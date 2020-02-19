@@ -1,1 +1,0 @@
-SUBDIRS(database locator magnitudes)

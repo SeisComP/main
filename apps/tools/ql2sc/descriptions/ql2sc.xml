@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<module name="ql2sc" category="Utilities">
+		<description>QuakeLink (gempa GmbH) to SeisComP event parameter exchange</description>
+		<configuration>
+			<parameter name="backLog" type="int" default="1800" unit="s">
+				<description>
+					Number of seconds to fetch missed updates on start up.
+				</description>
+			</parameter>
+			<parameter name="cacheSize" type="int" default="5000">
+				<description>
+					Number of public objects to cache.
+				</description>
+			</parameter>
+			<parameter name="batchSize" type="int" default="2000">
+				<description>
+					Maximum number of notifiers to batch in one message. If set
+					to 0 no size limit is enforced. Make sure to not hit the
+					overall message size limited of 16MiB which is enforced by
+					the messaging system.
+				</description>
+			</parameter>
+			<parameter name="eventAssociationTimeout" type="int" default="10" unit="s">
+				<description>
+					If event synchronisation is enabled and an incoming origin
+					is not yet associated with an event on the target machine
+					then this timeout defines the maximum number of seconds to
+					wait for an association.
+				</description>
+			</parameter>
+			<parameter name="hosts" type="list:string">
+				<description>
+					Registration of the host profiles defining the connection
+					parameters to the QuakeLink hosts.
+				</description>
+			</parameter>
+			<group name="host">
+				<description>
+				Definition of host profiles. For each host profile a connection
+				to one QuakeLink server can established. The profiles must be registered
+				in 'hosts' to apply them.
+				</description>
+				<struct type="quakelink server profile" link="hosts">
+					<description>
+						Provide the connection parameters to one QuakeLink server.
+					</description>
+					<parameter name="url" type="string" default="ql://localhost:18010">
+						<description>
+							URL of the QuakeLink service, the scheme 'qls' enables SSL.
+
+							Format: [ql[s]://][user:pwd@][host][:port].
+
+							If set to an empty string the application will run without any QuakeLink connection attempt.
+						</description>
+					</parameter>
+					<parameter name="gzip" type="boolean" default="false">
+						<description>
+							Enables/disables GZip (GNU zip) compression.
+						</description>
+					</parameter>
+					<parameter name="native" type="boolean" default="false">
+						<description>Request native data instead of XML format.
+						Native data export may be disabled on some hosts.</description>
+					</parameter>
+					<parameter name="syncEventAttributes" type="boolean" default="true">
+						<description>
+							Tries to update the event attributes of the target event
+							with the attributes of the source event which includes
+							event type and event certainty. It will not import
+							events but tries to find the associated event of the
+							input preferred origin at the target system and will
+							update the event attributes via journaling.
+						</description>
+					</parameter>
+					<group name="data">
+						<description>
+							Specify the XML components to fetch.
+							Note: These options are not used if 'native' data is requested.
+						</description>
+						<parameter name="picks" type="boolean" default="true">
+							<description>Include picks</description>
+						</parameter>
+						<parameter name="amplitudes" type="boolean" default="true">
+							<description>Include amplitudes</description>
+						</parameter>
+						<parameter name="arrivals" type="boolean" default="true">
+							<description>Include origin arrivals</description>
+						</parameter>
+						<parameter name="staMags" type="boolean" default="true">
+							<description>Include origin station magnitudes</description>
+						</parameter>
+						<parameter name="staMts" type="boolean" default="true">
+							<description>Include moment tensor station contributions and phase settings</description>
+						</parameter>
+						<parameter name="preferred" type="boolean" default="true">
+							<description>Include only preferred origin and magnitude information</description>
+						</parameter>
+					</group>
+					<parameter name="keepAlive" type="boolean" default="false">
+						<description>
+							Request server to send keep alive message every 30s to
+							prevent connection reset by firewalls on long idle
+							periods. If activated the client will reset the
+							connection if no alive message is received within 60s.
+						</description>
+					</parameter>
+					<parameter name="filter" type="string">
+						<description>
+							SQL like WHERE clause to filter the result set.
+
+							clause    := condition[ AND|OR [(]clause[)]] __
+							condition := MAG|DEPTH|LAT|LON|PHASES|OTIME|UPDATED [op float|time]|[IS [NOT] NULL] __
+							op        := =|&gt;|&gt;=|&lt;|&lt;=|eq|gt|ge|lt|ge __
+							time      := %Y,%m,%d[,%H,%M,%S,%f]
+						</description>
+					</parameter>
+					<parameter name="routingTable" type="list:string" default="Pick:IMPORT_GROUP,Amplitude:IMPORT_GROUP,FocalMechanism:FOCMECH,Origin:LOCATION">
+						<description>
+							Maps datamodel class names to messaging groups. For unmapped objects
+							the mapping of their parent objects is evaluated recursively. Objects
+							may be excluded by mapping them to 'NULL'.
+						</description>
+					</parameter>
+				</struct>
+			</group>
+		</configuration>
+		<command-line>
+			<group name="Generic">
+				<optionReference>generic#help</optionReference>
+				<optionReference>generic#version</optionReference>
+				<optionReference>generic#config-file</optionReference>
+				<optionReference>generic#plugins</optionReference>
+				<optionReference>generic#daemon</optionReference>
+			</group>
+			<group name="Verbosity">
+				<optionReference>verbosity#verbosity</optionReference>
+				<optionReference>verbosity#v</optionReference>
+				<optionReference>verbosity#quiet</optionReference>
+				<optionReference>verbosity#print-component</optionReference>
+				<optionReference>verbosity#print-context</optionReference>
+				<optionReference>verbosity#component</optionReference>
+				<optionReference>verbosity#syslog</optionReference>
+				<optionReference>verbosity#lockfile</optionReference>
+				<optionReference>verbosity#console</optionReference>
+				<optionReference>verbosity#debug</optionReference>
+				<optionReference>verbosity#trace</optionReference>
+				<optionReference>verbosity#log-file</optionReference>
+			</group>
+			<group name="Messaging">
+				<optionReference>messaging#user</optionReference>
+				<optionReference>messaging#host</optionReference>
+				<optionReference>messaging#timeout</optionReference>
+				<optionReference>messaging#primary-group</optionReference>
+				<optionReference>messaging#subscribe-group</optionReference>
+				<optionReference>messaging#content-type</optionReference>
+				<optionReference>messaging#start-stop-msg</optionReference>
+			</group>
+			<group name="Database">
+				<optionReference>database#db-driver-list</optionReference>
+				<optionReference>database#database</optionReference>
+			</group>
+		</command-line>
+	</module>
+</seiscomp>

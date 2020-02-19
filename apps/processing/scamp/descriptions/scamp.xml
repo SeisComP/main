@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<module name="scamp" category="Processing">
+		<description>Calculates amplitudes on basis of incoming origins and the associated picks.</description>
+		<configuration>
+			<parameter name="amplitudes" type="list:string" default="MLv, mb, mB, Mwp">
+				<description>Definition of magnitude types for which amplitudes are to be calculated.</description>
+			</parameter>
+			<group name="amptool">
+				<parameter name="minimumPickWeight" type="double" default="0.5">
+					<description>The minimum arrival weight within an origin to compute amplitudes for the associated pick.</description>
+				</parameter>
+				<parameter name="initialAcquisitionTimeout" type="double" default="30" unit="s">
+					<description>Timeout in seconds of the first data packet of waveform data acquisition.</description>
+				</parameter>
+				<parameter name="runningAcquisitionTimeout" type="double" default="2" unit="s">
+					<description>Timeout in seconds of any subsequent data packet of waveform data acquisition.</description>
+				</parameter>
+			</group>
+		</configuration>
+		<command-line>
+			<group name="Generic">
+				<optionReference>generic#help</optionReference>
+				<optionReference>generic#version</optionReference>
+				<optionReference>generic#config-file</optionReference>
+				<optionReference>generic#plugins</optionReference>
+				<optionReference>generic#daemon</optionReference>
+				<optionReference>generic#auto-shutdown</optionReference>
+				<optionReference>generic#shutdown-master-module</optionReference>
+				<optionReference>generic#shutdown-master-username</optionReference>
+				<option flag="x" long-flag="expiry" argument="time">
+					<description>Time span in hours after which objects expire.</description>
+				</option>
+				<option flag="O" long-flag="origin-id" argument="publicID">
+					<description>OriginID to calculate amplitudes for and exit.</description>
+				</option>
+				<option long-flag="dump-records">
+					<description>Dumps the filtered traces to ASCII when using -O.</description>
+				</option>
+			</group>
+			
+			<group name="Verbosity">
+				<optionReference>verbosity#verbosity</optionReference>
+				<optionReference>verbosity#v</optionReference>
+				<optionReference>verbosity#quiet</optionReference>
+				<optionReference>verbosity#component</optionReference>
+				<optionReference>verbosity#syslog</optionReference>
+				<optionReference>verbosity#lockfile</optionReference>
+				<optionReference>verbosity#console</optionReference>
+				<optionReference>verbosity#debug</optionReference>
+				<optionReference>verbosity#log-file</optionReference>
+			</group>
+			
+			<group name="Messaging">
+				<optionReference>messaging#user</optionReference>
+				<optionReference>messaging#host</optionReference>
+				<optionReference>messaging#timeout</optionReference>
+				<optionReference>messaging#primary-group</optionReference>
+				<optionReference>messaging#subscribe-group</optionReference>
+				<optionReference>messaging#content-type</optionReference>
+				<optionReference>messaging#start-stop-msg</optionReference>
+				<option long-flag="test">
+					<description>
+						Test mode where no messages are sent.
+					</description>
+				</option>
+			</group>
+			
+			<group name="Database">
+				<optionReference>database#db-driver-list</optionReference>
+				<optionReference>database#database</optionReference>
+				<optionReference>database#config-module</optionReference>
+				<optionReference>database#inventory-db</optionReference>
+				<optionReference>database#db-disable</optionReference>
+			</group>
+
+			<group name="Records">
+				<optionReference>records#record-driver-list</optionReference>
+				<optionReference>records#record-url</optionReference>
+				<optionReference>records#record-file</optionReference>
+				<optionReference>records#record-type</optionReference>
+			</group>
+
+			<group name="Input">
+				<option long-flag="ep" argument="file">
+					<description>
+					Defines an event parameters XML file to be read and processed. This
+					implies offline mode and only processes all origins contained
+					in that file. It computes amplitudes for all picks associated
+					with an origin and outputs an XML file that additionally
+					contains the amplitudes.
+					</description>
+				</option>
+				<option long-flag="reprocess">
+					<description>
+					Reprocess and update existing amplitudes in combination with --ep.
+					Manual amplitudes will be skipped.
+					This option can be used, e.g. for reprocessing amplitudes with
+					new inventory information. Waveform access is required.
+					</description>
+				</option>
+			</group>
+
+			<group name="Reprocess">
+				<description>
+					Amplitudes can be re-processed, e.g. in order to consider inventory
+					changes. The re-processing is time-window based and triggerd by
+					setting start-time or end-time. Re-processing will either create
+					output to stdout in XML format. Using --commit will send the
+					updated amplitudes to the messaging system. Waveform access is
+					required.
+				</description>
+				<option long-flag="force">
+					<description>
+					Forces reprocessing of all amplitudes, even manual ones.
+					</description>
+				</option>
+				<option long-flag="start-time" argument="time">
+					<description>
+					</description>
+				</option>
+				<option long-flag="end-time" argument="time">
+					<description>
+					</description>
+				</option>
+				<option long-flag="commit">
+					<description>
+						Send amplitude updates to the messaging otherwise an XML
+						document will be output.
+					</description>
+				</option>
+			</group>
+		</command-line>
+	</module>
+</seiscomp>

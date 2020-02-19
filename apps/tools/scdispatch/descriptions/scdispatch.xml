@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<module name="scdispatch" category="Utilities">
+		<description>
+		Reads objects (event, origin, etc) from a SC3ML file and sends the objects
+		to the messaging system.
+		</description>
+		<command-line>
+			<group name="Generic">
+				<optionReference>generic#help</optionReference>
+				<optionReference>generic#version</optionReference>
+				<optionReference>generic#config-file</optionReference>
+				<optionReference>generic#plugins</optionReference>
+				<optionReference>generic#daemon</optionReference>
+				<optionReference>generic#auto-shutdown</optionReference>
+				<optionReference>generic#shutdown-master-module</optionReference>
+				<optionReference>generic#shutdown-master-username</optionReference>
+			</group>
+
+			<group name="Verbosity">
+				<optionReference>verbosity#verbosity</optionReference>
+				<optionReference>verbosity#v</optionReference>
+				<optionReference>verbosity#quiet</optionReference>
+				<optionReference>verbosity#component</optionReference>
+				<optionReference>verbosity#syslog</optionReference>
+				<optionReference>verbosity#lockfile</optionReference>
+				<optionReference>verbosity#console</optionReference>
+				<optionReference>verbosity#debug</optionReference>
+				<optionReference>verbosity#log-file</optionReference>
+			</group>
+
+			<group name="Messaging">
+				<optionReference>messaging#user</optionReference>
+				<optionReference>messaging#host</optionReference>
+				<optionReference>messaging#timeout</optionReference>
+				<optionReference>messaging#primary-group</optionReference>
+				<optionReference>messaging#subscribe-group</optionReference>
+				<optionReference>messaging#content-type</optionReference>
+				<optionReference>messaging#start-stop-msg</optionReference>
+			</group>
+
+			<group name="Database">
+				<optionReference>database#db-driver-list</optionReference>
+				<optionReference>database#database</optionReference>
+				<optionReference>database#config-module</optionReference>
+				<optionReference>database#inventory-db</optionReference>
+				<optionReference>database#db-disable</optionReference>
+			</group>
+
+			<group name="Dispatch">
+				<option flag="i" long-flag="input" argument="flag">
+					<description>
+					File to dispatch to messaging.
+					</description>
+				</option>
+				<option flag="O" long-flag="operation" argument="flag" default="merge">
+					<description>
+					Operation to use: add, update, remove, merge or merge-without-remove.
+					Merge and merge-without-remove are special operations and require
+					a database connection. Both will read a corresponding object
+					from the database and calculate the differences which will be
+					sent to the messaging. Merge-no-remove behaves like merge
+					with the exception that remove operations will be filtered
+					out that no objects in the database will be removed.
+
+					If add, update or remove is specified then all objects in
+					XML are sent with the given operation regardless of their
+					existence in the database or not.
+					</description>
+				</option>
+				<option long-flag="routingtable" argument="flag">
+					<description>
+					Specify routing table as comma separated list of object:group pairs,
+					e.g. &quot;Origin:LOCATION,Event:EVENT&quot;. When an objects
+					should be routed to a group and no table entry for that perticular
+					class type is available, all parent objects are checked for
+					valid routing entries and the first found is used. E.g. if only
+					&quot;Origin:LOCATION&quot; is specified but the input file
+					contains also Arrivals which are child objects of Origin then
+					the routing entry of Origin is used because of the parent-child
+					relationship between Origin and Arrival.
+					</description>
+				</option>
+				<option long-flag="print-objects">
+					<description>
+					Print names of routable objects.
+					</description>
+				</option>
+				<option long-flag="test">
+					<description>
+					Test mode. Does not send any object.
+					</description>
+				</option>
+			</group>
+		</command-line>
+	</module>
+</seiscomp>
