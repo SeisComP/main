@@ -37,7 +37,10 @@ Tests = {
     "receivedmessages": "cnt",
     "messagequeuesize": "cnt",
     "objectcount": "cnt",
-    "uptime": "s"
+    "uptime": "s",
+    "dbadds": "row/s",
+    "dbupdates": "row/s",
+    "dbdeletes": "row/s"
 }
 
 
