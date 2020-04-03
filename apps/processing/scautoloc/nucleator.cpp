@@ -174,7 +174,7 @@ GridPoint::feed(const Pick* pick)
 	ProjectedPick pp(pick, wrapper);
 
 	// store newly inserted pick
-	//std::multiset<ProjectedPick>::iterator latest = _picks.insert(pp);
+	/* std::multiset<ProjectedPick>::iterator latest = */ _picks.insert(pp);
 
 	// roughly test if there is a cluster around the new pick
 	std::multiset<ProjectedPick>::iterator it,
