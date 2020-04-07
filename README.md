@@ -23,3 +23,5 @@ SC_TRUNK_LOCATOR_ILOC|OFF|Enable iLoc locator plugin (still experimental)|
 ## Compilation
 
 Follow the build instructions from the `seiscomp` repository.
+
+Just a nonsense addition, please reject the PR for this change.
