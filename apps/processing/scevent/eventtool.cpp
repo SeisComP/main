@@ -3912,12 +3912,11 @@ void EventTool::removedFromCache(Seiscomp::DataModel::PublicObject *po) {
 		it->second->aboutToBeRemoved = true;
 		SEISCOMP_DEBUG("... mark event %s to be removed from cache", po->publicID().c_str());
 	}
-	else {
-		// Only allow to detach objects from the EP instance if it hasn't been read
-		// from a file
-		if ( _epFile.empty() )
-			po->detach();
-	}
+
+	// Only allow to detach objects from the EP instance if it hasn't been read
+	// from a file
+	if ( _epFile.empty() )
+		po->detach();
 
 	DataModel::Notifier::SetEnabled(saveState);
 }
