@@ -778,7 +778,6 @@ void EventTool::cleanUpEventCache() {
 		if ( it->second->aboutToBeRemoved ) {
 			SEISCOMP_DEBUG("... remove event %s from cache",
 			               it->second->event->publicID().c_str());
-			it->second->event->detach();
 			_events.erase(it++);
 		}
 		else
@@ -956,8 +955,9 @@ void EventTool::addObject(const string &parentID, Object* object) {
 	if ( journalEntry ) {
 		logObject(_inputJournal, Core::Time::GMT());
 		SEISCOMP_LOG(_infoChannel,
-		             "Received new journal entry from %s for object %s",
-		             journalEntry->sender().c_str(), journalEntry->objectID().c_str());
+		             "Received new journal entry from %s for object %s: %s(%s)",
+		             journalEntry->sender().c_str(), journalEntry->objectID().c_str(),
+		             journalEntry->action().c_str(), journalEntry->parameters().c_str());
 		if ( handleJournalEntry(journalEntry.get()) )
 			return;
 	}
@@ -1217,6 +1217,10 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 	}
 	else
 		info->addJournalEntry(entry);
+
+	if ( !info->event->parent() ) {
+		SEISCOMP_ERROR("%s: internal error: no parent");
+	}
 
 	if ( entry->action() == "EvPrefMagType" ) {
 		SEISCOMP_DEBUG("...set preferred magnitude type");
@@ -2780,14 +2784,14 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 						if ( originPriority < preferredOriginPriority ) {
 							SEISCOMP_DEBUG("... skipping potential preferred origin (%d < %d)",
 							               originPriority, preferredOriginPriority);
-							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: priority too low (%d < %d)",
+							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: mode priority too low (%d < %d)",
 							             origin->publicID().c_str(), info->event->publicID().c_str(),
 							             originPriority, preferredOriginPriority);
 							return;
 						}
 						// Found origin with higher status priority
 						else if ( originPriority > preferredOriginPriority ) {
-							SEISCOMP_LOG(_infoChannel, "Origin %s: status priority %d overrides status priority %d",
+							SEISCOMP_LOG(_infoChannel, "Origin %s: mode priority %d overrides mode priority %d",
 							             origin->publicID().c_str(), originPriority, preferredOriginPriority);
 							break;
 						}
@@ -2824,7 +2828,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 						if ( originPriority < preferredOriginPriority ) {
 							SEISCOMP_DEBUG("... skipping potential preferred origin (%d < %d)",
 							               originPriority, preferredOriginPriority);
-							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: priority too low (%d < %d)",
+							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: status priority too low (%d < %d)",
 							             origin->publicID().c_str(), info->event->publicID().c_str(),
 							             originPriority, preferredOriginPriority);
 							return;
@@ -3060,13 +3064,13 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 					int preferredOriginPriority = priority(info->preferredOrigin.get());
 
 					if ( info->constraints.fixOriginMode(info->preferredOrigin.get()) ) {
-						SEISCOMP_LOG(_infoChannel, "Origin %s: has priority %d vs %d",
+						SEISCOMP_LOG(_infoChannel, "Origin %s: has evaluation mode/status priority %d vs %d",
 						             origin->publicID().c_str(), originPriority, preferredOriginPriority);
 
 						// Set back the evalmode to automatic if a higher priority
 						// origin has been send (but not triggered by a magnitude change only)
 						if ( realOriginUpdate && (originPriority > preferredOriginPriority) ) {
-							SEISCOMP_LOG(_infoChannel, "Origin %s has higher priority: releasing EvPrefOrgEvalMode",
+							SEISCOMP_LOG(_infoChannel, "Origin %s has higher evaluation mode/status priority: releasing EvPrefOrgEvalMode",
 							             origin->publicID().c_str());
 							JournalEntryPtr entry = new JournalEntry;
 							entry->setObjectID(info->event->publicID());
@@ -3087,7 +3091,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 					if ( originPriority < preferredOriginPriority ) {
 						SEISCOMP_DEBUG("... skipping potential preferred origin (%d < %d)",
 						               originPriority, preferredOriginPriority);
-						SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: priority too low (%d < %d)",
+						SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: evaluation mode/status priority too low (%d < %d)",
 						             origin->publicID().c_str(), info->event->publicID().c_str(),
 						             originPriority, preferredOriginPriority);
 						return;
