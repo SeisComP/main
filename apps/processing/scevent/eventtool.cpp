@@ -1219,7 +1219,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 		info->addJournalEntry(entry);
 
 	if ( !info->event->parent() ) {
-		SEISCOMP_ERROR("%s: internal error: no parent");
+		SEISCOMP_ERROR("%s: internal error: no parent", info->event->publicID().c_str());
 	}
 
 	if ( entry->action() == "EvPrefMagType" ) {
