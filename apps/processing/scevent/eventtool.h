@@ -121,6 +121,7 @@ class EventTool : public Application {
 		EventInformationPtr cachedEvent(const std::string &eventID);
 		bool removeCachedEvent(const std::string &eventID);
 		bool isEventCached(const std::string &eventID) const;
+		void refreshEventCache(EventInformationPtr info);
 
 		void removedFromCache(DataModel::PublicObject *);
 

@@ -2355,7 +2355,7 @@ EventInformationPtr EventTool::findAssociatedEvent(DataModel::Origin *origin) {
 		if ( it->second->event->originReference(origin->publicID()) ) {
 			SEISCOMP_DEBUG("... feeding cache with event %s",
 			               it->second->event->publicID().c_str());
-			_cache.feed(it->second->event.get());
+			refreshEventCache(it->second);
 			return it->second;
 		}
 	}
@@ -2375,7 +2375,7 @@ EventInformationPtr EventTool::findAssociatedEvent(DataModel::FocalMechanism *fm
 		if ( it->second->event->focalMechanismReference(fm->publicID()) ) {
 			SEISCOMP_DEBUG("... feeding cache with event %s",
 			               it->second->event->publicID().c_str());
-			_cache.feed(it->second->event.get());
+			refreshEventCache(it->second);
 			return it->second;
 		}
 	}
@@ -2507,11 +2507,25 @@ void EventTool::cacheEvent(EventInformationPtr info) {
 
 	// Cache the complete event information
 	_events[info->event->publicID()] = info;
-	// Set the clean-up flag to false
-	info->aboutToBeRemoved = false;
+	refreshEventCache(info);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void EventTool::refreshEventCache(EventInformationPtr info) {
+	if ( info->aboutToBeRemoved ) {
+		// Set the clean-up flag to false
+		info->aboutToBeRemoved = false;
+		SEISCOMP_DEBUG("... clear cache removal flag for event %s", info->event->publicID().c_str());
+	}
+
 	// Add the event to the EventParameters
 	if ( !info->event->eventParameters() )
 		_ep->add(info->event.get());
+
 	// Feed event into cache
 	_cache.feed(info->event.get());
 }
@@ -2534,16 +2548,7 @@ EventInformationPtr EventTool::cachedEvent(const std::string &eventID) {
 	EventMap::const_iterator it = _events.find(eventID);
 	if ( it == _events.end() ) return nullptr;
 
-	// If scheduled for removal, reset and cache it again
-	if ( it->second->aboutToBeRemoved ) {
-		// Reset removal flag
-		it->second->aboutToBeRemoved = false;
-		// Add it again to event parameters
-		if ( !it->second->event->eventParameters() )
-			_ep->add(it->second->event.get());
-		// Feed the cache again
-		_cache.feed(it->second->event.get());
-	}
+	refreshEventCache(it->second);
 
 	return it->second;
 }
