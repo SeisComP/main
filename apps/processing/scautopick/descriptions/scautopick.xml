@@ -128,6 +128,19 @@
 				</parameter>
 				<parameter name="minAmplOffset" type="double" default="3"/>
 			</group>
+			<group name="amplitudes">
+				<parameter name="enableUpdate" type="list:string" default="" unit="">
+					<description>
+						Configure a list of magnitude types.
+						Update and send amplitudes for these magnitudes as soon as data are
+						available. Do not wait for complete time windows.
+						Only magnitudes computed by scautopick as given by the amplitudes parameter are considered.
+						This option is for rapid magnitude estimation and EEW.
+
+						WARNING: This option increases the load on the system!
+					</description>
+				</parameter>
+			</group>
 			<group name="connection">
 				<parameter name="amplitudeGroup" type="string" default="AMPLITUDE">
 					<description>
