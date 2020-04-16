@@ -52,7 +52,6 @@ def time2str(time):
     return time.toString("%Y-%m-%d %H:%M:%S.%f000000")[:23]
 
 
-=======
 def RecordInput(filename=None, datatype=seiscomp.core.Array.INT):
     """
     Simple Record iterator that reads from a file (to be specified by
