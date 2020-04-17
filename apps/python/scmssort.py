@@ -72,7 +72,7 @@ def RecordInput(filename=None, datatype=seiscomp.core.Array.INT):
         stream, datatype, seiscomp.core.Record.SAVE_RAW)
 
     while True:
-        rec = next(inp)
+        rec = next(input)
         if not rec:
             return
         yield rec
