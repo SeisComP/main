@@ -7,8 +7,8 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_FDSNXML_FLOATNOUNITTYPE_H__
-#define SEISCOMP_FDSNXML_FLOATNOUNITTYPE_H__
+#ifndef SEISCOMP_FDSNXML_IDENTIFIER_H__
+#define SEISCOMP_FDSNXML_IDENTIFIER_H__
 
 
 #include <fdsnxml/metadata.h>
@@ -21,14 +21,16 @@ namespace Seiscomp {
 namespace FDSNXML {
 
 
-DEFINE_SMARTPOINTER(FloatNoUnitType);
+DEFINE_SMARTPOINTER(Identifier);
 
 
 /**
- * \brief Representation of floating-point numbers.
+ * \brief A type to document persistent identifiers. Identifier values should
+ * \brief be specified without a URI scheme (prefix), instead the identifer
+ * \brief type is documented as an attribute.
  */
-class FloatNoUnitType : public Core::BaseObject {
-	DECLARE_CASTS(FloatNoUnitType);
+class Identifier : public Core::BaseObject {
+	DECLARE_CASTS(Identifier);
 	DECLARE_RTTI;
 	DECLARE_METAOBJECT_DERIVED;
 
@@ -37,32 +39,25 @@ class FloatNoUnitType : public Core::BaseObject {
 	// ------------------------------------------------------------------
 	public:
 		//! Constructor
-		FloatNoUnitType();
+		Identifier();
 
 		//! Copy constructor
-		FloatNoUnitType(const FloatNoUnitType &other);
+		Identifier(const Identifier &other);
 
 		//! Custom constructor
-		FloatNoUnitType(double value);
-		FloatNoUnitType(double value,
-		                const OPT(double)& upperUncertainty,
-		                const OPT(double)& lowerUncertainty,
-		                const std::string& measurementMethod);
+		Identifier(const std::string& value);
 
 		//! Destructor
-		~FloatNoUnitType();
+		~Identifier();
 
 
 	// ------------------------------------------------------------------
 	//  Operators
 	// ------------------------------------------------------------------
 	public:
-		operator double&();
-		operator double() const;
-
 		//! Copies the metadata of other to this
-		FloatNoUnitType& operator=(const FloatNoUnitType &other);
-		bool operator==(const FloatNoUnitType &other) const;
+		Identifier& operator=(const Identifier &other);
+		bool operator==(const Identifier &other) const;
 
 
 	// ------------------------------------------------------------------
@@ -70,20 +65,8 @@ class FloatNoUnitType : public Core::BaseObject {
 	// ------------------------------------------------------------------
 	public:
 		//! XML tag: value
-		void setValue(double value);
-		double value() const;
-
-		//! XML tag: plusError
-		void setUpperUncertainty(const OPT(double)& upperUncertainty);
-		double upperUncertainty() const;
-
-		//! XML tag: minusError
-		void setLowerUncertainty(const OPT(double)& lowerUncertainty);
-		double lowerUncertainty() const;
-
-		//! XML tag: measurementMethod
-		void setMeasurementMethod(const std::string& measurementMethod);
-		const std::string& measurementMethod() const;
+		void setValue(const std::string& value);
+		const std::string& value() const;
 
 
 	// ------------------------------------------------------------------
@@ -91,10 +74,7 @@ class FloatNoUnitType : public Core::BaseObject {
 	// ------------------------------------------------------------------
 	private:
 		// Attributes
-		double _value;
-		OPT(double) _upperUncertainty;
-		OPT(double) _lowerUncertainty;
-		std::string _measurementMethod;
+		std::string _value;
 };
 
 
