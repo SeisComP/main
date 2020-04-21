@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<module name="scmssort" category="Utilities" standalone="true">
+		<description>
+		[TBD]
+		</description>
+		<command-line>
+			<synopsis>
+			scmssort [options]
+			</synopsis>
+			<description>
+			Add description here.
+			</description>
+		</command-line>
+	</module>
+</seiscomp>

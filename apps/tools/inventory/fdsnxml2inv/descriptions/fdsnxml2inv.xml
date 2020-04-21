@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<module name="fdsnxml2inv" category="Inventory">
+		<description>Imports FDSN Station XML to SeisComP inventory XML.</description>
+		<command-line>
+			<synopsis>
+				fdsnxml2inv {OPTIONS} input [output]
+			</synopsis>
+			<description>
+				[TBD]
+			</description>
+		</command-line>
+	</module>
+</seiscomp>
