@@ -53,7 +53,7 @@
 
 						&quot;quarry&quot;,&quot;rank 1&quot;,&quot;eventType: quarry blast, minDepth: -5, maxDepth: 10&quot;,13
 
-						When eventType is set, it superseeds eventTypePositive and eventTypeNegative.
+						When eventType is set, it supersedes eventTypePositive and eventTypeNegative.
 						When not set, eventTypePositive and eventTypeNegative are considered.
 					</description>
 				</parameter>
