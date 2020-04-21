@@ -14,16 +14,16 @@
 			</parameter>
 			<parameter name="use3Components" type="boolean" default="false">
 				<description>
-					If useConfiguredStreams == true, then this parameter decides whether
+					If useConfiguredStreams is true then this parameter decides whether
 					to use only the vertical component (default) or all three
 					components. The 3 components are collected from the inventory
-					according to channel orientation. If that is not possible,
+					according to channel orientation. If that is not possible
 					then the fixed components N and E will be used.
 				</description>
 			</parameter>
 			<parameter name="streamMask" type="string">
 				<description>
-					If useConfiguredStreams == false, then
+					If useConfiguredStreams is false, then
 					load (from inventory) only those streams, matching the streamMask
 
 					RegEx e.g. &quot;^(NET1|NET2)\.(STA1|STA2|STA3)\.(LOC)\.((BH)|(LH)|(HH))Z$&quot;
