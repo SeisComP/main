@@ -281,6 +281,8 @@ void Monitor::handleStatusMessage(const Client::Packet *msg) {
 	if ( !status.parse(msg->payload) )
 		return;
 
+	status.values[Client::Status::Clientname] = msg->subject;
+
 	_responseTimes[status.values[Client::Status::Clientname]] = Core::Time::GMT();
 
 	for ( auto &&client : _clientTable ) {

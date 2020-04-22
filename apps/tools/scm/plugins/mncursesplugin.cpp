@@ -170,6 +170,7 @@ bool MNcursesPlugin::print(const std::string& str, TextAttrib attrib) {
 bool MNcursesPlugin::printTable(ClientTable& table) {
 	clearOut(); // Clear the screen
 	updateColumnSizes(_clientTableCache);
+
 	std::string masterAddress;
 	if ( SCCoreApp )
 		masterAddress = SCCoreApp->connection()->source();
@@ -317,8 +318,11 @@ int MNcursesPlugin::findTag(Client::Status::Tag tag) const {
 void MNcursesPlugin::updateColumnSizes(const ClientTable &table) {
 	for ( ClientTable::const_iterator it = table.begin(); it != table.end(); ++it ) {
 		for ( TagOrder::iterator tagIt = _tagOrder.begin(); tagIt != _tagOrder.end(); ++tagIt ) {
-			int size = static_cast<int>(it->info.find(*tagIt)->second.size());
-			_columnSizes[*tagIt] = std::max(_columnSizes[*tagIt], size);
+			auto colIt = it->info.find(*tagIt);
+			if ( colIt != it->info.end() ) {
+				int size = static_cast<int>(colIt->second.size());
+				_columnSizes[*tagIt] = std::max(_columnSizes[*tagIt], size);
+			}
 		}
 	}
 }
