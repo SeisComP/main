@@ -59,6 +59,7 @@ Picker::Config::Config() {
 	pickerType = "";
 	killPendingSecondaryProcessors = true;
 	sendDetections = false;
+	addSNRCommentToPick = false;
 	playback = false;
 
 	amplitudeList.insert("MLv");
@@ -144,6 +145,9 @@ void Picker::Config::init(const Client::Application *app) {
 	try { sendDetections = app->configGetBool("sendDetections"); }
 	catch ( ... ) {}
 
+	try { addSNRCommentToPick = app->configGetBool("addSNRCommentToPick"); }
+	catch ( ... ) {}
+
 	try { playback = app->configGetBool("playback"); }
 	catch ( ... ) {}
 }
@@ -158,6 +162,7 @@ void Picker::Config::init(const System::CommandLine &commandline) {
 	offline = commandline.hasOption("offline") || commandline.hasOption("ep");
 	dumpRecords = commandline.hasOption("dump-records");
 	sendDetections = commandline.hasOption("send-detections") ? true : sendDetections;
+	addSNRCommentToPick = commandline.hasOption("with-comment") ? true : addSNRCommentToPick;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

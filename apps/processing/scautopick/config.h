@@ -12,13 +12,12 @@
  ***************************************************************************/
 
 
-
-
-
 #ifndef __APPS_PICKER_CONFIG_H__
 #define __APPS_PICKER_CONFIG_H__
 
+
 #include <string>
+#include <set>
 
 
 namespace Seiscomp {
@@ -150,6 +149,8 @@ class Config {
 
 		// Send detections as well if a picker is configured?
 		bool        sendDetections;
+
+		bool        addSNRCommentToPick;
 
 		// Accept historic data in real-time playbacks?
 		bool        playback;
