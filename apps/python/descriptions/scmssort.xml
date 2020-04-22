@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<module name="scmssort" category="Utilities" standalone="true">
+		<description>
+			Read and manipulate miniSEED records
+		</description>
+
+		<command-line>
+			<synopsis>
+			scmssort {options} input
+			</synopsis>
+
+			<group name="Options">
+
+				<option flag="h" long-flag="help">
+					<description>
+						Show the command-line help and exit.
+					</description>
+				</option>
+				<option flag="v" long-flag="verbose">
+					<description>
+						Run in verbose mode.
+					</description>
+				</option>
+				<option flag="E" long-flag="sort-by-end-time">
+					<description>
+						Sort by end time.
+					</description>
+				</option>
+				<option flag="u" long-flag="uniqueness">
+					<description>
+						Ensure uniqueness of output, i.e. skip duplicate records.
+					</description>
+				</option>
+				<option flag="t" long-flag="time-window" arg="TIME_WINDOW">
+					<description>
+						Specify time window (as one -properly quoted- string).
+						Times are of course UTC and separated by a tilde ~
+
+						Example:
+
+						'2020-03-28 15:48~2020-03-28 16:18'
+					</description>
+				</option>
+			</group>
+		</command-line>
+	</module>
+</seiscomp>

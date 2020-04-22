@@ -18,16 +18,16 @@ the archive attribute of all networks and stations available in the dataless.
 The datacenterID can be overridden with the :option:`--dcid` command line option.
 
 Examples
---------
+========
 
-Convert a given dataless SEED file to SeisComP XML.
+#. Convert a given dataless SEED file to SeisComP XML.
 
-.. code-block:: sh
+   .. code-block:: sh
 
-   dlsv2inv GE.dataless GE.xml
+      dlsv2inv GE.dataless GE.xml
 
-Override the datacenterID and leave it blank in the output.
+#. Override the datacenterID and leave it blank in the output.
 
-.. code-block:: sh
+   .. code-block:: sh
 
-   dlsv2inv --dcid "" GE.dataless GE.xml
+      dlsv2inv --dcid "" GE.dataless GE.xml
