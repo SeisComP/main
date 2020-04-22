@@ -2,9 +2,9 @@ invextr extracts or removes networks, stations and channels from an inventory
 XML file.
 It takes basically three important parameters:
 
-1. channel ID list
-2. input file
-3. output file
+#. channel ID list
+#. input file
+#. output file
 
 whereas the output file defaults to stdout and the input file to
 stdin if not given.

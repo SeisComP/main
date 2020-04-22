@@ -7,7 +7,7 @@
 
 		<command-line>
 			<synopsis>
-			scmssort {options} input
+			scmssort [options] input
 			</synopsis>
 
 			<group name="Options">

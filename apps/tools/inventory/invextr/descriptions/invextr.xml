@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="invextr" category="Inventory">
-		<description>Extracts channels from inventory.</description>
+		<description>Extract channels from inventory.</description>
+
+		<configuration>
+		</configuration>
+
 		<command-line>
 			<synopsis>
 				invextr [OPTIONS] [input=stdin] [output=stdout]
