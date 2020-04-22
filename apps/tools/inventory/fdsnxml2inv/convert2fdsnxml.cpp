@@ -1128,7 +1128,7 @@ bool Convert2FDSNStaXML::process(FDSNXML::Channel *sx_chan,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Convert2FDSNStaXML::process(FDSNXML::Channel *sx_chan,
-                                 const DataModel::Stream *stream,
+                                 const DataModel::Stream *,
                                  const DataModel::Sensor *sensor) {
 	FDSNXML::Response *resp = NULL;
 	try { resp = &sx_chan->response(); } catch ( ...) {}

@@ -583,7 +583,7 @@ bool isAnalogDataloggerStage(const string &inputUnit, const string &outputUnit) 
 }
 
 
-bool isDigitalDataloggerStage(const string &inputUnit, const string &outputUnit) {
+bool isDigitalDataloggerStage(const string &, const string &outputUnit) {
 	return !isElectric(outputUnit);
 }
 
@@ -2548,9 +2548,9 @@ bool Convert2SC3::process(DataModel::Datalogger *sc_dl, DataModel::Stream *sc_st
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Convert2SC3::process(DataModel::Sensor *sc_sens, DataModel::Stream *sc_stream,
-                          const FDSNXML::Channel *epoch,
-                          const FDSNXML::ResponseStage *resp) {
+bool Convert2SC3::process(DataModel::Sensor *, DataModel::Stream *,
+                          const FDSNXML::Channel *,
+                          const FDSNXML::ResponseStage *) {
 	/*
 	 * Actually a sensor calibration should not be created automatically. That
 	 * be used from the historic values of the sensitivity blockette. In FDSN
