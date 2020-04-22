@@ -38,13 +38,13 @@ Examples
 
       scart  -I file://<file.mseed> <SDS archive>
 
-#. Collect data from an arclink server using the :ref:`global_recordstream`
+#. Collect data from an FDSNWS server using the :ref:`global_recordstream`
    interface and write to a miniSEED file. The data streams and the time spans are
    defined in a list file, e.g. created by :ref:`scevtstreams`.
 
    .. code-block:: sh
 
-      scart  -I arclink://<server>:18001 --list list.file --stdout > file.mseed
+      scart  -I fdsnws://<server>:80 --list list.file --stdout > file.mseed
 
 .. note::
 

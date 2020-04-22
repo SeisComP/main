@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<module name="fdsnxml2inv" category="Inventory">
+		<description>
+			Convert station inventory between FDSN StationXML format and SeisComP inventory XML
+		</description>
+
+		<configuration>
+		</configuration>
+
+		<command-line>
+			<synopsis>
+				fdsnxml2inv {OPTIONS} input [output]
+			</synopsis>
+
+			<group name="Generic">
+				<optionReference>generic#help</optionReference>
+				<optionReference>generic#version</optionReference>
+				<optionReference>generic#config-file</optionReference>
+				<optionReference>generic#plugins</optionReference>
+				<optionReference>generic#daemon</optionReference>
+			</group>
+
+			<group name="Verbosity">
+				<optionReference>verbosity#verbosity</optionReference>
+				<optionReference>verbosity#v</optionReference>
+				<optionReference>verbosity#quiet</optionReference>
+				<optionReference>verbosity#component</optionReference>
+				<optionReference>verbosity#syslog</optionReference>
+				<optionReference>verbosity#lockfile</optionReference>
+				<optionReference>verbosity#console</optionReference>
+				<optionReference>verbosity#debug</optionReference>
+				<optionReference>verbosity#log-file</optionReference>
+			</group>
+
+			<group name="Convert">
+				<option flag="f" long-flag="formatted">
+					<description>
+						Generate formatted SCML. Otherwise, output XML to a single line.
+					</description>
+				</option>
+				<option flag="" long-flag="to-staxml">
+					<description>
+						Converts from SCML to StationXML and expects SCML as input.
+						If not given, input is SCML and output is StationXML.
+					</description>
+				</option>
+				<option flag="" long-flag="relaxed-ns-check">
+					<description>
+						Enables relaxed XML namespace checks. This will also accept
+						tags within a different namespace than defined in the supported schema.
+					</description>
+				</option>
+				<option flag="" long-flag="log-stages">
+					<description>
+						Adds more output to stderr for all channel response stages
+						when converting from StationXML.
+					</description>
+				</option>
+			</group>
+		</command-line>
+	</module>
+</seiscomp>
