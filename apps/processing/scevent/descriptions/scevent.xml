@@ -222,7 +222,7 @@
 				<parameter name="score" type="string">
 					<description>
 						Defines the ScoreProcessor interface to be used along
-						with priority &quot;SCORE&quot;.
+						with priority &quot;SCORE&quot; in the priorities list.
 					</description>
 				</parameter>
 
