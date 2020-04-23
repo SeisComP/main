@@ -385,6 +385,7 @@ struct DecimationHandler : public IO::XML::TypedClassHandler<Decimation> {
 
 struct IdentifierHandler : public IO::XML::TypedClassHandler<Identifier> {
 	IdentifierHandler() {
+		addProperty("type", "", Optional, Attribute, "type");
 		addProperty("value", "http://www.fdsn.org/xml/station/1", Mandatory, CDATA, "value");
 	}
 };
