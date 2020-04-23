@@ -24,6 +24,7 @@
 #include <fdsnxml/responsestage.h>
 #include <fdsnxml/coefficients.h>
 #include <fdsnxml/fir.h>
+#include <fdsnxml/floatnounitwithnumbertype.h>
 #include <fdsnxml/numeratorcoefficient.h>
 #include <fdsnxml/polynomial.h>
 #include <fdsnxml/polynomialcoefficient.h>
@@ -255,7 +256,7 @@ FDSNXML::ResponseStagePtr convert(const DataModel::ResponseIIR *iir,
 	try {
 		const vector<double> &numerators = iir->numerators().content();
 		for ( size_t c = 0; c < numerators.size(); ++c ) {
-			FDSNXML::FloatTypePtr fv = new FDSNXML::FloatType;
+			FDSNXML::FloatNoUnitWithNumberTypePtr fv = new FDSNXML::FloatNoUnitWithNumberType;
 			fv->setValue(numerators[c]);
 			sx_iir.addNumerator(fv.get());
 		}
@@ -265,7 +266,7 @@ FDSNXML::ResponseStagePtr convert(const DataModel::ResponseIIR *iir,
 	try {
 		const vector<double> &denominators = iir->denominators().content();
 		for ( size_t c = 0; c < denominators.size(); ++c ) {
-			FDSNXML::FloatTypePtr fv = new FDSNXML::FloatType;
+			FDSNXML::FloatNoUnitWithNumberTypePtr fv = new FDSNXML::FloatNoUnitWithNumberType;
 			fv->setValue(denominators[c]);
 			sx_iir.addDenominator(fv.get());
 		}
@@ -734,8 +735,6 @@ bool Convert2FDSNStaXML::process(FDSNXML::Station *sx_sta,
 		sx_chan->setSampleRate(Core::None);
 		sx_chan->setSampleRateRatio(Core::None);
 	}
-
-	sx_chan->setStorageFormat(stream->format());
 
 	// Remove all existing responses and regenerate them with the
 	// following information

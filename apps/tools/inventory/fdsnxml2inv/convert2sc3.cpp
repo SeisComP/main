@@ -23,6 +23,7 @@
 #include <fdsnxml/response.h>
 #include <fdsnxml/responsestage.h>
 #include <fdsnxml/coefficients.h>
+#include <fdsnxml/floatnounitwithnumbertype.h>
 #include <fdsnxml/fir.h>
 #include <fdsnxml/numeratorcoefficient.h>
 #include <fdsnxml/polynomial.h>
@@ -744,7 +745,7 @@ DataModel::ResponseFIRPtr convert(const FDSNXML::ResponseStage *resp,
 	rf->setCoefficients(DataModel::RealArray());
 	vector<double> &numerators = rf->coefficients().content();
 	for ( size_t n = 0; n < coeff->numeratorCount(); ++n ) {
-		FDSNXML::FloatType *num = coeff->numerator(n);
+		FDSNXML::FloatNoUnitWithNumberType *num = coeff->numerator(n);
 		numerators.push_back(num->value());
 	}
 
@@ -786,7 +787,7 @@ DataModel::ResponseIIRPtr convertIIR(const FDSNXML::ResponseStage *resp,
 	vector<double> &numerators = rp->numerators().content();
 
 	for ( size_t n = 0; n < coeff->numeratorCount(); ++n ) {
-		FDSNXML::FloatType *num = coeff->numerator(n);
+		FDSNXML::FloatNoUnitWithNumberType *num = coeff->numerator(n);
 		numerators.push_back(num->value());
 	}
 
@@ -794,7 +795,7 @@ DataModel::ResponseIIRPtr convertIIR(const FDSNXML::ResponseStage *resp,
 	vector<double> &denominators = rp->denominators().content();
 
 	for ( size_t n = 0; n < coeff->denominatorCount(); ++n ) {
-		FDSNXML::FloatType *num = coeff->denominator(n);
+		FDSNXML::FloatNoUnitWithNumberType *num = coeff->denominator(n);
 		denominators.push_back(num->value());
 	}
 
@@ -1930,7 +1931,6 @@ bool Convert2SC3::process(DataModel::SensorLocation *sc_loc,
 	catch ( ... ) { sc_stream->setEnd(Core::None); }
 
 	sc_stream->setDepth(cha->depth().value());
-	sc_stream->setFormat(cha->storageFormat());
 
 	for ( size_t i = 0; i < cha->typeCount(); ++i )
 		flags += cha->type(i)->type().toString()[0];
