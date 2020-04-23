@@ -213,7 +213,7 @@ void App::createCommandLineDescription() {
 	commandline().addOption("Settings", "gap-interpolation", "Enables/disables the linear interpolation of gaps", &_config.interpolateGaps);
 	commandline().addOption("Settings", "any-stream", "Use all/configured received Z streams for picking", &_config.useAllStreams);
 	commandline().addOption("Settings", "send-detections", "If a picker is configured send detections as well");
-	commandline().addOption("Settings", "with-comment", "Add SNR comments to picks");
+	commandline().addOption("Settings", "extra-comments", "Add extra comments to picks.\nSupported: SNR");
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1188,7 +1188,7 @@ void App::emitPPick(const Processing::Picker *proc,
 	pick->setPhaseHint(DataModel::Phase(_config.phaseHint));
 	pick->setWaveformID(waveformStreamID(res.record));
 
-	if ( _config.addSNRCommentToPick && res.snr >= 0 ) {
+	if ( _config.extraPickComments && res.snr >= 0 ) {
 		DataModel::CommentPtr comment;
 		comment = new DataModel::Comment;
 		comment->setId("SNR");
@@ -1339,7 +1339,7 @@ void App::emitSPick(const Processing::SecondaryPicker *proc,
 		pick->add(comment.get());
 	}
 
-	if ( _config.addSNRCommentToPick && res.snr >= 0 ) {
+	if ( _config.extraPickComments && res.snr >= 0 ) {
 		DataModel::CommentPtr comment;
 		comment = new DataModel::Comment;
 		comment->setId("SNR");

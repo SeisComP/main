@@ -150,7 +150,7 @@ class Config {
 		// Send detections as well if a picker is configured?
 		bool        sendDetections;
 
-		bool        addSNRCommentToPick;
+		bool        extraPickComments;
 
 		// Accept historic data in real-time playbacks?
 		bool        playback;
