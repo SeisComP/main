@@ -17,6 +17,7 @@ namespace FDSNXML {
 
 
 Identifier::MetaObject::MetaObject(const Core::RTTI *rtti, const Core::MetaObject *base) : Core::MetaObject(rtti, base) {
+	addProperty(Core::simpleProperty("type", "string", false, false, false, false, false, false, NULL, &Identifier::setType, &Identifier::type));
 	addProperty(Core::simpleProperty("value", "string", false, false, false, false, false, false, NULL, &Identifier::setValue, &Identifier::value));
 }
 
@@ -53,6 +54,17 @@ Identifier::Identifier(const std::string& value)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Identifier::Identifier(const std::string& type,
+                       const std::string& value)
+ : _type(type),
+   _value(value) {
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Identifier::~Identifier() {}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -61,9 +73,29 @@ Identifier::~Identifier() {}
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Identifier::operator==(const Identifier &rhs) const {
+	if ( !(_type == rhs._type) )
+		return false;
 	if ( !(_value == rhs._value) )
 		return false;
 	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Identifier::setType(const std::string& type) {
+	_type = type;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+const std::string& Identifier::type() const {
+	return _type;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -90,6 +122,7 @@ const std::string& Identifier::value() const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Identifier& Identifier::operator=(const Identifier &other) {
+	_type = other._type;
 	_value = other._value;
 	return *this;
 }

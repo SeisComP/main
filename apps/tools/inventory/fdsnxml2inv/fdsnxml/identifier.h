@@ -46,6 +46,8 @@ class Identifier : public Core::BaseObject {
 
 		//! Custom constructor
 		Identifier(const std::string& value);
+		Identifier(const std::string& type,
+		           const std::string& value);
 
 		//! Destructor
 		~Identifier();
@@ -64,6 +66,10 @@ class Identifier : public Core::BaseObject {
 	//  Setters/Getters
 	// ------------------------------------------------------------------
 	public:
+		//! XML tag: type
+		void setType(const std::string& type);
+		const std::string& type() const;
+
 		//! XML tag: value
 		void setValue(const std::string& value);
 		const std::string& value() const;
@@ -74,6 +80,7 @@ class Identifier : public Core::BaseObject {
 	// ------------------------------------------------------------------
 	private:
 		// Attributes
+		std::string _type;
 		std::string _value;
 };
 
