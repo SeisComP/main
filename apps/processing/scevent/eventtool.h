@@ -79,7 +79,8 @@ class EventTool : public Application {
 		bool handleJournalEntry(DataModel::JournalEntry *);
 
 		EventInformationPtr associateOriginCheckDelay(DataModel::Origin *);
-		EventInformationPtr associateOrigin(DataModel::Origin *, bool allowEventCreation);
+		EventInformationPtr associateOrigin(DataModel::Origin *, bool allowEventCreation,
+		                                    bool *createdEvent = nullptr);
 		void updatedOrigin(DataModel::Origin *, DataModel::Magnitude *, bool realOriginUpdate);
 
 		EventInformationPtr associateFocalMechanismCheckDelay(DataModel::FocalMechanism *);
