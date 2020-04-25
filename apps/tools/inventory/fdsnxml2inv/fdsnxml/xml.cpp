@@ -647,7 +647,7 @@ struct ChannelHandler : public IO::XML::TypedClassHandler<Channel> {
 		// Element
 		addProperty("Dip", "http://www.fdsn.org/xml/station/1", Optional, Element, "dip");
 		// Element
-		addProperty("waterLevel", "http://www.fdsn.org/xml/station/1", Optional, Element, "waterLevel");
+		addProperty("WaterLevel", "http://www.fdsn.org/xml/station/1", Optional, Element, "waterLevel");
 		addChildProperty("Type", "http://www.fdsn.org/xml/station/1", "type");
 		// Element
 		addProperty("SampleRate", "http://www.fdsn.org/xml/station/1", Optional, Element, "SampleRate");
@@ -693,7 +693,7 @@ struct StationHandler : public IO::XML::TypedClassHandler<Station> {
 		// Element
 		addProperty("Site", "http://www.fdsn.org/xml/station/1", Mandatory, Element, "site");
 		// Element
-		addProperty("waterLevel", "http://www.fdsn.org/xml/station/1", Optional, Element, "waterLevel");
+		addProperty("WaterLevel", "http://www.fdsn.org/xml/station/1", Optional, Element, "waterLevel");
 		addProperty("Vault", "http://www.fdsn.org/xml/station/1", Optional, Element, "vault");
 		addProperty("Geology", "http://www.fdsn.org/xml/station/1", Optional, Element, "geology");
 		addChildProperty("Equipment", "http://www.fdsn.org/xml/station/1", "equipment");
