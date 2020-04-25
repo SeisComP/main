@@ -20,9 +20,11 @@
 #include <fdsnxml/station.h>
 #include <fdsnxml/channel.h>
 #include <fdsnxml/comment.h>
+#include <fdsnxml/datetype.h>
 #include <fdsnxml/agency.h>
 #include <fdsnxml/email.h>
 #include <fdsnxml/name.h>
+#include <fdsnxml/operator.h>
 #include <fdsnxml/person.h>
 #include <fdsnxml/identifier.h>
 #include <fdsnxml/response.h>
@@ -133,27 +135,234 @@ void populateStageGain(FDSNXML::ResponseStage *stage, T *resp) {
 }
 
 
+class MyContact : public Core::BaseObject {
+	private:
+		FDSNXML::PersonPtr _person;
+
+	public:
+		MyContact(): _person(new FDSNXML::Person) {}
+
+		FDSNXML::Person *get() {
+			return _person.get();
+		}
+
+		virtual void serialize(Core::Archive &ar) {
+			vector<string> name, agency, email;
+			ar & NAMED_OBJECT_HINT("name", name, Core::Archive::STATIC_TYPE);
+			ar & NAMED_OBJECT_HINT("agency", agency, Core::Archive::STATIC_TYPE);
+			ar & NAMED_OBJECT_HINT("email", email, Core::Archive::STATIC_TYPE);
+
+			for ( vector<string>::iterator it = name.begin(); it != name.end();  ++it ) {
+				FDSNXML::NamePtr fdsnName = new FDSNXML::Name;
+				fdsnName->setText(*it);
+				_person->addName(fdsnName.get());
+			}
+
+			for ( vector<string>::iterator it = agency.begin(); it != agency.end();  ++it ) {
+				FDSNXML::AgencyPtr fdsnAgency = new FDSNXML::Agency;
+				fdsnAgency->setText(*it);
+				_person->addAgency(fdsnAgency.get());
+			}
+
+			for ( vector<string>::iterator it = email.begin(); it != email.end();  ++it ) {
+				FDSNXML::EmailPtr fdsnEmail = new FDSNXML::Email;
+				fdsnEmail->setText(*it);
+				_person->addEmail(fdsnEmail.get());
+			}
+		}
+};
+
+
+template<typename T>
+void deserializeIdentifier(IO::JSONArchive &ar, T sx) {
+	string type, value;
+	ar & NAMED_OBJECT_HINT("type", type, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT_HINT("value", value, Core::Archive::STATIC_TYPE);
+
+	FDSNXML::IdentifierPtr identifier = new FDSNXML::Identifier;
+	identifier->setType(type);
+	identifier->setValue(value);
+	sx->addIdentifier(identifier.get());
+}
+
+
+template<typename T>
+void deserializeOperator(IO::JSONArchive &ar, T sx) {
+	string agency, webSite;
+	vector<MyContact> contact;
+	ar & NAMED_OBJECT_HINT("agency", agency, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT_HINT("webSite", webSite, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT_HINT("contact", contact, Core::Archive::STATIC_TYPE);
+
+	FDSNXML::OperatorPtr oper = new FDSNXML::Operator;
+
+	if ( agency.length() > 0 ) {
+		FDSNXML::Agency fdsnAgency;
+		fdsnAgency.setText(agency);
+		oper->setAgency(fdsnAgency);
+	}
+
+	if ( webSite.length() > 0 ) {
+		FDSNXML::StringType fdsnWebSite;
+		fdsnWebSite.setText(webSite);
+		oper->setWebSite(fdsnWebSite);
+	}
+
+	for ( vector<MyContact>::iterator it = contact.begin(); it != contact.end(); ++it )
+		oper->addContact(it->get());
+
+	sx->addOperators(oper.get());
+}
+
+
+template<typename T>
+void deserializeEquipment(IO::JSONArchive &ar, T sx) {
+	string type, description, manufacturer, vendor, model, serialNumber, resourceId;
+	Core::Time installationDate, removalDate;
+	vector<Core::Time> calibrationDate;
+	ar & NAMED_OBJECT_HINT("type", type, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT_HINT("description", description, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT_HINT("manufacturer", manufacturer, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT_HINT("vendor", vendor, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT_HINT("model", model, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT_HINT("serialNumber", serialNumber, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT_HINT("resourceId", resourceId, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT_HINT("installationDate", installationDate, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT_HINT("removalDate", removalDate, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT_HINT("calibrationDate", calibrationDate, Core::Archive::STATIC_TYPE);
+
+	FDSNXML::EquipmentPtr equipment = new FDSNXML::Equipment;
+
+	if ( type.length() > 0 )
+		equipment->setType(type);
+
+	if ( description.length() > 0 )
+		equipment->setDescription(description);
+
+	if ( manufacturer.length() > 0 )
+		equipment->setManufacturer(manufacturer);
+
+	if ( vendor.length() > 0 )
+		equipment->setVendor(vendor);
+
+	if ( model.length() > 0 )
+		equipment->setModel(model);
+
+	if ( serialNumber.length() > 0 )
+		equipment->setSerialNumber(serialNumber);
+
+	if ( resourceId.length() > 0 )
+		equipment->setResourceId(resourceId);
+
+	if ( installationDate.valid() )
+		equipment->setInstallationDate(FDSNXML::DateTime(installationDate));
+
+	if ( removalDate.valid() )
+		equipment->setRemovalDate(FDSNXML::DateTime(removalDate));
+
+	for ( vector<Core::Time>::iterator it = calibrationDate.begin(); it != calibrationDate.end(); ++it ) {
+		FDSNXML::DateTypePtr dt = new FDSNXML::DateType;
+		dt->setValue(FDSNXML::DateTime(*it));
+		equipment->addCalibrationDate(dt.get());
+	}
+
+	sx->addEquipment(equipment.get());
+}
+
+
+template<typename T1, typename T2, typename T3>
+void deserializeFloatType(IO::JSONArchive &ar, T1 sx, void (T2::*setProperty)(T3)) {
+	double value = NAN, upperUncertainty = NAN, lowerUncertainty = NAN;
+	string unit, measurementMethod;
+	ar & NAMED_OBJECT_HINT("value", value, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT_HINT("unit", unit, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT_HINT("upperUncertainty", upperUncertainty, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT_HINT("lowerUncertainty", lowerUncertainty, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT_HINT("measurementMethod", measurementMethod, Core::Archive::STATIC_TYPE);
+
+	FDSNXML::FloatType ft;
+
+	if ( !isnan(value) )
+		ft.setValue(value);
+
+	if ( unit.length() > 0 )
+		ft.setUnit(unit);
+
+	if ( !isnan(upperUncertainty) )
+		ft.setUpperUncertainty(upperUncertainty);
+
+	if ( !isnan(lowerUncertainty) )
+		ft.setLowerUncertainty(lowerUncertainty);
+
+	if ( measurementMethod.length() > 0 )
+		ft.setMeasurementMethod(measurementMethod);
+
+	(sx.get()->*setProperty)(ft);
+}
+
+
+template<typename T1, typename T2, typename T3>
+void deserializeString(IO::JSONArchive &ar, T1 sx, void (T2::*setProperty)(T3)) {
+	string value;
+	ar & NAMED_OBJECT_HINT("value", value, Core::Archive::STATIC_TYPE);
+	(sx.get()->*setProperty)(value);
+}
+
+
+void deserializeJSON(const string& name, IO::JSONArchive &ar, FDSNXML::NetworkPtr sx) {
+	if ( name == "FDSNXML:Identifier" )
+		deserializeIdentifier(ar, sx);
+	else if ( name == "FDSNXML:Operator" )
+		deserializeOperator(ar, sx);
+	else if ( name == "FDSNXML:SourceID" )
+		deserializeString(ar, sx, &FDSNXML::Network::setSourceID);
+}
+
+
+void deserializeJSON(const string& name, IO::JSONArchive &ar, FDSNXML::StationPtr sx) {
+	if ( name == "FDSNXML:Identifier" )
+		deserializeIdentifier(ar, sx);
+	else if ( name == "FDSNXML:Operator" )
+		deserializeOperator(ar, sx);
+	else if ( name == "FDSNXML:Equipment" )
+		deserializeEquipment(ar, sx);
+	else if ( name == "FDSNXML:WaterLevel" )
+		deserializeFloatType(ar, sx, &FDSNXML::Station::setWaterLevel);
+	else if ( name == "FDSNXML:SourceID" )
+		deserializeString(ar, sx, &FDSNXML::Station::setSourceID);
+	else if ( name == "FDSNXML:Vault" )
+		deserializeString(ar, sx, &FDSNXML::Station::setVault);
+	else if ( name == "FDSNXML:Geology" )
+		deserializeString(ar, sx, &FDSNXML::Station::setGeology);
+}
+
+
+void deserializeJSON(const string& name, IO::JSONArchive &ar, FDSNXML::ChannelPtr sx) {
+	if ( name == "FDSNXML:Identifier" )
+		deserializeIdentifier(ar, sx);
+	else if ( name == "FDSNXML:Equipment" )
+		deserializeEquipment(ar, sx);
+	else if ( name == "FDSNXML:WaterLevel" )
+		deserializeFloatType(ar, sx, &FDSNXML::Channel::setWaterLevel);
+	else if ( name == "FDSNXML:SourceID" )
+		deserializeString(ar, sx, &FDSNXML::Channel::setSourceID);
+}
+
+
 template<typename T1, typename T2>
-void populateComments(T1 sc, T2 sx) {
+void populateComments(const T1 *sc, T2 sx) {
 	for ( size_t c = 0; c < sc->commentCount(); ++c ) {
 		DataModel::Comment *comment = sc->comment(c);
-
-		if ( comment->id().substr(0, 19) == "FDSNXML:Identifier/" ) {
+		if ( comment->id().substr(0, 8) == "FDSNXML:" ) {
+			string name = comment->id().substr(0, comment->id().find('/'));
 			IO::JSONArchive ar;
 
 			if (!ar.from(comment->text().c_str())) {
-				SEISCOMP_ERROR("failed to parse identifier \"%s\"", comment->text().c_str());
+				SEISCOMP_ERROR("failed to parse %s '%s'", name.c_str(), comment->text().c_str());
 				continue;
 			}
 
-			string type, value;
-			ar & NAMED_OBJECT_HINT("type", type, Core::Archive::STATIC_TYPE);
-			ar & NAMED_OBJECT_HINT("value", value, Core::Archive::STATIC_TYPE);
-
-			FDSNXML::IdentifierPtr sx_identifier = new FDSNXML::Identifier;
-			sx_identifier->setType(type);
-			sx_identifier->setValue(value);
-			sx->addIdentifier(sx_identifier.get());
+			deserializeJSON(name, ar, sx);
 			continue;
 		}
 
