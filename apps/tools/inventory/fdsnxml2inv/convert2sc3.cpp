@@ -1345,34 +1345,36 @@ void populateComments(const T1 *sx, T2 sc) {
 		FDSNXML::Comment *comment = sx->comment(c);
 		DataModel::CommentPtr sc_comment = new DataModel::Comment;
 		try { sc_comment->setId(Core::toString(comment->id())); }
-		catch ( ... ) { sc_comment->setId(Core::toString(c+1)); }
+		catch ( Core::ValueException ) { sc_comment->setId(Core::toString(c+1)); }
 
 		sc_comment->setText(comment->value());
 		try { sc_comment->setStart(comment->beginEffectiveTime()); }
-		catch ( ... ) {}
+		catch ( Core::ValueException ) {}
 		try { sc_comment->setEnd(comment->endEffectiveTime()); }
-		catch ( ... ) {}
+		catch ( Core::ValueException ) {}
 
 		if ( comment->authorCount() > 0 ) {
 			FDSNXML::Person *author = comment->author(0);
 			DataModel::CreationInfo ci;
+			bool useCI = false;
 
 			if ( author->nameCount() > 0 ) {
-				try { ci.setAuthor(author->name(0)->text()); }
-				catch ( ... ) {}
+				ci.setAuthor(author->name(0)->text());
+				useCI = true;
 			}
 
 			if ( author->emailCount() > 0 ) {
-				try { ci.setAuthorURI(author->email(0)->text()); }
-				catch ( ... ) {}
+				ci.setAuthorURI(author->email(0)->text());
+				useCI = true;
 			}
 
 			if (author->agencyCount() > 0 ) {
-				try { ci.setAgencyID(author->agency(0)->text()); }
-				catch ( ... ) {}
+				ci.setAgencyID(author->agency(0)->text());
+				useCI = true;
 			}
 
-			sc_comment->setCreationInfo(ci);
+			if ( useCI )
+				sc_comment->setCreationInfo(ci);
 		}
 
 		sc->add(sc_comment.get());
