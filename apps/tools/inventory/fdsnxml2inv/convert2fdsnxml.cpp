@@ -53,6 +53,7 @@
 #include <rapidjson/document.h>
 
 #include <iostream>
+#include <cmath>
 
 using namespace std;
 
@@ -282,16 +283,16 @@ void deserializeFloatType(IO::JSONArchive &ar, T1 sx, void (T2::*setProperty)(T3
 
 	FDSNXML::FloatType ft;
 
-	if ( !isnan(value) )
+	if ( !std::isnan(value) )
 		ft.setValue(value);
 
 	if ( unit.length() > 0 )
 		ft.setUnit(unit);
 
-	if ( !isnan(upperUncertainty) )
+	if ( !std::isnan(upperUncertainty) )
 		ft.setUpperUncertainty(upperUncertainty);
 
-	if ( !isnan(lowerUncertainty) )
+	if ( !std::isnan(lowerUncertainty) )
 		ft.setLowerUncertainty(lowerUncertainty);
 
 	if ( measurementMethod.length() > 0 )
