@@ -375,9 +375,9 @@ void populateComments(const T1 *sc, T2 sx) {
 			sx_comment->setId(c+1);
 		sx_comment->setValue(comment->text());
 		try { sx_comment->setBeginEffectiveTime(FDSNXML::DateTime(comment->start())); }
-		catch ( Core::ValueException ) {}
+		catch ( Core::ValueException & ) {}
 		try { sx_comment->setEndEffectiveTime(FDSNXML::DateTime(comment->end())); }
-		catch ( Core::ValueException ) {}
+		catch ( Core::ValueException & ) {}
 
 		try {
 			DataModel::CreationInfo ci = comment->creationInfo();
@@ -403,7 +403,7 @@ void populateComments(const T1 *sc, T2 sx) {
 
 			sx_comment->addAuthor(author.get());
 		}
-		catch ( Core::ValueException ) {}
+		catch ( Core::ValueException & ) {}
 
 		sx->addComment(sx_comment.get());
 	}

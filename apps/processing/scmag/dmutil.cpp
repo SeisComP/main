@@ -118,7 +118,7 @@ double arrivalWeight(const Seiscomp::DataModel::Arrival *arr, double defaultWeig
 	try {
 		return arr->weight();
 	}
-	catch (Seiscomp::Core::ValueException) {
+	catch (Seiscomp::Core::ValueException &) {
 		return defaultWeight;
 	}
 }

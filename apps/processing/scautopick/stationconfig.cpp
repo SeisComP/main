@@ -177,7 +177,7 @@ void StationConfig::read(const Seiscomp::Config::Config *localConfig,
 			try {
 				ps = DataModel::ParameterSet::Find(configSetup->parameterSetID());
 			}
-			catch ( Core::ValueException ) {
+			catch ( Core::ValueException & ) {
 				continue;
 			}
 
