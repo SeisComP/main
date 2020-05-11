@@ -1,9 +1,13 @@
 /***************************************************************************
- *   Copyright (C) 2013 by gempa GmbH
- *
- *   Author: Jan Becker
- *   Email: jabe@gempa.de $
- *
+ * Copyright (C) gempa GmbH                                                *
+ * Contact: gempa GmbH (seiscomp-dev@gempa.de)                             *
+ *                                                                         *
+ * This file may be used under the terms of the GNU Affero                 *
+ * Public License version 3.0 as published by the Free Software Foundation *
+ * and appearing in the file LICENSE included in the packaging of this     *
+ * file. Please review the following information to ensure the GNU Affero  *
+ * Public License version 3.0 requirements will be met:                    *
+ * https://www.gnu.org/licenses/agpl-3.0.html.                             *
  ***************************************************************************/
 
 
@@ -34,12 +38,12 @@
 #include <fdsnxml/operator.h>
 #include <fdsnxml/externalreference.h>
 #include <fdsnxml/datetype.h>
+#include <fdsnxml/identifier.h>
 #include <fdsnxml/equipment.h>
 #include <fdsnxml/output.h>
 #include <fdsnxml/gain.h>
 #include <fdsnxml/sensitivity.h>
 #include <fdsnxml/decimation.h>
-#include <fdsnxml/identifier.h>
 #include <fdsnxml/basefilter.h>
 #include <fdsnxml/poleandzero.h>
 #include <fdsnxml/polesandzeros.h>
@@ -323,6 +327,14 @@ struct DateTypeHandler : public IO::XML::TypedClassHandler<DateType> {
 };
 
 
+struct IdentifierHandler : public IO::XML::TypedClassHandler<Identifier> {
+	IdentifierHandler() {
+		addProperty("type", "", Optional, Attribute, "type");
+		addProperty("value", "http://www.fdsn.org/xml/station/1", Mandatory, CDATA, "value");
+	}
+};
+
+
 struct EquipmentHandler : public IO::XML::TypedClassHandler<Equipment> {
 	EquipmentHandler() {
 		addProperty("Type", "http://www.fdsn.org/xml/station/1", Optional, Element, "Type");
@@ -335,6 +347,7 @@ struct EquipmentHandler : public IO::XML::TypedClassHandler<Equipment> {
 		addProperty("RemovalDate", "http://www.fdsn.org/xml/station/1", Optional, Element, "RemovalDate");
 		addChildProperty("CalibrationDate", "http://www.fdsn.org/xml/station/1", "CalibrationDate");
 		addProperty("resourceId", "", Optional, Attribute, "resourceId");
+		addChildProperty("Identifier", "http://gfz-potsdam.de/ns/fdsnstationxml/1", "identifier");
 	}
 };
 
@@ -379,14 +392,6 @@ struct DecimationHandler : public IO::XML::TypedClassHandler<Decimation> {
 		addProperty("Delay", "http://www.fdsn.org/xml/station/1", Mandatory, Element, "Delay");
 		// Element
 		addProperty("Correction", "http://www.fdsn.org/xml/station/1", Mandatory, Element, "Correction");
-	}
-};
-
-
-struct IdentifierHandler : public IO::XML::TypedClassHandler<Identifier> {
-	IdentifierHandler() {
-		addProperty("type", "", Optional, Attribute, "type");
-		addProperty("value", "http://www.fdsn.org/xml/station/1", Mandatory, CDATA, "value");
 	}
 };
 
@@ -781,12 +786,12 @@ TypeMap::TypeMap() {
 	static OperatorHandler _OperatorHandler;
 	static ExternalReferenceHandler _ExternalReferenceHandler;
 	static DateTypeHandler _DateTypeHandler;
+	static IdentifierHandler _IdentifierHandler;
 	static EquipmentHandler _EquipmentHandler;
 	static OutputHandler _OutputHandler;
 	static GainHandler _GainHandler;
 	static SensitivityHandler _SensitivityHandler;
 	static DecimationHandler _DecimationHandler;
-	static IdentifierHandler _IdentifierHandler;
 	static BaseFilterHandler _BaseFilterHandler;
 	static PoleAndZeroHandler _PoleAndZeroHandler;
 	static PolesAndZerosHandler _PolesAndZerosHandler;
@@ -835,12 +840,12 @@ TypeMap::TypeMap() {
 	registerMapping<Operator>("Operator", "http://www.fdsn.org/xml/station/1", &_OperatorHandler);
 	registerMapping<ExternalReference>("ExternalReference", "http://www.fdsn.org/xml/station/1", &_ExternalReferenceHandler);
 	registerMapping<DateType>("DateType", "http://www.fdsn.org/xml/station/1", &_DateTypeHandler);
+	registerMapping<Identifier>("Identifier", "http://www.fdsn.org/xml/station/1", &_IdentifierHandler);
 	registerMapping<Equipment>("Equipment", "http://www.fdsn.org/xml/station/1", &_EquipmentHandler);
 	registerMapping<Output>("Output", "http://www.fdsn.org/xml/station/1", &_OutputHandler);
 	registerMapping<Gain>("Gain", "http://www.fdsn.org/xml/station/1", &_GainHandler);
 	registerMapping<Sensitivity>("Sensitivity", "http://www.fdsn.org/xml/station/1", &_SensitivityHandler);
 	registerMapping<Decimation>("Decimation", "http://www.fdsn.org/xml/station/1", &_DecimationHandler);
-	registerMapping<Identifier>("Identifier", "http://www.fdsn.org/xml/station/1", &_IdentifierHandler);
 	registerMapping<BaseFilter>("BaseFilter", "http://www.fdsn.org/xml/station/1", &_BaseFilterHandler);
 	registerMapping<PoleAndZero>("PoleAndZero", "http://www.fdsn.org/xml/station/1", &_PoleAndZeroHandler);
 	registerMapping<PolesAndZeros>("PolesAndZeros", "http://www.fdsn.org/xml/station/1", &_PolesAndZerosHandler);
@@ -887,6 +892,7 @@ Exporter::Exporter() {
 	setRootName("");
 	setTypeMap(&myTypeMap);
 	_defaultNsMap["http://www.fdsn.org/xml/station/1"] = "";
+	_defaultNsMap["http://gfz-potsdam.de/ns/fdsnstationxml/1"] = "gfz";
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

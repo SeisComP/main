@@ -1,14 +1,18 @@
 /***************************************************************************
- *   Copyright (C) 2013 by gempa GmbH
- *
- *   Author: Jan Becker
- *   Email: jabe@gempa.de $
- *
+ * Copyright (C) gempa GmbH                                                *
+ * Contact: gempa GmbH (seiscomp-dev@gempa.de)                             *
+ *                                                                         *
+ * This file may be used under the terms of the GNU Affero                 *
+ * Public License version 3.0 as published by the Free Software Foundation *
+ * and appearing in the file LICENSE included in the packaging of this     *
+ * file. Please review the following information to ensure the GNU Affero  *
+ * Public License version 3.0 requirements will be met:                    *
+ * https://www.gnu.org/licenses/agpl-3.0.html.                             *
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_FDSNXML_EQUIPMENT_H__
-#define SEISCOMP_FDSNXML_EQUIPMENT_H__
+#ifndef SEISCOMP_FDSNXML_EQUIPMENT_H
+#define SEISCOMP_FDSNXML_EQUIPMENT_H
 
 
 #include <fdsnxml/metadata.h>
@@ -23,6 +27,7 @@ namespace Seiscomp {
 namespace FDSNXML {
 
 DEFINE_SMARTPOINTER(DateType);
+DEFINE_SMARTPOINTER(Identifier);
 
 
 
@@ -120,6 +125,7 @@ class Equipment : public Core::BaseObject {
 		 *               or it already has another parent
 		 */
 		bool addCalibrationDate(DateType *obj);
+		bool addIdentifier(Identifier *obj);
 
 		/**
 		 * Removes an object.
@@ -129,6 +135,7 @@ class Equipment : public Core::BaseObject {
 		 *               because it does not exist in the list
 		 */
 		bool removeCalibrationDate(DateType *obj);
+		bool removeIdentifier(Identifier *obj);
 
 		/**
 		 * Removes an object of a particular class.
@@ -137,13 +144,16 @@ class Equipment : public Core::BaseObject {
 		 * @return false The index is out of bounds
 		 */
 		bool removeCalibrationDate(size_t i);
+		bool removeIdentifier(size_t i);
 
 		//! Retrieve the number of objects of a particular class
 		size_t calibrationDateCount() const;
+		size_t identifierCount() const;
 
 		//! Index access
 		//! @return The object at index i
 		DateType* calibrationDate(size_t i) const;
+		Identifier* identifier(size_t i) const;
 
 
 	// ------------------------------------------------------------------
@@ -163,6 +173,7 @@ class Equipment : public Core::BaseObject {
 
 		// Aggregations
 		std::vector<DateTypePtr> _calibrationDates;
+		std::vector<IdentifierPtr> _identifiers;
 };
 
 

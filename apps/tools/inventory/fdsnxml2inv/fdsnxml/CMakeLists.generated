@@ -28,12 +28,12 @@ SET(
 		fdsnxml/operator.h
 		fdsnxml/externalreference.h
 		fdsnxml/datetype.h
+		fdsnxml/identifier.h
 		fdsnxml/equipment.h
 		fdsnxml/output.h
 		fdsnxml/gain.h
 		fdsnxml/sensitivity.h
 		fdsnxml/decimation.h
-		fdsnxml/identifier.h
 		fdsnxml/basefilter.h
 		fdsnxml/poleandzero.h
 		fdsnxml/polesandzeros.h
@@ -88,12 +88,12 @@ SET(
 		fdsnxml/operator.cpp
 		fdsnxml/externalreference.cpp
 		fdsnxml/datetype.cpp
+		fdsnxml/identifier.cpp
 		fdsnxml/equipment.cpp
 		fdsnxml/output.cpp
 		fdsnxml/gain.cpp
 		fdsnxml/sensitivity.cpp
 		fdsnxml/decimation.cpp
-		fdsnxml/identifier.cpp
 		fdsnxml/basefilter.cpp
 		fdsnxml/poleandzero.cpp
 		fdsnxml/polesandzeros.cpp

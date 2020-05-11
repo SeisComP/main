@@ -1,15 +1,20 @@
 /***************************************************************************
- *   Copyright (C) 2013 by gempa GmbH
- *
- *   Author: Jan Becker
- *   Email: jabe@gempa.de $
- *
+ * Copyright (C) gempa GmbH                                                *
+ * Contact: gempa GmbH (seiscomp-dev@gempa.de)                             *
+ *                                                                         *
+ * This file may be used under the terms of the GNU Affero                 *
+ * Public License version 3.0 as published by the Free Software Foundation *
+ * and appearing in the file LICENSE included in the packaging of this     *
+ * file. Please review the following information to ensure the GNU Affero  *
+ * Public License version 3.0 requirements will be met:                    *
+ * https://www.gnu.org/licenses/agpl-3.0.html.                             *
  ***************************************************************************/
 
 
 #define SEISCOMP_COMPONENT SWE
 #include <fdsnxml/equipment.h>
 #include <fdsnxml/datetype.h>
+#include <fdsnxml/identifier.h>
 #include <algorithm>
 #include <seiscomp/logging/log.h>
 
@@ -29,6 +34,7 @@ Equipment::MetaObject::MetaObject(const Core::RTTI *rtti, const Core::MetaObject
 	addProperty(Core::simpleProperty("RemovalDate", "datetime", false, false, false, false, true, false, NULL, &Equipment::setRemovalDate, &Equipment::removalDate));
 	addProperty(arrayClassProperty<DateType>("CalibrationDate", "FDSNXML::DateType", &Equipment::calibrationDateCount, &Equipment::calibrationDate, static_cast<bool (Equipment::*)(DateType*)>(&Equipment::addCalibrationDate), &Equipment::removeCalibrationDate, static_cast<bool (Equipment::*)(DateType*)>(&Equipment::removeCalibrationDate)));
 	addProperty(Core::simpleProperty("resourceId", "string", false, false, false, false, false, false, NULL, &Equipment::setResourceId, &Equipment::resourceId));
+	addProperty(arrayClassProperty<Identifier>("identifier", "FDSNXML::Identifier", &Equipment::identifierCount, &Equipment::identifier, static_cast<bool (Equipment::*)(Identifier*)>(&Equipment::addIdentifier), &Equipment::removeIdentifier, static_cast<bool (Equipment::*)(Identifier*)>(&Equipment::removeIdentifier)));
 }
 
 
@@ -332,6 +338,74 @@ bool Equipment::removeCalibrationDate(size_t i) {
 		return false;
 
 	_calibrationDates.erase(_calibrationDates.begin() + i);
+
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+size_t Equipment::identifierCount() const {
+	return _identifiers.size();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Identifier* Equipment::identifier(size_t i) const {
+	return _identifiers[i].get();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Equipment::addIdentifier(Identifier *obj) {
+	if ( obj == NULL )
+		return false;
+
+	// Add the element
+	_identifiers.push_back(obj);
+	
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Equipment::removeIdentifier(Identifier *obj) {
+	if ( obj == NULL )
+		return false;
+
+	std::vector<IdentifierPtr>::iterator it;
+	it = std::find(_identifiers.begin(), _identifiers.end(), obj);
+	// Element has not been found
+	if ( it == _identifiers.end() ) {
+		SEISCOMP_ERROR("Equipment::removeIdentifier(Identifier*) -> child object has not been found although the parent pointer matches???");
+		return false;
+	}
+
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Equipment::removeIdentifier(size_t i) {
+	// index out of bounds
+	if ( i >= _identifiers.size() )
+		return false;
+
+	_identifiers.erase(_identifiers.begin() + i);
 
 	return true;
 }
