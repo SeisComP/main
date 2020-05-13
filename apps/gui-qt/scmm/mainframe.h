@@ -19,8 +19,10 @@
 
 
 #include <seiscomp/gui/core/mainwindow.h>
+#ifndef Q_MOC_RUN
 #include <seiscomp/messaging/connection.h>
 #include <seiscomp/logging/output.h>
+#endif
 #include <QtGui>
 
 #include "ui_mainframe.h"
