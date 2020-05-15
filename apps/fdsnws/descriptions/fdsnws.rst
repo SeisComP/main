@@ -486,7 +486,7 @@ where GPG stores its files. Let's use the directory
 Usage example
 ^^^^^^^^^^^^^
 
-A client like fdsnws_fetch is recommended, but also tools like wget and
+A client like :ref:`fdsnws_fetch` is recommended, but also tools like wget and
 curl can be used. As an example, let's request data from the restricted
 station AAI (assuming that we are authorized to get data of this station).
 
@@ -507,7 +507,7 @@ station AAI (assuming that we are authorized to get data of this station).
   sysop@host:~$ wget "http://`cat cred.txt`@geofon.gfz-potsdam.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -O data.mseed
   sysop@host:~$ curl --digest "http://`cat cred.txt`@geofon.gfz-potsdam.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -o data.mseed
 
-* Using the fdsnws_fetch utility, the two steps above can be combined into
+* Using the :ref:`fdsnws_fetch` utility, the two steps above can be combined into
   one:
 
 .. code-block:: sh
