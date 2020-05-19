@@ -206,7 +206,7 @@ limit is reached.
 Event attributes
 ================
 
-It might be desirable to synchronize event attributes set at the soure with
+It might be desirable to synchronize event attributes set at the source with
 the local system. In particular the event type, the type uncertainty, event
 descriptions and comments might be of interest. Because it is not advisable
 to route events and let :ref:`scevent` associate imported origins it can
