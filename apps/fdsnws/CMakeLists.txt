@@ -3,6 +3,8 @@ IF(CMAKE_MAJOR_VERSION GREATER 2)
 ENDIF(CMAKE_MAJOR_VERSION GREATER 2)
 
 SC_ADD_PYTHON_PROG(fdsnws)
+SC_ADD_PYTHON_PROG(fdsnws_fetch)
+SC_ADD_PYTHON_PROG(fdsnws2sds)
 SC_INSTALL_INIT(fdsnws initd.py)
 
 # python library files
