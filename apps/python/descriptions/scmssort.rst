@@ -6,7 +6,7 @@ scmssort reads single files and output to the command line. Cat many files
 to read them at the same time. In this way huge amount of data can be processed efficiently.
 
 
-.. info::
+.. hint::
 
    Combine with :ref:`scart` or :ref:`msrtsimul` to archive data or to make playbacks
    with real-time simulations.

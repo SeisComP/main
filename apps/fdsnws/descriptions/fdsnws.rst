@@ -1,16 +1,16 @@
-fdsnws is a server that provides
-`FDSN Web Services <http://www.fdsn.org/webservices>`_ from a SeisComP database
-and :ref:`global_recordstream` source. Also it may be configured to serve data
-availability information similar to the `IRIS DMC IRISWS availability Web
-Service <https://service.iris.edu/irisws/availability/1/>`_
+fdsnws is a server that provides event and station information by `FDSN Web Services`_
+from a SeisComP database and waveforms from a :ref:`global_recordstream` source.
+Also it may be configured to serve data
+availability information as described in the `IRIS DMC FDSNWS availability Web Service Documentation`_.
 
 .. caution::
    If you expose the FDSN Web Service as a public service, make sure that
    the database connection is read-only. fdsnws will never attempt to write
    into the database.
 
+
 Service Overview
-----------------
+================
 
 The following services are available:
 
@@ -18,18 +18,17 @@ The following services are available:
    :header: "Service", "Provides", "Provided format"
 
    ":ref:`fdsnws-dataselect <sec-dataSelect>`", "time series data", "`miniSEED <http://www.iris.edu/data/miniseed.htm>`_"
-   ":ref:`fdsnws-station <sec-station>`", "network, station, channel, response metadata", "`FDSN Station XML <http://www.fdsn.org/xml/station/>`_, `StationXML <http://www.data.scec.org/station/xml.html>`_, `SC3ML <http://geofon.gfz-potsdam.de/ns/seiscomp3-schema/>`_"
-   ":ref:`fdsnws-event <sec-event>`", "earthquake origin and magnitude estimates", "`QuakeML <https://quake.ethz.ch/quakeml>`_, `SC3ML <http://geofon.gfz-potsdam.de/ns/seiscomp3-schema/>`_"
+   ":ref:`fdsnws-station <sec-station>`", "network, station, channel, response metadata", "`FDSN Station XML <http://www.fdsn.org/xml/station/>`_, `StationXML <http://www.data.scec.org/station/xml.html>`_, :term:`SCML`"
+   ":ref:`fdsnws-event <sec-event>`", "earthquake origin and magnitude estimates", "`QuakeML <https://quake.ethz.ch/quakeml>`_, :term:`SCML`"
    ":ref:`ext-availability <sec-avail>`", "waveform data availability information", "text, geocsv, json, sync, request (`fdsnws-dataselect <https://service.iris.edu/fdsnws/dataselect/1>`_)"
 
 
 The available services can be reached from the fdsnws start page.  The services
 also provide an interactive URL builder constructing the request URL based on
 user inputs. The FDSN specifications can be found on
-`FDSN Web Services <http://www.fdsn.org/webservices>`_.
+`FDSN Web Services`_.
 
-URL
-^^^
+**URL**
 
 * http://localhost:8080/fdsnws
 
@@ -44,16 +43,18 @@ FDSNWS specification.
    you have to change the URL string in the ``*.wadl`` documents located under
    ``$DATADIR/fdsnws``.
 
+
 .. _sec-dataSelect:
 
 DataSelect
 ----------
 
-* provides time series data in miniSEED format
-* request type: HTTP-GET, HTTP-POST
+* Provides time series data in miniSEED format
+* Request type: HTTP-GET, HTTP-POST
+
 
 URL
-^^^
+~~~
 
 * http://localhost:8080/fdsnws/dataselect/1/builder
 * http://localhost:8080/fdsnws/dataselect/1/query
@@ -61,8 +62,9 @@ URL
 * http://localhost:8080/fdsnws/dataselect/1/version
 * http://localhost:8080/fdsnws/dataselect/1/application.wadl
 
+
 Example
-^^^^^^^
+~~~~~~~
 
 * Request URL for querying waveform data from the GE station BKNI, all BH channels
   on 11 April 2013 between 00:00:00 and 12:00:00:
@@ -78,23 +80,25 @@ To submit HTTP-POST requests the command line tool ``curl`` may be used:
 where *request.txt* contains the POST message body. For details read the
 FDSN specifications.
 
-Feature Notes
-^^^^^^^^^^^^^
+
+Feature notes
+~~~~~~~~~~~~~
 
 * ``quality`` parameter not implemented (information not available in SeisComP)
 * ``minimumlength`` parameter is not implemented
 * ``longestonly`` parameter is not implemented
-* access to restricted networks and stations is only granted through the
+* Access to drestricted networks and stations is only granted through the
   ``queryauth`` method
 
 The data channels exposed by this service may be restrict by defining an
 inventory filter, see section :ref:`sec-inv-filter`.
 
-Service Configuration
-^^^^^^^^^^^^^^^^^^^^^
 
-* activate :confval:`serveDataSelect` in the module configuration
-* configure the :ref:`global_recordstream` in the module's global configuration.
+Service configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+* Activate :confval:`serveDataSelect` in the module configuration
+* Configure the :ref:`global_recordstream` in the module's global configuration.
   If the data is stored in a local waveform archive the
   :ref:`rs-sdsarchive` provides fast access to the data. For archives on remote hosts
   use :ref:`rs-arclink` or :ref:`rs-fdsnws` instead.
@@ -110,35 +114,39 @@ Service Configuration
    service to
    ``slink/localhost:18000?timeout=1&retries=0;sdsarchive//home/sysop/seiscomp/var/lib/archive``.
 
+
 .. _sec-station:
 
 Station
 -------
 
-* provides network, station, channel, response metadata
-* request type: HTTP-GET, HTTP-POST
-* stations may be filtered e.g. by geographic region and time, also the
+* Provides network, station, channel, response metadata
+* Request type: HTTP-GET, HTTP-POST
+* Stations may be filtered e.g. by geographic region and time, also the
   information depth level is selectable
 
+
 URL
-^^^
+~~~
 
 * http://localhost:8080/fdsnws/station/1/builder
 * http://localhost:8080/fdsnws/station/1/query
 * http://localhost:8080/fdsnws/station/1/version
 * http://localhost:8080/fdsnws/station/1/application.wadl
 
+
 Example
-^^^^^^^
+~~~~~~~
 
 * Request URL for querying the information for the GE network on response level:
 
   http://localhost:8080/fdsnws/station/1/query?net=GE&cha=BH%3F&level=response&nodata=404
 
-Feature Notes
-^^^^^^^^^^^^^
 
-* to enable FDSNXML or StationXML support the plugins ``fdsnxml`` resp.
+Feature notes
+~~~~~~~~~~~~~
+
+* To enable FDSNXML or StationXML support the plugins ``fdsnxml`` resp.
   ``staxml`` have to be loaded
 * ``updatedafter`` request parameter not implemented: The last modification time
   in SeisComP is tracked on the object level. If a child of an object is updated
@@ -146,7 +154,7 @@ Feature Notes
   station was updated all children must be evaluated recursively. This operation
   would be much too expensive.
 * ``formatted``: boolean, default: ``false``
-* additional values of request parameters:
+* Additional values of request parameters:
 
   * format:
 
@@ -157,17 +165,19 @@ Feature Notes
 The inventory exposed by this service may be restricted, see section
 :ref:`sec-inv-filter`.
 
+
 .. _sec-event:
 
 Event
 -----
 
-* provides earthquake origin and magnitude estimates
-* request type: HTTP-GET
-* events may be filtered e.g. by hypocenter, time and magnitude
+* Provides earthquake origin and magnitude estimates
+* Request type: HTTP-GET
+* Events may be filtered e.g. by hypocenter, time and magnitude
+
 
 URL
-^^^
+~~~
 
 * http://localhost:8080/fdsnws/event/1/builder
 * http://localhost:8080/fdsnws/event/1/query
@@ -176,43 +186,46 @@ URL
 * http://localhost:8080/fdsnws/event/1/version
 * http://localhost:8080/fdsnws/event/1/application.wadl
 
+
 Example
-^^^^^^^
+~~~~~~~
 
 * Request URL for fetching the event parameters within 10 degrees around 50°N/11°E
   starting on 18 April 2013:
 
   http://localhost:8080/fdsnws/event/1/query?start=2018-06-01&lat=50&lon=11&maxradius=10&nodata=404
 
+
 Feature Notes
-^^^^^^^^^^^^^
+~~~~~~~~~~~~~
 
 * SeisComP does not distinguish between catalogs and contributors, but
   supports agencyIDs. Hence, if specified, the value of the ``contributor``
   parameter is mapped to the agencyID. The file
   ``@DATADIR@/share/fdsn/contributors.xml`` has to be filled manually with all
   available agency ids
-* origin and magnitude filter parameters are always applied to preferred origin
+* Origin and magnitude filter parameters are always applied to preferred origin
   resp. preferred magnitude
 * ``updatedafter`` request parameter not implemented: The last modification time
   in SeisComP is tracked on the object level. If a child of an object is updated
   the update time is not propagated to all parents. In order to check if a
   station was updated all children must be evaluated recursively. This operation
   would be much too expensive.
-* additional request parameters:
+* Additional request parameters:
 
   * ``includepicks``: boolean, default: ``false``, works only in combination
     with ``includearrivals`` set to ``true``
   * ``includecomments``: boolean, default: ``true``
   * ``formatted``: boolean, default: ``false``
 
-* additional values of request parameters:
+* Additional values of request parameters:
 
   * format:
 
     * standard: ``[xml, text]``
     * additional: ``[qml (=xml), qml-rt, sc3ml, csv]``
     * default: ``xml``
+
 
 .. _sec-avail:
 
@@ -231,8 +244,9 @@ to be compatible with the `IRIS DMC IRISWS availability Web Service
 * request type: HTTP-GET, HTTP-POST
 * results may be filtered e.g. by channel code, time and quality
 
+
 URL
-^^^
+~~~
 
 * http://localhost:8080/ext/availability/1/extent - Produces list of available
   time extents (earliest to latest) for selected channels (network, station,
@@ -246,8 +260,9 @@ URL
   form your data time span requests
 * http://localhost:8080/ext/availability/1/version
 
+
 Examples
-^^^^^^^^
+~~~~~~~~
 
 * Request URL for data extents of seismic network ``IU``:
 
@@ -265,8 +280,9 @@ Examples
 
    Use :ref:`scardac` for creating the availability information.
 
+
 Feature Notes
-^^^^^^^^^^^^^
+~~~~~~~~~~~~~
 
 * The IRISWS availability implementation truncates the time spans of the returned
   data extents and segments to the requested start and end times (if any). This
@@ -276,28 +292,28 @@ Feature Notes
 
   The reasons for this derivation are:
 
-  * Performance: With the ``/extent`` query the ``text``, ``geocsv`` and
+  * performance: With the ``/extent`` query the ``text``, ``geocsv`` and
     ``json`` offer the display of the number of included time spans
     (``show=timespancount``). The data model offers no efficient way to
     recalculate the number of time spans represented by an extent if the extents
     time window is altered by the requested start and end times. The ``sync``
     and ``request`` formats do not provided this counter and it is convenient to
     use their outputs for subsequent data requests.
-  * By truncating the time windows information is lost. There would be no
+  * by truncating the time windows information is lost. There would be no
     efficient way for a client to retrieve the exact time windows falling into a
     specific time span.
-  * Network and station epochs returned by the :ref:`sec-station` service are also
+  * network and station epochs returned by the :ref:`sec-station` service are also
     not truncated to the requested start and end times.
-  * Truncation can easily be done on client side. No additional network traffic is
+  * truncation can easily be done on client side. No additional network traffic is
     generated.
 
 
 .. _sec-inv-filter:
 
 Filtering the inventory
------------------------
+=======================
 
-The channels served by the :ref:`sec-station` and :ref:`sec-dataSelect` service
+The channels served by the :ref:`sec-station` and :ref:`sec-dataSelect` services
 may be filtered by specified an INI file in the ``stationFilter`` and
 ``dataSelectFilter`` configuration parameter. You may use the same file for both
 services or define a separate configuration set. **Note:** If distinct file
@@ -360,24 +376,24 @@ channel is only added if no other include rule exists in the entire rule set.
 .. _sec-port:
 
 Changing the service port
--------------------------
+=========================
 
 The FDSN Web service specification defines that the Service SHOULD be available
 under port 80. Typically SeisComP runs under a user without root permissions
 and therefore is not allowed to bind to privileged ports (<1024).
 To serve on port 80 you may for instance
 
-* run SeisComP with root privileged (not recommended)
-* use a proxy Webserver, e.g. Apache with
+* Run SeisComP with root privileged (not recommended)
+* Use a proxy Webserver, e.g. Apache with
   `mod-proxy <http://httpd.apache.org/docs/2.2/mod/mod_proxy.html>`_ module
-* configure and use :ref:`sec-authbind`
-* setup :ref:`sec-firewall` redirect rules
+* Configure and use :ref:`sec-authbind`
+* Setup :ref:`sec-firewall` redirect rules
 
 
 .. _sec-authbind:
 
 Authbind
-^^^^^^^^
+========
 
 ``authbind`` allows a program which does not or should not run as root to bind
 to low-numbered ports in a controlled way. Please refer to ``man authbind`` for
@@ -405,7 +421,7 @@ line in the ``~/seiscomp/etc/init/fdsnws.py`` have to be commented in.
 .. _sec-firewall:
 
 Firewall
-^^^^^^^^
+========
 
 All major Linux distributions ship with their own firewall implementations which
 are front-ends for the ``iptables`` kernel functions. The following line
@@ -420,7 +436,7 @@ Please refer to the documentation of your particular firewall solution on how to
 set up this rule permanently.
 
 Authentication extension
-------------------------
+========================
 
 The FDSNWS standard requires HTTP digest authentication as the
 authentication mechanism. The "htpasswd" configuration option is used to
@@ -450,7 +466,7 @@ authorization mechanism in SC3 (used by Arclink). It works as follows:
   arclink-access bindings.
 
 Configuration
-^^^^^^^^^^^^^
+-------------
 
 The authentication extension is enabled by setting the "auth.enable"
 configuration option to "true" and pointing "auth.gnupgHome" to a directory
@@ -483,16 +499,17 @@ where GPG stores its files. Let's use the directory
 
   sysop@host:~$ echo "auth.enable = true" >>~/seiscomp/etc/fdsnws.cfg
 
-Usage example
-^^^^^^^^^^^^^
 
-A client like :ref:`fdsnws_fetch` is recommended, but also tools like wget and
+Usage example
+-------------
+
+A client like :ref:`fdsnws_fetch <sec-fdsnws-related>` is recommended, but also tools like wget and
 curl can be used. As an example, let's request data from the restricted
 station AAI (assuming that we are authorized to get data of this station).
 
 * The first step is to obtain the token from an authentication service.
   Assuming that the token is saved in "token.asc", credentials of the
-  temporary account can be requsted using one of the following commands:
+  temporary account can be requested using one of the following commands:
 
 .. code-block:: sh
 
@@ -507,16 +524,18 @@ station AAI (assuming that we are authorized to get data of this station).
   sysop@host:~$ wget "http://`cat cred.txt`@geofon.gfz-potsdam.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -O data.mseed
   sysop@host:~$ curl --digest "http://`cat cred.txt`@geofon.gfz-potsdam.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -o data.mseed
 
-* Using the :ref:`fdsnws_fetch` utility, the two steps above can be combined into
+* Using the :ref:`fdsnws_fetch <sec-fdsnws-related>` utility, the two steps above can be combined into
   one:
 
 .. code-block:: sh
 
   sysop@host:~$ fdsnws_fetch -a token.asc -s 2015-12-15T16:00:00Z -e 2015-12-15T16:10:00Z -N IA -S AAI -o data.mseed
 
+
 Logging
--------
-In addition to normal SC3 logs, fdsnws can create a simple HTTP access log
+=======
+
+In addition to normal SeisComP logs, fdsnws can create a simple HTTP access log
 and/or a detailed request log. The locations of log files are specified by
 "accessLog" and "requestLog" in fdsnws.cfg.
 
@@ -605,7 +624,37 @@ Both logs are rotated daily. In case of access log, one week of data is
 kept. Request logs are compressed using bzip2 and not removed.
 
 If trackdb.enable=true in fdsnws.cfg, then requests are additionally logged
-into SC3 database using the ArcLink request log schema. Be aware that the
+into SeisComP database using the ArcLink request log schema. Be aware that the
 number of requests in a production system can be rather large. For example,
 the GEOFON datacentre is currently serving between 0.5..1 million FDSNWS
 requests per day.
+
+
+.. _sec-fdsnws-related:
+
+Related modules
+===============
+
+:term:`GEOFON` maintains `scripts for FDSNWS`_:
+
+* The :program:`fdsnws_fetch` client is a convenient tool for requesting waveforms
+  from a FDSN web service hosted by :term:`EIDA`.
+* The :program:`fdsnws2sds` client is a tool for requesting waveforms
+  from a FDSN web service hosted by :term:`EIDA` and to store them into an :term:`SDS` archive.
+
+
+Public FDSN Web Servers
+=======================
+
+IRIS maintains a `list of data centers`_ supporting `FDSN Web Services`_.
+
+
+References
+==========
+
+.. target-notes::
+
+.. _`FDSN Web Services` : http://www.fdsn.org/webservices/
+.. _`IRIS DMC FDSNWS availability Web Service Documentation` : https://service.iris.edu/fdsnws/availability/1/
+.. _`scripts for FDSNWS` : https://www.seiscomp3.org/doc/applications/fdsnws_scripts.html
+.. _`list of data centers` : https://www.fdsn.org/webservices/datacenters/
