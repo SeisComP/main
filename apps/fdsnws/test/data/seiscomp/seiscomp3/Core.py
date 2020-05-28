@@ -1,1 +1,0 @@
-../../../../../libs/swig/Core.py

@@ -23,7 +23,7 @@ from twisted.web import http, resource, server
 
 from zope.interface import implementer
 
-import seiscomp.datamodel, seiscomp.io, seiscomp.logging
+from seiscomp import datamodel, io, logging
 from seiscomp.client import Application
 from seiscomp.core import Time
 
@@ -291,7 +291,7 @@ class _Availability(BaseResource):
             # the GET operation supports exactly one stream filter
             ro.streams.append(ro)
         except ValueError as e:
-            seiscomp.logging.warning(str(e))
+            logging.warning(str(e))
             return self.renderErrorPage(req, http.BAD_REQUEST, str(e), ro)
 
         return self._prepareRequest(req, ro)
@@ -305,7 +305,7 @@ class _Availability(BaseResource):
             ro.parsePOST(req.content)
             ro.parse()
         except ValueError as e:
-            seiscomp.logging.warning(str(e))
+            logging.warning(str(e))
             return self.renderErrorPage(req, http.BAD_REQUEST, str(e), ro)
 
         return self._prepareRequest(req, ro)
@@ -612,7 +612,7 @@ class FDSNAvailabilityExtent(_Availability):
                 merged = e
             else:
                 if not cloned:
-                    merged = seiscomp.datamodel.DataAttributeExtent(merged)
+                    merged = datamodel.DataAttributeExtent(merged)
                     cloned = True
 
                 if e.start() < merged.start():
@@ -735,7 +735,7 @@ class FDSNAvailabilityExtent(_Availability):
 
         byteCount, extCount = self._writeLines(req, lines, ro)
 
-        seiscomp.logging.debug("%s: returned %i extents (total bytes: %i)" % (
+        logging.debug("%s: returned %i extents (total bytes: %i)" % (
                       ro.service, extCount, byteCount))
         utils.accessLog(req, ro, http.OK, byteCount, None)
         return True
@@ -1260,7 +1260,7 @@ class FDSNAvailabilityQuery(_Availability):
             self.writeErrorPage(req, http.NO_CONTENT, msg, ro)
             return False
 
-        db = seiscomp.io.DatabaseInterface.Open(Application.Instance().databaseURI())
+        db = io.DatabaseInterface.Open(Application.Instance().databaseURI())
         if db is None:
             msg = "could not connect to database"
             return self.renderErrorPage(req, http.SERVICE_UNAVAILABLE, msg, ro)
@@ -1275,7 +1275,7 @@ class FDSNAvailabilityQuery(_Availability):
             self.writeErrorPage(req, http.NO_CONTENT, msg, ro)
             return True
 
-        seiscomp.logging.debug("%s: returned %i segments (total bytes: %i)" % (
+        logging.debug("%s: returned %i segments (total bytes: %i)" % (
                       ro.service, segCount, byteCount))
         utils.accessLog(req, ro, http.OK, byteCount, None)
 
@@ -1288,11 +1288,11 @@ class FDSNAvailabilityQuery(_Availability):
         def _T(name):
             return db.convertColumnName(name)
 
-        dba = seiscomp.datamodel.DatabaseArchive(db)
+        dba = datamodel.DatabaseArchive(db)
 
         for idList in parentOIDs:
             if req._disconnected:
-                raise StopIteration()
+                return
 
             # build SQL query
             q = 'SELECT * from DataSegment ' \
@@ -1323,9 +1323,9 @@ class FDSNAvailabilityQuery(_Availability):
             q += 'ORDER BY _parent_oid, {0}, {1}' \
                  .format(_T('start'), _T('start_ms'))
 
-            segIt = dba.getObjectIterator(q, seiscomp.datamodel.DataSegment.TypeInfo())
+            segIt = dba.getObjectIterator(q, datamodel.DataSegment.TypeInfo())
             if segIt is None or not segIt.valid():
-                raise StopIteration()
+                return
 
             # Iterate and optionally merge segments.
             # A segment will be yielded if
@@ -1342,7 +1342,7 @@ class FDSNAvailabilityQuery(_Availability):
             lines = 0
             while not req._disconnected and (seg is None or segIt.next()) and \
                   (not ro.limit or lines < ro.limit):
-                s = seiscomp.datamodel.DataSegment.Cast(segIt.get())
+                s = datamodel.DataSegment.Cast(segIt.get())
                 if s is None:
                     break
 
@@ -1350,7 +1350,7 @@ class FDSNAvailabilityQuery(_Availability):
                 try:
                     e, restricted = oIDs[segIt.parentOid()]
                 except KeyError:
-                    seiscomp.logging.warning("parent object id not found: %i",
+                    logging.warning("parent object id not found: %i",
                                     segIt.parentOid())
                     continue
 
@@ -1388,7 +1388,7 @@ class FDSNAvailabilityQuery(_Availability):
 
             # close database iterator if iteration was stopped because of 
             # row limit
-            raise StopIteration()
+            return
 
 
 # vim: ts=4 et tw=79

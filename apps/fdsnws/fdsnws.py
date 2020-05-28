@@ -35,11 +35,11 @@ try:
 except ImportError as e:
     sys.exit("%s\nIs python twisted installed?" % str(e))
 
-try:
-    import seiscomp.core, seiscomp.datamodel, seiscomp.io, seiscomp.logging
-    import seiscomp.client, seiscomp.system
-except ImportError as e:
-    sys.exit("%s\nIs the SeisComP environment set correctly?" % str(e))
+#try:
+import seiscomp.core, seiscomp.datamodel, seiscomp.io, seiscomp.logging
+import seiscomp.client, seiscomp.system
+#except ImportError as e:
+#    sys.exit("%s\nIs the SeisComP environment set correctly?" % str(e))
 
 from seiscomp.fdsnws.utils import isRestricted, py3ustr, py3bstr
 from seiscomp.fdsnws.dataselect import FDSNDataSelect, FDSNDataSelectRealm, \

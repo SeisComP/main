@@ -12,7 +12,7 @@ from __future__ import absolute_import, division, print_function
 import sys
 
 from fdsnwstest import FDSNWSTest
-from fdsnws import event, station, dataselect, availability
+from seiscomp.fdsnws import event, station, dataselect, availability
 
 
 ###############################################################################

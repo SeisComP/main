@@ -1,1 +1,0 @@
-../../../../../libs/swig/System.py
