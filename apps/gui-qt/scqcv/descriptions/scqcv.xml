@@ -18,13 +18,14 @@
 				<parameter name="codes" type="list:string">
 					<description>
 						List of channels to display. By default the global
-						configuration is used which can be overwritten with this parameter.
+						binding configuration is used which can be overwritten with this parameter.
 					</description>
 				</parameter>
 				<parameter name="cumulative" type="boolean" default="false">
 					<description>
-						Add new streams from WfQ automatically to the list of stream
-						configured in streams.codes.
+						Add new streams automatically to the streams
+						configured in streams.codes when waveform QC parameters are
+						provided for these streams.
 					</description>
 				</parameter>
 			</group>
