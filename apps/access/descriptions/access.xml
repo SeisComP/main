@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<module name="access" category="Acquisition" standalone="true">
+		<description>
+			Access module for FDSNWS.
+		</description>
+	</module>
+
+	<binding module="access">
+		<description>
+			FDSNWS station access.
+		</description>
+		<configuration>
+			<group name="access">
+				<description>
+					Defines access to restricted data. When defined it will add the listed users to the list of authorized users to access certain restricted data give the parameters on this binding.
+				</description>
+				<parameter name="users" type="list:string" default="">
+					<description>
+						List of users (e-mail addresses) allowed to access the restricted data.
+					</description>
+				</parameter>
+				<parameter name="disableStationCode" type="boolean" default="false">
+					<description>
+						When disableStationCode option is set to true the access entries will be generated only for the network level (and optionally stream level), no station code will be filled (this can potentially reduce the number of entries on the access table, and save memory on the request handler when used).
+					</description>
+				</parameter>
+				<parameter name="streams" type="list:string" default="">
+					<description>
+						List of locations.streams this access rule applies to. The location code is optional (optional, allow wildcards).
+					</description>
+				</parameter>
+				<parameter name="start" type="datetime" default="">
+					<description>
+						Start of validity (optional).
+					</description>
+				</parameter>
+				<parameter name="end" type="datetime" default="">
+					<description>
+						End of validity (optional).
+					</description>
+				</parameter>
+			</group>
+		</configuration>
+	</binding>
+</seiscomp>
