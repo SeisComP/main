@@ -1,6 +1,6 @@
 from __future__ import print_function
 import os, string, time, re, glob, shutil, sys, imp, random, fnmatch
-from seiscomp3 import Core, Kernel, Config, System, Client, DataModel
+import seiscomp.core, seiscomp.kernel, seiscomp.system, seiscomp.client, seiscomp.datamodel
 
 DEBUG = 0
 
@@ -16,7 +16,7 @@ def collectParams(container):
     for i in range(container.parameterCount()):
         p = container.parameter(i)
 
-        if p.symbol.stage == System.Environment.CS_UNDEFINED:
+        if p.symbol.stage == seiscomp.system.Environment.CS_UNDEFINED:
             continue
 
         params[p.variableName] = ",".join(p.symbol.values)
@@ -50,7 +50,7 @@ class InventoryResolver(object):
         if cstart is None and cend is None: return True
         
         if cstart is None:
-            cstart = Core.Time()
+            cstart = seiscomp.core.Time()
         
         if pend is not None:
             if pend > cstart:
@@ -179,9 +179,9 @@ class InventoryResolver(object):
             raise Exception("Cannot find suitable %s network with station code %s ranging from %s / %s" % (ncode, scode, start, end))
         return items
 
-class AccessUpdater(Client.Application):
+class AccessUpdater(seiscomp.client.Application):
     def __init__(self, argc, argv):
-        Client.Application.__init__(self, argc, argv)
+        seiscomp.client.Application.__init__(self, argc, argv)
         self.setLoggingToStdErr(True)
         self.setMessagingEnabled(True)
         self.setDatabaseEnabled(True, True)
@@ -203,7 +203,7 @@ class AccessUpdater(Client.Application):
             time.sleep(1)
 
     def sendNotifiers(self, group):
-        Nsize = DataModel.Notifier.Size()
+        Nsize = seiscomp.datamodel.Notifier.Size()
 
         if Nsize > 0:
             logd("trying to apply %d changes..." % Nsize)
@@ -211,10 +211,10 @@ class AccessUpdater(Client.Application):
             logd("no changes to apply")
             return
 
-        Nmsg = DataModel.Notifier.GetMessage(True)
+        Nmsg = seiscomp.datamodel.Notifier.GetMessage(True)
 
         it = Nmsg.iter()
-        msg = DataModel.NotifierMessage()
+        msg = seiscomp.datamodel.NotifierMessage()
 
         maxmsg = 100
         sent = 0
@@ -223,7 +223,7 @@ class AccessUpdater(Client.Application):
         try:
             try:
                 while it.get():
-                    msg.attach(DataModel.Notifier.Cast(it.get()))
+                    msg.attach(seiscomp.datamodel.Notifier.Cast(it.get()))
                     mcount += 1
                     if msg and mcount == maxmsg:
                         sent += mcount
@@ -252,12 +252,12 @@ class AccessUpdater(Client.Application):
         configuration into the database and thus manages the content.
         '''
         # Initialize the basic directories
-        filebase = System.Environment.Instance().installDir()
+        filebase = seiscomp.system.Environment.Instance().installDir()
         descdir = os.path.join(filebase, "etc", "descriptions")
         keydir = os.path.join(filebase, "etc", "key", self.name())
 
         # Load definitions of the configuration schema
-        defs = System.SchemaDefinitions()
+        defs = seiscomp.system.SchemaDefinitions()
         if defs.load(descdir) == False:
             log("could not read descriptions")
             return False
@@ -268,7 +268,7 @@ class AccessUpdater(Client.Application):
 
         # Create a model from the schema and read its configuration including
         # all bindings.
-        model = System.Model()
+        model = seiscomp.system.Model()
         model.create(defs)
         model.readConfig()
 
@@ -280,8 +280,8 @@ class AccessUpdater(Client.Application):
         inventory = self.query().loadInventory()
         iResolver = InventoryResolver(inventory)
 
-        DataModel.Notifier.Enable()
-        DataModel.Notifier.SetCheckEnabled(False)
+        seiscomp.datamodel.Notifier.Enable()
+        seiscomp.datamodel.Notifier.SetCheckEnabled(False)
 
         # Update access on basis of access module
         if mod_access:
@@ -311,10 +311,10 @@ class AccessUpdater(Client.Application):
                 stationCode = staid.stationCode
 
                 if access_start:
-                    access_start = Core.Time.FromString(access_start, "%Y-%m-%d %H:%M:%S")
+                    access_start = seiscomp.core.Time.FromString(access_start, "%Y-%m-%d %H:%M:%S")
 
                 if access_end:
-                    access_end = Core.Time.FromString(access_end, "%Y-%m-%d %H:%M:%S")
+                    access_end = seiscomp.core.Time.FromString(access_end, "%Y-%m-%d %H:%M:%S")
 
                 if access_netonly:
                     stationCode = ""
@@ -347,15 +347,15 @@ class AccessUpdater(Client.Application):
 
 
         for ((networkCode, stationCode, locationCode, streamCode, user, start), (end,)) in existingAccess.items():
-            access = routing.access(DataModel.AccessIndex(networkCode, stationCode, locationCode, streamCode, user, Core.Time.FromString(start, "%Y-%m-%d %H:%M:%S")))
+            access = routing.access(seiscomp.datamodel.AccessIndex(networkCode, stationCode, locationCode, streamCode, user, seiscomp.core.Time.FromString(start, "%Y-%m-%d %H:%M:%S")))
             if not access:
-                access = DataModel.Access()
+                access = seiscomp.datamodel.Access()
                 access.setNetworkCode(networkCode)
                 access.setStationCode(stationCode)
                 access.setLocationCode(locationCode)
                 access.setStreamCode(streamCode)
                 access.setUser(user)
-                access.setStart(Core.Time.FromString(start, "%Y-%m-%d %H:%M:%S"))
+                access.setStart(seiscomp.core.Time.FromString(start, "%Y-%m-%d %H:%M:%S"))
                 access.setEnd(end)
                 routing.add(access)
             else:
@@ -386,9 +386,9 @@ class AccessUpdater(Client.Application):
         self.sendNotifiers("ROUTING")
         return True
 
-class Module(Kernel.Module):
+class Module(seiscomp.kernel.Module):
     def __init__(self, env):
-        Kernel.Module.__init__(self, env, env.moduleName(__file__))
+        seiscomp.kernel.Module.__init__(self, env, env.moduleName(__file__))
 
     def start(self):
         return 0
@@ -410,7 +410,7 @@ class Module(Kernel.Module):
         # Synchronize database configuration
         params = [self.name, '--console', '1', '-H', 'localhost:%d' % messagingPort]
         # Create the database update app and run it
-        # This app implements a Client.Application and connects
+        # This app implements a seiscomp.client.Application and connects
         # to localhost regardless of connections specified in global.cfg to
         # prevent updating a remote installation by accident.
         app = AccessUpdater(len(params), params)
