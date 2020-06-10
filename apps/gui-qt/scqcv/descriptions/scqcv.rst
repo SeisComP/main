@@ -108,8 +108,8 @@ Select the desired parameters from the list below. "#" disables a parameter.
    #				"gaps length       : gap",\
    #				"spikes interval   : spike",\
    #				"spikes amplitude  : spike"
-   #				"overlaps interval : gap",\
-   #				"overlaps length   : gap"
+   #				"overlaps interval : overlap",\
+   				"overlaps length   : overlap"
 
 Stream selection
 ----------------
