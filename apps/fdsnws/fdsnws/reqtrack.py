@@ -1,7 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
 from twisted.internet import reactor
-import  seiscomp.core, seiscomp.datamodel
+import seiscomp.core
+import seiscomp.datamodel
 
 
 def callFromThread(f):
@@ -21,7 +22,8 @@ def enableNotifier(f):
 
 class RequestTrackerDB(object):
 
-    def __init__(self, appName, msgConn, req_id, req_type, user, header, label, user_ip, client_ip):
+    def __init__(self, appName, msgConn, req_id, req_type, user, header, label,
+                 user_ip, client_ip):
         self.msgConn = msgConn
         self.arclinkRequest = seiscomp.datamodel.ArclinkRequest.Create()
         self.arclinkRequest.setCreated(seiscomp.core.Time.GMT())
@@ -49,7 +51,8 @@ class RequestTrackerDB(object):
             self.msgConn.send("LOGGING", msg)
 
     def line_status(self, start_time, end_time, network, station, channel,
-                    location, restricted, net_class, shared, constraints, volume, status, size, message):
+                    location, restricted, net_class, shared, constraints,
+                    volume, status, size, message):
         if network is None or network == "":
             network = "."
         if station is None or station == "":

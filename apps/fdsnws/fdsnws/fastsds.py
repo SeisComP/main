@@ -10,7 +10,6 @@
 from __future__ import absolute_import, division, print_function
 
 import datetime
-import fnmatch
 import os
 
 import seiscomp.logging
@@ -27,7 +26,7 @@ else:
 
 class SDS(object):
     def __init__(self, sdsRoot):
-        if type(sdsRoot) == type(list()):
+        if isinstance(sdsRoot, list):
             self.sdsRoot = sdsRoot
 
         else:
@@ -39,7 +38,8 @@ class SDS(object):
                 (root, reqDate.year, net, sta, cha, net, sta, loc, cha,
                  reqDate.year, reqDate.strftime('%j'))
 
-    def __time2recno(self, msFile, reclen, timeStart, recStart, timeEnd, recEnd, searchTime):
+    @staticmethod
+    def __time2recno(msFile, reclen, timeStart, recStart, timeEnd, recEnd, searchTime):
         if searchTime <= timeStart:
             msFile.seek(recStart * reclen)
             rec = seiscomp.mseedlite.Record(msFile)
@@ -128,18 +128,18 @@ class SDS(object):
             return
 
         if timeStart >= timeEnd:
-            seiscomp.logging.error("%s: overlap detected (start=%s, end=%s)" %
-                          (msFile.name, timeStart, timeEnd))
+            seiscomp.logging.error("%s: overlap detected (start=%s, end=%s)" % (
+                msFile.name, timeStart, timeEnd))
             return
 
-        (lower, et1) = self.__time2recno(msFile, reclen,
-                                         timeStart, recStart, timeEnd, recEnd, startt)
-        (upper, et2) = self.__time2recno(
+        (lower, _) = self.__time2recno(
+            msFile, reclen, timeStart, recStart, timeEnd, recEnd, startt)
+        (upper, _) = self.__time2recno(
             msFile, reclen, startt, lower, timeEnd, recEnd, endt)
 
         if upper < lower:
-            seiscomp.logging.error("%s: overlap detected (lower=%d, upper=%d)" %
-                          (msFile.name, lower, upper))
+            seiscomp.logging.error("%s: overlap detected (lower=%d, upper=%d)" % (
+                msFile.name, lower, upper))
             upper = lower
 
         msFile.seek(lower * reclen)

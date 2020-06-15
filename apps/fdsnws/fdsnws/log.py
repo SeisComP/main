@@ -15,7 +15,7 @@ import time
 import threading
 
 if sys.version_info[0] < 3:
-    from Queue import Queue
+    from Queue import Queue # pylint: disable=E0401
 else:
     from queue import Queue
 
@@ -24,6 +24,7 @@ else:
 
 def _worker(log):
     while True:
+        # pylint: disable=W0212
         msg = log._queue.get()
         log._write(str(msg))
         log._queue.task_done()

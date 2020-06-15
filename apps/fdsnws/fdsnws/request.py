@@ -16,7 +16,8 @@ import re
 from twisted.web import http
 
 from seiscomp.core import Time
-import seiscomp.logging, seiscomp.math
+import seiscomp.logging
+import seiscomp.math
 
 from .utils import py3ustr, py3ustrlist
 
@@ -228,7 +229,8 @@ class RequestOptions:
                 if b.maxLon is not None and lon > b.maxLon:
                     return False
                 return True
-            elif self.bCircle:
+
+            if self.bCircle:
                 c = self.bCircle
                 dist = seiscomp.math.delazi(c.lat, c.lon, lat, lon)
                 if c.minRad is not None and dist[0] < c.minRad:
@@ -260,7 +262,7 @@ class RequestOptions:
         # nodata
         code = self.parseInt(self.PNoData)
         if code is not None:
-            if code != http.NO_CONTENT and code != http.NOT_FOUND:
+            if code not in (http.NO_CONTENT, http.NOT_FOUND):
                 self.raiseValueError(self.PNoData[0])
             self.noData = code
 
@@ -353,7 +355,7 @@ class RequestOptions:
         if hasBBoxParam and hasBCircleParam:
             raise ValueError("bounding box and bounding circle parameters " \
                              "may not be combined")
-        elif hasBBoxParam:
+        if hasBBoxParam:
             self.geo = RequestOptions.Geo()
             self.geo.bBox = b
         elif hasBCircleRadParam:
@@ -365,7 +367,8 @@ class RequestOptions:
             self.geo.bCircle = c
 
     #---------------------------------------------------------------------------
-    def _assertValueRange(self, key, v, minValue, maxValue):
+    @staticmethod
+    def _assertValueRange(key, v, minValue, maxValue):
         if (minValue is not None and v < minValue) or \
            (maxValue is not None and v > maxValue):
             minStr, maxStr = '-inf', 'inf'
@@ -373,11 +376,12 @@ class RequestOptions:
                 minStr = str(minValue)
             if maxValue is not None:
                 maxStr = str(maxValue)
-            raise ValueError("parameter not in domain [%s,%s]: %s" % (
-                             minStr, maxStr, key))
+            raise ValueError(
+                "parameter not in domain [%s,%s]: %s" % (minStr, maxStr, key))
 
     #---------------------------------------------------------------------------
-    def raiseValueError(self, key):
+    @staticmethod
+    def raiseValueError(key):
         raise ValueError("invalid value in parameter: %s" % key)
 
     #---------------------------------------------------------------------------
@@ -555,56 +559,55 @@ class RequestOptions:
 
                 raise ValueError("invalid parameter in line %i" % nLine)
 
-            else:
-                # stream parameters
-                toks = line.split()
-                nToks = len(toks)
-                if nToks != 5 and nToks != 6:
-                    raise ValueError("invalid number of stream components " \
-                                     "in line %i" % nLine)
 
-                ro = RequestOptions()
+            # stream parameters
+            toks = line.split()
+            nToks = len(toks)
+            if nToks not in (5, 6):
+                raise ValueError("invalid number of stream components " \
+                                 "in line %i" % nLine)
 
-                # net, sta, loc, cha
-                ro.channel = RequestOptions.Channel()
-                ro.channel.net = toks[0].split(',')
-                ro.channel.sta = toks[1].split(',')
-                ro.channel.loc = toks[2].split(',')
-                ro.channel.cha = toks[3].split(',')
+            ro = RequestOptions()
 
-                msg = "invalid %s value in line %i"
-                for net in ro.channel.net:
-                    if ro.ChannelChars(net):
-                        raise ValueError(msg % ('network', nLine))
-                for sta in ro.channel.sta:
-                    if ro.ChannelChars(sta):
-                        raise ValueError(msg % ('station', nLine))
-                for loc in ro.channel.loc:
-                    if loc != "--" and ro.ChannelChars(loc):
-                        raise ValueError(msg % ('location', nLine))
-                for cha in ro.channel.cha:
-                    if ro.ChannelChars(cha):
-                        raise ValueError(msg % ('channel', nLine))
+            # net, sta, loc, cha
+            ro.channel = RequestOptions.Channel()
+            ro.channel.net = toks[0].split(',')
+            ro.channel.sta = toks[1].split(',')
+            ro.channel.loc = toks[2].split(',')
+            ro.channel.cha = toks[3].split(',')
 
-                # start/end time
-                ro.time = RequestOptions.Time()
-                ro.time.start = Time()
+            msg = "invalid %s value in line %i"
+            for net in ro.channel.net:
+                if ro.ChannelChars(net):
+                    raise ValueError(msg % ('network', nLine))
+            for sta in ro.channel.sta:
+                if ro.ChannelChars(sta):
+                    raise ValueError(msg % ('station', nLine))
+            for loc in ro.channel.loc:
+                if loc != "--" and ro.ChannelChars(loc):
+                    raise ValueError(msg % ('location', nLine))
+            for cha in ro.channel.cha:
+                if ro.ChannelChars(cha):
+                    raise ValueError(msg % ('channel', nLine))
+
+            # start/end time
+            ro.time = RequestOptions.Time()
+            ro.time.start = Time()
+            for fmt in RequestOptions.TimeFormats:
+                if ro.time.start.fromString(toks[4], fmt):
+                    break
+            logEnd = "-"
+            if len(toks) > 5:
+                ro.time.end = Time()
                 for fmt in RequestOptions.TimeFormats:
-                    if ro.time.start.fromString(toks[4], fmt):
+                    if ro.time.end.fromString(toks[5], fmt):
                         break
-                logEnd = "-"
-                if len(toks) > 5:
-                    ro.time.end = Time()
-                    for fmt in RequestOptions.TimeFormats:
-                        if ro.time.end.fromString(toks[5], fmt):
-                            break
-                    logEnd = ro.time.end.iso()
+                logEnd = ro.time.end.iso()
 
-                seiscomp.logging.debug("ro: %s.%s.%s.%s %s %s" % (
-                                            ro.channel.net, ro.channel.sta,
-                                            ro.channel.loc, ro.channel.cha,
-                                            ro.time.start.iso(), logEnd))
-                self.streams.append(ro)
+            seiscomp.logging.debug("ro: %s.%s.%s.%s %s %s" % (
+                ro.channel.net, ro.channel.sta, ro.channel.loc,
+                ro.channel.cha, ro.time.start.iso(), logEnd))
+            self.streams.append(ro)
 
         if len(self.streams) == 0:
             raise ValueError("at least one stream line is required")

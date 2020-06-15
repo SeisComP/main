@@ -1,15 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
 import os
-import time
 import datetime
 import json
 import hashlib
 import subprocess
 import logging
 import logging.handlers
-import GeoIP
 import threading
+import GeoIP
+
 
 from .utils import py3bstr
 
@@ -49,11 +49,14 @@ class Tracker(object):
             'created': datetime.datetime.utcnow().isoformat() + 'Z'
         }
 
-        if (userName and userName.lower().endswith("@gfz-potsdam.de")) or userIP.startswith("139.17."):
+        if (userName and userName.lower().endswith("@gfz-potsdam.de")) or \
+           userIP.startswith("139.17."):
             self.__data['userLocation']['institution'] = "GFZ"
 
+    #pylint: disable=W0613
     def line_status(self, start_time, end_time, network, station, channel,
-                    location, restricted, net_class, shared, constraints, volume, status, size, message):
+                    location, restricted, net_class, shared, constraints,
+                    volume, status, size, message):
 
         try:
             trace = self.__data['trace']

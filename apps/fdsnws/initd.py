@@ -33,15 +33,15 @@ class Module(seiscomp.kernel.Module):
             open(reloadfile, 'a').close()
 
             if not os.path.isfile(reloadfile):
-                self.env.log('could not touch reload file: {}'.format(
-                             reloadfile))
+                self.env.log('could not touch reload file: {}' \
+                             .format(reloadfile))
                 return 1
 
             # Send SIGHUP
             subprocess.call("kill -s HUP %d" % pid, shell=True)
 
             # wait for reload file to disappear
-            for i in range(0, int(self.reloadTimeout * 5)):
+            for _ in range(0, int(self.reloadTimeout * 5)):
                 time.sleep(0.2)
                 if not os.path.isfile(reloadfile):
                     return 0

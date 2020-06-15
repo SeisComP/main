@@ -23,9 +23,9 @@ FILE(
 )
 FOREACH(file ${python_files})
 	ADD_CUSTOM_TARGET(link_build_lib_python_seiscomp_fdsnws_${file} ALL
-	        COMMAND ${CMAKE_COMMAND} -E create_symlink
-                        ${CMAKE_CURRENT_SOURCE_DIR}/fdsnws/${file}
-                        ${build_lib_python_seiscomp_dir}/${file}
+		COMMAND ${CMAKE_COMMAND} -E create_symlink
+			${CMAKE_CURRENT_SOURCE_DIR}/fdsnws/${file}
+			${build_lib_python_seiscomp_dir}/${file}
 	)
 ENDFOREACH()
 

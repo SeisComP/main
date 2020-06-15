@@ -16,7 +16,9 @@ import traceback
 from twisted.internet import reactor, defer
 from twisted.python.failure import Failure
 
-import seiscomp.logging, seiscomp.core, seiscomp.io
+import seiscomp.logging
+import seiscomp.core
+import seiscomp.io
 from seiscomp.client import Application
 
 #-------------------------------------------------------------------------------
@@ -42,7 +44,7 @@ else:
     py2ustr = str
     py3bstr = b_str
     py3ustr = u_str
-    py3ustrlist = lambda l: [ u_str(x) for x in l ]
+    py3ustrlist = lambda l: [u_str(x) for x in l]
 
 
 #-------------------------------------------------------------------------------
@@ -75,8 +77,8 @@ def onFinish(result, req):
         if isinstance(err, defer.CancelledError):
             seiscomp.logging.error("request canceled")
             return
-        seiscomp.logging.error("%s %s" % (result.getErrorMessage(),
-                                 traceback.format_tb(result.getTracebackObject())))
+        seiscomp.logging.error("%s %s" % (
+            result.getErrorMessage(), traceback.format_tb(result.getTracebackObject())))
     else:
         if result:
             seiscomp.logging.debug("request successfully served")
@@ -84,15 +86,14 @@ def onFinish(result, req):
             seiscomp.logging.debug("request failed")
 
     reactor.callFromThread(req.finish)
-    # req.finish()
 
 
 #-------------------------------------------------------------------------------
 # Handle connection errors
 def onCancel(failure, req):
     if failure:
-        seiscomp.logging.error("%s %s" % (failure.getErrorMessage(),
-                                 traceback.format_tb(failure.getTracebackObject())))
+        seiscomp.logging.error("%s %s" % (
+            failure.getErrorMessage(), traceback.format_tb(failure.getTracebackObject())))
     else:
         seiscomp.logging.error("request canceled")
     req.cancel()
@@ -100,7 +101,7 @@ def onCancel(failure, req):
 
 #-------------------------------------------------------------------------------
 # Handle premature connection reset
-def onResponseFailure(err, call):
+def onResponseFailure(_, call):
     seiscomp.logging.error("response canceled")
     call.cancel()
 
@@ -109,7 +110,7 @@ def onResponseFailure(err, call):
 # Renders error page if the result set exceeds the configured maximum number
 # objects
 def accessLog(req, ro, code, length, err):
-    logger = Application.Instance()._accessLog
+    logger = Application.Instance()._accessLog # pylint: disable=W0212
     if logger is None:
         return
 
@@ -124,7 +125,7 @@ class Sink(seiscomp.io.ExportSink):
         self.written = 0
 
     def write(self, data, size):
-        if self.request._disconnected:
+        if self.request._disconnected: #pylint: disable=W0212
             return -1
         writeTS(self.request, data[:size])
         self.written += size
@@ -179,8 +180,7 @@ class AccessLogEntry:
 
         self.clientIP = req.getClientIP()
         self.msgSuffix = "|%s|%i|%i|%s|%s|%i|%s|%s|%s|%s|%s||" % (
-                         self.clientIP, length, procTime, err, agent, code,
-                         user, net, sta, loc, cha)
+            self.clientIP, length, procTime, err, agent, code, user, net, sta, loc, cha)
 
     def __str__(self):
         try:

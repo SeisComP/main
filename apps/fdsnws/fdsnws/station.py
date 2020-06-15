@@ -25,9 +25,10 @@
 from __future__ import absolute_import, division, print_function
 
 from twisted.internet.threads import deferToThread
-from twisted.web import http, resource, server
+from twisted.web import http, server
 
-import seiscomp.datamodel, seiscomp.logging
+import seiscomp.datamodel
+import seiscomp.logging
 from seiscomp.client import Application
 from seiscomp.core import Time
 from seiscomp.io import Exporter, ExportObjectList
@@ -97,14 +98,14 @@ class _StationRequestOptions(RequestOptions):
         key, value = self.getFirstValue(self.PLevel)
         if value is not None:
             value = value.lower()
-            if value == 'network' or value == 'net':
+            if value in ('network', 'net'):
                 self.includeSta = False
-            elif value == 'channel' or value == 'cha' or value == 'chan':
+            elif value in ('channel', 'cha', 'chan'):
                 self.includeCha = True
-            elif value == 'response' or value == 'res' or value == 'resp':
+            elif value in ('response', 'res', 'resp'):
                 self.includeCha = True
                 self.includeRes = True
-            elif value != 'station' and value != 'sta':
+            elif value not in ('station', 'sta'):
                 self.raiseValueError(key)
 
         # includeRestricted (optional)
@@ -339,7 +340,7 @@ class FDSNStation(BaseResource):
 
     #---------------------------------------------------------------------------
     def _processRequestExp(self, req, ro, exp, dac):
-        if req._disconnected:
+        if req._disconnected: #pylint: disable=W0212
             return False
 
         staCount, locCount, chaCount, extCount, objCount = 0, 0, 0, 0, 0
@@ -355,7 +356,7 @@ class FDSNStation(BaseResource):
 
         # iterate over inventory networks
         for net in ro.networkIter(self._inv, levelNet):
-            if req._disconnected:
+            if req._disconnected: #pylint: disable=W0212
                 return False
             if skipRestricted and utils.isRestricted(net):
                 continue
@@ -367,7 +368,7 @@ class FDSNStation(BaseResource):
 
             # iterate over inventory stations of current network
             for sta in ro.stationIter(net, levelSta):
-                if req._disconnected:
+                if req._disconnected: #pylint: disable=W0212
                     return False
                 if skipRestricted and utils.isRestricted(sta):
                     continue
@@ -422,14 +423,14 @@ class FDSNStation(BaseResource):
                                             ro, dataloggers, sensors, self._maxObj)
             if decCount is None:
                 return False
-            else:
-                resCount = newInv.responsePAZCount() + \
-                    newInv.responseFIRCount() + \
-                    newInv.responsePolynomialCount() + \
-                    newInv.responseFAPCount() + \
-                    newInv.responseIIRCount()
-                objCount += resCount + decCount + newInv.dataloggerCount() + \
-                    newInv.sensorCount()
+
+            resCount = newInv.responsePAZCount() + \
+                newInv.responseFIRCount() + \
+                newInv.responsePolynomialCount() + \
+                newInv.responseFAPCount() + \
+                newInv.responseIIRCount()
+            objCount += resCount + decCount + newInv.dataloggerCount() + \
+                newInv.sensorCount()
 
         # Copy data extents
         objOut = newInv
@@ -447,17 +448,19 @@ class FDSNStation(BaseResource):
         if not exp.write(sink, objOut):
             return False
 
-        seiscomp.logging.debug("%s: returned %iNet, %iSta, %iLoc, %iCha, %iDL, %iDec, "
-                      "%iSen, %iRes, %iDAExt (total objects/chars: %i/%i)" % (
-                      ro.service, newInv.networkCount(), staCount, locCount,
-                      chaCount, newInv.dataloggerCount(), decCount,
-                      newInv.sensorCount(), resCount, extCount, objCount,
-                      sink.written))
+        seiscomp.logging.debug(
+            "%s: returned %iNet, %iSta, %iLoc, %iCha, %iDL, %iDec, %iSen, "
+            "%iRes, %iDAExt (total objects/chars: %i/%i)" % (
+                ro.service, newInv.networkCount(), staCount, locCount,
+                chaCount, newInv.dataloggerCount(), decCount,
+                newInv.sensorCount(), resCount, extCount, objCount,
+                sink.written))
         utils.accessLog(req, ro, http.OK, sink.written, None)
         return True
 
     #---------------------------------------------------------------------------
-    def _formatEpoch(self, obj):
+    @staticmethod
+    def _formatEpoch(obj):
         df = "%FT%T"
         dfMS = "%FT%T.%f"
 
@@ -478,7 +481,7 @@ class FDSNStation(BaseResource):
 
     #---------------------------------------------------------------------------
     def _processRequestText(self, req, ro, dac):
-        if req._disconnected:
+        if req._disconnected: #pylint: disable=W0212
             return False
 
         skipRestricted = not self._allowRestricted or \
@@ -493,7 +496,7 @@ class FDSNStation(BaseResource):
 
             # iterate over inventory networks
             for net in ro.networkIter(self._inv, True):
-                if req._disconnected:
+                if req._disconnected: #pylint: disable=W0212
                     return False
                 if skipRestricted and utils.isRestricted(net):
                     continue
@@ -501,7 +504,7 @@ class FDSNStation(BaseResource):
                 # at least one matching station is required
                 stationFound = False
                 for sta in ro.stationIter(net, False):
-                    if req._disconnected:
+                    if req._disconnected: #pylint: disable=W0212
                         return False
                     if self._matchStation(net, sta, ro, dac) and \
                        not (skipRestricted and utils.isRestricted(sta)):
@@ -523,17 +526,17 @@ class FDSNStation(BaseResource):
 
             # iterate over inventory networks
             for net in ro.networkIter(self._inv, False):
-                if req._disconnected:
+                if req._disconnected: #pylint: disable=W0212
                     return False
                 if skipRestricted and utils.isRestricted(net):
                     continue
                 # iterate over inventory stations
                 for sta in ro.stationIter(net, True):
-                    if req._disconnected:
+                    if req._disconnected: #pylint: disable=W0212
                         return False
-                    if not self._matchStation(net, sta, ro, dac) or \
-                       (skipRestricted and utils.isRestricted(sta)):
-                           continue
+                    if not self._matchStation(net, sta, ro, dac) or (
+                            skipRestricted and utils.isRestricted(sta)):
+                        continue
 
                     try:
                         lat = str(sta.latitude())
@@ -566,13 +569,13 @@ class FDSNStation(BaseResource):
 
             # iterate over inventory networks
             for net in ro.networkIter(self._inv, False):
-                if req._disconnected:
+                if req._disconnected: #pylint: disable=W0212
                     return False
                 if skipRestricted and utils.isRestricted(net):
                     continue
                 # iterate over inventory stations, locations, streams
                 for sta in ro.stationIter(net, False):
-                    if req._disconnected:
+                    if req._disconnected: #pylint: disable=W0212
                         return False
                     if skipRestricted and utils.isRestricted(sta):
                         continue
@@ -629,20 +632,20 @@ class FDSNStation(BaseResource):
                             try:
                                 sr = str(stream.sampleRateNumerator() /
                                          stream.sampleRateDenominator())
-                            except ValueError as ZeroDevisionError:
+                            except (ValueError, ZeroDivisionError):
                                 sr = ''
 
                             start, end = self._formatEpoch(stream)
-                            lines.append(("%s.%s.%s.%s %s" % (
-                                net.code(), sta.code(),
-                                loc.code(), stream.code(), start),
+                            lines.append((
+                                "%s.%s.%s.%s %s" % (
+                                    net.code(), sta.code(),
+                                    loc.code(), stream.code(), start),
                                 "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|"
                                 "%s|%s|%s|%s|%s|%s\n" % (
-                                net.code(), sta.code(),
-                                loc.code(), stream.code(), lat,
-                                lon, elev, depth, azi, dip, desc,
-                                scale, scaleFreq, scaleUnit, sr,
-                                start, end)))
+                                    net.code(), sta.code(), loc.code(),
+                                    stream.code(), lat, lon, elev, depth, azi,
+                                    dip, desc, scale, scaleFreq, scaleUnit, sr,
+                                    start, end)))
 
         # sort lines and append to final data string
         lines.sort(key=lambda line: line[0])
@@ -657,7 +660,7 @@ class FDSNStation(BaseResource):
 
         utils.writeTS(req, data)
         seiscomp.logging.debug("%s: returned %i lines (total bytes: %i)" % (
-                      ro.service, len(lines), len(data)))
+            ro.service, len(lines), len(data)))
         utils.accessLog(req, ro, http.OK, len(data), None)
         return True
 
@@ -675,7 +678,7 @@ class FDSNStation(BaseResource):
             if dac is None and not ro.channel.cha and not ro.time:
                 return True
 
-            for stream in ro.streamIter(net, sta, loc, False, dac):
+            for _ in ro.streamIter(net, sta, loc, False, dac):
                 return True
 
         return False
@@ -738,7 +741,7 @@ class FDSNStation(BaseResource):
 
         # datalogger
         for i in range(inv.dataloggerCount()):
-            if req._disconnected:
+            if req._disconnected: #pylint: disable=W0212
                 return None
             logger = inv.datalogger(i)
             if logger.publicID() not in dataloggers:
@@ -772,7 +775,7 @@ class FDSNStation(BaseResource):
 
         # sensor
         for i in range(inv.sensorCount()):
-            if req._disconnected:
+            if req._disconnected: #pylint: disable=W0212
                 return None
             sensor = inv.sensor(i)
             if sensor.publicID() not in sensors:
@@ -795,31 +798,31 @@ class FDSNStation(BaseResource):
 
         # responses
         if ro.includeRes:
-            if req._disconnected:
+            if req._disconnected: #pylint: disable=W0212
                 return None
             for i in range(inv.responsePAZCount()):
                 resp = inv.responsePAZ(i)
                 if resp.publicID() in responses:
                     newInv.add(seiscomp.datamodel.ResponsePAZ(resp))
-            if req._disconnected:
+            if req._disconnected: #pylint: disable=W0212
                 return None
             for i in range(inv.responseFIRCount()):
                 resp = inv.responseFIR(i)
                 if resp.publicID() in responses:
                     newInv.add(seiscomp.datamodel.ResponseFIR(resp))
-            if req._disconnected:
+            if req._disconnected: #pylint: disable=W0212
                 return None
             for i in range(inv.responsePolynomialCount()):
                 resp = inv.responsePolynomial(i)
                 if resp.publicID() in responses:
                     newInv.add(seiscomp.datamodel.ResponsePolynomial(resp))
-            if req._disconnected:
+            if req._disconnected: #pylint: disable=W0212
                 return None
             for i in range(inv.responseFAPCount()):
                 resp = inv.responseFAP(i)
                 if resp.publicID() in responses:
                     newInv.add(seiscomp.datamodel.ResponseFAP(resp))
-            if req._disconnected:
+            if req._disconnected: #pylint: disable=W0212
                 return None
             for i in range(inv.responseIIRCount()):
                 resp = inv.responseIIR(i)
