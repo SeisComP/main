@@ -53,7 +53,7 @@ string SplitString(string &buffer, char c, int &p1, int &p2) {
 	string value = buffer.substr(p1, p2-p1);
 
 	// the output gives a strange value at the end of each line, check for its presence and delete it.
-	if ( value[value.size()-1]==static_cast<char>(13) )
+	if ( !value.empty() && value[value.size()-1] == static_cast<char>(13) )
 		return value.substr(0, value.size()-1);
 	else
 		return value;
@@ -75,7 +75,7 @@ string SplitString(string &buffer, char c) {
 	string value = buffer.substr(p1, p2-p1);
 
 	// the output gives a strange value at the end of each line, check for its presence and delete it.
-	if ( value[value.size()-1] == static_cast<char>(13) )
+	if ( !value.empty() && value[value.size()-1] == static_cast<char>(13) )
 		return value.substr(0, value.size()-1);
 	else
 		return value;
@@ -97,7 +97,7 @@ vector<string> SplitStrings(string &buffer, char c) {
 		if ( p2 == string::npos )
 			p2 = buffer.size();
 		string value = buffer.substr(p1, p2-p1);
-		if(value[value.size()-1]==static_cast<char>(13))
+		if( !value.empty() && value[value.size()-1] == static_cast<char>(13) )
 			info.push_back(value.substr(0, value.size()-1));
 		else
 			info.push_back(value);
