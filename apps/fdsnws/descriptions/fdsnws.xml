@@ -92,7 +92,7 @@
 			</parameter>
 			<parameter name="htpasswd" type="string" default="@CONFIGDIR@/fdsnws.htpasswd">
 				<description>
-				Path to password file used in fdsnws-station/queryauth. The
+				Path to password file used in fdsnws-dataselect/queryauth. The
 				format is 'username:password' separated by lines. Because of the
 				HTTP digest authentication method required by the FDSN
 				specification, the passwords have to be stored in plain text.
