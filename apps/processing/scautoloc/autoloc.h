@@ -12,16 +12,15 @@
  ***************************************************************************/
 
 
+#ifndef SEISCOMP_AUTOLOC_AUTOLOC3
+#define SEISCOMP_AUTOLOC_AUTOLOC3
 
-
-#ifndef SEISCOMP_AUTOLOC_AUTOLOC3__
-#define SEISCOMP_AUTOLOC_AUTOLOC3__
 
 #include <string>
 #include <map>
 #include <set>
 
-#include <seiscomp/seismology/locsat.h>
+#include <seiscomp/seismology/locator/locsat.h>
 
 #include "datamodel.h"
 #include "nucleator.h"
@@ -520,5 +519,6 @@ class Autoloc3 {
 
 
 }  // namespace Autoloc
+
 
 #endif

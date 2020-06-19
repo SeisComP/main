@@ -12,8 +12,6 @@
  ***************************************************************************/
 
 
-
-
 #define SEISCOMP_COMPONENT Autoloc
 #include <seiscomp/logging/log.h>
 
@@ -24,7 +22,6 @@
 #include <seiscomp/datamodel/pick.h>
 #include <seiscomp/datamodel/origin.h>
 #include <seiscomp/datamodel/sensorlocation.h>
-#include <seiscomp/seismology/locsat.h>
 #include "util.h"
 #include "sc3adapters.h"
 #include "locator.h"
