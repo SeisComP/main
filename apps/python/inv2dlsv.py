@@ -18,8 +18,8 @@ from __future__ import (absolute_import, division, print_function, unicode_liter
 import sys
 import io
 from seiscomp.legacy.fseed import *
-from seiscomp.legacy.db.seiscomp import sc3wrap
-from seiscomp.legacy.db.seiscomp.inventory import Inventory
+from seiscomp.legacy.db.seiscomp3 import sc3wrap
+from seiscomp.legacy.db.seiscomp3.inventory import Inventory
 import seiscomp.datamodel, seiscomp.io
 
 ORGANIZATION = "EIDA"
