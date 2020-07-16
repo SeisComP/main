@@ -368,6 +368,7 @@ bool Import::buildImportRoutingtable() {
 			sourceGroups.insert(v.begin(), v.end());
 		}
 		catch ( Config::Exception& ) {
+			SEISCOMP_ERROR("No message groups defined, see @msggroups");
 			exit(0);
 		}
 	}
@@ -419,6 +420,7 @@ void Import::buildRelayRoutingtable(bool routeUnknownGroup) {
 			sourceGroups.insert(v.begin(), v.end());
 		}
 		catch ( Config::Exception& ) {
+			SEISCOMP_ERROR("No message groups defined, see @msggroups");
 			exit(0);
 		}
 	}
