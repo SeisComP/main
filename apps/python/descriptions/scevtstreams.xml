@@ -97,6 +97,11 @@
 					Dump in capstool format (Common Acquisition Protocol Server by gempa GmbH)
 					</description>
 				</option>
+				<option flag="" long-flag="fdsnws" argument="flag">
+					<description>
+					Dump in FDSN dataselect webservice POST format
+					</description>
+				</option>
 			</group>
 		</command-line>
 	</module>

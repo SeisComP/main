@@ -105,6 +105,7 @@ class EventStreams(seiscomp.client.Application):
         self.streams = []
 
         self.caps = False
+        self.fdsnws = False
 
     def createCommandLineDescription(self):
         self.commandline().addGroup("Input")
@@ -134,6 +135,8 @@ class EventStreams(seiscomp.client.Application):
                                      "if all components are used, use inventory to resolve stream components instead of using '?' (important when Arclink should be used)")
         self.commandline().addOption("Dump", "caps",
                                      "dump in capstool format (Common Acquisition Protocol Server by gempa GmbH)")
+        self.commandline().addOption("Dump", "fdsnws",
+                                     "dump in FDSN dataselect webservice POST format")
         return True
 
     def validateParameters(self):
@@ -182,28 +185,15 @@ class EventStreams(seiscomp.client.Application):
                 pass
 
             try:
-                self.allStreams = self.commandline().hasOption("all-streams")
-            except:
-                pass
-
-            try:
                 self.allLocations = self.commandline().optionInt("all-locations") != 0
             except:
                 pass
-            try:
-                self.allStations = self.commandline().hasOption("all-stations")
-            except:
-                pass
 
-            try:
-                self.allNetworks = self.commandline().hasOption("all-networks")
-            except:
-                pass
-
-            try:
-                self.caps = self.commandline().hasOption("caps")
-            except:
-                pass
+            self.allStreams = self.commandline().hasOption("all-streams")
+            self.allStations = self.commandline().hasOption("all-stations")
+            self.allNetworks = self.commandline().hasOption("all-networks")
+            self.caps = self.commandline().hasOption("caps")
+            self.fdsnws = self.commandline().hasOption("fdsnws")
 
             return True
         except:
@@ -304,6 +294,8 @@ class EventStreams(seiscomp.client.Application):
                         line = minTime.toString("%Y,%m,%d,%H,%M,%S") + " " + maxTime.toString("%Y,%m,%d,%H,%M,%S") + " " \
                             + net + " " + station \
                             + " " + loc + " " + s
+                    elif self.fdsnws:
+                        line = net + " " + station + " " + loc + " " + s + " " + minTime.iso() + " " + maxTime.iso()
                     else:
                         line = minTime.toString("%F %T") + ";" + maxTime.toString("%F %T") + ";" \
                             + net + "." + station \
@@ -321,6 +313,8 @@ class EventStreams(seiscomp.client.Application):
                             line = minTime.toString("%Y,%m,%d,%H,%M,%S") + " " + maxTime.toString("%Y,%m,%d,%H,%M,%S") + " " \
                                 + net + " " + station + " " + \
                                 loc + " " + s + streams[0][2]
+                        elif self.fdsnws:
+                            line = net + " " + station + " " + loc + " " + s + " " + minTime.iso() + " " + maxTime.iso()
                         else:
                             line = minTime.toString("%F %T") + ";" + maxTime.toString("%F %T") + ";" \
                                 + net + "." + station + "." + \
