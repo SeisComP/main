@@ -747,7 +747,7 @@ void MainFrame::onMessageSkipped(Seiscomp::Client::Packet *pkt) {
 
 		case Client::Packet::Disconnected:
 		{
-			QString name = QString(pkt->sender.c_str());
+			QString name = QString(pkt->subject.c_str());
 			ClientItem *item = _clientMap.value(name);
 			if ( item ) {
 				_clientMap.remove(name);
