@@ -169,8 +169,8 @@ class AccessLogEntry:
         # The host name of the client is resolved in the __str__ method by the
         # logging thread so that a long running DNS reverse lookup may not slow
         # down the request
-        self.msgPrefix = "%s|%s|%s|" % (service, req.getRequestHostname(),
-                                        accessTime)
+        self.msgPrefix = "%s|%s|%s|" % (
+            service, py3ustr(req.getRequestHostname()), accessTime)
 
         xff = req.requestHeaders.getRawHeaders("x-forwarded-for")
         if xff:
