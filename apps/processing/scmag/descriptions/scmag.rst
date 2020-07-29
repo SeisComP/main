@@ -117,20 +117,21 @@ at which the amplitude was measured. Typically, epicentral distance is used.
 .. note::
 
    Usually station magnitudes use amplitudes of the same type. However, some magnitude
-   consider amplitudes of another type. E.g. :term:`MLr` uses amplitudes computed for :term:`MLv`.
+   consider amplitudes of another type. E.g. :term:`MLr <magnitude, local GNS/GEONET (MLr)>`
+   uses amplitudes computed for :term:`MLv <magnitude, local vertical (MLv)>`.
 
 .. _scmag-networkM:
 
 Network magnitudes
 ==================
 
-The network magnitude is a magnitude value summarizing severval :ref:`station magnitudes <scmag-stationM>`
+The network magnitude is a magnitude value summarizing several :ref:`station magnitudes <scmag-stationM>`
 values of one :term:`origin`.
 Different methods are available for summarizing the station magnitudes:
 
 * mean: the usual mean value
 * trimmed mean value:
-  To stabilize the network magntiudes the smallest and the largest 12.5% of the
+  To stabilize the network magnitudes the smallest and the largest 12.5% of the
   :term:`station magnitude` values are removed before computing the mean.
 * median: the usual media value
 
@@ -156,15 +157,21 @@ It is computed as a weighted average over the available magnitudes:
    w_{i} = a_i stationCount(M_{i}) + b_i
 
 The coefficients a and b can be configured per magnitude type by :confval:`summaryMagnitude.coefficients.a`
-and :confval:`summaryMagnitude.coefficients.b`.
-Furthermore each magnitude type can be specifically included or excluded from the summary magnitude calculation
+and :confval:`summaryMagnitude.coefficients.b`, respectively.
+Furthermore each magnitude type can be specifically added to or excluded from the summary magnitude calculation
 as defined in :confval:`summaryMagnitude.whitelist` or :confval:`summaryMagnitude.blacklist`,
 respectively.
 
 .. note::
 
-   While the magnitudes are compited by scmag the decision about the preferred
+   While the magnitudes are computed by scmag the decision about the preferred
    magnitude of an :term:`event` is made by :ref:`scevent`.
+
+Preferred Magnitude
+===================
+
+The preferred magnitude of an :term:`event` is set automatically by :ref:`scevent`
+or interactively in :ref:`scolv`. It can be any network magnitude or the summary magnitude.
 
 References
 ==========
