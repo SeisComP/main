@@ -368,6 +368,7 @@ class FDSNWS(seiscomp.client.Application):
         self._daDCCName = 'DCC'
 
         self._hideAuthor = False
+        self._hideComments = False
         self._evaluationMode = None
         self._eventTypeWhitelist = None
         self._eventTypeBlacklist = None
@@ -545,6 +546,10 @@ class FDSNWS(seiscomp.client.Application):
         # event filter
         try:
             self._hideAuthor = self.configGetBool('hideAuthor')
+        except Exception:
+            pass
+        try:
+            self._hideComments = self.configGetBool('hideComments')
         except Exception:
             pass
         try:
@@ -780,6 +785,7 @@ configuration read:
   allowRestricted : {}
   useArclinkAccess: {}
   hideAuthor      : {}
+  hideComments    : {}
   evaluationMode  : {}
   data availability
     enabled       : {}
@@ -805,12 +811,12 @@ configuration read:
             self._connections, self._htpasswd, self._accessLogFile,
             self._corsOrigins, self._queryObjects, self._realtimeGap,
             self._samplesM, self._recordBulkSize, self._allowRestricted,
-            self._useArclinkAccess, self._hideAuthor, modeStr,
-            self._daEnabled, self._daCacheDuration, self._daRepositoryName,
-            self._daDCCName, whitelistStr, blacklistStr, stationFilterStr,
-            dataSelectFilterStr, self._debugFilter, self._trackdbEnabled,
-            self._trackdbDefaultUser, self._authEnabled,
-            self._authGnupgHome, self._requestLogFile))
+            self._useArclinkAccess, self._hideAuthor, self._hideComments,
+            modeStr, self._daEnabled, self._daCacheDuration,
+            self._daRepositoryName, self._daDCCName, whitelistStr,
+            blacklistStr, stationFilterStr, dataSelectFilterStr,
+            self._debugFilter, self._trackdbEnabled, self._trackdbDefaultUser,
+            self._authEnabled, self._authGnupgHome, self._requestLogFile))
 
         if not self._serveDataSelect and not self._serveEvent and \
            not self._serveStation:
@@ -939,7 +945,7 @@ configuration read:
 
             # query
             event1.putChild(b'query', FDSNEvent(
-                self._hideAuthor, self._evaluationMode,
+                self._hideAuthor, self._hideComments, self._evaluationMode,
                 self._eventTypeWhitelist, self._eventTypeBlacklist,
                 self._eventFormats))
 
@@ -955,15 +961,19 @@ configuration read:
 
             # version
             event1.putChild(b'version', ServiceVersion(EventVersion))
-            fileRes = static.File(os.path.join(shareDir, 'event.wadl'))
-            fileRes.childNotFound = NoResource(EventVersion)
 
             # application.wadl
+            filterList = ['includecomments'] if self._hideComments else []
+            try:
+                fileRes = WADLFilter(os.path.join(shareDir, 'event.wadl'),
+                                     filterList)
+            except Exception:
+                fileRes = NoResource(StationVersion)
             event1.putChild(b'application.wadl', fileRes)
-            fileRes = static.File(os.path.join(shareDir, 'event-builder.html'))
-            fileRes.childNotFound = NoResource(EventVersion)
 
             # builder
+            fileRes = static.File(os.path.join(shareDir, 'event-builder.html'))
+            fileRes.childNotFound = NoResource(EventVersion)
             event1.putChild(b'builder', fileRes)
 
         # station
@@ -982,7 +992,7 @@ configuration read:
             station1.putChild(b'version', ServiceVersion(StationVersion))
 
             # application.wadl
-            filterList = [] if self._daEnabled else ['name="matchtimeseries"']
+            filterList = [] if self._daEnabled else ['matchtimeseries']
             try:
                 fileRes = WADLFilter(os.path.join(shareDir, 'station.wadl'),
                                      filterList)

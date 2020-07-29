@@ -88,10 +88,10 @@ class _EventRequestOptions(RequestOptions):
     PComments = ['includecomments', 'comments']
     PFormatted = ['formatted']
 
-    # SC3 knows more event types than QuakeML. Types unknown to QuakeML are
-    # mapped during the SC3 to QuakeML conversion. Since the FDNSWS standard
-    # defines both, the request and response type to be QuakeML some extra
-    # SC3 types need to be queried from the database.
+    # SeisComP knows more event types than QuakeML. Types unknown to QuakeML
+    # are mapped during the SeisComP to QuakeML conversion. Since the FDNSWS
+    # standard defines both, the request and response type to be QuakeML some
+    # extra SeisComP types need to be queried from the database.
     ExtraEventTypes = {
         seiscomp.datamodel.INDUCED_OR_TRIGGERED_EVENT: [
             seiscomp.datamodel.INDUCED_EARTHQUAKE
@@ -130,8 +130,8 @@ class _EventRequestOptions(RequestOptions):
 
         self.depth = None
         self.mag = None
-        self.eventTypes = set()  # SC3 numeric event type ids, -1 is used for
-        # empty event types
+        self.eventTypes = set()  # SeisComP numeric event type ids, -1 is used
+                                 # for empty event types
 
         self.allOrigins = None
         self.allMags = None
@@ -195,15 +195,16 @@ class _EventRequestOptions(RequestOptions):
                 self.eventTypes.add(-1)
             else:
                 try:
-                    sc3Type = seiscomp.datamodel.QMLTypeMapper.EventTypeFromString(t)
-                    self.eventTypes.add(sc3Type)
-                    # SC3 knows more event types than QuakeML. Types unknown to
-                    # QuakeML are mapped during the SC3 to QuakeML conversion.
-                    # Since the FDNSWS standard defines both, the request and
-                    # response type to be QuakeML some extra SC3 types need to
-                    # be queried from the database.
-                    if sc3Type in self.ExtraEventTypes:
-                        self.eventTypes.update(self.ExtraEventTypes[sc3Type])
+                    scType = seiscomp.datamodel.QMLTypeMapper.EventTypeFromString(t)
+                    self.eventTypes.add(scType)
+                    # SeisComP knows more event types than QuakeML. Types
+                    # unknown to QuakeML are mapped during the SeisComP to
+                    # QuakeML conversion. Since the FDNSWS standard defines
+                    # both, the request and response type to be QuakeML some
+                    # extra SeisComP types need to be queried from the
+                    # database.
+                    if scType in self.ExtraEventTypes:
+                        self.eventTypes.update(self.ExtraEventTypes[scType])
                 except ValueError:
                     raise ValueError("'%s' is not a valid QuakeML event type" \
                                      % t)
@@ -261,11 +262,12 @@ class FDSNEvent(BaseResource):
     isLeaf = True
 
     #---------------------------------------------------------------------------
-    def __init__(self, hideAuthor=False, evaluationMode=None,
-                 eventTypeWhitelist=None, eventTypeBlacklist=None,
-                 formatList=None):
+    def __init__(self, hideAuthor=False, hideComments=False,
+                 evaluationMode=None, eventTypeWhitelist=None,
+                 eventTypeBlacklist=None, formatList=None):
         BaseResource.__init__(self, VERSION)
         self._hideAuthor = hideAuthor
+        self._hideComments = hideComments
         self._evaluationMode = evaluationMode
         self._eventTypeWhitelist = eventTypeWhitelist
         self._eventTypeBlacklist = eventTypeBlacklist
@@ -293,6 +295,10 @@ class FDSNEvent(BaseResource):
         # Catalog filter is not supported
         if ro.catalogs:
             msg = "catalog filter not supported"
+            return self.renderErrorPage(req, http.BAD_REQUEST, msg, ro)
+
+        if ro.comments and self._hideComments:
+            msg = "including of comments not supported"
             return self.renderErrorPage(req, http.BAD_REQUEST, msg, ro)
 
         # updateafter not implemented
