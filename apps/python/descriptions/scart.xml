@@ -43,8 +43,13 @@
 				<option flag="l" long-flag="list" argument="file">
 					<description>
 					Uses a stream list file instead of defined networks and channels
-					(-n and -c are ignored). Line format: starttime;endtime;streamID.
+					(-n and -c are ignored). The list can be generated from events
+					by scevetstreams. Line format: starttime;endtime;streamID.
 					The time format is the same as described in option '-t'.
+
+					Example:
+
+					2019-07-17 02:00:00;2019-07-17 02:10:00;GR.CLL..BHZ
 					</description>
 				</option>
 				<option flag="s" long-flag="sort">

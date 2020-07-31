@@ -40,7 +40,8 @@ Examples
 
 #. Collect data from an FDSNWS server using the :ref:`global_recordstream`
    interface and write to a miniSEED file. The data streams and the time spans are
-   defined in a list file, e.g. created by :ref:`scevtstreams`.
+   defined in a list file using the option :option:`list`. The list can be generated e.g.
+   by :ref:`scevtstreams`.
 
    .. code-block:: sh
 
