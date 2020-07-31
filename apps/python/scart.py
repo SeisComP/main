@@ -483,7 +483,8 @@ Options:
                      times are of course UTC and separated by a tilde ~
     -d, --dump       export (dump) mode
     -l, --list       uses a stream list file instead of defined networks and
-                     channels (-n and -c are ignored)
+                     channels (-n and -c are ignored). The list can be generated
+                     from events by scevtstreams.
                      line format: starttime;endtime;streamID
                                   2007-03-28 15:48;2007-03-28 16:18;GE.LAST.*.*
                                   2007-03-28 15:48;2007-03-28 16:18;GE.PMBI..BH?
