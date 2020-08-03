@@ -123,6 +123,7 @@ class TraceViewApp : public Kicker<Seiscomp::Applications::TraceView::MainWindow
 			}
 			catch ( ... ) {
 				try {
+					_filterNames.clear();
 					_filterNames.push_back(configGetString("filter"));
 				}
 				catch ( ... ) {}
