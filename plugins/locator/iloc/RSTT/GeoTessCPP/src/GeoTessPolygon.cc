@@ -201,10 +201,10 @@ void GeoTessPolygon::loadAscii(vector<string>& records)
 			if (tokens.size() == 2)
 			{
 				val1 = CPPUtils::stod(tokens[0]);
-				if (!isnan(val1))
+				if (!std::isnan(val1))
 				{
 					val2 = CPPUtils::stod(tokens[1]);
-					if (!isnan(val2))
+					if (!std::isnan(val2))
 					{
 						vector<double> pair;
 						pair.push_back(val1);

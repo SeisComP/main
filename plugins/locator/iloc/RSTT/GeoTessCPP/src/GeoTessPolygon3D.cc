@@ -121,7 +121,7 @@ void GeoTessPolygon3D::loadAscii(vector<string>& records)
 			if (tokens.size() == 4)
 			{
 				double x = CPPUtils::stod(tokens[2]);
-				if (isnan(x))
+				if (std::isnan(x))
 				{
 					ostringstream os;
 					os << endl << "ERROR in Polygon3D::loadAscii" << endl

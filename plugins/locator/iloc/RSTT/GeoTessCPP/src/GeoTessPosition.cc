@@ -371,7 +371,7 @@ double GeoTessPosition::getValue(int attribute)
 					radialIndexes[i], radialCoefficients[i], attribute);
 	}
 
-	return isnan(value) ? getErrorValue() : value;
+	return std::isnan(value) ? getErrorValue() : value;
 }
 
 /**
@@ -409,7 +409,7 @@ double GeoTessPosition::getRadiusTop(int layer)
 		for (int i = 0; i < (int) v.size(); ++i)
 			layerRadii[layer + 1] += modlProfiles[v[i]][layer]->getRadiusTop() * c[i];
 	}
-	return isnan(layerRadii[layer + 1]) ? getErrorValue() : layerRadii[layer + 1];
+	return std::isnan(layerRadii[layer + 1]) ? getErrorValue() : layerRadii[layer + 1];
 }
 
 /**
@@ -447,7 +447,7 @@ double GeoTessPosition::getRadiusBottom(int layer)
 		for (int i = 0; i < (int) v.size(); ++i)
 			layerRadii[layer] += modlProfiles[v[i]][layer]->getRadiusBottom() * c[i];
 	}
-	return isnan(layerRadii[layer]) ? getErrorValue() : layerRadii[layer];
+	return std::isnan(layerRadii[layer]) ? getErrorValue() : layerRadii[layer];
 }
 
 /**
