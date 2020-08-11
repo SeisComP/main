@@ -317,7 +317,7 @@ public:
 template<>
 inline bool	GeoTessDataValue<double>::isNaN(int attributeIndex) const
 {
-	return (isnan(value));
+	return (std::isnan(value));
 }
 
 /**
@@ -327,7 +327,7 @@ template<>
 inline bool	GeoTessDataValue<float>::isNaN(int attributeIndex) const
 {
 	double v = (double) value;
-	return (isnan(v));
+	return (std::isnan(v));
 }
 
 /**
