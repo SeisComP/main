@@ -1,18 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="scalert" category="Utilities">
-		<description>Real time (voice) alert template.</description>
+		<description>Real time alert template.</description>
 		<configuration>
 			<parameter name="firstNew" type="boolean" default="false">
 				<description>
-					Treats an event as new event when it is seen the first time.
+					Treat an event as new event when it is seen the first time.
 				</description>
 			</parameter>
 			<parameter name="agencyIDs" type="list:string" default="">
 				<description>
-					Defines a white list of agencyIDs to alert an event. The
-					agencyID is extracted from the preferred origin of the event.
-					If this list is empty, all agencies are allowed.
+					List of agencyIDs to consider origins. The
+					agencyID is extracted from the preferred origin of the event
+					and compared with the configured IDs.
+
+					unset (=): use agencyID defined in global
+
+					empty list (=""): all agencies are allowed
 				</description>
 			</parameter>
 			<group name="poi">
@@ -44,24 +48,24 @@
 			<group name="scripts">
 				<parameter name="amplitude" type="string">
 					<description>
-					Specify the script to be called if an amplitude
-					arrives, network-, stationcode and amplitude are passed
-					as parameters $1, $2 and $3.
+                    The script to be called when an amplitude
+                    arrives. Network-, stationcode, amplitude and amplitude publicID are passed
+                    as parameters $1, $2, $3, $4.
 					</description>
 				</parameter>
 				<parameter name="alert" type="string">
 					<description>
-					Specify the script to be called if a preliminary
-					origin arrives, latitude and longitude are passed as
+					The script to be called when a preliminary
+					origin arrives. Latitude and longitude are passed as
 					parameters $1 and $2.
 					</description>
 				</parameter>
 				<parameter name="event" type="string">
 					<description>
-					Specify the script to be called when an event has been
-					declared; the message string, a flag (1=new event,
+					The script to be called when an event has been
+					declared. The message string, a flag (1=new event,
 					0=update event), the EventID, the arrival count and the
-					magnitude (optional when set) are passed as parameter
+					magnitude (optional when set) are passed as parameters
 					$1, $2, $3, $4 and $5.
 					</description>
 				</parameter>
