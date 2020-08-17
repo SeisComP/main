@@ -64,13 +64,13 @@ class VoiceAlert(seiscomp.client.Application):
                                      "calls an event a new event when it is seen the first time")
         self.commandline().addGroup("Alert")
         self.commandline().addStringOption("Alert", "amp-type",
-                                           "specify the amplitude type to listen to", self._ampType)
+                                           "amplitude type to listen to", self._ampType)
         self.commandline().addStringOption("Alert", "amp-script",
-                                           "specify the script to be called when a stationamplitude arrived, network-, stationcode and amplitude are passed as parameters $1, $2 and $3")
+                                           "script to be called when a stationamplitude arrived, network-, stationcode and amplitude are passed as parameters $1, $2 and $3")
         self.commandline().addStringOption("Alert", "alert-script",
-                                           "specify the script to be called when a preliminary origin arrived, latitude and longitude are passed as parameters $1 and $2")
+                                           "script to be called when a preliminary origin arrived, latitude and longitude are passed as parameters $1 and $2")
         self.commandline().addStringOption("Alert", "event-script",
-                                           "specify the script to be called when an event has been declared; the message string, a flag (1=new event, 0=update event), the EventID, the arrival count and the magnitude (optional when set) are passed as parameter $1, $2, $3, $4 and $5")
+                                           "script to be called when an event has been declared; the message string, a flag (1=new event, 0=update event), the EventID, the arrival count and the magnitude (optional when set) are passed as parameter $1, $2, $3, $4 and $5")
         self.commandline().addGroup("Cities")
         self.commandline().addStringOption("Cities", "max-dist",
                                            "maximum distance for using the distance from a city to the earthquake")
@@ -84,6 +84,7 @@ class VoiceAlert(seiscomp.client.Application):
         if not seiscomp.client.Application.init(self):
             return False
 
+        # module configuration paramters
         try:
             self._newWhenFirstSeen = self.configGetBool("firstNew")
         except:
@@ -96,16 +97,11 @@ class VoiceAlert(seiscomp.client.Application):
 
         try:
             agencyIDs = self.configGetStrings("agencyIDs")
+            self._agencyIDs = ""
             for item in agencyIDs:
                 item = item.strip()
                 if item not in self._agencyIDs:
                     self._agencyIDs.append(item)
-        except:
-            pass
-
-        try:
-            if self.commandline().hasOption("first-new"):
-                self._newWhenFirstSeen = True
         except:
             pass
 
@@ -120,12 +116,19 @@ class VoiceAlert(seiscomp.client.Application):
             pass
 
         try:
+            self._citiesMinPopulation = self.configGetInt("poi.minPopulation")
+        except:
+            pass
+
+        # mostly command-line options
+        try:
             self._citiesMaxDist = self.commandline().optionDouble("max-dist")
         except:
             pass
 
         try:
-            self._citiesMinPopulation = self.configGetInt("poi.minPopulation")
+            if self.commandline().hasOption("first-new"):
+                self._newWhenFirstSeen = True
         except:
             pass
 
@@ -149,12 +152,14 @@ class VoiceAlert(seiscomp.client.Application):
 
         if self._ampScript:
             self._ampScript = seiscomp.system.Environment.Instance().absolutePath(self._ampScript)
+            seiscomp.logging.info("Using amplitude script %s" % self._ampScript)
 
         try:
             self._alertScript = self.commandline().optionString("alert-script")
         except:
             try:
                 self._alertScript = self.configGetString("scripts.alert")
+                seiscomp3.Logging.info("Using alert script %s" % self._alertScript)
             except:
                 seiscomp.logging.warning("No alert script defined")
 
@@ -190,7 +195,10 @@ class VoiceAlert(seiscomp.client.Application):
             seiscomp.logging.info(
                 "A new event is declared when I see it the first time")
 
-        seiscomp.logging.info("agencyIDs: %s" % (" ".join(self._agencyIDs)))
+        if self._agencyIDs:
+            seiscomp.logging.info("agencyIDs: %s" % (" ".join(self._agencyIDs)))
+        else:
+            seiscomp.logging.info("agencyIDs: no filter is applied")
 
         return True
 
@@ -211,9 +219,15 @@ class VoiceAlert(seiscomp.client.Application):
                 sys.stderr.write(i)
             return False
 
-    def runAmpScript(self, net, sta, amp):
+    def runAmpScript(self, ampObject):
         if not self._ampScript:
             return
+
+        # parse values
+        net = ampObject.waveformID().networkCode()
+        sta = ampObject.waveformID().stationCode()
+        amp = ampObject.amplitude().value()
+        ampID = ampObject.publicID()
 
         if self._ampProc is not None:
             if self._ampProc.poll() is None:
@@ -222,7 +236,7 @@ class VoiceAlert(seiscomp.client.Application):
                 return
         try:
             self._ampProc = subprocess.Popen(
-                [self._ampScript, net, sta, "%.2f" % amp])
+                [self._ampScript, net, sta, "%.2f" % amp, ampID])
             seiscomp.logging.info(
                 "Started amplitude script with pid %d" % self._ampProc.pid)
         except:
@@ -333,8 +347,7 @@ class VoiceAlert(seiscomp.client.Application):
                 sys.stderr.write(i)
 
     def notifyAmplitude(self, amp):
-        self.runAmpScript(amp.waveformID().networkCode(
-        ), amp.waveformID().stationCode(), amp.amplitude().value())
+        self.runAmpScript(amp)
 
     def notifyEvent(self, evt, newEvent=True, dtmax=3600):
         try:
