@@ -23,7 +23,7 @@ from seiscomp.client import Application
 
 #-------------------------------------------------------------------------------
 # Converts a unicode string to a byte string
-b_str = lambda s: s.encode('utf-8')
+b_str = lambda s: s.encode('utf-8', 'replace')
 
 
 #-------------------------------------------------------------------------------
