@@ -495,16 +495,22 @@ Options:
                      of the real time difference between the records
     -n               network list (comma separated), default: *
     -c               channel filter (regular expression),
-                     default: (B|S|M|H|E)(L|H)(Z|N|E)
+                     default: "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
     -E               sort according to record end time; default is start time
         --files      specify the file handles to cache; default: 100
     -v, --verbose    verbose mode
         --test       test mode, no record output
     -h, --help       display this help message
 
-Example:
+Examples:
+
+- Read from /archive and create a sorted miniSEED file
 
   scart -dsv -t '2007-03-28 15:48~2007-03-28 16:18' /archive > sorted.mseed
+
+- Read miniSEED data from file [your file] and create an SDS archive
+
+  scart -I file://[your file] $SEISCOMP_ROOT/var/lib/archive
 
 """
 
@@ -536,7 +542,7 @@ recordURL = "file://-"
 speed = 0
 stdout = False
 
-channels = "(B|S|M|H|E)(L|H)(Z|N|E)"
+channels = "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
 networks = "*"
 
 archiveDirectory = "./"
