@@ -1,6 +1,7 @@
 /***************************************************************************
- * Copyright (C) GFZ Potsdam                                               *
+ * Copyright (C) gempa GmbH                                                *
  * All rights reserved.                                                    *
+ * Contact: gempa GmbH (seiscomp-dev@gempa.de)                             *
  *                                                                         *
  * GNU Affero General Public License Usage                                 *
  * This file may be used under the terms of the GNU Affero                 *
@@ -9,6 +10,11 @@
  * file. Please review the following information to ensure the GNU Affero  *
  * Public License version 3.0 requirements will be met:                    *
  * https://www.gnu.org/licenses/agpl-3.0.html.                             *
+ *                                                                         *
+ * Other Usage                                                             *
+ * Alternatively, this file may be used in accordance with the terms and   *
+ * conditions contained in a signed written agreement between you and      *
+ * gempa GmbH.                                                             *
  ***************************************************************************/
 
 
@@ -282,7 +288,7 @@ class RegionCheckProcessor : public Seiscomp::Client::EventProcessor {
 							}
 						}
 						else {
-							SEISCOMP_ERROR("  + evrc: minDepth not found for region %s, not considered",
+							SEISCOMP_DEBUG("  + evrc: minDepth not found for region %s, not considered",
 							               _regions[i].first->name().c_str());
 						}
 
@@ -296,7 +302,7 @@ class RegionCheckProcessor : public Seiscomp::Client::EventProcessor {
 							}
 						}
 						else {
-							SEISCOMP_ERROR("  + evrc: maxDepth not found for region %s, not considered",
+							SEISCOMP_DEBUG("  + evrc: maxDepth not found for region %s, not considered",
 							               _regions[i].first->name().c_str());
 						}
 					}

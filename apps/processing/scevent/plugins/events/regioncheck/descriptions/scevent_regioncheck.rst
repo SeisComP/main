@@ -1,31 +1,41 @@
-*evrc* is a ::term:`plugin` for :ref:`scevent`. It sets the event type according to the
-location of an event by comparing the event coordinates with regions.
-By default it sets the event type to "outside of network interest" if the event is
-not within a defined region.
+*evrc* is a :term:`plugin` for :ref:`scevent`. It sets the event type according to the
+location of the preferred origin by comparing the coordinates with regions defined by
+:ref:`BNA polygons <sec-gui_layers>`.
 
-Events for which the type has been set manually are not treated.
+.. note::
+
+	Events for which the mode of the preferred origin is "manual" are not considered.
+
 
 Definition of regions
 =====================
 
 Regions are defined by :confval:`names <rc.regions>` of closed polygons provided as
-:ref:`BNA files <global_gui>` in @CONFIGDIR@/bna/ or @DATADIR@/bna/.
+:ref:`BNA files <sec-gui_layers>` in @CONFIGDIR@/bna/ or @DATADIR@/bna/.
 Events are evaluated based on their location with respect to the regions.
 
-There exist **positive and negative regions**.
-Areas enclosed by a polygon are positive regions, areas outside the polygon are negative.
-However, if the :confval:`name <rc.regions>` of the enclosing polygon starts with **!** (exclamation mark),
-the enclosed region is negative and outside is positive.
+There exist **positive and negative regions**:
 
-If a list of region names is defined, the last matching region in the list takes priority.
+* **Positive region:** All events within the area enclosed by the polygon are flagged positive,
+  all events not enclosed by the polygon are flagged negative.
+* **Negative region:** All events within the area enclosed by the polygon are flagged negative,
+  all events not enclosed by the polygon are flagged positive.
+
+Regions are negative if the :confval:`name <rc.regions>` of the enclosing polygon
+starts with **!** (exclamation mark. Otherwise the region is positive.
+
+If a list of region names is defined, the last matching region in the list takes
+priority when treating events.
 
 
 Treatment of events
 ===================
 
-When the *evrc* plugin is loaded and configured, the locations of the preferred origins
-of events are compared with the defined regions.
+When the *evrc* plugin is loaded and configured, the location of the preferred origin
+of an events is compared with the defined regions.
 Events within a positive and a negative region are flagged positive and negative, respectively.
+By default it sets the event type to "outside of network interest" if the event is
+flagged negative.
 
 #. When activating :confval:`rc.readEventTypeFromBNA` the type of positive events is set according
    to the eventType defined in :ref:`BNA headers <sec-evrc-bna>`.
@@ -34,13 +44,14 @@ Events within a positive and a negative region are flagged positive and negative
 #. When :confval:`rc.readEventTypeFromBNA` is inactive, the event type is set
    based on :confval:`rc.eventTypePositive` and :confval:`rc.eventTypeNegative`:
 
-   #. By default the type of all negative events (events within negative regions) is set to "outside of network interest".
+   #. by default the type of all negative events (events within negative regions)
+      is set to "outside of network interest".
       Prepend **accept** to :confval:`rc.regions` to unset the event type for negative events.
 
-   #. **Positive:** The event type of positive events is set to :confval:`rc.eventTypePositive`.
+   #. **positive:** The event type of positive events is set to :confval:`rc.eventTypePositive`.
       For empty :confval:`rc.eventTypePositive` the type is unset.
 
-   #. **Negative:** The event type of negative events is set to :confval:`rc.eventTypeNegative`.
+   #. **negative:** The event type of negative events is set to :confval:`rc.eventTypeNegative`.
       The default type for negative events is "outside of network interest".
 
 Evaluation is made based on the order of the regions names defined in :confval:`rc.regions`.
@@ -57,11 +68,13 @@ If events ARE NOT within positive regions their type is set to "outside of netwo
 
   Disjunct and overlapping regions in front of a default.
 
+
 Event types
 ===========
 
 The event types are either set based the types configured in :confval:`rc.eventTypePositive` and :confval:`rc.eventTypeNegative`
 or based on the type provided by the header of BNA polygons if :confval:`rc.readEventTypeFromBNA` is active.
+
 
 Type definition
 ---------------
@@ -78,6 +91,7 @@ Examples for valid event types:
 * ...
 
 Invalid values result in errors which are reported depending on the verbosity level of :ref:`scevent`.
+
 
 .. _sec-evrc-bna:
 
@@ -105,7 +119,7 @@ is "mining explosion". The name and the rank are mandatory fields.
 
 The depth of the event can be tested, too. For events within a region but with depth outside a depth range the type
 is not set. The limits of the depth range can be added to the header of the BNA files
-using the key words *minDepth* and *maxDepth*. The the depth *d* of an event must be
+using the key words *minDepth* and *maxDepth*. The depth *d* of an event must be
 within the range
 
 
@@ -130,6 +144,7 @@ Example BNA file:
      polygons in :file:`@DATADIR@` (:file:`seiscomp/share/bna`) are ignored. It is recommended
      to store BNA polygons only in :file:`seiscomp/share/bna`
 
+
 Configuration
 =============
 
@@ -141,12 +156,12 @@ global configuration of :ref:`scevent`:
    plugins = ${plugins},evrc
 
 Add BNA polygons by defining :confval:`rc.regions`.
-Use the region name to defined regions of acceptance and region names with
-leading *!* to define regions within which events are set to "outside of network interest".
+Use the region name to define positive and negative regions. Names with
+leading *!* define negative regions.
 
 .. code-block:: sh
 
-   rc.regions = accept,!area
+   rc.regions = accept,area
 
 .. note::
 
@@ -156,24 +171,25 @@ leading *!* to define regions within which events are set to "outside of network
 Activate :confval:`rc.readEventTypeFromBNA` and add the eventType key-value pair to the
 header of the :ref:`BNA polygon <sec-evrc-bna>` if the event type shall be read from the BNA polygon.
 
+
 Examples
 ========
 
-Set type events within the polygon **germany** to positive events but do not change
-the type outside:
+Set type of events within the positive polygon **germany** but do not change the type outside:
 
 .. code-block:: sh
 
    rc.regions = accept,germany
 
-Accept all events without type but set the type for all positive events within the polygon **germany** but consider negative within the polygon **quarries**:
+Accept all events without setting the type but set the type for all events within
+the positive polygon **germany** but consider negative within the polygon **quarries**:
 
 .. code-block:: sh
 
    rc.regions = accept,germany,!quarries
 
-Accept all events without setting the type but consider negative events within the polygon **germany**
-and positive events within the polygon **saxony**:
+Accept all events without setting the type but consider events within the negative polygon **germany**
+and events within the positive polygon **saxony**:
 
 .. code-block:: sh
 
