@@ -529,6 +529,8 @@ void App::done() {
 		ar.setFormattedOutput(true);
 		ar << _ep;
 		ar.close();
+		cerr << "Found "<< _ep->pickCount() << " picks and "
+		     << _ep->amplitudeCount() << " amplitudes" << endl;
 		_ep = NULL;
 	}
 
