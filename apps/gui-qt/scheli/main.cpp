@@ -564,7 +564,7 @@ int main(int argc, char** argv) {
 		}
 
 		HCApp app(argc, argv, flags, type);
-		// app.setPrimaryMessagingGroup("LISTENER_GROUP");
+		// app.setPrimaryMessagingGroup(Seiscomp::Client::Protocol::LISTENER_GROUP);
 		// TODO: Listen for events and picks and draw them into
 		//       the trace.
 		//app.addMessagingSubscription("EVENT");

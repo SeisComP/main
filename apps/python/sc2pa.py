@@ -31,7 +31,7 @@ class ProcAlert(seiscomp.client.Application):
         self.setAutoApplyNotifierEnabled(True)
         self.setInterpretNotifierEnabled(True)
 
-        self.setPrimaryMessagingGroup("LISTENER_GROUP")
+        self.setPrimaryMessagingGroup(seiscomp.client.Protocol.LISTENER_GROUP)
         self.addMessagingSubscription("EVENT")
         self.addMessagingSubscription("LOCATION")
         self.addMessagingSubscription("MAGNITUDE")

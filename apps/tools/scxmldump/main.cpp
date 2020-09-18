@@ -79,7 +79,7 @@ static void removeAllStationContributions(Seiscomp::DataModel::MomentTensor *mt)
 class EventDump : public Seiscomp::Client::Application {
 	public:
 		EventDump(int argc, char** argv) : Application(argc, argv) {
-			setPrimaryMessagingGroup("LISTENER_GROUP");
+			setPrimaryMessagingGroup(Seiscomp::Client::Protocol::LISTENER_GROUP);
 			addMessagingSubscription("EVENT");
 			setMessagingEnabled(true);
 			setDatabaseEnabled(true, false);
