@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 
 	{
 		MMApp app(argc, argv, Application::SHOW_SPLASH | Application::WANT_MESSAGING | Application::OPEN_CONNECTION_DIALOG);
-		app.setPrimaryMessagingGroup("LISTENER_GROUP");
+		app.setPrimaryMessagingGroup(Seiscomp::Client::Protocol::LISTENER_GROUP);
 		app.setMembershipMessagesEnabled(true);
 		app.setMessagingUsername("");
 		app.addMessagingSubscription("*");

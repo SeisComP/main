@@ -227,7 +227,7 @@ class Monitor(seiscomp.client.Application):
         self.setMembershipMessagesEnabled(True);
         self.addMessagingSubscription(seiscomp.client.Protocol.STATUS_GROUP)
         self.setMessagingUsername("")
-        self.setPrimaryMessagingGroup("LISTENER_GROUP")
+        self.setPrimaryMessagingGroup(seiscomp.client.Protocol.LISTENER_GROUP)
         self._clients = dict()
         self._outputScript = None
         self._outputFile = "@LOGDIR@/server.xml"

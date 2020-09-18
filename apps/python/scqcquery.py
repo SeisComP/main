@@ -22,7 +22,7 @@ class WfqQuery(seiscomp.client.Application):
     def __init__(self, argc, argv):
         seiscomp.client.Application.__init__(self, argc, argv)
 
-        self.setPrimaryMessagingGroup("LISTENER_GROUP")
+        self.setPrimaryMessagingGroup(seiscomp.client.Protocol.LISTENER_GROUP)
         self.addMessagingSubscription("QC")
         self.setMessagingEnabled(True)
         self.setDatabaseEnabled(True, True)

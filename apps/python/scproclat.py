@@ -66,7 +66,7 @@ class ProcLatency(seiscomp.client.Application):
         self.addMessagingSubscription("MAGNITUDE")
         self.addMessagingSubscription("EVENT")
 
-        self.setPrimaryMessagingGroup("LISTENER_GROUP")
+        self.setPrimaryMessagingGroup(seiscomp.client.Protocol.LISTENER_GROUP)
 
         self._directory = ""
         self._nowDirectory = ""

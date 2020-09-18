@@ -191,7 +191,7 @@ class AccessUpdater(seiscomp.client.Application):
         ##self.setLoadConfigModuleEnabled(True)
         # Load all configuration modules
         ##self.setConfigModuleName("")
-        self.setPrimaryMessagingGroup("LISTENER_GROUP")
+        self.setPrimaryMessagingGroup(seiscomp.client.Protocol.LISTENER_GROUP)
 
     def send(self, *args):
         '''
