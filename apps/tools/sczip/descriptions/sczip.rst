@@ -1,6 +1,6 @@
 sczip can compress and decompress data using the ZIP algorithm (PKZIP). It
 is not meant to supersede any available packagers but a little helper to
-decompress SC3 zipped XML formats. Like GZip, sczip can only handle one file
+decompress zipped SeisComPML formats. Like GZip, sczip can only handle one file
 and does not support archives. It compresses a byte stream and outputs a byte
 stream.
 
