@@ -78,15 +78,15 @@ class SyncStationXML : public Client::Application {
 			commandline().addGroup("Convert");
 
 			commandline().addOption("Convert", "relaxed-ns-check",
-			                        "Enables relaxed XML namespace checks. This will "
+			                        "Enable relaxed XML namespace checks. This will "
 			                        "accept also tags within a different namespace than "
 			                        "defined in the supported schema.");
 			commandline().addOption("Convert", "to-staxml",
-			                        "Converts from SC3 XML to StationXML and expects SC3 XML as input");
+			                        "Convert from SeisComPML to StationXML expecting SeisComPML as input");
 			commandline().addOption("Convert", "formatted,f",
-			                        "Enables formatted output");
+			                        "Enable formatted output");
 			commandline().addOption("Convert", "log-stages",
-			                        "Adds more output to stderr for all channel response stages when converting "
+			                        "Add more output to stderr for all channel response stages when converting "
 			                        "from StationXML");
 		}
 

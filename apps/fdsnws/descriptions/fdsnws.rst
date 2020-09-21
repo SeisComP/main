@@ -446,7 +446,7 @@ would have access to all restricted data.
 
 An extension to the FDSNWS protocol has been developed in order to use
 email-pattern-based access control lists, which is an established
-authorization mechanism in SC3 (used by Arclink). It works as follows:
+authorization mechanism in SeisComP3 (used by Arclink). It works as follows:
 
 * The user contacts an authentication service (based on eduGAIN AAI,
   e-mail, etc.) and receives a list of attributes (a token), signed by the

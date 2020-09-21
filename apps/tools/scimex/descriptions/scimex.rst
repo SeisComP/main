@@ -1,6 +1,6 @@
-scimex manages the SC3 object exchange between two or more different SeisComP systems in
+scimex manages the |scname| object exchange between two or more different SeisComP systems in
 real time. scimex may import or export the data to one or several systems. In
-contrary to :ref:`scimport` the exchange of the SC3 objects is event based.
+contrary to :ref:`scimport` the exchange of the |scname| objects is event based.
 This means no messages will be exchanged until the exporting system has produced
 an event.
 
@@ -15,7 +15,7 @@ scmaster's message groups at the source and checks if the filter criteria
 match. Once the criteria are fulfilled, the whole package of objects is send
 to the scmaster IMPORT group of the receiving system.
 
-At the receiving SC3 system an instance of scimex runs in import mode. It
+At the receiving |scname| system an instance of scimex runs in import mode. It
 fetches the whole event information from its own IMPORT group, checks the local
 filter criteria of the system and sends the collected objects to the different
 message groups, e.g. Pick, Amplitude, Magnitude, Location. In export mode

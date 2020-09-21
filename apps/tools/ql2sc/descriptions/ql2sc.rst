@@ -1,6 +1,6 @@
-ql2sc manages the import of SC3 objects from one or several QuakeLink servers
+ql2sc manages the import of SeisComP objects from one or several QuakeLink servers
 into a SeisComP system in real time. Like :ref:`scimex` but contrary to
-:ref:`scimport` the exchange of the SC3 objects is event based. This means no
+:ref:`scimport` the exchange of the SeisComP objects is event based. This means no
 messages will be exchanged until the exporting system has produced an event.
 
 The user may control at various levels which information to import. Whenever
@@ -36,7 +36,7 @@ magnitude of 6, detected by at least 10 stations and which are shallower than
 Server-side object filter
 =========================
 
-QuakeLink provides a coarse object filter for the most relevant SC3 objects:
+QuakeLink provides a coarse object filter for the most relevant SeisComP objects:
 
 ============ ==============================================================
 Option       Impact
@@ -55,7 +55,7 @@ Local object filter and routing
 ===============================
 
 Subsequent to the server-side filters a routing table defines which objects to
-import and to which message group to send them. Depending on the SC3 modules
+import and to which message group to send them. Depending on the |scname| modules
 listening to the specified message groups an object may be further processed.
 Typically no modules (other than :ref:`scmaster`) is connected to the
 ``IMPORT_GROUP`` so that objects sent to this group are just stored to the
@@ -64,7 +64,7 @@ may be used.
 
 The routing table is defined as a comma-separated list of
 ``object name:group name`` pairs. Also the routing rules are inherited
-recursively within the SC3 object tree. If no explicit rule exists for an object
+recursively within the SeisComP object tree. If no explicit rule exists for an object
 the routing of its parent is evaluated up to the ``EventParameters`` root node.
 
 Examples
@@ -150,7 +150,7 @@ are also skipped even if they carry a different agency id.
 .. note::
 
    The agency white list filter might be essential to avoid circular event
-   updates between cross-connected SC3 systems.
+   updates between cross-connected SeisComP systems.
 
 
 Workflow
@@ -186,7 +186,7 @@ properties. For e.g. arrivals this is the ``pickID`` property, for comments the
 ``id`` property.
 
 Ones all notifiers are collected they are send to the local messaging system.
-For performance reasons and because of the processing logic of listening SC3
+For performance reasons and because of the processing logic of listening |scname|
 modules ql2sc tries to batch as many notifiers as possible into one notifier
 message. A separate notifier message is created if the target message group
 changes between successive notifiers or if the configurable :confval:`batchSize`
@@ -197,7 +197,7 @@ limit is reached.
    Care must be taken when configuring the ``batchSize`` limit. If the value
    is to big the overall message size limit (default: 1MB) may be exceeded
    resulting in an undeliverable message. On the other hand a much to small
-   value will create unwanted results in the SC3 processing chain. If for
+   value will create unwanted results in the |scname| processing chain. If for
    instance picks are routed to the ``PICK`` group and the pick set is split
    into several notifier messages the local :ref:`scautoloc` might create
    locations based on an incomplete dataset.
@@ -264,4 +264,3 @@ import by routing them to ``NULL``. If magnitudes from ``A`` and from ``B``
 should be available an :ref:`agency filter<agency_filter>` may be defined. Make
 sure ``A`` and ``B`` uses distinct agency IDs and add the agency ID of ``B`` to
 ``processing.blacklist.agencies``.
-
