@@ -3977,9 +3977,15 @@ void EventTool::updateEvent(DataModel::Event *ev, bool callProcessors) {
 	// Set the modification to current time
 	try {
 		ev->creationInfo().setModificationTime(now);
+		if ( ev->creationInfo().agencyID() != agencyID() )
+			ev->creationInfo().setAgencyID(agencyID());
+		if ( ev->creationInfo().author() != author() )
+			ev->creationInfo().setAuthor(author());
 	}
 	catch ( ... ) {
 		DataModel::CreationInfo ci;
+		ci.setAgencyID(agencyID());
+		ci.setAuthor(author());
 		ci.setModificationTime(now);
 		ev->setCreationInfo(ci);
 	}
