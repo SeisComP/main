@@ -12,7 +12,6 @@
  ***************************************************************************/
 
 
-
 #define SEISCOMP_COMPONENT Autopick
 
 #include <stdio.h>
@@ -137,6 +136,9 @@ void Picker::Config::init(const Client::Application *app) {
 	catch ( ... ) {}
 
 	try { secondaryPickerType = app->configGetString("spicker"); }
+	catch ( ... ) {}
+
+	try { featureExtractionType = app->configGetString("fx"); }
 	catch ( ... ) {}
 
 	try { killPendingSecondaryProcessors = app->configGetBool("killPendingSPickers"); }

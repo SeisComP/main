@@ -12,8 +12,8 @@
  ***************************************************************************/
 
 
-#ifndef __APPS_PICKER_STATIONCONFIG_H__
-#define __APPS_PICKER_STATIONCONFIG_H__
+#ifndef APPS_PICKER_STATIONCONFIG_H
+#define APPS_PICKER_STATIONCONFIG_H
 
 #include <seiscomp/datamodel/configmodule.h>
 #include <seiscomp/utils/keyvalues.h>

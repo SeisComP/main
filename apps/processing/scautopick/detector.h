@@ -12,10 +12,8 @@
  ***************************************************************************/
 
 
-
-
-#ifndef __APPS_PICKER_DETECTOR_H__
-#define __APPS_PICKER_DETECTOR_H__
+#ifndef APPS_PICKER_DETECTOR_H
+#define APPS_PICKER_DETECTOR_H
 
 
 #include <seiscomp/processing/detector.h>

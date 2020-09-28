@@ -12,7 +12,6 @@
  ***************************************************************************/
 
 
-
 #define SEISCOMP_COMPONENT Autopick
 #include <seiscomp/logging/log.h>
 

@@ -12,15 +12,15 @@
  ***************************************************************************/
 
 
+#ifndef SEISCOMP_APPLICATIONS_PICKER
+#define SEISCOMP_APPLICATIONS_PICKER
 
-
-#ifndef SEISCOMP_APPLICATIONS_PICKER__
-#define SEISCOMP_APPLICATIONS_PICKER__
 
 #include <seiscomp/processing/application.h>
 #include <seiscomp/processing/detector.h>
 #include <seiscomp/processing/picker.h>
 #include <seiscomp/processing/secondarypicker.h>
+#include <seiscomp/processing/fx.h>
 #include <seiscomp/processing/amplitudeprocessor.h>
 
 #include <seiscomp/datamodel/eventparameters.h>
@@ -34,9 +34,7 @@
 
 
 namespace Seiscomp {
-
 namespace Applications {
-
 namespace Picker {
 
 
@@ -82,6 +80,9 @@ class App : public Processing::Application {
 		                   const DataModel::WaveformStreamID &waveformID,
 		                   const Core::Time &time);
 
+		bool addFeatureExtractor(Seiscomp::DataModel::Pick *pick,
+		                         DataModel::Amplitude *amp,
+		                         const Record *rec, bool isPrimary);
 		void addSecondaryPicker(const Core::Time &onset, const Record *rec,
 		                        const std::string& pickID);
 		void addAmplitudeProcessor(Processing::AmplitudeProcessorPtr proc,
@@ -103,8 +104,18 @@ class App : public Processing::Application {
 		void emitSPick(const Processing::SecondaryPicker *,
 		               const Processing::SecondaryPicker::Result &);
 
+		void emitFXPick(Seiscomp::DataModel::PickPtr pick,
+		                Seiscomp::DataModel::AmplitudePtr amp,
+		                bool isPrimary,
+		                const Processing::FX*,
+		                const Processing::FX::Result &);
+
 		void emitAmplitude(const Processing::AmplitudeProcessor *ampProc,
 		                   const Processing::AmplitudeProcessor::Result &res);
+
+		void sendPick(Seiscomp::DataModel::Pick *pick,
+		              Seiscomp::DataModel::Amplitude *amp,
+		              const Record *rec, bool isPrimary);
 
 
 	private:
@@ -144,9 +155,8 @@ class App : public Processing::Application {
 
 
 }
-
+}
 }
 
-}
 
 #endif
