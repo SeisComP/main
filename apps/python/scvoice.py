@@ -13,25 +13,23 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
-import os
 import sys
 import subprocess
 import traceback
-import seiscomp.core, seiscomp.client, seiscomp.datamodel, seiscomp.logging
-import seiscomp.seismology, seiscomp.system, seiscomp.math
 
+from seiscomp import (client, core, datamodel, logging, seismology, system,
+                      math)
 
-class VoiceAlert(seiscomp.client.Application):
+class VoiceAlert(client.Application):
 
     def __init__(self, argc, argv):
-        seiscomp.client.Application.__init__(self, argc, argv)
+        client.Application.__init__(self, argc, argv)
 
         self.setMessagingEnabled(True)
         self.setDatabaseEnabled(True, True)
         self.setLoadRegionsEnabled(True)
         self.setMessagingUsername("")
-        self.setPrimaryMessagingGroup(
-            seiscomp.client.Protocol.LISTENER_GROUP)
+        self.setPrimaryMessagingGroup(client.Protocol.LISTENER_GROUP)
         self.addMessagingSubscription("EVENT")
         self.addMessagingSubscription("LOCATION")
         self.addMessagingSubscription("MAGNITUDE")
@@ -46,6 +44,7 @@ class VoiceAlert(seiscomp.client.Application):
         self._citiesMaxDist = 20
         self._citiesMinPopulation = 50000
 
+        self._cache = None
         self._eventDescriptionPattern = None
         self._ampScript = None
         self._alertScript = None
@@ -60,33 +59,45 @@ class VoiceAlert(seiscomp.client.Application):
         self._agencyIDs = []
 
     def createCommandLineDescription(self):
-        self.commandline().addOption("Generic", "first-new",
-                                     "calls an event a new event when it is seen the first time")
+        self.commandline().addOption(
+            "Generic", "first-new", "calls an event a new event when it is "
+            "seen the first time")
         self.commandline().addGroup("Alert")
-        self.commandline().addStringOption("Alert", "amp-type",
-                                           "specify the amplitude type to listen to", self._ampType)
-        self.commandline().addStringOption("Alert", "amp-script",
-                                           "specify the script to be called when a stationamplitude arrived, network-, stationcode and amplitude are passed as parameters $1, $2 and $3")
-        self.commandline().addStringOption("Alert", "alert-script",
-                                           "specify the script to be called when a preliminary origin arrived, latitude and longitude are passed as parameters $1 and $2")
-        self.commandline().addStringOption("Alert", "event-script",
-                                           "specify the script to be called when an event has been declared; the message string, a flag (1=new event, 0=update event), the EventID, the arrival count and the magnitude (optional when set) are passed as parameter $1, $2, $3, $4 and $5")
+        self.commandline().addStringOption(
+            "Alert", "amp-type", "specify the amplitude type to listen to",
+            self._ampType)
+        self.commandline().addStringOption(
+            "Alert", "amp-script", "specify the script to be called when a "
+            "stationamplitude arrived, network-, stationcode and amplitude are "
+            "passed as parameters $1, $2 and $3")
+        self.commandline().addStringOption(
+            "Alert", "alert-script", "specify the script to be called when a "
+            "preliminary origin arrived, latitude and longitude are passed as "
+            "parameters $1 and $2")
+        self.commandline().addStringOption(
+            "Alert", "event-script", "specify the script to be called when an "
+            "event has been declared; the message string, a flag (1=new event, "
+            "0=update event), the EventID, the arrival count and the magnitude "
+            "(optional when set) are passed as parameter $1, $2, $3, $4 and $5")
         self.commandline().addGroup("Cities")
-        self.commandline().addStringOption("Cities", "max-dist",
-                                           "maximum distance for using the distance from a city to the earthquake")
-        self.commandline().addStringOption("Cities", "min-population",
-                                           "minimum population for a city to become a point of interest")
+        self.commandline().addStringOption(
+            "Cities", "max-dist", "maximum distance for using the distance "
+            "from a city to the earthquake")
+        self.commandline().addStringOption(
+            "Cities", "min-population", "minimum population for a city to "
+            "become a point of interest")
         self.commandline().addGroup("Debug")
-        self.commandline().addStringOption("Debug", "eventid,E", "specify Event ID")
+        self.commandline().addStringOption(
+            "Debug", "eventid,E", "specify Event ID")
         return True
 
     def init(self):
-        if not seiscomp.client.Application.init(self):
+        if not client.Application.init(self):
             return False
 
         try:
             self._newWhenFirstSeen = self.configGetBool("firstNew")
-        except:
+        except BaseException:
             pass
 
         try:
@@ -95,101 +106,101 @@ class VoiceAlert(seiscomp.client.Application):
                 item = item.strip()
                 if item not in self._agencyIDs:
                     self._agencyIDs.append(item)
-        except:
+        except BaseException:
             pass
 
         try:
             if self.commandline().hasOption("first-new"):
                 self._newWhenFirstSeen = True
-        except:
+        except BaseException:
             pass
 
         try:
             self._eventDescriptionPattern = self.configGetString("poi.message")
-        except:
+        except BaseException:
             pass
 
         try:
             self._citiesMaxDist = self.configGetDouble("poi.maxDist")
-        except:
+        except BaseException:
             pass
 
         try:
             self._citiesMaxDist = self.commandline().optionDouble("max-dist")
-        except:
+        except BaseException:
             pass
 
         try:
             self._citiesMinPopulation = self.configGetInt("poi.minPopulation")
-        except:
+        except BaseException:
             pass
 
         try:
             self._citiesMinPopulation = self.commandline().optionInt("min-population")
-        except:
+        except BaseException:
             pass
 
         try:
             self._ampType = self.commandline().optionString("amp-type")
-        except:
+        except BaseException:
             pass
 
         try:
             self._ampScript = self.commandline().optionString("amp-script")
-        except:
+        except BaseException:
             try:
                 self._ampScript = self.configGetString("scripts.amplitude")
-            except:
-                seiscomp.logging.warning("No amplitude script defined")
+            except BaseException:
+                logging.warning("No amplitude script defined")
 
         if self._ampScript:
-            self._ampScript = seiscomp.system.Environment.Instance().absolutePath(self._ampScript)
+            self._ampScript = system.Environment.Instance().absolutePath(self._ampScript)
 
         try:
             self._alertScript = self.commandline().optionString("alert-script")
-        except:
+        except BaseException:
             try:
                 self._alertScript = self.configGetString("scripts.alert")
-            except:
-                seiscomp.logging.warning("No alert script defined")
+            except BaseException:
+                logging.warning("No alert script defined")
 
         if self._alertScript:
-            self._alertScript = seiscomp.system.Environment.Instance(
+            self._alertScript = system.Environment.Instance(
             ).absolutePath(self._alertScript)
 
         try:
             self._eventScript = self.commandline().optionString("event-script")
-        except:
+        except BaseException:
             try:
                 self._eventScript = self.configGetString("scripts.event")
-                seiscomp.logging.info(
+                logging.info(
                     "Using event script: %s" % self._eventScript)
-            except:
-                seiscomp.logging.warning("No event script defined")
+            except BaseException:
+                logging.warning("No event script defined")
 
         if self._eventScript:
-            self._eventScript = seiscomp.system.Environment.Instance(
-            ).absolutePath(self._eventScript)
+            self._eventScript = system.Environment.Instance() \
+                                .absolutePath(self._eventScript)
 
-        seiscomp.logging.info("Creating ringbuffer for 100 objects")
+        logging.info("Creating ringbuffer for 100 objects")
         if not self.query():
-            seiscomp.logging.warning(
+            logging.warning(
                 "No valid database interface to read from")
-        self._cache = seiscomp.datamodel.PublicObjectRingBuffer(
+        self._cache = datamodel.PublicObjectRingBuffer(
             self.query(), 100)
 
         if self._ampScript and self.connection():
             self.connection().subscribe("AMPLITUDE")
 
         if self._newWhenFirstSeen:
-            seiscomp.logging.info(
+            logging.info(
                 "A new event is declared when I see it the first time")
 
         if not self._agencyIDs:
-            seiscomp.logging.info("agencyIDs: []")
+            logging.info("agencyIDs: []")
         else:
-            seiscomp.logging.info("agencyIDs: %s" %
-                                   (" ".join(self._agencyIDs)))
+            logging.info(
+                "agencyIDs: %s" % (" ".join(self._agencyIDs)))
 
         return True
 
@@ -197,14 +208,14 @@ class VoiceAlert(seiscomp.client.Application):
         try:
             try:
                 eventID = self.commandline().optionString("eventid")
-                event = self._cache.get(seiscomp.datamodel.Event, eventID)
+                event = self._cache.get(datamodel.Event, eventID)
                 if event:
                     self.notifyEvent(event)
-            except:
+            except BaseException:
                 pass
 
-            return seiscomp.client.Application.run(self)
-        except:
+            return client.Application.run(self)
+        except BaseException:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
@@ -216,16 +227,16 @@ class VoiceAlert(seiscomp.client.Application):
 
         if self._ampProc is not None:
             if self._ampProc.poll() is None:
-                seiscomp.logging.warning(
+                logging.warning(
                     "AmplitudeScript still in progress -> skipping message")
                 return
         try:
             self._ampProc = subprocess.Popen(
                 [self._ampScript, net, sta, "%.2f" % amp])
-            seiscomp.logging.info(
+            logging.info(
                 "Started amplitude script with pid %d" % self._ampProc.pid)
-        except:
-            seiscomp.logging.error(
+        except BaseException:
+            logging.error(
                 "Failed to start amplitude script '%s'" % self._ampScript)
 
     def runAlert(self, lat, lon):
@@ -234,135 +245,138 @@ class VoiceAlert(seiscomp.client.Application):
 
         if self._alertProc is not None:
             if self._alertProc.poll() is None:
-                seiscomp.logging.warning(
+                logging.warning(
                     "AlertScript still in progress -> skipping message")
                 return
         try:
             self._alertProc = subprocess.Popen(
                 [self._alertScript, "%.1f" % lat, "%.1f" % lon])
-            seiscomp.logging.info(
+            logging.info(
                 "Started alert script with pid %d" % self._alertProc.pid)
-        except:
-            seiscomp.logging.error(
+        except BaseException:
+            logging.error(
                 "Failed to start alert script '%s'" % self._alertScript)
 
     def handleMessage(self, msg):
         try:
-            dm = seiscomp.core.DataMessage.Cast(msg)
+            dm = core.DataMessage.Cast(msg)
             if dm:
                 for att in dm:
-                    org = seiscomp.datamodel.Origin.Cast(att)
-                    if org:
-                        try:
-                            if org.evaluationStatus() == seiscomp.datamodel.PRELIMINARY:
-                                self.runAlert(org.latitude().value(),
-                                              org.longitude().value())
-                        except:
-                            pass
+                    org = datamodel.Origin.Cast(att)
+                    if not org:
+                        continue
 
-            #ao = seiscomp.datamodel.ArtificialOriginMessage.Cast(msg)
+                    try:
+                        if org.evaluationStatus() == datamodel.PRELIMINARY:
+                            self.runAlert(org.latitude().value(),
+                                          org.longitude().value())
+                    except BaseException:
+                        pass
+
+            #ao = datamodel.ArtificialOriginMessage.Cast(msg)
             # if ao:
             #  org = ao.origin()
             #  if org:
             #    self.runAlert(org.latitude().value(), org.longitude().value())
             #  return
 
-            seiscomp.client.Application.handleMessage(self, msg)
-        except:
+            client.Application.handleMessage(self, msg)
+        except BaseException:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
 
-    def addObject(self, parentID, object):
+    def addObject(self, parentID, arg0):
+        #pylint: disable=W0622
         try:
-            obj = seiscomp.datamodel.Amplitude.Cast(object)
+            obj = datamodel.Amplitude.Cast(arg0)
             if obj:
                 if obj.type() == self._ampType:
-                    seiscomp.logging.debug("got new %s amplitude '%s'" % (
+                    logging.debug("got new %s amplitude '%s'" % (
                         self._ampType, obj.publicID()))
                     self.notifyAmplitude(obj)
 
-            obj = seiscomp.datamodel.Origin.Cast(object)
+            obj = datamodel.Origin.Cast(arg0)
             if obj:
                 self._cache.feed(obj)
-                seiscomp.logging.debug("got new origin '%s'" % obj.publicID())
+                logging.debug("got new origin '%s'" % obj.publicID())
 
                 try:
-                    if obj.evaluationStatus() == seiscomp.datamodel.PRELIMINARY:
+                    if obj.evaluationStatus() == datamodel.PRELIMINARY:
                         self.runAlert(obj.latitude().value(),
                                       obj.longitude().value())
-                except:
+                except BaseException:
                     pass
 
                 return
 
-            obj = seiscomp.datamodel.Magnitude.Cast(object)
+            obj = datamodel.Magnitude.Cast(arg0)
             if obj:
                 self._cache.feed(obj)
-                seiscomp.logging.debug(
+                logging.debug(
                     "got new magnitude '%s'" % obj.publicID())
                 return
 
-            obj = seiscomp.datamodel.Event.Cast(object)
+            obj = datamodel.Event.Cast(arg0)
             if obj:
                 org = self._cache.get(
-                    seiscomp.datamodel.Origin, obj.preferredOriginID())
+                    datamodel.Origin, obj.preferredOriginID())
                 agencyID = org.creationInfo().agencyID()
-                seiscomp.logging.debug("got new event '%s'" % obj.publicID())
+                logging.debug("got new event '%s'" % obj.publicID())
                 if not self._agencyIDs or agencyID in self._agencyIDs:
                     self.notifyEvent(obj, True)
-        except:
+        except BaseException:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
 
-    def updateObject(self, parentID, object):
+    def updateObject(self, parentID, arg0):
         try:
-            obj = seiscomp.datamodel.Event.Cast(object)
+            obj = datamodel.Event.Cast(arg0)
             if obj:
-                org = self._cache.get(
-                    seiscomp.datamodel.Origin, obj.preferredOriginID())
+                org = self._cache.get(datamodel.Origin, obj.preferredOriginID())
                 agencyID = org.creationInfo().agencyID()
-                seiscomp.logging.debug("update event '%s'" % obj.publicID())
+                logging.debug("update event '%s'" % obj.publicID())
                 if not self._agencyIDs or agencyID in self._agencyIDs:
                     self.notifyEvent(obj, False)
-        except:
+        except BaseException:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
 
     def notifyAmplitude(self, amp):
-        self.runAmpScript(amp.waveformID().networkCode(
-        ), amp.waveformID().stationCode(), amp.amplitude().value())
+        self.runAmpScript(amp.waveformID().networkCode(),
+                          amp.waveformID().stationCode(),
+                          amp.amplitude().value())
 
-    def notifyEvent(self, evt, newEvent=True, dtmax=3600):
+    def notifyEvent(self, evt, newEvent=True):
         try:
-            org = self._cache.get(
-                seiscomp.datamodel.Origin, evt.preferredOriginID())
+            org = self._cache.get(datamodel.Origin, evt.preferredOriginID())
             if not org:
-                seiscomp.logging.warning(
-                    "unable to get origin %s, ignoring event message" % evt.preferredOriginID())
+                logging.warning("unable to get origin %s, ignoring event "
+                                "message" % evt.preferredOriginID())
                 return
 
             preliminary = False
             try:
-                if org.evaluationStatus() == seiscomp.datamodel.PRELIMINARY:
+                if org.evaluationStatus() == datamodel.PRELIMINARY:
                     preliminary = True
-            except:
+            except BaseException:
                 pass
 
-            if preliminary == False:
+            if not preliminary:
                 nmag = self._cache.get(
-                    seiscomp.datamodel.Magnitude, evt.preferredMagnitudeID())
+                    datamodel.Magnitude, evt.preferredMagnitudeID())
                 if nmag:
                     mag = nmag.magnitude().value()
                     mag = "magnitude %.1f" % mag
                 else:
                     if len(evt.preferredMagnitudeID()) > 0:
-                        seiscomp.logging.warning(
-                            "unable to get magnitude %s, ignoring event message" % evt.preferredMagnitudeID())
+                        logging.warning(
+                            "unable to get magnitude %s, ignoring event "
+                            "message" % evt.preferredMagnitudeID())
                     else:
-                        seiscomp.logging.warning(
+                        logging.warning(
                             "no preferred magnitude yet, ignoring event message")
                     return
 
@@ -373,27 +387,28 @@ class VoiceAlert(seiscomp.client.Application):
                 else:
                     newEvent = True
 
-            dsc = seiscomp.seismology.Regions.getRegionName(
+            dsc = seismology.Regions.getRegionName(
                 org.latitude().value(), org.longitude().value())
 
             if self._eventDescriptionPattern:
                 try:
-                    city, dist, azi = self.nearestCity(org.latitude().value(), org.longitude(
-                    ).value(), self._citiesMaxDist, self._citiesMinPopulation)
+                    city, dist, _ = self.nearestCity(
+                        org.latitude().value(), org.longitude().value(),
+                        self._citiesMaxDist, self._citiesMinPopulation)
                     if city:
                         dsc = self._eventDescriptionPattern
-                        region = seiscomp.seismology.Regions.getRegionName(
+                        region = seismology.Regions.getRegionName(
                             org.latitude().value(), org.longitude().value())
-                        distStr = str(int(seiscomp.math.deg2km(dist)))
+                        distStr = str(int(math.deg2km(dist)))
                         dsc = dsc.replace("@region@", region).replace(
                             "@dist@", distStr).replace("@poi@", city.name())
-                except:
+                except BaseException:
                     pass
 
-            seiscomp.logging.debug("desc: %s" % dsc)
+            logging.debug("desc: %s" % dsc)
 
             dep = org.depth().value()
-            now = seiscomp.core.Time.GMT()
+            now = core.Time.GMT()
             otm = org.time().value()
 
             dt = (now - otm).seconds()
@@ -408,28 +423,28 @@ class VoiceAlert(seiscomp.client.Application):
             else:
                 dt = "%d seconds ago" % dt
 
-            if preliminary == True:
+            if preliminary:
                 message = "earthquake, preliminary, %%s, %s" % dsc
             else:
                 message = "earthquake, %%s, %s, %s, depth %d kilometers" % (
                     dsc, mag, int(dep+0.5))
             # at this point the message lacks the "ago" part
 
-            if evt.publicID() in self._prevMessage and self._prevMessage[evt.publicID()] == message:
-                seiscomp.logging.info(
-                    "Suppressing repeated message '%s'" % message)
+            if evt.publicID() in self._prevMessage and \
+               self._prevMessage[evt.publicID()] == message:
+                logging.info("Suppressing repeated message '%s'" % message)
                 return
 
             self._prevMessage[evt.publicID()] = message
             message = message % dt  # fill the "ago" part
-            seiscomp.logging.info(message)
+            logging.info(message)
 
             if not self._eventScript:
                 return
 
             if self._eventProc is not None:
                 if self._eventProc.poll() is None:
-                    seiscomp.logging.warning(
+                    logging.warning(
                         "EventScript still in progress -> skipping message")
                     return
 
@@ -441,26 +456,28 @@ class VoiceAlert(seiscomp.client.Application):
                     param2 = 1
 
                 org = self._cache.get(
-                    seiscomp.datamodel.Origin, evt.preferredOriginID())
+                    datamodel.Origin, evt.preferredOriginID())
                 if org:
                     try:
                         param3 = org.quality().associatedPhaseCount()
-                    except:
+                    except BaseException:
                         pass
 
                 nmag = self._cache.get(
-                    seiscomp.datamodel.Magnitude, evt.preferredMagnitudeID())
+                    datamodel.Magnitude, evt.preferredMagnitudeID())
                 if nmag:
                     param4 = "%.1f" % nmag.magnitude().value()
 
                 self._eventProc = subprocess.Popen(
-                    [self._eventScript, message, "%d" % param2, evt.publicID(), "%d" % param3, param4])
-                seiscomp.logging.info(
+                    [self._eventScript, message, "%d" % param2, evt.publicID(),
+                     "%d" % param3, param4])
+                logging.info(
                     "Started event script with pid %d" % self._eventProc.pid)
-            except:
-                seiscomp.logging.error("Failed to start event script '%s %s %d %d %s'" % (
-                    self._eventScript, message, param2, param3, param4))
-        except:
+            except BaseException:
+                logging.error(
+                    "Failed to start event script '%s %s %d %d %s'" % (
+                        self._eventScript, message, param2, param3, param4))
+        except BaseException:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
