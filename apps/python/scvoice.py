@@ -248,7 +248,7 @@ class VoiceAlert(seiscomp.client.Application):
 
     def handleMessage(self, msg):
         try:
-            dm = seiscomp.sore.DataMessage.Cast(msg)
+            dm = seiscomp.core.DataMessage.Cast(msg)
             if dm:
                 for att in dm:
                     org = seiscomp.datamodel.Origin.Cast(att)
