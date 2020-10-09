@@ -10,11 +10,11 @@
 			</parameter>
 			<parameter name="agencyIDs" type="list:string" default="">
 				<description>
-					List of agencyIDs to consider origins. The
-					agencyID is extracted from the preferred origin of the event
+					List of agencyIDs to consider picks and origins. The
+					agencyID is extracted from the pick or the preferred origin of the event
 					and compared with the configured IDs.
 
-					unset (=): use agencyID defined in global
+					unset (=): use agencyID defined in global, default
 
 					empty list (=""): all agencies are allowed
 				</description>
@@ -46,11 +46,18 @@
 				</parameter>
 			</group>
 			<group name="scripts">
+				<parameter name="pick" type="string">
+					<description>
+					The script to be called when a pick
+					arrives. Network-, station code, pick publicID are passed
+					as parameters $1, $2, $3.
+					</description>
+				</parameter>
 				<parameter name="amplitude" type="string">
 					<description>
-                    The script to be called when an amplitude
-                    arrives. Network-, stationcode, amplitude and amplitude publicID are passed
-                    as parameters $1, $2, $3, $4.
+					The script to be called when an amplitude
+					arrives. Network-, station code, amplitude and amplitude publicID are passed
+					as parameters $1, $2, $3, $4.
 					</description>
 				</parameter>
 				<parameter name="alert" type="string">
@@ -67,6 +74,15 @@
 					0=update event), the EventID, the arrival count and the
 					magnitude (optional when set) are passed as parameters
 					$1, $2, $3, $4 and $5.
+					</description>
+				</parameter>
+			</group>
+			<group name="constraints">
+				<description>Constraints for executing scripts</description>
+				<parameter name="phaseHints" type="list::string" default="P,S">
+					<description>
+					Start the pick script only when the phaseHint of the
+					received pick has one of the value(s).
 					</description>
 				</parameter>
 			</group>
