@@ -42,36 +42,55 @@
 				</group>
 			</group>
 			<group name="eventAssociation">
-				<group name="region">
-					<parameter name="rect" type = "string" >
-						<description>
-							Region in which scevent is allowed to create events.
-						</description>
-					</parameter>
+				<description>
+					Criteria defining if Origins are associated to an event
+					and which Origins and magnitudes become preferred.
+				</description>
 
-					<parameter name="minDepth" type="double"  unit="km">
-						<description>
-							Minimum depth for which scevent is allowed to create events.
-						</description>
-					</parameter>
-
-					<parameter name="maxDepth" type="double" unit="km">
-						<description>
-							Maximum depth for which scevent is allowed to create events.
-						</description>
-					</parameter>
-				</group>
-
-				<parameter name="minimumMagnitudes" type="int" default="4">
+				<parameter name="minimumDefiningPhases" type="int" default="10">
 					<description>
-						Minimum number of station magnitudes referenced to a network magnitude
-						to become a preferred magnitude.
+						Minimum number of Picks for an Origin that is automatic and cannot be
+						associated with an Event to be allowed to form an new Event.
+					</description>
+				</parameter>
+
+				<parameter name="minimumScore" type="double">
+					<description>
+						Minimum score of an automatic Origin to be allowed to
+						form an new Event. This requires an activated score
+						plugin and a score processor. Configure &quot;score&quot;
+						for defining the score processor and the score processor
+						parameters. If minimumScore is defined, &quot;minimumDefiningPhases&quot;
+						has no effect on association as this phase check will be
+						superseded by the score check. It is the task of the score
+						processor to evaluate a proper score for all input Origins.
+					</description>
+				</parameter>
+
+				<parameter name="ignoreFMDerivedOrigins" type="boolean" default="true">
+					<description>
+						Ignore and do not associate Origins derived
+						from CMT/MT inversions.
+					</description>
+				</parameter>
+
+				<parameter name="eventTimeBefore" type="double" unit="s" default="1800">
+					<description>
+						Time range before the Origin time of an incoming Origin to search for
+						matching events.
+					</description>
+				</parameter>
+
+				<parameter name="eventTimeAfter" type="double" unit="s" default="1800">
+					<description>
+						Time range after the Origin time of an incoming Origin to search for
+						matching events.
 					</description>
 				</parameter>
 
 				<parameter name="minimumMatchingArrivals" type="int" default="3">
 					<description>
-						Minimum number of matching picks between two origins to be associated
+						Minimum number of matching picks between two Origins to be associated
 						to the same event.
 					</description>
 				</parameter>
@@ -103,43 +122,9 @@
 					</description>
 				</parameter>
 
-				<parameter name="minimumDefiningPhases" type="int" default="10">
-					<description>
-						Minimum number of Picks for an Origin that is automatic and cannot be
-						associated with an Event to be allowed to form an new Event.
-					</description>
-				</parameter>
-
-				<parameter name="minimumScore" type="double">
-					<description>
-						Minimum score of an automatic origin to be allowed to
-						form an new Event. This requires an activated score
-						plugin and a score processor. Configure score for defining the
-						score processor and the score processor parameters.
-						If minimumScore is defined, minimumDefiningPhases has no effect at as
-						this phase check will be superseded by the score check. It is
-						the task of the score processor to evaluate a proper
-						score for all input origins.
-					</description>
-				</parameter>
-
-				<parameter name="eventTimeBefore" type="double" unit="s" default="1800">
-					<description>
-						Time range before the origin time of an incoming origin to search for
-						matching events.
-					</description>
-				</parameter>
-
-				<parameter name="eventTimeAfter" type="double" unit="s" default="1800">
-					<description>
-						Time range after the origin time of an incoming origin to search for
-						matching events.
-					</description>
-				</parameter>
-
 				<parameter name="maximumTimeSpan" type="double" unit="s" default="60">
 					<description>
-					Associates an origin with an existing event  if the origin
+					Associates an Origin with an existing event  if the Origin
 					time differs not more than 60 seconds unless the
 					minimumMatchingArrivals criteria matches.
 					</description>
@@ -147,8 +132,33 @@
 
 				<parameter name="maximumDistance" type="double" unit="degrees" default="5">
 					<description>
-						Allowed location difference between an incoming origin compared with
-						preferred origins to get associated.
+						Allowed location difference between an incoming Origin compared with
+						preferred Origins to get associated.
+					</description>
+				</parameter>
+
+				<parameter name="magTypes" type="list:string" default="M">
+					<description>
+						Magnitude type priority list for becoming a preferred magnitude for an
+						event.
+
+						Example:
+
+						M, mBc, Mw(mB), Mwp, ML, MLh, MLv, mb
+					</description>
+				</parameter>
+
+				<parameter name="enableFallbackMagnitude" type="boolean" default="false">
+					<description>
+						If true, one magnitude will be preferred even if magnitude criteria are
+						not fullfilled.
+					</description>
+				</parameter>
+
+				<parameter name="minimumMagnitudes" type="int" default="4">
+					<description>
+						Minimum number of station magnitudes referenced to a network magnitude
+						to become a preferred magnitude.
 					</description>
 				</parameter>
 
@@ -173,75 +183,9 @@
 					</description>
 				</parameter>
 
-				<parameter name="enableFallbackMagnitude" type="boolean" default="false">
+				<parameter name="priorities" type="list:string" default="AGENCY, STATUS, PHASES_AUTOMATIC, TIME_AUTOMATIC">
 					<description>
-						If true, one magnitude will be preferred even if magnitude criteria are
-						not fullfilled.
-					</description>
-				</parameter>
-
-				<parameter name="ignoreFMDerivedOrigins" type="boolean" default="true">
-					<description>
-						Defines whether to associate or to ignore origins derived
-						from CMT/MT inversions.
-					</description>
-				</parameter>
-
-				<parameter name="declareFakeEventForRejectedOrigin" type="boolean" default="false">
-					<description>
-						If the preferred origin has evaluation status 'rejected' the
-						event type will be set as 'not existing' unless the event
-						type has been fixed by an operator or the preferred origin
-						has been fixed.
-					</description>
-				</parameter>
-
-				<parameter name="magTypes" type="list:string" default="mBc, Mw(mB), Mwp, ML, MLh, MLv, mb">
-					<description>
-						Magnitude type priority list for becoming a preferred magnitude for an
-						event.
-					</description>
-				</parameter>
-
-				<parameter name="agencies" type="list:string">
-					<description>
-						The agencyID priority list. When the eventtool comes to the point to
-						select a preferred origin it orders all origins by its agency priority and
-						selects then the best one among the highest priority agency. It also defines the
-						agency priority for custom priority checks
-						(eventAssociation.priorities).
-					</description>
-				</parameter>
-
-				<parameter name="authors" type="list:string">
-					<description>
-						The author priority list. When the eventtool comes to the point to
-						select a preferred origin it orders all origins by its author priority and
-						selects then the best one among the highest priority author. It also defines the
-						author priority for custom priority checks (eventAssociation.priorities).
-					</description>
-				</parameter>
-
-				<parameter name="methods" type="list:string">
-					<description>
-						The method priority list. When the eventtool comes to the point to
-						select a preferred origin it orders all origins by its methodID priority and
-						selects then the best one among the highest priority method. It also defines the
-						method priority for custom priority checks (eventAssociation.priorities).
-						A defined method string must match exactly the string in Origin.methodID.
-					</description>
-				</parameter>
-
-				<parameter name="score" type="string">
-					<description>
-						Defines the ScoreProcessor interface to be used along
-						with priority &quot;SCORE&quot;.
-					</description>
-				</parameter>
-
-				<parameter name="priorities" type="list:string">
-					<description>
-						The general priority list to decide if an origin becomes preferred.
+						The general priority list to decide if an Origin becomes preferred.
 						The priority decreases in the order of the parameters.
 						This list is not used unless this parameter is activated.
 
@@ -249,12 +193,12 @@
 							AGENCY, STATUS, PHASES_AUTOMATIC, TIME_AUTOMATIC
 
 						Each item in the list corresponds to a check that is performed.
-						Each check computes a score of the incoming origin (s1) and the
-						current preferred origin (s2). If the s1 is lower than s2,
-						the incoming origin is rejected and does not become preferred.
+						Each check computes a score of the incoming Origin (s1) and the
+						current preferred Origin (s2). If the s1 is lower than s2,
+						the incoming Origin is rejected and does not become preferred.
 						All subsequent checks are ignored.
 						If s1 is equal to s2, the next check in the list is performed.
-						If s1 is larger than s2, the origin becomes preferred and
+						If s1 is larger than s2, the Origin becomes preferred and
 						all subsequent checks are ignored.
 
 						Available tokens:
@@ -275,43 +219,116 @@
 
 						PHASES: higher phase count = higher priority
 
-						PHASES_AUTOMATIC: only checks phase priorities for incoming automatic origins
+						PHASES_AUTOMATIC: only checks phase priorities for incoming automatic Origins
 
 						RMS: lower rms = higher priority
 
-						RMS_AUTOMATIC: only check RMS on incoming automatic origins
+						RMS_AUTOMATIC: only check RMS on incoming automatic Origins
 
-						TIME: more recent origins (creationTime) have higher priorities
+						TIME: more recent Origins (creationTime) have higher priorities
 
-						TIME_AUTOMATIC: only check creationTime priority on incoming automatic origins
+						TIME_AUTOMATIC: only check creationTime priority on incoming automatic Origins
 
 						SCORE: evaluates the score according to a configured ScoreProcessor and
-						       prefers the origin/focalmechanism with the highest score
+							   prefers the Origin/Focalmechanism with the highest score.
+					</description>
+				</parameter>
+
+				<parameter name="agencies" type="list:string">
+					<description>
+						The agencyID priority list. When the eventtool comes to the point to
+						select a preferred Origin based on AGENCY it orders all Origins by its agency priority and
+						selects then the best one among the highest priority agency. It also defines the
+						agency priority for custom priority checks
+						(eventAssociation.priorities).
+
+						The parameter is only considered when defined in &quot;priorities&quot;.
+					</description>
+				</parameter>
+
+				<parameter name="authors" type="list:string">
+					<description>
+						The author priority list. When the eventtool comes to the point to
+						select a preferred Origin based on AUTHOR it orders all Origins by its author priority and
+						selects then the best one among the highest priority author. It also defines the
+						author priority for custom priority checks (eventAssociation.priorities).
+
+						The parameter is only considered when defined in &quot;priorities&quot;.
+					</description>
+				</parameter>
+
+				<parameter name="methods" type="list:string">
+					<description>
+						The method priority list. When the eventtool comes to the point to
+						select a preferred Origin based on METHOD it orders all Origins by its methodID priority and
+						selects then the best one among the highest priority method. It also defines the
+						method priority for custom priority checks (eventAssociation.priorities).
+						A defined method string must match exactly the string in Origin.methodID.
+
+						The parameter is only considered when defined in &quot;priorities&quot;.
+					</description>
+				</parameter>
+
+				<parameter name="score" type="string">
+					<description>
+						Defines the ScoreProcessor interface to be used along
+						with priority &quot;SCORE&quot;.
+
+						The parameter is only considered when defined in &quot;priorities&quot;.
+					</description>
+				</parameter>
+
+				<parameter name="declareFakeEventForRejectedOrigin" type="boolean" default="false">
+					<description>
+						If the preferred Origin has evaluation status 'rejected', the
+						Event type will be set to 'not existing' unless the Event
+						type has been fixed by an operator or the preferred Origin
+						has been fixed.
 					</description>
 				</parameter>
 
 				<parameter name="delayTimeSpan" type="int" unit="s">
 					<description>
-						Configures a timespan to delay event creation. If a new origin arrives
-						which cannot be associated to an existing event, delay the event creation for a certain
+						Configures a timespan to delay Event creation. If a new Origin arrives
+						which cannot be associated to an existing Event, delay the Event creation for a certain
 						timespan.
 					</description>
 				</parameter>
 
+				<group name="region">
+					<parameter name="rect" type = "string" >
+						<description>
+							Region in which scevent is allowed to create Events.
+						</description>
+					</parameter>
+
+					<parameter name="minDepth" type="double"  unit="km">
+						<description>
+							Minimum depth for which scevent is allowed to create Events.
+						</description>
+					</parameter>
+
+					<parameter name="maxDepth" type="double" unit="km">
+						<description>
+							Maximum depth for which scevent is allowed to create Events.
+						</description>
+					</parameter>
+				</group>
+
 				<group name="delayFilter">
 					<description>
-						The delayFilter group configures an origin filter to activate the delay feature for
-						this origin. If more than one filter is given they are combined with AND.
+						The delayFilter group configures an Origin filter to activate the delay feature for
+						this Origin. If more than one filter is given they are combined with AND.
 					</description>
 					<parameter name="agencyID" type="string">
-						<description>The agencyID of the origin to be delayed.</description>
+						<description>The agencyID of the Origin to be delayed.</description>
 					</parameter>
 					<parameter name="author" type="string">
-						<description>The author of the origin to be delayed.</description>
+						<description>The author of the Origin to be delayed.</description>
 					</parameter>
 					<parameter name="evaluationMode" type="string">
 						<description>
-							The evaluation mode of the origin to be delayed. Can be either &quot;manual&quot;
+							The evaluation mode of the Origin to be delayed. Can be either &quot;manual&quot;
 							or &quot;automatic&quot;.
 						</description>
 					</parameter>
@@ -357,7 +374,7 @@
 				<optionReference>messaging#timeout</optionReference>
 				<optionReference>messaging#primary-group</optionReference>
 				<optionReference>messaging#subscribe-group</optionReference>
-				<optionReference>messaging#content-type</optionReference>
+				<optionReference>messaging#encoding</optionReference>
 				<optionReference>messaging#start-stop-msg</optionReference>
 			</group>
 
