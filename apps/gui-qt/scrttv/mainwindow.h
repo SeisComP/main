@@ -23,15 +23,20 @@
 #include <seiscomp/datamodel/waveformstreamid.h>
 #include <seiscomp/datamodel/configstation.h>
 #endif
+#include <seiscomp/gui/core/gradient.h>
 #include <seiscomp/gui/core/mainwindow.h>
 #include <seiscomp/gui/core/questionbox.h>
 #include <seiscomp/gui/core/recordview.h>
 #include <seiscomp/gui/core/recordstreamthread.h>
+
 #include "progressbar.h"
 #include "ui_mainwindow.h"
 
 #include <QtGui>
 #include <QTabBar>
+
+#include <set>
+
 
 class QLineEdit;
 
@@ -190,6 +195,8 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		void sortByNetworkStationCode();
 		void sortByDistance();
 		void sortByConfig();
+		void sortByGroup();
+		void colorByConfig();
 
 		void alignLeft();
 		void alignRight();
@@ -286,6 +293,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		QTimer* _timer;
 		QTimer* _switchBack;
 
+		bool _needColorUpdate;
 		bool _allowTimeWindowExtraction;
 		int  _lastFoundRow;
 		bool _showPicks;
@@ -334,11 +342,23 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 			QString     unit;
 		};
 
+		struct ChannelGroup {
+			std::vector<DataModel::WaveformStreamID> members;
+			std::string   title;
+			std::string   regionName;
+			QPen          pen;
+			int           numberOfUsedChannels{0};
+			Gui::Gradient gradient;
+		};
+
 		typedef std::set<WaveformStreamEntry, ltWaveformStreamID> WaveformStreamSet;
 		WaveformStreamSet _waveformStreams;
 
 		typedef std::vector<DecorationDesc> DecorationDescs;
 		DecorationDescs _decorationDescs;
+
+		typedef std::vector<ChannelGroup> ChannelGroups;
+		ChannelGroups _channelGroups;
 
 	friend class TraceDecorator;
 };
