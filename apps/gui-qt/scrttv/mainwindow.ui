@@ -82,6 +82,7 @@
     <addaction name="actionSortDistance" />
     <addaction name="actionSortStaCode" />
     <addaction name="actionSortNetStaCode" />
+    <addaction name="actionSortGroup" />
     <addaction name="separator" />
     <addaction name="actionHorZoomIn" />
     <addaction name="actionHorZoomOut" />
@@ -566,6 +567,20 @@
    </property>
    <property name="shortcut" >
     <string>4</string>
+   </property>
+  </action>
+  <action name="actionSortGroup" >
+   <property name="text" >
+    <string>Sort by groups</string>
+   </property>
+   <property name="iconText" >
+    <string>Sort by groups</string>
+   </property>
+   <property name="toolTip" >
+    <string>Sort by groups</string>
+   </property>
+   <property name="shortcut" >
+    <string>5</string>
    </property>
   </action>
   <action name="actionAlignOriginTime" >
