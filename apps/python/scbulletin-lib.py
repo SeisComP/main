@@ -227,7 +227,7 @@ class Bulletin(object):
             txt += "    Depth                %11.3f km" % dep
         else:
             txt += "    Depth                 %7.0f km" % dep
-        if not deperr:
+        if deperr is None:
             txt += "\n"
         elif deperr == 0:
             txt += "   (fixed)\n"
