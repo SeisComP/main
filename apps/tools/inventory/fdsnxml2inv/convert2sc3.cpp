@@ -1003,9 +1003,16 @@ DataModel::ResponsePolynomialPtr convert(const FDSNXML::ResponseStage *resp,
 	// Frequency unit is fixed at Hz.
 	// https://github.com/FDSN/StationXML/blob/v1.0/fdsn-station.xsd#L790
 	rp->setFrequencyUnit("B");
-	const char *atstr = poly->approximationType().toString();
-	if ( atstr != NULL )
-		rp->setApproximationType(atstr);
+	switch ( poly->approximationType() ) {
+		case FDSNXML::AT_MACLAURIN:
+			rp->setApproximationType("M");
+			break;
+		default:
+			SEISCOMP_WARNING("Unknown polynomial response approximation type: %s: ignoring",
+			                 poly->approximationType().toString());
+			break;
+	}
+
 	rp->setApproximationLowerBound(poly->approximationLowerBound());
 	rp->setApproximationUpperBound(poly->approximationUpperBound());
 

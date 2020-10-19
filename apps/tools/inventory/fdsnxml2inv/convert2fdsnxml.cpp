@@ -700,11 +700,14 @@ FDSNXML::ResponseStagePtr convert(const DataModel::ResponsePolynomial *poly,
 	sx_poly.setInputUnits(FDSNXML::UnitsType(inputUnit, inputUnitDescription));
 	sx_poly.setOutputUnits(FDSNXML::UnitsType(outputUnit));
 
-	FDSNXML::ApproximationType at;
-	if ( at.fromString(poly->approximationType().c_str()) )
-		sx_poly.setApproximationType(at);
-	else
+	if ( poly->approximationType() == "M" ) {
 		sx_poly.setApproximationType(FDSNXML::AT_MACLAURIN);
+	}
+	else {
+		SEISCOMP_WARNING("Unknown polynomial response approximation type: %s: setting to MACLAURIN",
+		                 poly->approximationType().c_str());
+		sx_poly.setApproximationType(FDSNXML::AT_MACLAURIN);
+	}
 
 	try { sx_poly.setApproximationLowerBound(poly->approximationLowerBound()); }
 	catch ( ... ) { sx_poly.setApproximationLowerBound(0); }
