@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp xmlns="http://geofon.gfz-potsdam.de/ns/seiscomp3-schema/0.11" version="0.11">
+  <EventParameters>
+    <origin publicID="Origin/20201015065349.251114.904">
+      <time>
+        <value>2020-10-15T06:49:58.76375Z</value>
+        <uncertainty>0.8645173907</uncertainty>
+      </time>
+      <latitude>
+        <value>-21.67427826</value>
+        <uncertainty>4.801901817</uncertainty>
+      </latitude>
+      <longitude>
+        <value>-68.84509277</value>
+        <uncertainty>7.95320797</uncertainty>
+      </longitude>
+      <depth>
+        <value>10</value>
+        <uncertainty>0</uncertainty>
+      </depth>
+      <methodID>LOCSAT</methodID>
+      <earthModelID>iasp91</earthModelID>
+      <quality>
+        <associatedPhaseCount>11</associatedPhaseCount>
+        <usedPhaseCount>9</usedPhaseCount>
+        <associatedStationCount>11</associatedStationCount>
+        <usedStationCount>9</usedStationCount>
+        <standardError>2.088579215</standardError>
+        <azimuthalGap>216.2728271</azimuthalGap>
+        <maximumDistance>3.396702528</maximumDistance>
+        <minimumDistance>0.3883109391</minimumDistance>
+        <medianDistance>1.559972882</medianDistance>
+      </quality>
+      <evaluationMode>automatic</evaluationMode>
+      <creationInfo>
+        <agencyID>gempa</agencyID>
+        <author>scautoloc@sc3training</author>
+        <creationTime>2020-10-15T06:53:49.251135Z</creationTime>
+      </creationInfo>
+    </origin>
+  </EventParameters>
+</seiscomp>

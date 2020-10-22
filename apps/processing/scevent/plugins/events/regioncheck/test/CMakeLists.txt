@@ -1,0 +1,11 @@
+RETURN()
+INCLUDE_DIRECTORIES(.)
+
+SET(TEST_NAME test_scevent_regioncheck)
+ADD_EXECUTABLE(${TEST_NAME} regioncheck.cpp ../regioncheck.cpp)
+SC_LINK_LIBRARIES_INTERNAL(${TEST_NAME} core client evplugin unittest)
+ADD_TEST(
+	NAME ${TEST_NAME}
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	COMMAND ${TEST_NAME}
+)
