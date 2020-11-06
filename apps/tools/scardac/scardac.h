@@ -11,13 +11,18 @@
  * https://www.gnu.org/licenses/agpl-3.0.html.                             *
  ***************************************************************************/
 
-#ifndef SEISCOMP_APPLICATIONS_SCARDAC_H__
-#define SEISCOMP_APPLICATIONS_SCARDAC_H__
+#ifndef SEISCOMP_DATAAVAILABILITY_SCARDAC_H
+#define SEISCOMP_DATAAVAILABILITY_SCARDAC_H
+
+#include <seiscomp/plugins/dataavailability/collector.h>
 
 #include <seiscomp/client/application.h>
 #include <seiscomp/client/queue.h>
 #include <seiscomp/client/queue.ipp>
+
 #include <seiscomp/core/datetime.h>
+#include <seiscomp/core/timewindow.h>
+
 #include <seiscomp/datamodel/dataavailability.h>
 #include <seiscomp/datamodel/dataextent.h>
 #include <seiscomp/datamodel/dataattributeextent.h>
@@ -27,13 +32,13 @@
 #include <string>
 
 namespace Seiscomp {
-namespace Applications {
+namespace DataAvailability {
 
 class SCARDAC;
 
 class Worker {
 	public:
-		Worker(const SCARDAC *app, int id);
+		Worker(const SCARDAC *app, int id, Collector *collector);
 
 		void processExtent(DataModel::DataExtent *extent, bool foundInDB);
 
@@ -45,34 +50,38 @@ class Worker {
 		bool dbConnect(DataModel::DatabaseReaderPtr &db, const char *info);
 
 		DataModel::DatabaseIterator dbSegments();
-		bool readFileSegments(Segments &segments, const std::string &file,
-		                      const Core::Time &mtime);
+		bool readChunkSegments(Segments &segments, const std::string &chunk,
+		                       const Core::Time &mtime,
+		                       const Core::TimeWindow &window);
 
 		bool findDBSegment(DataModel::DatabaseIterator &it,
 		                   const DataModel::DataSegment *segment);
 
-		void removeSegment(DataModel::DataSegmentPtr segment);
-		void addSegment(DataModel::DataSegmentPtr segment);
+		void removeSegment(const DataModel::DataSegmentPtr &segment);
+		void addSegment(const DataModel::DataSegmentPtr &segment);
 		void flushSegmentBuffers();
 
 		bool writeExtent(DataModel::Operation op);
 		bool syncAttributeExtents(const DataModel::DataExtent &tmpExt);
 
 	private:
-		const SCARDAC*                          _app;
-		int                                     _id;
-		DataModel::DatabaseReaderPtr            _dbRead;
-		DataModel::DatabaseReaderPtr            _dbWrite;
+		const SCARDAC*                  _app{nullptr};
+		int                             _id{0};
+		CollectorPtr                    _collector;
 
-		// variables valid per extent
-		DataModel::DataExtent                  *_extent;
-		std::string                             _sid;
-		Segments                                _segmentsRemove;
-		Segments                                _segmentsAdd;
-		DataModel::DataSegmentPtr               _currentSegment;
+		// initialized by first processExtent call and reused subsequently
+		DataModel::DatabaseReaderPtr    _dbRead;
+		DataModel::DatabaseReaderPtr    _dbWrite;
+
+		// variables valid per processExtent call
+		DataModel::DataExtent          *_extent;
+		std::string                     _sid;
+		Segments                        _segmentsRemove;
+		Segments                        _segmentsAdd;
+		DataModel::DataSegmentPtr       _currentSegment;
 };
 
-class SCARDAC : public Seiscomp::Client::Application {
+class SCARDAC : public Client::Application {
 	// ----------------------------------------------------------------------
 	//  X'truction
 	// ----------------------------------------------------------------------
@@ -105,9 +114,6 @@ class SCARDAC : public Seiscomp::Client::Application {
 		bool validateParameters();
 		bool run();
 
-		void checkDirectory(int level, const std::string &dir);
-		void checkFiles(const std::string &dir);
-
 		void processExtents(int threadID);
 		bool generateTestData();
 
@@ -116,33 +122,38 @@ class SCARDAC : public Seiscomp::Client::Application {
 	// ----------------------------------------------------------------------
 	protected:
 		// configuration parameters
-		int                             _threads;
-		int                             _batchSize;
-		float                           _jitter;
-		bool                            _deepScan;
-		int                             _maxSegments;
-		std::string                     _testData;
+		std::string _archive{"sds://@ROOTDIR@/var/lib/archive"};
+		int         _threads{1};
+		int         _batchSize{100};
+		float       _jitter{0.5};
+		bool        _deepScan{false};
+		int         _maxSegments{1000000};
+		std::string _from;
+		std::string _to;
+		Core::Time  _startTime;
+		Core::Time  _endTime;
 
-		std::string                     _archive;
-		std::vector<std::string>        _archiveYears;
-		DataModel::DataAvailability     _dataAvailability;
+		std::string                          _testData;
+		DataAvailability::CollectorPtr       _collector;
+
+		DataModel::DataAvailability          _dataAvailability;
 
 		// Map of stream ID to extents
 		typedef std::map<std::string, DataModel::DataExtent*> ExtentMap;
-		ExtentMap                       _extentMap;
+		ExtentMap                            _extentMap;
 
 		// Thread safe queue of extends to process
 		Client::ThreadedQueue<WorkQueueItem> _workQueue;
 
 		typedef std::vector<boost::thread*> WorkerList;
-		WorkerList                      _worker;
+		WorkerList                           _worker;
 
 	private:
 		friend class Worker;
 };
 
-} // ns Applications
+} // ns DataAvailability
 } // ns Seiscomp
 
-#endif // SEISCOMP_APPLICATIONS_SCARDAC_H__
+#endif // SEISCOMP_DATAAVAILABILITY_SCARDAC_H
 

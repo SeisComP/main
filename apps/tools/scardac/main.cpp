@@ -16,6 +16,6 @@
 
 
 int main(int argc, char **argv) {
-	Seiscomp::Applications::SCARDAC app(argc, argv);
+	Seiscomp::DataAvailability::SCARDAC app(argc, argv);
 	return app();
 }

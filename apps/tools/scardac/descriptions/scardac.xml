@@ -28,7 +28,7 @@
 				records in multiples of sample time.
 				</description>
 			</parameter>
-<!-- Not yet implemented
+<!--
 			<parameter name="deepScan" type="boolean" default="false">
 				<description>
 				By default the last scan time of the extent is compared with
