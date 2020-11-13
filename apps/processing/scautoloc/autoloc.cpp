@@ -100,6 +100,7 @@ bool Autoloc3::init()
         if ( ! _nucleator.init())
                 return false;
 
+	SEISCOMP_DEBUG("Setting configured locator profile: %s", _config.locatorProfile.c_str());
 	setLocatorProfile(_config.locatorProfile);
 
 	return true; // ready to start processing
