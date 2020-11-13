@@ -133,7 +133,11 @@ Different methods are available for summarizing the station magnitudes:
 * trimmed mean value:
   To stabilize the network magnitudes the smallest and the largest 12.5% of the
   :term:`station magnitude` values are removed before computing the mean.
-* median: the usual media value
+* median: the usual median value
+* median trimmed mean:
+  Removing all station magnitudes with a distance greater than 0.5 (default)
+  from the median of all station magnitudes and computing the mean of all
+  remaining station magnitudes.
 
 Default values apply for each magnitude type.
 In :ref:`scolv` the methods, the stations magnitudes and other parameters can be

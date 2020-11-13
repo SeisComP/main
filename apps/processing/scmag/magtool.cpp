@@ -76,6 +76,8 @@ std::string averageMethodToString(const MagTool::AverageDescription &desc) {
 		return "median";
 	else if ( desc.type == MagTool::TrimmedMedian )
 		return "trimmed median(" + Core::toString(desc.parameter) + ")";
+	else if ( desc.type == MagTool::MedianTrimmedMean )
+		return "median trimmed mean(" + Core::toString(desc.parameter) + ")";
 
 	return "unknown";
 }
@@ -120,6 +122,20 @@ bool averageMethodFromString(MagTool::AverageDescription &desc, const std::strin
 
 		desc.type = MagTool::TrimmedMedian;
 		desc.parameter = percent;
+		return true;
+	}
+
+	if ( method.compare(0, 13, "median trimmed mean(") == 0 ) {
+		size_t p = method.find_last_of(')', 15);
+		if ( p == string::npos )
+			return false;
+
+		double distance;
+		if ( !Core::fromString(distance, method.substr(15, p-15)) )
+			return false;
+
+		desc.type = MagTool::MedianTrimmedMean;
+		desc.parameter = distance;
 		return true;
 	}
 
@@ -539,12 +555,30 @@ DataModel::Magnitude *MagTool::getMagnitude(DataModel::Origin* origin,
 	}
 	else {
 		if ( !_allowReprocessing ) {
+			bool rejectProcessing = false;
+
 			try {
 				// Check if evaluation status is set
 				mag->evaluationStatus();
-				return NULL;
+				rejectProcessing = true;
+
+				// Check if scmag has set it to rejected and allow reprocessing.
+				// This is important if a magnitude has been set rejected
+				// because all station magnitudes haven't passed the QC.
+				// Otherwise this case would lock further processing of this
+				// magnitude.
+				try {
+					if ( mag->evaluationStatus() == DataModel::REJECTED
+					  && mag->creationInfo().author() == SCCoreApp->author()
+					  && mag->creationInfo().agencyID() == SCCoreApp->agencyID() )
+						rejectProcessing = false;
+				}
+				catch ( ... ) {}
 			}
 			catch ( ... ) {}
+
+			if ( rejectProcessing )
+				return NULL;
 		}
 
 		if ( newInstance ) *newInstance = false;
@@ -1214,6 +1248,11 @@ bool MagTool::computeAverage(AverageDescription &avg,
 			else
 				stdev = 0;
 
+			break;
+
+		case MedianTrimmedMean:
+			methodID = "median trimmed median(" + Core::toString(avg.parameter) + ")";
+			Math::Statistics::computeMedianTrimmedMean(values, avg.parameter, value, stdev, &weights);
 			break;
 
 		default:
