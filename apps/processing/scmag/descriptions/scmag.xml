@@ -56,7 +56,10 @@
 
 						The default behaviour is to compute the mean if less than 4 contributed
 						station magnitudes exist otherwise a trimmed mean of 25 percent is used.
-						Options are &quot;default&quot;, &quot;mean&quot; and &quot;trimmedMean&quot;.</description>
+
+						Options are &quot;default&quot;, &quot;mean&quot;,
+						&quot;trimmedMean&quot; and &quot;medianTrimmedMean&quot;.
+					</description>
 				</parameter>
 			</group>
 		</configuration>

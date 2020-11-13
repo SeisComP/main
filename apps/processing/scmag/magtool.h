@@ -56,7 +56,8 @@ class MagTool {
 			Mean,
 			TrimmedMean,
 			Median,
-			TrimmedMedian
+			TrimmedMedian,
+			MedianTrimmedMean
 		};
 
 		struct AverageDescription {

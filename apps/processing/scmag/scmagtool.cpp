@@ -164,6 +164,21 @@ class MagToolApp : public Seiscomp::Client::Application {
 				desc.type = MagTool::TrimmedMedian;
 				desc.parameter = percent;
 			}
+			else if ( value == "medianTrimmedMean" ) {
+				double distance;
+				if ( !Core::fromString(distance, param) ) {
+					SEISCOMP_ERROR("magnitudes.average(%s): 'medianTrimmedMean' parameter is not a number", type);
+					return false;
+				}
+
+				if ( distance < 0 || distance > 100 ) {
+					SEISCOMP_ERROR("magnitudes.average(%s): 'medianTrimmedMean' parameter with %.2f is out of bounds", type, distance);
+					return false;
+				}
+
+				desc.type = MagTool::MedianTrimmedMean;
+				desc.parameter = distance;
+			}
 			else {
 				SEISCOMP_ERROR("magnitudes.average(%s): unknown average method '%s'", type, value.c_str());
 				return false;
