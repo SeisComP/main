@@ -4,6 +4,14 @@
 		<description>Locates seismic events.</description>
 		<configuration>
 			<group name="locator">
+				<description>
+				Define parameters of the locator. Only LOCSAT is supported.
+				</description>
+				<parameter name="profile" type="string" default="iasp91">
+					<description>
+					The locator profile to use.
+					</description>
+				</parameter>
 				<parameter name="defaultDepth" type="double" default="10" unit="km">
 					<description>
 					For each location, scautoloc performs checks to test if the
@@ -28,13 +36,6 @@
 				</parameter>
 			</group>
 			<group name="autoloc">
-				<group name="locator">
-					<parameter name="profile" type="string" default="iasp91">
-						<description>
-						The locator profile to use.
-						</description>
-					</parameter>
-				</group>
 				<parameter name="maxRMS" type="double" default="3.5" unit="s">
 					<description>
 					Max. permissible RMS for a location to be reported.
@@ -171,7 +172,9 @@
 					</parameter>
 					<parameter name="minAmplitude" type="double" default="10000">
 						<description>
-						Minimum amplitude for a pick to be flagged as XXL. NOTE that
+						Minimum amplitude for a pick to be flagged as XXL. The
+						value corresponds to the amplitude type configured in
+						autoloc.amplTypeAbs. NOTE that
 						BOTH minAmplitude and minSNR need to be exceeded!
 						</description>
 					</parameter>

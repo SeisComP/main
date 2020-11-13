@@ -297,7 +297,10 @@ bool App::initConfiguration() {
 	try { _amplTypeSNR = configGetString("autoloc.amplTypeSNR"); } catch (...) {}
 	try { _amplTypeAbs = configGetString("autoloc.amplTypeAbs"); } catch (...) {}
 	try { _stationLocationFile = configGetString("autoloc.stationLocations"); } catch (...) {}
+	// support depreciated configuration
 	try { _config.locatorProfile = configGetString("autoloc.locator.profile"); } catch (...) {}
+	// override depreciated configuration if value is set
+	try { _config.locatorProfile = configGetString("locator.profile"); } catch (...) {}
 
 	try { _config.playback = configGetBool("autoloc.playback"); } catch ( ... ) {}
 	try { _config.offline = configGetBool("autoloc.offline"); } catch ( ... ) {}
