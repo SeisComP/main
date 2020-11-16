@@ -35,7 +35,30 @@
 					</description>
 				</parameter>
 			</group>
+			<group name="buffer">
+				<description>
+				Control the buffer of objects.
+				</description>
+				<parameter name="pickKeep" type="double" default="21600" unit="s">
+					<description>
+					Time to keep picks in the buffer with respect to pick time, not creation time.
+					</description>
+				</parameter>
+				<parameter name="originKeep" type="integer" default="86400" unit="s">
+					<description>
+					Time to keep origins in buffer.
+					</description>
+				</parameter>
+				<parameter name="cleanupInterval" type="integer" default="3600" unit="s">
+					<description>
+					Clean-up interval for removing old/unused objects.
+					</description>
+				</parameter>
+			</group>
 			<group name="autoloc">
+				<description>
+				Define parameters for creating and reporting origins.
+				</description>
 				<parameter name="maxRMS" type="double" default="3.5" unit="s">
 					<description>
 					Max. permissible RMS for a location to be reported.
@@ -43,29 +66,30 @@
 				</parameter>
 				<parameter name="maxResidual" type="double" default="7.0" unit="s">
 					<description>
-					Max. individual residual (unweighted) for a pick to be used
-					in locationMax. permissible RMS for a location to be reported.
+					Maximum station residual (unweighted) for a pick to be used.
 					</description>
 				</parameter>
 				<parameter name="minPhaseCount" type="integer" default="6">
 					<description>
-					Minimum number of phases.
+					Minimum number of phases for reporting origins.
 					</description>
 				</parameter>
 				<parameter name="maxDepth" type="double" default="1000" unit="km">
 					<description>
-					Maximum permissible depth for a location to be reported.
+					Maximum permissible depth for reporting origins.
 					</description>
 				</parameter>
 				<parameter name="maxSGAP" type="double" default="360" unit="deg">
 					<description>
-					Max. secondary azimuth gap for an origin to be reported by.
-					Default is 360 degrees, i.e. no restriction based on this parameter.
+					Maximum secondary azimuth gap for an origin to be reported by.
+					The secondary gap is the maximum of the sum of 2 station gaps.
+
+					Default: 360 degrees, i.e. no restriction based on this parameter.
 					</description>
 				</parameter>
 				<parameter name="maxStationDistance" type="double" default="180" unit="deg">
 					<description>
-					Stations outside the maximum distance range are ignored.
+					Maximum epicntral distance to stations for accepting picks.
 					</description> 
 				</parameter>
 				<parameter name="minStaCountIgnorePKP" type="integer" default="30">
@@ -74,27 +98,6 @@
 					exceeds this number, no picks at &gt; 105 degrees will be
 					used in location. They will be loosely associated, though.
 					</description> 
-				</parameter>
-				<parameter name="cleanupInterval" type="integer" default="3600" unit="s">
-					<description>
-					Clean-up interval for removing old/unused objects.
-					</description> 
-				</parameter>
-				<parameter name="maxAge" type="integer" default="21600" unit="s">
-					<description>
-					 Max. age for objects kept in memory.
-					</description> 
-				</parameter>
-				<parameter name="wakeupInterval" type="integer" default="5">
-					<description>
-					 Don`t change.
-					</description> 
-				</parameter>
-				<parameter name="adoptManualDepth" type="boolean" default="true">
-					<description>
-					If set to true, autoloc adopts a depth from a manual origin. If false,
-					autoloc may set a default depth (autoloc.defaultDepth).
-					</description>
 				</parameter>
 				<parameter name="amplTypeAbs" type="string" default="mb">
 					<description>
@@ -114,57 +117,80 @@
 				<parameter name="publicationIntervalTimeSlope" type="double" unit="s/count" default="0.5">
 					<description>
 					Parameter &quot;a&quot;  in the equation t = aN + b.
-                    t is the time interval between sending updates of an origin.
-                    N is the arrival count of the origin.
+					t is the time interval between sending updates of an origin.
+					N is the arrival count of the origin.
 					</description>
 				</parameter>
 				<parameter name="publicationIntervalTimeIntercept" type="double" unit="s" default="0.">
 					<description>
-                    Parameter &quot;b&quot;  in the equation t = aN + b.
-                    t is the time interval between sending updates of an origin.
-                    N is the arrival count of the origin.
+					Parameter &quot;b&quot; in the equation t = aN + b.
+					t is the time interval between sending updates of an origin.
+					N is the arrival count of the origin.
 					</description>
 				</parameter>
-				<parameter name="grid" type="string" default="@DATADIR@/scautoloc/grid.conf">
+				<parameter name="grid" type="path" default="@DATADIR@/scautoloc/grid.conf">
 					<description>
-					Location of autoloc grid file.
+					Location of the grid file for nucleating origins.
 					</description>
 				</parameter>
 				<parameter name="stationConfig" type="path" default="@DATADIR@/scautoloc/station.conf">
 					<description>
-					Location of autoloc stations config file.
+					Location of the station configuration file for nucleating origins.
 					</description>
-				<parameter name="stationLocations" type="path">
+					</parameter>
+				<parameter name="stationLocations" type="path" default="">
 					<description>
-					The station-locations.conf file to use when in offline mode.
-					If no file is given the database is used.
+					The station file to be used when in offline mode.
+					If no file is given the database is used. An example is given
+					in &quot;@DATADIR@/scautoloc/station-locations.conf&quot;.
 					</description>
-				</parameter>
 				</parameter>
 				<parameter name="pickLog" type="string" default="@LOGDIR@/autoloc-picklog">
 					<description>
-					Location of autoloc stations config file.
+					Location of pick log file containing information about received
+					picks.
+					</description>
+				</parameter>
+				<parameter name="tryDefaultDepth" type="boolean" default="true">
+					<description>
+					Compare located origin with the origin at the depth given by
+					locator.defaultDepth. The origin with lower RMS is reported.
 					</description>
 				</parameter>
 				<parameter name="useManualOrigins" type="boolean" default="false">
 					<description>
-					If set to true, scautoloc will listen for manual origins. Manual picks and pick
+					Receive and process manual origins. Manual picks and arrival
 					weights will be adopted from the manual origin and the processing continues with these.
 					Origins produced this way by adding incoming automatic picks are nevertheless marked as
 					automatic origins. But they may contain manual picks (even pP and S picks).
 
-					Note that in order to listen to manual origins, make sure to add the LOCATION group to
-					connection.subscriptions!
+					Add the LOCATION group to connection.subscriptions for receiving manual origins!
 
 					This is an experimental feature relevant only for large regional and global networks,
-					where interaction by the analyst is expected already before the event is over.
+					where results by analysts can be expected before the end
+					of automatic event processing.
+					</description>
+				</parameter>
+				<parameter name="useManualPicks" type="boolean" default="false">
+					<description>
+					Receive and process phase picks.
+					</description>
+				</parameter>
+				<parameter name="adoptManualDepth" type="boolean" default="true">
+					<description>
+					Adopt the depth from manual origins. Otherwise the default depth
+					in locator.defaultDepth is considered.
 					</description>
 				</parameter>
 
 				<group name="xxl">
+					<description>
+					Create origins from XXL picks. These origins will receive the status "preliminary".
+					Use with care! Enabling XXL picks may result in frequent fake solutions.
+					</description>
 					<parameter name="enable" type="boolean" default="false">
 						<description>
-						Arrivals with exceptionally large amplitudes may be flagged as XXL, 
+						Picks with exceptionally large amplitudes may be flagged as XXL,
 						allowing (in future) faster, preliminary "heads-up" alerts.
 
 						This option enables the feature.
@@ -186,18 +212,18 @@
 					</parameter>
 					<parameter name="minPhaseCount" type="integer" default="4">
 						<description>
-						Minimum number of XXL phases. Currently the minimum
-						possible value is 4.
+						Minimum number of XXL picks for forming an origin.
+						Must be >= 4.
 						</description> 
 					</parameter>
 					<parameter name="maxStationDistance" type="double" default="10" unit="deg">
 						<description>
-						XXL picks from stations beyond maxDistanceXXL are ignored.
+						Maximum epicentral distance for accepting XXL picks.
 						</description> 
 					</parameter>
 					<parameter name="maxDepth" type="double" default="100" unit="km">
 						<description>
-						Only up to this depth XXL preliminary origins may be created.
+						Maximum depth for creating origins based on XXL arrivals.
 						</description> 
 					</parameter>
 				</group>
@@ -266,7 +292,8 @@
 				<option flag="" long-flag="station-locations" argument="arg" default="">
 					<description>
 					The station-locations.conf file to use when in
-					offline mode. If no file is given the database is used.
+					offline mode (started with --offline).
+					If no file is given the database is used.
 					</description>
 				</option>
 
@@ -352,7 +379,7 @@
 
 				<option flag="" long-flag="max-age" argument="arg" default="3784320000">
 					<description>
-					During cleanup all objects older than maxAge (in seconds)
+					During cleanup all pick objects older than maxAge (in seconds)
 					are removed (maxAge == 0 => disable cleanup)
 					</description>
 				</option>
