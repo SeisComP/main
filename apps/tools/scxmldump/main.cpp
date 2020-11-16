@@ -763,38 +763,38 @@ class EventDump : public Seiscomp::Client::Application {
 				       fm->triggeringOriginID() != event->preferredOriginID() ) {
 
 					OriginPtr triggeringOrigin = ep->findOrigin(fm->triggeringOriginID());
-					if ( triggeringOrigin != NULL ) continue;
-
-					triggeringOrigin = Origin::Cast(PublicObjectPtr(
-						query()->getObject(Origin::TypeInfo(), fm->triggeringOriginID())));
 					if ( ! triggeringOrigin ) {
-						SEISCOMP_WARNING("Triggering origin with id '%s' not found",
-								 fm->triggeringOriginID().c_str());
-						continue;
-					}
-
-					query()->load(triggeringOrigin.get());
-
-					if ( ! withStationMagnitudes )
-						removeAllStationMagnitudes(triggeringOrigin.get());
-
-					if ( ignoreArrivals )
-						removeAllArrivals(triggeringOrigin.get());
-
-					if ( preferredOnly && ! allMagnitudes ) {
-						MagnitudePtr netMag;
-						while ( triggeringOrigin->magnitudeCount() > 0 ) {
-							if ( triggeringOrigin->magnitude(0)->publicID() == event->preferredMagnitudeID() )
-								netMag = triggeringOrigin->magnitude(0);
-
-							triggeringOrigin->removeMagnitude(0);
+						triggeringOrigin = Origin::Cast(PublicObjectPtr(
+							query()->getObject(Origin::TypeInfo(), fm->triggeringOriginID())));
+						if ( ! triggeringOrigin ) {
+							SEISCOMP_WARNING("Triggering origin with id '%s' not found",
+									 fm->triggeringOriginID().c_str());
 						}
+						else {
+							query()->load(triggeringOrigin.get());
 
-						if ( netMag )
-							triggeringOrigin->add(netMag.get());
+							if ( ! withStationMagnitudes )
+								removeAllStationMagnitudes(triggeringOrigin.get());
+
+							if ( ignoreArrivals )
+								removeAllArrivals(triggeringOrigin.get());
+
+							if ( preferredOnly && ! allMagnitudes ) {
+								MagnitudePtr netMag;
+								while ( triggeringOrigin->magnitudeCount() > 0 ) {
+									if ( triggeringOrigin->magnitude(0)->publicID() == event->preferredMagnitudeID() )
+										netMag = triggeringOrigin->magnitude(0);
+
+									triggeringOrigin->removeMagnitude(0);
+								}
+
+								if ( netMag )
+									triggeringOrigin->add(netMag.get());
+							}
+
+							ep->add(triggeringOrigin.get());
+						}
 					}
-
-					ep->add(triggeringOrigin.get());
 				}
 
 				ep->add(fm.get());
