@@ -215,75 +215,163 @@ bool App::validateParameters() {
 bool App::initConfiguration() {
 	if ( !Client::Application::initConfiguration() ) return false;
 
-	try { _config.maxAge = configGetDouble("autoloc.maxAge"); } catch (...) {}
+	// support depreciated configuration, depreciated since 2020-11-16
+	try {
+		_config.maxAge = configGetDouble("autoloc.maxAge");
+		SEISCOMP_ERROR("Configuration parameter autoloc.maxAge is depreciated."
+		                 " Use buffer.pickKeep instead!");
+	}
+	catch (...) {}
+	// override depreciated configuration if value is set
+	try { _config.maxAge = configGetDouble("buffer.pickKeep"); }
+	catch (...) {}
 
-	try { _config.defaultDepth = configGetDouble("locator.defaultDepth"); } catch (...) {}
-	try { _config.defaultDepthStickiness = configGetDouble("autoloc.defaultDepthStickiness"); } catch (...) {}
-	try { _config.tryDefaultDepth = configGetBool("autoloc.tryDefaultDepth"); } catch (...) {}
-	try { _config.adoptManualDepth = configGetBool("autoloc.adoptManualDepth"); } catch (...) {}
-	try { _config.minimumDepth = configGetDouble("locator.minimumDepth"); } catch (...) {}
+	// support depreciated configuration, depreciated since 2020-11-16
+	try {
+		_keepEventsTimeSpan = configGetInt("keepEventsTimeSpan");
+		SEISCOMP_ERROR("Configuration parameter keepEventsTimeSpan is depreciated."
+		                 " Use buffer.originKeep instead!");
+	}
+	catch ( ... ) {}
+	// override depreciated configuration if value is set
+	try { _keepEventsTimeSpan = configGetInt("buffer.originKeep"); }
+	catch ( ... ) {}
 
-	try { _config.maxAziGapSecondary = configGetDouble("autoloc.maxSGAP"); } catch (...) {}
-	try { _config.maxRMS = configGetDouble("autoloc.maxRMS"); } catch (...) {}
-	try { _config.maxDepth = configGetDouble("autoloc.maxDepth"); } catch (...) {}
-	try { _config.maxResidualUse = configGetDouble("autoloc.maxResidual"); } catch (...) {}
-	try { _config.maxStaDist = configGetDouble("autoloc.maxStationDistance"); } catch (...) {}
-	try { _config.defaultMaxNucDist = configGetDouble("autoloc.defaultMaxNucleationDistance"); } catch (...) {}
 
-	try { _config.xxlEnabled = configGetBool("autoloc.xxl.enable"); } catch (...) {}
-	try { _config.xxlMinAmplitude = configGetDouble("autoloc.xxl.minAmplitude"); } catch (...) {
+	// support depreciated configuration, depreciated since 2020-11-16
+	try { _config.cleanupInterval = configGetDouble("autoloc.cleanupInterval");
+		SEISCOMP_ERROR("Configuration parameter autoloc.cleanupInterval is depreciated."
+		                 " Use buffer.cleanupIntervalinstead!");}
+	catch (...) {}
+	try { _config.cleanupInterval = configGetDouble("buffer.cleanupInterval"); }
+	catch (...) {}
+
+	try { _config.defaultDepth = configGetDouble("locator.defaultDepth"); }
+	catch (...) {}
+
+	try { _config.defaultDepthStickiness = configGetDouble("autoloc.defaultDepthStickiness"); }
+	catch (...) {}
+
+	try { _config.tryDefaultDepth = configGetBool("autoloc.tryDefaultDepth"); }
+	catch (...) {}
+
+	try { _config.adoptManualDepth = configGetBool("autoloc.adoptManualDepth"); }
+	catch (...) {}
+
+	try { _config.minimumDepth = configGetDouble("locator.minimumDepth"); }
+	catch (...) {}
+
+	try { _config.maxAziGapSecondary = configGetDouble("autoloc.maxSGAP"); }
+	catch (...) {}
+
+	try { _config.maxRMS = configGetDouble("autoloc.maxRMS"); }
+	catch (...) {}
+
+	try { _config.maxDepth = configGetDouble("autoloc.maxDepth"); }
+	catch (...) {}
+
+	try { _config.maxResidualUse = configGetDouble("autoloc.maxResidual"); }
+	catch (...) {}
+
+	try { _config.maxStaDist = configGetDouble("autoloc.maxStationDistance"); }
+	catch (...) {}
+
+	try { _config.defaultMaxNucDist = configGetDouble("autoloc.defaultMaxNucleationDistance"); }
+	catch (...) {}
+
+	try { _config.xxlEnabled = configGetBool("autoloc.xxl.enable"); }
+	catch (...) {}
+
+	try { _config.xxlMinAmplitude = configGetDouble("autoloc.xxl.minAmplitude"); }
+	catch (...) {
 		try {
 			// deprecated since 2013-06-26
 			_config.xxlMinAmplitude = configGetDouble("autoloc.thresholdXXL");
-			SEISCOMP_WARNING("Config parameter autoloc.thresholdXXL is deprecated.  Use autoloc.xxl.minAmplitude instead!");
-		} catch (...) {}
+			SEISCOMP_ERROR("Config parameter autoloc.thresholdXXL is deprecated.  Use autoloc.xxl.minAmplitude instead!");
+		}
+		catch (...) {}
 	}
 
-	try { _config.xxlMaxStaDist = configGetDouble("autoloc.xxl.maxStationDistance"); } catch (...) {
+	try { _config.xxlMaxStaDist = configGetDouble("autoloc.xxl.maxStationDistance"); }
+	catch (...) {
 		try {
 			// deprecated since 2013-06-26
 			_config.xxlMaxStaDist = configGetDouble("autoloc.maxStationDistanceXXL");
-			SEISCOMP_WARNING("Config parameter autoloc.maxStationDistanceXXL is deprecated. Use autoloc.xxl.maxStationDistance instead!");
-		} catch (...) {}
+			SEISCOMP_ERROR("Configuration parameter autoloc.maxStationDistanceXXL"
+			               " is deprecated. Use autoloc.xxl.maxStationDistance instead!");
+		}
+		catch (...) {}
 	}
 
-	try { _config.xxlMinPhaseCount = configGetInt("autoloc.xxl.minPhaseCount"); } catch (...) {
+	try { _config.xxlMinPhaseCount = configGetInt("autoloc.xxl.minPhaseCount"); }
+	catch (...) {
 		try {
 			// deprecated since 2013-06-26
 			_config.xxlMinPhaseCount = configGetInt("autoloc.minPhaseCountXXL");
-			SEISCOMP_WARNING("Config parameter autoloc.minPhaseCountXXL is deprecated. Use autoloc.xxl.minPhaseCount instead!");
-		} catch (...) {}
+			SEISCOMP_ERROR("Configuration parameter autoloc.minPhaseCountXXL is"
+			               " deprecated. Use autoloc.xxl.minPhaseCount instead!");
+		}
+		catch (...) {}
 	}
 
-	try { _config.xxlMinSNR = configGetDouble("autoloc.xxl.minSNR"); } catch (...) {}
-	try { _config.xxlMaxDepth = configGetDouble("autoloc.xxl.maxDepth"); } catch (...) {}
-	try { _config.xxlDeadTime = configGetDouble("autoloc.xxl.deadTime"); } catch (...) {}
+	try { _config.xxlMinSNR = configGetDouble("autoloc.xxl.minSNR"); }
+	catch (...) {}
 
+	try { _config.xxlMaxDepth = configGetDouble("autoloc.xxl.maxDepth"); }
+	catch (...) {}
 
-	try { _config.minPickSNR = configGetDouble("autoloc.minPickSNR"); } catch (...) {}
-	try { _config.minPickAffinity = configGetDouble("autoloc.minPickAffinity"); } catch (...) {}
+	try { _config.xxlDeadTime = configGetDouble("autoloc.xxl.deadTime"); }
+	catch (...) {}
 
-	try { _config.minPhaseCount = configGetInt("autoloc.minPhaseCount"); } catch (...) {}
-	try { _config.minScore = configGetDouble("autoloc.minScore"); } catch (...) {}
-	try { _config.minScoreBypassNucleator = configGetDouble("autoloc.minScoreBypassNucleator"); } catch (...) {}
+	try { _config.minPickSNR = configGetDouble("autoloc.minPickSNR"); }
+	catch (...) {}
 
-	try { _config.minStaCountIgnorePKP = configGetInt("autoloc.minStaCountIgnorePKP"); } catch (...) {}
-	try { _config.reportAllPhases = configGetBool("autoloc.reportAllPhases"); } catch (...) {}
-	try { _config.useManualPicks = configGetBool("autoloc.useManualPicks"); } catch (...) {}
-	try { _config.useManualOrigins = configGetBool("autoloc.useManualOrigins"); } catch (...) {}
-	try { _config.useImportedOrigins = configGetBool("autoloc.useImportedOrigins"); } catch (...) {}
+	try { _config.minPickAffinity = configGetDouble("autoloc.minPickAffinity"); }
+	catch (...) {}
 
-	try { _config.cleanupInterval = configGetDouble("autoloc.cleanupInterval"); } catch (...) {}
-	try { _wakeUpTimout = configGetInt("autoloc.wakeupInterval"); } catch (...) {}
-	try { _config.maxRadiusFactor = configGetDouble("autoloc.gridsearch._maxRadiusFactor"); } catch (...) {}
+	try { _config.minPhaseCount = configGetInt("autoloc.minPhaseCount"); }
+	catch (...) {}
 
-	try { _config.publicationIntervalTimeSlope = configGetDouble("autoloc.publicationIntervalTimeSlope"); } catch ( ... ) {}
-	try { _config.publicationIntervalTimeIntercept = configGetDouble("autoloc.publicationIntervalTimeIntercept"); } catch ( ... ) {}
-	try { _config.publicationIntervalPickCount = configGetInt("autoloc.publicationIntervalPickCount"); } catch ( ... ) {}
+	try { _config.minScore = configGetDouble("autoloc.minScore"); }
+	catch (...) {}
 
-	try { _config.dynamicPickThresholdInterval = configGetDouble("autoloc.dynamicPickThresholdInterval"); } catch ( ... ) {}
+	try { _config.minScoreBypassNucleator = configGetDouble("autoloc.minScoreBypassNucleator"); }
+	catch (...) {}
 
-	try { _keepEventsTimeSpan = configGetInt("keepEventsTimeSpan"); } catch ( ... ) {}
+	try { _config.minStaCountIgnorePKP = configGetInt("autoloc.minStaCountIgnorePKP"); }
+	catch (...) {}
+
+	try { _config.reportAllPhases = configGetBool("autoloc.reportAllPhases"); }
+	catch (...) {}
+
+	try { _config.useManualPicks = configGetBool("autoloc.useManualPicks"); }
+	catch (...) {
+		_config.useManualPicks = false;
+	}
+
+	try { _config.useManualOrigins = configGetBool("autoloc.useManualOrigins"); }
+	catch (...) {}
+
+	try { _config.useImportedOrigins = configGetBool("autoloc.useImportedOrigins"); }
+	catch (...) {}
+
+	try { _wakeUpTimout = configGetInt("autoloc.wakeupInterval"); }
+	catch (...) {}
+
+	try { _config.maxRadiusFactor = configGetDouble("autoloc.gridsearch._maxRadiusFactor"); }
+	catch (...) {}
+
+	try { _config.publicationIntervalTimeSlope = configGetDouble("autoloc.publicationIntervalTimeSlope"); }
+	catch ( ... ) {}
+
+	try { _config.publicationIntervalTimeIntercept = configGetDouble("autoloc.publicationIntervalTimeIntercept"); }
+	catch ( ... ) {}
+
+	try { _config.publicationIntervalPickCount = configGetInt("autoloc.publicationIntervalPickCount"); }
+	catch ( ... ) {}
+
+	try { _config.dynamicPickThresholdInterval = configGetDouble("autoloc.dynamicPickThresholdInterval"); }
+	catch ( ... ) {}
 
 	try { _gridConfigFile = Environment::Instance()->absolutePath(configGetString("autoloc.grid")); }
 	catch (...) { _gridConfigFile = Environment::Instance()->shareDir() + "/scautoloc/grid.conf"; }
@@ -294,35 +382,50 @@ bool App::initConfiguration() {
 	try { _config.pickLogFile = configGetString("autoloc.pickLog"); }
 	catch (...) { _config.pickLogFile = ""; }
 
-	try { _amplTypeSNR = configGetString("autoloc.amplTypeSNR"); } catch (...) {}
-	try { _amplTypeAbs = configGetString("autoloc.amplTypeAbs"); } catch (...) {}
-	try { _stationLocationFile = configGetString("autoloc.stationLocations"); } catch (...) {}
-	// support depreciated configuration
-	try { _config.locatorProfile = configGetString("autoloc.locator.profile"); } catch (...) {}
-	// override depreciated configuration if value is set
-	try { _config.locatorProfile = configGetString("locator.profile"); } catch (...) {}
+	try { _amplTypeSNR = configGetString("autoloc.amplTypeSNR"); }
+	catch (...) {}
 
-	try { _config.playback = configGetBool("autoloc.playback"); } catch ( ... ) {}
-	try { _config.offline = configGetBool("autoloc.offline"); } catch ( ... ) {}
-	try { _config.test = configGetBool("autoloc.test"); } catch ( ... ) {}
+	try { _amplTypeAbs = configGetString("autoloc.amplTypeAbs"); }
+	catch (...) {}
+
+	try { _stationLocationFile = configGetString("autoloc.stationLocations"); }
+	catch (...) {}
+
+	// support depreciated configuration, depreciated since 2020-11-13
+	try { _config.locatorProfile = configGetString("autoloc.locator.profile"); }
+	catch (...) {}
+	if ( !_config.locatorProfile.empty() ) {
+		SEISCOMP_ERROR("Configuration parameter autoloc.locator.profile is depreciated."
+		                 " Use locator.profile instead!");
+	}
+	// override depreciated configuration if value is set
+	try { _config.locatorProfile = configGetString("locator.profile"); }
+	catch (...) {}
+
+	try { _config.playback = configGetBool("autoloc.playback"); }
+	catch ( ... ) {}
+
+	try { _config.test = configGetBool("autoloc.test"); }
+	catch ( ... ) {}
 
 	_config.pickLogFile = Environment::Instance()->absolutePath(_config.pickLogFile);
 	_stationLocationFile = Environment::Instance()->absolutePath(_stationLocationFile);
 
 	// network type
 	std::string ntp = "global";
-	try { ntp = configGetString("autoloc.networkType"); } catch ( ... ) {}
-	if      (ntp=="global") {
+	try { ntp = configGetString("autoloc.networkType"); }
+	catch ( ... ) {}
+	if      ( ntp == "global" ) {
 		_config.networkType = ::Autoloc::GlobalNetwork;
 	}
-	else if (ntp=="regional") {
+	else if ( ntp == "regional" ) {
 		_config.networkType = ::Autoloc::RegionalNetwork;
 	}
-	else if (ntp=="local") {
+	else if ( ntp == "local" ) {
 		_config.networkType = ::Autoloc::LocalNetwork;
 	}
-	else    {
-		SEISCOMP_ERROR_S("illegal value '"+ntp+"' for autoloc.networkType");
+	else {
+		SEISCOMP_ERROR("Illegal value %s for autoloc.networkType", ntp.c_str());
 		return false;
 	}
 
