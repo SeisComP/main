@@ -61,7 +61,7 @@ class RegionCheckProcessor : public Seiscomp::Client::EventProcessor {
 		 * @return Update flag: true, if the event has been updated, false
 		 *         otherwise.
 		 */
-		bool process(DataModel::Event *event);
+		bool process(DataModel::Event *event, const Journal &journal);
 
 
 	// ----------------------------------------------------------------------
