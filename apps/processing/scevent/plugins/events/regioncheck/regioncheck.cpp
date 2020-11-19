@@ -27,6 +27,7 @@
 #include <seiscomp/logging/log.h>
 #include <seiscomp/datamodel/event.h>
 #include <seiscomp/datamodel/origin.h>
+#include <seiscomp/datamodel/journalentry.h>
 #include <seiscomp/seismology/regions.h>
 
 ADD_SC_PLUGIN("Region check for events that sets the event type to \"outside of network interest\" "
@@ -194,11 +195,25 @@ bool RegionCheckProcessor::setup(const Config::Config &config) {
 }
 
 
-bool RegionCheckProcessor::process(Event *event) {
+bool RegionCheckProcessor::process(Event *event, const Journal &journal) {
 	Origin *org = Origin::Find(event->preferredOriginID());
 
 	SEISCOMP_DEBUG("evrc plugin: processing event %s",
 	               event->publicID().c_str());
+
+	bool isTypeFixed = false;
+
+	for ( Journal::const_iterator it = journal.begin(); it != journal.end(); ++it ) {
+		if ( (*it)->action() != "EvType" ) continue;
+		isTypeFixed = !(*it)->parameters().empty();
+	}
+
+	if ( isTypeFixed ) {
+		SEISCOMP_DEBUG(" + evrc: type of event %s set through journal: ignoring",
+		               event->publicID().c_str());
+		return false;
+	}
+
 	if ( !org ) {
 		SEISCOMP_WARNING(" + evrc: no origin information found");
 		return false;

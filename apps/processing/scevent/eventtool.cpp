@@ -1345,7 +1345,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 				}
 
 				Notifier::Enable();
-				updateEvent(info->event.get());
+				updateEvent(info.get());
 				Notifier::Disable();
 			}
 		}
@@ -1379,7 +1379,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 					response = createEntry(entry->objectID(), entry->action() + OK, ":unset:");
 				}
 				Notifier::Enable();
-				updateEvent(info->event.get());
+				updateEvent(info.get());
 				Notifier::Disable();
 			}
 		}
@@ -1436,7 +1436,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 			}
 		}
 		Notifier::Enable();
-		updateEvent(info->event.get());
+		updateEvent(info.get());
 		Notifier::Disable();
 	}
 	else if ( entry->action() == "EvPrefMw" ) {
@@ -3264,7 +3264,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		// Call registered processors
 		EventProcessors::iterator it;
 		for ( it = _processors.begin(); it != _processors.end(); ++it ) {
-			if ( it->second->process(info->event.get()) )
+			if ( it->second->process(info->event.get(), info->journal) )
 				update = true;
 		}
 
@@ -3326,14 +3326,14 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		               Notifier::IsEnabled());
 
 		if ( !info->created )
-			updateEvent(info->event.get(), callProcessors);
+			updateEvent(info, callProcessors);
 		else {
 			info->created = false;
 
 			// Call registered processors
 			EventProcessors::iterator it;
 			for ( it = _processors.begin(); it != _processors.end(); ++it )
-				it->second->process(info->event.get());
+				it->second->process(info->event.get(), info->journal);
 		}
 	}
 }
@@ -3762,14 +3762,14 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 			choosePreferred(info, info->preferredOrigin.get(), nullptr);
 
 		if ( !info->created )
-			updateEvent(info->event.get());
+			updateEvent(info);
 		else {
 			info->created = false;
 
 			// Call registered processors
 			EventProcessors::iterator it;
 			for ( it = _processors.begin(); it != _processors.end(); ++it )
-				it->second->process(info->event.get());
+				it->second->process(info->event.get(), info->journal);
 		}
 	}
 }
@@ -3974,7 +3974,8 @@ void EventTool::removedFromCache(Seiscomp::DataModel::PublicObject *po) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void EventTool::updateEvent(DataModel::Event *ev, bool callProcessors) {
+void EventTool::updateEvent(EventInformation *info, bool callProcessors) {
+	DataModel::Event *ev = info->event.get();
 	Core::Time now = Core::Time::GMT();
 	// Set the modification to current time
 	try {
@@ -4005,7 +4006,7 @@ void EventTool::updateEvent(DataModel::Event *ev, bool callProcessors) {
 		// Call registered processors
 		EventProcessors::iterator it;
 		for ( it = _processors.begin(); it != _processors.end(); ++it )
-			it->second->process(ev);
+			it->second->process(ev, info->journal);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
