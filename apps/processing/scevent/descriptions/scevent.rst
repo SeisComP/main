@@ -83,8 +83,9 @@ criteria are applied to allow the creation of the new event:
 .. figure:: media/scevent/Association_of_an_origin_by_matching_picks.jpg
     :scale: 50 %
     :alt: alternate association of an origin by matching picks.
+    :align: center
 
-    Associations of an origin to an event by matching picks.
+    Association of an origin to an event by matching picks.
 
 
 .. _scevent-preforg:
