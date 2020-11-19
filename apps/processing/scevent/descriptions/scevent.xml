@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="scevent" category="Processing">
-		<description>Associates an Origin to an Event or forms a new Event if no match is found. Selects the preferred magnitude.</description>
+		<description>
+		Associates an Origin to an Event or forms a new Event if no match is found.
+		Selects the preferred origin, magnitude and focal mechanism.</description>
 		<configuration>
 			<parameter name="eventIDPrefix" type="string">
 				<description>Prefix for all Event IDs</description>

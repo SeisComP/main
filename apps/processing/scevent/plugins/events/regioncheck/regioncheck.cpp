@@ -198,7 +198,7 @@ bool RegionCheckProcessor::process(Event *event) {
 	Origin *org = Origin::Find(event->preferredOriginID());
 
 	SEISCOMP_DEBUG("evrc plugin: processing event %s",
-				   event->publicID().c_str());
+	               event->publicID().c_str());
 	if ( !org ) {
 		SEISCOMP_WARNING(" + evrc: no origin information found");
 		return false;
@@ -207,9 +207,9 @@ bool RegionCheckProcessor::process(Event *event) {
 	try {
 		if ( org->evaluationMode() == DataModel::MANUAL ){
 			SEISCOMP_DEBUG(" + evrc: found %s preferred origin %s: "
-						   "do not change the event status",
-						   org->evaluationMode().toString(),
-						   org->publicID().c_str());
+			               "do not change the event status",
+			               org->evaluationMode().toString(),
+			               org->publicID().c_str());
 			return false;
 		}
 	}
@@ -219,7 +219,7 @@ bool RegionCheckProcessor::process(Event *event) {
 
 	try {
 		location.set(static_cast<float>(org->latitude().value()),
-					 static_cast<float>(org->longitude().value()));
+		             static_cast<float>(org->longitude().value()));
 	}
 	catch ( ... ) {
 		SEISCOMP_WARNING(" + evrc: no lat/lon information available");
@@ -230,14 +230,13 @@ bool RegionCheckProcessor::process(Event *event) {
 	try {
 		depth = org->depth().value();
 		SEISCOMP_DEBUG(" + evrc: checking regions for location %f / %f / %.2f km",
-					   static_cast<double>(location.lat),
-					   static_cast<double>(location.lon),
-					   *depth);
+		               static_cast<double>(location.lat),
+		               static_cast<double>(location.lon), *depth);
 	}
 	catch ( const ValueException& ) {
 		SEISCOMP_DEBUG(" + evrc: checking regions for location %f / %f / - km",
-					   static_cast<double>(location.lat),
-					   static_cast<double>(location.lon));
+		               static_cast<double>(location.lat),
+		               static_cast<double>(location.lon));
 	}
 
 	OPT(EventType) currentType;
