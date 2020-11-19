@@ -1,10 +1,10 @@
-*evrc* is a :term:`plugin` for :ref:`scevent`. It sets the event type according to the
+*evrc* (event region check) is a :term:`plugin` for :ref:`scevent`. It sets the event type according to the
 location of the preferred origin by comparing the coordinates with regions defined by
 :ref:`BNA polygons <sec-gui_layers>`.
 
 .. note::
 
-	Events for which the mode of the preferred origin is "manual" are not considered.
+   Events for which the mode of the preferred origin is "manual" are not considered.
 
 
 Definition of regions
