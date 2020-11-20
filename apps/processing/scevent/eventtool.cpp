@@ -1617,7 +1617,8 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 					if ( newInfo ) {
 						// Remove origin reference
 						Notifier::SetEnabled(true);
-						info->event->removeOriginReference(org->publicID());
+						if ( info->event->removeOriginReference(org->publicID()) )
+							info->dirtyPickSet = true;
 
 						// Remove all focal mechanism references that
 						// used this origin as trigger
@@ -2347,6 +2348,7 @@ EventInformationPtr EventTool::createEvent(Origin *origin) {
 
 		info->event->setCreationInfo(ci);
 		info->created = true;
+		info->dirtyPickSet = true;
 
 		cacheEvent(info);
 
