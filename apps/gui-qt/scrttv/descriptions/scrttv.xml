@@ -20,7 +20,7 @@
 					If enabled, picks are shown.
 				</description>
 			</parameter>
-			<parameter name="filter" type="string" default="BW(3, 0.5, 10.0)">
+			<parameter name="filter" type="string" default="BW(3, 0.5, 8.0)">
 				<description>
 					Defines the filter to be used when filtering is activated. This
 					is only being used if filters is not set otherwise it is
@@ -58,14 +58,14 @@
 						Configures an initial location (latitude, longitude) to be used
 						for sorting the traces.
 					</description>
-					<parameter name="latitude" type="double" unit="deg">
+					<parameter name="latitude" type="double" unit="deg" default="0.0">
 						<description>
-							Latitude of the initial location.
+							Latitude of the initial location for sorting traces.
 						</description>
 					</parameter>
-					<parameter name="longitude" type="double" unit="deg">
+					<parameter name="longitude" type="double" unit="deg" default="0.0">
 						<description>
-							Longitude of the initial location.
+							Longitude of the initial location for sorting traces.
 						</description>
 					</parameter>
 				</group>
@@ -105,22 +105,22 @@
 					<description>
 						Defines a region used for clipping requested stations.
 					</description>
-					<parameter name="lonmin" type="double" unit="deg">
+					<parameter name="lonmin" type="double" unit="deg" default="-180.0">
 						<description>
 							Minimum longitude.
 						</description>
 					</parameter>
-					<parameter name="lonmax" type="double" unit="deg">
+					<parameter name="lonmax" type="double" unit="deg" default="180.0">
 						<description>
 							Maximum longitude.
 						</description>
 					</parameter>
-					<parameter name="latmin" type="double" unit="deg">
+					<parameter name="latmin" type="double" unit="deg" default="-90.0">
 						<description>
 							Minimum latitude.
 						</description>
 					</parameter>
-					<parameter name="latmax" type="double" unit="deg">
+					<parameter name="latmax" type="double" unit="deg" default="90.0">
 						<description>
 							Maximum latitude.
 						</description>
