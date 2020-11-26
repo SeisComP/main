@@ -42,6 +42,7 @@ Therefore, scolv is divided into 6 main logical units (main window with tabs and
 scolv provides the whole functionality to review and revise earthquake
 parameters.
 
+
 .. _scolv-sec-location-tab:
 
 Location tab
@@ -79,6 +80,7 @@ hypocenter, time, station distribution, helps to find outlier.
    (**B5**) Commit origin
    (**Summary**) all information of the preferred origin of the loaded event
 
+
 .. _scolv-sec-summary-widget:
 
 Summary widget
@@ -94,6 +96,7 @@ by pressing :kbd:`F8` or from the *View* menu.
 
    The summary tab is available for all other tabs of the scolv main window and
    also for other GUI applications.
+
 
 .. _scolv-sec-diagrams:
 
@@ -147,6 +150,7 @@ link again and select the "None" filter will show all arrivals in the plot again
 
 Plots can also be configured to show or hide dashed grid lines. Use :confval:`olv.drawGridLines`
 for configuration. The default is true.
+
 
 Arrival table
 -------------
@@ -243,6 +247,7 @@ The context menu allows to:
 If arrivals are deleted, they are removed physically from this solution in
 contrast to deactivate an arrival where only the used flags are set to zero.
 
+
 .. _scolv-sec-waveform-review:
 
 Waveform review (Picker)
@@ -274,19 +279,8 @@ Initially the picker allows to pick the following phases:
 - S
 - Sg
 
-This list can be customized and phases can be grouped to reflect e.g. regional
-and teleseismic profiles. An example configuration looks like this:
-
-.. code-block:: sh
-
-   # Define two phase groups: regional and teleseismic
-   picker.phases.groups = regional, teleseismic
-
-   # Define all phases of group "regional"
-   picker.phases.groups.regional = Pn, P, Pg, PmP, P1, Sg, S, Sn, SmS
-
-   # Define all phases of group "teleseismic"
-   picker.phases.groups.teleseismic = pP, PKP, PKP
+Up to 9 phase types can be selected by hot keys. This list of favourite phases
+can be customized by :confval:`picker.phases.favourites`, e.g.: ::
 
    # Define a list of favourite phases for quick access
    picker.phases.favourites = Pn, P, Pg, PmP, P1, Pg, Sg, S, Sn, SmS
@@ -297,13 +291,37 @@ to the first phase, :kbd:`2` to the second and so on.
 .. note:: Shortcuts are assigned only  to the first 9 favourite phases. All
    other defined phases can be activated from the *Picking* menu.
 
+The phases can be also grouped to reflect e.g. regional
+and teleseismic profiles. In group not hot keys are available.
+An example configuration looks like this:
+
+.. code-block:: sh
+
+   # Define two phase groups: regional and teleseismic
+   picker.phases.groups = regional, teleseismic
+
+   # Define all phases of group "regional"
+   picker.phases.groups.regional = Pn, P, Pg, PmP, P1, Sg, S, Sn, SmS
+
+   # Define all phases of group "teleseismic"
+   picker.phases.groups.teleseismic = pP, sP, sS, PKP, PKP
+
 .. figure:: media/scolv/phases-menu.png
    :align: center
 
    Pick phase selection menu
 
-To set the uncertainty of a pick a list of predefined uncertainties can be
-defined. Additionally uncertainties can be defined freely whereas choosing
+To set the uncertainty of a pick more easily a list of predefined uncertainties can be
+defined using :confval:`picker.uncertainties`, e.g.: ::
+
+   picker.uncertainties = 0.05, 0.1, 0.2, "(0.1,0.2)", "(0.05,0.02)"
+
+where single values define symmetric and pairs of values define asymmetric uncertainties.
+The pre-defined uncertainties can be selected during picking using hot keys, e.g.
+:kbd:`1` or :kbd:`2` for the 1st or the 2nd value defined in :confval:`picker.uncertainties`.
+Later, the uncertainties can be adjusted manually.
+
+Additionally, uncertainties can be defined freely whereas choosing
 among a predefined set of uncertainties is a lot faster.
 
 If the mouse hovers a pick a dashed rectangle is drawn around this pick. Then
@@ -316,9 +334,7 @@ shows the available uncertainties.
 
    Pick context menu
 
-They can be configured in scolv.cfg with:
-
-.. code-block:: sh
+As for phase types, uncertainty profiles can be additionally configured: ::
 
    # Define available pick uncertainty profiles. Single values
    # are symmetric uncertainties whereas tuples are asymmetric
@@ -398,6 +414,7 @@ The difference is shown in the following two images:
 
    Trace clipping disabled
 
+
 .. _scolv-sec-relocating:
 
 Relocate events
@@ -413,6 +430,7 @@ by :ref:`concepts_plugins`.
 
 Pressing *Relocate* creates a new origin and updates the arrival table and the
 parameters displayed in the Location tab.
+
 
 Compute magnitudes
 ------------------
@@ -512,6 +530,7 @@ With custom commit buttons origin and event paramters can be set, e.g.:
 
    Custom commit buttons in the Location tab for configured actions and with specific label and color.
 
+
 .. _scolv-sec-magnitude-tab:
 
 Magnitudes tab
@@ -544,6 +563,7 @@ origin. They can be recomputed after creating a new origin, e.g. by relocating.
    (**B1**) Recalculation of the network magnitudes
    (**B2**) Open waveform review
 
+
 .. _scolv-sec-magnitude-station:
 
 Station magnitudes
@@ -565,6 +585,7 @@ start the interactive analysis.
    magnitudes and then change into this tab to open either the waveform
    review window or to just remove outliers.
 
+
 .. _scolv-sec-magnitude-network:
 
 Network magnitudes
@@ -584,6 +605,7 @@ rejected. To manually review the waveforms and to fine tune the
 parameters, open the waveforms and add at least one station magnitude. Otherwise
 the rejected magnitude will be removed from the origin prio to committing it.
 
+
 .. _scolv-sec-magnitude-summary:
 
 Summary magnitude
@@ -600,6 +622,7 @@ configured button or interactively in the :ref:`magnitude tab <fig-scolv-magnitu
 of scolv. Interactively check the box in the network magnitudes tab, then press the
 custom commit button. Setting the preferred magnitude interactively in the magnitude
 tab takes priority over the configuration of the custom commit button.
+
 
 .. _scolv-sec-amplitude-review:
 
@@ -660,6 +683,7 @@ Show raw data
 By default the processed waveforms are displayed. To look at the raw waveforms
 change the filter drop down box to *Raw*.
 
+
 Processing settings
 ^^^^^^^^^^^^^^^^^^^
 
@@ -688,6 +712,7 @@ down boxes are enabled in the toolbar and can be used to change the defaults.
 .. note:: Amplitudes are not recalculated if any changes to the settings are
    made. Recalculation has to be activated manually (see below).
 
+
 Secondary filters
 ^^^^^^^^^^^^^^^^^
 
@@ -705,6 +730,7 @@ configuration file similar to the manual picker filters:
 The new filter selection is applied immediately to the waveforms while the amplitudes are not recalculated
 (see next section).
 
+
 Calculate amplitudes
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -719,6 +745,7 @@ after a certain amount of time and shows information about the amplitude.
 .. figure:: media/scolv/amplitude-tooltip.png
    :align: center
 
+
 Pick amplitudes
 ^^^^^^^^^^^^^^^
 
@@ -729,9 +756,10 @@ activate picking by pressing :kbd:`1` or in the main menu:
 
 There are two modes of picking:
 
- 1. create a time window by pressing with left mouse button at the start time and
-    releasing at the end time, or
- 2. double click at a time and use a time window of [t-0.5sec;t+0.5sec]
+#. Create a time window by pressing with left mouse button at the start time and
+   releasing at the end time, or
+#. Double click at a time and use a time window of [t-0.5sec;t+0.5sec]
+
 
 Add stations in range
 ^^^^^^^^^^^^^^^^^^^^^
@@ -740,11 +768,13 @@ Unpicked or unassociated stations can be added the same way as in the manual
 picker. The new stations will not have an amplitude and need either manual
 picking or global amplitude recalculation.
 
+
 Remove bad stations
 ^^^^^^^^^^^^^^^^^^^
 
 Stations can be disabled by either double clicking on the trace label in the
 overview or by deactivating an amplitude similar to deactivating a pick.
+
 
 Confirm the amplitudes
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -754,6 +784,7 @@ magnitude review page. Only activated amplitudes are transferred. Disabled
 stations or disabled amplitudes are ignored. At this stage all magnitudes are
 calculated and the network magnitude is calculated according to the available
 settings: *Mean*, *Median* or *Trimmed mean*.
+
 
 Event tab
 =========
@@ -782,6 +813,40 @@ a window that has to be opened by pulling the left side frame to the right.
 
 The map (lower left part) shows all associated origins while the currently
 selected origin (**Origin list**) is drawn filled.
+
+
+Origin list
+-----------
+
+The Origin list shows details of all available origins. The Stat column indicates
+a combination of the mode and the status of the origin.
+
+.. _scolv-origin-mode:
+
+The mode is color coded:
+
+* **Red**: automatic
+* **Green**: manual
+
+.. _scolv-origin-status:
+
+The status is coded by a single character:
+
+* **A**: unset, status not specically set, e.g. usually automatic origins from :ref:`scautoloc`
+* **C**: confirmed
+* **F**: final
+* **P**: preliminary, e.g. XXL origins from :ref:`scautoloc`
+* **R**: reported
+* **V**: veviewed
+* **X**: rejected
+
+
+Magnitude list
+--------------
+
+The magnitude list shows all available magnitudes available for the origin
+selectected in the Origin list.
+
 
 Events tab
 ==========
@@ -814,6 +879,7 @@ all origins associated with one event are displayed if an event item is expanded
    of the computer where the event has been created and the local dataset
    differs. Therefore the region names resolved locally are rendered with italic
    font style.
+
 
 Event filtering
 ---------------
@@ -865,6 +931,7 @@ will hide all events where the preferred origins agencyID is not the configured
    # is disabled by default.
    eventlist.filter.agencies.enabled = true
 
+
 Events table
 ------------
 
@@ -873,14 +940,16 @@ The available identifiers are:
 
 * **OT(GMT)**
 * **Type**
-* **M**
-* **TP**
+* M
+* **MType**
 * **Phases**
-* RMS
+* **RMS**
 * **Lat**
 * **Lon**
 * **Depth**
-* **Stat**
+* DType
+* **Stat** : a combination of the :ref:`mode <scolv-origin-mode>` (color) and
+  the :ref:`status <scolv-origin-status>` (letter) of the preferred origin
 * FM
 * **Agency**
 * Author
@@ -893,8 +962,8 @@ with :confval:`eventlist.visibleColumns`
 .. code-block:: sh
 
    # Remove Type and Author from column list that is initially active
-   eventlist.visibleColumns = OT(GMT), M, TP, Phases, Lat, Lon,\
-                              Depth, Stat, Agency, Region, ID
+   eventlist.visibleColumns = OT(GMT), Type, M, MType Phases, RMS, Lat, Lon,\
+                              Depth, DType, Stat, FM, Author, Agency, Region, ID
 
 To show or hide columns interactively click with the right mouse button on the
 table header and check or uncheck the corresponding column.
@@ -909,6 +978,7 @@ Event tab and to the Event list. This can help to evaluate origins in a better
 way.
 
 Two source are supported, origin comments and custom scripts.
+
 
 Origin comments
 ---------------
@@ -1095,6 +1165,7 @@ in the background. It can take a while until the complete list has been
 processed. A progress indicator is plotted in the middle of the event list while
 the background processes are running.
 
+
 .. _scolv-settings:
 
 Settings
@@ -1105,6 +1176,12 @@ However, some settings can be changed on-the-fly. The connection to the messagin
 system and the database can be adjusted in the *Setup connection* dialog access
 by pressing :kbd:`F2`. A window for adjusting scolv settings is
 available which can be opened by pressing :kbd:`F3`.
+
+.. warning::
+
+   When pressing the Save button in the scolv settings menu, the parameters will be written
+   to :file:`$HOME/.seiscomp/scolv.cfg` (use mode configuration) where they take
+   priority over configurations in :file:`$SEISCOMP_ROOT/etc/scolv.cfg` (system mode configuration).
 
 Global
 ------
@@ -1168,6 +1245,7 @@ This section contains settings for the picker window.
 *Remove all automatic picks*
  If checked all automatic picks are removed once the manual review is confirmed.
 
+
 Magnitude review
 ----------------
 
@@ -1188,6 +1266,7 @@ This section contains settings for the magnitude waveform review window.
 
  The greater the offset the more the amplitude time window can be extended or
  shifted.
+
 
 Units and precisions
 --------------------
@@ -1219,146 +1298,211 @@ Furthermore the precision of various values can be configured:
    not the values themselves. These and other lock-and-feel parameters can be
    adjusted in *scheme* section of the :ref:`global configuration <global>`.
 
+
 Hotkeys
 =======
 
 The following table describes the available key combinations and their triggered
-actions in scolv.
+actions in scolv. The hotkeys are provided for:
 
-+----------------------+-------------------------------------------------------------+
-| Shortcut             | Description                                                 |
-+======================+=============================================================+
-| **Main window**      |                                                             |
-+----------------------+-------------------------------------------------------------+
-| F2                   | Setup connection dialog                                     |
-+----------------------+-------------------------------------------------------------+
-| F3                   | Picker and amplitude settings dialog                        |
-+----------------------+-------------------------------------------------------------+
-| F8                   | Display left event summary panel                            |
-+----------------------+-------------------------------------------------------------+
-| F9                   | Show ray paths and associated stations                      |
-+----------------------+-------------------------------------------------------------+
-| F10                  | Show event list                                             |
-+----------------------+-------------------------------------------------------------+
-| F11                  | Toggle fullscreen                                           |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+N               | Create an unassociated artificial origin at the current map |
-|                      | center                                                      |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+Z               | Go back to last origin (if available)                       |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+Shift+Z         | Go to next origin (if available)                            |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+PgUp            | Load previous event from the event list                     |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+PgDown          | Load next event from the event list                         |
-+----------------------+-------------------------------------------------------------+
-| Mouse wheel          | Zoom map in/out                                             |
-+----------------------+-------------------------------------------------------------+
-| Double click         | Center map at the clicked position                          |
-+----------------------+-------------------------------------------------------------+
-| **Picker**           |                                                             |
-+----------------------+-------------------------------------------------------------+
-| 1 .. 9               | Activate configured phase picking                           |
-+----------------------+-------------------------------------------------------------+
-| Space                | If phase picking is enabled, set pick                       |
-+----------------------+-------------------------------------------------------------+
-| Esc                  | Leaving picking mode                                        |
-+----------------------+-------------------------------------------------------------+
-| F3                   | Add station                                                 |
-+----------------------+-------------------------------------------------------------+
-| F5                   | Relocate                                                    |
-+----------------------+-------------------------------------------------------------+
-| E                    | Switch to E-component                                       |
-+----------------------+-------------------------------------------------------------+
-| F                    | Toggle between current filter and unfiltered                |
-+----------------------+-------------------------------------------------------------+
-| G                    | Toggle all filters                                          |
-+----------------------+-------------------------------------------------------------+
-| N                    | Switch to N-component                                       |
-+----------------------+-------------------------------------------------------------+
-| S                    | Maximize visible amplitudes                                 |
-+----------------------+-------------------------------------------------------------+
-| T                    | Temporarily toggle 3 component view in picking trace        |
-+----------------------+-------------------------------------------------------------+
-| W                    | Reset scale in picking trace                                |
-+----------------------+-------------------------------------------------------------+
-| X                    | Scroll down (through the traces)                            |
-+----------------------+-------------------------------------------------------------+
-| Y                    | Decrease row height of trace list                           |
-+----------------------+-------------------------------------------------------------+
-| Z                    | Switch to Z-component                                       |
-+----------------------+-------------------------------------------------------------+
-| >                    | Increase time scale in trace overview                       |
-+----------------------+-------------------------------------------------------------+
-| <                    | Decrease time scale in trace overview                       |
-+----------------------+-------------------------------------------------------------+
-| Left                 | Move trace view to left (fine)                              |
-+----------------------+-------------------------------------------------------------+
-| Right                | Move trace view to right (fine)                             |
-+----------------------+-------------------------------------------------------------+
-| Shift+Left           | Move trace view to left (rough)                             |
-+----------------------+-------------------------------------------------------------+
-| Shift+Right          | Move trace view to left (rough)                             |
-+----------------------+-------------------------------------------------------------+
-| Shift+F              | Toggle filter but limits to the selected trace              |
-+----------------------+-------------------------------------------------------------+
-| Shift+S              | Toggle spectrogram of selected trace                        |
-+----------------------+-------------------------------------------------------------+
-| Shift+Y              | Increase row height of trace list                           |
-+----------------------+-------------------------------------------------------------+
-| Up                   | Scroll up (through the traces)                              |
-+----------------------+-------------------------------------------------------------+
-| Down                 | Scroll down (through the traces)                            |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+S               | Show Fourier spectrum of selected trace                     |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+F               | Show spectrum of current trace                              |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+N               | Default trace view                                          |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+T               | Toggle display of theoretical arrivals                      |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+P               | Toggle display of picks (not arrivals). If picks should     |
-|                      | be shown for the first, all picks within the time span of   |
-|                      | interest are loaded from database. The behaviour is the     |
-|                      | same as ticking the option "Load all picks".                |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+Up              | Amplitude zoom in                                           |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+Down            | Amplitude zoom out                                          |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+Right           | Time zoom in                                                |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+Left            | Time zoom out                                               |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+0               | Align by origin time                                        |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+[1..9]          | Align on 1st-9th favorite phase                             |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+Shift+[1..9]    | Align on theoretical onset of 1st-9th favorite phase        |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+F1              | Align on P arrival                                          |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+F2              | Align on S arrival                                          |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+WheelUp         | Amplitude zoom in                                           |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+WheelDown       | Amplitude zoom out                                          |
-+----------------------+-------------------------------------------------------------+
-| Shift+WheelUp        | Time zoom in                                                |
-+----------------------+-------------------------------------------------------------+
-| Shift+WheelDown      | Time zoom out                                               |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+Shift+WheelUp   | Time and amplitude zoom in                                  |
-+----------------------+-------------------------------------------------------------+
-| Ctrl+Shift+WheelDown | Time and amplitude zoom out                                 |
-+----------------------+-------------------------------------------------------------+
-| Alt+Right            | Jump to next marker (picking mode)                          |
-+----------------------+-------------------------------------------------------------+
-| Alt+Left             | Jump to previous marker (picking mode)                      |
-+----------------------+-------------------------------------------------------------+
-| Alt+D                | Sort by distance                                            |
-+----------------------+-------------------------------------------------------------+
-| Alt+R                | Sort by residual                                            |
-+----------------------+-------------------------------------------------------------+
+* Main window
+* Picker window
+
+  * all areas
+  * upper area - picking trace
+  * lower area - picker overview
+* Magnitude waveform window.
+
++------------------------+-------------------------------------------------------------+
+| Shortcut               | Description                                                 |
++========================+=============================================================+
+| **Main window**        |                                                             |
++------------------------+-------------------------------------------------------------+
+| F2                     | Setup connection dialog                                     |
++------------------------+-------------------------------------------------------------+
+| F3                     | Picker and amplitude settings dialog                        |
++------------------------+-------------------------------------------------------------+
+| F8                     | Display left event summary panel                            |
++------------------------+-------------------------------------------------------------+
+| F9                     | Show ray paths and associated stations                      |
++------------------------+-------------------------------------------------------------+
+| F10                    | Show event list                                             |
++------------------------+-------------------------------------------------------------+
+| F11                    | Toggle fullscreen                                           |
++------------------------+-------------------------------------------------------------+
+| Ctrl+N                 | Create an unassociated artificial origin at the current map |
+|                        | center                                                      |
++------------------------+-------------------------------------------------------------+
+| Ctrl+Z                 | Go back to last origin (if available)                       |
++------------------------+-------------------------------------------------------------+
+| Ctrl+Shift+Z           | Go to next origin (if available)                            |
++------------------------+-------------------------------------------------------------+
+| Ctrl+PgUp              | Load previous event from the event list                     |
++------------------------+-------------------------------------------------------------+
+| Ctrl+PgDown            | Load next event from the event list                         |
++------------------------+-------------------------------------------------------------+
+| Mouse wheel            | Zoom map in/out                                             |
++------------------------+-------------------------------------------------------------+
+| Double click           | Center map at the clicked position                          |
++------------------------+-------------------------------------------------------------+
+| **Picker**             |                                                             |
++------------------------+-------------------------------------------------------------+
+| 1 .. 9                 | Activate configured phase picking                           |
++------------------------+-------------------------------------------------------------+
+| Space                  | If phase picking is enabled, set pick                       |
++------------------------+-------------------------------------------------------------+
+| Esc                    | Leaving picking mode                                        |
++------------------------+-------------------------------------------------------------+
+| F3                     | Add station                                                 |
++------------------------+-------------------------------------------------------------+
+| F5                     | Relocate                                                    |
++------------------------+-------------------------------------------------------------+
+| E                      | Switch to E-component                                       |
++------------------------+-------------------------------------------------------------+
+| F                      | Toggle between current filter and unfiltered                |
++------------------------+-------------------------------------------------------------+
+| G                      | Toggle all filters                                          |
++------------------------+-------------------------------------------------------------+
+| N                      | Switch to N-component                                       |
++------------------------+-------------------------------------------------------------+
+| S                      | Maximize visible amplitudes                                 |
++------------------------+-------------------------------------------------------------+
+| X                      | Scroll down (through the traces)                            |
++------------------------+-------------------------------------------------------------+
+| Z                      | Switch to Z-component                                       |
++------------------------+-------------------------------------------------------------+
+| Shift+F                | Toggle filter but limits to the selected trace              |
++------------------------+-------------------------------------------------------------+
+| Up                     | Scroll up (through the traces)                              |
++------------------------+-------------------------------------------------------------+
+| Down                   | Scroll down (through the traces)                            |
++------------------------+-------------------------------------------------------------+
+| >                      | Increase time scale                                         |
++------------------------+-------------------------------------------------------------+
+| <                      | Decrease time scale                                         |
++------------------------+-------------------------------------------------------------+
+| Ctrl+S                 | Show Fourier spectrum of selected trace                     |
++------------------------+-------------------------------------------------------------+
+| Ctrl+N                 | Default trace view                                          |
++------------------------+-------------------------------------------------------------+
+| Ctrl+T                 | Toggle display of theoretical arrivals                      |
++------------------------+-------------------------------------------------------------+
+| Ctrl+P                 | Toggle display of picks (not arrivals). If picks should     |
+|                        | be shown the first time, all picks within the time span of  |
+|                        | interest are loaded from database. The behaviour is the     |
+|                        | same as ticking the option "Load all picks".                |
++------------------------+-------------------------------------------------------------+
+| Ctrl+Right             | Time zoom in                                                |
++------------------------+-------------------------------------------------------------+
+| Ctrl+Left              | Time zoom out                                               |
++------------------------+-------------------------------------------------------------+
+| Ctrl+0                 | Align by origin time                                        |
++------------------------+-------------------------------------------------------------+
+| Ctrl+[1..9]            | Align on 1st - 9th favorite phase                           |
++------------------------+-------------------------------------------------------------+
+| Ctrl+Shift+[1..9]      | Align on theoretical onset of 1st - 9th favorite phase      |
++------------------------+-------------------------------------------------------------+
+| Ctrl+F1                | Align on P arrival                                          |
++------------------------+-------------------------------------------------------------+
+| Ctrl+F2                | Align on S arrival                                          |
++------------------------+-------------------------------------------------------------+
+| Alt+Right              | Jump to next marker (picking mode)                          |
++------------------------+-------------------------------------------------------------+
+| Alt+Left               | Jump to previous marker (picking mode)                      |
++------------------------+-------------------------------------------------------------+
+| *Picking trace*        |                                                             |
++------------------------+-------------------------------------------------------------+
+| T                      | Temporarily toggle 3 component view                         |
++------------------------+-------------------------------------------------------------+
+| Left                   | Move trace view to left (fine)                              |
++------------------------+-------------------------------------------------------------+
+| Right                  | Move trace view to right (fine)                             |
++------------------------+-------------------------------------------------------------+
+| Shift+Left             | Move trace view to left (rough)                             |
++------------------------+-------------------------------------------------------------+
+| Shift+Right            | Move trace view to left (rough)                             |
++------------------------+-------------------------------------------------------------+
+| W                      | Reset scale                                                 |
++------------------------+-------------------------------------------------------------+
+| Ctrl+WheelUp           | Amplitude zoom in                                           |
++------------------------+-------------------------------------------------------------+
+| Ctrl+WheelDown         | Amplitude zoom out                                          |
++------------------------+-------------------------------------------------------------+
+| Ctrl+Up                | Amplitude zoom in                                           |
++------------------------+-------------------------------------------------------------+
+| Ctrl+Down              | Amplitude zoom out                                          |
++------------------------+-------------------------------------------------------------+
+| Shift+S                | Toggle spectrogram of selected trace                        |
++------------------------+-------------------------------------------------------------+
+| Shift+WheelUp          | Time zoom in                                                |
++------------------------+-------------------------------------------------------------+
+| Shift+WheelDown        | Time zoom out                                               |
++------------------------+-------------------------------------------------------------+
+| *Picking overview*     |                                                             |
++------------------------+-------------------------------------------------------------+
+| Alt+D                  | Sort by distance                                            |
++------------------------+-------------------------------------------------------------+
+| Alt+R                  | Sort by residual                                            |
++------------------------+-------------------------------------------------------------+
+| Ctrl+F                 | Search for station code                                     |
++------------------------+-------------------------------------------------------------+
+| Ctrl+Up                | Time zoom in                                                |
++------------------------+-------------------------------------------------------------+
+| Ctrl+Down              | Time zoom out                                               |
++------------------------+-------------------------------------------------------------+
+| Ctrl+Shift+WheelUp     | Time and amplitude zoom in                                  |
++------------------------+-------------------------------------------------------------+
+| Ctrl+Shift+WheelDown   | Time and amplitude zoom out                                 |
++------------------------+-------------------------------------------------------------+
+| Y                      | Decrease row height                                         |
++------------------------+-------------------------------------------------------------+
+| Shift+Y                | Increase row height                                         |
++------------------------+-------------------------------------------------------------+
+| **Magnitude waveforms**|                                                             |
++------------------------+-------------------------------------------------------------+
+| F5                     | Compute network magnitudes and return to Magnitudes tab     |
++------------------------+-------------------------------------------------------------+
+| 1                      | Pick amplitudes manually                                    |
++------------------------+-------------------------------------------------------------+
+| ESC                    | Leave picking mode                                          |
++------------------------+-------------------------------------------------------------+
+| F                      | Toggle filter                                               |
++------------------------+-------------------------------------------------------------+
+| Shift+N                | Default view                                                |
++------------------------+-------------------------------------------------------------+
+| Left                   | Move trace view to left (fine)                              |
++------------------------+-------------------------------------------------------------+
+| Right                  | Move trace view to right (fine)                             |
++------------------------+-------------------------------------------------------------+
+| Shift+Left             | Move trace view to left (rough)                             |
++------------------------+-------------------------------------------------------------+
+| Shift+Right            | Move trace view to left (rough)                             |
++------------------------+-------------------------------------------------------------+
+| R                      | Recompute amplitude of selected station                     |
++------------------------+-------------------------------------------------------------+
+| X                      | Deactivate selected pick or station                         |
++------------------------+-------------------------------------------------------------+
+| Y                      | Decrease row height                                         |
++------------------------+-------------------------------------------------------------+
+| Shift+Y                | Increase row height                                         |
++------------------------+-------------------------------------------------------------+
+| >                      | Increase time scale                                         |
++------------------------+-------------------------------------------------------------+
+| <                      | Decrease time scale                                         |
++------------------------+-------------------------------------------------------------+
+| Alt+A                  | Sort traces by distance                                     |
++------------------------+-------------------------------------------------------------+
+| Alt+D                  | Sort traces by station name                                 |
++------------------------+-------------------------------------------------------------+
+| Alt+D                  | Sort traces by station name                                 |
++------------------------+-------------------------------------------------------------+
+| Left                   | Move trace view to left (fine)                              |
++------------------------+-------------------------------------------------------------+
+| Right                  | Move trace view to right (fine)                             |
++------------------------+-------------------------------------------------------------+
+| Shift+Left             | Move trace view to left (rough)                             |
++------------------------+-------------------------------------------------------------+
+| Ctrl+0                 | Align traces by origin time                                 |
++------------------------+-------------------------------------------------------------+
+| Ctrl+1                 | Align traces by trigger time                                |
++------------------------+-------------------------------------------------------------+
