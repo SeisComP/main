@@ -627,10 +627,17 @@ void MainWindow::start() {
 	else
 		openAcquisition();
 
+	double lat = 0.0;
+	double lon = 0.0;
 	try {
-		double lat = Gui::Application::Instance()->configGetDouble("streams.sort.latitude");
-		double lon = Gui::Application::Instance()->configGetDouble("streams.sort.longitude");
-
+		lat = Gui::Application::Instance()->configGetDouble("streams.sort.latitude");
+	}
+	catch ( ... ) {}
+	try {
+		lon = Gui::Application::Instance()->configGetDouble("streams.sort.longitude");
+	}
+	catch ( ... ) {}
+	try {
 		sortByOrigin(lat, lon);
 	}
 	catch ( ... ) {}
@@ -1486,13 +1493,50 @@ void MainWindow::openAcquisition() {
 
 		QRectF regionRect;
 
+		double latMin = -90.0;
+		double latMax = 90.0;
+		double lonMin = -180.0;
+		double lonMax = 180.0;
 		try {
-			double lonMin = Gui::Application::Instance()->configGetDouble("streams.region.lonmin");
-			double lonMax = Gui::Application::Instance()->configGetDouble("streams.region.lonmax");
-			double latMin = Gui::Application::Instance()->configGetDouble("streams.region.latmin");
-			double latMax = Gui::Application::Instance()->configGetDouble("streams.region.latmax");
+			lonMin = Gui::Application::Instance()->configGetDouble("streams.region.lonmin");
+		}
+		catch ( ... ) {
+		}
+		try {
+			lonMax = Gui::Application::Instance()->configGetDouble("streams.region.lonmax");
+		}
+		catch ( ... ) {
+		}
+		try {
+			latMin = Gui::Application::Instance()->configGetDouble("streams.region.latmin");
+		}
+		catch ( ... ) {
+		}
+		try {
+			latMax = Gui::Application::Instance()->configGetDouble("streams.region.latmax");
+		}
+		catch ( ... ) {
+		}
 
-			regionRect.setRect(lonMin, latMin, lonMax-lonMin, latMax-latMin);
+		if ( lonMin > 180 ) {
+			lonMin -= 360.0;
+		}
+		if ( lonMin < -180 ) {
+			lonMin += 360.0;
+		}
+		if ( lonMax > 180 ) {
+			lonMax -= 360.0;
+		}
+		if ( lonMax < -180 ) {
+			lonMax += 360.0;
+		}
+		double latDelta = 0.0;
+		latDelta = lonMax-lonMin;
+		if ( latDelta < 0 ) {
+			latDelta += 360.;
+		}
+		try {
+			regionRect.setRect(lonMin, latMin, latDelta, latMax-latMin);
 		}
 		catch ( ... ) {
 		}
