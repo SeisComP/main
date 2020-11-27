@@ -20,8 +20,7 @@ import seiscomp.client, seiscomp.datamodel, seiscomp.io
 class ObjectDumper(seiscomp.client.Application):
 
     def __init__(self):
-        argv = [bytes(a.encode()) for a in sys.argv]
-        seiscomp.client.Application.__init__(self, len(argv), argv)
+        seiscomp.client.Application.__init__(self, len(sys.argv), sys.argv)
         self.setMessagingEnabled(True)
         self.setDatabaseEnabled(True, False)
         self.setMessagingUsername("")
