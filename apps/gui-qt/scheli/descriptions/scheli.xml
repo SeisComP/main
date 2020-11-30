@@ -3,6 +3,67 @@
 	<module name="scheli" category="GUI">
 		<description>Real-time helicorder view for one stream</description>
 		<configuration>
+			<group name="heli">
+				<parameter name="streams" type="list:string" default="" unit="">
+					<description>
+					Streams to display. When using a list, the first entry is considered.
+					When configuring a list, the streams can be considered for dumping
+					separate image files for multiple streams.
+					Use commas for separating streams.
+
+					Example: GR.MOX..BHZ
+					</description>
+				</parameter>
+				<parameter name="filter" type="string" default="" unit="">
+					<description>Filter to be applied on the data.</description>
+				</parameter>
+				<parameter name="numberOfRows" type="integer" default="48" unit="">
+					<description>Filter to be applied on the data.</description>
+				</parameter>
+				<parameter name="rowTimeSpan" type="double" default="1800" unit="s">
+					<description>Length of data per trace.</description>
+				</parameter>
+				<parameter name="timeFormat" type="string" default="%F" unit="">
+					<description>Time format.</description>
+				</parameter>
+				<parameter name="recordTime" type="boolean" default="false">
+					<description>Fix current time to last record</description>
+				</parameter>
+				<parameter name="lineWith" type="integer" default="1" unit="">
+					<description>Line width of traces.</description>
+				</parameter>
+				<group name="stream">
+					<parameter name="description" type="boolean" default="true">
+						<description>Add stream description to traces.</description>
+					</parameter>
+				</group>
+			</group>
+			<group name="amplitudeRange">
+				<description>Gain-corrected amplitudes given in units of the sensor, e.g. m/s.</description>
+				<parameter name="min" type="double" default="-0.00001" unit="">
+					<description>Minimum amplitude to show in trace.</description>
+				</parameter>
+				<parameter name="max" type="double" default="0.00001" unit="">
+					<description>Minimum amplitude to show in trace.</description>
+				</parameter>
+			</group>
+			<group name="dump">
+				<description>Control dumping of PNG images.</description>
+				<parameter name="interval" type="integer" default="-1" unit="s">
+					<description>
+						Image creation interval. Negative values disable image dumping.
+					</description>
+				</parameter>
+				<parameter name="dpi" type="integer" default="300" unit="dpi">
+					<description>Image resolution</description>
+				</parameter>
+				<parameter name="xres" type="integer" default="1024" unit="px">
+					<description>Number of pixels horizontally</description>
+				</parameter>
+				<parameter name="yres" type="integer" default="768" unit="px">
+					<description>Number of pixels vertically</description>
+				</parameter>
+			</group>
 			<group name="scripts">
 				<parameter name="postprocessing" type="path">
 					<description>

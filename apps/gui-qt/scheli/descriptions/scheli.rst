@@ -29,7 +29,7 @@ Let :ref:`scheli` show data from the CX station PB01 for the previous 5 hours.
 
 .. code-block:: sh
 
-   scheli --stream=CX.PB01..HHZ --rows 10
+   scheli --stream CX.PB01..HHZ --rows 10
 
 .. _scheli-capture:
 
@@ -42,7 +42,7 @@ of the requested stations.
 
 .. code-block:: sh
 
-   scheli capture --heli.streams="CX.PB01..HHZ,CX.PB02..HHZ,CX.PB04..HHZ" --interval=10 -o "/tmp/heli_%N_%S_%L_%C.png" -H localhost -I slink://localhost
+   scheli capture --heli.streams="CX.PB01..HHZ,CX.PB02..HHZ,CX.PB04..HHZ" --interval 10 -o "/tmp/heli_%N_%S_%L_%C.png" -H localhost -I slink://localhost
 
 Setup
 =====
