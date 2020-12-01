@@ -1,14 +1,14 @@
-scheli visualizes waveforms from a single station mimicking a drum-recorder plot
-(see :ref:`fig-scheli`).
+:program:`scheli` visualizes waveforms from a single stream or multiple stations
+mimicking a drum-recorder plot (see :ref:`fig-scheli`):
 
-Features
-========
-
-* scheli plots configurable traces in helicorder style
+* :program:`scheli` plots one configurable trace in helicorder style in the
+  :term:`GUI` (:ref:`GUI mode <scheli-show>`).
 * Configurable GUI: trace colors, visualized time spans, number of rows, data filtering,
   amplitude ranges and much more.
-* Automatic image capture: capture helicorder images at configurable time intervals
-  and a set of channels
+* Automatic image capturing: Capture helicorder images at configurable time intervals
+  of one trace in :ref:`GUI mode<scheli-show>` or a set of multiple channels in
+  :ref:`capture mode<scheli-capture>`.
+  The images can be used, e.g. for showing data images on web sites.
 
 .. _fig-scheli:
 
@@ -16,42 +16,54 @@ Features
    :width: 16cm
    :align: center
 
-   scheli
+   scheli in GUI mode
 
 Examples
 ========
 
 .. _scheli-show:
 
-**Simple helicorder window:**
+1. **GUI mode - Simple helicorder window:**
 
-Let :ref:`scheli` show data from the CX station PB01 for the previous 5 hours.
+   * Start :program:`scheli` with the configured values and informative debug output: ::
 
-.. code-block:: sh
+        scheli --debug
 
-   scheli --stream CX.PB01..HHZ --rows 10
+   * Let :program:`scheli` show data from the CX station PB01 for the previous 5 hours
+     overriding configuration by command-line paramaters.
+
+     .. code-block:: sh
+
+        scheli --stream CX.PB01..HHZ --rows 10
 
 .. _scheli-capture:
 
-**Image capture:**
+2. **Capture mode - Image capturing:**
 
-Capture the helicorder plot for 3 stations in intervals of 10 seconds.
-The data is retrieved using seedlink and the plots are stored as PNG images.
-The image files are named according to network, station, stream and location codes
-of the requested stations.
+   Capture the helicorder plot for 3 stations in intervals of 10 seconds.
+   The data is retrieved using seedlink and the plots are stored as PNG images.
+   The image files are named according to network, station, stream and location codes
+   of the requested stations. Command-line parameters override the module configuration.
 
-.. code-block:: sh
+   .. code-block:: sh
 
-   scheli capture --heli.streams="CX.PB01..HHZ,CX.PB02..HHZ,CX.PB04..HHZ" --interval 10 -o "/tmp/heli_%N_%S_%L_%C.png" -H localhost -I slink://localhost
+      scheli capture --stream "CX.PB01..HHZ,CX.PB02..HHZ,CX.PB04..HHZ" --interval 10 -o "/tmp/heli_%N_%S_%L_%C.png" -H localhost -I slink://localhost
+
+   The output file names will be generated based on network code (%N), station code (%S),
+   location code (%L) and stream code (%C): ::
+
+      /tmp/CX.PB01..HHZ.png
+      /tmp/CX.PB02..HHZ.png
+      /tmp/CX.PB04..HHZ.png
 
 Setup
 =====
 
+Specifc :program:`scheli` parameters are adjusted in the :ref:`module configuration <scheli_configuration>`.
 Colors of traces etc. can be adjusted by setting the *scheme* parameters in
 the global configuration of scheli. For alternating colors between the traces
 set the parameters scheme.colors.records.foreground and
-scheme.colors.records.alternateForeground in scheli.cfg, e.g. as for the example
-in the figure :ref:`fig-scheli`:
+scheme.colors.records.alternateForeground in :file:`scheli.cfg`:
 
 .. code-block:: sh
 
