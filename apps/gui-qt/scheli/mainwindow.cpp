@@ -31,14 +31,14 @@ MainWindow::MainWindow() {
 	_ui.setupUi(this);
 	_ui.labelHeadline->setVisible(false);
 
-	_xRes = 512;
-	_yRes = 512;
+	_xRes = 1024;
+	_yRes = 768;
 	_dpi = 300;
 	_rowTimeSpan = 18000;
 	_timeFormat = "%F";
-	_snapshotTimer = 0;
+	_snapshotTimer = -1;
 
-	_streamThread = NULL;
+	_streamThread = nullptr;
 	_fixCurrentTimeToLastRecord = false;
 
 	//_ui.labelStreamID->setFont(SCScheme.fonts.highlight);
@@ -217,6 +217,7 @@ void MainWindow::setTimeFormat(const std::string &timeFormat) {
 
 void MainWindow::timerEvent(QTimerEvent *event) {
 	if ( event->timerId() != _snapshotTimer ) return;
+
 	if ( !_dumpFilename.isEmpty() ) print(_dumpFilename);
 }
 
@@ -256,7 +257,7 @@ void MainWindow::start(QString dumpFilename) {
 
 
 void MainWindow::startAcquisition() {
-	if ( _streamThread != NULL ) {
+	if ( _streamThread ) {
 		_streamThread->wait(2000);
 		delete _streamThread;
 	}
@@ -287,7 +288,7 @@ void MainWindow::startAcquisition() {
 
 void MainWindow::acquisitionFinished() {
 	delete _streamThread;
-	_streamThread = NULL;
+	_streamThread = nullptr;
 }
 
 

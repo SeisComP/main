@@ -75,8 +75,9 @@ HCApp::HCApp(int& argc, char** argv, int flags, Type type )
 	_dpi = 300;
 	_timeFormat = "%F";
 	_snapshotTimeout = -1;
-	_streamThread = NULL;
+	_streamThread = nullptr;
 	_snapshotTimer = -1;
+	_outputFilename = "/tmp/heli_%N_%S_%L_%C.png";
 }
 
 
@@ -194,6 +195,7 @@ bool HCApp::initConfiguration() {
 	try { _timeSpanPerRow = configGetInt("heli.rowTimeSpan"); } catch ( ... ) {}
 	try { _antialiasing = configGetBool("heli.antialiasing"); } catch ( ... ) {}
 	try { _lineWidth = configGetInt("heli.lineWidth"); } catch ( ... ) {}
+	try { _outputFilename = configGetString("heli.dump.outputFile"); } catch ( ... ) {}
 	try { _xRes = configGetInt("heli.dump.xres"); } catch ( ... ) {}
 	try { _yRes = configGetInt("heli.dump.yres"); } catch ( ... ) {}
 	try { _dpi = configGetInt("heli.dump.dpi"); } catch ( ... ) {}
@@ -302,6 +304,31 @@ bool HCApp::init() {
 	if ( _streamCodes.empty() ) {
 		std::cerr << "ERROR: no streams given" << std::endl;
 		return false;
+	}
+
+	SEISCOMP_INFO("Parameter overview:");
+	for ( size_t i = 0; i < _streamCodes.size(); ++i ) {
+		SEISCOMP_INFO(" + added stream: %s", _streamCodes[i].c_str());
+		if ( i > 0 ) {
+			SEISCOMP_WARNING("Configured stream %s is only considered when running in capture mode.",
+			                 _streamCodes[i].c_str());
+		}
+	}
+	SEISCOMP_INFO(" + filter: %s", _filterString.c_str());
+	SEISCOMP_INFO(" + rows: %i", _numberOfRows);
+	SEISCOMP_INFO(" + rows time span: %i s", _timeSpanPerRow);
+	SEISCOMP_INFO(" + minimum amplitude: %.9f", _amplitudesMin);
+	SEISCOMP_INFO(" + maximum amplitude: %.9f", _amplitudesMax);
+	if ( _snapshotTimeout <= 0 ) {
+		SEISCOMP_INFO(" + Image capturing is inactive");
+	}
+	else {
+		SEISCOMP_INFO(" + Image capturing:");
+		SEISCOMP_INFO("   + output file %s", _outputFilename.c_str());
+		SEISCOMP_INFO("   + interval %i s", _snapshotTimeout);
+		SEISCOMP_INFO("   + dpi %i", _dpi);
+		SEISCOMP_INFO("   + xres %i", _xRes);
+		SEISCOMP_INFO("   + yres %i", _yRes);
 	}
 
 	return true;
@@ -444,7 +471,12 @@ void HCApp::setupUi(MainWindow *w) {
 	if ( !_filterString.empty() )
 		w->setFilter(_filterString);
 
-	w->start(_outputFilename.c_str());
+	QString file = _outputFilename.c_str();
+	file.replace("%N", streamID.networkCode().c_str());
+	file.replace("%S", streamID.stationCode().c_str());
+	file.replace("%L", streamID.locationCode().c_str());
+	file.replace("%C", streamID.channelCode().c_str());
+	w->start(file);
 }
 
 
@@ -538,7 +570,7 @@ void HCApp::receivedRecord(Seiscomp::Record *rec) {
 void HCApp::acquisitionFinished() {
 	if ( _streamThread ) {
 		delete _streamThread;
-		_streamThread = NULL;
+		_streamThread = nullptr;
 		QApplication::quit();
 	}
 }
