@@ -594,7 +594,7 @@ class FDSNWS(seiscomp.client.Application):
                                   "list takes precedence" % overlapCount,
                                   file=sys.stderr)
                 except Exception as e:
-                    print("error parsing eventType.whitelist: %s" % str(e),
+                    print("error parsing eventType.blacklist: %s" % str(e),
                           file=sys.stderr)
                     return False
         except Exception:
