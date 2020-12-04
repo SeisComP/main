@@ -53,7 +53,7 @@ delay [s]
 .. _scqc-gaps:
 
 gap (count [counts], interval [s], length [s])
- **Plugin:** qcplugin_spike
+ **Plugin:** qcplugin_gap
 
  **Description:** In case of a data gap between two consecutive records this parameter delivers
  the gap interval time, the mean length of the gaps and the number
