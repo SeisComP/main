@@ -1274,7 +1274,7 @@ void serializeJSON(const string *val, IO::JSONArchive &ar) {
 
 template<typename T1, typename T2, typename T3, typename T4>
 void populateJSON(const string &name, const T1 *sx, T2 sc, T3 (T4::*getObject)(size_t) const,
-							   size_t (T4::*objectCount)() const) {
+                  size_t (T4::*objectCount)() const) {
 	for ( size_t n = 0; n < (sx->*objectCount)(); ++n ) {
 		std::string data;
 
