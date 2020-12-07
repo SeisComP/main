@@ -113,6 +113,8 @@ class MagTool {
 		bool feed(DataModel::Pick*);
 		bool feed(DataModel::Amplitude*, bool update);
 
+		void remove(DataModel::PublicObject *po);
+
 
 	protected:
 		struct MagnitudeEntry {

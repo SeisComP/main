@@ -781,6 +781,8 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 
 	weightIndex = 0;
 
+	set<StationMagnitudeContribution*> refs;
+
 	for ( StaMagArray::iterator it = stationMagnitudes.begin();
 	      it != stationMagnitudes.end(); ++it ) {
 		const DataModel::StationMagnitude *stationMagnitude = (*it).get();
@@ -824,6 +826,7 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 			}
 		}
 
+		refs.insert(magRef.get());
 		++weightIndex;
 	}
 
@@ -870,6 +873,8 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 				SEISCOMP_DEBUG("Updating magnitude reference for %s", stationMagnitude->publicID().c_str());
 			}
 		}
+
+		refs.insert(magRef.get());
 	}
 
 	netMag->setMethodID(methodID);
@@ -880,6 +885,15 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 		netMag->setEvaluationStatus(Core::None);
 
 	netMag->setStationCount(staCount);
+
+	for ( size_t i = 0; i < netMag->stationMagnitudeContributionCount(); ) {
+		if ( refs.find(netMag->stationMagnitudeContribution(i)) == refs.end() ) {
+			netMag->removeStationMagnitudeContribution(i);
+		}
+		else {
+			++i;
+		}
+	}
 
 	ProcessorList::iterator it = _processors.find(mtype);
 	if ( it == _processors.end() ) return false;
@@ -2090,6 +2104,15 @@ bool MagTool::feed(DataModel::Pick *pick) {
 	createBinding(pickID);
 
 	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MagTool::remove(DataModel::PublicObject *po) {
+	_objectCache.remove(po);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

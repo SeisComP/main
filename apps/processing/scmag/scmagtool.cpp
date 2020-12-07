@@ -447,7 +447,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 			_sendImmediately = false;
 		}
 
-		void addObject(const std::string& parentID, DataModel::Object* object) {
+		void addObject(const std::string &parentID, DataModel::Object *object) {
 			Pick *pick = Pick::Cast(object);
 			if ( pick != NULL ) {
 				logObject(_magtool.inputPickLog, Time::GMT());
@@ -477,7 +477,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 			}
 		}
 
-		void updateObject(const std::string&, DataModel::Object* object) {
+		void updateObject(const std::string &, DataModel::Object *object) {
 			Amplitude *ampl = Amplitude::Cast(object);
 			if ( ampl != NULL ) {
 				logObject(_magtool.inputAmpLog, Time::GMT());
@@ -498,6 +498,12 @@ class MagToolApp : public Seiscomp::Client::Application {
 				Notifier::Disable();
 				return;
 			}
+		}
+
+		void removeObject(const std::string &, DataModel::Object *object) {
+			PublicObject *po = PublicObject::Cast(object);
+			if ( po )
+				_magtool.remove(po);
 		}
 
 
