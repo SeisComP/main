@@ -702,7 +702,7 @@ else:
     env.initConfig(cfg, "scart")
     try:
         plugins = cfg.getStrings("plugins")
-        registry = seiscomp.client.PluginRegistry.Instance()
+        registry = seiscomp.system.PluginRegistry.Instance()
         for p in plugins:
             registry.addPluginName(p)
         registry.loadPlugins()
