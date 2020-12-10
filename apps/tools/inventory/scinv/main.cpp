@@ -490,6 +490,10 @@ class InventoryManager : public Client::Application,
 			if ( !Client::Application::validateParameters() ) return false;
 			vector<string> opts = commandline().unrecognizedOptions();
 
+			// Remove filters to read the entire inventory
+			_networkTypeFirewall = Util::StringFirewall();
+			_stationTypeFirewall = Util::StringFirewall();
+
 			if ( _operation.empty() ) {
 				cerr << "No operation given." << endl;
 				cerr << "Usage: " << name() << " [sync|merge|apply|ls|keys|check] [opts]" << endl;
