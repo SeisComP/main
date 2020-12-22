@@ -16,24 +16,10 @@
 
 
 #include <string>
-#include <list>
-
 #include <seiscomp/core/baseobject.h>
 #include <seiscomp/core/interfacefactory.h>
 #include <seiscomp/config/config.h>
 #include <seiscomp/plugins/events/api.h>
-
-
-/******************************************************************************
- scevent API Changelog
- ******************************************************************************
- 2
-   - Added list of event journal entries to process()
-
- <undefined>
-   - Initial API
- */
-#define SCEVENT_EVENTPROCESSOR_API_VERSION 2
 
 
 namespace Seiscomp {
@@ -42,7 +28,6 @@ namespace Seiscomp {
 namespace DataModel {
 
 class Event;
-DEFINE_SMARTPOINTER(JournalEntry);
 
 }
 
@@ -55,14 +40,7 @@ DEFINE_SMARTPOINTER(EventProcessor);
 
 class SC_EVPLUGIN_API EventProcessor : public Seiscomp::Core::BaseObject {
 	// ----------------------------------------------------------------------
-	// Public types
-	// ----------------------------------------------------------------------
-	public:
-		typedef std::list<DataModel::JournalEntryPtr> Journal;
-
-
-	// ----------------------------------------------------------------------
-	// X'truction
+	// X'struction
 	// ----------------------------------------------------------------------
 	public:
 		EventProcessor();
@@ -80,8 +58,7 @@ class SC_EVPLUGIN_API EventProcessor : public Seiscomp::Core::BaseObject {
 		//! methods.
 		//! This method should return true if the event objects needs
 		//! an update.
-		virtual bool process(DataModel::Event *event,
-		                     const Journal &journals) = 0;
+		virtual bool process(DataModel::Event *event) = 0;
 };
 
 
