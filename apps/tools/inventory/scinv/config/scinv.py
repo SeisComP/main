@@ -28,7 +28,7 @@ class Module(seiscomp.kernel.Module):
     def updateConfig(self):
         messaging = True
         messagingPort = 18180
-        messagingProtocol = 'scmp';
+        messagingProtocol = 'scmp'
 
         try:
             messaging = self.env.getBool("messaging.enable")
