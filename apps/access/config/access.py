@@ -1,8 +1,34 @@
 from __future__ import print_function
-import os, string, time, re, glob, shutil, sys, imp, random, fnmatch
-import seiscomp.core, seiscomp.kernel, seiscomp.system, seiscomp.client, seiscomp.datamodel
+import os
+import string
+import time
+import re
+import glob
+import shutil
+import sys
+import imp
+import random
+import fnmatch
+import seiscomp.core
+import seiscomp.config
+import seiscomp.kernel
+import seiscomp.system
+import seiscomp.client
+import seiscomp.datamodel
+
 
 DEBUG = 0
+
+
+def parseBindPort(bind):
+    bindToks = bind.split(':')
+    if len(bindToks) == 1:
+        return int(bindToks[0])
+    elif len(bindToks) == 2:
+        return int(bindToks[1])
+    else:
+        return -1
+
 
 def collectParams(container):
     params = {}
@@ -396,19 +422,50 @@ class Module(seiscomp.kernel.Module):
     def updateConfig(self):
         messaging = True
         messagingPort = 18180
+        messagingProtocol = 'scmp';
 
         try: messaging = self.env.getBool("messaging.enable")
-        except: pass
-        try: messagingPort = self.env.getInt("messaging.port")
         except: pass
 
         # If messaging is disabled in kernel.cfg, do not do anything
         if not messaging:
-          log("- messaging disabled, nothing to do")
-          return 0
+            log("- messaging disabled, nothing to do")
+            return 0
+
+        # Load scmaster configuration and figure the bind ports of scmaster out
+        cfg = seiscomp.config.Config()
+        seiscomp.system.Environment.Instance().initConfig(cfg, "scmaster")
+
+        # First check the unencrypted port and prefer that
+        p = parseBindPort(cfg.getString("interface.bind"))
+        if p > 0:
+            messagingPort = p
+
+            try:
+                bind = self.env.getString("messaging.bind")
+                bindToks = bind.split(':')
+                if len(bindToks) == 1:
+                    messagingPort = int(bindToks[0])
+                elif len(bindToks) == 2:
+                    messagingPort = int(bindToks[1])
+                else:
+                    sys.stdout.write(
+                        "E invalid messaging bind parameter: %s\n" % bind)
+                    sys.stdout.write("  expected either 'port' or 'ip:port'\n")
+                    return 1
+            except:
+                pass
+
+        # Otherwise check if ssl is enabled
+        else:
+            p = parseBindPort(cfg.getString("interface.ssl.bind"))
+            if p > 0:
+                messagingPort = p
+                messagingProtocol = 'scmps'
 
         # Synchronize database configuration
-        params = [self.name, '--console', '1', '-H', 'localhost:%d' % messagingPort]
+        params = [self.name, '--console', '1', '-H',
+                  '%s://localhost:%d' % (messagingProtocol, messagingPort)]
         # Create the database update app and run it
         # This app implements a seiscomp.client.Application and connects
         # to localhost regardless of connections specified in global.cfg to
