@@ -725,8 +725,19 @@ void MainWindow::start() {
 		lon = Gui::Application::Instance()->configGetDouble("streams.sort.longitude");
 	}
 	catch ( ... ) {}
+
 	try {
-		sortByOrigin(lat, lon);
+		string sortMode = SCApp->configGetString("streams.sort.mode");
+		if ( sortMode == "config" )
+			sortByConfig();
+		else if ( sortMode == "distance" )
+			sortByOrigin(lat, lon);
+		else if ( sortMode == "station" )
+			sortByStationCode();
+		else if ( sortMode == "network" )
+			sortByNetworkStationCode();
+		else if ( sortMode == "group" )
+			sortByGroup();
 	}
 	catch ( ... ) {}
 }

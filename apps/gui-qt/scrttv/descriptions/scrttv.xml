@@ -61,17 +61,24 @@
 			<group name="streams">
 				<group name="sort">
 					<description>
-						Configures an initial location (latitude, longitude) to be used
-						for sorting the traces when selecting &quot;Restore config order&quot;.
+						Configures the initial stream sorting.
 					</description>
+					<parameter name="mode" type="string" default="distance">
+						<description>
+							The sort mode applied initially. Allowed values
+							are: config, distance, station, network, group.
+						</description>
+					</parameter>
 					<parameter name="latitude" type="double" unit="deg" default="0.0">
 						<description>
 							Latitude of the initial location for sorting traces.
+							Only valid if mode == distance.
 						</description>
 					</parameter>
 					<parameter name="longitude" type="double" unit="deg" default="0.0">
 						<description>
 							Longitude of the initial location for sorting traces.
+							Only valid if mode == distance.
 						</description>
 					</parameter>
 				</group>
