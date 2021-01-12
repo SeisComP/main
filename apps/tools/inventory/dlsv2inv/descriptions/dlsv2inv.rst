@@ -1,12 +1,12 @@
 dlsv2inv converts dataless `SEED <http://www.iris.edu/data/dataless.htm>`_ to
-SeisComP XML. Due to the limitations of dataless SEED dlsv2inv allows to set
+SeisComP XML (:term:`SCML`). Due to the limitations of dataless SEED dlsv2inv allows to set
 attributes which are not available in dataless such as network type, network
 description and so on.
 
 It takes basically two important parameters:
 
-1. input file
-2. output file
+#. input file
+#. output file
 
 whereas the output file defaults to stdout if not given.
 
@@ -16,6 +16,11 @@ which should contain the local datacenter where the information comes from.
 While importing the attribute :confval:`datacenterID` is read and written into
 the archive attribute of all networks and stations available in the dataless.
 The datacenterID can be overridden with the :option:`--dcid` command line option.
+
+.. note::
+
+   Conversion of inventory in |scname| XML to dataless SEED is provided by :ref:`inv2dlsv`.
+
 
 Examples
 ========

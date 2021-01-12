@@ -1,30 +1,36 @@
-inv2dlsv is a simple filter that converts XML from stdin (or a file) to dataless
-SEED on stdout (or a file). It does not support processing of input XML such as
-extraction of networks or channels. To accomplish this task, combine inv2dlsv
-with :ref:`invextr`.
+inv2dlsv is a simple filter that converts inventory in |scname| XML (:term:`SCML`)
+format from stdin (or a file) to dataless SEED on stdout (or a file). It does
+not support processing of input XML such as extraction of networks or channels.
+To accomplish this task, combine :program:`inv2dlsv` with :ref:`invextr`.
 
-.. note:: "-" can always be used as filename to refer to the standard
-   input/output channel.
+.. note::
+
+   Conversion of dataless SEED to |scname| XML is provided by :ref:`dlsv2inv`.
+
 
 Examples
 ========
 
+.. note::
+
+   "-" can always be used as filename to refer to the standard input/output channel.
+
 #. Convert an inventory XML file to a dataless SEED file
 
-.. code-block:: sh
+   .. code-block:: sh
 
-   inv2dlsv inv.xml inv.seed
+      inv2dlsv inv.xml inv.seed
 
 
 #. Convert an inventory XML file to a compressed dataless SEED file
 
-.. code-block:: sh
+   .. code-block:: sh
 
-   inv2dlsv inv.xml | gzip > inv.seed.gz
+      inv2dlsv inv.xml | gzip > inv.seed.gz
 
 
 #. Convert a subset of an inventory XML using :ref:`invextr`.
 
-.. code-block:: sh
+   .. code-block:: sh
 
-   invextr --chans "*MORC*" inv.xml | inv2dlsv - inv.seed
+      invextr --chans "*MORC*" inv.xml | inv2dlsv - inv.seed
