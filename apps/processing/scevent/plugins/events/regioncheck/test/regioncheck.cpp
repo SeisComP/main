@@ -15,9 +15,9 @@
  * Email: enrico.ellguth@gempa.de                                          *
  ***************************************************************************/
 
-#define SEISCOMP_COMPONENT TEST_SCEVENT_REGIONCHECK
-#define SEISCOMP_TEST_MODULE test_scevent_region_check
 
+#define SEISCOMP_COMPONENT TEST_SCEVENT_REGIONCHECK
+#define SEISCOMP_TEST_MODULE SeisComP
 
 #include "../regioncheck.h"
 
@@ -30,6 +30,7 @@
 #include <seiscomp3/datamodel/event.h>
 #include <seiscomp3/datamodel/origin.h>
 #include <seiscomp3/datamodel/eventparameters.h>
+#include <seiscomp3/datamodel/journalentry.h>
 #include <seiscomp3/io/archive/xmlarchive.h>
 
 using namespace std;
@@ -55,6 +56,10 @@ bool readEventParameters(EventParameters &ep,
 
 }
 
+
+BOOST_AUTO_TEST_SUITE(seiscomp_main_scevent_regioncheck)
+
+
 BOOST_AUTO_TEST_CASE(CheckOrigin) {
 	EventParameters ep;
 	BOOST_CHECK(readEventParameters(ep, "data/20201015070038.624597.1087.xml"));
@@ -66,5 +71,9 @@ BOOST_AUTO_TEST_CASE(CheckOrigin) {
 
 	// TODO get event from data set
 	EventPtr event;
-	BOOST_CHECK(proc.process(event.get()));
+	Client::EventProcessor::Journal journal;
+	BOOST_CHECK(proc.process(event.get(), journal));
 }
+
+
+BOOST_AUTO_TEST_SUITE_END()
