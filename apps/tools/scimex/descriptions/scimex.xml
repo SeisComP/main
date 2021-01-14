@@ -24,17 +24,19 @@
 				is supported which was used in release Barcelona (2008).
 				</description>
 			</parameter>
-			<parameter name="exportHosts" type="string">
+			<parameter name="exportHosts" type="list:string">
 				<description>
-				A list of names of recipients. These are used in hosts.$name directives
+				A list of hosts profiles to be considered for exporting.
+				These are used in hosts.$name directives
 				(see below) to define addresses, filter criteria, etc.
 				applicable to each recipient.
 				</description>
 			</parameter>
 
-			<parameter name="importHosts" type="string">
+			<parameter name="importHosts" type="list:string">
 				<description>
-				List of names of suppliers from which to export. These are used with hosts.$name directives similarly to exportHosts.
+				A list of hosts profiles to be considered for importing.
+				These are used with hosts.$name directives similarly to exportHosts.
 				</description>
 			</parameter>
 			<group name="criteria">
