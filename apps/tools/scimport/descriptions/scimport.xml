@@ -5,7 +5,16 @@
 		<configuration>
 			<parameter name="sink" type="string">
 				<description>
-				Address of scmaster to sent imported messages to.
+				URI of receiving host which runs scmaster. The URI contains
+				the host name with an optional protocol and port.
+
+				Format: protocol://host:port
+
+				Examples:
+
+				- proc
+
+				- scmp://proc:18180
 				</description>
 			</parameter>
 			<parameter name="routingtable" type="list:string">
@@ -26,16 +35,18 @@
 				Enable/Disable filtering of messages
 			</parameter>
 			<group name="filter">
+				<description>Define filter criteria before sending</description>
 				<group name="pick">
+					<description>Criteria for filtering picks</description>
 					<parameter name="mode" type="string">
 						<description>
-						Defines the pick mode to filter for. Allowed values are
+						The mode of picks to filter for. Allowed values:
 						&quot;automatic&quot; and &quot;manual&quot;.
 						</description>
 					</parameter>
 					<parameter name="status" type="string">
 						<description>
-						Defines the pick status to filter for. Allowed values are
+						The status of picks to filter for. Allowed values:
 						&quot;preliminary&quot;, &quot;confirmed&quot;,
 						&quot;reviewed&quot;, &quot;final&quot;,
 						&quot;rejected&quot; and &quot;reported&quot;.
@@ -43,33 +54,34 @@
 					</parameter>
 					<parameter name="phase" type="string">
 						<description>
-						Defines the pick phase hint to filter for. Allowed values are
+						The pick phase hint to filter for. Allowed values:
 						all possible phase codes.
 						</description>
 					</parameter>
 					<parameter name="agencyIDs" type="list:string">
 						<description>
-						Defines the pick agencyIDs to filter for. Allowed values are
+						The pick agencyIDs to filter for. Allowed values:
 						all possible agency ids;
 						</description>
 					</parameter>
 					<parameter name="networkCode" type="string">
 						<description>
-						Defines the pick network code of the processed waveforms.
-						Allowed values are all possible network codes.
+						The pick network code of the processed waveforms.
+						Allowed values: all possible network codes.
 						</description>
 					</parameter>
 				</group>
 				<group name="amplitude">
+					<description>Criteria for filtering amplitudes</description>
 					<parameter name="operator" type="string">
 						<description>
-						Defines the amplitude comparison operator. Allowed values are
+						The amplitude comparison operator. Allowed values:
 						&quot;eq&quot;, &quot;lt&quot;, &quot;gt&quot; and &quot;*&quot;.
 						</description>
 					</parameter>
 					<parameter name="amplitude" type="double">
 						<description>
-						Defines the amplitude threshold to filter for. The operator
+						The amplitude threshold to filter for. The operator
 						configured with &quot;operator&quot; is used to compare this threshold with
 						the incoming value. If &quot;operator&quot; is &quot;*&quot; then
 						values will pass.
@@ -77,42 +89,43 @@
 					</parameter>
 					<parameter name="agencyIDs" type="list:string">
 						<description>
-						Defines the amplitude agencyIDs to filter for. Allowed values are
+						The amplitude agencyIDs to filter for. Allowed values:
 						all possible agency ids.
 						</description>
 					</parameter>
 				</group>
 				<group name="origin">
+					<description>Criteria for filtering origins</description>
 					<parameter name="latitude" type="string">
 						<description>
-						Defines the latitude range in format [min]:[max].
+						The latitude range in format [min]:[max].
 						</description>
 					</parameter>
 					<parameter name="longitude" type="string">
 						<description>
-						Defines the longitude range in format [min]:[max].
+						The longitude range in format [min]:[max].
 						</description>
 					</parameter>
 					<parameter name="depth" type="string">
 						<description>
-						Defines the depth range in format [min]:[max].
+						The depth range in format [min]:[max].
 						</description>
 					</parameter>
 					<parameter name="agencyIDs" type="list:string">
 						<description>
-						Defines the origin agencyIDs to filter for. Allowed values are
+						The origin agencyIDs to filter for. Allowed values:
 						all possible agency ids;
 						</description>
 					</parameter>
 					<parameter name="mode" type="string">
 						<description>
-						Defines the origin evaluation mode to filter for. Allowed values are
+						The origin evaluation mode to filter for. Allowed values:
 						&quot;automatic&quot; and &quot;manual&quot;.
 						</description>
 					</parameter>
 					<parameter name="status" type="string">
 						<description>
-						Defines the origin status to filter for. Allowed values are
+						The origin status to filter for. Allowed values:
 						&quot;preliminary&quot;, &quot;confirmed&quot;,
 						&quot;reviewed&quot;, &quot;final&quot;,
 						&quot;rejected&quot; and &quot;reported&quot;.
@@ -120,39 +133,43 @@
 					</parameter>
 					<parameter name="arrivalcount" type="string">
 						<description>
-						Defines the minimum number of arrivals of an origin to pass
+						The minimum number of arrivals of an origin to pass
 						the filter.
 						</description>
 					</parameter>
 				</group>
 				<group name="event">
+					<description>Criteria for filtering events</description>
 					<parameter name="type" type="string">
 						<description>
-						Defines the event type to filter for, e.g. &quot;earthquake&quot;,
+						The event type to filter for, e.g. &quot;earthquake&quot;,
 						&quot;explosion&quot; ...
 						</description>
 					</parameter>
 				</group>
 				<group name="stationMagnitude">
+					<description>Criteria for filtering station magnitudes</description>
 					<parameter name="type" type="string">
 						<description>
-						Defines the station magnitude type. Allowed values are all possible
+						The station magnitude type. Allowed values: all possible
 						magnitude types such as &quot;MLv&quot;.
 						</description>
 					</parameter>
 				</group>
 				<group name="magnitude">
+					<description>Criteria for filtering network magnitudes</description>
 					<parameter name="type" type="string">
 						<description>
-						Defines the magnitude type. Allowed values are all possible
+						The magnitude type. Allowed values: all possible
 						magnitude types such as &quot;MLv&quot;.
 						</description>
 					</parameter>
 				</group>
 				<group name="qc">
+					<description>Criteria for filtering QC parameters</description>
 					<parameter name="type" type="string">
 						<description>
-						Defines the QC parameter type. Allowed values are all possible
+						The QC parameter type. Allowed values: all possible
 						types such as &quot;latency&quot;, &quot;delay&quot; ...
 						</description>
 					</parameter>
