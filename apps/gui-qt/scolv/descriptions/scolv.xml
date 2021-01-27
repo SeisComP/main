@@ -11,7 +11,7 @@
 			<parameter name="magnitudes" type="list:string" default="MLv,mb,mB,Mwp">
 				<description>
 					List of magnitude types to be calculated when
-					computing magnitudes. This list can be altered interactivly so
+					computing magnitudes. This list can be altered interactively so
 					this reflects only the default unless computeMagnitudesSilently
 					is set to true.
 				</description>
@@ -88,7 +88,7 @@
 					<description>
 					Sets the default magnitude aggregation method. It can be either &quot;mean&quot;,
 					&quot;trimmed mean&quot; or &quot;median&quot;. If not set, the default
-					behaviour is used which computes the mean if less than 4 stations are available,
+					behavior is used which computes the mean if less than 4 stations are available,
 					trimmed mean otherwise.
 					</description>
 				</parameter>
@@ -181,7 +181,7 @@
 						<parameter name="defaultRadius" type="double" unit="deg" default="-1">
 							<description>
 								Default map radius in degrees if a new event is selected.
-								A negative value restores the default behaviour.
+								A negative value restores the default behavior.
 							</description>
 						</parameter>
 					</group>
@@ -448,7 +448,8 @@
 				</parameter>
 				<parameter name="filters" type="list:string">
 					<description>
-						List of filters available in the picker.
+						List of filters available in the picker. Format:
+						"name1;filter-definition1", "name2;filter-definition2"
 					</description>
 				</parameter>
 				<parameter name="velocityChannelCodes" type="list:string">
@@ -586,27 +587,41 @@
 				</parameter>
 				<parameter name="filters" type="list:string">
 					<description>
-						A list of filters used for the amplitude picker.
+						A list of filters used for the amplitude picker. Format:
+						"name1;filter-definition1", "name2;filter-definition2"
 					</description>
 				</parameter>
 			</group>
 			<group name="display">
+				<description>
+				Display custom information in the Location tab.
+				</description>
 				<group name="origin">
+					<description>
+						Origin information
+					</description>
 					<parameter name="addons" type="list:string">
 						<description>
+							Name(s) of quality addon(s) to be considered.
 						</description>
 					</parameter>
 					<group name="comment">
+						<description>
+						Display origin comments.
+						</description>
 						<parameter name="id" type="string">
 							<description>
+							ID of the origin comment to be considered.
 							</description>
 						</parameter>
 						<parameter name="default" type="string">
 							<description>
+							Value to be shown in case no valid origin comment is found.
 							</description>
 						</parameter>
 						<parameter name="label" type="string">
 							<description>
+							Label of the value to be shown.
 							</description>
 						</parameter>
 					</group>
