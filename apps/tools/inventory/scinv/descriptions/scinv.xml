@@ -95,6 +95,14 @@
 					</description>
 				</option>
 			</group>
+			<group name="Check">
+				<option double="distance" unit="km" default="10">
+					<description>
+					Maximum allowed distance between station and location coordinates
+					when using the check command.
+					</description>
+				</option>
+			</group>
 			<group name="Sync">
 				<option long-flag="create-notifier">
 					<description>
@@ -141,6 +149,14 @@
 					Delete key files if a station does not exist in inventory.
 				</description>
 			</parameter>
+			<group name="check">
+				<parameter name="maxDistance" type="double" unit="km" default="10">
+					<description>
+					Maximum allowed distance between station and location coordinates
+					when using the check command.
+					</description>
+				</parameter>
+			</group>
 		</configuration>
 	</module>
 </seiscomp>

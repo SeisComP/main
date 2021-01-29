@@ -29,7 +29,6 @@ class Check : public InventoryTask {
 		//! which holds the final merged inventory
 		Check(Seiscomp::DataModel::Inventory *inv);
 
-
 	// ------------------------------------------------------------------
 	//  Public interface
 	// ------------------------------------------------------------------
@@ -38,6 +37,8 @@ class Check : public InventoryTask {
 		typedef std::map<std::string, TimeWindows> EpochMap;
 
 		bool check();
+
+		bool setMaxDistance(double maxDistance);
 
 
 	// ------------------------------------------------------------------
@@ -57,6 +58,9 @@ class Check : public InventoryTask {
 		Seiscomp::DataModel::ResponsePAZ *findPAZ(const std::string &) const;
 		Seiscomp::DataModel::ResponsePolynomial *findPoly(const std::string &) const;
 		Seiscomp::DataModel::ResponseFAP *findFAP(const std::string &) const;
+
+	public:
+		double    _maxDistance{10};
 };
 
 

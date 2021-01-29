@@ -471,6 +471,11 @@ class InventoryManager : public Client::Application,
 			commandline().addOption("Merge", "strip",
 			                        "Remove unreferenced objects (dataloggers, "
 			                        "sensors, ...).");
+			commandline().addGroup("Check");
+			commandline().addOption("Check", "distance",
+			                        "Maximum allowed distance between station and location in km. "
+			                        "Larger distances will be reported.",
+			                        &_maxDistance);
 			commandline().addGroup("Sync");
 			commandline().addOption("Sync", "create-notifier",
 			                        "If an output file is given then all "
@@ -1104,7 +1109,7 @@ class InventoryManager : public Client::Application,
 				merger.push(inv.get(), i);
 			}
 
-			_currentTask = NULL;
+			_currentTask = nullptr;
 
 			if ( _exitRequested ) {
 				cerr << "Exit requested: abort" << endl;
@@ -1118,6 +1123,13 @@ class InventoryManager : public Client::Application,
 			Check checker(finalInventory.get());
 			checker.setLogHandler(this);
 			cerr << "Checking inventory ... " << flush;
+
+			if ( !commandline().hasOption("distance") ) {
+				try { _maxDistance = configGetDouble("check.maxDistance"); }
+				catch (...) {}
+			}
+			checker.setMaxDistance(_maxDistance);
+
 			checker.check();
 			cerr << "done" << endl;
 
@@ -1793,6 +1805,7 @@ class InventoryManager : public Client::Application,
 		string    _keydir;
 		string    _output;
 		string    _level;
+		double    _maxDistance{10};
 		bool      _continueOperation;
 		std::stringstream  _logs;
 		int       _conflicts;
