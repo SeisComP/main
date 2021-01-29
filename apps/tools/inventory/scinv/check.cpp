@@ -99,7 +99,7 @@ overlaps(const Check::TimeWindows &epochs, const Core::TimeWindow &tw) {
 			return &epoch;
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 
@@ -128,11 +128,17 @@ Check::Check(Inventory *inv) : InventoryTask(inv) {}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Check::setMaxDistance(double maxDistance) {
+	_maxDistance = maxDistance;
+	return true;
+}
+//
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Check::check() {
-	if ( _inv == NULL ) return false;
+	if ( _inv == nullptr ) return false;
 
 	EpochMap networkEpochs;
 
@@ -161,7 +167,7 @@ bool Check::check() {
 				log(LogHandler::Warning,
 				    (string(sta->className()) + " " + id(sta) + "\n  "
 				     "latitude is not set").c_str(),
-				     NULL, NULL);
+				     nullptr, nullptr);
 				lvalid = false;
 			}
 
@@ -172,7 +178,7 @@ bool Check::check() {
 				log(LogHandler::Warning,
 				    (string(sta->className()) + " " + id(sta) + "\n  "
 				     "longitude is not set").c_str(),
-				     NULL, NULL);
+				     nullptr, nullptr);
 				lvalid = false;
 			}
 
@@ -180,7 +186,7 @@ bool Check::check() {
 				log(LogHandler::Warning,
 				    (string(sta->className()) + " " + id(sta) + "\n  "
 				     "coordinates are 0.0/0.0").c_str(),
-				     NULL, NULL);
+				     nullptr, nullptr);
 			}
 
 			for ( size_t l = 0; l < sta->sensorLocationCount(); ++l ) {
@@ -200,7 +206,7 @@ bool Check::check() {
 					log(LogHandler::Warning,
 					    (string(loc->className()) + " " + id(loc) + "\n  "
 					     "latitude is not set").c_str(),
-					     NULL, NULL);
+					     nullptr, nullptr);
 					llvalid = false;
 				}
 
@@ -211,7 +217,7 @@ bool Check::check() {
 					log(LogHandler::Warning,
 					    (string(loc->className()) + " " + id(loc) + "\n  "
 					     "longitude is not set").c_str(),
-					     NULL, NULL);
+					     nullptr, nullptr);
 					llvalid = false;
 				}
 
@@ -219,7 +225,7 @@ bool Check::check() {
 					log(LogHandler::Warning,
 					    (string(loc->className()) + " " + id(loc) + "\n  "
 					     "coordinates are 0.0/0.0").c_str(),
-					     NULL, NULL);
+					     nullptr, nullptr);
 				}
 
 				if ( lvalid && llvalid ) {
@@ -227,12 +233,13 @@ bool Check::check() {
 
 					Math::Geo::delazi(lat,lon,llat,llon, &dist, &a1, &a2);
 					dist = Math::Geo::deg2km(dist);
-
-					if ( dist > 10 ) {
+					if ( dist > _maxDistance ) {
 						log(LogHandler::Warning,
 						    (string(loc->className()) + " " + id(loc) + "\n  "
-						     "location is " + Core::toString(dist) + "km away from parent Station").c_str(),
-						    NULL, NULL);
+						     "location is " + Core::toString(dist) + " km away from parent Station. "
+						     "maximum allowed distance is " + Core::toString(_maxDistance) + " km "
+						     "by configuration").c_str(),
+						    nullptr, nullptr);
 					}
 				}
 
@@ -247,36 +254,36 @@ bool Check::check() {
 						if ( cha->gain() == 0.0 ) {
 							log(LogHandler::Warning,
 							    (string(cha->className()) + " " + id(cha) + "\n  "
-							     "invalid gain of 0").c_str(), NULL, NULL);
+							     "invalid gain of 0").c_str(), nullptr, nullptr);
 						}
 					}
 					catch ( ... ) {
 						log(LogHandler::Warning,
 						    (string(cha->className()) + " " + id(cha) + "\n  "
-						     "no gain set").c_str(), NULL, NULL);
+						     "no gain set").c_str(), nullptr, nullptr);
 					}
 
 					if ( cha->gainUnit().empty() ) {
 						log(LogHandler::Warning,
 						    (string(cha->className()) + " " + id(cha) + "\n  "
-						     "no gain unit set").c_str(), NULL, NULL);
+						     "no gain unit set").c_str(), nullptr, nullptr);
 					}
 
 					if ( !cha->sensor().empty() ) {
 						// Done already in merge
 						/*
 						Sensor *sensor = findSensor(cha->sensor());
-						if ( sensor == NULL ) {
+						if ( sensor == nullptr ) {
 							log(LogHandler::Unresolved,
 							    (string(cha->className()) + " " + id(cha) + "\n  "
-							     "referenced sensor is not available").c_str(), NULL, NULL);
+							     "referenced sensor is not available").c_str(), nullptr, nullptr);
 						}
 						*/
 					}
 					else
 						log(LogHandler::Information,
 						    (string(cha->className()) + " " + id(cha) + "\n  "
-						     "no sensor and thus no response information available").c_str(), NULL, NULL);
+						     "no sensor and thus no response information available").c_str(), nullptr, nullptr);
 				}
 			}
 		}
@@ -285,14 +292,14 @@ bool Check::check() {
 	for ( size_t i = 0; i < _inv->sensorCount(); ++i ) {
 		Sensor *sensor = _inv->sensor(i);
 		Object *o = findPAZ(sensor->response());
-		if ( o == NULL ) o = findPoly(sensor->response());
-		if ( o == NULL ) o = findFAP(sensor->response());
-		if ( o == NULL ) {
+		if ( o == nullptr ) o = findPoly(sensor->response());
+		if ( o == nullptr ) o = findFAP(sensor->response());
+		if ( o == nullptr ) {
 			// Done in merge
 			/*
 			log(LogHandler::Unresolved,
 			    (string(sensor->className()) + " " + id(sensor) + "\n  "
-			     "referenced response is not available").c_str(), NULL, NULL);
+			     "referenced response is not available").c_str(), nullptr, nullptr);
 			*/
 		}
 	}
@@ -313,7 +320,7 @@ void Check::checkEpoch(const T *obj) {
 			    (string(obj->className()) + " " + id(obj) + "\n  "
 			     "invalid epoch: start >= end: " +
 			     toString(Core::TimeWindow(obj->start(), obj->end()))).c_str(),
-			     NULL, NULL);
+			     nullptr, nullptr);
 		}
 	}
 	catch ( ... ) {}
@@ -332,11 +339,11 @@ void Check::checkOverlap(TimeWindows &epochs, const T *obj) {
 
 	Core::TimeWindow epoch(obj->start(), end);
 	const Core::TimeWindow *tw = overlaps(epochs, epoch);
-	if ( tw != NULL ) {
+	if ( tw != nullptr ) {
 		log(LogHandler::Conflict,
 		    (string(obj->className()) + " " + id(obj) + "\n  "
 		     "overlapping epochs " +
-		     toString(epoch) + " and " + toString(*tw)).c_str(), NULL, NULL);
+		     toString(epoch) + " and " + toString(*tw)).c_str(), nullptr, nullptr);
 	}
 
 	epochs.push_back(epoch);
@@ -364,7 +371,7 @@ void Check::checkOutside(const T1 *parent, const T2 *obj) {
 		    (string(obj->className()) + " " + id(obj) + "\n  "
 		     "epoch " + toString(epoch) + " outside parent " +
 		     parent->className() + " epoch " + toString(pepoch)).c_str(),
-		     NULL, NULL);
+		     nullptr, nullptr);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -379,7 +386,7 @@ Sensor *Check::findSensor(const string &id) const {
 		if ( sensor->publicID() == id ) return sensor;
 	}
 
-	return NULL;
+	return nullptr;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -393,7 +400,7 @@ ResponsePAZ *Check::findPAZ(const string &id) const {
 		if ( paz->publicID() == id ) return paz;
 	}
 
-	return NULL;
+	return nullptr;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -407,7 +414,7 @@ ResponsePolynomial *Check::findPoly(const string &id) const {
 		if ( poly->publicID() == id ) return poly;
 	}
 
-	return NULL;
+	return nullptr;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -421,7 +428,7 @@ ResponseFAP *Check::findFAP(const std::string &id) const {
 		if ( fap->publicID() == id ) return fap;
 	}
 
-	return NULL;
+	return nullptr;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
