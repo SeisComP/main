@@ -68,7 +68,7 @@ latency [s]
 
  .. math::
 
-   latency = t_{arr2} - t_{arr1}.
+   latency = t_{22} - t_{21}.
 
  For constant and low delays, latency is approximately the mean record length.
 
