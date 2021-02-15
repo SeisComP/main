@@ -571,7 +571,10 @@ clientID
   agent string
 
 userEmail
-  e-mail address of authenticated user if using restricted data.
+  e-mail address of authenticated user if using restricted data
+
+auth
+  True if user is authenticated (not anonymous)
 
 userLocation
   JSON object containing rough user location (eg., country) for statistic purposes
