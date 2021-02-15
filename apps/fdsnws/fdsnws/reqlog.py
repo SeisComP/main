@@ -28,21 +28,23 @@ class MyFileHandler(logging.handlers.TimedRotatingFileHandler):
 
 
 class Tracker(object):
-    def __init__(self, logger, geoip, service, userName, userIP, clientID):
+    def __init__(self, logger, geoip, service, userName, userIP, clientID, userSalt):
         self.__logger = logger
         self.__userName = userName
+        self.__userSalt = userSalt
         self.__logged = False
 
         if userName:
-            userID = int(hashlib.md5(py3bstr(userName.lower())).hexdigest()[:8], 16)
+            userID = int(hashlib.md5(py3bstr(userSalt + userName.lower())).hexdigest()[:8], 16)
         else:
-            userID = int(hashlib.md5(py3bstr(userIP)).hexdigest()[:8], 16)
+            userID = int(hashlib.md5(py3bstr(userSalt + userIP)).hexdigest()[:8], 16)
 
         self.__data = {
             'service': service,
             'userID': userID,
             'clientID': clientID,
             'userEmail': None,
+            'auth': not not userName,
             'userLocation': {},
             'created': datetime.datetime.utcnow().isoformat() + 'Z'
         }
@@ -95,10 +97,11 @@ class Tracker(object):
 
 
 class RequestLog(object):
-    def __init__(self, filename):
+    def __init__(self, filename, userSalt):
         self.__logger = logging.getLogger("seiscomp.fdsnws.reqlog")
         self.__logger.addHandler(MyFileHandler(filename))
         self.__logger.setLevel(logging.INFO)
+        self.__userSalt = userSalt
 
         try:
             import GeoIP
@@ -108,4 +111,4 @@ class RequestLog(object):
             self.__geoip = None
 
     def tracker(self, service, userName, userIP, clientID):
-        return Tracker(self.__logger, self.__geoip, service, userName, userIP, clientID)
+        return Tracker(self.__logger, self.__geoip, service, userName, userIP, clientID, self.__userSalt)
