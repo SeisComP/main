@@ -31,6 +31,7 @@ class Tracker(object):
     def __init__(self, logger, geoip, service, userName, userIP, clientID):
         self.__logger = logger
         self.__userName = userName
+        self.__logged = False
 
         if userName:
             userID = int(hashlib.md5(py3bstr(userName.lower())).hexdigest()[:8], 16)
@@ -88,7 +89,9 @@ class Tracker(object):
 
     def request_status(self, status, message):
         with mutex:
-            self.__logger.info(json.dumps(self.__data))
+            if not self.__logged:
+                self.__logger.info(json.dumps(self.__data))
+                self.__logged = True
 
 
 class RequestLog(object):
