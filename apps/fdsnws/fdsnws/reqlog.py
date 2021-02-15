@@ -8,7 +8,6 @@ import subprocess
 import logging
 import logging.handlers
 import threading
-import GeoIP
 
 
 from .utils import py3bstr
@@ -43,11 +42,12 @@ class Tracker(object):
             'userID': userID,
             'clientID': clientID,
             'userEmail': None,
-            'userLocation': {
-                'country': geoip.country_code_by_addr(userIP)
-            },
+            'userLocation': {},
             'created': datetime.datetime.utcnow().isoformat() + 'Z'
         }
+
+        if geoip:
+            self.__data['userLocation']['country'] = geoip.country_code_by_addr(userIP)
 
         if (userName and userName.lower().endswith("@gfz-potsdam.de")) or \
            userIP.startswith("139.17."):
@@ -96,7 +96,13 @@ class RequestLog(object):
         self.__logger = logging.getLogger("seiscomp.fdsnws.reqlog")
         self.__logger.addHandler(MyFileHandler(filename))
         self.__logger.setLevel(logging.INFO)
-        self.__geoip = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
+
+        try:
+            import GeoIP
+            self.__geoip = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
+
+        except ImportError:
+            self.__geoip = None
 
     def tracker(self, service, userName, userIP, clientID):
         return Tracker(self.__logger, self.__geoip, service, userName, userIP, clientID)
