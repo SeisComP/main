@@ -352,6 +352,7 @@ class FDSNWS(seiscomp.client.Application):
         self._htpasswd = '@CONFIGDIR@/fdsnws.htpasswd'
         self._accessLogFile = ''
         self._requestLogFile = ''
+        self._userSalt = ''
         self._corsOrigins = ['*']
 
         self._allowRestricted = True
@@ -470,6 +471,12 @@ class FDSNWS(seiscomp.client.Application):
         try:
             self._requestLogFile = seiscomp.system.Environment.Instance() \
                                    .absolutePath(self.configGetString('requestLog'))
+        except Exception:
+            pass
+
+        # user salt
+        try:
+            self._userSalt = self.configGetString('userSalt')
         except Exception:
             pass
 
@@ -833,7 +840,7 @@ configuration read:
             # import here, so we don't depend on GeoIP if request log is not
             # needed
             from seiscomp.fdsnws.reqlog import RequestLog # pylint: disable=C0415
-            self._requestLog = RequestLog(self._requestLogFile)
+            self._requestLog = RequestLog(self._requestLogFile, self._userSalt)
 
         # load inventory needed by DataSelect and Station service
         stationInv = dataSelectInv = None
