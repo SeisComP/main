@@ -32,7 +32,8 @@ def readXML(self):
         elif self.inputFormat == "binary":
             ar = seiscomp.io.VBinaryArchive()
         else:
-            raise TypeError("unknown input format '" + inputFormat + "'")
+            raise TypeError("unknown input format '{}'".format(
+                self.inputFormat))
 
         if ar.open(self.inputFile) == False:
             raise IOError(self.inputFile + ": unable to open")
@@ -205,8 +206,6 @@ class EventStreams(seiscomp.client.Application):
     def run(self):
         try:
             picks = []
-            minTime = None
-            maxTime = None
 
             self.marginBefore = int(self.margin[0])
             self.marginAfter = int(self.margin[-1])
@@ -231,22 +230,28 @@ class EventStreams(seiscomp.client.Application):
                     sys.stderr.write(" in database\n")
                 else:
                     sys.stderr.write(" in input file " + self.inputFile + "\n")
+                return False
 
+            minTime = None
+            maxTime = None
             for pick in picks:
-                if minTime is None:
-                    minTime = pick.time().value()
-                elif minTime > pick.time().value():
+                if minTime is None or minTime > pick.time().value():
                     minTime = pick.time().value()
 
-                if maxTime is None:
-                    maxTime = pick.time().value()
-                elif maxTime < pick.time().value():
+                if maxTime is None or maxTime < pick.time().value():
                     maxTime = pick.time().value()
 
-            if minTime:
-                minTime = minTime - seiscomp.core.TimeSpan(self.marginBefore)
-            if maxTime:
-                maxTime = maxTime + seiscomp.core.TimeSpan(self.marginAfter)
+            minTime = minTime - seiscomp.core.TimeSpan(self.marginBefore)
+            maxTime = maxTime + seiscomp.core.TimeSpan(self.marginAfter)
+
+            if self.caps:
+                timeFMT = "%Y,%m,%d,%H,%M,%S"
+            elif self.fdsnws:
+                timeFMT = "%FT%T"
+            else:
+                timeFMT = "%F %T"
+            minTime = minTime.toString(timeFMT)
+            maxTime = maxTime.toString(timeFMT)
 
             inv = seiscomp.client.Inventory.Instance().inventory()
 
@@ -286,18 +291,22 @@ class EventStreams(seiscomp.client.Application):
                     station = "*"
                     loc = "*"
 
+                # FDSNWS requires empty location to be encoded by 2 dashes
+                if not loc and self.fdsnws:
+                    loc = "--"
+
                 for s in streams:
                     if self.allStreams or self.allNetworks:
                         s = "*"
 
                     if self.caps:
-                        line = minTime.toString("%Y,%m,%d,%H,%M,%S") + " " + maxTime.toString("%Y,%m,%d,%H,%M,%S") + " " \
+                        line = minTime + " " + maxTime + " " \
                             + net + " " + station \
                             + " " + loc + " " + s
                     elif self.fdsnws:
-                        line = net + " " + station + " " + loc + " " + s + " " + minTime.iso() + " " + maxTime.iso()
+                        line = net + " " + station + " " + loc + " " + s + " " + minTime + " " + maxTime
                     else:
-                        line = minTime.toString("%F %T") + ";" + maxTime.toString("%F %T") + ";" \
+                        line = minTime + ";" + maxTime + ";" \
                             + net + "." + station \
                             + "." + loc + "." + s
 
@@ -310,13 +319,13 @@ class EventStreams(seiscomp.client.Application):
                             s = "*"
 
                         if self.caps:
-                            line = minTime.toString("%Y,%m,%d,%H,%M,%S") + " " + maxTime.toString("%Y,%m,%d,%H,%M,%S") + " " \
+                            line = minTime + " " + maxTime + " " \
                                 + net + " " + station + " " + \
                                 loc + " " + s + streams[0][2]
                         elif self.fdsnws:
-                            line = net + " " + station + " " + loc + " " + s + " " + minTime.iso() + " " + maxTime.iso()
+                            line = net + " " + station + " " + loc + " " + s + " " + minTime + " " + maxTime
                         else:
-                            line = minTime.toString("%F %T") + ";" + maxTime.toString("%F %T") + ";" \
+                            line = minTime + ";" + maxTime + ";" \
                                 + net + "." + station + "." + \
                                 loc + "." + s + streams[0][2]
 
@@ -325,11 +334,13 @@ class EventStreams(seiscomp.client.Application):
             for line in sorted(lines):
                 sys.stdout.write(line+"\n")
 
-            return True
         except:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
+            return False
+
+        return True
 
 
 app = EventStreams(len(sys.argv), sys.argv)
