@@ -13,84 +13,17 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
+from __future__ import absolute_import, division, print_function
+
 import sys
-import traceback
-import seiscomp.core, seiscomp.client, seiscomp.io, seiscomp.datamodel
+
+from seiscomp import client, core, datamodel, io
 
 
-def readXML(self):
+class EventStreams(client.Application):
 
-    pickIDs = set()
-    picks = []
-
-    try:
-        if self.inputFormat == "xml":
-            ar = seiscomp.io.XMLArchive()
-        elif self.inputFormat == "zxml":
-            ar = seiscomp.io.XMLArchive()
-            ar.setCompression(True)
-        elif self.inputFormat == "binary":
-            ar = seiscomp.io.VBinaryArchive()
-        else:
-            raise TypeError("unknown input format '{}'".format(
-                self.inputFormat))
-
-        if ar.open(self.inputFile) == False:
-            raise IOError(self.inputFile + ": unable to open")
-
-        obj = ar.readObject()
-        if obj is None:
-            raise TypeError(self.inputFile + ": invalid format")
-
-        ep = seiscomp.datamodel.EventParameters.Cast(obj)
-        if ep is None:
-            raise TypeError(self.inputFile + ": no eventparameters found")
-
-        if ep.eventCount() <= 0:
-            if ep.originCount() <= 0:
-                raise TypeError(self.inputFile + \
-                    ": no origin and no event in eventparameters found")
-        else:
-            if ep.eventCount() > 1:
-                if not self.event:
-                    sys.stderr.write(
-                        "\nERROR: input contains more than 1 event. Considering only first event\n")
-
-            for i in range(ep.eventCount()):
-                ev = ep.event(i)
-                if self.eventID:
-                    if self.eventID != ev.publicID():
-                        # sys.stderr.write("Ignoring event ID" + ev.publicID() + "\n")
-                        continue
-
-                # sys.stderr.write("Working on event ID" + ev.publicID() + "\n")
-                for iorg in range(ev.originReferenceCount()):
-                    org = seiscomp.datamodel.Origin.Find(
-                        ev.originReference(iorg).originID())
-                    if org is None:
-                        continue
-#           sys.stderr.write("Working on origin" + org.publicID() + "\n")
-
-                    for iarrival in range(org.arrivalCount()):
-                        pickID = org.arrival(iarrival).pickID()
-                        pickIDs.add(pickID)
-
-                for pickID in pickIDs:
-                    pick = seiscomp.datamodel.Pick.Find(pickID)
-                    picks.append(pick)
-
-                break
-
-    except Exception as exc:
-        sys.stderr.write("ERROR: " + str(exc) + "\n")
-        return False
-
-    return picks
-
-
-class EventStreams(seiscomp.client.Application):
     def __init__(self, argc, argv):
-        seiscomp.client.Application.__init__(self, argc, argv)
+        client.Application.__init__(self, argc, argv)
 
         self.setMessagingEnabled(False)
         self.setDatabaseEnabled(True, False)
@@ -98,47 +31,75 @@ class EventStreams(seiscomp.client.Application):
 
         self.eventID = None
         self.inputFile = None
+        self.inputFormat = "xml"
         self.margin = [300]
 
-        self.allComponents = True
+        self.allNetworks = True
+        self.allStations = True
         self.allLocations = True
+        self.allStreams = True
+        self.allComponents = True
 
         self.streams = []
 
         self.caps = False
         self.fdsnws = False
 
+
     def createCommandLineDescription(self):
         self.commandline().addGroup("Input")
-        self.commandline().addStringOption("Input", "input,i",
-                                           "input XML file name. Overwrites reading from database.")
-        self.commandline().addStringOption("Input", "format,f", "input format to use (xml [default], zxml (zipped xml), binary). "
-                                           "Only relevant with --input.")
+        self.commandline().addStringOption(
+            "Input", "input,i",
+            "read event from XML file instead of database. Use '-' to read "
+            "from stdin.")
+        self.commandline().addStringOption(
+            "Input", "format,f",
+            "input format to use (xml [default], zxml (zipped xml), binary). "
+            "Only relevant with --input.")
 
         self.commandline().addGroup("Dump")
         self.commandline().addStringOption("Dump", "event,E", "event id")
-        self.commandline().addStringOption("Dump", "margin,m",
-                                           "time margin around the picked time window, default is 300. Added before the first and after the last pick, respectively. Use 2 comma-separted values (before,after) for asymmetric margins, e.g. -m 120,300.")
-        self.commandline().addStringOption("Dump", "streams,S",
-                                           "comma separated list of streams per station to add, e.g. BH,SH,HH")
-        self.commandline().addOption("Dump", "all-streams",
-                                     "dump all streams. If unused, just streams with picks are dumped.")
-        self.commandline().addIntOption("Dump", "all-components,C",
-                                        "all components or just the picked ones (0). Default is 1")
-        self.commandline().addIntOption("Dump", "all-locations,L",
-                                        "all locations or just the picked ones (0). Default is 1")
-        self.commandline().addOption("Dump", "all-stations",
-                                     "dump all stations from the same network. If unused, just stations with picks are dumped.")
-        self.commandline().addOption("Dump", "all-networks", "dump all networks. If unused, just networks with picks are dumped. "
-                                     "This option implies all-stations, all-locations, all-streams, all-components "
-                                     "and will only provide the time window.")
-        self.commandline().addOption("Dump", "resolve-wildcards,R",
-                                     "if all components are used, use inventory to resolve stream components instead of using '?' (important when Arclink should be used)")
-        self.commandline().addOption("Dump", "caps",
-                                     "dump in capstool format (Common Acquisition Protocol Server by gempa GmbH)")
-        self.commandline().addOption("Dump", "fdsnws",
-                                     "dump in FDSN dataselect webservice POST format")
+        self.commandline().addStringOption(
+            "Dump", "margin,m",
+            "time margin around the picked time window, default is 300. Added "
+            "before the first and after the last pick, respectively. Use 2 "
+            "comma-separted values (before,after) for asymmetric margins, e.g. "
+            "-m 120,300.")
+        self.commandline().addStringOption(
+            "Dump", "streams,S",
+            "comma separated list of streams per station to add, e.g. BH,SH,HH")
+        self.commandline().addOption(
+            "Dump", "all-streams",
+            "dump all streams. If unused, just streams with picks are dumped.")
+        self.commandline().addIntOption(
+            "Dump", "all-components,C",
+            "all components or just the picked ones (0). Default is 1")
+        self.commandline().addIntOption(
+            "Dump", "all-locations,L",
+            "all locations or just the picked ones (0). Default is 1")
+        self.commandline().addOption(
+            "Dump", "all-stations",
+            "dump all stations from the same network. If unused, just stations "
+            "with picks are dumped.")
+        self.commandline().addOption(
+            "Dump", "all-networks",
+            "dump all networks. If unused, just networks with picks are dumped."
+            " This option implies all-stations, all-locations, all-streams, "
+            "all-components and will only provide the time window.")
+        self.commandline().addOption(
+            "Dump", "resolve-wildcards,R",
+            "if all components are used, use inventory to resolve stream "
+            "components instead of using '?' (important when Arclink should be "
+            "used)")
+        self.commandline().addOption(
+            "Dump", "caps",
+            "dump in capstool format (Common Acquisition Protocol Server by "
+            "gempa GmbH)")
+        self.commandline().addOption(
+            "Dump", "fdsnws",
+            "dump in FDSN dataselect webservice POST format")
         return True
+
 
     def validateParameters(self):
         if self.commandline().hasOption("resolve-wildcards"):
@@ -146,202 +107,264 @@ class EventStreams(seiscomp.client.Application):
 
         try:
             self.inputFile = self.commandline().optionString("input")
-        except:
+            self.setDatabaseEnabled(False, False)
+        except BaseException:
             pass
 
-        if self.inputFile:
-            self.setDatabaseEnabled(False, False)
-
         return True
+
 
     def init(self):
-        try:
-            if not seiscomp.client.Application.init(self):
-                return False
 
-            try:
-                self.inputFormat = self.commandline().optionString("format")
-            except:
-                self.inputFormat = "xml"
-
-            try:
-                self.eventID = self.commandline().optionString("event")
-            except:
-                sys.stderr.write("Error: An eventID is mandatory\n")
-                return False
-
-            try:
-                self.margin = self.commandline().optionString("margin").split(",")
-            except:
-                pass
-
-            try:
-                self.streams = self.commandline().optionString("streams").split(",")
-            except:
-                pass
-
-            try:
-                self.allComponents = self.commandline().optionInt("all-components") != 0
-            except:
-                pass
-
-            try:
-                self.allLocations = self.commandline().optionInt("all-locations") != 0
-            except:
-                pass
-
-            self.allStreams = self.commandline().hasOption("all-streams")
-            self.allStations = self.commandline().hasOption("all-stations")
-            self.allNetworks = self.commandline().hasOption("all-networks")
-            self.caps = self.commandline().hasOption("caps")
-            self.fdsnws = self.commandline().hasOption("fdsnws")
-
-            return True
-        except:
-            cla, exc, trbk = sys.exc_info()
-            sys.stderr.write("%s\n" % cla.__name__)
-            sys.stderr.write("%s\n" % exc.__dict__["args"])
-            sys.stderr.write("%s\n" % traceback.format_tb(trbk, 5))
-
-    def run(self):
-        try:
-            picks = []
-
-            self.marginBefore = int(self.margin[0])
-            self.marginAfter = int(self.margin[-1])
-
-            resolveWildcards = self.commandline().hasOption("resolve-wildcards")
-
-            if self.inputFile == None:
-                # sys.stderr.write("Reading from database\n")
-                for obj in self.query().getEventPicks(self.eventID):
-                    pick = seiscomp.datamodel.Pick.Cast(obj)
-                    if pick is None:
-                        continue
-                    picks.append(pick)
-            else:
-                # sys.stderr.write("Reading from XML input. Ignoring events in database\n")
-                picks = readXML(self)
-
-            if not picks:
-                sys.stderr.write(
-                    "Could not find picks for event " + self.eventID)
-                if self.inputFile == None:
-                    sys.stderr.write(" in database\n")
-                else:
-                    sys.stderr.write(" in input file " + self.inputFile + "\n")
-                return False
-
-            minTime = None
-            maxTime = None
-            for pick in picks:
-                if minTime is None or minTime > pick.time().value():
-                    minTime = pick.time().value()
-
-                if maxTime is None or maxTime < pick.time().value():
-                    maxTime = pick.time().value()
-
-            minTime = minTime - seiscomp.core.TimeSpan(self.marginBefore)
-            maxTime = maxTime + seiscomp.core.TimeSpan(self.marginAfter)
-
-            if self.caps:
-                timeFMT = "%Y,%m,%d,%H,%M,%S"
-            elif self.fdsnws:
-                timeFMT = "%FT%T"
-            else:
-                timeFMT = "%F %T"
-            minTime = minTime.toString(timeFMT)
-            maxTime = maxTime.toString(timeFMT)
-
-            inv = seiscomp.client.Inventory.Instance().inventory()
-
-            lines = set()
-            for pick in picks:
-                net = pick.waveformID().networkCode()
-                station = pick.waveformID().stationCode()
-                loc = pick.waveformID().locationCode()
-                streams = [pick.waveformID().channelCode()]
-                rawStream = streams[0][:2]
-
-                if self.allComponents == True:
-                    if resolveWildcards:
-                        iloc = seiscomp.datamodel.getSensorLocation(inv, pick)
-                        if iloc:
-                            tc = seiscomp.datamodel.ThreeComponents()
-                            seiscomp.datamodel.getThreeComponents(
-                                tc, iloc, rawStream, pick.time().value())
-                            streams = []
-                            if tc.vertical():
-                                streams.append(tc.vertical().code())
-                            if tc.firstHorizontal():
-                                streams.append(tc.firstHorizontal().code())
-                            if tc.secondHorizontal():
-                                streams.append(tc.secondHorizontal().code())
-                    else:
-                        streams = [rawStream + "?"]
-
-                if self.allLocations == True:
-                    loc = "*"
-
-                if self.allStations:
-                    station = "*"
-
-                if self.allNetworks:
-                    net = "*"
-                    station = "*"
-                    loc = "*"
-
-                # FDSNWS requires empty location to be encoded by 2 dashes
-                if not loc and self.fdsnws:
-                    loc = "--"
-
-                for s in streams:
-                    if self.allStreams or self.allNetworks:
-                        s = "*"
-
-                    if self.caps:
-                        line = minTime + " " + maxTime + " " \
-                            + net + " " + station \
-                            + " " + loc + " " + s
-                    elif self.fdsnws:
-                        line = net + " " + station + " " + loc + " " + s + " " + minTime + " " + maxTime
-                    else:
-                        line = minTime + ";" + maxTime + ";" \
-                            + net + "." + station \
-                            + "." + loc + "." + s
-
-                    lines.add(line)
-
-                for s in self.streams:
-                    if s != rawStream:
-
-                        if self.allStreams or self.allNetworks:
-                            s = "*"
-
-                        if self.caps:
-                            line = minTime + " " + maxTime + " " \
-                                + net + " " + station + " " + \
-                                loc + " " + s + streams[0][2]
-                        elif self.fdsnws:
-                            line = net + " " + station + " " + loc + " " + s + " " + minTime + " " + maxTime
-                        else:
-                            line = minTime + ";" + maxTime + ";" \
-                                + net + "." + station + "." + \
-                                loc + "." + s + streams[0][2]
-
-                        lines.add(line)
-
-            for line in sorted(lines):
-                sys.stdout.write(line+"\n")
-
-        except:
-            info = traceback.format_exception(*sys.exc_info())
-            for i in info:
-                sys.stderr.write(i)
+        if not client.Application.init(self):
             return False
+
+        try:
+            self.inputFormat = self.commandline().optionString("format")
+        except BaseException:
+            pass
+
+        try:
+            self.eventID = self.commandline().optionString("event")
+        except BaseException:
+            if not self.inputFile:
+                raise ValueError("An eventID is mandatory if no input file is "
+                                 "specified")
+
+        try:
+            self.margin = self.commandline().optionString("margin").split(",")
+        except BaseException:
+            pass
+
+        try:
+            self.streams = self.commandline().optionString("streams").split(",")
+        except BaseException:
+            pass
+
+        try:
+            self.allComponents = self.commandline().optionInt("all-components") != 0
+        except BaseException:
+            pass
+
+        try:
+            self.allLocations = self.commandline().optionInt("all-locations") != 0
+        except BaseException:
+            pass
+
+        self.allStreams = self.commandline().hasOption("all-streams")
+        self.allStations = self.commandline().hasOption("all-stations")
+        self.allNetworks = self.commandline().hasOption("all-networks")
+        self.caps = self.commandline().hasOption("caps")
+        self.fdsnws = self.commandline().hasOption("fdsnws")
 
         return True
 
 
-app = EventStreams(len(sys.argv), sys.argv)
-sys.exit(app())
+    def run(self):
+
+        resolveWildcards = self.commandline().hasOption("resolve-wildcards")
+
+        picks = []
+
+        # read picks from input file
+        if self.inputFile:
+            picks = self.readXML()
+            if not picks:
+                raise ValueError("Could not find picks in input file")
+
+        # read picks from database
+        else:
+            for obj in self.query().getEventPicks(self.eventID):
+                pick = datamodel.Pick.Cast(obj)
+                if pick is None:
+                    continue
+                picks.append(pick)
+
+            if not picks:
+                raise ValueError("Could not find picks for event {} in "
+                                 "database".format(self.eventID))
+
+        # calculate minimum and maximum pick time
+        minTime = None
+        maxTime = None
+        for pick in picks:
+            if minTime is None or minTime > pick.time().value():
+                minTime = pick.time().value()
+
+            if maxTime is None or maxTime < pick.time().value():
+                maxTime = pick.time().value()
+
+        # add time margin(s), no need for None check since pick time is
+        # mandatory and at least on pick exists
+        minTime = minTime - core.TimeSpan(float(self.margin[0]))
+        maxTime = maxTime + core.TimeSpan(float(self.margin[-1]))
+
+        # convert times to string dependend on requested output format
+        if self.caps:
+            timeFMT = "%Y,%m,%d,%H,%M,%S"
+        elif self.fdsnws:
+            timeFMT = "%FT%T"
+        else:
+            timeFMT = "%F %T"
+        minTime = minTime.toString(timeFMT)
+        maxTime = maxTime.toString(timeFMT)
+
+        inv = client.Inventory.Instance().inventory()
+
+        lines = set()
+        for pick in picks:
+            net = pick.waveformID().networkCode()
+            station = pick.waveformID().stationCode()
+            loc = pick.waveformID().locationCode()
+            streams = [pick.waveformID().channelCode()]
+            rawStream = streams[0][:2]
+
+            if self.allComponents:
+                if resolveWildcards:
+                    iloc = datamodel.getSensorLocation(inv, pick)
+                    if iloc:
+                        tc = datamodel.ThreeComponents()
+                        datamodel.getThreeComponents(
+                            tc, iloc, rawStream, pick.time().value())
+                        streams = []
+                        if tc.vertical():
+                            streams.append(tc.vertical().code())
+                        if tc.firstHorizontal():
+                            streams.append(tc.firstHorizontal().code())
+                        if tc.secondHorizontal():
+                            streams.append(tc.secondHorizontal().code())
+                else:
+                    streams = [rawStream + "?"]
+
+            if self.allLocations:
+                loc = "*"
+
+            if self.allStations:
+                station = "*"
+
+            if self.allNetworks:
+                net = "*"
+                station = "*"
+                loc = "*"
+
+            # FDSNWS requires empty location to be encoded by 2 dashes
+            if not loc and self.fdsnws:
+                loc = "--"
+
+            # line format
+            if self.caps:
+                lineFMT = "{0} {1} {2} {3} {4} {5}"
+            elif self.fdsnws:
+                lineFMT = "{2} {3} {4} {5} {0} {1}"
+            else:
+                lineFMT = "{0};{1};{2}.{3}.{4}.{5}"
+
+            for s in streams:
+                if self.allStreams or self.allNetworks:
+                    s = "*"
+
+                lines.add(lineFMT.format(
+                    minTime, maxTime, net, station, loc, s))
+
+            for s in self.streams:
+                if s == rawStream:
+                    continue
+
+                if self.allStreams or self.allNetworks:
+                    s = "*"
+
+                lines.add(lineFMT.format(
+                    minTime, maxTime, net, station, loc, s + streams[0][2]))
+
+        for line in sorted(lines):
+            print(line, file=sys.stdout)
+
+        return True
+
+
+    def readXML(self):
+
+        if self.inputFormat == "xml":
+            ar = io.XMLArchive()
+        elif self.inputFormat == "zxml":
+            ar = io.XMLArchive()
+            ar.setCompression(True)
+        elif self.inputFormat == "binary":
+            ar = io.VBinaryArchive()
+        else:
+            raise TypeError("unknown input format '{}'".format(
+                self.inputFormat))
+
+        if not ar.open(self.inputFile):
+            raise IOError("unable to open input file")
+
+        obj = ar.readObject()
+        if obj is None:
+            raise TypeError("invalid input file format")
+
+        ep = datamodel.EventParameters.Cast(obj)
+        if ep is None:
+            raise ValueError("no event parameters found in input file")
+
+        # we require at least one origin which references to picks via arrivals
+        if ep.originCount() == 0:
+            raise ValueError("no origin found in input file")
+
+        originIDs = []
+
+        # search for a specific event id
+        if self.eventID:
+            ev = datamodel.Event.Find(self.eventID)
+            if ev:
+                originIDs = [ev.originReference(i).originID() \
+                             for i in range(ev.originReferenceCount())]
+            else:
+                raise ValueError("event id {} not found in input file".format(
+                    self.eventID))
+
+        # use first event/origin if no id was specified
+        else:
+            # no event, use first available origin
+            if ep.eventCount() == 0:
+                if ep.originCount() > 1:
+                    print("WARNING: Input file contains no event but more than "
+                          "1 origin. Considering only first origin",
+                          file=sys.stderr)
+                originIDs.append(ep.origin(0).publicID())
+
+            # use origin references of first available event
+            else:
+                if ep.eventCount() > 1:
+                    print("WARNING: Input file contains more than 1 event. "
+                          "Considering only first event", file=sys.stderr)
+                ev = ep.event(0)
+                originIDs = [ev.originReference(i).originID() \
+                             for i in range(ev.originReferenceCount())]
+
+        # collect pickIDs
+        pickIDs = set()
+        for oID in originIDs:
+            o = datamodel.Origin.Find(oID)
+            if o is None:
+                continue
+
+            for i in range(o.arrivalCount()):
+                pickIDs.add(o.arrival(i).pickID())
+
+        # lookup picks
+        picks = []
+        for pickID in pickIDs:
+            pick = datamodel.Pick.Find(pickID)
+            if pick:
+                picks.append(pick)
+
+        return picks
+
+
+if __name__ == '__main__':
+    try:
+        app = EventStreams(len(sys.argv), sys.argv)
+        sys.exit(app())
+    except (ValueError, TypeError) as e:
+        print("ERROR: {}".format(e), file=sys.stderr)
+    sys.exit(1)
