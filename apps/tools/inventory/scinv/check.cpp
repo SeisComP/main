@@ -149,6 +149,13 @@ bool Check::check() {
 
 		EpochMap stationEpochs;
 
+		if ( net->stationCount() == 0 ) {
+			log(LogHandler::Warning,
+			    (string(net->className()) + " " + id(net) + "\n  "
+			     "has no station - may not be considered for data processing").c_str(),
+			     nullptr, nullptr);
+		}
+
 		for ( size_t s = 0; s < net->stationCount(); ++s ) {
 			Station *sta = net->station(s);
 			checkEpoch(sta);
@@ -186,6 +193,13 @@ bool Check::check() {
 				log(LogHandler::Warning,
 				    (string(sta->className()) + " " + id(sta) + "\n  "
 				     "coordinates are 0.0/0.0").c_str(),
+				     nullptr, nullptr);
+			}
+
+			if ( sta->sensorLocationCount() == 0 ) {
+				log(LogHandler::Warning,
+				    (string(sta->className()) + " " + id(sta) + "\n  "
+				     "has no location - may not be considered for data processing").c_str(),
 				     nullptr, nullptr);
 			}
 
@@ -244,6 +258,12 @@ bool Check::check() {
 				}
 
 				EpochMap channelEpochs;
+				if ( loc->streamCount() == 0 ) {
+					log(LogHandler::Warning,
+					    (string(loc->className()) + " " + id(loc) + "\n  "
+					     "has no stream - may not be considered for data processing").c_str(),
+					     nullptr, nullptr);
+				}
 
 				for ( size_t c = 0; c < loc->streamCount(); ++c ) {
 					Stream *cha = loc->stream(c);
