@@ -4,7 +4,11 @@ Additional to the current event older events can also be chosen from the eventli
 events tab.
 
 The two tabs of scesv are shown in :ref:`fig-events` and :ref:`fig-summary`.
-The events tab shows the eventlist of the time span defined on the bottom side of the window.
+The Events tab shows the eventlist of the time span defined on the bottom side of
+the window. A the Events tab is also available for other GUIs, such as :ref:`scolv`
+it can be configured in the global module configuration.
+The :ref:`description of the Events tab in scolv <scolv-events-tab>` provides more
+details.
 
 .. _fig-events:
 
@@ -30,8 +34,6 @@ Region                a map of the region and location with the event and statio
 Magnitude             different magnitude types, the values and counts
 Hypocenter            origin information with location, depth, azimuthal gap etc.
 ====================  =====================================================
-
-|
 
 .. _fig-summary:
 
