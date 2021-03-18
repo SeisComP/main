@@ -271,6 +271,15 @@ Initially the picker shows only the vertical channels for each station that
 have been associated with the current location. It can be
 :ref:`configured <scolv-settings>` to show all three components.
 
+Phase picks are color-coded:
+
+* Red: automatic
+* Green: manual
+* Blue: predicted using the selected travel-time table
+
+Mature colors and light color indicate arrivals and unassociated picks, respectively.
+Unassociated picks can be shown/hidden using :kbd:`Ctrl`+:kbd:`5`.
+
 Initially the picker allows to pick the following phases:
 
 - P
@@ -384,9 +393,10 @@ components are requested.
 When waveforms are requested the corresponding widget background is changed
 according to the current state:
 
-- yellow: waveforms requested but not yet received
-- red: acquisition finished and data is not available
-- green: waveforms received and acquisition still in progress
+* Yellow: waveforms requested but not yet received
+* Red: acquisition finished and data is not available
+* Green: waveforms received and acquisition still in progress
+* Gray: meta data are missing
 
 
 .. figure:: media/scolv/picker-acqui.png
@@ -466,22 +476,22 @@ to the processing system and let it decide what origin becomes preferred.
 
 To optimize the workflow
 
-1. select an event
-2. review solution
-3. commit solution
-4. change to event tab
-5. set this solution preferred
-6. set event type
-7. change to events tab
-8. goto 1.
+1. Select an event
+2. Review solution
+3. Commit solution
+4. Change to event tab
+5. Set this solution preferred
+6. Set event type
+7. Change to events tab
+8. Goto 1.
 
 to
 
-1. select an event
-2. review solution
-3. commit solution
-4. change to events tab
-5. goto 1.
+1. Select an event
+2. Review solution
+3. Commit solution
+4. Change to events tab
+5. Goto 1.
 
 an additional commit mode was added which allows to set certain options along
 with the location and its magnitudes.
@@ -515,13 +525,13 @@ configuration: Add, enable and configure a custom commit profile in
 :confval:`olv.customCommits`.
 With custom commit buttons origin and event paramters can be set, e.g.:
 
-* origin status
-* fixing the origin
-* event type
-* event type certainty
-* magnitude type of the :term:`preferred magnitude`. The preferred magnitude
+* Origin status
+* Fixing the origin
+* Event type
+* Event type certainty
+* Magnitude type of the :term:`preferred magnitude`. The preferred magnitude
   can also be set in the :ref:`magnitude tab <scolv-sec-magnitude-summary>`.
-* event comments
+* Event comments
 
 .. _fig-scolv-custom-commit:
 
@@ -661,23 +671,23 @@ Picker, the second line is amplitude picker specific.
 
 A station trace is divided into three areas:
 
-- dark gray: unused data
-- light gray: data used for noise offset and noise amplitude
-- white: data used for amplitude calculation
+* Dark gray: unused data
+* Light gray: data used for noise offset and noise amplitude
+* White: data used for amplitude calculation
 
 The example above shows nicely how different data time windows are used for
 amplitude determination depending on the distance. This depends on the
 amplitude type and its implementation.
 
-Things that can be done:
+Available actions are:
 
-- show raw data
-- change processing settings
-- adjust processing areas (noise, signal) for a single trace or all traces
-- apply a secondary filter (e.g. to remove noise or low frequencies)
-- pick amplitudes within a user definable time window
-- add unpicked/unassociated stations that are within a certain distance
-- remove bad stations
+* Show raw data
+* Change processing settings
+* Adjust processing areas (noise, signal) for a single trace or all traces
+* Apply a secondary filter (e.g. to remove noise or low frequencies)
+* Pick amplitudes within a user definable time window
+* Add unpicked/unassociated stations that are within a certain distance
+* Remove bad stations
 
 
 Show raw data
@@ -836,11 +846,11 @@ The mode is color coded:
 The status is coded by a single character:
 
 * **A**: unset, status not specifically set, e.g. usually automatic origins from :ref:`scautoloc`
-* **C**: confirmed
 * **F**: final
+* **V**: reviewed
+* **C**: confirmed
 * **P**: preliminary, e.g. XXL origins from :ref:`scautoloc`
 * **R**: reported
-* **V**: veviewed
 * **X**: rejected
 
 
@@ -850,6 +860,8 @@ Magnitude list
 The magnitude list shows all available magnitudes available for the origin
 selected in the Origin list.
 
+
+.. _scolv-events-tab:
 
 Events tab
 ==========
@@ -884,6 +896,51 @@ all origins associated with one event are displayed if an event item is expanded
    font style.
 
 
+Events table
+------------
+
+As with the arrival table the shown columns of the list are also configurable.
+The available identifiers are:
+
+* **OT(GMT)** : origin time
+* **Type** : event type
+* M : magnitude
+* **MType** : magnitude type
+* **Phases** : number of used phases
+* **RMS** : root-mean square
+* **Lat** : latitude
+* **Lon** : longitude
+* **Depth** : depth
+* DType : depth type
+* **Stat** : a combination of the :ref:`color-coded mode <scolv-origin-mode>` and
+  the :ref:`status<scolv-origin-status>` of the preferred origin as described by
+  a letter. A trailing "+" indicates that origins were contributed to the event
+  by multiple agencies, e.g. "C+".
+* FM : focal mechanism
+* **Agency** : agency ID
+* Author : author
+* **Region** : region name
+* **ID** : ID of the show element, e.g. event or origin
+
+The bold identifiers are visible initially.
+To show or hide columns interactively click with the right mouse button on the
+table header and check or uncheck the corresponding column.
+
+Sorting and re-ordering is available by clicking on the header of the columns and
+by dragging the header fields, respectively. Right-click on cells to copy individual
+cells values or entire rows.
+
+This list can also be customized
+with :confval:`eventlist.visibleColumns` in the global configuration
+(:file:`scolv.cfg` or :file:`global.cfg`):
+
+.. code-block:: sh
+
+   # Remove Type and Author from column list that is initially active
+   eventlist.visibleColumns = OT(GMT), Type, M, MType Phases, RMS, Lat, Lon,\
+                              Depth, DType, Stat, FM, Author, Agency, Region, ID
+
+
 Event filtering
 ---------------
 
@@ -896,10 +953,11 @@ database request for loading events. It does not update the current list.**
 
 The event list also contains a checkbox *Hide other/fake events*. If checked all
 events with type *not existing* or *other* are hidden. If unchecked they are
-shown. '**Pressing the Hide button affects the currently loaded list.**
+shown. **Pressing the Hide button affects the currently loaded list.**
 
 It is possible to configure the event types used for this filter as well
-as the label text of the checkbox (:file:`scolv.cfg` or :file:`global.cfg):
+as the label text of the checkbox. Use the global configuration for setting
+the parameters (:file:`scolv.cfg` or :file:`global.cfg`):
 
 .. code-block:: sh
 
@@ -934,43 +992,6 @@ will hide all events where the preferred origins agencyID is not the configured
    # Enable this filter initially. If this option is not used the filter
    # is disabled by default.
    eventlist.filter.agencies.enabled = true
-
-
-Events table
-------------
-
-As with the arrival table the shown columns of the list are also configurable.
-The available identifiers are:
-
-* **OT(GMT)**
-* **Type**
-* M
-* **MType**
-* **Phases**
-* **RMS**
-* **Lat**
-* **Lon**
-* **Depth**
-* DType
-* **Stat** : a combination of the :ref:`mode <scolv-origin-mode>` (color) and
-  the :ref:`status <scolv-origin-status>` (letter) of the preferred origin
-* FM
-* **Agency**
-* Author
-* **Region**
-* **ID**
-
-The bold identifiers are visible initially. This list can also be customized
-with :confval:`eventlist.visibleColumns` (:file:`scolv.cfg` or :file:`global.cfg`):
-
-.. code-block:: sh
-
-   # Remove Type and Author from column list that is initially active
-   eventlist.visibleColumns = OT(GMT), Type, M, MType Phases, RMS, Lat, Lon,\
-                              Depth, DType, Stat, FM, Author, Agency, Region, ID
-
-To show or hide columns interactively click with the right mouse button on the
-table header and check or uncheck the corresponding column.
 
 
 Custom actions
@@ -1153,7 +1174,7 @@ configure (:file:`scolv.cfg`):
 .. code-block:: sh
 
    # Define the available add-ons to be used
-   display.origin.addons = qual1, qual2
+   display.origin.addons = qual, qual2
 
    # Configure each add-on
    display.origin.addon.qual1.label = "Qual1"
