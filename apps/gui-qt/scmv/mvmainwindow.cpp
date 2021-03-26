@@ -604,11 +604,17 @@ bool MvMainWindow::init() {
 	} catch ( Config::Exception& ) {}
 
 	StationDataCollection::iterator stationIt = _stationDataCollection.begin();
-	for ( ; stationIt != _stationDataCollection.end(); ++stationIt )
+	for ( ; stationIt != _stationDataCollection.end(); ++stationIt ) {
 		stationIt->gmFilter = StationData::GmFilterPtr(Math::Filtering::InPlaceFilter<double>::Create(_configStationRecordFilterStr));
+		if ( !stationIt->gmFilter ) {
+			SEISCOMP_ERROR("Could not create filter: %s",
+			               _configStationRecordFilterStr.c_str());
+			return false;
+		}
+	}
 
 	if ( !initRecordStream() ) {
-		SEISCOMP_ERROR("Could not initialize record stream");
+		SEISCOMP_WARNING("Could not initialize record stream");
 	}
 
 	try {
