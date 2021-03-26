@@ -63,6 +63,7 @@ class MNMagnitude : public Seiscomp::Processing::MagnitudeProcessor {
 		                                const Seiscomp::DataModel::Origin *hypocenter,
 		                                const Seiscomp::DataModel::SensorLocation *receiver,
 		                                const Seiscomp::DataModel::Amplitude *,
+		                                const Locale *,
 		                                double &value);
 
 		virtual bool treatAsValidMagnitude() const;

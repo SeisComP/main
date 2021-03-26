@@ -101,7 +101,7 @@ MNMagnitude::computeMagnitude(double amplitude,
                               double delta, double depth,
                               const Seiscomp::DataModel::Origin *hypocenter,
                               const Seiscomp::DataModel::SensorLocation *receiver,
-                              const DataModel::Amplitude *,
+                              const DataModel::Amplitude *, const Locale *,
                               double &value) {
 	Status status = OK;
 
@@ -180,7 +180,7 @@ MNMagnitude::computeMagnitude(double amplitude,
 	// The method correctMagnitude automatically scales and offsets the input
 	// value with the configured coefficients. They are by default 1 and 0.
 	// correctMagnitude(x) -> x * _linearCorrection + _constantCorrection
-	value = correctMagnitude(3.3 + 1.66*log10(dist) + log10(amplitude / (2*M_PI)));
+	value = 3.3 + 1.66*log10(dist) + log10(amplitude / (2*M_PI));
 
 	return status;
 }
