@@ -9,6 +9,9 @@
 		<configuration>
 			<group name="amplitudes">
 				<group name="MN">
+					<description>
+					Amplitude control parameters for MN (Nuttli magnitude).
+					</description>
 					<parameter name="velocityModel" type="string" default="iasp91">
 						<description>
 						The travel time table set compiled for LocSAT. The tables
@@ -19,6 +22,9 @@
 			</group>
 			<group name="magnitudes">
 				<group name="MN">
+					<description>
+					Regionalization of MN (Nuttli magnitude).
+					</description>
 					<parameter name="region" type="path" default="@DATADIR@/magnitudes/MN/MN.bna">
 						<description>
 						The path to the BNA file which defines the valid region
@@ -156,4 +162,3 @@
 		</configuration>
 	</binding>
 </seiscomp>
-
