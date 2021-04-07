@@ -660,8 +660,8 @@ bool App::initProcessor(Processing::WaveformProcessor *proc,
 			break;
 
 		case Processing::WaveformProcessor::SecondHorizontal:
-			if ( ! initComponent(proc, Processing::WaveformProcessor::SecondHorizontalComponent,
-			                     time, streamID, waveformID, metaDataRequired) ) {
+			if ( !initComponent(proc, Processing::WaveformProcessor::SecondHorizontalComponent,
+			                    time, streamID, waveformID, metaDataRequired) ) {
 				SEISCOMP_ERROR_S(dottedWaveformID + ": failed to setup second horizontal component");
 				return false;
 			}
@@ -711,10 +711,10 @@ bool App::initProcessor(Processing::WaveformProcessor *proc,
 				return false;
 			}
 
-			if ( ! initComponent(proc, Processing::WaveformProcessor::FirstHorizontalComponent,
-			                     time, streamID1, waveformID1, metaDataRequired) ||
-			     ! initComponent(proc, Processing::WaveformProcessor::SecondHorizontalComponent,
-			                     time, streamID2, waveformID2, metaDataRequired) ) {
+			if ( !initComponent(proc, Processing::WaveformProcessor::FirstHorizontalComponent,
+			                    time, streamID1, waveformID1, metaDataRequired) ||
+			     !initComponent(proc, Processing::WaveformProcessor::SecondHorizontalComponent,
+			                    time, streamID2, waveformID2, metaDataRequired) ) {
 				SEISCOMP_ERROR_S(dottedWaveformID + ": failed to setup horizontal components");
 				return false;
 			}
@@ -1139,6 +1139,21 @@ void App::addAmplitudeProcessor(AmplitudeProcessorPtr proc,
 
 	if ( !initProcessor(proc.get(), proc->usedComponent(), proc->trigger(), rec->streamID(), waveformID, true) )
 		return;
+
+	proc->setEnvironment(
+		nullptr, // No hypocenter information
+		Client::Inventory::Instance()->getSensorLocation(
+			n, s, l, proc->trigger()
+		),
+		pick
+	);
+
+	if ( proc->isFinished() ) {
+		// If the processor has finished already e.g. due to missing
+		// hypocenter information, do not add it and return.
+		processorFinished(rec, proc.get());
+		return;
+	}
 
 	if ( _config.amplitudeUpdateList.find(proc->type()) != _config.amplitudeUpdateList.end() )
 		proc->setUpdateEnabled(true);
