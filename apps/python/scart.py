@@ -50,6 +50,8 @@ class Archive:
                 try:
                     files = os.listdir(netdir)
                 except:
+                    sys.stderr.write("error: year %i not found in archive %s, skipping\n"
+                                     % (year, netdir))
                     continue
 
                 its = []
@@ -64,7 +66,14 @@ class Archive:
 
             if sta == "*":
                 stadir = self.archiveDirectory + str(year) + "/" + net + "/"
-                files = os.listdir(stadir)
+
+                try:
+                    files = os.listdir(stadir)
+                except:
+                    sys.stderr.write("error: network %s not found in archive %s, skipping\n"
+                                     % (net, stadir))
+                    continue
+
                 its = []
                 for file in files:
                     if os.path.isdir(stadir + file) == False:
@@ -84,11 +93,17 @@ class Archive:
                 try:
                     files = os.listdir(stadir)
                 except:
+                    sys.stderr.write("error: no data files found in archive %s, skipping station %s\n"
+                                     % (stadir, sta))
                     return []
+
                 its = []
                 for file in files:
                     if os.path.isdir(stadir + file) == False:
+                        sys.stderr.write("error: data file %s not found in archive %s, skipping\n"
+                                         % (file, stadir))
                         continue
+
                     part = file[:3]
                     if cha != "*":
                         mr = re.match(cha, part)
@@ -112,7 +127,7 @@ class Archive:
                 else:
                     end_day = t_end[7]
 
-                files = files = glob.glob(dir + "*.%03d" % start_day)
+                files = glob.glob(dir + "*.%03d" % start_day)
 
                 # Find first day with data
                 while len(files) == 0 and start_day <= end_day:
@@ -120,9 +135,16 @@ class Archive:
                     begin = seiscomp.core.Time.FromYearDay(year, start_day)
                     files = glob.glob(dir + "*.%03d" % start_day)
 
+                if not files:
+                    t = time.gmtime(begin.seconds())
+                    sys.stderr.write("error: found no data with start on %s in archive %s, skipping day\n"
+                                     % (time.strftime("%Y-%m-%d",t), dir))
+
                 for file in files:
                     file = file.split('/')[-1]
                     if os.path.isfile(dir + file) == False:
+                        sys.stderr.write("error: data file %s not found in archive %s, skipping\n"
+                                         % (file, dir))
                         continue
 
                     tmp_its = self.iterators(
