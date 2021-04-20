@@ -8,10 +8,31 @@
 				<description>
 				Test if events lie within or outside a region.
 				Events within a region are flagged as positive, outside as negative.
-				The event type is set accordingly.
-				Add the plugin &quot;evrc&quot; to the  plugins
-				parameter to make this feature available.
+				The event type is set accordingly. Add the
+				plugin &quot;evrc&quot; to the plugins parameter in the
+				order of priority to make this feature available. Read the
+				documentation of the RegionCheck for more details.
 				</description>
+				<parameter name="setEventType" type="boolean" default="true">
+					<description>
+						Allow setting the event type.
+						The type of events which have manual origins will
+						not be changed unless configured explicitely by
+						&quot;overwriteManual&quot;.
+					</description>
+				</parameter>
+				<parameter name="overwriteEventType" type="boolean" default="true">
+					<description>
+						Allow overwriting existing event types. Disabling does not
+						allow accounting for changes in source region.
+					</description>
+				</parameter>
+				<parameter name="overwriteManual" type="boolean" default="false">
+					<description>
+						Allow setting the event type if the mode of the preferred
+						origin is manual or if the event type was set manually.
+					</description>
+				</parameter>
 				<parameter name="regions" type="list:string" default="!reject">
 					<description>
 					The list of closed BNA polygon names defining regions for

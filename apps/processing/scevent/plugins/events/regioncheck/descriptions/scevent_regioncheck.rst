@@ -1,6 +1,6 @@
-*evrc* (event region check) is a :term:`plugin` for :ref:`scevent`. It sets the event type according to the
-location of the preferred origin by comparing the coordinates with regions defined by
-:ref:`BNA polygons <sec-gui_layers>`.
+*evrc* (event region check) is a :term:`plugin` for :ref:`scevent`. It sets the
+event type according to the location of the preferred origin by comparing the
+coordinates with regions defined by :ref:`BNA polygons <sec-gui_layers>`.
 
 .. note::
 
@@ -8,7 +8,7 @@ location of the preferred origin by comparing the coordinates with regions defin
 
 
 Definition of regions
-=====================
+---------------------
 
 Regions are defined by :confval:`names <rc.regions>` of closed polygons provided as
 :ref:`BNA files <sec-gui_layers>` in @CONFIGDIR@/bna/ or @DATADIR@/bna/.
@@ -29,7 +29,7 @@ priority when treating events.
 
 
 Treatment of events
-===================
+-------------------
 
 When the *evrc* plugin is loaded and configured, the location of the preferred origin
 of an events is compared with the defined regions.
@@ -70,14 +70,14 @@ If events ARE NOT within positive regions their type is set to "outside of netwo
 
 
 Event types
-===========
+-----------
 
 The event types are either set based the types configured in :confval:`rc.eventTypePositive` and :confval:`rc.eventTypeNegative`
 or based on the type provided by the header of BNA polygons if :confval:`rc.readEventTypeFromBNA` is active.
 
 
 Type definition
----------------
+~~~~~~~~~~~~~~~
 
 For defining the event type, any value defined in `QuakeML <https://geofon.gfz-potsdam.de/_uml/>`_.
 The list of valid values can also be found in the Event tab of :ref:`scolv`: Type.
@@ -96,7 +96,7 @@ Invalid values result in errors which are reported depending on the verbosity le
 .. _sec-evrc-bna:
 
 Event type from BNA
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 If :confval:`rc.readEventTypeFromBNA` is active, the event type is read from the header of
 the feature. Use a key-value pair in double quotes to specify the type where the key is "eventType"
@@ -145,11 +145,11 @@ Example BNA file:
      to store BNA polygons only in :file:`seiscomp/share/bna`
 
 
-Configuration
-=============
+Set up the plugin
+=================
 
-Load the *evrc* plugin by adding to the global configuration or to the
-global configuration of :ref:`scevent`:
+Load the *evrc* plugin: Add to the global configuration or to the
+global configuration of :ref:`scevent`  in the order of priority:
 
 .. code-block:: sh
 
@@ -172,10 +172,10 @@ Activate :confval:`rc.readEventTypeFromBNA` and add the eventType key-value pair
 header of the :ref:`BNA polygon <sec-evrc-bna>` if the event type shall be read from the BNA polygon.
 
 
-Examples
-========
+**Examples:**
 
-Set type of events within the positive polygon **germany** but do not change the type outside:
+Set type of events within the positive polygon **germany** but do not change the
+type outside:
 
 .. code-block:: sh
 

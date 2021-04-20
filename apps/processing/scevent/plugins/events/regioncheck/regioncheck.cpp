@@ -30,8 +30,7 @@
 #include <seiscomp/datamodel/journalentry.h>
 #include <seiscomp/seismology/regions.h>
 
-ADD_SC_PLUGIN("Region check for events that sets the event type to \"outside of network interest\" "
-              "if the location is outside preconfigured regions",
+ADD_SC_PLUGIN("evrc for scevent: Set event type by region check",
               "Jan Becker, Dirk Roessler, gempa GmbH <jabe@gempa.de>", 0, 1, 0)
 
 using namespace std;
@@ -72,6 +71,21 @@ bool RegionCheckProcessor::setup(const Config::Config &config) {
 
 	_hasPositiveRegions = false;
 	_hasNegativeRegions = false;
+
+	try {
+		_setEventType = config.getBool("rc.setEventType");
+	}
+	catch ( ... ) {}
+
+	try {
+		_overwriteEventType = config.getBool("rc.overwriteEventType");
+	}
+	catch ( ... ) {}
+
+	try {
+		_overwriteManual = config.getBool("rc.overwriteManual");
+	}
+	catch ( ... ) {}
 
 	try { _readEventTypeFromBNA = config.getBool("rc.readEventTypeFromBNA"); }
 	catch ( ... ) {
@@ -201,6 +215,24 @@ bool RegionCheckProcessor::process(Event *event, const Journal &journal) {
 	SEISCOMP_DEBUG("evrc plugin: processing event %s",
 	               event->publicID().c_str());
 
+	if ( !_setEventType ) {
+		SEISCOMP_DEBUG(" + evrc: setting event type is "
+		               "disabled by configuration");
+		return false;
+	}
+
+	OPT(DataModel::EventType) currentType;
+	try {
+		currentType = event->type();
+	}
+	catch ( ... ) { }
+
+	if ( currentType && !_overwriteEventType ) {
+		SEISCOMP_DEBUG(" + evrc: overwriting event type is "
+		               "disabled by configuration");
+		return false;
+	}
+
 	bool isTypeFixed = false;
 
 	for ( Journal::const_iterator it = journal.begin(); it != journal.end(); ++it ) {
@@ -208,7 +240,7 @@ bool RegionCheckProcessor::process(Event *event, const Journal &journal) {
 		isTypeFixed = !(*it)->parameters().empty();
 	}
 
-	if ( isTypeFixed ) {
+	if ( isTypeFixed && !_overwriteManual ) {
 		SEISCOMP_DEBUG(" + evrc: type of event %s set through journal: ignoring",
 		               event->publicID().c_str());
 		return false;
@@ -220,11 +252,9 @@ bool RegionCheckProcessor::process(Event *event, const Journal &journal) {
 	}
 
 	try {
-		if ( org->evaluationMode() == DataModel::MANUAL ){
-			SEISCOMP_DEBUG(" + evrc: found %s preferred origin %s: "
-			               "do not change the event status",
-			               org->evaluationMode().toString(),
-			               org->publicID().c_str());
+		if ( org->evaluationMode() == DataModel::MANUAL && !_overwriteManual ){
+			SEISCOMP_DEBUG(" + evrc: found %s preferred origin %s. Do not set event type.",
+			               org->evaluationMode().toString(), org->publicID().c_str());
 			return false;
 		}
 	}
@@ -254,14 +284,8 @@ bool RegionCheckProcessor::process(Event *event, const Journal &journal) {
 		               static_cast<double>(location.lon));
 	}
 
-	OPT(EventType) currentType;
 	OPT(EventType) eventType;
 	EventType tmp;
-
-	try {
-		currentType = event->type();
-	}
-	catch ( ... ) {}
 
 	bool isInside = false;
 	bool useWorld = false;

@@ -76,6 +76,10 @@ class RegionCheckProcessor : public Seiscomp::Client::EventProcessor {
 		bool                      _hasNegativeRegions{false};
 		bool                      _setType{true};
 		bool                      _readEventTypeFromBNA{false};
+		bool                      _setEventType{true};
+		bool                      _overwriteEventType{true};
+		bool                      _overwriteManual{false};
+
 };
 
 }
