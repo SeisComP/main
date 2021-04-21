@@ -97,13 +97,14 @@ class EventTool : public Application {
 		//! Chooses the preferred origin and magnitude for an event
 		void choosePreferred(EventInformation *info, DataModel::Origin *origin,
 		                     DataModel::Magnitude *mag,
-		                     bool realOriginUpdate = false);
+		                     bool realOriginUpdate = false,
+		                     bool refresh = false);
 
 		//! Chooses the preferred focal mechanism an event
 		void choosePreferred(EventInformation *info, DataModel::FocalMechanism *fm);
 
 		//! Select the preferred origin again among all associated origins
-		void updatePreferredOrigin(EventInformation *info);
+		void updatePreferredOrigin(EventInformation *info, bool refresh = false);
 		void updatePreferredFocalMechanism(EventInformation *info);
 
 		//! Merges two events. Returns false if nothing has been done due to

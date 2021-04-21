@@ -1721,6 +1721,13 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 			}
 		}
 	}
+	else if ( entry->action() == "EvRefresh" ) {
+		response = createEntry(entry->objectID(), entry->action() + OK, ":refreshing:");
+
+		Notifier::Enable();
+		updatePreferredOrigin(info.get(), true);
+		Notifier::Disable();
+	}
 	// Is this command ours by starting with Ev?
 	else if ( !entry->action().empty() && (entry->action().compare(0, 2,"Ev") == 0) ) {
 		// Make sure we don't process result journal entries ending on either
@@ -2630,7 +2637,7 @@ bool EventTool::removeCachedEvent(const std::string &eventID) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventTool::choosePreferred(EventInformation *info, Origin *origin,
                                 DataModel::Magnitude *triggeredMag,
-                                bool realOriginUpdate) {
+                                bool realOriginUpdate, bool refresh) {
 	Magnitude *mag = nullptr;
 	MagnitudePtr momentMag;
 
@@ -2687,7 +2694,8 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		mag = preferredMagnitude(origin);
 	}
 
-	bool update = false;
+	bool update = refresh;
+	bool needRegionNameUpdate = refresh;
 
 	if ( !info->preferredOrigin ) {
 		if ( isAgencyIDAllowed(objectAgencyID(origin)) || info->constraints.fixOrigin(origin) ) {
@@ -2698,7 +2706,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			SEISCOMP_LOG(_infoChannel, "Origin %s has been set preferred in event %s",
 			             origin->publicID().c_str(), info->event->publicID().c_str());
 
-			updateRegionName(info->event.get(), origin);
+			needRegionNameUpdate = true;
 
 			info->preferredOrigin = origin;
 			update = true;
@@ -3227,7 +3235,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		SEISCOMP_LOG(_infoChannel, "Origin %s has been set preferred in event %s",
 		             origin->publicID().c_str(), info->event->publicID().c_str());
 
-		updateRegionName(info->event.get(), origin);
+		needRegionNameUpdate = true;
 
 		info->preferredOrigin = origin;
 
@@ -3267,6 +3275,10 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 	}
 	else {
 		SEISCOMP_INFO("%s: nothing to do", info->event->publicID().c_str());
+	}
+
+	if ( needRegionNameUpdate ) {
+		updateRegionName(info->event.get(), info->preferredOrigin.get());
 	}
 
 	bool callProcessors = true;
@@ -3792,7 +3804,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void EventTool::updatePreferredOrigin(EventInformation *info) {
+void EventTool::updatePreferredOrigin(EventInformation *info, bool refresh) {
 	if ( !info->event ) return;
 
 	for ( size_t i = 0; i < info->event->originReferenceCount(); ++i ) {
@@ -3802,7 +3814,7 @@ void EventTool::updatePreferredOrigin(EventInformation *info) {
 			SEISCOMP_DEBUG("... loading magnitudes for origin %s", org->publicID().c_str());
 			query()->loadMagnitudes(org.get());
 		}
-		choosePreferred(info, org.get(), nullptr);
+		choosePreferred(info, org.get(), nullptr, false, refresh);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
