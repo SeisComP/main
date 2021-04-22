@@ -218,7 +218,7 @@ class EventTool : public Application {
 		typedef std::list<DelayedEventUpdate> DelayEventBuffer;
 		typedef std::set<std::string> IDSet;
 
-		typedef std::map<std::string, EventProcessorPtr> EventProcessors;
+		typedef std::list<EventProcessorPtr> EventProcessors;
 
 		double                        _fExpiry;
 		Cache                         _cache;

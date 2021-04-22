@@ -445,7 +445,7 @@ bool EventTool::init() {
 				}
 
 				SEISCOMP_INFO("Processor '%s' added", it->c_str());
-				_processors[*it] = proc;
+				_processors.push_back(proc);
 			}
 		}
 
@@ -3287,9 +3287,8 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 	if ( !update && triggeredMag && !realOriginUpdate &&
 	     triggeredMag->publicID() == info->event->preferredMagnitudeID() ) {
 		// Call registered processors
-		EventProcessors::iterator it;
-		for ( it = _processors.begin(); it != _processors.end(); ++it ) {
-			if ( it->second->process(info->event.get()) )
+		for ( EventProcessorPtr &proc : _processors ) {
+			if ( proc->process(info->event.get()) )
 				update = true;
 		}
 
@@ -3356,9 +3355,8 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			info->created = false;
 
 			// Call registered processors
-			EventProcessors::iterator it;
-			for ( it = _processors.begin(); it != _processors.end(); ++it )
-				it->second->process(info->event.get());
+			for ( EventProcessorPtr &proc : _processors )
+				proc->process(info->event.get());
 		}
 	}
 }
@@ -3792,9 +3790,8 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 			info->created = false;
 
 			// Call registered processors
-			EventProcessors::iterator it;
-			for ( it = _processors.begin(); it != _processors.end(); ++it )
-				it->second->process(info->event.get());
+			for ( EventProcessorPtr &proc : _processors )
+				proc->process(info->event.get());
 		}
 	}
 }
@@ -4028,9 +4025,8 @@ void EventTool::updateEvent(DataModel::Event *ev, bool callProcessors) {
 
 	if ( callProcessors ) {
 		// Call registered processors
-		EventProcessors::iterator it;
-		for ( it = _processors.begin(); it != _processors.end(); ++it )
-			it->second->process(ev);
+		for ( EventProcessorPtr &proc : _processors )
+			proc->process(ev);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
