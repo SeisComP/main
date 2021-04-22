@@ -170,14 +170,23 @@ size_t EventInformation::matchingPicks(DataModel::DatabaseQuery *q,
 			string id = p->waveformID().networkCode() + "." +
 			            p->waveformID().stationCode();
 
-			char code = Util::getShortPhaseName(p->phaseHint().code());
+			char code = ' ';
+			try {
+				code = Util::getShortPhaseName(p->phaseHint().code());
+			}
+			catch ( ... ) {}
 
 			PickRange range = picks.equal_range(id);
 			PickAssociation::const_iterator it;
 			int hit = 0, cnt = 0;
 			for ( it = range.first; it != range.second; ++it ) {
 				Pick *cmp = it->second.get();
-				char cmpCode = Util::getShortPhaseName(cmp->phaseHint().code());
+				char cmpCode = ' ';
+				try {
+					cmpCode = Util::getShortPhaseName(cmp->phaseHint().code());
+				}
+				catch ( ... ) {}
+
 				if ( code != cmpCode ) continue;
 
 				++cnt;
