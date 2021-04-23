@@ -44,12 +44,12 @@ bool minmax(const RecordSequence *seq, const Core::TimeWindow &tw,
 				if ( tw.overlaps(rtw) ) {
 					double fs = rec->samplingFrequency();
 					double dt = tw.startTime() - rec->startTime();
-					if(dt>0)
+					if( dt > 0 )
 						imin = int(dt*fs);
 
 					dt = rec->endTime() - tw.endTime();
 					imax = ns;
-					if(dt>0)
+					if( dt > 0 )
 						imax -= int(dt*fs);
 				}
 				else
@@ -74,13 +74,13 @@ bool minmax(const RecordSequence *seq, const Core::TimeWindow &tw,
 		for ( int i = imin; i < imax; ++i )
 			ofs += (*arr)[i];
 
-		if(min==max) {
+		if( min == max ) {
 			min = xmin;
 			max = xmax;
 		}
 		else {
-			if (xmin<min) min = xmin;
-			if (xmax>max) max = xmax;
+			if ( xmin < min ) min = xmin;
+			if ( xmax > max ) max = xmax;
 		}
 	}
 
@@ -99,14 +99,15 @@ void HeliCanvas::Row::update() {
 
 HeliCanvas::HeliCanvas(bool saveUnfiltered)
 : _saveUnfiltered(saveUnfiltered) {
-	_records = NULL;
-	_filteredRecords = NULL;
+	_records = nullptr;
+	_filteredRecords = nullptr;
 	_scale = 1.0f;
-	_filter = NULL;
+	_filter = nullptr;
 
 	_gaps[0] = SCScheme.colors.records.gaps;
 	_gaps[1] = SCScheme.colors.records.gaps;
 
+	_scaling = "minmax";
 	_amplitudeRange[0] = -0.00001;
 	_amplitudeRange[1] = +0.00001;
 
@@ -162,6 +163,12 @@ bool HeliCanvas::setFilter(const std::string &filterStr) {
 	_filter = filter;
 	applyFilter();
 
+	return true;
+}
+
+
+bool HeliCanvas::setScaling(const std::string &scaling) {
+	_scaling = scaling;
 	return true;
 }
 
@@ -488,22 +495,31 @@ void HeliCanvas::render(QPainter &p) {
 					_rows[i].polyline = new Gui::RecordPolyline;
 			}
 
-			float ofs, min, max;
+			float ofs, min, max, minAmp, maxAmp;
 			Core::TimeWindow tw(_rows[i].time, _rows[i].time + Core::TimeSpan(_rowTimeSpan));
 			minmax(_filteredRecords, tw, ofs, min, max);
+
+			if ( _scaling == "row" ) {
+				minAmp = min - ofs;
+				maxAmp = max - ofs;
+			}
+			else {
+				minAmp = _amplitudeRange[0];
+				maxAmp = _amplitudeRange[1];
+			}
 
 			if ( _antialiasing )
 				static_cast<Gui::RecordPolylineF*>(_rows[i].polyline.get())
 				->create(_filteredRecords,
 				         tw.startTime(), tw.endTime(),
 				         (double)recordWidth / (double)_rowTimeSpan,
-				         _amplitudeRange[0], _amplitudeRange[1], ofs, rowHeight);
+				         minAmp, maxAmp, ofs, rowHeight);
 			else
 				static_cast<Gui::RecordPolyline*>(_rows[i].polyline.get())
 				->create(_filteredRecords,
 				         tw.startTime(), tw.endTime(),
 				         (double)recordWidth / (double)_rowTimeSpan,
-				         _amplitudeRange[0], _amplitudeRange[1], ofs, rowHeight);
+				         minAmp, maxAmp, ofs, rowHeight);
 			_rows[i].dirty = false;
 		}
 

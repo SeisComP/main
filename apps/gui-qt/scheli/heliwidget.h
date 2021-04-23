@@ -52,6 +52,7 @@ class HeliCanvas {
 		// Sets the scale, usually 1/gain
 		void setScale(float scale);
 		bool setFilter(const std::string &filter);
+		bool setScaling(const std::string &scaling);
 		void setAmplitudeRange(double min, double max);
 
 		void setRowColors(const QVector<QColor> &);
@@ -94,6 +95,7 @@ class HeliCanvas {
 		Seiscomp::Core::Time      _currentTime;
 		int                       _numberOfRows;
 		float                     _scale;
+		std::string               _scaling;
 
 		QBrush                    _gaps[2];
 		double                    _amplitudeRange[2];

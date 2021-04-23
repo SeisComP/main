@@ -82,6 +82,7 @@ class HCApp : public Gui::Application {
 		std::string              _filterString;
 		std::string              _imagePostProcessingScript;
 		float                    _gain;
+		std::string              _scaling;
 		float                    _amplitudesRange;
 		float                    _amplitudesMin;
 		float                    _amplitudesMax;

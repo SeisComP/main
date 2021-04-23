@@ -161,6 +161,12 @@ void MainWindow::setFilter(const std::string &filter) {
 }
 
 
+bool MainWindow::setScaling(const std::string &scaling) {
+	_heliWidget->canvas().setScaling(scaling);
+	return true;
+}
+
+
 void MainWindow::setAmplitudeRange(double min, double max) {
 	_heliWidget->canvas().setAmplitudeRange(min, max);
 }

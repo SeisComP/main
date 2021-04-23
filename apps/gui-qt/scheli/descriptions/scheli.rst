@@ -18,27 +18,37 @@ mimicking a drum-recorder plot (see :ref:`fig-scheli`):
 
    scheli in GUI mode
 
+
 Examples
 ========
 
 .. _scheli-show:
 
-1. **GUI mode - Simple helicorder window:**
+#. **GUI mode - Simple helicorder window:**
+
+   * Learn about the plenty command-line options for :program:`scheli`: ::
+
+        scheli -h
 
    * Start :program:`scheli` with the configured values and informative debug output: ::
 
         scheli --debug
 
    * Let :program:`scheli` show data from the CX station PB01 for the previous 5 hours
-     overriding configuration by command-line paramaters.
+     overriding configuration by command-line paramaters:
 
      .. code-block:: sh
 
         scheli --stream CX.PB01..HHZ --rows 10
 
+   * Define the data request window by end time and duration; scale traces to the
+     maximum amplitude per row: ::
+
+        scheli --stream IU.TSUM.00.BHZ --end-time "2021-04-22 14:00:00" --time-span 600 --amp-scaling row
+
 .. _scheli-capture:
 
-2. **Capture mode - Image capturing:**
+#. **Capture mode - Image capturing:**
 
    Capture the helicorder plot for 3 stations in intervals of 10 seconds.
    The data is retrieved using seedlink and the plots are stored as PNG images.
