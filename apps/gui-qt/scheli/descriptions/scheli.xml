@@ -53,12 +53,30 @@
 					</parameter>
 				</group>
 				<group name="amplitudeRange">
-					<description>Gain-corrected amplitudes given in units of the sensor, e.g. m/s.</description>
+					<description>
+					Gain-corrected amplitudes given in units of the sensor, e.g. m/s.
+					</description>
+					<parameter name="scaling" type="string" default="minmax">
+						<description>
+						Define the method to scale traces within rows. Possible values are:
+
+						minmax: Scale all rows to confiugured minimum and maximum
+						amplitudes configured by amplitudeRange.min and amplitudeRange.max.
+
+						row: Scale each row to the maximum within this row.
+						</description>
+					</parameter>
 					<parameter name="min" type="double" default="-0.00001" unit="">
-						<description>Minimum amplitude to show in trace.</description>
+						<description>
+						Minimum amplitude to show in trace. Requires
+						amplitudeRange.scale = "minmax".
+						</description>
 					</parameter>
 					<parameter name="max" type="double" default="0.00001" unit="">
-						<description>Minimum amplitude to show in trace.</description>
+						<description>
+						Minimum amplitude to show in trace. Requires
+						amplitudeRange.scale = "minmax".
+						</description>
 					</parameter>
 				</group>
 				<group name="dump">

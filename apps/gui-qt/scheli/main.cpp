@@ -61,6 +61,7 @@ HCApp::HCApp(int& argc, char** argv, int flags, Type type )
 	setLoadRegionsEnabled(false);
 
 	_gain = 1.0;
+	_scaling = "minmax";
 	_amplitudesRange = 0.0;
 	_amplitudesMin =  -0.00001f;
 	_amplitudesMax =  +0.00001f;
@@ -155,6 +156,9 @@ bool HCApp::initConfiguration() {
 	if ( !Gui::Application::initConfiguration() )
 		return false;
 
+	try { _scaling = configGetString("heli.amplitudeRange.scaling"); }
+	catch ( Config::Exception& e ) {}
+
 	try { _amplitudesMin = configGetDouble("heli.amplitudeRange.min"); }
 	catch ( Config::Exception& e ) {}
 
@@ -222,10 +226,11 @@ void HCApp::createCommandLineDescription() {
 	commandline().addOption("Data", "stream", "The record stream that should be displayed: stream=net.sta.loc.cha", &_streamID);
 	commandline().addOption("Data", "filter", "The filter to apply", &_filterString);
 	commandline().addOption("Data", "gain", "Gain applied to the data before plotting.", &_gain);
-	commandline().addOption("Data", "amp-range-min", "Lower bound of amplitude range per row", &_amplitudesMin);
-	commandline().addOption("Data", "amp-range-max", "Upper bound of amplitude range per row", &_amplitudesMax);
-	commandline().addOption("Data", "amp-range", "Arround zero bound of amplitude range per row", &_amplitudesRange);
-	commandline().addOption("Data", "record-time", "Does the last row always contain the last record received", &_fixCurrentTimeToLastRecord);
+	commandline().addOption("Data", "amp-scaling", "Method for scaling amplitudes per row", &_scaling);
+	commandline().addOption("Data", "amp-range-min", "Lower bound of amplitude range per row. Requires --amp-scaling minmax", &_amplitudesMin);
+	commandline().addOption("Data", "amp-range-max", "Upper bound of amplitude range per row. Requires --amp-scaling minmax", &_amplitudesMax);
+	commandline().addOption("Data", "amp-range", "Arround zero bound of amplitude range per row. Requires --amp-scaling minmax. Overrides min and max values.", &_amplitudesRange);
+	commandline().addOption("Data", "record-time", "Let the last row always contain the last record received", &_fixCurrentTimeToLastRecord);
 
 	commandline().addGroup("Output");
 	commandline().addOption("Output", "desc", "Enables/disables the display of a station description", &_stationDescription);
@@ -273,11 +278,13 @@ bool HCApp::validateParameters() {
 	}
 	catch ( ... ) {}
 
-	if ( commandline().hasOption("amp-range") && !commandline().hasOption("amp-range-min") )
+	if ( commandline().hasOption("amp-range") && !commandline().hasOption("amp-range-min") ) {
 		_amplitudesMin = -1 * fabs(_amplitudesRange);
+	}
 
-	if ( commandline().hasOption("amp-range") && !commandline().hasOption("amp-range-max") )
+	if ( commandline().hasOption("amp-range") && !commandline().hasOption("amp-range-max") ) {
 		_amplitudesMax = fabs(_amplitudesRange);
+	}
 
 	if ( commandline().hasOption("no-messaging") )
 		setMessagingEnabled(false);
@@ -317,8 +324,15 @@ bool HCApp::init() {
 	SEISCOMP_INFO(" + filter: %s", _filterString.c_str());
 	SEISCOMP_INFO(" + rows: %i", _numberOfRows);
 	SEISCOMP_INFO(" + rows time span: %i s", _timeSpanPerRow);
-	SEISCOMP_INFO(" + minimum amplitude: %.9f", _amplitudesMin);
-	SEISCOMP_INFO(" + maximum amplitude: %.9f", _amplitudesMax);
+
+	if ( _scaling == "row" ) {
+		SEISCOMP_INFO(" + amplitudes are scaled to row maximum");
+	}
+	else {
+		SEISCOMP_INFO(" + minimum amplitude: %.9f", _amplitudesMin);
+		SEISCOMP_INFO(" + maximum amplitude: %.9f", _amplitudesMax);
+	}
+
 	if ( _snapshotTimeout <= 0 ) {
 		SEISCOMP_INFO(" + Image capturing is inactive");
 	}
@@ -345,6 +359,7 @@ bool HCApp::run() {
 
 			heli->setAntialiasingEnabled(_antialiasing);
 			heli->setLineWidth(_lineWidth);
+			heli->setScaling(_scaling);
 			heli->setAmplitudeRange(_amplitudesMin, _amplitudesMax);
 			heli->setLayout(_numberOfRows, _timeSpanPerRow);
 
@@ -445,6 +460,7 @@ bool HCApp::run() {
 
 
 void HCApp::setupUi(MainWindow *w) {
+	w->setScaling(_scaling);
 	w->setAmplitudeRange(_amplitudesMin, _amplitudesMax);
 	w->fixCurrentTimeToLastRecord(_fixCurrentTimeToLastRecord);
 	w->setStationDescriptionEnabled(_stationDescription);

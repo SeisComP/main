@@ -61,6 +61,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		void setStream(Seiscomp::DataModel::WaveformStreamID streamID);
 
 		void setFilter(const std::string &filter);
+		bool setScaling(const std::string &scaling);
 		void setAmplitudeRange(double min, double max);
 		void setRowColors(const QVector<QColor> &);
 
