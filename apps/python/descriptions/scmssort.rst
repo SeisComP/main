@@ -5,11 +5,21 @@ acquisition and playbacks. Removing of duplicate data and trimming of time windo
 scmssort reads single files and output to the command line. Cat many files
 to read them at the same time. In this way huge amount of data can be processed efficiently.
 
+Applications to miniSEED records:
+
+* Sort by time, e.g. for playbacks
+* Remove duplicates and clean archives
+* Filter based on
+
+  * time windows
+  * stream lists
+
 
 .. hint::
 
    Combine with :ref:`scart` or :ref:`msrtsimul` to archive data or to make playbacks
    with real-time simulations.
+
 
 Examples
 ========
@@ -27,3 +37,7 @@ Examples
    .. code-block:: sh
 
       cat *.mseed | scmssort -u -E -v -t '2020-03-28 15:48~2020-03-28 16:18' > sorted.mseed
+
+#. Extract streams by time, stream code and sort records by end time ::
+
+      echo CX.PB01..BH? | scmssort -v -E -t '2007-03-28 15:48~2007-03-28 16:18' -u -l - test.mseed > sorted.mseed

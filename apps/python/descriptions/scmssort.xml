@@ -22,6 +22,14 @@
 						Run in verbose mode.
 					</description>
 				</option>
+				<option flag="l" long-flag="list">
+					<description>
+						File with streams to filter the records. One stream per
+						line. Instead of a file read the from stdin (-). Line
+						format: NET.STA.LOC.CHA - wildcards and regular expressions
+						are considered. Example: CX.*..BH? .
+					</description>
+				</option>
 				<option flag="E" long-flag="sort-by-end-time">
 					<description>
 						Sort by end time.
