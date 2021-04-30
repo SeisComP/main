@@ -149,7 +149,7 @@ class InventoryTask : public Task {
 		Session       _session;
 
 		LogHandler   *_logHandler;
-		SourceMap     _sources;
+		static SourceMap _sources;
 };
 
 

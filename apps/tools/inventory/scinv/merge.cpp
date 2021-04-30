@@ -237,8 +237,6 @@ bool Merge::merge(bool stripUnreferenced) {
 			process(r);
 	}
 
-	_sources.clear();
-
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
