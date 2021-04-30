@@ -363,7 +363,7 @@ void Check::checkOverlap(TimeWindows &epochs, const T *obj) {
 		log(LogHandler::Conflict,
 		    (string(obj->className()) + " " + id(obj) + "\n  "
 		     "overlapping epochs " +
-		     toString(epoch) + " and " + toString(*tw)).c_str(), nullptr, nullptr);
+		     toString(epoch) + " and " + toString(*tw)).c_str(), obj, obj);
 	}
 
 	epochs.push_back(epoch);
@@ -391,7 +391,7 @@ void Check::checkOutside(const T1 *parent, const T2 *obj) {
 		    (string(obj->className()) + " " + id(obj) + "\n  "
 		     "epoch " + toString(epoch) + " outside parent " +
 		     parent->className() + " epoch " + toString(pepoch)).c_str(),
-		     nullptr, nullptr);
+		     obj, obj);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

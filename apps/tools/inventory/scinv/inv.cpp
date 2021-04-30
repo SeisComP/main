@@ -18,6 +18,10 @@
 using namespace std;
 using namespace Seiscomp;
 using namespace Seiscomp::DataModel;
+
+
+InventoryTask::SourceMap InventoryTask::_sources;
+
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -88,7 +92,9 @@ void InventoryTask::log(LogHandler::Level level, const char *message,
                         const Seiscomp::DataModel::Object *obj1,
                         const Seiscomp::DataModel::Object *obj2) {
 	if ( _logHandler == NULL ) return;
-	_logHandler->publish(level, message, obj1, _sources[obj1], obj2, _sources[obj2]);
+	int id1 = _sources.find(obj1) != _sources.end() ? _sources[obj1] : -1;
+	int id2 = _sources.find(obj2) != _sources.end() ? _sources[obj2] : -1;
+	_logHandler->publish(level, message, obj1, id1, obj2, id2);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
