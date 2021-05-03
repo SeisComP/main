@@ -189,8 +189,8 @@ EventTool::EventTool(int argc, char **argv) : Application(argc, argv) {
 	_cache.setPopCallback(boost::bind(&EventTool::removedFromCache, this, _1));
 
 	_infoChannel = SEISCOMP_DEF_LOGCHANNEL("processing/info", Logging::LL_INFO);
-	_infoOutput = new Logging::FileRotatorOutput(Environment::Instance()->logFile("scevent-processing-info").c_str(),
-	                                             60*60*24, 30);
+	string logFile = Environment::Instance()->logFile(_name + "-processing-info");
+	_infoOutput = new Logging::FileRotatorOutput(logFile.c_str(), 60*60*24, 30);
 	_infoOutput->subscribe(_infoChannel);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
