@@ -683,8 +683,8 @@ MainFrame::MainFrame(){
 	        this, SLOT(selectEvent(std::string)),
 	        Qt::QueuedConnection);
 
-	connect(_eventList, SIGNAL(eventAddedToList(Seiscomp::DataModel::Event*,bool)),
-	        this, SLOT(eventAdded(Seiscomp::DataModel::Event*,bool)));
+	connect(_eventList, SIGNAL(visibleEventCountChanged()),
+	        this, SLOT(updateEventTabText()));
 
 	_originLocator->map()->canvas().addLayer(eventMapLayer);
 
@@ -1780,6 +1780,18 @@ void MainFrame::eventAdded(Seiscomp::DataModel::Event *e, bool fromNotification)
 	}
 #endif
 }
+
+
+void MainFrame::updateEventTabText() {
+	_ui.tabWidget->setTabText(
+		_ui.tabWidget->count()-1,
+		QString("Events (%1/%2)")
+		.arg(_eventList->visibleEventCount())
+		.arg(_eventList->eventCount())
+	);
+}
+
+
 #if QT_VERSION >= 0x040300
 
 

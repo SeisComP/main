@@ -67,6 +67,7 @@ class MainFrame : public MainWindow {
 		void messageAvailable(Seiscomp::Core::Message*, Seiscomp::Client::Packet*);
 
 		void eventAdded(Seiscomp::DataModel::Event*, bool);
+		void updateEventTabText();
 		void setOrigin(Seiscomp::DataModel::Origin*, Seiscomp::DataModel::Event*, bool, bool);
 		void updateOrigin(Seiscomp::DataModel::Origin*, Seiscomp::DataModel::Event*);
 		void committedNewOrigin(Seiscomp::DataModel::Origin*, Seiscomp::DataModel::Event*);
