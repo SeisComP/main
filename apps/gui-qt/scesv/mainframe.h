@@ -60,6 +60,7 @@ class MainFrame : public Gui::MainWindow {
 		void setLastNonFakeEvent();
 		void clearStatusbar();
 		void showESVTab();
+		void updateEventTabText();
 
 	private:
 		Ui::MainFrame _ui;

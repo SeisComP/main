@@ -129,6 +129,11 @@ MainFrame::MainFrame() {
 	connect(_listPage, SIGNAL(eventRemovedFromList(Seiscomp::DataModel::Event*)),
 	        eventMapLayer, SLOT(removeEvent(Seiscomp::DataModel::Event*)));
 
+	if ( _ui.tabWidget ) {
+		connect(_listPage, SIGNAL(visibleEventCountChanged()),
+		        this, SLOT(updateEventTabText()));
+	}
+
 	_eventSummary->map()->canvas().addLayer(eventMapLayer);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -194,7 +199,7 @@ void MainFrame::toggleDock() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainFrame::toggleEventList() {
-	if ( _ui.tabWidget == NULL ) return;
+	if ( !_ui.tabWidget ) return;
 
 	if ( _ui.tabWidget->currentIndex() == 0 )
 		_ui.tabWidget->setCurrentIndex(1);
@@ -259,6 +264,17 @@ void MainFrame::clearStatusbar() {
 void MainFrame::showESVTab() {
 	if ( _ui.tabWidget )
 		_ui.tabWidget->setCurrentIndex(0);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainFrame::updateEventTabText() {
+	_ui.tabWidget->setTabText(1, QString("Events (%1/%2)")
+	                          .arg(_listPage->visibleEventCount())
+	                          .arg(_listPage->eventCount()));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
