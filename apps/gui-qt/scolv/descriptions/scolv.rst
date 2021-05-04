@@ -866,9 +866,14 @@ selected in the Origin list.
 Events tab
 ==========
 
-The Events tab gives an overview of the events in a defined time span. Shown events
-are updated in real time as new events arrive in |scname| or are loaded from the database.
-When starting scolv with the option **--ep** events can also be loaded from an XML
+The Events tab gives an overview of the events in the defined time span. Listed
+events are updated in real time as new events arrive in |scname| or are loaded
+from the database. The title of the tab also indicates the number of shown vs.
+the total number of loaded events. The numbers can be different because events
+can be :ref:`hidden from the list by filtering <scolv-events-filtering>`.
+
+
+When starting scolv with the option **--offline**, events can also be loaded from an XML
 file using the File menu in the main window.
 
 .. _fig-scolv-events:
@@ -941,57 +946,88 @@ with :confval:`eventlist.visibleColumns` in the global configuration
                               Depth, DType, Stat, FM, Author, Agency, Region, ID
 
 
+.. _scolv-events-filtering:
+
 Event filtering
 ---------------
 
-Database requests filters can be set and adjusted in
-the filter parameter window which opens when pressing the Filter button. Press *Read*
-to reload the events list based on the filter parameters. Filter parameters
-are :ref:`global` parameters which can be preset by adjusting the configuration parameters
-:confval:`eventlist.filter.database.*`. **The request filter only concerns the
-database request for loading events. It does not update the current list.**
+Database request filters can be applied interactively or automatically by
 
-The event list also contains a checkbox *Hide other/fake events*. If checked all
-events with type *not existing* or *other* are hidden. If unchecked they are
-shown. **Pressing the Hide button affects the currently loaded list.**
+* **Interactive custom request filters**: You may set and adjust a custom request
+  filter** in the filter parameter window which opens when pressing the Filter
+  button. Press *Read* to reload the events list based on the filter parameters.
+  **The interactive custom request filter only concerns the
+  database request for loading events. It does not update the current list.**
+  Use the :ref:`global` for presetting the values (:file:`scolv.cfg` or
+  :file:`global.cfg`), e.g.:
 
-It is possible to configure the event types used for this filter as well
-as the label text of the checkbox. Use the global configuration for setting
-the parameters (:file:`scolv.cfg` or :file:`global.cfg`):
+  .. code-block:: sh
 
-.. code-block:: sh
+     eventlist.filter.database.minlat = 51.0
 
-   # Define the event types to be filtered
-   eventlist.filter.types.blacklist = "not existing", "other",\
-                                      "outside of network interest"
+* **Preset filters** based on
 
-   # Define the label of the button to filter the events
-   eventlist.filter.types.label = "Hide fake events"
+  * **Event type:** Activate by check box *Hide other/fake events*. If checked, all
+    events with the configured types are hidden from the list. The default event types
+    to hide are *not existing* and *other* are hidden. If unchecked, the filtering
+    is inactive and the events are shown. **Pressing the Hide button only affects
+    the currently loaded list.** Configure the event types used for this filter as well
+    as the label text for the checkbox.
+    Use the :ref:`global` for presetting the values s (:file:`scolv.cfg` or :file:`global.cfg`):
 
-   # Define the default behavior
-   eventlist.filter.types.enabled = true
+    .. code-block:: sh
 
+       # Define the event types to be filtered
+       eventlist.filter.types.blacklist = "not existing", "other",\
+                                          "outside of network interest"
 
-Another option to filter events is by agencyID. The button *Show only own events*
-will hide all events where the preferred origins agencyID is not the configured
-:confval:`agencyID` of scolv. This is the default behavior which can be customized
-(:file:`scolv.cfg` or :file:`global.cfg`):
+       # Define the label of the button to filter the events
+       eventlist.filter.types.label = "Hide fake events"
 
-.. code-block:: sh
+       # Define the default behavior
+       eventlist.filter.types.enabled = true
 
-   # Set the preferred agencyIDs to GFZ and EMSC
-   eventlist.filter.agencies.whitelist = GFZ, EMSC
+  * **Agency**: Activate by check boxes *Show only own origin* and/or "Show only
+    latest/preferred origin per agency". The button *Show only own events*
+    will hide all events where the preferred origins agencyID is not the configured
+    :confval:`agencyID` of scolv. This is the default behavior which can be customized
+    (:file:`scolv.cfg` or :file:`global.cfg`):
 
-   # Set type to 'origins' which means that an event will pass the filter if
-   # at least one origin is from a preferred agency defined with the whitelist
-   # above. The default type is 'events' which checks only the events preferred
-   # origin.
-   eventlist.filter.agencies.type = origins
-   eventlist.filter.agencies.label = "Show only my preferred events"
+    .. code-block:: sh
 
-   # Enable this filter initially. If this option is not used the filter
-   # is disabled by default.
-   eventlist.filter.agencies.enabled = true
+       # Set the preferred agencyIDs to GFZ and EMSC
+       eventlist.filter.agencies.whitelist = GFZ, EMSC
+
+       # Set type to 'origins' which means that an event will pass the filter if
+       # at least one origin is from a preferred agency defined with the whitelist
+       # above. The default type is 'events' which checks only the events preferred
+       # origin.
+       eventlist.filter.agencies.type = origins
+
+       # Defines the text of the option "Show only own events".
+       eventlist.filter.agencies.label = "Show only own events"
+
+       # Enable this filter initially. If this option is not used the filter
+       # is disabled by default.
+       eventlist.filter.agencies.enabled = true
+
+  * **Source region:** Select a source region, activate "Hide events" and choose to
+    hide events inside or outside the region.
+    **Pressing the Hide button only affects the currently loaded list.**
+    Pre-defined regions can be configured in the global configuration
+    (:file:`scolv.cfg`, :file:`global.cfg`):
+
+    .. code-block:: sh
+
+       # Configured a list of regions that can be used as filter of the result set.
+       eventlist.regions = chile
+
+       # Defines the name of the region that shows up in the listbox.
+       eventlist.region.chile.name = Chile
+
+       # Defines a rectangular region with a list of 4 values: latmin, lonmin, latmax,
+       # lonmax.
+       eventlist.region.chile.rect = -40, -80, -10, -60
 
 
 Custom actions
