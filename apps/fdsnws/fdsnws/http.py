@@ -85,6 +85,14 @@ Service Version:
         msg = "The requested resource does not exist on this server."
         return HTTP.renderErrorPage(request, http.NOT_FOUND, msg, version)
 
+    # ---------------------------------------------------------------------------
+    @staticmethod
+    def renderNotModified(request, ro=None):
+        code = http.NOT_MODIFIED
+        request.setResponseCode(code)
+        request.responseHeaders.removeHeader('content-type')
+        accessLog(request, ro, code, 0, None)
+
 
 ################################################################################
 class ServiceVersion(resource.Resource):
@@ -148,6 +156,10 @@ class BaseResource(resource.Resource):
         data = self.renderErrorPage(request, code, msg, ro)
         if data:
             writeTSBin(request, data)
+
+    #---------------------------------------------------------------------------
+    def returnNotModified(self, request, ro=None):
+        HTTP.renderNotModified(request, ro)
 
     #---------------------------------------------------------------------------
     # Renders error page if the result set exceeds the configured maximum number

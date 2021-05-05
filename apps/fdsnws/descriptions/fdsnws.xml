@@ -122,6 +122,12 @@
 				Enables/disables access to restricted inventory data.
 				</description>
 			</parameter>
+			<parameter name="handleConditionalRequests" type="boolean" default="false">
+				<description>
+				Enables/disables handling of time-based conditional requests (RFC
+				7232) by the fdsnws-station resource.
+				</description>
+			</parameter>
 			<parameter name="useArclinkAccess" type="boolean" default="false">
 				<description>
 				If enabled, then access to restricted waveform data is controlled

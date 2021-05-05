@@ -366,6 +366,7 @@ class FDSNWS(seiscomp.client.Application):
         self._openStreams = None
         self._daRepositoryName = 'primary'
         self._daDCCName = 'DCC'
+        self._handleConditionalRequests = False
 
         self._hideAuthor = False
         self._hideComments = False
@@ -394,6 +395,7 @@ class FDSNWS(seiscomp.client.Application):
 
         self._requestLog = None
         self.__reloadRequested = False
+        self.__timeInventoryLoaded = None
         self.__tcpPort = None
 
         # Leave signal handling to us
@@ -483,6 +485,13 @@ class FDSNWS(seiscomp.client.Application):
         # access to restricted inventory information
         try:
             self._allowRestricted = self.configGetBool('allowRestricted')
+        except Exception:
+            pass
+
+        # time-based conditional requests handled by fdsnws-station
+        try:
+            self._handleConditionalRequests = \
+                self.configGetBool('handleConditionalRequests')
         except Exception:
             pass
 
@@ -768,53 +777,54 @@ class FDSNWS(seiscomp.client.Application):
         seiscomp.logging.debug("""
 configuration read:
   serve
-    dataselect    : {}
-    event         : {}
-    station       : {}
-    availability  : {}
-  listenAddress   : {}
-  port            : {}
-  connections     : {}
-  htpasswd        : {}
-  accessLog       : {}
-  CORS origins    : {}
-  queryObjects    : {}
-  realtimeGap     : {}
-  samples (M)     : {}
-  recordBulkSize  : {}
-  allowRestricted : {}
-  useArclinkAccess: {}
-  hideAuthor      : {}
-  hideComments    : {}
-  evaluationMode  : {}
+    dataselect             : {}
+    event                  : {}
+    station                : {}
+    availability           : {}
+  listenAddress            : {}
+  port                     : {}
+  connections              : {}
+  htpasswd                 : {}
+  accessLog                : {}
+  CORS origins             : {}
+  queryObjects             : {}
+  realtimeGap              : {}
+  samples (M)              : {}
+  recordBulkSize           : {}
+  allowRestricted          : {}
+  handleConditionalRequests: {}
+  useArclinkAccess         : {}
+  hideAuthor               : {}
+  hideComments             : {}
+  evaluationMode           : {}
   data availability
-    enabled       : {}
-    cache duration: {}
-    repo name     : {}
-    dcc name      : {}
+    enabled                : {}
+    cache duration         : {}
+    repo name              : {}
+    dcc name               : {}
   eventType
-    whitelist     : {}
-    blacklist     : {}
+    whitelist              : {}
+    blacklist              : {}
   inventory filter
-    station       : {}
-    dataSelect    : {}
-    debug enabled : {}
+    station                : {}
+    dataSelect             : {}
+    debug enabled          : {}
   trackdb
-    enabled       : {}
-    defaultUser   : {}
+    enabled                : {}
+    defaultUser            : {}
   auth
-    enabled       : {}
-    gnupgHome     : {}
-  requestLog      : {}""".format( \
+    enabled                : {}
+    gnupgHome              : {}
+  requestLog               : {}""".format( \
             self._serveDataSelect, self._serveEvent, self._serveStation,
             self._serveAvailability, self._listenAddress, self._port,
             self._connections, self._htpasswd, self._accessLogFile,
             self._corsOrigins, self._queryObjects, self._realtimeGap,
             self._samplesM, self._recordBulkSize, self._allowRestricted,
-            self._useArclinkAccess, self._hideAuthor, self._hideComments,
-            modeStr, self._daEnabled, self._daCacheDuration,
-            self._daRepositoryName, self._daDCCName, whitelistStr,
-            blacklistStr, stationFilterStr, dataSelectFilterStr,
+            self._handleConditionalRequests, self._useArclinkAccess,
+            self._hideAuthor, self._hideComments, modeStr, self._daEnabled,
+            self._daCacheDuration, self._daRepositoryName, self._daDCCName,
+            whitelistStr, blacklistStr, stationFilterStr, dataSelectFilterStr,
             self._debugFilter, self._trackdbEnabled, self._trackdbDefaultUser,
             self._authEnabled, self._authGnupgHome, self._requestLogFile))
 
@@ -858,6 +868,8 @@ configuration read:
             else:
                 retn = self._filterInventory(
                     dataSelectInv, self._dataSelectFilter)
+
+            self.__timeInventoryLoaded = seiscomp.core.Time.GMT()
 
             if not retn:
                 return None
@@ -986,7 +998,9 @@ configuration read:
 
             # query
             station1.putChild(b'query', FDSNStation(
-                stationInv, self._allowRestricted, self._queryObjects, self._daEnabled))
+                stationInv, self._allowRestricted, self._queryObjects,
+                self._daEnabled, self._handleConditionalRequests,
+                self.__timeInventoryLoaded))
 
             # version
             station1.putChild(b'version', ServiceVersion(StationVersion))

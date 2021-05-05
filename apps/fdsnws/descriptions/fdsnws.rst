@@ -124,6 +124,8 @@ Station
 * Request type: HTTP-GET, HTTP-POST
 * Stations may be filtered e.g. by geographic region and time, also the
   information depth level is selectable
+* Optionally handles time-based conditional HTTP-GET requests as specified by
+  `RFC 7232 <https://tools.ietf.org/html/rfc7232>`_.
 
 
 URL
