@@ -1,16 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="sccnv" category="Utilities" standalone="true">
-		<description>Converts data in in different formats.</description>
+		<description>Converts data in different formats.</description>
 		<command-line>
 			<synopsis>
 				sccnv -i format:file -o format:file
 			</synopsis>
 			<description>
 				sccnv reads the input given in a supported format, converts the content
-				and write the output in another format. Use the option --format-list
+				and writes the output in another format. Use the option `format-list`
 				for a list of supported formats.
 			</description>
+			<group name="Generic">
+				<optionReference>generic#help</optionReference>
+				<optionReference>generic#version</optionReference>
+			</group>
+			<group name="Verbosity">
+				<optionReference>verbosity#v</optionReference>
+				<optionReference>verbosity#debug</optionReference>
+			</group>
+			<group name="Formats">
+				<option flag="" long-flag="format-list" argument="">
+					<description>
+					List all supported formats
+					</description>
+				</option>
+			</group>
+			<group name="Input">
+				<option flag="i" long-flag="input" argument="arg">
+					<description>
+					Input stream [format:][file], default: trunk:-
+					</description>
+				</option>
+			</group>
+			<group name="Output">
+				<option flag="o" long-flag="output" argument="arg">
+					<description>
+					Output stream [format:][file], default trunk:-
+					</description>
+				</option>
+				<option flag="f" long-flag="formatted" argument="">
+					<description>
+					Use formatted output
+					</description>
+				</option>
+				<option flag="" long-flag="indent" argument="arg">
+					<description>
+					Formatted line indent. Default: 2
+					</description>
+				</option>
+			</group>
 		</command-line>
 	</module>
 </seiscomp>
