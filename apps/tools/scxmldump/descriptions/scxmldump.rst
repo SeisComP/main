@@ -21,11 +21,11 @@ Export configuration
 
    scxmldump -fC -o config.xml -d mysql://sysop:sysop@localhost/seiscomp
 
-Export full event data
+Export full event data incl. the relevant journal entries
 
 .. code-block:: sh
 
-   scxmldump -fPAMF -E test2012abcd -o test2012abcd.xml \
+   scxmldump -fPAMFJ -E test2012abcd -o test2012abcd.xml \
              -d mysql://sysop:sysop@localhost/seiscomp
 
 
@@ -53,3 +53,11 @@ Copy event
    scxmldump -fPAMF -E test2012abcd \
              -d mysql://sysop:sysop@localhost/seiscomp | \
    scdb -i - -d mysql://sysop:sysop@archive-db/seiscomp
+
+
+Export the entire journal:
+
+.. code-block:: sh
+
+   scxmldump -fJ -o journal.xml \
+             -d mysql://sysop:sysop@localhost/seiscomp
