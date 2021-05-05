@@ -74,6 +74,11 @@
 						Dump the configuration database.
 					</description>
 				</option>
+				<option flag="J" long-flag="journal">
+					<description>
+						Dump the journal. In combination with -E only corresponding journal entries are included.
+					</description>
+				</option>
 				<option flag="R" long-flag="routing">
 					<description>
 						Dump the routing database.

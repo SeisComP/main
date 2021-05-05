@@ -19,6 +19,8 @@
 #include <seiscomp/io/archive/xmlarchive.h>
 #include <seiscomp/datamodel/inventory.h>
 #include <seiscomp/datamodel/config.h>
+#include <seiscomp/datamodel/journaling.h>
+#include <seiscomp/datamodel/journalentry.h>
 #include <seiscomp/datamodel/routing.h>
 #include <seiscomp/datamodel/dataavailability.h>
 #include <seiscomp/datamodel/eventparameters.h>
@@ -98,6 +100,7 @@ class EventDump : public Seiscomp::Client::Application {
 			commandline().addOption("Dump", "without-station-groups", "remove station groups from inventory");
 			commandline().addOption("Dump", "stations", "if inventory is exported filter the stations to export where each item is in format net[.{sta|*}]", &_stationIDs);
 			commandline().addOption("Dump", "config,C", "export the config");
+			commandline().addOption("Dump", "journal,J", "export the journal");
 			commandline().addOption("Dump", "routing,R", "export routing");
 			commandline().addOption("Dump", "availability,Y", "export data availability information");
 			commandline().addOption("Dump", "with-segments", "export individual data availability segments");
@@ -122,9 +125,10 @@ class EventDump : public Seiscomp::Client::Application {
 				  && !commandline().hasOption("origin")
 				  && !commandline().hasOption("inventory")
 				  && !commandline().hasOption("config")
+				  && !commandline().hasOption("journal")
 				  && !commandline().hasOption("routing")
 				  && !commandline().hasOption("availability") ) {
-					cerr << "Require inventory, config, routing or "
+					cerr << "Require inventory, config, journal, routing or "
 					        "availability flag, or origin or event id" << endl;
 					return false;
 				}
@@ -144,7 +148,7 @@ class EventDump : public Seiscomp::Client::Application {
 			return true;
 		}
 
-		bool write(PublicObject *po) {
+		bool write(PublicObject *po, Journaling *jnl = nullptr) {
 			XMLArchive ar;
 			stringbuf buf;
 			if ( !ar.create(&buf) ) {
@@ -154,7 +158,11 @@ class EventDump : public Seiscomp::Client::Application {
 
 			ar.setFormattedOutput(commandline().hasOption("formatted"));
 
-			ar << po;
+			if ( po )
+				ar << po;
+			if ( jnl )
+				ar << jnl;
+
 			ar.close();
 
 			string content = buf.str();
@@ -418,6 +426,7 @@ class EventDump : public Seiscomp::Client::Application {
 				if ( !write(cfg.get()) ) return false;
 			}
 
+
 			if ( commandline().hasOption("routing") ) {
 				RoutingPtr routing = query()->loadRouting();
 				if ( !routing ) {
@@ -450,36 +459,83 @@ class EventDump : public Seiscomp::Client::Application {
 				if ( !write(avail.get()) ) return false;
 			}
 
+			// collection of publicIDs for which we might want the
+			// journal to be dumped (if journal output is requested).
+			vector<string> journalingPublicIDs;
+
+			// parse -E and -O command-line arguments and collect the publicID's
+
+			vector<string> eventIDs;
 			if ( commandline().hasOption("event") ) {
-				EventParametersPtr ep = new EventParameters;
-				vector<string> eventIDs;
 				Core::split(eventIDs, _eventIDs.c_str(), ",");
-				for ( vector<string>::const_iterator it = eventIDs.begin();
-				      it != eventIDs.end(); ++it ) {
+				for ( const string &publicID : eventIDs )
+					journalingPublicIDs.push_back(publicID);
+			}
+
+			vector<string> originIDs;
+			if ( commandline().hasOption("origin") ) {
+				Core::split(originIDs, _originIDs.c_str(), ",");
+				for ( const string &publicID : originIDs )
+					journalingPublicIDs.push_back(publicID);
+
+			}
+
+			JournalingPtr jnl;
+			if ( commandline().hasOption("journal") ) {
+				if ( ! journalingPublicIDs.empty() ) {
+					// create a journal specific to the publicIDs
+					jnl = new Journaling();
+					for ( const string &publicID : journalingPublicIDs ) {
+						DatabaseIterator it = query()->getJournal(publicID);
+						while ( it.get() ) {
+							jnl->add(JournalEntry::Cast(*it));
+							++it;
+						}
+					}
+				}
+				else {
+					// retrieve entire journal
+					jnl = query()->loadJournaling();
+					if ( !jnl ) {
+						SEISCOMP_ERROR("Journal has not been found");
+						return false;
+					}
+				}
+			}
+
+			EventParametersPtr ep;
+			if ( ! eventIDs.empty() ) {
+				if ( ! ep )
+					ep = new EventParameters;
+				for ( const string &publicID : eventIDs ) {
 					EventPtr event = Event::Cast(PublicObjectPtr(
-						query()->getObject(Event::TypeInfo(), *it)));
+						query()->getObject(Event::TypeInfo(), publicID)));
 					if ( event )
 						addEvent(ep.get(), event.get());
 					else
-						SEISCOMP_ERROR("Event with id '%s' has not been found", it->c_str());
+						SEISCOMP_ERROR("Event with id '%s' has not been found", publicID.c_str());
 				}
-				return ep->eventCount() > 0 && write(ep.get());
 			}
 
-			if ( commandline().hasOption("origin") ) {
-				EventParametersPtr ep = new EventParameters;
+			if ( ! originIDs.empty() ) {
+				if ( ! ep )
+					ep = new EventParameters;
 				vector<string> originIDs;
 				Core::split(originIDs, _originIDs.c_str(), ",");
-				for ( vector<string>::const_iterator it = originIDs.begin();
-				      it != originIDs.end(); ++it ) {
+				for ( const string &publicID : originIDs ) {
 					OriginPtr origin = Origin::Cast(PublicObjectPtr(
-						query()->getObject(Origin::TypeInfo(), *it)));
+						query()->getObject(Origin::TypeInfo(), publicID)));
 					if ( origin )
 						addOrigin(ep.get(), origin.get());
 					else
-						SEISCOMP_ERROR("Origin with id '%s' has not been found", it->c_str());
+						SEISCOMP_ERROR("Origin with id '%s' has not been found", publicID.c_str());
 				}
-				return ep->originCount() > 0 && write(ep.get());
+			}
+
+			if ( ep || jnl ) {
+				if ( ! write(ep.get(), jnl.get()) )
+					return false;
+				return true;
 			}
 
 			if ( commandline().hasOption("listen") )
