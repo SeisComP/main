@@ -54,8 +54,8 @@ class TestAvailability(FDSNWSTest):
         ]
         for q, ct, ignoreRanges, concurrent in tests:
             auth = q.startswith('queryauth') or q.startswith('extentauth')
-            self.testGET('{}{}'.format(query, q), ct, ignoreRanges, concurrent,
-                         auth=auth, dataFile=resFile.format(i), testID=i)
+            self.testHTTP('{}{}'.format(query, q), ct, ignoreRanges, concurrent,
+                          auth=auth, dataFile=resFile.format(i), testID=i)
             i += 1
 
 
