@@ -153,7 +153,7 @@ def readStreamList(file):
             f = open(listFile, 'r')
     except:
         print("%s: error: unable to open" % listFile, file=sys.stderr)
-        return []
+        return([])
 
     lineNumber = -1
     for line in f:
@@ -178,6 +178,9 @@ def readStreamList(file):
 
     f.close()
 
+    if len(streams) == 0:
+        return([])
+
     return(streams)
 
 
@@ -187,8 +190,13 @@ if not filenames:
 if listFile:
     streams = []
     streams = readStreamList(listFile)
+    if not streams:
+        print(" + cannot extract data", file=sys.stderr)
+        quit()
+
     if opt.verbose:
         string = " + streams: "
+
         for stream in streams:
             string += stream + " "
         print("%s" % (string), file=sys.stderr)
