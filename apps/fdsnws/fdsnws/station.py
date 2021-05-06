@@ -37,7 +37,7 @@ from .http import BaseResource
 from .request import RequestOptions
 from . import utils
 
-VERSION = "1.1.2"
+VERSION = "1.1.3"
 
 ################################################################################
 
@@ -225,7 +225,7 @@ class _StationRequestOptions(RequestOptions):
                         continue
 
                 # match data availability extent
-                if dac is not None and ro.matchTimeSeries:
+                if dac is not None and self.matchTimeSeries:
                     extent = dac.extent(net.code(), sta.code(), loc.code(),
                                         stream.code())
                     if extent is None or (ro.time and

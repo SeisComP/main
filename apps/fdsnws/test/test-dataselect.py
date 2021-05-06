@@ -27,8 +27,8 @@ class TestDataSelect(FDSNWSTest):
         resFile = self.rootdir + '/results/dataselect-{}.mseed'
 
         i = 1
-        self.testGET('{}{}'.format(query, '?station=R0F05'), ctTXT,
-                     retCode=403, testID=i)
+        self.testHTTP('{}{}'.format(query, '?station=R0F05'), ctTXT,
+                      retCode=403, testID=i)
         i += 1
         tests = [
             ('?channel=EHZ', False),
@@ -36,9 +36,9 @@ class TestDataSelect(FDSNWSTest):
             ('auth?network=AM&station=R0F05&starttime=2019-08-02T12:00:00', True),
         ]
         for q, concurrent in tests:
-            self.testGET('{}{}'.format(query, q), ctMSeed, [], concurrent,
-                         dataFile=resFile.format(i), testID=i,
-                         auth=q.startswith('auth'))
+            self.testHTTP('{}{}'.format(query, q), ctMSeed, [], concurrent,
+                          dataFile=resFile.format(i), testID=i,
+                          auth=q.startswith('auth'))
             i += 1
 
 

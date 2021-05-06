@@ -38,8 +38,8 @@ class TestEvent(FDSNWSTest):
             ('?format=csv', ctTXT, False),
         ]
         for q, ct, concurrent in tests:
-            self.testGET('{}{}'.format(query, q), ct, [], concurrent,
-                         dataFile='{}{}.txt'.format(resFile, i), testID=i)
+            self.testHTTP('{}{}'.format(query, q), ct, [], concurrent,
+                          dataFile='{}{}.txt'.format(resFile, i), testID=i)
             i += 1
 
 
