@@ -230,30 +230,36 @@ class FDSNWSTest:
 
 
     #--------------------------------------------------------------------------
-    def testGET(self, url, contentType='text/html', ignoreRanges=None,
-                concurrent=False, retCode=200, testID=None, auth=False,
-                data=None, dataFile=None, diffContent=True, silent=False):
+    def testHTTP(self, url, contentType='text/html', ignoreRanges=None,
+                 concurrent=False, retCode=200, testID=None, auth=False,
+                 data=None, dataFile=None, diffContent=True, silent=False,
+                 postData=None):
         if concurrent:
-            self.testGETConcurrent(url, contentType, data, dataFile, retCode,
-                                   testID, ignoreRanges, auth, diffContent)
+            self.testHTTPConcurrent(url, contentType, data, dataFile, retCode,
+                                    testID, ignoreRanges, auth, diffContent,
+                                    postData)
         else:
-            self.testGETOneShot(url, contentType, data, dataFile, retCode,
-                                testID, ignoreRanges, auth, diffContent,
-                                silent)
+            self.testHTTPOneShot(url, contentType, data, dataFile, retCode,
+                                 testID, ignoreRanges, auth, diffContent,
+                                 silent, postData)
 
 
     #--------------------------------------------------------------------------
-    def testGETOneShot(self, url, contentType='text/html', data=None,
-                       dataFile=None, retCode=200, testID=None,
-                       ignoreRanges=None, auth=False, diffContent=True,
-                       silent=False):
+    def testHTTPOneShot(self, url, contentType='text/html', data=None,
+                        dataFile=None, retCode=200, testID=None,
+                        ignoreRanges=None, auth=False, diffContent=True,
+                        silent=False, postData=None):
         if not silent:
             if testID is not None:
                 print('#{} '.format(testID), end='')
             print('{}: '.format(url), end='')
         stream = dataFile is not None
         dAuth = requests.auth.HTTPDigestAuth('sysop', 'sysop') if auth else None
-        r = requests.get(url, stream=stream, auth=dAuth)
+        if postData is None:
+            r = requests.get(url, stream=stream, auth=dAuth)
+        else:
+            r = requests.post(url, data=postData, stream=stream, auth=dAuth)
+
         if r.status_code != retCode:
             raise ValueError('Invalid status code, expected "{}", got "{}"' \
                              .format(retCode, r.status_code))
@@ -288,10 +294,10 @@ class FDSNWSTest:
 
 
     #--------------------------------------------------------------------------
-    def testGETConcurrent(self, url, contentType='text/html', data=None,
-                          dataFile=None, retCode=200, testID=None,
-                          ignoreRanges=None, auth=False, diffContent=True,
-                          repetitions=1000, numThreads=10):
+    def testHTTPConcurrent(self, url, contentType='text/html', data=None,
+                           dataFile=None, retCode=200, testID=None,
+                           ignoreRanges=None, auth=False, diffContent=True,
+                           postData=None, repetitions=1000, numThreads=10):
         if testID is not None:
             print('#{} '.format(testID), end='')
         print('concurrent [{}/{}] {}: '.format(repetitions, numThreads, url),
@@ -304,9 +310,9 @@ class FDSNWSTest:
                     i = q.get()
                     if i is None:
                         break
-                    self.testGETOneShot(url, contentType, data, dataFile,
-                                        retCode, testID, ignoreRanges, auth,
-                                        diffContent, True)
+                    self.testHTTPOneShot(url, contentType, data, dataFile,
+                                         retCode, testID, ignoreRanges, auth,
+                                         diffContent, True, postData)
                     print('.', end='')
                     sys.stdout.flush()
                 except ValueError as e:

@@ -35,8 +35,22 @@ class TestStation(FDSNWSTest):
             ('?format=sc3ml&network=AM&station=R0F05&location=00&channel=SHZ&latitude=52&longitude=13&maxradius=0.5&level=response&includeavailability=true', ctXML, [], True),
         ]
         for q, ct, ignoreRanges, concurrent in tests:
-            self.testGET('{}{}'.format(query, q), ct, ignoreRanges, concurrent,
-                         dataFile='{}{}.txt'.format(resFile, i), testID=i)
+            self.testHTTP('{}{}'.format(query, q), ct, ignoreRanges, concurrent,
+                          dataFile='{}{}.txt'.format(resFile, i), testID=i)
+            i += 1
+
+        # POST tests
+        tests = [
+            ('', ctTXT, [], False),
+            ('', ctTXT, [], False)
+        ]
+        postFile = "{}/post/station-{}.txt"
+        for q, ct, ignoreRanges, concurrent in tests:
+            with open(postFile.format(self.rootdir, i), 'rb') as f:
+                self.testHTTP('{}{}'.format(query, q),
+                              ct, ignoreRanges, concurrent,
+                              dataFile='{}{}.txt'.format(resFile, i), testID=i,
+                              postData=f)
             i += 1
 
 

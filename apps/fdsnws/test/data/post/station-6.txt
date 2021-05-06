@@ -1,0 +1,3 @@
+format=text
+level=channel
+AM * * * 2021-05-01T00:00:00 2021-05-02T00:00:00
