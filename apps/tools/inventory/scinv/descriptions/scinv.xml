@@ -96,7 +96,7 @@
 				</option>
 			</group>
 			<group name="Check">
-				<option double="distance" unit="km" default="10">
+				<option long-flag="distance" unit="km" default="10">
 					<description>
 					Maximum allowed distance between station and location coordinates
 					when using the check command.
