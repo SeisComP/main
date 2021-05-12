@@ -1,56 +1,89 @@
-scsendjournal allows to manipulate event parameters by sending journals to the
-messaging system. The manipulation allows to:
+scsendjournal sends journals to the \scname messaging system.
+Currently, journals can be used to command :ref:`scevent`.
+The journals command :ref:`scevent` to manipulate event parameters according to
+the :ref:`journal actions <scsendjournal-actions>` which must be known to
+:ref:`scevent`.
 
-a. Create new events
-#. Modify event parameters
-#. Control the association of origins to events
+The actions allow to:
+
+* Create new events,
+* Modify event parameters,
+* Control the association of origins to events.
+
 
 Synopsis
 ========
 
 scsendjournal [opts] {objectID} {action} [parameters]
 
-.. _scsendjournal-options:
+
+.. _scsendjournal-actions:
 
 Actions
 =======
 
-There are specific actions for handling non-events and events.
+There are specific journal actions for handling non-events and events. The documentation
+of :ref:`scevent` contains a :ref:`complete list of journals known to scevent <scevent-journals>`.
+
 
 None-event specific actions
 ---------------------------
 
-a. EvNewEvent: create a new event from origin in the provided file
+* **EvNewEvent**: Create a new event from origin with the provided origin ID.
+  The origin must be known to :ref:`scevent`.
+
+  Example: Create a new event from the
+  origin with given originID. Apply the action in the message system on *localhost*: ::
+
+     scsendjournal -H localhost Origin#20170505130954.736019.318 EvNewEvent
+
 
 Origin association
 ------------------
 
-a. EvGrabOrg: grab origin and move the origin to the event with the given eventID.
-   If the origins is already associated to another event, remove this reference.
-#. EvMerge: merge events into one event
-#. EvSplitOrg: split origins to 2 events
+* **EvGrabOrg**: Grab origin and move the origin to the event with the given eventID.
+  If the origins is already associated to another event, remove this reference
+  in the other event.
+* **EvMerge**: Merge events into one event.
+
+  Example: Merge all origins from the source event with eventID *eventS* into the
+  target event with eventID *eventT*. Remove event *eventS*. Apply the action in
+  the message system on *host*: ::
+
+     scsendjournal -H {host} {eventT} EvMerge {eventS}
+
+* **EvSplitOrg**: Split origins to 2 events.
+
 
 Event parameters
 ----------------
 
-a. EvName: set event Name
-#. EvOpComment: set event operator's comment
-#. EvPrefFocMecID: set event preferred focal mechanism
-#. EvPrefMagType: set preferred magnitude type
-#. EvPrefMw: set Mw from focal mechanism as preferred magnitude
-#. EvPrefOrgAutomatic: set the preferred mode to *automatic* corresponding to *unfix* in scolv
-#. EvPrefOrgEvalMode: set preferred origin by evaluation mode
-#. EvPrefOrgID: set preferred origin by ID
-#. EvType: set event type
-#. EvTypeCertainty: set event type certainty
+* **EvName**: Set *EventDescription* of type *earthquake name*.
 
-Examples
-========
+  Example, setting the name of the event with
+  eventID *gempa2021abcd* to *Petrinja* ::
 
-#. **EvMerge:** Merge all origins from the source event with eventID *eventS* into the target
-   event with eventID *eventT*. Remove event *eventS*. Apply the action in message
-   system on *host*:
+     scsendjournal -H localhost gempa2020abcd EvName "Petrinja"
 
-   .. code-block:: sh
+* **EvOpComment**: Set event operator's comment.
+* **EvPrefFocMecID**: Set event preferred focal mechanism.
+* **EvPrefMagTypev:** Set preferred magnitude type.
+* **EvPrefMw**: Set Mw from focal mechanism as preferred magnitude.
+* **EvPrefOrgAutomatic**: Set the preferred mode to *automatic* corresponding to *unfix* in scolv.
+* **EvPrefOrgEvalMode**: Set preferred origin by evaluation mode.
+* **EvPrefOrgID**: Set preferred origin by ID.
+* **EvRefresh**: Select the preferred origin, the preferred magnitude, update
+  the region. Call processors loaded with plugins, e.g. the
+  :ref:`evrc <scevent_regioncheck>` plugin for scevent.
 
-      scsendjournal -H {host} {eventT} EvMerge {eventS}
+  Example: ::
+
+     scsendjournal -H localhost gempa2021abcd EvRefresh
+
+* **EvType**: Set event type.
+
+  Example: Set the type of the event with eventID *gempa2021abcd* to *nuclear explosion*. ::
+
+     scsendjournal -H localhost gempa2021abcd EvType "nuclear explosion"
+
+* **EvTypeCertainty**: set event type certainty.

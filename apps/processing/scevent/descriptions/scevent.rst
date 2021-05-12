@@ -33,6 +33,7 @@ scevent associates origins to events by searching for the best match of the new
 
 If a match is not found, a new event can be formed.
 
+
 Origin match
 ------------
 
@@ -41,20 +42,20 @@ origin time, and :term:`arrivals <arrival>` (associated picks).
 The new origin is matched to an existing origin which has the highest rank in
 the following three groups (1, 2, 3):
 
-1. Location and Time (lowest)
+#. Location and Time (lowest)
 
    The difference in horizontal location is less than
    :confval:`eventAssociation.maximumDistance` (degrees)
    and the difference in origin times is less than
    :confval:`eventAssociation.maximumTimeSpan`.
 
-2. Picks
+#. Picks
 
    The two origins have more than :confval:`eventAssociation.minimumMatchingArrivals`
    matching picks. Picks are matched either by ID or by time depending
    on :confval:`eventAssociation.maximumMatchingArrivalTimeDiff`.
 
-3. Picks and Location and Time (highest)
+#. Picks and Location and Time (highest)
 
    This is the best match, for which both the location-and-time and picks
    criteria above are satisfied.
@@ -65,9 +66,11 @@ one of them is chosen.
 .. note::
 
    For efficiency events in the cache are scanned first and if no matches are found,
-   the database is scanned for the time window :confval:`eventAssociation.eventTimeBefore` - :confval:`eventAssociation.eventTimeAfter`
+   the database is scanned for the time window :confval:`eventAssociation.eventTimeBefore` -
+   :confval:`eventAssociation.eventTimeAfter`
    around the incoming Origin time. The cached events are ordered by eventID and
    thus in time.
+
 
 No origin match
 ---------------
@@ -121,7 +124,7 @@ most recent automatic focal mechnisms becomes preferred.
 
 .. _scevent-eventid:
 
-ID of events
+ID of Events
 ============
 
 The ID of an event or eventID uniquely identifies an event. The ID is derived from
@@ -135,13 +138,40 @@ string containing the year and a set of characters or numbers defining the time.
 Journals
 ========
 
-scevent can be commanded to do a certain action. Journal entries are being
+scevent can be commanded by journals to do a certain action. Journal entries are being
 received via the messaging bus to any of the subscribed groups. A journal entry
 contains an action, a subject (a publicID of an object) and optional parameters.
-If scevent has handled an action then it will send a reply journal entry with
+Journals can be interactively sent to the messaging by :ref:`scsendjournal`.
+
+If scevent has handled an action, it will send a reply journal entry with
 an action formed from the origin action name plus **OK** or **Failed**. The
-parameters of the journal entry contain a possible reason. The following actions
-are supported by scevent:
+parameters of the journal entry contain a possible reason.
+
+The following actions are supported by scevent:
+
+.. function:: EvGrabOrg(objectID, parameters)
+
+   Grabs an origin and associates it to the given event. If the origin is
+   already associated with another event then its reference to this event
+   will be removed.
+
+   :param objectID: The ID of an existing event
+   :param parameters: The ID of the origin to be grabbed
+
+.. function:: EvMerge(objectID, parameters)
+
+   Merges an event (source) into another event (target). After successful
+   completion the source event will be deleted.
+
+   :param objectID: The ID of an existing event (target)
+   :param parameters: The ID of an existing event (source)
+
+.. function:: EvName(objectID, parameters)
+
+   Adds or updates the event description with type "earthquake name".
+
+   :param objectID: The ID of an existing event
+   :param parameters: An event name
 
 .. function:: EvNewEvent(objectID, parameters)
 
@@ -152,34 +182,12 @@ are supported by scevent:
                     create the new event.
    :param parameters: Unused
 
-.. function:: EvPrefMagType(objectID, parameters)
+.. function:: EvOpComment(objectID, parameters)
 
-   Set the preferred magnitude of the event matching the requested magnitude
-   type.
-
-   :param objectID: The ID of an existing event
-   :param parameters: The desired preferred magnitude type
-
-.. function:: EvPrefOrgID(objectID, parameters)
-
-   Sets the preferred origin ID of an event. If an origin ID is passed then
-   it will be fixed as preferred solution for this event and any subsequent
-   origin associations will not cause a change of the preferred origin.
-
-   If an empty origin ID is passed then this is considered as "unfix" and
-   scevent will switch back to automatic preferred selection mode.
+   Adds or updates the event comment text with id "Operator".
 
    :param objectID: The ID of an existing event
-   :param parameters: The origin ID which will become preferred or empty.
-
-.. function:: EvPrefOrgEvalMode(objectID, parameters)
-
-   Sets the preferred origin based on an evaluation mode. The configured
-   priorities are still valid. If an empty evaluation mode is passed then
-   scevent releases this constraint.
-
-   :param objectID: The ID of an existing event
-   :param parameters: The evaluation mode ("automatic", "manual") or empty
+   :param parameters: The comment text
 
 .. function:: EvPrefFocMecID(objectID, parameters)
 
@@ -194,12 +202,68 @@ are supported by scevent:
    :param objectID: The ID of an existing event
    :param parameters: The focal mechanism ID which will become preferred or empty.
 
+.. function:: EvPrefMagType(objectID, parameters)
+
+   Set the preferred magnitude of the event matching the requested magnitude
+   type.
+
+   :param objectID: The ID of an existing event
+   :param parameters: The desired preferred magnitude type
+
+.. function:: EvPrefMw(objectID, parameters)
+
+   Sets the moment magnitude (Mw) of the preferred focal mechanism as
+   preferred magnitude of the event.
+
+   :param objectID: The ID of an existing event
+   :param parameters: Boolean flag, either "true" or "false"
+
 .. function:: EvPrefOrgAutomatic(objectID, parameters)
 
    Releases the fixed origin constraint. This call is equal to :code:`EvPrefOrgID(eventID, '')`.
 
    :param objectID: The ID of an existing event
    :param parameters: Unused
+
+.. function:: EvPrefOrgEvalMode(objectID, parameters)
+
+   Sets the preferred origin based on an evaluation mode. The configured
+   priorities are still valid. If an empty evaluation mode is passed then
+   scevent releases this constraint.
+
+   :param objectID: The ID of an existing event
+   :param parameters: The evaluation mode ("automatic", "manual") or empty
+
+.. function:: EvPrefOrgID(objectID, parameters)
+
+   Sets the preferred origin ID of an event. If an origin ID is passed then
+   it will be fixed as preferred solution for this event and any subsequent
+   origin associations will not cause a change of the preferred origin.
+
+   If an empty origin ID is passed then this is considered as "unfix" and
+   scevent will switch back to automatic preferred selection mode.
+
+   :param objectID: The ID of an existing event
+   :param parameters: The origin ID which will become preferred or empty.
+
+.. function:: EvRefresh(objectID, parameters)
+
+   Refreshes the event information. This operation can be useful if the
+   configured fep region files have changed on disc and scevent should
+   update the region information. Changed plugin parameters can be another
+   reason to refresh the event status.
+
+   :param objectID: The ID of an existing event
+   :param parameters: Unused
+
+.. function:: EvSplitOrg(objectID, parameters)
+
+   Remove an origin reference from an event and create a new event for
+   this origin.
+
+   :param objectID: The ID of an existing event holding a reference to the
+                    given origin ID.
+   :param parameters: The ID of the origin to be split
 
 .. function:: EvType(objectID, parameters)
 
@@ -214,61 +278,3 @@ are supported by scevent:
 
    :param objectID: The ID of an existing event
    :param parameters: The event type certainty
-
-.. function:: EvName(objectID, parameters)
-
-   Adds or updates the event description with type "earthquake name".
-
-   :param objectID: The ID of an existing event
-   :param parameters: An event name
-
-.. function:: EvOpComment(objectID, parameters)
-
-   Adds or updates the event comment text with id "Operator".
-
-   :param objectID: The ID of an existing event
-   :param parameters: The comment text
-
-.. function:: EvPrefMw(objectID, parameters)
-
-   Sets the moment magnitude (Mw) of the preferred focal mechanism as
-   preferred magnitude of the event.
-
-   :param objectID: The ID of an existing event
-   :param parameters: Boolean flag, either "true" or "false"
-
-.. function:: EvMerge(objectID, parameters)
-
-   Merges an event (source) into another event (target). After successful
-   completion the source event will be deleted.
-
-   :param objectID: The ID of an existing event (target)
-   :param parameters: The ID of an existing event (source)
-
-.. function:: EvGrabOrg(objectID, parameters)
-
-   Grabs an origin and associates it to the given event. If the origin is
-   already associated with another event then its reference to this event
-   will be removed.
-
-   :param objectID: The ID of an existing event
-   :param parameters: The ID of the origin to be grabbed
-
-.. function:: EvSplitOrg(objectID, parameters)
-
-   Remove an origin reference from an event and create a new event for
-   this origin.
-
-   :param objectID: The ID of an existing event holding a reference to the
-                    given origin ID.
-   :param parameters: The ID of the origin to be split
-
-.. function:: EvRefresh(objectID, parameters)
-
-   Refreshes the event information. This operation can be useful if the
-   configured fep region files have changed on disc and scevent should
-   update the region information. Changed plugin parameters can be another
-   reason to refresh the event status.
-
-   :param objectID: The ID of an existing event
-   :param parameters: Unused
