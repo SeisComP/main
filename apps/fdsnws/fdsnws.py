@@ -111,7 +111,7 @@ class UsernamePasswordChecker(object):
     #--------------------------------------------------------------------------
     def requestAvatarId(self, cred):
         return defer.maybeDeferred(self.__userdb.checkPassword, cred) \
-            .addCallback(self.__cbPasswordMatch, str(cred.username))
+            .addCallback(self.__cbPasswordMatch, cred.username)
 
 
 ###############################################################################
