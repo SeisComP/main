@@ -215,32 +215,32 @@ bool App::validateParameters() {
 bool App::initConfiguration() {
 	if ( !Client::Application::initConfiguration() ) return false;
 
-	// support depreciated configuration, depreciated since 2020-11-16
+	// support deprecated configuration, deprecated since 2020-11-16
 	try {
 		_config.maxAge = configGetDouble("autoloc.maxAge");
-		SEISCOMP_ERROR("Configuration parameter autoloc.maxAge is depreciated."
+		SEISCOMP_ERROR("Configuration parameter autoloc.maxAge is deprecated."
 		                 " Use buffer.pickKeep instead!");
 	}
 	catch (...) {}
-	// override depreciated configuration if value is set
+	// override deprecated configuration if value is set
 	try { _config.maxAge = configGetDouble("buffer.pickKeep"); }
 	catch (...) {}
 
-	// support depreciated configuration, depreciated since 2020-11-16
+	// support deprecated configuration, deprecated since 2020-11-16
 	try {
 		_keepEventsTimeSpan = configGetInt("keepEventsTimeSpan");
-		SEISCOMP_ERROR("Configuration parameter keepEventsTimeSpan is depreciated."
+		SEISCOMP_ERROR("Configuration parameter keepEventsTimeSpan is deprecated."
 		                 " Use buffer.originKeep instead!");
 	}
 	catch ( ... ) {}
-	// override depreciated configuration if value is set
+	// override deprecated configuration if value is set
 	try { _keepEventsTimeSpan = configGetInt("buffer.originKeep"); }
 	catch ( ... ) {}
 
 
-	// support depreciated configuration, depreciated since 2020-11-16
+	// support deprecated configuration, deprecated since 2020-11-16
 	try { _config.cleanupInterval = configGetDouble("autoloc.cleanupInterval");
-		SEISCOMP_ERROR("Configuration parameter autoloc.cleanupInterval is depreciated."
+		SEISCOMP_ERROR("Configuration parameter autoloc.cleanupInterval is deprecated."
 		                 " Use buffer.cleanupIntervalinstead!");}
 	catch (...) {}
 	try { _config.cleanupInterval = configGetDouble("buffer.cleanupInterval"); }
@@ -391,14 +391,14 @@ bool App::initConfiguration() {
 	try { _stationLocationFile = configGetString("autoloc.stationLocations"); }
 	catch (...) {}
 
-	// support depreciated configuration, depreciated since 2020-11-13
+	// support deprecated configuration, deprecated since 2020-11-13
 	try { _config.locatorProfile = configGetString("autoloc.locator.profile"); }
 	catch (...) {}
 	if ( !_config.locatorProfile.empty() ) {
-		SEISCOMP_ERROR("Configuration parameter autoloc.locator.profile is depreciated."
+		SEISCOMP_ERROR("Configuration parameter autoloc.locator.profile is deprecated."
 		                 " Use locator.profile instead!");
 	}
-	// override depreciated configuration if value is set
+	// override deprecated configuration if value is set
 	try { _config.locatorProfile = configGetString("locator.profile"); }
 	catch (...) {}
 
