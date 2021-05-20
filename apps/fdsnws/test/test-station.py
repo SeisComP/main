@@ -11,28 +11,26 @@ from __future__ import absolute_import, division, print_function
 
 import sys
 
-from fdsnwstest import FDSNWSTest
+from station import TestStationBase
 
 
 ###############################################################################
-class TestStation(FDSNWSTest):
+class TestStation(TestStationBase):
 
     #--------------------------------------------------------------------------
     def test(self):
         print('Testing station service')
 
-        query = '{}/station/1/query'.format(self.url)
-        ctTXT = 'text/plain'
-        ctXML = 'application/xml'
+        query = self.query()
         resFile = self.rootdir + '/results/station-'
 
         i = 1
         tests = [
-            ('?format=text&level=channel', ctTXT, [], False),
-            ('?format=text&includerestricted=false', ctTXT, [], True),
-            ('?format=text&startbefore=2019-07-01', ctTXT, [], False),
-            ('?level=channel&includeavailability=true', ctXML, [(172, 198, 7, 0)], False),
-            ('?format=sc3ml&network=AM&station=R0F05&location=00&channel=SHZ&latitude=52&longitude=13&maxradius=0.5&level=response&includeavailability=true', ctXML, [], True),
+            ('?format=text&level=channel', TestStationBase.CT_TXT, [], False),
+            ('?format=text&includerestricted=false', TestStationBase.CT_TXT, [], True),
+            ('?format=text&startbefore=2019-07-01', TestStationBase.CT_TXT, [], False),
+            ('?level=channel&includeavailability=true', TestStationBase.CT_XML, [(172, 198, 7, 0)], False),
+            ('?format=sc3ml&network=AM&station=R0F05&location=00&channel=SHZ&latitude=52&longitude=13&maxradius=0.5&level=response&includeavailability=true', TestStationBase.CT_XML, [], True),
         ]
         for q, ct, ignoreRanges, concurrent in tests:
             self.testHTTP('{}{}'.format(query, q), ct, ignoreRanges, concurrent,
@@ -41,13 +39,13 @@ class TestStation(FDSNWSTest):
 
         # POST tests
         tests = [
-            ('', ctTXT, [], False),
-            ('', ctTXT, [], False)
+            ('', TestStationBase.CT_TXT, [], False),
+            ('', TestStationBase.CT_TXT, [], False)
         ]
         postFile = "{}/post/station-{}.txt"
         for q, ct, ignoreRanges, concurrent in tests:
             with open(postFile.format(self.rootdir, i), 'rb') as f:
-                self.testHTTP('{}{}'.format(query, q),
+                self.testHTTP(query,
                               ct, ignoreRanges, concurrent,
                               dataFile='{}{}.txt'.format(resFile, i), testID=i,
                               postData=f)

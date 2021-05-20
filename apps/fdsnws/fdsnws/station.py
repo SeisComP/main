@@ -241,12 +241,15 @@ class FDSNStation(BaseResource):
     isLeaf = True
 
     #---------------------------------------------------------------------------
-    def __init__(self, inv, restricted, maxObj, daEnabled):
+    def __init__(self, inv, restricted, maxObj, daEnabled,
+                 conditionalRequestsEnabled, timeInventoryLoaded):
         BaseResource.__init__(self, VERSION)
         self._inv = inv
         self._allowRestricted = restricted
         self._maxObj = maxObj
         self._daEnabled = daEnabled
+        self._conditionalRequestsEnabled = conditionalRequestsEnabled
+        self._timeInventoryLoaded = timeInventoryLoaded.seconds()
 
         # additional object count dependent on detail level
         self._resLevelCount = inv.responsePAZCount() + inv.responseFIRCount() \
@@ -354,6 +357,8 @@ class FDSNStation(BaseResource):
         levelNet = not ro.includeSta
         levelSta = ro.includeSta and not ro.includeCha
 
+        isConditionalRequest = self._isConditionalRequest(req)
+
         # iterate over inventory networks
         for net in ro.networkIter(self._inv, levelNet):
             if req._disconnected: #pylint: disable=W0212
@@ -378,8 +383,12 @@ class FDSNStation(BaseResource):
                 if ro.includeCha:
                     numCha, numLoc, d, s, e = \
                         self._processStation(newNet, net, sta, ro, dac,
-                                             skipRestricted)
+                                             skipRestricted,
+                                             isConditionalRequest)
                     if numCha > 0:
+                        if isConditionalRequest:
+                            self.returnNotModified(req, ro)
+                            return True
                         locCount += numLoc
                         chaCount += numCha
                         extCount += len(e)
@@ -392,6 +401,9 @@ class FDSNStation(BaseResource):
                             if k not in extents:
                                 extents[k] = v
                 elif self._matchStation(net, sta, ro, dac):
+                    if isConditionalRequest:
+                        self.returnNotModified(req, ro)
+                        return True
                     if ro.includeSta:
                         newSta = seiscomp.datamodel.Station(sta)
                         # Copy comments
@@ -415,6 +427,10 @@ class FDSNStation(BaseResource):
             msg = "no matching inventory found"
             self.writeErrorPage(req, http.NO_CONTENT, msg, ro)
             return True
+
+        if self._conditionalRequestsEnabled:
+            req.setHeader("Last-Modified",
+                          http.datetimeToString(self._timeInventoryLoaded))
 
         # Copy references (dataloggers, responses, sensors)
         decCount, resCount = 0, 0
@@ -486,6 +502,7 @@ class FDSNStation(BaseResource):
 
         skipRestricted = not self._allowRestricted or \
             (ro.restricted is not None and not ro.restricted)
+        isConditionalRequest = self._isConditionalRequest(req)
 
         data = ""
         lines = []
@@ -512,6 +529,9 @@ class FDSNStation(BaseResource):
                         break
                 if not stationFound:
                     continue
+                if isConditionalRequest:
+                    self.returnNotModified(req, ro)
+                    return True
 
                 start, end = self._formatEpoch(net)
                 lines.append(("%s %s" % (net.code(), start),
@@ -537,6 +557,9 @@ class FDSNStation(BaseResource):
                     if not self._matchStation(net, sta, ro, dac) or (
                             skipRestricted and utils.isRestricted(sta)):
                         continue
+                    if isConditionalRequest:
+                        self.returnNotModified(req, ro)
+                        return True
 
                     try:
                         lat = str(sta.latitude())
@@ -583,6 +606,9 @@ class FDSNStation(BaseResource):
                         for stream in ro.streamIter(net, sta, loc, True, dac):
                             if skipRestricted and utils.isRestricted(stream):
                                 continue
+                            if isConditionalRequest:
+                                self.returnNotModified(req, ro)
+                                return True
 
                             try:
                                 lat = str(loc.latitude())
@@ -658,11 +684,32 @@ class FDSNStation(BaseResource):
             self.writeErrorPage(req, http.NO_CONTENT, msg, ro)
             return False
 
+        if self._conditionalRequestsEnabled:
+            req.setHeader("Last-Modified",
+                          http.datetimeToString(self._timeInventoryLoaded))
+
         utils.writeTS(req, data)
         seiscomp.logging.debug("%s: returned %i lines (total bytes: %i)" % (
             ro.service, len(lines), len(data)))
         utils.accessLog(req, ro, http.OK, len(data), None)
         return True
+
+    #---------------------------------------------------------------------------
+    def _isConditionalRequest(self, req):
+        # support for time based conditional requests
+        if not self._conditionalRequestsEnabled:
+            return False
+        if req.method not in (b'GET', b'HEAD'):
+            return False
+        if req.getHeader("If-None-Match") is not None:
+            return False
+
+        modifiedSince = req.getHeader("If-Modified-Since")
+        if not modifiedSince:
+            return False
+
+        modifiedSince = http.stringToDatetime(modifiedSince)
+        return modifiedSince and self._timeInventoryLoaded <= modifiedSince
 
     #---------------------------------------------------------------------------
     # Checks if at least one location and channel combination matches the
@@ -687,7 +734,7 @@ class FDSNStation(BaseResource):
     # Adds a deep copy of the specified station to the new network if the
     # location and channel combination matches the request options (if any)
     @staticmethod
-    def _processStation(newNet, net, sta, ro, dac, skipRestricted):
+    def _processStation(newNet, net, sta, ro, dac, skipRestricted, isConditionalRequest):
         chaCount = 0
         dataloggers, sensors, extents = set(), set(), {}
         newSta = seiscomp.datamodel.Station(sta)
@@ -706,6 +753,8 @@ class FDSNStation(BaseResource):
             for stream in ro.streamIter(net, sta, loc, True, dac):
                 if skipRestricted and utils.isRestricted(stream):
                     continue
+                if isConditionalRequest:
+                    return 1, 1, [], [], []
                 newCha = seiscomp.datamodel.Stream(stream)
                 # Copy comments
                 for i in range(stream.commentCount()):
