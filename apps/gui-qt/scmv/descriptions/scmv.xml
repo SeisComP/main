@@ -35,9 +35,6 @@
 				or an existing event is updated.
 				</description>
 			</parameter>
-			<parameter name="legend" type="boolean" default="true">
-				<description>Enables/disabled the display of the legend at startup.</description>
-			</parameter>
 			<parameter name="annotations" type="boolean" default="false">
 				<description>Enables/disabled drawing of station annotations at startup.</description>
 			</parameter>
