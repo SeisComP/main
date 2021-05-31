@@ -816,23 +816,33 @@ a window that has to be opened by pulling the left side frame to the right.
 
    Event tab of scolv.
 
-   (**Origin list**) List of all associated origins
-   (**Magnitude list**) List of magnitudes of the actual origin
-   (**B1**) Selector for the event type
-   (**B2**) Button to fix the selected origin as preferred
-   (**B3**) Button to let :ref:`scevent` select the preferred origin
-   (**B4**) Button to fix the selected magnitude as preferred
-   (**B5**) Button to let :ref:`scevent` select the preferred magnitude
+* **Origin list:** List of all associated origins
+  * **B1** Selector for the event type
+  * **B2** Button to fix the selected origin as preferred
+  * **B3** Button to let :ref:`scevent` select the preferred origin
+
+* **Magnitude list** List of magnitudes of the actual origin
+  * **B4** Button to fix the selected magnitude as preferred
+  * **B5** Button to let :ref:`scevent` select the preferred magnitude
+
+* **Focal Mechanism:** List of all focal mechanisms associated to the selected event.
 
 The map (lower left part) shows all associated origins while the currently
 selected origin (**Origin list**) is drawn filled.
 
 
+.. _scolv-origin-list:
+
 Origin list
 -----------
 
-The Origin list shows details of all available origins. The Stat column indicates
-a combination of the mode and the status of the origin.
+The Origin list shows details of all available origins. You may fix/unfix an
+origin to become the preferred one or select the type and set
+the type uncertainty for the selected sevent.
+
+Select a row or cell and
+press the right mouse button to copy the row or cell, respectively.
+The *Stat* column indicates a combination of the mode and the status of the origin.
 
 .. _scolv-origin-mode:
 
@@ -854,11 +864,30 @@ The status is coded by a single character:
 * **X**: rejected
 
 
+.. _scolv-magnitude-list:
+
 Magnitude list
 --------------
 
 The magnitude list shows all available magnitudes available for the origin
-selected in the Origin list.
+selected in the :ref:`Origin list <scolv-origin-list>`. You may fix/unfix a
+magnitude type to become the preferred magnitude.
+
+Select a row or cell and
+press the right mouse button to copy the row or cell, respectively.
+
+
+.. _scolv-fm-list:
+
+Focal Mechanism list
+--------------------
+
+The Focal Mechanism tab shows all focal mechanisms and moment tensors associated
+to the selected event. You may fix the preferred mechanism or fix/unfix :term:`Mw`
+to become the preferred magnitude.
+
+Select a row or cell and
+press the right mouse button to copy the row or cell, respectively.
 
 
 .. _scolv-events-tab:
@@ -922,6 +951,7 @@ The available identifiers are:
   a letter. A trailing "+" indicates that origins were contributed to the event
   by multiple agencies, e.g. "C+".
 * FM : focal mechanism
+* Origins: number of origins per event
 * **Agency** : agency ID
 * Author : author
 * **Region** : region name
