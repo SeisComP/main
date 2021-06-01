@@ -393,6 +393,17 @@ absolute amplitude but e.g. "xy", then :confval:`autoloc.amplTypeAbs` needs to b
 
 The use of manual picks is controlled by :confval:`autoloc.useManualPicks`.
 
+Pick processing may be enabled/disabled according to its author ID.
+This is controlled via :confval:`autoloc.authors`, which is a
+comma-separated list of author ID's. In addition to acting as a
+whitelist, the order of the author ID's determines the pick
+priority. An author early in the list is given higher priority.
+Note: The latter feature is not implemented yet.
+
+.. code-block:: sh
+
+   autoloc.authors = joeseismologist@screview, student@sctraining, repicker@scaux, scautopick@scmain
+
 Currently there **must** be an absolute and a relative amplitude for every pick.
 However, this requirement will be relaxed in a future version. But currently
 scautoloc will always wait until both amplitude have arrived, which results
