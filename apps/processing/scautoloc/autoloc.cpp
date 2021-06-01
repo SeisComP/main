@@ -539,6 +539,21 @@ bool Autoloc3::feed(Origin *origin)
 }
 
 
+int Autoloc3::_authorPriority(const std::string &author) const
+{
+	if (_config.authors.empty())
+		return 1;
+
+	int n = _config.authors.size();
+	for (int i=0; i<n; i++) {
+		if (_config.authors[i] == author)
+			return n-i;
+	}
+		
+	return 0;
+}
+
+
 double Autoloc3::_score(const Origin *origin) const
 {
 	// compute the score of the origin as if there were no other origins

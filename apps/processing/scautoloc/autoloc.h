@@ -57,6 +57,9 @@ class StationConfig {
 class Autoloc3 {
 
 	public:
+		typedef std::vector<std::string> StringList;
+
+	public:
 		Autoloc3();
 		virtual ~Autoloc3();
 
@@ -64,6 +67,10 @@ class Autoloc3 {
 		class Config {
 		public:
 			Config();
+
+			// White list of allowed pick authors.
+			// Also defines priority in descending order.
+			StringList authors;
 
 			// During cleanup() all objects older than maxAge
 			// (in hours) are removed.
@@ -297,6 +304,11 @@ class Autoloc3 {
 	protected:
 		// flush any pending (Origin) messages by calling _report()
 		void _flush();
+
+		// Compute author priority. First in list gets highest
+		// priority. Not in list gets priority 0. No priority list
+		// defined gives 1 for all authors.
+		int _authorPriority(const std::string &author) const;
 
 	private:
 		//

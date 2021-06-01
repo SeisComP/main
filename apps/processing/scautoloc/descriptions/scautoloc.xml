@@ -137,7 +137,7 @@
 					<description>
 					Location of the station configuration file for nucleating origins.
 					</description>
-					</parameter>
+				</parameter>
 				<parameter name="stationLocations" type="path" default="">
 					<description>
 					The station file to be used when in offline mode.
@@ -181,6 +181,15 @@
 					Adopt the depth from manual origins. Otherwise the default depth
 					in locator.defaultDepth is considered.
 					</description>
+				</parameter>
+				<parameter name="authors" type="list:string">
+					Pick processing may be enabled/disabled according to the
+					author ID of a pick. In addition, picks of certain authors
+					can be prioritized over other authors.
+					This is the author priority list that controls this behavior.
+					Its value is a comma-separated list of author ID's.
+					The earlier an author ID appears in the list the higher the
+					priority it gets.
 				</parameter>
 
 				<group name="xxl">

@@ -226,6 +226,12 @@ bool App::initConfiguration() {
 	try { _config.maxAge = configGetDouble("buffer.pickKeep"); }
 	catch (...) {}
 
+	try {
+		_config.authors = configGetStrings("autoloc.authors");
+	}
+	catch (...) {}
+
+
 	// support deprecated configuration, deprecated since 2020-11-16
 	try {
 		_keepEventsTimeSpan = configGetInt("keepEventsTimeSpan");
@@ -1058,6 +1064,14 @@ bool App::feed(DataModel::Pick *sc3pick) {
 
 		SEISCOMP_INFO("pick '%s' from agency '%s'", pickID.c_str(), objectAgencyID(sc3pick).c_str());
 
+	}
+
+	const std::string &author = objectAuthor(sc3pick);
+	const int priority = _authorPriority(author);
+	SEISCOMP_INFO("pick '%s' from author '%s' has priority %d", pickID.c_str(), author.c_str(), priority);
+	if (priority == 0) {
+		SEISCOMP_INFO("pick '%s' not processed", pickID.c_str());
+		return false;
 	}
 
 	try {
