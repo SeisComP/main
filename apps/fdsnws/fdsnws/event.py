@@ -43,7 +43,7 @@ from . import utils
 
 DBMaxUInt = 18446744073709551615  # 2^64 - 1
 
-VERSION = "1.2.2"
+VERSION = "1.2.3"
 
 ################################################################################
 
@@ -739,6 +739,7 @@ class FDSNEvent(BaseResource):
 
         orderByMag = ro.orderBy and ro.orderBy.startswith('magnitude')
         reqMag = ro.mag or orderByMag
+        reqMagType = ro.mag and ro.mag.type
         reqDist = ro.geo and ro.geo.bCircle
         colPID = _T('publicID')
         colTime = _T('time_value')
@@ -770,7 +771,11 @@ class FDSNEvent(BaseResource):
         q += " FROM Event AS e, PublicObject AS pe" \
              ", Origin AS o, PublicObject AS po"
         if reqMag:
-            q += ", Magnitude AS m, PublicObject AS pm"
+            q += ", Magnitude AS m"
+            if not reqMagType:
+                # the preferred magnitude is used if not specific magnitude type
+                # is requested
+                q += ", PublicObject AS pm"
 
         # WHERE ---------------------------------
         q += " WHERE e._oid = pe._oid"
@@ -891,14 +896,28 @@ class FDSNEvent(BaseResource):
 
         # magnitude information filter
         if reqMag:
-            q += " AND m._oid = pm._oid AND "
-            if ro.mag and ro.mag.type:
-                # join magnitude table on oID of origin and magnitude type
-                q += "m._parent_oid = o._oid AND m.%s = '%s'" % (_T('type'),
-                                                                 dbq.toString(ro.mag.type))
+            if reqMagType:
+                # specific mag type is searched in magnitudes of preferred
+                # origin or in derived origin of moment tensors of preferred
+                # focal mechanism
+                q += " AND (m._parent_oid = po._oid OR m._parent_oid IN (" \
+                         "SELECT pdo._oid " \
+                         "FROM " \
+                             "PublicObject pfm, " \
+                             "MomentTensor mt, " \
+                             "PublicObject pdo " \
+                         "WHERE " \
+                             "pfm.%s = e.%s AND " \
+                             "mt._parent_oid = pfm._oid AND " \
+                             "pdo.%s = mt.%s))" \
+                    " AND m.%s = '%s'" % (
+                        colPID, _T('preferredFocalMechanismID'),
+                        colPID, _T('derivedOriginID'),
+                        _T('type'), dbq.toString(ro.mag.type))
             else:
                 # join magnitude table on preferred magnitude id of event
-                q += "pm.%s = e.%s" % (colPID, _T('preferredMagnitudeID'))
+                q += " AND m._oid = pm._oid AND pm.%s = e.%s" % (
+                    colPID, _T('preferredMagnitudeID'))
 
             if ro.mag and ro.mag.min is not None:
                 q += " AND m.%s >= %s" % (colMag, ro.mag.min)
