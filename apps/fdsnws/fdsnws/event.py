@@ -758,7 +758,8 @@ class FDSNEvent(BaseResource):
                 bBox = ro.geo.bCircle.calculateBBox()
 
         # SELECT --------------------------------
-        q = "SELECT DISTINCT pe.%s, e.*, %s" % (colPID, colOrderBy)
+        q = "SELECT DISTINCT pe.%s, e.*, %s AS colOrderBy" % (
+            colPID, colOrderBy)
         if reqDist:  # Great circle distance calculated by Haversine formula
             c = ro.geo.bCircle
             q += ", DEGREES(ACOS(" \
@@ -896,11 +897,29 @@ class FDSNEvent(BaseResource):
 
         # magnitude information filter
         if reqMag:
-            if reqMagType:
-                # specific mag type is searched in magnitudes of preferred
-                # origin or in derived origin of moment tensors of preferred
-                # focal mechanism
-                q += " AND (m._parent_oid = po._oid OR m._parent_oid IN (" \
+            if ro.mag and ro.mag.min is not None:
+                q += " AND m.%s >= %s" % (colMag, ro.mag.min)
+            if ro.mag and ro.mag.max is not None:
+                q += " AND m.%s <= %s" % (colMag, ro.mag.max)
+
+            # default case, no magnitude type filter:
+            # join magnitude table on preferred magnitude id of event
+            if not reqMagType:
+                q += " AND m._oid = pm._oid AND pm.%s = e.%s" % (
+                    colPID, _T('preferredMagnitudeID'))
+
+            # magnitude type filter:
+            # Specific mag type is searched in magnitudes of preferred origin or
+            # in derived origin of moment tensors of preferred focal mechanism.
+            else:
+                q += " AND m.%s = '%s' AND m._parent_oid " % (
+                    _T('type'), dbq.toString(ro.mag.type))
+
+                # For performance reasons the query is split in two parts
+                # combined with a UNION statement. The subsequent ORDER BY,
+                # LIMIT/OFFSET or distance subquery is carried out on the entire
+                # UNION result set.
+                q += "= po._oid UNION " + q + "IN (" \
                          "SELECT pdo._oid " \
                          "FROM " \
                              "PublicObject pfm, " \
@@ -909,27 +928,16 @@ class FDSNEvent(BaseResource):
                          "WHERE " \
                              "pfm.%s = e.%s AND " \
                              "mt._parent_oid = pfm._oid AND " \
-                             "pdo.%s = mt.%s))" \
-                    " AND m.%s = '%s'" % (
-                        colPID, _T('preferredFocalMechanismID'),
-                        colPID, _T('derivedOriginID'),
-                        _T('type'), dbq.toString(ro.mag.type))
-            else:
-                # join magnitude table on preferred magnitude id of event
-                q += " AND m._oid = pm._oid AND pm.%s = e.%s" % (
-                    colPID, _T('preferredMagnitudeID'))
-
-            if ro.mag and ro.mag.min is not None:
-                q += " AND m.%s >= %s" % (colMag, ro.mag.min)
-            if ro.mag and ro.mag.max is not None:
-                q += " AND m.%s <= %s" % (colMag, ro.mag.max)
+                             "pdo.%s = mt.%s)" % (
+                                 colPID, _T('preferredFocalMechanismID'),
+                                 colPID, _T('derivedOriginID'))
 
         # ORDER BY ------------------------------
-        q += " ORDER BY %s" % colOrderBy
+        q += " ORDER BY colOrderBy "
         if ro.orderBy and ro.orderBy.endswith('-asc'):
-            q += " ASC"
+            q += "ASC"
         else:
-            q += " DESC"
+            q += "DESC"
 
         # SUBQUERY distance (optional) ----------
         if reqDist:
