@@ -71,7 +71,7 @@ void showQueries(const Config::Config& conf)
 
 DBQuery* findQuery(const Config::Config& conf, const std::string& name)
 {
-	DBQuery* q = NULL;
+	DBQuery* q = nullptr;
 
 	std::vector<std::string> sqlQueries;
 	try
@@ -112,11 +112,12 @@ class AppQuery : public Client::Application {
 		void createCommandLineDescription() {
 			commandline().addGroup("Commands");
 			commandline().addOption("Commands", "query,Q", "Execute the given query from the commandline.", &_query);
+			commandline().addOption("Commands", "print-header", "Print the query parameters and the query filter description as a header of the query output.");
 			commandline().addOption("Commands", "showqueries", "Show the stored queries in queries.cfg");
 		}
 
 		virtual void printUsage() {
-			std::cout << "Basic usage: scquery <queryname> parameter0 parameter1 ...\n"
+			std::cout << "Basic usage: scquery [options] <queryname> parameter0 parameter1 ...\n"
 			             "The predefined queries are stored in queries.cfg and can be listed via --showqueries\n"
 			          << std::endl;
 
@@ -135,6 +136,10 @@ class AppQuery : public Client::Application {
 				return true;
 			}
 
+			if ( commandline().hasOption("print-header") ) {
+				_header = true;
+			}
+
 			std::vector<std::string> qParameter = commandline().unrecognizedOptions();
 
 			if (!qParameter.empty())
@@ -150,13 +155,15 @@ class AppQuery : public Client::Application {
 					{
 						std::cerr << "The amount of parameter is not corresponding with given query!" << std::endl;
 						std::cerr << "Given arguments: ";
-						for (size_t i = 0; i < params.size(); ++i)
+						for (size_t i = 0; i < params.size(); ++i) {
 							std::cout << params[i] << " ";
+						}
 						std::cout << std::endl;
 
 						std::cerr << "Query parameter: ";
-						for (size_t i = 0; i < q->parameter().size(); ++i)
+						for (size_t i = 0; i < q->parameter().size(); ++i) {
 							std::cerr << q->parameter()[i] << " ";
+						}
 						std::cerr << std::endl;
 
 						std::cerr << "Query: " << q->query() << std::endl;
@@ -165,8 +172,14 @@ class AppQuery : public Client::Application {
 
 					DBConnection dbConnection(database());
 					//std::cerr << *q << std::endl;
-					if (!dbConnection.executeQuery(*q))
+					if (!dbConnection.executeQuery(*q)) {
 						std::cerr << "Could not execute query: " << q->query() << std::endl;
+					}
+					if ( _header ) {
+						std::cout << "# Name: " << q->name() << std::endl;
+						std::cout << "# Description: " << q->description() << std::endl;
+						std::cout << "# Query: " << q->query() << std::endl;
+					}
 					std::cout << dbConnection.table() << std::endl;
 				}
 				else
@@ -177,8 +190,14 @@ class AppQuery : public Client::Application {
 			else if ( !_query.empty() ) {
 				DBQuery q("default", "default", _query);
 				DBConnection dbConnection(database());
-				if (!dbConnection.executeQuery(q))
+				if (!dbConnection.executeQuery(q)) {
 					std::cerr << "Could not execute query: " << _query << std::endl;
+				}
+				if ( _header ) {
+					std::cout << "# Name: " << q.name() << std::endl;
+					std::cout << "# Description: " << q.description() << std::endl;
+					std::cout << "# Query: " << q.query() << std::endl;
+				}
 				std::cout << dbConnection.table() << std::endl;
 			}
 
@@ -187,6 +206,7 @@ class AppQuery : public Client::Application {
 
 	private:
 		std::string _query;
+		bool        _header{false};
 };
 
 

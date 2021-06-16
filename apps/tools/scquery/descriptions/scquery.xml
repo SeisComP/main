@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
-    <module name="scquery" category="Utilities">
-        <description>
-                Reads database objects and writes them to the command line.
-        </description>
+	<module name="scquery" category="Utilities">
+		<description>
+			Reads database objects and writes them to the command line.
+		</description>
+		<configuration>
+		</configuration>
 		<command-line>
+			<synopsis>
+				scquery [OPTIONS] [query name] [query parameters]
+			</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
@@ -32,7 +37,13 @@
 			<group name="Commands">
 				<option flag="" long-flag="showqueries">
 					<description>
-						Show the stored queries in queries.cfg
+					Show the stored queries in queries.cfg
+					</description>
+				</option>
+				<option flag="" long-flag="print-header">
+					<description>
+					Print the query parameters and the query filter description
+					as a header of the query output.
 					</description>
 				</option>
 			</group>
