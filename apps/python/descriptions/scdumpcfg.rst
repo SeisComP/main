@@ -1,5 +1,9 @@
-scdumpcfg reads and prints the module or the bindings configuration for a specific module or
-for global. This commandline utility is useful for debugging of configuration parameters.
+scdumpcfg reads and prints the :ref:`module or bindings configuration <concepts_configuration>`
+for a specific module or for global. This command-line utility is useful for
+debugging of configuration parameters.
+
+Related to :program:`scdumpcfg` is :ref:`bindings2cfg` which dumps the bindings
+configuration to :term:`SCML`.
 
 Examples
 ========
@@ -8,26 +12,26 @@ Examples
 
    .. code-block:: sh
 
-      scdumpcfg global -d mysql://sysop:sysop@seiscomp/localhost -B
+      scdumpcfg global -d mysql://sysop:sysop@localhost/seiscomp -B
 
 #. Dump the bindings configuration for all stations which have bindings to a
-   scautopick profile. Additionally use *-G* as scautopick inherits global bindings.
+   :ref:`scautopick` profile. Additionally use *-G* as :ref:`scautopick` inherits global bindings.
 
    .. code-block:: sh
 
-      scdumpcfg scautopick -d mysql://sysop:sysop@seiscomp/localhost -GB
+      scdumpcfg scautopick -d mysql://sysop:sysop@localhost/seiscomp -GB
 
 #. Dump the module global module configuration specifcally searching for the map
-   zoom sensitivity and output the result in the format of the SeisComP module
+   zoom sensitivity and output the result in the format of the |scname| module
    configuration.
 
    .. code-block:: sh
 
-      scdumpcfg global -d mysql://sysop:sysop@seiscomp/localhost --cfg -P map.zoom.sensitivity
+      scdumpcfg global -d mysql://sysop:sysop@localhost/seiscomp --cfg -P map.zoom.sensitivity
 
 #. Dump the module configuration of scautopick and output in the format of the
-   SeisComP module configuration.
+   |scname| module configuration.
 
    .. code-block:: sh
 
-      scdumpcfg scautopick -d mysql://sysop:sysop@seiscomp/localhost --cfg
+      scdumpcfg scautopick -d mysql://sysop:sysop@localhost/seiscomp --cfg
