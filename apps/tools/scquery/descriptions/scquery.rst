@@ -1,6 +1,12 @@
-*scquery* reads and writes objects from the SeisComP database configured in
-:ref:`scquery.cfg<scquery_config>`. It takes into account the query profiles
-defined in :ref:`queries.cfg<scquery_queries>`.
+*scquery* reads and writes objects from the |scname| database configured in
+:ref:`scquery.cfg<scquery_config>`. It takes into account the
+:ref:`query profiles <scquery_queries>` defined in
+
+* :file:`@SYSTEMCONFIGDIR@/queries.cfg` or
+* :file:`@CONFIGDIR@/queries.cfg`
+
+while parmaters in the latter take priority.
+
 
 .. _scquery_examples:
 
@@ -38,6 +44,7 @@ parameters are indicated by hashes, e.g. ##latMin##
    .. code-block:: sh
 
       scquery -d localhost/seiscomp eventType explosion '2017-11-01 00:00:00' '2018-11-01 00:00:00'
+
 
 Parameter and query profile files
 =================================
