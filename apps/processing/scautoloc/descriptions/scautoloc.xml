@@ -183,6 +183,7 @@
 					</description>
 				</parameter>
 				<parameter name="authors" type="list:string">
+					<description>
 					Pick processing may be enabled/disabled according to the
 					author ID of a pick. In addition, picks of certain authors
 					can be prioritized over other authors.
@@ -190,6 +191,7 @@
 					Its value is a comma-separated list of author ID's.
 					The earlier an author ID appears in the list the higher the
 					priority it gets.
+					</description>
 				</parameter>
 
 				<group name="xxl">
@@ -236,7 +238,6 @@
 						</description> 
 					</parameter>
 				</group>
-				
 			</group>
 		</configuration>
 		<command-line>
@@ -250,7 +251,7 @@
 				<optionReference>generic#shutdown-master-module</optionReference>
 				<optionReference>generic#shutdown-master-username</optionReference>
 			</group>
-			
+
 			<group name="Verbosity">
 				<optionReference>verbosity#verbosity</optionReference>
 				<optionReference>verbosity#v</optionReference>
@@ -262,7 +263,7 @@
 				<optionReference>verbosity#debug</optionReference>
 				<optionReference>verbosity#log-file</optionReference>
 			</group>
-			
+
 			<group name="Messaging">
 				<optionReference>messaging#user</optionReference>
 				<optionReference>messaging#host</optionReference>
@@ -272,7 +273,7 @@
 				<optionReference>messaging#content-type</optionReference>
 				<optionReference>messaging#start-stop-msg</optionReference>
 			</group>
-			
+
 			<group name="Database">
 				<optionReference>database#db-driver-list</optionReference>
 				<optionReference>database#database</optionReference>
@@ -285,13 +286,11 @@
 				<option flag="" long-flag="test" argument="" default="">
 					<description>Do not send any object</description>
 				</option>
-				
 				<option flag="" long-flag="offline" argument="" default="">
 					<description>Do not connect to a messaging server. Instead a
 					station-locations.conf file can be provided. This implies
 					--test and --playback</description>
 				</option>
-				
 				<option flag="" long-flag="playback" argument="" default="">
 					<description>Flush origins immediately without delay</description>
 				</option>
