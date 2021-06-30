@@ -31,6 +31,7 @@ class TestStation(TestStationBase):
             ('?format=text&startbefore=2019-07-01', TestStationBase.CT_TXT, [], False),
             ('?level=channel&includeavailability=true', TestStationBase.CT_XML, [(172, 198, 7, 0)], False),
             ('?format=sc3ml&network=AM&station=R0F05&location=00&channel=SHZ&latitude=52&longitude=13&maxradius=0.5&level=response&includeavailability=true', TestStationBase.CT_XML, [], True),
+            ('?network=DK&station=OVD', TestStationBase.CT_XML, [(172, 198, 7)], False)
         ]
         for q, ct, ignoreRanges, concurrent in tests:
             self.testHTTP('{}{}'.format(query, q), ct, ignoreRanges, concurrent,
