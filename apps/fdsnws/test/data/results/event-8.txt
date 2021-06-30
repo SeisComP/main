@@ -1,3 +1,4 @@
+gfz2021meng,2021-06-23T05:39:42.26Z,-22.619,171.769,30.2,,"Südöstlich der Loyalitätsinseln"
 gfz2021jtmw,2021-05-19T17:54:36.232216Z,-36.6749,-110.276,10,,"Southern East Pacific Rise"
 rs2019qtevor,2019-08-26T01:52:33.931644Z,-19.6569,-69.3277,95.1469,2.53205,"Tarapaca, Chile"
 rs2019qsodmc,2019-08-25T17:28:52.37413Z,-7.91688,159.243,63.7146,5.28315,"Solomon Islands"

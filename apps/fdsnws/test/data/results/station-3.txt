@@ -1,2 +1,3 @@
 #Network|Station|Latitude|Longitude|Elevation|SiteName|StartTime|EndTime
 AM|R0F05|52.412|13.0191|42.0|Raspberry Shake Citizen Science Station|2019-03-02T09:25:47.846|
+DK|OVD|57.317|10.206|10.0|Station Øster Vrå, Denmark|2015-10-09T00:00:00|

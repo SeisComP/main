@@ -127,7 +127,8 @@ class Sink(seiscomp.io.ExportSink):
     def write(self, data, size):
         if self.request._disconnected: #pylint: disable=W0212
             return -1
-        writeTS(self.request, data[:size])
+        dataBin = py3bstr(data)
+        writeTSBin(self.request, dataBin[:size])
         self.written += size
         return size
 

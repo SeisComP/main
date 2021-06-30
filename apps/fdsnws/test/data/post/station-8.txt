@@ -1,0 +1,7 @@
+includerestricted=false
+level=channel
+includeavailability=true
+matchTimeSeries=true
+format=text
+AM * * HDF 2019-01-01T00:00:00 2020-01-01T00:00:00
+AM * * EHZ 2019-09-23T00:00:00 2020-01-01T00:00:00
