@@ -50,7 +50,7 @@ class Archive:
                 try:
                     files = os.listdir(netdir)
                 except:
-                    sys.stderr.write("error: year %i not found in archive %s, skipping\n"
+                    sys.stderr.write("info: skipping year %i - not found in archive %s\n"
                                      % (year, netdir))
                     continue
 
@@ -70,7 +70,7 @@ class Archive:
                 try:
                     files = os.listdir(stadir)
                 except:
-                    sys.stderr.write("error: network %s not found in archive %s, skipping\n"
+                    sys.stderr.write("info: skipping network %s - not found in archive %s\n"
                                      % (net, stadir))
                     continue
 
@@ -93,14 +93,14 @@ class Archive:
                 try:
                     files = os.listdir(stadir)
                 except:
-                    sys.stderr.write("error: no data files found in archive %s, skipping station %s\n"
-                                     % (stadir, sta))
+                    sys.stderr.write("info: skipping station %s - no data files found in archive %s\n"
+                                     % (sta, stadir))
                     return []
 
                 its = []
                 for file in files:
                     if os.path.isdir(stadir + file) == False:
-                        sys.stderr.write("error: data file %s not found in archive %s, skipping\n"
+                        sys.stderr.write("info: skipping data file %s - not found in archive %s\n"
                                          % (file, stadir))
                         continue
 
@@ -137,13 +137,13 @@ class Archive:
 
                 if not files:
                     t = time.gmtime(begin.seconds())
-                    sys.stderr.write("error: found no data with start on %s in archive %s, skipping day\n"
-                                     % (time.strftime("%Y-%m-%d",t), dir))
+                    sys.stderr.write("info: skipping streams %s.%s.*.%s on %s - no data found for this day in archive %s\n"
+                                     % (net,sta,cha,time.strftime("%Y-%m-%d",t), dir))
 
                 for file in files:
                     file = file.split('/')[-1]
                     if os.path.isfile(dir + file) == False:
-                        sys.stderr.write("error: data file %s not found in archive %s, skipping\n"
+                        sys.stderr.write("info: skipping data file %s - not found in archive %s\n"
                                          % (file, dir))
                         continue
 
@@ -622,6 +622,9 @@ try:
 except:
     pass
 
+if os.path.isdir(archiveDirectory) == False:
+    sys.stderr.write("info: archive %s not found - stopping\n" % archiveDirectory)
+    sys.exit(-1)
 
 archive = Archive(archiveDirectory)
 archive.filePoolSize = filePoolSize
