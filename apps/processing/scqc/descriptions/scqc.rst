@@ -15,9 +15,9 @@ The QC parameters can be interactively observed using :ref:`scqcv` or :ref:`scmm
 Technology
 ==========
 
-scqc uses :term:`plugins <plugin>` to compute the waveform quality control (QC) parameters.
-The plugins can be found in @DATADIR@/plugins/qc. They are loaded by default or
-selected by :ref:`configuration setup <scqc-setup>`.
+scqc uses :term:`plugins <plugin>` to compute the waveform quality control (QC)
+parameters. The plugins can be found in @DATADIR@/plugins/qc. They are loaded
+by default or selected by :ref:`configuration setup <scqc-setup>`.
 
 
 QC parameters
@@ -31,6 +31,7 @@ QC parameters
 
    Times describing the data records, e.g., for calculating
    :ref:`delay<scqc-delay>` or :ref:`latency<scqc-latency>`.
+   :math:`t_{now}` may be measured differently depending on the QC parameter.
 
 The following QC parameters are determined when the corresponding plugin is
 loaded:
@@ -47,12 +48,17 @@ availability [%]
 delay [s]
  **Plugin:** qcplugin_delay
 
- **Description:** Time difference between arrival time of last record at the |scname| system
- and end time of last record (see :ref:`Figure<scqc-fig-times>`):
+ **Description:** Time difference between current time, :math:`t_{now}`, and
+ time of the last record in the |scname| system (see :ref:`Figure<scqc-fig-times>`):
 
  .. math::
 
-   delay = t_{arr1} - t_{12}.
+   delay = t_{now} - t_{2}.
+
+ .. note ::
+
+    Current time is measured during reception of a record and updated in the
+    report intervals configured for delay.
 
 .. _scqc-gaps:
 
@@ -73,13 +79,17 @@ gaps (count [counts], interval [s], length [s])
 latency [s]
  **Plugin:** qcplugin_latency
 
- **Description:** Time difference between the end times of consecutive records (see :ref:`Figure<scqc-fig-times>`):
+ **Description:** Time difference between current time, :math:`t_{now}`, and
+ arrival time of the last record (see :ref:`Figure<scqc-fig-times>`):
 
  .. math::
 
-   latency = t_{22} - t_{21}.
+   latency = t_{now} - t_{arr}.
 
- For constant and low delays, latency is approximately the mean record length.
+ .. note ::
+
+    Current time is measured during reception of a record and updated in the
+    report intervals configured for latency.
 
 .. _scqc-offset:
 
@@ -137,8 +147,8 @@ spikes (count [counts], interval [s], amplitude [counts])
 timing [%]
  **Plugin:** qcplugin_timing
 
- **Description:** miniSEED record timing quality (0 - 100 %) as written into the miniSEED records
- by the digitizer.
+ **Description:** miniSEED record timing quality (0 - 100 %) as written into the
+ miniSEED records by the digitizer.
 
 
 .. _scqc-setup:
