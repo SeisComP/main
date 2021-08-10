@@ -266,7 +266,8 @@ void QcModel::setWaveformQuality(DataModel::WaveformQuality *wfq) {
 
 	// ignore unknown (not/wrong specified in cfg file) parameters
 	if ( column == -1 ) {
-		SEISCOMP_DEBUG("Unknown parameter received: %s", wfq->parameter().c_str());
+		SEISCOMP_DEBUG("Unknown parameter received and ignored: %s - Add to "
+		               "configuration for displaying", wfq->parameter().c_str());
 		return;
 	}
 
