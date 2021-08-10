@@ -108,6 +108,7 @@ class QcViewConfig {
 		ScoreMap _scoreMap;
 		ColorMap	_colorMap;
 		bool _cumulative;
+		int _formatFloat = 2;
 };
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

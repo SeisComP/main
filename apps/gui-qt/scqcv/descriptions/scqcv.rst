@@ -5,8 +5,9 @@ determined by :ref:`scqc` and sent via messaging system, are received and displa
 scqcv allows to interactively disable or to enable streams for automatic data processing
 based on the observed QC reports.
 
+
 Detailed QC reports per station
--------------------------------
+===============================
 
 :ref:`fig-tab-view` shows the tabular view of the QC report messages.
 Each QC parameter is shown in a column. The default sorting by stream code can
@@ -18,7 +19,8 @@ expression in the "StreamIDFilter" text entry field results in a stream code
 filter, only displaying the matching stream codes with QC parameter. Green
 colored fields indicate that the QC parameter values lie within the configured
 "good" interval. Red colors indicate that the QC parameters lie outside the
-tolerated value interval -- this stream might have an issue.
+tolerated value interval -- this stream might have an issue. All :ref:`colors are
+configurable <scqcv-sec-setup>`.
 Click on the table header to sort by the selected value or drag the columns to
 another position. The order of the columns is controlled by :confval:`parameter`.
 By clicking on a streamID, the past waveforms are displayed at length configured
@@ -35,14 +37,20 @@ To **disable / enable** a station click on the respective station field in the
 
    Tabulator view of scqcv
 
+
 Station overview
-----------------
+================
 
 :ref:`fig-status-overview` shows the status overview grouped by network code.
-The more the color varies to dark red, the worse the waveform data might be.
-A dark red color indicates a stream with high latency. Light to darker red
-represents a badness sum of related QC parameters. Colors are subject to be
-changed in near future. Pressing a stream code item opens a single line table
+The status is color coded and the color is derived from a
+:ref:`score <scqcv-sec-scoring>` per station.
+
+The more the color usually varies from green to dark red, the worse the waveform data might be.
+A dark red color indicates a stream with low quality, e.g. high latency.
+Light to darker red
+represents a badness sum of related QC parameters. Colors are subject to
+changes in near future and are configurable. Pressing a stream code item opens a
+single line table
 with detailed information of the selected stream. Again it is possible to open
 a real time waveform widget by pressing the leading header field indicating
 the stream code.
@@ -75,6 +83,19 @@ network seperated view by clicking the checkbox in the bottom line.
 
    Compact status overview of scqcv
 
+
+.. _scqcv-sec-scoring:
+
+Scoring
+-------
+
+The score is formed per station as the sum of the counts for the parameters defined,
+e.g., by :confval:`score.default`. The counts are defined per QC parameter by the
+`count` parameter of the applicable range, e.g. :confval:`timing.range.$name.count`.
+
+
+.. _scqcv-sec-setup:
+
 Setup
 =====
 
@@ -84,6 +105,7 @@ of others is available by examples in the extensive default configuration of scq
 
 Apply your setup to scqcv.cfg in @SYSTEMCONFIGDIR@ or in @CONFIGDIR@.
 If the parameters are not configured, the defaults configuration will be considered.
+
 
 Message groups and QC parameters
 --------------------------------
@@ -104,12 +126,13 @@ Select the desired parameters from the list below. "#" disables a parameter.
    				"overlaps count    : overlap",\
    				"availability      : availability",\
    				"spikes count      : spike"
-   #				"gaps interval     : gap",\
-   #				"gaps length       : gap",\
-   #				"spikes interval   : spike",\
-   #				"spikes amplitude  : spike"
-   #				"overlaps interval : overlap",\
-   				"overlaps length   : overlap"
+   #				"gaps interval     : gapInterval",\
+   #				"gaps length       : gapLength",\
+   #				"spikes interval   : spikeInterval",\
+   #				"spikes amplitude  : spikeAmplitude"
+   #				"overlaps interval : overlapInterval",\
+   #				"overlaps length   : overlapLength"
+
 
 Stream selection
 ----------------
@@ -130,20 +153,58 @@ Example configuration or the AM network:
    # streams.codes.
    streams.cumulative = false
 
-QC parameters configuration
+
+Properties of QC parameters
 ---------------------------
 
-Configure intervals, values and format and background colors for displayed QC parameters.
+Configure intervals, values and format and background colors for QC parameters to
+display in :file:`scqcv.cfg`.
 
-Example for the QC parameter *timing quality* referred to as *timing*:
+In the configuration the QC parameter is referred to by its unique ConfigName. You may
+generate structures for each parameter starting with its ConfigName. The structures
+contain all configuration parameters. Example for the QC parameter *timing quality*
+referred to as *timing*:
 
 .. code-block:: sh
 
-   timing.ranges = bad, inter, sane
-   timing.range.inter = 50.0, 90.0
-   timing.range.inter.count = -1
-   timing.range.inter.color = yellow
-   timing.range.sane = 90.0, 100.0
+   timing.ranges = sane, inter, bad
    timing.format = int
    timing.expire = 600
    timing.useAbsoluteValue = false
+
+   timing.range.sane = 90.0, 100.0
+   timing.range.inter = 50.0, 90.0
+
+   timing.range.bad.count = -100
+   timing.range.bad.color = darkred
+
+   timing.range.inter.count = -1
+   timing.range.inter.color = yellow
+
+   timing.range.sane.count = 0
+   timing.range.sane.color = green
+
+
+The mapping of parameter names to ConfigName is configurable by
+:confval:`parameter` but the default mapping is available in
+:file:`@DEFAULTCONFIGDIR@/scqcv.cfg`.
+
+.. csv-table:: Default mapping of parameter names.
+
+   "Parameter name","ConfigName"
+   "latency","latency"
+   "delay","delay"
+   "timing quality","timing"
+   "offset","offset"
+   "rms","rms"
+   "gaps count","gap"
+   "overlaps count","overlap"
+   "availability","availability"
+   "spikes count","spike"
+   "gaps interval","gapInterval"
+   "gaps length","gapLength"
+   "spikes interval","spikeInterval"
+   "spikes amplitude","spikeAmplitude"
+   "overlaps interval","overlapInterval"
+   "overlaps length","overlapLength"
+

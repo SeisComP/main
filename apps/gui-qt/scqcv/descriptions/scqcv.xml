@@ -5,15 +5,17 @@
 		<configuration>
 			<parameter name="parameter" type="list:string">
 			<description>
-			List of QC paramters to be displayed in the details table. Read the scqc documentation
+			List of QC parameters to be displayed in the details table. Read the scqc documentation
 			for a list of available QC parameters and the default configuration
 			of scqcv $SEISCOMP_ROOT/etc/defaults/scqcv.cfg for more examples.
 
-			Format: "Parameter name : Config name"
+			Format: "Parameter name : ConfigName"
 
-			Example: "delay : delay","spikes count : spike","spikes amplitude : spike"
+			Example: "delay : delay","spikes count : spike","spikes amplitude : spikeAmplitude"
+			Refer to the parameters by their ConfigName to configure the attributes.
 			</description>
 			</parameter>
+
 			<group name="streams">
 				<parameter name="codes" type="list:string">
 					<description>
@@ -29,38 +31,73 @@
 					</description>
 				</parameter>
 			</group>
+
 			<group name="streamWidget">
 				<description>
 					Control the stream widget which opens when clicking on a stream
 					name in the detailed table.
 				</description>
-				<parameter name="length" type="double" default="600" unit="s">
+				<parameter name="length" type="int" default="600" unit="s">
 					<description>
 						Length of data to be displayed.
 					</description>
 				</parameter>
 			</group>
+
+			<group name="score">
+				<description>
+					Parameters controlling the overall QC score of a station.
+					The score is computed from the valid count parameter of the
+					defined ranges.
+				</description>
+				<group name="default">
+					<parameter name="ranges" type="list:string" unit="">
+						<description>
+							Ranges to be considered for forming the score. Set the
+							count parameter om the respective range section for
+							controlling the contribution of this range.
+						</description>
+					</parameter>
+				</group>
+			</group>
+
 			<group name="default">
 				<description>
 					Default configuration for all QC parameters. The configuration
 					can be extended to each QC parameter by placing
-					"default" with the parameter name in scqcv.cfg.
-					Read the scqc documentation for a list of available QC parameters and the default
-					configuration of scqcv $SEISCOMP_ROOT/etc/defaults/scqcv.cfg.
-					for more examples.
+					"default" with the parameter name in scqcv.cfg. Examples for
+					some QC parameters are given below.
+
+					Read the scqc documentation for a list of available QC
+					parameters and the default configuration of scqcv
+					$SEISCOMP_ROOT/etc/defaults/scqcv.cfg for more examples.
 				</description>
-				<parameter name="expire" type="double" default="0" unit="s">
-					<description>
-						Default time in seconds, how long a value is displayed in scqcv
-						if no update is received. Setting to 0 means, show value until
-						updated.
-					</description>
-				</parameter>
 				<parameter name="ranges" type="list:string" default="bad, sane" unit="">
 					<description>
-						The ranges define the background color table fields depending
-						on the field value. Add the default ranges for which different intervals and
-						the color are configured.
+						Names of range profile to be considered.
+						The range profiles define the background color table
+						fields depending on the field value. Add the default
+						ranges for which different intervals and the color are
+						configured.
+					</description>
+				</parameter>
+				<parameter name="format" type="string" default="" unit="">
+					<description>
+						Values are: int, float, percent, timeSpan
+
+						Displays raw values if unset.
+					</description>
+				</parameter>
+				<parameter name="expire" type="double" default="" unit="s">
+					<description>
+					Default time in seconds, how long a value is displayed in scqcv
+					if no update is received. Setting to 0 means, show value until
+					updated.
+					</description>
+				</parameter>
+				<parameter name="color" type="string" unit="">
+					<description>
+					A color defined by the color definitions below.
 					</description>
 				</parameter>
 				<parameter name="useAbsoluteValue" type="boolean" default="false" unit="">
@@ -68,30 +105,1483 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="float" unit="">
+				<parameter name="action" type="string" unit="">
 					<description>
-						Format of the displayed value.
-
-						Available formats: float, double, percent, timeSpan
+					Possible values: enableStream, disableStream
 					</description>
 				</parameter>
-				<parameter name="color" type="string" default="grey1" unit="">
+				<group name="range">
 					<description>
-						Default color scheme name.
+					Range parameters overriding parameters from the general
+					range section below. Unset values or range profiles
+					undefined here will be inherited from the general range
+					section.
+					</description>
+					<parameter name="sane" type="list:double" default="" unit="">
+						<description>
+							Value interval for range sane
+						</description>
+					</parameter>
+					<parameter name="inter" type="list:double" default="" unit="">
+						<description>
+							Value interval for range inter
+						</description>
+					</parameter>
+					<parameter name="bad" type="list:double" default="" unit="">
+						<description>
+							Value interval for range bad
+						</description>
+					</parameter>
+					<struct type="Add range profile" link="ranges">
+						<parameter name="count" type="double" unit="" default="0">
+							<description>
+							Contribution of this range for computing the score.
+							The range must be considered.
+							</description>
+						</parameter>
+						<parameter name="color" type="string" unit="">
+							<description>
+							A color defined by the color definitions below.
+							</description>
+						</parameter>
+						<parameter name="action" type="string" unit="">
+							<description>
+							Possible values: enableStream, disableStream
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
+
+			<group name="availability">
+				<description>
+				Parameters controlling the display of the QC parameter 'availability'
+				</description>
+				<parameter name="ranges" type="list:string" default="" unit="">
+					<description>
+					Names of range profile to be considered
+					The range profiles s define the background color table
+					fields depending on the field value. Add the default
+					ranges for which different intervals and the color are
+					configured.
+					</description>
+				</parameter>
+				<parameter name="format" type="string" default="" unit="">
+					<description>
+						Values are: int, float, percent, timeSpan
+
+						Displays raw values if unset.
+					</description>
+				</parameter>
+				<parameter name="expire" type="double" default="" unit="s">
+					<description>
+					Default time in seconds, how long a value is displayed in scqcv
+					if no update is received. Setting to 0 means, show value until
+					updated.
+					</description>
+				</parameter>
+				<parameter name="color" type="string" unit="">
+					<description>
+					A color defined by the color definitions below.
+					</description>
+				</parameter>
+				<parameter name="useAbsoluteValue" type="boolean" default="false" unit="">
+					<description>
+						Activate to display absolute values (modulus).
+					</description>
+				</parameter>
+				<parameter name="action" type="string" unit="">
+					<description>
+					Possible values: enableStream, disableStream
+					</description>
+				</parameter>
+				<group name="range">
+					<description>
+					Range parameters overriding parameters from the general
+					range section below. Unset values or range profiles
+					undefined here will be inherited from the general range
+					section.
+					</description>
+					<parameter name="sane" type="list:double" default="" unit="">
+						<description>
+							Value interval for range sane
+						</description>
+					</parameter>
+					<parameter name="inter" type="list:double" default="" unit="">
+						<description>
+							Value interval for range inter
+						</description>
+					</parameter>
+					<parameter name="bad" type="list:double" default="" unit="">
+						<description>
+							Value interval for range bad
+						</description>
+					</parameter>
+					<struct type="Add range profile" link="ranges">
+						<parameter name="count" type="double" unit="" default="0">
+							<description>
+							Contribution of this range for computing the score.
+							The range must be considered.
+							</description>
+						</parameter>
+						<parameter name="color" type="string" unit="">
+							<description>
+							A color defined by the color definitions below.
+							</description>
+						</parameter>
+						<parameter name="action" type="string" unit="">
+							<description>
+							Possible values: enableStream, disableStream
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
+
+			<group name="delay">
+				<description>
+				Parameters controlling the display of the QC parameter 'delay'
+				</description>
+				<parameter name="ranges" type="list:string" default="" unit="">
+					<description>
+					Names of range profile to be considered
+					The range profiles s define the background color table
+					fields depending on the field value. Add the default
+					ranges for which different intervals and the color are
+					configured.
+					</description>
+				</parameter>
+				<parameter name="format" type="string" default="" unit="">
+					<description>
+						Values are: int, float, percent, timeSpan
+
+						Displays raw values if unset.
+					</description>
+				</parameter>
+				<parameter name="expire" type="double" default="" unit="s">
+					<description>
+					Default time in seconds, how long a value is displayed in scqcv
+					if no update is received. Setting to 0 means, show value until
+					updated.
+					</description>
+				</parameter>
+				<parameter name="color" type="string" unit="">
+					<description>
+					A color defined by the color definitions below.
+					</description>
+				</parameter>
+				<parameter name="useAbsoluteValue" type="boolean" default="false" unit="">
+					<description>
+						Activate to display absolute values (modulus).
+					</description>
+				</parameter>
+				<parameter name="action" type="string" unit="">
+					<description>
+					Possible values: enableStream, disableStream
+					</description>
+				</parameter>
+				<group name="range">
+					<description>
+					Range parameters overriding parameters from the general
+					range section below. Unset values or range profiles
+					undefined here will be inherited from the general range
+					section.
+					</description>
+					<parameter name="sane" type="list:double" default="" unit="">
+						<description>
+							Value interval for range sane
+						</description>
+					</parameter>
+					<parameter name="inter" type="list:double" default="" unit="">
+						<description>
+							Value interval for range inter
+						</description>
+					</parameter>
+					<parameter name="bad" type="list:double" default="" unit="">
+						<description>
+							Value interval for range bad
+						</description>
+					</parameter>
+					<struct type="Add range profile" link="ranges">
+						<parameter name="count" type="double" unit="" default="0">
+							<description>
+							Contribution of this range for computing the score.
+							The range must be considered.
+							</description>
+						</parameter>
+						<parameter name="color" type="string" unit="">
+							<description>
+							A color defined by the color definitions below.
+							</description>
+						</parameter>
+						<parameter name="action" type="string" unit="">
+							<description>
+							Possible values: enableStream, disableStream
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
+
+			<group name="gap">
+				<description>
+				Parameters controlling the display of the QC parameter 'gaps count'
+				</description>
+				<parameter name="ranges" type="list:string" default="" unit="">
+					<description>
+					Names of range profile to be considered
+					The range profiles s define the background color table
+					fields depending on the field value. Add the default
+					ranges for which different intervals and the color are
+					configured.
+					</description>
+				</parameter>
+				<parameter name="format" type="string" default="" unit="">
+					<description>
+						Values are: int, float, percent, timeSpan
+
+						Displays raw values if unset.
+					</description>
+				</parameter>
+				<parameter name="expire" type="double" default="" unit="s">
+					<description>
+					Default time in seconds, how long a value is displayed in scqcv
+					if no update is received. Setting to 0 means, show value until
+					updated.
+					</description>
+				</parameter>
+				<parameter name="color" type="string" unit="">
+					<description>
+					A color defined by the color definitions below.
+					</description>
+				</parameter>
+				<parameter name="useAbsoluteValue" type="boolean" default="false" unit="">
+					<description>
+						Activate to display absolute values (modulus).
+					</description>
+				</parameter>
+				<parameter name="action" type="string" unit="">
+					<description>
+					Possible values: enableStream, disableStream
+					</description>
+				</parameter>
+				<group name="range">
+					<description>
+					Range parameters overriding parameters from the general
+					range section below. Unset values or range profiles
+					undefined here will be inherited from the general range
+					section.
+					</description>
+					<parameter name="sane" type="list:double" default="" unit="">
+						<description>
+							Value interval for range sane
+						</description>
+					</parameter>
+					<parameter name="inter" type="list:double" default="" unit="">
+						<description>
+							Value interval for range inter
+						</description>
+					</parameter>
+					<parameter name="bad" type="list:double" default="" unit="">
+						<description>
+							Value interval for range bad
+						</description>
+					</parameter>
+					<struct type="Add range profile" link="ranges">
+						<parameter name="count" type="double" unit="" default="0">
+							<description>
+							Contribution of this range for computing the score.
+							The range must be considered.
+							</description>
+						</parameter>
+						<parameter name="color" type="string" unit="">
+							<description>
+							A color defined by the color definitions below.
+							</description>
+						</parameter>
+						<parameter name="action" type="string" unit="">
+							<description>
+							Possible values: enableStream, disableStream
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
+
+			<group name="gapLength">
+				<description>
+				Parameters controlling the display of the QC parameter 'gaps length'
+				</description>
+				<parameter name="ranges" type="list:string" default="" unit="">
+					<description>
+					Names of range profile to be considered
+					The range profiles s define the background color table
+					fields depending on the field value. Add the default
+					ranges for which different intervals and the color are
+					configured.
+					</description>
+				</parameter>
+				<parameter name="format" type="string" default="" unit="">
+					<description>
+						Values are: int, float, percent, timeSpan
+
+						Displays raw values if unset.
+					</description>
+				</parameter>
+				<parameter name="expire" type="double" default="" unit="s">
+					<description>
+					Default time in seconds, how long a value is displayed in scqcv
+					if no update is received. Setting to 0 means, show value until
+					updated.
+					</description>
+				</parameter>
+				<parameter name="color" type="string" unit="">
+					<description>
+					A color defined by the color definitions below.
+					</description>
+				</parameter>
+				<parameter name="useAbsoluteValue" type="boolean" default="false" unit="">
+					<description>
+						Activate to display absolute values (modulus).
+					</description>
+				</parameter>
+				<parameter name="action" type="string" unit="">
+					<description>
+					Possible values: enableStream, disableStream
+					</description>
+				</parameter>
+				<group name="range">
+					<description>
+					Range parameters overriding parameters from the general
+					range section below. Unset values or range profiles
+					undefined here will be inherited from the general range
+					section.
+					</description>
+					<parameter name="sane" type="list:double" default="" unit="">
+						<description>
+							Value interval for range sane
+						</description>
+					</parameter>
+					<parameter name="inter" type="list:double" default="" unit="">
+						<description>
+							Value interval for range inter
+						</description>
+					</parameter>
+					<parameter name="bad" type="list:double" default="" unit="">
+						<description>
+							Value interval for range bad
+						</description>
+					</parameter>
+					<struct type="Add range profile" link="ranges">
+						<parameter name="count" type="double" unit="" default="0">
+							<description>
+							Contribution of this range for computing the score.
+							The range must be considered.
+							</description>
+						</parameter>
+						<parameter name="color" type="string" unit="">
+							<description>
+							A color defined by the color definitions below.
+							</description>
+						</parameter>
+						<parameter name="action" type="string" unit="">
+							<description>
+							Possible values: enableStream, disableStream
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
+
+			<group name="gapInterval">
+				<description>
+				Parameters controlling the display of the QC parameter 'gaps interval'
+				</description>
+				<parameter name="ranges" type="list:string" default="" unit="">
+					<description>
+					Names of range profile to be considered
+					The range profiles s define the background color table
+					fields depending on the field value. Add the default
+					ranges for which different intervals and the color are
+					configured.
+					</description>
+				</parameter>
+				<parameter name="format" type="string" default="" unit="">
+					<description>
+						Values are: int, float, percent, timeSpan
+
+						Displays raw values if unset.
+					</description>
+				</parameter>
+				<parameter name="expire" type="double" default="" unit="s">
+					<description>
+					Default time in seconds, how long a value is displayed in scqcv
+					if no update is received. Setting to 0 means, show value until
+					updated.
+					</description>
+				</parameter>
+				<parameter name="color" type="string" unit="">
+					<description>
+					A color defined by the color definitions below.
+					</description>
+				</parameter>
+				<parameter name="useAbsoluteValue" type="boolean" default="false" unit="">
+					<description>
+						Activate to display absolute values (modulus).
+					</description>
+				</parameter>
+				<parameter name="action" type="string" unit="">
+					<description>
+					Possible values: enableStream, disableStream
+					</description>
+				</parameter>
+				<group name="range">
+					<description>
+					Range parameters overriding parameters from the general
+					range section below. Unset values or range profiles
+					undefined here will be inherited from the general range
+					section.
+					</description>
+					<parameter name="sane" type="list:double" default="" unit="">
+						<description>
+							Value interval for range sane
+						</description>
+					</parameter>
+					<parameter name="inter" type="list:double" default="" unit="">
+						<description>
+							Value interval for range inter
+						</description>
+					</parameter>
+					<parameter name="bad" type="list:double" default="" unit="">
+						<description>
+							Value interval for range bad
+						</description>
+					</parameter>
+					<struct type="Add range profile" link="ranges">
+						<parameter name="count" type="double" unit="" default="0">
+							<description>
+							Contribution of this range for computing the score.
+							The range must be considered.
+							</description>
+						</parameter>
+						<parameter name="color" type="string" unit="">
+							<description>
+							A color defined by the color definitions below.
+							</description>
+						</parameter>
+						<parameter name="action" type="string" unit="">
+							<description>
+							Possible values: enableStream, disableStream
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
+
+			<group name="latency">
+				<description>
+				Parameters controlling the display of the QC parameter 'latency'
+				</description>
+				<parameter name="ranges" type="list:string" default="" unit="">
+					<description>
+					Names of range profile to be considered
+					The range profiles s define the background color table
+					fields depending on the field value. Add the default
+					ranges for which different intervals and the color are
+					configured.
+					</description>
+				</parameter>
+				<parameter name="format" type="string" default="" unit="">
+					<description>
+						Values are: int, float, percent, timeSpan
+
+						Displays raw values if unset.
+					</description>
+				</parameter>
+				<parameter name="expire" type="double" default="" unit="s">
+					<description>
+					Default time in seconds, how long a value is displayed in scqcv
+					if no update is received. Setting to 0 means, show value until
+					updated.
+					</description>
+				</parameter>
+				<parameter name="color" type="string" unit="">
+					<description>
+					A color defined by the color definitions below.
+					</description>
+				</parameter>
+				<parameter name="useAbsoluteValue" type="boolean" default="false" unit="">
+					<description>
+						Activate to display absolute values (modulus).
+					</description>
+				</parameter>
+				<parameter name="action" type="string" unit="">
+					<description>
+					Possible values: enableStream, disableStream
+					</description>
+				</parameter>
+				<group name="range">
+					<description>
+					Range parameters overriding parameters from the general
+					range section below. Unset values or range profiles
+					undefined here will be inherited from the general range
+					section.
+					</description>
+					<parameter name="sane" type="list:double" default="" unit="">
+						<description>
+							Value interval for range sane
+						</description>
+					</parameter>
+					<parameter name="inter" type="list:double" default="" unit="">
+						<description>
+							Value interval for range inter
+						</description>
+					</parameter>
+					<parameter name="bad" type="list:double" default="" unit="">
+						<description>
+							Value interval for range bad
+						</description>
+					</parameter>
+					<struct type="Add range profile" link="ranges">
+						<parameter name="count" type="double" unit="" default="0">
+							<description>
+							Contribution of this range for computing the score.
+							The range must be considered.
+							</description>
+						</parameter>
+						<parameter name="color" type="string" unit="">
+							<description>
+							A color defined by the color definitions below.
+							</description>
+						</parameter>
+						<parameter name="action" type="string" unit="">
+							<description>
+							Possible values: enableStream, disableStream
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
+
+			<group name="offset">
+				<description>
+				Parameters controlling the display of the QC parameter 'offset'
+				</description>
+				<parameter name="ranges" type="list:string" default="" unit="">
+					<description>
+					Names of range profile to be considered
+					The range profiles s define the background color table
+					fields depending on the field value. Add the default
+					ranges for which different intervals and the color are
+					configured.
+					</description>
+				</parameter>
+				<parameter name="format" type="string" default="" unit="">
+					<description>
+						Values are: int, float, percent, timeSpan
+
+						Displays raw values if unset.
+
+						Displays raw values if unset.
+					</description>
+				</parameter>
+				<parameter name="expire" type="double" default="" unit="s">
+					<description>
+					Default time in seconds, how long a value is displayed in scqcv
+					if no update is received. Setting to 0 means, show value until
+					updated.
+					</description>
+				</parameter>
+				<parameter name="color" type="string" unit="">
+					<description>
+					A color defined by the color definitions below.
+					</description>
+				</parameter>
+				<parameter name="useAbsoluteValue" type="boolean" default="false" unit="">
+					<description>
+						Activate to display absolute values (modulus).
+					</description>
+				</parameter>
+				<parameter name="action" type="string" unit="">
+					<description>
+					Possible values: enableStream, disableStream
+					</description>
+				</parameter>
+				<group name="range">
+					<description>
+					Range parameters overriding parameters from the general
+					range section below. Unset values or range profiles
+					undefined here will be inherited from the general range
+					section.
+					</description>
+					<parameter name="sane" type="list:double" default="" unit="">
+						<description>
+							Value interval for range sane
+						</description>
+					</parameter>
+					<parameter name="inter" type="list:double" default="" unit="">
+						<description>
+							Value interval for range inter
+						</description>
+					</parameter>
+					<parameter name="bad" type="list:double" default="" unit="">
+						<description>
+							Value interval for range bad
+						</description>
+					</parameter>
+					<struct type="Add range profile" link="ranges">
+						<parameter name="count" type="double" unit="" default="0">
+							<description>
+							Contribution of this range for computing the score.
+							The range must be considered.
+							</description>
+						</parameter>
+						<parameter name="color" type="string" unit="">
+							<description>
+							A color defined by the color definitions below.
+							</description>
+						</parameter>
+						<parameter name="action" type="string" unit="">
+							<description>
+							Possible values: enableStream, disableStream
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
+
+			<group name="overlap">
+				<description>
+				Parameters controlling the display of the QC parameter 'overlaps count'
+				</description>
+				<parameter name="ranges" type="list:string" default="" unit="">
+					<description>
+					Names of range profile to be considered
+					The range profiles s define the background color table
+					fields depending on the field value. Add the default
+					ranges for which different intervals and the color are
+					configured.
+					</description>
+				</parameter>
+				<parameter name="format" type="string" default="" unit="">
+					<description>
+						Values are: int, float, percent, timeSpan
+
+						Displays raw values if unset.
+					</description>
+				</parameter>
+				<parameter name="expire" type="double" default="" unit="s">
+					<description>
+					Default time in seconds, how long a value is displayed in scqcv
+					if no update is received. Setting to 0 means, show value until
+					updated.
+					</description>
+				</parameter>
+				<parameter name="color" type="string" unit="">
+					<description>
+					A color defined by the color definitions below.
+					</description>
+				</parameter>
+				<parameter name="useAbsoluteValue" type="boolean" default="false" unit="">
+					<description>
+						Activate to display absolute values (modulus).
+					</description>
+				</parameter>
+				<parameter name="action" type="string" unit="">
+					<description>
+					Possible values: enableStream, disableStream
+					</description>
+				</parameter>
+				<group name="range">
+					<description>
+					Range parameters overriding parameters from the general
+					range section below. Unset values or range profiles
+					undefined here will be inherited from the general range
+					section.
+					</description>
+					<parameter name="sane" type="list:double" default="" unit="">
+						<description>
+							Value interval for range sane
+						</description>
+					</parameter>
+					<parameter name="inter" type="list:double" default="" unit="">
+						<description>
+							Value interval for range inter
+						</description>
+					</parameter>
+					<parameter name="bad" type="list:double" default="" unit="">
+						<description>
+							Value interval for range bad
+						</description>
+					</parameter>
+					<struct type="Add range profile" link="ranges">
+						<parameter name="count" type="double" unit="" default="0">
+							<description>
+							Contribution of this range for computing the score.
+							The range must be considered.
+							</description>
+						</parameter>
+						<parameter name="color" type="string" unit="">
+							<description>
+							A color defined by the color definitions below.
+							</description>
+						</parameter>
+						<parameter name="action" type="string" unit="">
+							<description>
+							Possible values: enableStream, disableStream
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
+
+			<group name="overlapInterval">
+				<description>
+				Parameters controlling the display of the QC parameter 'overlaps interval'
+				</description>
+				<parameter name="ranges" type="list:string" default="" unit="">
+					<description>
+					Names of range profile to be considered
+					The range profiles s define the background color table
+					fields depending on the field value. Add the default
+					ranges for which different intervals and the color are
+					configured.
+					</description>
+				</parameter>
+				<parameter name="format" type="string" default="" unit="">
+					<description>
+						Values are: int, float, percent, timeSpan
+
+						Displays raw values if unset.
+					</description>
+				</parameter>
+				<parameter name="expire" type="double" default="" unit="s">
+					<description>
+					Default time in seconds, how long a value is displayed in scqcv
+					if no update is received. Setting to 0 means, show value until
+					updated.
+					</description>
+				</parameter>
+				<parameter name="color" type="string" unit="">
+					<description>
+					A color defined by the color definitions below.
+					</description>
+				</parameter>
+				<parameter name="useAbsoluteValue" type="boolean" default="false" unit="">
+					<description>
+						Activate to display absolute values (modulus).
+					</description>
+				</parameter>
+				<parameter name="action" type="string" unit="">
+					<description>
+					Possible values: enableStream, disableStream
+					</description>
+				</parameter>
+				<group name="range">
+					<description>
+					Range parameters overriding parameters from the general
+					range section below. Unset values or range profiles
+					undefined here will be inherited from the general range
+					section.
+					</description>
+					<parameter name="sane" type="list:double" default="" unit="">
+						<description>
+							Value interval for range sane
+						</description>
+					</parameter>
+					<parameter name="inter" type="list:double" default="" unit="">
+						<description>
+							Value interval for range inter
+						</description>
+					</parameter>
+					<parameter name="bad" type="list:double" default="" unit="">
+						<description>
+							Value interval for range bad
+						</description>
+					</parameter>
+					<struct type="Add range profile" link="ranges">
+						<parameter name="count" type="double" unit="" default="0">
+							<description>
+							Contribution of this range for computing the score.
+							The range must be considered.
+							</description>
+						</parameter>
+						<parameter name="color" type="string" unit="">
+							<description>
+							A color defined by the color definitions below.
+							</description>
+						</parameter>
+						<parameter name="action" type="string" unit="">
+							<description>
+							Possible values: enableStream, disableStream
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
+
+			<group name="overlapLength">
+				<description>
+				Parameters controlling the display of the QC parameter 'overlaps length'
+				</description>
+				<parameter name="ranges" type="list:string" default="" unit="">
+					<description>
+					Names of range profile to be considered
+					The range profiles s define the background color table
+					fields depending on the field value. Add the default
+					ranges for which different intervals and the color are
+					configured.
+					</description>
+				</parameter>
+				<parameter name="format" type="string" default="" unit="">
+					<description>
+						Values are: int, float, percent, timeSpan
+
+						Displays raw values if unset.
+					</description>
+				</parameter>
+				<parameter name="expire" type="double" default="" unit="s">
+					<description>
+					Default time in seconds, how long a value is displayed in scqcv
+					if no update is received. Setting to 0 means, show value until
+					updated.
+					</description>
+				</parameter>
+				<parameter name="color" type="string" unit="">
+					<description>
+					A color defined by the color definitions below.
+					</description>
+				</parameter>
+				<parameter name="useAbsoluteValue" type="boolean" default="false" unit="">
+					<description>
+						Activate to display absolute values (modulus).
+					</description>
+				</parameter>
+				<parameter name="action" type="string" unit="">
+					<description>
+					Possible values: enableStream, disableStream
+					</description>
+				</parameter>
+				<group name="range">
+					<description>
+					Range parameters overriding parameters from the general
+					range section below. Unset values or range profiles
+					undefined here will be inherited from the general range
+					section.
+					</description>
+					<parameter name="sane" type="list:double" default="" unit="">
+						<description>
+							Value interval for range sane
+						</description>
+					</parameter>
+					<parameter name="inter" type="list:double" default="" unit="">
+						<description>
+							Value interval for range inter
+						</description>
+					</parameter>
+					<parameter name="bad" type="list:double" default="" unit="">
+						<description>
+							Value interval for range bad
+						</description>
+					</parameter>
+					<struct type="Add range profile" link="ranges">
+						<parameter name="count" type="double" unit="" default="0">
+							<description>
+							Contribution of this range for computing the score.
+							The range must be considered.
+							</description>
+						</parameter>
+						<parameter name="color" type="string" unit="">
+							<description>
+							A color defined by the color definitions below.
+							</description>
+						</parameter>
+						<parameter name="action" type="string" unit="">
+							<description>
+							Possible values: enableStream, disableStream
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
+
+			<group name="rms">
+				<description>
+				Parameters controlling the display of the QC parameter 'rms'
+				</description>
+				<parameter name="ranges" type="list:string" default="" unit="">
+					<description>
+					Names of range profile to be considered
+					The range profiles s define the background color table
+					fields depending on the field value. Add the default
+					ranges for which different intervals and the color are
+					configured.
+					</description>
+				</parameter>
+				<parameter name="format" type="string" default="" unit="">
+					<description>
+						Values are: int, float, percent, timeSpan
+
+						Displays raw values if unset.
+					</description>
+				</parameter>
+				<parameter name="expire" type="double" default="" unit="s">
+					<description>
+					Default time in seconds, how long a value is displayed in scqcv
+					if no update is received. Setting to 0 means, show value until
+					updated.
+					</description>
+				</parameter>
+				<parameter name="color" type="string" unit="">
+					<description>
+					A color defined by the color definitions below.
+					</description>
+				</parameter>
+				<parameter name="useAbsoluteValue" type="boolean" default="false" unit="">
+					<description>
+						Activate to display absolute values (modulus).
+					</description>
+				</parameter>
+				<parameter name="action" type="string" unit="">
+					<description>
+					Possible values: enableStream, disableStream
+					</description>
+				</parameter>
+
+				<group name="range">
+					<description>
+					Range parameters overriding parameters from the general
+					range section below. Unset values or range profiles
+					undefined here will be inherited from the general range
+					section.
+					</description>
+					<parameter name="sane" type="list:double" default="" unit="">
+						<description>
+							Value interval for range sane
+						</description>
+					</parameter>
+					<parameter name="inter" type="list:double" default="" unit="">
+						<description>
+							Value interval for range inter
+						</description>
+					</parameter>
+					<parameter name="bad" type="list:double" default="" unit="">
+						<description>
+							Value interval for range bad
+						</description>
+					</parameter>
+					<struct type="Add range profile" link="ranges">
+						<parameter name="count" type="double" unit="" default="0">
+							<description>
+							Contribution of this range for computing the score.
+							The range must be considered.
+							</description>
+						</parameter>
+						<parameter name="color" type="string" unit="">
+							<description>
+							A color defined by the color definitions below.
+							</description>
+						</parameter>
+						<parameter name="action" type="string" unit="">
+							<description>
+							Possible values: enableStream, disableStream
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
+
+			<group name="spike">
+				<description>
+				Parameters controlling the display of the QC parameter 'spikes count'
+				</description>
+				<parameter name="ranges" type="list:string" default="" unit="">
+					<description>
+					Names of range profile to be considered
+					The range profiles s define the background color table
+					fields depending on the field value. Add the default
+					ranges for which different intervals and the color are
+					configured.
+					</description>
+				</parameter>
+				<parameter name="format" type="string" default="" unit="">
+					<description>
+						Values are: int, float, percent, timeSpan
+
+						Displays raw values if unset.
+					</description>
+				</parameter>
+				<parameter name="expire" type="double" default="" unit="s">
+					<description>
+					Default time in seconds, how long a value is displayed in scqcv
+					if no update is received. Setting to 0 means, show value until
+					updated.
+					</description>
+				</parameter>
+				<parameter name="color" type="string" unit="">
+					<description>
+					A color defined by the color definitions below.
+					</description>
+				</parameter>
+				<parameter name="useAbsoluteValue" type="boolean" default="false" unit="">
+					<description>
+						Activate to display absolute values (modulus).
+					</description>
+				</parameter>
+				<parameter name="action" type="string" unit="">
+					<description>
+					Possible values: enableStream, disableStream
+					</description>
+				</parameter>
+
+				<group name="range">
+					<description>
+					Range parameters overriding parameters from the general
+					range section below. Unset values or range profiles
+					undefined here will be inherited from the general range
+					section.
+					</description>
+					<parameter name="sane" type="list:double" default="" unit="">
+						<description>
+							Value interval for range sane
+						</description>
+					</parameter>
+					<parameter name="inter" type="list:double" default="" unit="">
+						<description>
+							Value interval for range inter
+						</description>
+					</parameter>
+					<parameter name="bad" type="list:double" default="" unit="">
+						<description>
+							Value interval for range bad
+						</description>
+					</parameter>
+					<struct type="Add range profile" link="ranges">
+						<parameter name="count" type="double" unit="" default="0">
+							<description>
+							Contribution of this range for computing the score.
+							The range must be considered.
+							</description>
+						</parameter>
+						<parameter name="color" type="string" unit="">
+							<description>
+							A color defined by the color definitions below.
+							</description>
+						</parameter>
+						<parameter name="action" type="string" unit="">
+							<description>
+							Possible values: enableStream, disableStream
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
+
+			<group name="spikeAmplitude">
+				<description>
+				Parameters controlling the display of the QC parameter 'spikes amplitude'
+				</description>
+				<parameter name="ranges" type="list:string" default="" unit="">
+					<description>
+					Names of range profile to be considered
+					The range profiles s define the background color table
+					fields depending on the field value. Add the default
+					ranges for which different intervals and the color are
+					configured.
+					</description>
+				</parameter>
+				<parameter name="format" type="string" default="" unit="">
+					<description>
+						Values are: int, float, percent, timeSpan
+
+						Displays raw values if unset.
+					</description>
+				</parameter>
+				<parameter name="expire" type="double" default="" unit="s">
+					<description>
+					Default time in seconds, how long a value is displayed in scqcv
+					if no update is received. Setting to 0 means, show value until
+					updated.
+					</description>
+				</parameter>
+				<parameter name="color" type="string" unit="">
+					<description>
+					A color defined by the color definitions below.
+					</description>
+				</parameter>
+				<parameter name="useAbsoluteValue" type="boolean" default="false" unit="">
+					<description>
+						Activate to display absolute values (modulus).
+					</description>
+				</parameter>
+				<parameter name="action" type="string" unit="">
+					<description>
+					Possible values: enableStream, disableStream
+					</description>
+				</parameter>
+				<group name="range">
+					<description>
+					Range parameters overriding parameters from the general
+					range section below. Unset values or range profiles
+					undefined here will be inherited from the general range
+					section.
+					</description>
+					<parameter name="sane" type="list:double" default="" unit="">
+						<description>
+							Value interval for range sane
+						</description>
+					</parameter>
+					<parameter name="inter" type="list:double" default="" unit="">
+						<description>
+							Value interval for range inter
+						</description>
+					</parameter>
+					<parameter name="bad" type="list:double" default="" unit="">
+						<description>
+							Value interval for range bad
+						</description>
+					</parameter>
+					<struct type="Add range profile" link="ranges">
+						<parameter name="count" type="double" unit="" default="0">
+							<description>
+							Contribution of this range for computing the score.
+							The range must be considered.
+							</description>
+						</parameter>
+						<parameter name="color" type="string" unit="">
+							<description>
+							A color defined by the color definitions below.
+							</description>
+						</parameter>
+						<parameter name="action" type="string" unit="">
+							<description>
+							Possible values: enableStream, disableStream
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
+
+			<group name="spikeInterval">
+				<description>
+				Parameters controlling the display of the QC parameter 'spikes interval'
+				</description>
+				<parameter name="ranges" type="list:string" default="" unit="">
+					<description>
+					Names of range profile to be considered
+					The range profiles s define the background color table
+					fields depending on the field value. Add the default
+					ranges for which different intervals and the color are
+					configured.
+					</description>
+				</parameter>
+				<parameter name="format" type="string" default="" unit="">
+					<description>
+						Values are: int, float, percent, timeSpan
+
+						Displays raw values if unset.
+					</description>
+				</parameter>
+				<parameter name="expire" type="double" default="" unit="s">
+					<description>
+					Default time in seconds, how long a value is displayed in scqcv
+					if no update is received. Setting to 0 means, show value until
+					updated.
+					</description>
+				</parameter>
+				<parameter name="color" type="string" unit="">
+					<description>
+					A color defined by the color definitions below.
+					</description>
+				</parameter>
+				<parameter name="useAbsoluteValue" type="boolean" default="false" unit="">
+					<description>
+						Activate to display absolute values (modulus).
+					</description>
+				</parameter>
+				<parameter name="action" type="string" unit="">
+					<description>
+					Possible values: enableStream, disableStream
+					</description>
+				</parameter>
+				<group name="range">
+					<description>
+					Range parameters overriding parameters from the general
+					range section below. Unset values or range profiles
+					undefined here will be inherited from the general range
+					section.
+					</description>
+					<parameter name="sane" type="list:double" default="" unit="">
+						<description>
+							Value interval for range sane
+						</description>
+					</parameter>
+					<parameter name="inter" type="list:double" default="" unit="">
+						<description>
+							Value interval for range inter
+						</description>
+					</parameter>
+					<parameter name="bad" type="list:double" default="" unit="">
+						<description>
+							Value interval for range bad
+						</description>
+					</parameter>
+					<struct type="Add range profile" link="ranges">
+						<parameter name="count" type="double" unit="" default="0">
+							<description>
+							Contribution of this range for computing the score.
+							The range must be considered.
+							</description>
+						</parameter>
+						<parameter name="color" type="string" unit="">
+							<description>
+							A color defined by the color definitions below.
+							</description>
+						</parameter>
+						<parameter name="action" type="string" unit="">
+							<description>
+							Possible values: enableStream, disableStream
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
+
+			<group name="timing">
+				<description>
+				Parameters controlling the display of the QC parameter 'timing quality'
+				</description>
+				<parameter name="ranges" type="list:string" default="" unit="">
+					<description>
+					Names of range profile to be considered
+					The range profiles s define the background color table
+					fields depending on the field value. Add the default
+					ranges for which different intervals and the color are
+					configured.
+					</description>
+				</parameter>
+				<parameter name="format" type="string" default="" unit="">
+					<description>
+						Values are: int, float, percent, timeSpan
+
+						Displays raw values if unset.
+					</description>
+				</parameter>
+				<parameter name="expire" type="double" default="" unit="s">
+					<description>
+					Default time in seconds, how long a value is displayed in scqcv
+					if no update is received. Setting to 0 means, show value until
+					updated.
+					</description>
+				</parameter>
+				<parameter name="color" type="string" unit="">
+					<description>
+					A color defined by the color definitions below.
+					</description>
+				</parameter>
+				<parameter name="useAbsoluteValue" type="boolean" default="false" unit="">
+					<description>
+						Activate to display absolute values (modulus).
+					</description>
+				</parameter>
+				<parameter name="action" type="string" unit="">
+					<description>
+					Possible values: enableStream, disableStream
+					</description>
+				</parameter>
+				<group name="range">
+					<description>
+					Range parameters overriding parameters from the general
+					range section below. Unset values or range profiles
+					undefined here will be inherited from the general range
+					section.
+					</description>
+					<parameter name="sane" type="list:double" default="" unit="">
+						<description>
+							Value interval for range sane
+						</description>
+					</parameter>
+					<parameter name="inter" type="list:double" default="" unit="">
+						<description>
+							Value interval for range inter
+						</description>
+					</parameter>
+					<parameter name="bad" type="list:double" default="" unit="">
+						<description>
+							Value interval for range bad
+						</description>
+					</parameter>
+					<struct type="Add range profile" link="ranges">
+						<parameter name="count" type="double" unit="" default="0">
+							<description>
+							Contribution of this range for computing the score.
+							The range must be considered.
+							</description>
+						</parameter>
+						<parameter name="color" type="string" unit="">
+							<description>
+							A color defined by the color definitions below.
+							</description>
+						</parameter>
+						<parameter name="action" type="string" unit="">
+							<description>
+							Possible values: enableStream, disableStream
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
+
+			<group name="range">
+				<description>
+					Range parameters defining default values which can be overridden
+					per QC parameter in the section of this parameter.
+					More ranges can be added by adjusting scqcv.cfg e.g. in
+					@SYSTEMCONFIGDIR@/.
+				</description>
+				<parameter name="sane" type="list:double" default="" unit="">
+					<description>
+						Value interval for range sane
+					</description>
+				</parameter>
+				<parameter name="inter" type="list:double" default="" unit="">
+					<description>
+						Value interval for range inter
+					</description>
+				</parameter>
+				<parameter name="bad" type="list:double" default="" unit="">
+					<description>
+						Value interval for range bad
+					</description>
+				</parameter>
+				<struct type="Range profile" link="">
+					<parameter name="count" type="double" unit="" default="0">
+						<description>
+						Contribution of this range for computing the score.
+						The range must be considered.
+						</description>
+					</parameter>
+					<parameter name="color" type="string" unit="">
+						<description>
+						A color defined by the color definitions below.
+						</description>
+					</parameter>
+					<parameter name="action" type="string" unit="">
+						<description>
+						Possible values: enableStream, disableStream
+						</description>
+					</parameter>
+				</struct>
+			</group>
+
+			<group name="color">
+				<description>
+					Color definitions. More colors can be added by adjusting
+					scqcv.cfg e.g. in @SYSTEMCONFIGDIR@/.
+				</description>
+				<parameter name="red" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="yellow" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="green" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="blue" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="grey" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="grey1" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="darkred" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="yellow" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="red01" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="red02" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="red03" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="red04" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="red05" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="red06" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="red07" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="red08" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="red09" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
+					</description>
+				</parameter>
+				<parameter name="red10" type="list:string" unit="">
+					<description>
+						Color names or R, G, B, alpha values
 					</description>
 				</parameter>
 			</group>
-			<group name="score">
+
+			<group name="format">
 				<description>
-					Parameters controlling the overal QC score of a station.
+					Format describtions for showing values. The format parameter
+					is defined seprately for earch parameter but the actual format
+					can be adjusted here.
 				</description>
-				<group name="default">
-					<parameter name="ranges" type="list:string" unit="">
-						<description>
-							Ranges to be considered for forming the score.
-						</description>
-					</parameter>
-				</group>
+				<parameter name="float" type="int" default="2" unit="">
+					<description>
+						Number of decimal values shown for parameters of format float.
+					</description>
+				</parameter>
 			</group>
 		</configuration>
 	</module>

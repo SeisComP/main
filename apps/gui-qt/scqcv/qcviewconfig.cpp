@@ -94,11 +94,14 @@ bool QcViewConfig::init() {
 		return false;
 	}
 
-	try { _streamWidgetLength = _app->configGetDouble("streamWidget.length");}
-	catch (Seiscomp::Config::Exception &) {_streamWidgetLength = 600.0;}
+	try { _streamWidgetLength = _app->configGetInt("streamWidget.length");}
+	catch (Seiscomp::Config::Exception &) {_streamWidgetLength = 600;}
 
 	try { _cumulative = _app->configGetBool("streams.cumulative");}
 	catch (Seiscomp::Config::Exception &) {_cumulative = false;}
+
+	try { _formatFloat = _app->configGetInt("format.float");}
+	catch (Seiscomp::Config::Exception &) {}
 
 	return true;
 }
@@ -301,7 +304,7 @@ QString QcViewConfig::format(const QString& parameterName, double value) const {
 	
 	// format according to given format string
 	if (format == "float") {
-		return QString().setNum(value, 'f', 2);
+		return QString().setNum(value, 'f', _formatFloat);
 	}
 	
 	if (format == "int") {
