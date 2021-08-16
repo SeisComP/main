@@ -109,17 +109,19 @@ corresponding tab.
 
 In these diagrams, arrival can be activated or deactivating for :ref:`relocating <scolv-sec-relocating>`
 by clicking on a point or by selecting a range using mouse drag. Deselecting is
-available by mouse drag when pressing kbd:`Ctrl`.
+available by mouse drag when pressing :kbd:`Ctrl`.
 
 
 .. figure:: media/scolv/tab_location_plots.png
-   :width: 16cm
+   :width: 18cm
    :align: center
 
    Additional arrival plots in Location tab of the main window
 
-   From upper left to lower right: **1**) azimuth vs distance, **2**) travel time vs distance,
-   **3**) travel time - predicted travel time vs distance, **4**) azimuth vs distance polar
+   From upper left to lower right: **1**) travel-time residual vs distance, **2**)
+   travel-time residual vs azimuth, **3**) azimuth vs distance in polar plot
+   **4**) travel-time vs distance, **5**) corrected travel-time vs distance
+   **6**) focal mechanism.
 
 The move out plot uses the reduced travel time with a default reduction velocity
 of 6km/s. This value is configurable by :confval:`olv.Pvel`, either in the configuration file
@@ -151,6 +153,8 @@ link again and select the "None" filter will show all arrivals in the plot again
 Plots can also be configured to show or hide dashed grid lines. Use :confval:`olv.drawGridLines`
 for configuration (:file:`scolv.cfg`). The default is true.
 
+
+.. _scolv-sec-location-arrival-table:
 
 Arrival table
 -------------
@@ -251,15 +255,23 @@ contrast to deactivate an arrival where only the used flags are set to zero.
 
 .. _scolv-sec-waveform-review:
 
-Waveform review (Picker)
-------------------------
+Phase picker: review waveforms
+------------------------------
 
 The *Picker* button opens the interactive waveform picker window. It allows
-to pick additional phases, to confirm picks, to add additional pick information
-such as polarity and uncertainty, to rotate traces and much more.
+to view and process waveforms for
 
-It is divided into two parts, the zoom trace and the trace list. The zoom trace
-shows a sub area of the active trace in the list.
+* Picking additional phases,
+* Confirming picks,
+* Adding additional pick information such as polarity and uncertainty,
+* Data procssing, e.g. filtering, rotation, spectrogram and much more.
+
+The phase picker window is divided into two parts:
+
+* The zoom trace and
+* The trace list.
+
+The zoom trace shows a sub area of the active trace in the list.
 
 .. _fig-scolv-picker:
 
@@ -267,136 +279,26 @@ shows a sub area of the active trace in the list.
    :width: 16cm
    :align: center
 
-Initially the picker shows only the vertical channels for each station that
-have been associated with the current location. It can be
-:ref:`configured <scolv-settings>` to show all three components.
 
-Phase picks are color-coded:
+Request waveforms
+^^^^^^^^^^^^^^^^^
 
-* Red: automatic
-* Green: manual
-* Blue: predicted using the selected travel-time table
+When the picker window opens waveforms are initially requested for all streams
+which have associated phase picks (arrivals). More waveforms can be fetched
+interavtively:
 
-Mature colors and light color indicate arrivals and unassociated picks, respectively.
-Unassociated picks can be shown/hidden using :kbd:`Ctrl`+:kbd:`5`.
+#. Provide a maximum distance,
+#. Click on the purple `Add` button to load the data.
 
-Initially the picker allows to pick the following phases:
+Toggle viewing data without arrivals by clicking the purple `Hide` button.
 
-- P
-- Pn
-- Pg
-- pP
-- S
-- Sg
+During request the background of the traces is changed according to the current
+state:
 
-Up to 9 phase types can be selected by hot keys. This list of favourite phases
-can be customized by :confval:`picker.phases.favourites`, e.g. (:file:`scolv.cfg`): ::
-
-   # Define a list of favourite phases for quick access
-   picker.phases.favourites = Pn, P, Pg, PmP, P1, Pg, Sg, S, Sn, SmS
-
-The list of favourites is used to assign shortcuts to. :kbd:`1` is assigned
-to the first phase, :kbd:`2` to the second and so on.
-
-.. note:: Shortcuts are assigned only  to the first 9 favourite phases. All
-   other defined phases can be activated from the *Picking* menu.
-
-The phases can be also grouped to reflect e.g. regional
-and teleseismic profiles. In group not hot keys are available.
-An example configuration looks like this (:file:`scolv.cfg`):
-
-.. code-block:: sh
-
-   # Define two phase groups: regional and teleseismic
-   picker.phases.groups = regional, teleseismic
-
-   # Define all phases of group "regional"
-   picker.phases.groups.regional = Pn, P, Pg, PmP, P1, Sg, S, Sn, SmS
-
-   # Define all phases of group "teleseismic"
-   picker.phases.groups.teleseismic = pP, sP, sS, PKP, PKP
-
-.. figure:: media/scolv/phases-menu.png
-   :align: center
-
-   Pick phase selection menu
-
-To set the uncertainty of a pick more easily a list of predefined uncertainties can be
-defined using :confval:`picker.uncertainties`, e.g.: ::
-
-   picker.uncertainties = 0.05, 0.1, 0.2, "(0.1,0.2)", "(0.05,0.02)"
-
-where single values define symmetric and pairs of values define asymmetric uncertainties.
-The pre-defined uncertainties can be selected during picking using hot keys, e.g.
-:kbd:`1` or :kbd:`2` for the 1st or the 2nd value defined in :confval:`picker.uncertainties`.
-Later, the uncertainties can be adjusted manually.
-
-Additionally, uncertainties can be defined freely whereas choosing
-among a predefined set of uncertainties is a lot faster.
-
-If the mouse hovers a pick a dashed rectangle is drawn around this pick. Then
-the pick is active and the right mouse button can be pressed to open the context
-menu where the polarity and uncertainty can be defined. The following screen shot
-shows the available uncertainties.
-
-.. figure:: media/scolv/pick-context2.png
-   :align: center
-
-   Pick context menu
-
-As for phase types, uncertainty profiles can be additionally configured (:file:`scolv.cfg`): ::
-
-   # Define available pick uncertainty profiles. Single values
-   # are symmetric uncertainties whereas tuples are asymmetric
-   # uncertainties: (left,right). Uncertainty values are given
-   # in seconds.
-
-   # Define an uncertainty profile for local events
-   picker.uncertainties.profile.local = 0.05, 0.1, 0.2, 0.3, "(0.1,0.2)"
-
-   # Define an uncertainty profile for teleseismic events
-   picker.uncertainties.profile.teleseismic = 0.5, 1, 2, 3, "(1,2)"
-
-   # Define the list of uncertainty sets that are active in scolv.
-   # This first set in the list is used by default. The other sets
-   # can be activated in the settings dialog (scolv: F3)
-   picker.uncertainties.preferred = local, teleseismic
-
-
-If an uncertainty is selected the active pick is copied into a manual pick
-and the uncertainty is displayed as semi transparent bar to the left and
-to the right of the pick. The width of the bar corresponds to the uncertainty
-in seconds.
-
-.. figure:: media/scolv/pick-uncertainty.png
-   :align: center
-
-Furthermore the pick polarity can be defined.
-
-.. figure:: media/scolv/pick-context.png
-   :align: center
-
-Either *positive*, *negative*, *undecidable* or *unset*. If set it is displayed
-as an arrow. *Undecidable* is displayed as a cross (X).
-
-.. figure:: media/scolv/pick-polarity.png
-   :align: center
-
-To rotate the waveform components into ZNE or ZRT system a new drop down list
-was added in the toolbar. Selecting either ZNE or ZRT implies that all missing
-components are requested.
-
-.. figure:: media/scolv/rotation-options.png
-   :align: center
-
-
-When waveforms are requested the corresponding widget background is changed
-according to the current state:
-
-* Yellow: waveforms requested but not yet received
-* Red: acquisition finished and data is not available
-* Green: waveforms received and acquisition still in progress
-* Gray: meta data are missing
+* Yellow: waveforms requested but not yet received.
+* Red: acquisition finished and data is not available.
+* Green: waveforms received and acquisition still in progress.
+* Gray: meta data are missing.
 
 
 .. figure:: media/scolv/picker-acqui.png
@@ -426,22 +328,242 @@ The difference is shown in the following two images:
    Trace clipping disabled
 
 
+1C / 3C data
+^^^^^^^^^^^^
+
+Initially the picker window shows only the vertical channels for each station that
+have been associated with the current location. When opening, it can be configured to
+
+* Load all components: :confval:`picker.loadAllComponents`,
+* Show all components: :confval:`picker.showAllComponents`.
+
+Hotkey :kbd:`t` can be used to toggle beetween 1- and 3-component data. Use the
+yellow buttons or :ref:`hot keys <sec-scolv-hotkeys>` to load components not yet
+loaded.
+
+
+Data filtering
+^^^^^^^^^^^^^^
+
+When the picker window opens, the waveforms are filtered by the default filter
+configured in :confval:`picker.filters`. Selecting filters or unfitlered data
+interactively is available by choosing the filter from the filter menu or
+:ref:`hot keys <sec-scolv-hotkeys>`.
+
+
+Waveform rotation
+^^^^^^^^^^^^^^^^^
+
+Waveforms can be rotated to better view details. For rotating the waveform
+components into ZNE or ZRT system a new drop down list was added in the toolbar.
+Selecting either ZNE or ZRT implies that all missing components are requested.
+
+.. figure:: media/scolv/rotation-options.png
+   :align: center
+
+
+Phase picks
+^^^^^^^^^^^
+
+Phase picks shown on waveforms are color-coded:
+
+* Red: automatic
+* Green: manual
+* Blue: predicted using the selected travel-time table
+
+Mature and light colors indicate arrivals and unassociated picks, respectively.
+Unassociated picks can be shown/hidden using :kbd:`Ctrl` + :kbd:`5`.
+
+
+Phase picking
+~~~~~~~~~~~~~
+
+Initially the picker window allows to pick the arrival times of the following phases:
+
+- P
+- Pn
+- Pg
+- pP
+- S
+- Sg
+
+Up to 9 phase types can be configured for selection by
+:ref:`hot keys <sec-scolv-hotkeys>`. This list of favourite phases can be customized
+by :confval:`picker.phases.favourites`, e.g. (:file:`scolv.cfg`): ::
+
+   # Define a list of favourite phases for quick access
+   picker.phases.favourites = Pn, P, Pg, PmP, P1, Pg, Sg, S, Sn, SmS
+
+The list of favourites is used to assign shortcuts to. :kbd:`1` is assigned
+to the first phase in the list, :kbd:`2` to the second and so on.
+
+.. note:: Shortcuts are assigned only  to the first 9 favourite phases. All
+   other defined phases can be activated from the *Picking* menu.
+
+The phases can be also grouped to reflect e.g. regional
+and teleseismic profiles. In group not hot keys are available.
+An example configuration looks like this (:file:`scolv.cfg`):
+
+.. code-block:: sh
+
+   # Define two phase groups: regional and teleseismic
+   picker.phases.groups = regional, teleseismic
+
+   # Define all phases of group "regional"
+   picker.phases.groups.regional = Pn, P, Pg, PmP, P1, Sg, S, Sn, SmS
+
+   # Define all phases of group "teleseismic"
+   picker.phases.groups.teleseismic = pP, sP, sS, PKP, PKP
+
+.. figure:: media/scolv/phases-menu.png
+   :align: center
+
+   Pick phase selection menu
+
+For making a phase pick the picking mode must be activated by choosing a phase in the
+Picking menu. Short cuts are:
+
+* Blue P and S buttons for picking P and phases, respectively (hot keys :kbd:`F1`, :kbd:`F2`),
+* Numbers shown in the picking menu used as hot keys.
+
+Additional information can be added interactively to the picks:
+
+* :ref:`Pick uncertainties <scolv-sec-uncertainties>`,
+* :ref:`Phase polarities <scolv-sec-polarities>`.
+
+Press :kbd:`ESC` to leave the picking menu. To send all picks to the main scolv
+window click on the red `Apply` button or press :kbd:`F5`. The picks will be used
+immediately for :ref:`relocating <scolv-sec-relocating>`.
+
+.. warning::
+
+   All manual work will be lost when closing the picker window without sending
+   the picks.
+
+
+.. _scolv-sec-uncertainties:
+
+Pick uncertainties
+~~~~~~~~~~~~~~~~~~
+
+If the mouse hovers a pick, a dashed rectangle is drawn around this pick. Then
+the pick is active and the right mouse button can be pressed to open the context
+menu where the polarity and uncertainty can be defined. The following screen shot
+shows the available uncertainties.
+
+.. figure:: media/scolv/pick-context2.png
+   :align: center
+
+   Pick context menu
+
+Additionally, pick uncertainties can be defined freely whereas choosing
+among a predefined set of uncertainties is a lot faster. The way, pick uncertainties
+are used depends on the applied locator routine and its configuration.
+To set the uncertainty of a pick more easily a list of predefined uncertainties can be
+defined using :confval:`picker.uncertainties`, e.g.: ::
+
+   picker.uncertainties = 0.05, 0.1, 0.2, "(0.1,0.2)", "(0.05,0.02)"
+
+where single values define symmetric and pairs of values define asymmetric uncertainties.
+The pre-defined uncertainties can be selected during picking using
+:ref:`hot keys <sec-scolv-hotkeys>`, e.g.
+:kbd:`1` or :kbd:`2` for the 1st or the 2nd value defined in :confval:`picker.uncertainties`.
+Later, the uncertainties can be adjusted manually.
+As for phase types, uncertainty profiles can be additionally configured (:file:`scolv.cfg`): ::
+
+   # Define available pick uncertainty profiles. Single values
+   # are symmetric uncertainties whereas tuples are asymmetric
+   # uncertainties: (left,right). Uncertainty values are given
+   # in seconds.
+
+   # Define an uncertainty profile for local events
+   picker.uncertainties.profile.local = 0.05, 0.1, 0.2, 0.3, "(0.1,0.2)"
+
+   # Define an uncertainty profile for teleseismic events
+   picker.uncertainties.profile.teleseismic = 0.5, 1, 2, 3, "(1,2)"
+
+   # Define the list of uncertainty sets that are active in scolv.
+   # This first set in the list is used by default. The other sets
+   # can be activated in the settings dialog (scolv: F3)
+   picker.uncertainties.preferred = local, teleseismic
+
+
+If an uncertainty is selected, the active pick is copied into a manual pick
+and the uncertainty is displayed as semi transparent bar to the left and
+to the right of the pick. The width of the bar corresponds to the uncertainty
+in seconds.
+
+.. figure:: media/scolv/pick-uncertainty.png
+   :align: center
+
+
+.. _scolv-sec-polarities:
+
+Phase polarities
+~~~~~~~~~~~~~~~~
+
+Furthermore the phase pick polarity can be defined. When this is the polarity
+of the first arrival P phase it can be used to manually set the focal mechanisms
+of the origin in the :ref:`FirstMotion <scolv-sec-diagrams>` diagram.
+
+.. figure:: media/scolv/pick-context.png
+   :align: center
+
+Right-click on the pick to make a choice: Either *positive*, *negative*,
+*undecidable* or *unset* is available. You may speed up your work by using
+:ref:`hot keys <sec-scolv-hotkeys>`. If set, the polarity is displayed as an
+arrow. *Undecidable* is displayed as a cross (X).
+
+.. figure:: media/scolv/pick-polarity.png
+   :align: center
+
+
 .. _scolv-sec-relocating:
 
 Relocate events
 ---------------
 
-Before relocating choose the locator, the locator profile and additional parameters
-to the right or from the the tool box. Additional locator routines are available
-by :ref:`concepts_plugins`.
+The *Relocate* button allows relocating based on the selected pick set. Picks may
+be manually adjusted or created before in the
+:ref:`wave review window<scolv-sec-waveform-review>` or arrival properties may
+be directly adjusted in the :ref:`arrival table <scolv-sec-location-arrival-table>`.
+Prior to relocating choose the locator, the locator profile and additional parameters
+to the right or from the the tool box.
 
 .. figure:: media/scolv/scolv-relocating.png
    :width: 16cm
    :align: center
 
+Defaults may be configured, e.g.
+
+* :confval:`olv.locator.interface`: Default locator
+* :confval:`olv.locator.defaultProfile`: Default profile of the default locator
+* :confval:`olv.locator.minimumDepth`: Minimum depth for the locator to consider.
+
+The locators available by default in |scname| are
+
+* :ref:`LOCSAT <global_fixedhypocenter>`,
+* :ref:`FixedHypocenter <global_locsat>`.
+
+Additional locator routines are available by :ref:`concepts_plugins` which
+provide their own specific global configuration, e.g.
+
+* :ref:`Hypo71 <global_hypo71>`,
+* :ref:`NonLinLoc <global_nonlinloc>`,
+* iLoc (currently only on when :ref:`building SeisComP from source <build>`).
+
+Any other custom locator can be intergrated through configuration of
+:ref:`global_locext`.
+
 Pressing *Relocate* creates a new origin and updates the arrival table and the
 parameters displayed in the Location tab.
 
+.. hint::
+
+   You need to create a new origin for :ref:`computing magnitudes <scolv-sec-magnitudes>`.
+
+
+.. _scolv-sec-magnitudes:
 
 Compute magnitudes
 ------------------
@@ -485,7 +607,7 @@ To optimize the workflow
 7. Change to events tab
 8. Goto 1.
 
-to
+This may be replaced by
 
 1. Select an event
 2. Review solution
@@ -493,8 +615,8 @@ to
 4. Change to events tab
 5. Goto 1.
 
-an additional commit mode was added which allows to set certain options along
-with the location and its magnitudes.
+An additional commit mode was added which allows to set certain parameters and
+options along with the location and its magnitudes.
 
 .. figure:: media/scolv/commit-options.png
    :align: center
@@ -507,11 +629,11 @@ brings up another window where the different options can be set.
    :align: center
 
 It allows to fix the origin to be committed as preferred origin and to set the
-event type in one go. If *Return to event list after commit* is ticked the
+event type in one go. If *Return to event list after commit* is ticked, the
 event list is activated after pressing OK to select another event quickly.
 
 *Earthquake name*
- Contains the event description *earthquake name*. If this field is empty the
+ Contains the event description *earthquake name*. If this field is empty, the
  description will be removed from the event otherwise it will be added.
 
 *Comment*
@@ -654,7 +776,7 @@ The initial view loads all traces of all arrivals within the defined distance
 for that magnitude type. The zoom trace shows all components required for this
 particular amplitude type and the lower part shows all stations and only the
 currently active component. All traces are aligned on trigger time (blue P marker).
-If a station has got an amplitude it shows up as a red (automatic
+If a station has got an amplitude, it shows up as a red (automatic
 determined amplitude) or green (manually determined amplitude) marker.
 This display is similar to the Picker.
 
@@ -690,11 +812,12 @@ Available actions are:
 * Remove bad stations
 
 
-Show raw data
-^^^^^^^^^^^^^
+Filtered and raw data
+^^^^^^^^^^^^^^^^^^^^^^
 
-By default the processed waveforms are displayed. To look at the raw waveforms
-change the filter drop down box to *Raw*.
+By default the processed waveforms are displayed. The processing is defined by
+the magnitude type. To view the raw waveforms change the filter drop down box
+to *Raw*.
 
 
 Processing settings
@@ -719,7 +842,7 @@ two components is computed, e.g. ML on the horizontals. The combiner procedure
 defines how the amplitudes of each horizontal are combined to a single amplitude,
 e.g. by taking the maximum of both or the average.
 
-If the amplitude processor allows any of these options the corresponding drop
+If the amplitude processor allows any of these options, the corresponding drop
 down boxes are enabled in the toolbar and can be used to change the defaults.
 
 .. note:: Amplitudes are not recalculated if any changes to the settings are
@@ -749,10 +872,10 @@ Calculate amplitudes
 
 To calculate the amplitudes of all traces with the current settings press the
 green check in the toolbar. It will process all traces and recalculate the
-amplitudes within the shown time windows. If an error occurs it will show up as
-a small message box in the station trace itself. If a new amplitude is available
+amplitudes within the shown time windows. If an error occurs, it will show up as
+a small message box in the station trace itself. If a new amplitude is available,
 its state is set to manual and the marker is updated to reflect the new position
-of the amplitude. If the mouse hovers an amplitude marker a tooltip pops up
+of the amplitude. If the mouse hovers an amplitude marker, a tooltip pops up
 after a certain amount of time and shows information about the amplitude.
 
 .. figure:: media/scolv/amplitude-tooltip.png
@@ -941,7 +1064,8 @@ The available identifiers are:
 * M : magnitude
 * **MType** : magnitude type
 * **Phases** : number of used phases
-* **RMS** : root-mean square
+* **RMS** : root-mean square travel-time residual
+* AzGap: largest azimuthal gap between two neighboring stations of an origin
 * **Lat** : latitude
 * **Lon** : longitude
 * **Depth** : depth
@@ -1037,7 +1161,7 @@ Database request filters can be applied interactively or automatically by
        # Defines the text of the option "Show only own events".
        eventlist.filter.agencies.label = "Show only own events"
 
-       # Enable this filter initially. If this option is not used the filter
+       # Enable this filter initially. If this option is not used, the filter
        # is disabled by default.
        eventlist.filter.agencies.enabled = true
 
@@ -1225,7 +1349,9 @@ An example script which just returns the standard error looks like this:
 
 As many scripts as necessary for evaluation can be created.
 
-.. warning:: Calling external scripts causes overhead and can take some time
+.. warning::
+
+   Calling external scripts causes overhead and can take some time
    depending on the implementation of the script. scolv needs to access the
    database to fetch additional information which it does not need normally.
    The slower the database access, the longer it takes to display the results.
@@ -1423,6 +1549,8 @@ Furthermore the precision of various values can be configured:
    adjusted in *scheme* section of the :ref:`global configuration <global>`.
 
 
+.. _sec-scolv-hotkeys ::
+
 Hotkeys
 =======
 
@@ -1473,8 +1601,6 @@ actions in scolv. The hotkeys are provided for:
 +------------------------+-------------------------------------------------------------+
 | 1 .. 9                 | Activate configured phase picking                           |
 +------------------------+-------------------------------------------------------------+
-| Space                  | If phase picking is enabled, set pick                       |
-+------------------------+-------------------------------------------------------------+
 | Esc                    | Leaving picking mode                                        |
 +------------------------+-------------------------------------------------------------+
 | F3                     | Add station                                                 |
@@ -1485,7 +1611,9 @@ actions in scolv. The hotkeys are provided for:
 +------------------------+-------------------------------------------------------------+
 | F                      | Toggle between current filter and unfiltered                |
 +------------------------+-------------------------------------------------------------+
-| G                      | Toggle all filters                                          |
+| Shift+F                | Toggle limiting filters to the selected trace               |
++------------------------+-------------------------------------------------------------+
+| G                      | Toggle through all configured filters                       |
 +------------------------+-------------------------------------------------------------+
 | N                      | Switch to N-component                                       |
 +------------------------+-------------------------------------------------------------+
@@ -1494,8 +1622,6 @@ actions in scolv. The hotkeys are provided for:
 | X                      | Scroll down (through the traces)                            |
 +------------------------+-------------------------------------------------------------+
 | Z                      | Switch to Z-component                                       |
-+------------------------+-------------------------------------------------------------+
-| Shift+F                | Toggle filter but limits to the selected trace              |
 +------------------------+-------------------------------------------------------------+
 | Up                     | Scroll up (through the traces)                              |
 +------------------------+-------------------------------------------------------------+
@@ -1536,7 +1662,15 @@ actions in scolv. The hotkeys are provided for:
 +------------------------+-------------------------------------------------------------+
 | *Picking trace*        |                                                             |
 +------------------------+-------------------------------------------------------------+
+| R                      | Active picker: Repick phase by the selection, e.g. AIC, BK  |
++------------------------+-------------------------------------------------------------+
 | T                      | Temporarily toggle 3 component view                         |
++------------------------+-------------------------------------------------------------+
+| Space                  | Active picker: Set pick at curser position                  |
++------------------------+-------------------------------------------------------------+
+| Space                  | Inactive picker: Show Fourier spectrum from visible window  |
++------------------------+-------------------------------------------------------------+
+| Enter                  | Active picker: Set pick at curser position, load next trace |
 +------------------------+-------------------------------------------------------------+
 | Left                   | Move trace view to left (fine)                              |
 +------------------------+-------------------------------------------------------------+
@@ -1546,7 +1680,13 @@ actions in scolv. The hotkeys are provided for:
 +------------------------+-------------------------------------------------------------+
 | Shift+Right            | Move trace view to left (rough)                             |
 +------------------------+-------------------------------------------------------------+
-| W                      | Reset scale                                                 |
+| Shift+Delete           | Remove polarity from new pick                               |
++------------------------+-------------------------------------------------------------+
+| Shift+Down             | Set negative polarity on new pick                           |
++------------------------+-------------------------------------------------------------+
+| Shift+Up               | Set positive polarity on new pick                           |
++------------------------+-------------------------------------------------------------+
+| Shift+X                | Set positive polarity to undecidable on new pick            |
 +------------------------+-------------------------------------------------------------+
 | Ctrl+WheelUp           | Amplitude zoom in                                           |
 +------------------------+-------------------------------------------------------------+
