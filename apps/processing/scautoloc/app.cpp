@@ -49,10 +49,10 @@ namespace Autoloc {
 App::App(int argc, char **argv)
 : Application(argc, argv), Autoloc3()
 , objectCount(0)
-, _inputPicks(NULL)
-, _inputAmps(NULL)
-, _inputOrgs(NULL)
-, _outputOrgs(NULL)
+, _inputPicks(nullptr)
+, _inputAmps(nullptr)
+, _inputOrgs(nullptr)
+, _outputOrgs(nullptr)
 {
 	setMessagingEnabled(true);
 
@@ -97,15 +97,19 @@ void App::createCommandLineDescription() {
 
 	commandline().addGroup("Settings");
 	commandline().addOption("Settings", "station-locations", "The station-locations.conf file to use when in offline mode. If no file is given the database is used.", &_stationLocationFile, false);
-	commandline().addOption("Settings", "station-config", "The station.conf file", &_config.staConfFile, false);
-	commandline().addOption("Settings", "pick-log", "The pick log file", &_config.pickLogFile, false);
-	commandline().addOption("Settings", "grid", "The grid.conf file to use", &_gridConfigFile, false);
+	commandline().addOption("Settings", "station-config", "The station configuration file", &_config.staConfFile, false);
+	commandline().addOption("Settings", "grid", "The grid configuration file", &_gridConfigFile, false);
+	commandline().addOption("Settings", "pick-log", "The pick log file. Providing a "
+	                        "file name enables logging picks even when disabled by configuration.",
+	                        &_config.pickLogFile, false);
 
-	commandline().addOption("Settings", "default-depth", "", &_config.defaultDepth);
+	commandline().addOption("Settings", "default-depth", "Default depth for locating", &_config.defaultDepth);
 	commandline().addOption("Settings", "default-depth-stickiness", "", &_config.defaultDepthStickiness);
-	commandline().addOption("Settings", "max-sgap", "", &_config.maxAziGapSecondary);
-	commandline().addOption("Settings", "max-rms", "", &_config.maxRMS);
-	commandline().addOption("Settings", "max-residual", "", &_config.maxResidualUse);
+	commandline().addOption("Settings", "max-sgap", "Maximum secondary azimuthal gap", &_config.maxAziGapSecondary);
+	commandline().addOption("Settings", "max-rms", "Maximum RMS residual"
+	                        "to be considered", &_config.maxRMS);
+	commandline().addOption("Settings", "max-residual", "Maximum travel-time residual"
+	                        "per station to be considered", &_config.maxResidualUse);
 	commandline().addOption("Settings", "max-station-distance", "Maximum distance of stations to be used", &_config.maxStaDist);
 	commandline().addOption("Settings", "max-nucleation-distance-default", "Default maximum distance of stations to be used for nucleating new origins", &_config.defaultMaxNucDist);
 	commandline().addOption("Settings", "min-pick-affinity", "", &_config.minPickAffinity);
@@ -204,6 +208,10 @@ bool App::validateParameters() {
 
 	_config.maxResidualKeep = 3*_config.maxResidualUse;
 
+	if ( !_config.pickLogFile.empty() ) {
+		_config.pickLogEnable = true;
+	}
+
 	return Client::Application::validateParameters();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -219,7 +227,7 @@ bool App::initConfiguration() {
 	try {
 		_config.maxAge = configGetDouble("autoloc.maxAge");
 		SEISCOMP_ERROR("Configuration parameter autoloc.maxAge is deprecated."
-		                 " Use buffer.pickKeep instead!");
+		               " Use buffer.pickKeep instead!");
 	}
 	catch (...) {}
 	// override deprecated configuration if value is set
@@ -236,7 +244,7 @@ bool App::initConfiguration() {
 	try {
 		_keepEventsTimeSpan = configGetInt("keepEventsTimeSpan");
 		SEISCOMP_ERROR("Configuration parameter keepEventsTimeSpan is deprecated."
-		                 " Use buffer.originKeep instead!");
+		               " Use buffer.originKeep instead!");
 	}
 	catch ( ... ) {}
 	// override deprecated configuration if value is set
@@ -247,7 +255,7 @@ bool App::initConfiguration() {
 	// support deprecated configuration, deprecated since 2020-11-16
 	try { _config.cleanupInterval = configGetDouble("autoloc.cleanupInterval");
 		SEISCOMP_ERROR("Configuration parameter autoloc.cleanupInterval is deprecated."
-		                 " Use buffer.cleanupIntervalinstead!");}
+		               " Use buffer.cleanupIntervalinstead!");}
 	catch (...) {}
 	try { _config.cleanupInterval = configGetDouble("buffer.cleanupInterval"); }
 	catch (...) {}
@@ -388,6 +396,12 @@ bool App::initConfiguration() {
 	try { _config.pickLogFile = configGetString("autoloc.pickLog"); }
 	catch (...) { _config.pickLogFile = ""; }
 
+	try { _config.pickLogEnable = configGetBool("autoloc.pickLogEnable"); }
+	catch (...) { _config.pickLogEnable = false; }
+	if ( !_config.pickLogEnable ) {
+		_config.pickLogFile = "";
+	}
+
 	try { _amplTypeSNR = configGetString("autoloc.amplTypeSNR"); }
 	catch (...) {}
 
@@ -461,7 +475,13 @@ bool App::init() {
 	if ( ! initInventory() )
 		return false;
 
-	setPickLogFilePrefix(_config.pickLogFile);
+	if ( !_config.pickLogFile.empty() ) {
+		setPickLogFilePrefix(_config.pickLogFile);
+	}
+	else {
+		SEISCOMP_DEBUG("Do not set a pick log file: Disabled by configuration "
+		               "of autolog.pickLogEnable");
+	}
 
 	if ( _config.playback ) {
 		if ( _inputEPFile.empty() ) {

@@ -61,12 +61,12 @@
 				</description>
 				<parameter name="maxRMS" type="double" default="3.5" unit="s">
 					<description>
-					Max. permissible RMS for a location to be reported.
+					Maximum travel-time RMS for a location to be reported.
 					</description>
 				</parameter>
 				<parameter name="maxResidual" type="double" default="7.0" unit="s">
 					<description>
-					Maximum station residual (unweighted) for a pick to be used.
+					Maximum travel-time residual (unweighted) for a pick at a station to be used.
 					</description>
 				</parameter>
 				<parameter name="minPhaseCount" type="integer" default="6">
@@ -81,7 +81,7 @@
 				</parameter>
 				<parameter name="maxSGAP" type="double" default="360" unit="deg">
 					<description>
-					Maximum secondary azimuth gap for an origin to be reported by.
+					Maximum secondary azimuthal gap for an origin to be reported by.
 					The secondary gap is the maximum of the sum of 2 station gaps.
 
 					Default: 360 degrees, i.e. no restriction based on this parameter.
@@ -114,20 +114,6 @@
 					amplitude object. If it is empty, the pick SNR is 10.
 					</description>
 				</parameter>
-				<parameter name="publicationIntervalTimeSlope" type="double" unit="s/count" default="0.5">
-					<description>
-					Parameter &quot;a&quot;  in the equation t = aN + b.
-					t is the time interval between sending updates of an origin.
-					N is the arrival count of the origin.
-					</description>
-				</parameter>
-				<parameter name="publicationIntervalTimeIntercept" type="double" unit="s" default="0.">
-					<description>
-					Parameter &quot;b&quot; in the equation t = aN + b.
-					t is the time interval between sending updates of an origin.
-					N is the arrival count of the origin.
-					</description>
-				</parameter>
 				<parameter name="grid" type="path" default="@DATADIR@/scautoloc/grid.conf">
 					<description>
 					Location of the grid file for nucleating origins.
@@ -145,16 +131,9 @@
 					in &quot;@DATADIR@/scautoloc/station-locations.conf&quot;.
 					</description>
 				</parameter>
-				<parameter name="pickLog" type="string" default="@LOGDIR@/autoloc-picklog">
+				<parameter name="useManualPicks" type="boolean" default="false">
 					<description>
-					Location of pick log file containing information about received
-					picks.
-					</description>
-				</parameter>
-				<parameter name="tryDefaultDepth" type="boolean" default="true">
-					<description>
-					Compare located origin with the origin at the depth given by
-					locator.defaultDepth. The origin with lower RMS is reported.
+					Receive and process manual phase picks.
 					</description>
 				</parameter>
 				<parameter name="useManualOrigins" type="boolean" default="false">
@@ -169,11 +148,6 @@
 					This is an experimental feature relevant only for large regional and global networks,
 					where results by analysts can be expected before the end
 					of automatic event processing.
-					</description>
-				</parameter>
-				<parameter name="useManualPicks" type="boolean" default="false">
-					<description>
-					Receive and process phase picks.
 					</description>
 				</parameter>
 				<parameter name="adoptManualDepth" type="boolean" default="true">
@@ -191,6 +165,37 @@
 					Its value is a comma-separated list of author ID's.
 					The earlier an author ID appears in the list the higher the
 					priority it gets.
+					</description>
+				</parameter>
+				<parameter name="tryDefaultDepth" type="boolean" default="true">
+					<description>
+					Compare located origin with the origin at the depth given by
+					locator.defaultDepth. The origin with lower RMS is reported.
+					</description>
+				</parameter>
+				<parameter name="publicationIntervalTimeSlope" type="double" unit="s/count" default="0.5">
+					<description>
+					Parameter &quot;a&quot;  in the equation t = aN + b.
+					t is the time interval between sending updates of an origin.
+					N is the arrival count of the origin.
+					</description>
+				</parameter>
+				<parameter name="publicationIntervalTimeIntercept" type="double" unit="s" default="0.">
+					<description>
+					Parameter &quot;b&quot; in the equation t = aN + b.
+					t is the time interval between sending updates of an origin.
+					N is the arrival count of the origin.
+					</description>
+				</parameter>
+				<parameter name="pickLogEnable" type="boolean" default="false">
+					<description>
+					Activate for writing pick log files to &quot;pickLog&quot;.
+					</description>
+				</parameter>
+				<parameter name="pickLog" type="string" default="@LOGDIR@/autoloc-picklog">
+					<description>
+					Location of pick log file containing information about received
+					picks. Activate &quot;pickLogEnable&quot; for writing the files.
 					</description>
 				</parameter>
 
@@ -292,7 +297,7 @@
 					--test and --playback</description>
 				</option>
 				<option flag="" long-flag="playback" argument="" default="">
-					<description>Flush origins immediately without delay</description>
+					<description>Flush origins immediately without delay.</description>
 				</option>
 			</group>
 
@@ -306,31 +311,45 @@
 				</option>
 
 				<option flag="" long-flag="station-config" argument="arg" default="">
-					<description>The station.conf file</description>
-				</option>
-
-				<option flag="" long-flag="pick-log" argument="arg" default="">
-					<description>The pick log file</description>
+					<description>
+					The station configuration file. Examples are in @DATADIR@/scautoloc/
+					</description>
 				</option>
 
 				<option flag="" long-flag="grid" argument="arg" default="">
-					<description>The grid.conf file to use</description>
+					<description>
+					The grid configuration file. Examples are in @DATADIR@/scautoloc/</description>
 				</option>
 
+				<option flag="" long-flag="pick-log" argument="arg" default="">
+					<description>
+					The pick log file. Providing a file name enables logging picks
+					even when disabled by configuration.
+					</description>
+				</option>
 				<option flag="" long-flag="default-depth" argument="arg" default="10">
-					<description></description>
+					<description>
+					Default depth for comparison with the depth after locating.
+					</description>
 				</option>
 
 				<option flag="" long-flag="max-sgap" argument="arg" default="360">
-					<description></description>
+					<description>
+					Maximum secondary azimuthal gap for an origin to be reported by.
+					The secondary gap is the maximum of the sum of 2 station gaps.
+					</description>
 				</option>
 
 				<option flag="" long-flag="max-rms" argument="arg" default="3.5">
-					<description></description>
+					<description>
+					Maximum travel-time RMS for a location to be reported.
+					</description>
 				</option>
 
 				<option flag="" long-flag="max-residual" argument="arg" default="3">
-					<description></description>
+					<description>
+					Maximum travel-time residual (unweighted) for a pick at a station to be used.
+					</description>
 				</option>
 
 				<option flag="" long-flag="max-station-distance" argument="arg" default="5">
