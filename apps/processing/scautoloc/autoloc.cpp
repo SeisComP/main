@@ -567,13 +567,18 @@ double Autoloc3::_score(const Origin *origin) const
 
 bool Autoloc3::_log(const Pick *pick)
 {
+	if ( !_pickLogEnable ) {
+		return false;
+	}
+
 	if (_pickLogFilePrefix != "") {
 		Time now = Time(Seiscomp::Core::Time::GMT());
 		setPickLogFileName(_pickLogFilePrefix+"."+sc3time(now).toString("%F"));
 	}
 
-	if ( ! _pickLogFile.good())
+	if ( ! _pickLogFile.good()) {
 		return false;
+	}
 
 	char line[200];
 	string loc = pick->loc == "" ? "__" : pick->loc;

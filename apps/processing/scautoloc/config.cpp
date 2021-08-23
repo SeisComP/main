@@ -146,45 +146,45 @@ Autoloc3::Config::Config()
 void Autoloc3::Config::dump() const
 {
 	SEISCOMP_INFO("Configuration:");
-	SEISCOMP_INFO("defaultDepth                     %g",     defaultDepth);
-	SEISCOMP_INFO("defaultDepthStickiness           %g",     defaultDepthStickiness);
-	SEISCOMP_INFO("tryDefaultDepth                  %s",     tryDefaultDepth ? "true":"false");
-	SEISCOMP_INFO("adoptManualDepth                 %s",     adoptManualDepth ? "true":"false");
-	SEISCOMP_INFO("minimumDepth                     %g",     minimumDepth);
-	SEISCOMP_INFO("minPhaseCount                    %d",     minPhaseCount);
-	SEISCOMP_INFO("minScore                         %.1f",   minScore);
-	SEISCOMP_INFO("minPickSNR                       %.1f",   minPickSNR);
-	SEISCOMP_INFO("maxResidual                      %.1f s", maxResidualUse);
-	SEISCOMP_INFO("goodRMS                          %.1f s", goodRMS);
-	SEISCOMP_INFO("maxRMS                           %.1f s", maxRMS);
-	SEISCOMP_INFO("maxDepth                         %.1f km", maxDepth);
-	SEISCOMP_INFO("minStaCountIgnorePKP             %d",     minStaCountIgnorePKP);
-	SEISCOMP_INFO("pickKeep                         %.0f s", maxAge);
-	SEISCOMP_INFO("publicationIntervalTimeSlope     %.2f",   publicationIntervalTimeSlope);
-	SEISCOMP_INFO("publicationIntervalTimeIntercept %.1f",   publicationIntervalTimeIntercept);
-	SEISCOMP_INFO("publicationIntervalPickCount     %d",     publicationIntervalPickCount);
-	SEISCOMP_INFO("reportAllPhases                  %s",     reportAllPhases ? "true":"false");
-	SEISCOMP_INFO("pickLogFile                      %s",     pickLogFile.size() ? pickLogFile.c_str() : "(none)");
-	SEISCOMP_INFO("dynamicPickThresholdInterval     %g",     dynamicPickThresholdInterval);
-	SEISCOMP_INFO("offline                          %s",     offline ? "true":"false");
-	SEISCOMP_INFO("test                             %s",     test ? "true":"false");
-	SEISCOMP_INFO("playback                         %s",     playback ? "true":"false");
-	SEISCOMP_INFO("useManualPicks                   %s",     useManualPicks ? "true":"false");
-	SEISCOMP_INFO("useManualOrigins                 %s",     useManualOrigins ? "true":"false");
+	SEISCOMP_INFO("  defaultDepth                     %g",     defaultDepth);
+	SEISCOMP_INFO("  defaultDepthStickiness           %g",     defaultDepthStickiness);
+	SEISCOMP_INFO("  tryDefaultDepth                  %s",     tryDefaultDepth ? "true":"false");
+	SEISCOMP_INFO("  adoptManualDepth                 %s",     adoptManualDepth ? "true":"false");
+	SEISCOMP_INFO("  minimumDepth                     %g",     minimumDepth);
+	SEISCOMP_INFO("  minPhaseCount                    %d",     minPhaseCount);
+	SEISCOMP_INFO("  minScore                         %.1f",   minScore);
+	SEISCOMP_INFO("  minPickSNR                       %.1f",   minPickSNR);
+	SEISCOMP_INFO("  maxResidual                      %.1f s", maxResidualUse);
+	SEISCOMP_INFO("  goodRMS                          %.1f s", goodRMS);
+	SEISCOMP_INFO("  maxRMS                           %.1f s", maxRMS);
+	SEISCOMP_INFO("  maxDepth                         %.1f km", maxDepth);
+	SEISCOMP_INFO("  minStaCountIgnorePKP             %d",     minStaCountIgnorePKP);
+	SEISCOMP_INFO("  pickKeep                         %.0f s", maxAge);
+	SEISCOMP_INFO("  publicationIntervalTimeSlope     %.2f",   publicationIntervalTimeSlope);
+	SEISCOMP_INFO("  publicationIntervalTimeIntercept %.1f",   publicationIntervalTimeIntercept);
+	SEISCOMP_INFO("  publicationIntervalPickCount     %d",     publicationIntervalPickCount);
+	SEISCOMP_INFO("  reportAllPhases                  %s",     reportAllPhases ? "true":"false");
+	SEISCOMP_INFO("  pickLogFile                      %s",     pickLogFile.size() ? pickLogFile.c_str() : "pick logging is disabled");
+	SEISCOMP_INFO("  dynamicPickThresholdInterval     %g",     dynamicPickThresholdInterval);
+	SEISCOMP_INFO("  offline                          %s",     offline ? "true":"false");
+	SEISCOMP_INFO("  test                             %s",     test ? "true":"false");
+	SEISCOMP_INFO("  playback                         %s",     playback ? "true":"false");
+	SEISCOMP_INFO("  useManualPicks                   %s",     useManualPicks ? "true":"false");
+	SEISCOMP_INFO("  useManualOrigins                 %s",     useManualOrigins ? "true":"false");
 // This isn't used still so we don't want to confuse the user....
 //	SEISCOMP_INFO("useImportedOrigins               %s",     useImportedOrigins ? "true":"false");
-	SEISCOMP_INFO("locatorProfile                   %s",     locatorProfile.c_str());
+	SEISCOMP_INFO("  locatorProfile                   %s",     locatorProfile.c_str());
 
 	if ( ! xxlEnabled) {
-		SEISCOMP_INFO("XXL feature is not enabled");
+		SEISCOMP_INFO("  XXL feature is not enabled");
 		return;
 	}
-	SEISCOMP_INFO("XXL feature is enabled");
-	SEISCOMP_INFO("xxl.minPhaseCount                 %d",     xxlMinPhaseCount);
-	SEISCOMP_INFO("xxl.minAmplitude                  %g",     xxlMinAmplitude);
-	SEISCOMP_INFO("xxl.maxStationDistance           %.1f deg", xxlMaxStaDist);
-	SEISCOMP_INFO("xxl.maxDepth                      %g km",  xxlMaxDepth);
-	SEISCOMP_INFO("xxl.deadTime                      %g s",  xxlDeadTime);
+	SEISCOMP_INFO("  XXL feature is enabled");
+	SEISCOMP_INFO("  xxl.minPhaseCount                 %d",     xxlMinPhaseCount);
+	SEISCOMP_INFO("  xxl.minAmplitude                  %g",     xxlMinAmplitude);
+	SEISCOMP_INFO("  xxl.maxStationDistance           %.1f deg", xxlMaxStaDist);
+	SEISCOMP_INFO("  xxl.maxDepth                      %g km",  xxlMaxDepth);
+	SEISCOMP_INFO("  xxl.deadTime                      %g s",  xxlDeadTime);
 //	SEISCOMP_INFO("maxRadiusFactor                  %g", 	 maxRadiusFactor);
 }
 

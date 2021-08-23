@@ -197,11 +197,12 @@ class Autoloc3 {
 			bool useManualPicks;
 
 			// The pick log file
-			std::string pickLogFile;
+			bool        pickLogEnable{false};
+			std::string pickLogFile{""};
 			int         pickLogDate;
 
 			// locator profile, e.g. "iasp91", "tab" etc.
-			std::string locatorProfile;
+			std::string locatorProfile{"iasp91"};
 
 			// The station configuration file
 			std::string staConfFile;
@@ -209,12 +210,12 @@ class Autoloc3 {
 			// misc. experimental options
 			bool aggressivePKP;
 			bool reportAllPhases;
-			bool useManualOrigins;
+			bool useManualOrigins{false};
 			bool adoptManualOriginsFixedDepth;
 			bool useImportedOrigins;
 
 			// enable the XXL feature
-			bool xxlEnabled;
+			bool xxlEnabled{false};
 
 			// minimum absolute amplitude to flag a pick as XXL
 			double xxlMinAmplitude;            // default  10000 nm/s
@@ -513,6 +514,7 @@ class Autoloc3 {
 	protected:
 		typedef std::map<std::string, PickCPtr> PickMap;
 		PickMap  _pick;
+		bool          _pickLogEnable{false};
 		std::string   _pickLogFilePrefix;
 		std::string   _pickLogFileName;
 		std::ofstream _pickLogFile;
