@@ -1465,7 +1465,7 @@ This section contains settings for all the main tabs and *all* waveform windows.
  The default value to add stations (traces) that have not been picked or
  associated is 15 degrees. A lower value can be defined, e.g. if mainly local events are analyzed.
 
-*Hide station traces without data*
+*Hide station traces without data and arrivals*
  If new stations are added during pick review or amplitude review and if no
  data is available for some of those stations, they will be hidden and not
  shown. Once data arrives the trace becomes visible.
