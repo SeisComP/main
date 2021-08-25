@@ -18,6 +18,7 @@
 #include <seiscomp/logging/log.h>
 #include <seiscomp/client/inventory.h>
 #include <seiscomp/datamodel/eventparameters.h>
+#include <seiscomp/datamodel/journaling_package.h>
 #include <seiscomp/datamodel/utils.h>
 #include <seiscomp/utils/files.h>
 #include <seiscomp/core/datamessage.h>
@@ -412,12 +413,13 @@ bool App::initConfiguration() {
 	catch (...) {}
 
 	// support deprecated configuration, deprecated since 2020-11-13
-	try { _config.locatorProfile = configGetString("autoloc.locator.profile"); }
-	catch (...) {}
-	if ( !_config.locatorProfile.empty() ) {
+	try {
+		_config.locatorProfile = configGetString("autoloc.locator.profile");
 		SEISCOMP_ERROR("Configuration parameter autoloc.locator.profile is deprecated."
 		                 " Use locator.profile instead!");
 	}
+	catch (...) {}
+
 	// override deprecated configuration if value is set
 	try { _config.locatorProfile = configGetString("locator.profile"); }
 	catch (...) {}
@@ -1297,10 +1299,42 @@ bool App::_report(const ::Autoloc::Origin *origin) {
 	DataModel::NotifierMessagePtr nmsg = DataModel::Notifier::GetMessage(true);
 	connection()->send(nmsg.get());
 
-	if (origin->preliminary )
+	if ( origin->preliminary ) {
 		SEISCOMP_INFO("Sent preliminary origin %ld (heads up)", origin->id);
-	else
+
+		// create and send journal entry
+		string str = "";
+		try {
+			str = sc3origin->evaluationStatus().toString();
+		}
+		catch ( Core::ValueException & ) {}
+
+		if ( !str.empty() ) {
+			DataModel::JournalEntryPtr journalEntry = new DataModel::JournalEntry;
+			journalEntry->setAction("OrgEvalStatOK");
+			journalEntry->setObjectID(sc3origin->publicID());
+			journalEntry->setSender(SCCoreApp->author().c_str());
+			journalEntry->setParameters(str);
+			journalEntry->setCreated(Core::Time::GMT());
+
+			DataModel::NotifierMessagePtr jm = new DataModel::NotifierMessage;
+			jm->attach(new DataModel::Notifier(DataModel::Journaling::ClassName(),
+			           DataModel::OP_ADD, journalEntry.get()));
+
+			if ( connection()->send(jm.get()) ) {
+				SEISCOMP_DEBUG("Sent origin journal entry for origin %s to the message group: %s",
+				               sc3origin->publicID().c_str(), primaryMessagingGroup().c_str());
+			}
+			else {
+				SEISCOMP_ERROR("Sending origin journal entry failed with error: %s",
+				               connection()->lastError().toString());
+			}
+		}
+
+	}
+	else {
 		SEISCOMP_INFO("Sent origin %ld", origin->id);
+	}
 
 	SEISCOMP_INFO_S(::Autoloc::printOrigin(origin, false));
 
