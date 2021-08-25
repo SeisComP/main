@@ -142,7 +142,8 @@
 				</parameter>
 				<parameter name="hideStationsWithoutData" type="boolean" default="false">
 					<description>
-						If enabled, all traces without data are hidden in the picker.
+						If enabled, all traces without data and arrivals are
+						hidden in the picker.
 					</description>
 				</parameter>
 				<parameter name="hideDisabledStations" type="boolean" default="false">
