@@ -452,6 +452,8 @@ typedef struct AssociatedPhase {
     double d2tdd;                                 /* second time derivatives */
     double d2tdh;                                 /* second time derivatives */
     double bpdel;                 /* depth phase bounce point distance [deg] */
+    double rsttTotalErr;     /* RSTT path-dependent (model + pick) error [s] */
+    double rsttPickErr;                               /* RSTT pick error [s] */
     int firstP;               /* 1 if first arriving defining P, 0 otherwise */
     int firstS;                        /* 1 if first arriving S, 0 otherwise */
     int hasDepthPhase;         /* 1 if firstP and reading has depth phase(s) */
