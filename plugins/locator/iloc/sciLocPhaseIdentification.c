@@ -429,6 +429,7 @@ static void PhaseIdentification(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
 {
     double resid, bigres = 60., min_resid, dtdd = ILOC_NULLVAL;
     double ttime = ILOC_NULLVAL, pPttime = ILOC_NULLVAL, d2tdd = 0, d2tdh = 0;
+    double rstterr = 0., pickerr = 0.;
     char candidate_phase[ILOC_PHALEN], mappedphase[ILOC_PHALEN], phase[ILOC_PHALEN];
     char Vmodel[ILOC_VALLEN];
     int isS = 0, isP = 0, isI = 0, isH = 0, iss = 0, isp = 0;
@@ -442,6 +443,7 @@ static void PhaseIdentification(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
     for (m = 0, k = rdindx->start; k < n; m++, k++) {
         Assocs[k].TimeRes = Assocs[k].AzimRes = Assocs[k].SlowRes = ILOC_NULLVAL;
         Assocs[k].d2tdd = Assocs[k].d2tdh = 0.;
+        Assocs[k].rsttPickErr = Assocs[k].rsttTotalErr = 0.;
 /*
  *      skip phases that don't get residuals (amplitudes etc)
  */
@@ -538,6 +540,8 @@ static void PhaseIdentification(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
                         Assocs[k-1].dtdd = Assocs[k].dtdd;
                         Assocs[k-1].d2tdd = Assocs[k].d2tdd;
                         Assocs[k-1].d2tdh = Assocs[k].d2tdh;
+                        Assocs[k-1].rsttTotalErr = Assocs[k].rsttTotalErr;
+                        Assocs[k-1].rsttPickErr = Assocs[k].rsttPickErr;
                         Assocs[k].duplicate = 1;
                         continue;
                     }
@@ -561,6 +565,8 @@ static void PhaseIdentification(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
                         Assocs[k].dtdd = Assocs[k-1].dtdd;
                         Assocs[k].d2tdd = Assocs[k-1].d2tdd;
                         Assocs[k].d2tdh = Assocs[k-1].d2tdh;
+                        Assocs[k].rsttTotalErr = Assocs[k-1].rsttTotalErr;
+                        Assocs[k].rsttPickErr = Assocs[k-1].rsttPickErr;
                         Assocs[k].duplicate = 1;
                         continue;
                     }
@@ -761,6 +767,8 @@ static void PhaseIdentification(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
                     dtdd = Assocs[k].dtdd;
                     d2tdd = Assocs[k].d2tdd;
                     d2tdh = Assocs[k].d2tdh;
+                    rstterr = Assocs[k].rsttTotalErr;
+                    pickerr = Assocs[k].rsttPickErr;
                 }
             }
 /*
@@ -781,6 +789,8 @@ static void PhaseIdentification(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
                 Assocs[k].dtdd = dtdd;
                 Assocs[k].d2tdd = d2tdd;
                 Assocs[k].d2tdh = d2tdh;
+                Assocs[k].rsttTotalErr = rstterr;
+                Assocs[k].rsttPickErr = pickerr;
                 if (Assocs[k].BackAzimuth != ILOC_NULLVAL)
                     Assocs[k].AzimRes = Assocs[k].BackAzimuth - Assocs[k].Seaz;
                 if (Assocs[k].Slowness != ILOC_NULLVAL)
@@ -945,8 +955,11 @@ static void GetPriorMeasurementError(ILOC_ASSOC *Assoc,
 /*
  *                  a priori time measurement error
  */
-                    if (!Assoc->userDeltim)
+                    if (!Assoc->userDeltim) {
                         Assoc->Deltim = PhaseIdInfo->PhaseWeight[j].deltim;
+                        if (Assoc->rsttPickErr > 0)
+                            Assoc->Deltim = Assoc->rsttPickErr;
+                    }
                     if (Assoc->Timedef) {
 /*
  *                      make time non-defining if its residual is large

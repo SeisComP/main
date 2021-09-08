@@ -55,7 +55,7 @@ static double GetTTResidual(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
         ILOC_TTINFO *TTInfo, ILOC_TT_TABLE *TTtables, ILOC_TTINFO *LocalTTInfo,
         ILOC_TT_TABLE *LocalTTtables, short int **topo,
         ILOC_PHASEIDINFO *PhaseIdInfo, int isall, int iszderiv, int is2nderiv);
-static int isRSTT(ILOC_CONF *iLocConfig, ILOC_ASSOC *Assoc);
+static int isRSTT(ILOC_CONF *iLocConfig, ILOC_ASSOC *Assoc, double depth);
 static double GetTravelTimeTableValue(double depth, double delta,
         ILOC_TT_TABLE *TTtable, int iszderiv, double *dtdd, double *dtdh,
         double *bpdel, int is2nderiv, double *d2tdd, double *d2tdh);
@@ -346,7 +346,7 @@ int iLoc_GetTravelTimePrediction(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
 {
     int pind = 0, isdepthphase = 0, rstt_phase = 0;
     double ttim = -1, dtdd = 0., dtdh = 0., bpdel = 0., d2tdd = 0., d2tdh = 0.;
-    double dtdlat = 0., dtdlon = 0.;
+    double dtdlat = 0., dtdlon = 0., mperr = 0., merr = 0., perr = 0.;
     double lat, lon, depth, slat, slon, elev;
     double Psurfvel = TTInfo->PSurfVel, Ssurfvel = TTInfo->SSurfVel;
     char phase[ILOC_PHALEN];
@@ -433,12 +433,24 @@ int iLoc_GetTravelTimePrediction(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
         if (ttim >= 0) strcpy(Assoc->Vmodel, LocalTTInfo->TTmodel);
     }
     else if (iLocConfig->UseRSTT) {
+        lat = ILOC_DEG2RAD * Hypocenter->Lat;
+        lon = ILOC_DEG2RAD * Hypocenter->Lon;
+        depth = Hypocenter->Depth;
+        slat = ILOC_DEG2RAD * StaLoc->StaLat;
+        slon = ILOC_DEG2RAD * StaLoc->StaLon;
+        elev = -StaLoc->StaElevation / 1000.;
+        if      (ILOC_STREQ(Assoc->Phase, "Pb")) strcpy(phase, "Pg");
+        else if (ILOC_STREQ(Assoc->Phase, "Sb")) strcpy(phase, "Lg");
+        else if (ILOC_STREQ(Assoc->Phase, "Sg")) strcpy(phase, "Lg");
+        else                             strcpy(phase, Assoc->Phase);
 /*
  *      decide if the phase belongs to RSTT domain
  */
-        if ((rstt_phase = isRSTT(iLocConfig, Assoc)) == 0) {
+        if ((rstt_phase = isRSTT(iLocConfig, Assoc, depth)) == 0 ||
+             slbm_shell_createGreatCircle(phase, &lat, &lon, &depth,
+                                          &slat, &slon, &elev)) {
 /*
- *          get travel-time prediction from TT table
+ *          not RSTT, use TTInfo->TTmodel to get travel-time prediction from TT table
  */
             ttim = GetTravelTimeTableValue(Hypocenter->Depth, Assoc->Delta,
                             &TTtables[pind], iszderiv, &dtdd, &dtdh, &bpdel,
@@ -478,22 +490,28 @@ int iLoc_GetTravelTimePrediction(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
 /*
  *          get travel-time prediction from RSTT
  */
-            dtdd = dtdh = 0.;
-            lat = ILOC_DEG2RAD * Hypocenter->Lat;
-            lon = ILOC_DEG2RAD * Hypocenter->Lon;
-            depth = Hypocenter->Depth;
-            slat = ILOC_DEG2RAD * StaLoc->StaLat;
-            slon = ILOC_DEG2RAD * StaLoc->StaLon;
-            elev = -StaLoc->StaElevation / 1000.;
-            if      (ILOC_STREQ(Assoc->Phase, "Pb")) strcpy(phase, "Pg");
-            else if (ILOC_STREQ(Assoc->Phase, "Sb")) strcpy(phase, "Lg");
-            else if (ILOC_STREQ(Assoc->Phase, "Sg")) strcpy(phase, "Lg");
-            else                                strcpy(phase, Assoc->Phase);
-            if (slbm_shell_createGreatCircle(phase, &lat, &lon, &depth,
-                                             &slat, &slon, &elev))
-                return ILOC_RSTT_ERROR;
             if (slbm_shell_getTravelTime(&ttim)) ttim = -999.;
             if (ttim >= 0.) {
+/*
+ *              path-dependent uncertainty (total error = model + pick error)
+ */
+                if (slbm_shell_getTTUncertainty_useRandErr(&mperr))
+                    mperr = ILOC_NULLVAL;
+                if (mperr < ILOC_NULLVAL) {
+/*
+ *                  get pick error
+ */
+                    if (slbm_shell_getTTUncertainty(&merr)) merr = ILOC_NULLVAL;
+                    if (merr < ILOC_NULLVAL) {
+                        merr = ILOC_MAX(0.25, merr);
+                        perr = sqrt(fabs(mperr * mperr - merr * merr));
+                        if (Assoc->Phase[0] == 'P')
+                            perr = ILOC_MAX(0.8, perr);
+                        else
+                            perr = ILOC_MAX(1.2, perr);
+                        mperr = sqrt(fabs(merr * merr + perr * perr));
+                    }
+                }
 /*
  *              derivatives
  */
@@ -562,13 +580,22 @@ int iLoc_GetTravelTimePrediction(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
         Assoc->d2tdd = d2tdd;
         Assoc->d2tdh = d2tdh;
     }
+    Assoc->rsttPickErr = perr;
+    Assoc->rsttTotalErr = mperr;
+
 /*
  *  elevation, ellipticity and bounce point corrections
  *  Note: RSTT includes all these
  */
-    if (!rstt_phase)
-        TravelTimeCorrections(iLocConfig, Hypocenter, Assoc, StaLoc, ec, topo,
-                              Psurfvel, Ssurfvel);
+    if (iLocConfig->UseRSTT) {
+        if (!rstt_phase)
+            TravelTimeCorrections(iLocConfig, Hypocenter, Assoc, StaLoc,
+                                  ec, topo, Psurfvel, Ssurfvel);
+    }
+    else {
+        TravelTimeCorrections(iLocConfig, Hypocenter, Assoc, StaLoc,
+                              ec, topo, Psurfvel, Ssurfvel);
+    }
     return ILOC_SUCCESS;
 }
 
@@ -577,17 +604,18 @@ int iLoc_GetTravelTimePrediction(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
  *     isRSTT
  *  Synopsis:
  *     Decides whether phase belongs to RSTT domain:
- *         delta < ILOC_MAX_RSTT_DIST && phase is
+ *         delta < ILOC_MAX_RSTT_DIST && depth < 45 && phase is
  *         Pn/Sn or first-arriving Pg/Pb/Sg/Sb if crustal phases to be used)
  *  Input Arguments:
  *     iLocConfig - pointer to ILOC_CONF structure
  *     Assoc      - pointer to ILOC_ASSOC structure
+ *     depth      - hypocenter depth
  *  Return:
  *     1 if phase qualifies for RSTT, 0 otherwise
  *  Called by:
  *     iLoc_GetTravelTimePrediction
  */
-static int isRSTT(ILOC_CONF *iLocConfig, ILOC_ASSOC *Assoc)
+static int isRSTT(ILOC_CONF *iLocConfig, ILOC_ASSOC *Assoc, double depth)
 {
     if (iLocConfig->UseRSTT == 0)
         return 0;
@@ -612,6 +640,11 @@ static int isRSTT(ILOC_CONF *iLocConfig, ILOC_ASSOC *Assoc)
          ILOC_STREQ(Assoc->Phase, "Sg") ||
          ILOC_STREQ(Assoc->Phase, "Pb") || ILOC_STREQ(Assoc->Phase, "Sb")) &&
          !iLocConfig->UseRSTTPgLg)
+        return 0;
+/*
+ *  RSTT doesn't calculate direct waves for events below the crust
+ */
+    if (Assoc->Delta < 0.25 && depth > 45)
         return 0;
     return 1;
 }
@@ -651,7 +684,7 @@ static double GetTravelTimeTableValue(double depth, double delta,
 {
     int i, j, k, m, ilo, ihi, jlo, jhi, idel, jdep, ndep, ndel;
     int exactdelta = 0, exactdepth = 0, isbounce = 0;
-    double ttim = -1., dydx = 0., d2ydx = 0., d2nd = 0.;
+    double ttim = -1., dydx = 0., d2ydx = 0.;
     double  x[ILOC_DELTASAMPLES],  z[ILOC_DEPTHSAMPLES], d2y[ILOC_DELTASAMPLES];
     double tx[ILOC_DELTASAMPLES], tz[ILOC_DEPTHSAMPLES];
     double dx[ILOC_DELTASAMPLES], dz[ILOC_DEPTHSAMPLES];
@@ -693,8 +726,7 @@ static double GetTravelTimeTableValue(double depth, double delta,
     }
     else if (fabs(delta - TTtable->deltas[ihi]) < ILOC_DEPSILON) {
         idel = ihi;
-        if (ihi < ndel - 1) ihi++;
-        if (ihi < ndel - 1) ihi++;
+        if (ihi <= ndel - 1) ihi++;
         ilo = ihi - ILOC_DELTASAMPLES;
         if (ilo < 0) {
             ilo = 0;
@@ -736,8 +768,7 @@ static double GetTravelTimeTableValue(double depth, double delta,
     }
     else if (fabs(depth - TTtable->depths[jhi]) < ILOC_DEPSILON) {
         jdep = jhi;
-        if (jhi < ndep - 1) jhi++;
-        if (jhi < ndep - 1) jhi++;
+        if (jhi <= ndep - 1) jhi++;
         jlo = jhi - ILOC_DEPTHSAMPLES;
         if (jlo < 0) {
             jlo = 0;
@@ -835,20 +866,6 @@ static double GetTravelTimeTableValue(double depth, double delta,
  *  no valid data
  */
     if (k == 0) return ttim;
-/*
- *  no need for Spline interpolation if exact depth
- */
-    if (exactdepth) {
-        if (is2nderiv == 0) {
-            ttim = tz[0];
-            if (isbounce)
-                *bpdel = pz[0];
-            *dtdd = dz[0];
-            if (iszderiv)
-                *dtdh = hz[0];
-            return ttim;
-        }
-    }
 /*
  *  insufficient data for Spline interpolation
  */
@@ -1284,8 +1301,8 @@ static int GetLastLag(char phase[]) {
  *      (Kennett and Gudmundsson, 1996)
  *        #  Phase  ndist delta_min delta_max
  *
- *        0  Pup      3       0.0      10.0
- *        1  P       20       5.0     100.0     (Pg, Pb, Pn)
+ *        0  Pup      3       0.0      10.0     (Pg, Pb)
+ *        1  P       20       5.0     100.0     (Pn, PgPg, PbPb)
  *        2  Pdiff   11     100.0     150.0     (pPdiff, sPdiff)
  *        3  PKPab    7     145.0     175.0
  *        4  PKPbc    3     145.0     155.0     (PKPdiff)
@@ -1315,8 +1332,8 @@ static int GetLastLag(char phase[]) {
  *       28  SKKPdf  32     205.0     360.0
  *       29  PP      31      40.0     190.0     (PnPn)
  *       30  P'P'    26     235.0     360.0
- *       31  Sup      3       0.0      10.0
- *       32  S       19       5.0      95.0     (Sg, Sb, Sn)
+ *       31  Sup      3       0.0      10.0     (Sg, Lg, Sb)
+ *       32  S       19       5.0      95.0     (Sn, SgSg, SbSb)
  *       33  Sdiff   11     100.0     150.0     (pSdiff, sSdiff)
  *       34  SKSac   16      65.0     140.0
  *       35  SKSdf   16     105.0     180.0
@@ -1407,11 +1424,11 @@ static double GetEllipticityCorrection(ILOC_EC_COEF *ec, char *phase,
  */
 static int ECPhaseIndex(char *phase, double delta)
 {
-    if (ILOC_STREQ(phase, "Pup") ||
-        ILOC_STREQ(phase, "p"))      return 0;
-    if (ILOC_STREQ(phase, "P")    ||
+    if (ILOC_STREQ(phase, "Pup")  ||
         ILOC_STREQ(phase, "Pg")   ||
         ILOC_STREQ(phase, "Pb")   ||
+        ILOC_STREQ(phase, "p"))      return 0;
+    if (ILOC_STREQ(phase, "P")    ||
         ILOC_STREQ(phase, "Pn")   ||
         ILOC_STREQ(phase, "PgPg") ||
         ILOC_STREQ(phase, "PbPb"))   return 1;
@@ -1455,11 +1472,12 @@ static int ECPhaseIndex(char *phase, double delta)
     if (ILOC_STREQ(phase, "P'P'ab") ||
         ILOC_STREQ(phase, "P'P'bc") ||
         ILOC_STREQ(phase, "P'P'df")) return 30;
-    if (ILOC_STREQ(phase, "Sup") ||
+    if (ILOC_STREQ(phase, "Sup")  ||
+        ILOC_STREQ(phase, "Sg")   ||
+        ILOC_STREQ(phase, "Lg")   ||
+        ILOC_STREQ(phase, "Sb")   ||
         ILOC_STREQ(phase, "s"))      return 31;
     if (ILOC_STREQ(phase, "S")    ||
-        ILOC_STREQ(phase, "Sg")   ||
-        ILOC_STREQ(phase, "Sb")   ||
         ILOC_STREQ(phase, "Sn")   ||
         ILOC_STREQ(phase, "SgSg") ||
         ILOC_STREQ(phase, "SbSb"))   return 32;
