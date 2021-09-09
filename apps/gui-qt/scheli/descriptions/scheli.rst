@@ -24,7 +24,7 @@ Examples
 
 .. _scheli-show:
 
-#. **GUI mode - Simple helicorder window:**
+1. **GUI mode - Simple helicorder window:**
 
    * Learn about the plenty command-line options for :program:`scheli`: ::
 
@@ -48,7 +48,7 @@ Examples
 
 .. _scheli-capture:
 
-#. **Capture mode - Image capturing:**
+2. **Capture mode - Image capturing:**
 
    Capture the helicorder plot for 3 stations in intervals of 10 seconds.
    The data is retrieved using seedlink and the plots are stored as PNG images.
