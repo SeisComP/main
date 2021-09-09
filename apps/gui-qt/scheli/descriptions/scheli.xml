@@ -33,7 +33,7 @@
 				<parameter name="recordTime" type="boolean" default="false">
 					<description>Sets current time to last data sample</description>
 				</parameter>
-				<parameter name="lineWidth" type="integer" default="1" unit="">
+				<parameter name="lineWidth" type="integer" default="1" unit="px">
 					<description>Line width of traces.</description>
 				</parameter>
 				<parameter name="colors" type="list:string" default="FF0000, 0000FF" unit="">
@@ -60,19 +60,19 @@
 						<description>
 						Define the method to scale traces within rows. Possible values are:
 
-						minmax: Scale all rows to confiugured minimum and maximum
+						minmax: Scale all rows to configured minimum and maximum
 						amplitudes configured by amplitudeRange.min and amplitudeRange.max.
 
 						row: Scale each row to the maximum within this row.
 						</description>
 					</parameter>
-					<parameter name="min" type="double" default="-0.00001" unit="">
+					<parameter name="min" type="double" default="-0.00001" unit="unit of input data">
 						<description>
 						Minimum amplitude to show in trace. Requires
 						amplitudeRange.scale = "minmax".
 						</description>
 					</parameter>
-					<parameter name="max" type="double" default="0.00001" unit="">
+					<parameter name="max" type="double" default="0.00001" unit="unit of input data">
 						<description>
 						Minimum amplitude to show in trace. Requires
 						amplitudeRange.scale = "minmax".
@@ -203,7 +203,16 @@
 				</option>
 				<option long-flag="gain" argument="arg" unit="counts/unit">
 					<description>
-						Gain applied to the data before plotting. Units: counts/unit
+						Gain applied to the data before plotting
+					</description>
+				</option>
+				<option long-flag="amp-scaling" argument="arg" default="minmax">
+					<description>
+					Lower bound of amplitude range per row. Possible values:
+
+					minmax: Scale all rows to configured minimum and maximum amplitudes.
+
+					row: Scale each row to the maximum within this row.
 					</description>
 				</option>
 				<option long-flag="amp-range-min" argument="arg">
@@ -266,7 +275,8 @@
 				</option>
 				<option flag="o" argument="arg">
 					<description>
-						Output filename (placeholders: %N,%S,%L,%C)
+						Output filename. Placeholders are %N,%S,%L,%C for network code,
+						station code, location code, channel code.
 					</description>
 				</option>
 				<option long-flag="interval" argument="arg" unit="s">

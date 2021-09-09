@@ -226,7 +226,11 @@ void HCApp::createCommandLineDescription() {
 	commandline().addOption("Data", "stream", "The record stream that should be displayed: stream=net.sta.loc.cha", &_streamID);
 	commandline().addOption("Data", "filter", "The filter to apply", &_filterString);
 	commandline().addOption("Data", "gain", "Gain applied to the data before plotting.", &_gain);
-	commandline().addOption("Data", "amp-scaling", "Method for scaling amplitudes per row", &_scaling);
+	commandline().addOption("Data", "amp-scaling", "Method for scaling amplitudes per row. "
+	                        "Possible values:"
+	                        "\nminmax: Scale all rows to configured minimum and "
+	                        "maximum amplitudes."
+	                        "\nrow: Scale each row to the maximum within this row.", &_scaling);
 	commandline().addOption("Data", "amp-range-min", "Lower bound of amplitude range per row. Requires --amp-scaling minmax", &_amplitudesMin);
 	commandline().addOption("Data", "amp-range-max", "Upper bound of amplitude range per row. Requires --amp-scaling minmax", &_amplitudesMax);
 	commandline().addOption("Data", "amp-range", "Arround zero bound of amplitude range per row. Requires --amp-scaling minmax. Overrides min and max values.", &_amplitudesRange);
