@@ -45,7 +45,7 @@ if sys.version_info[0] < 3:
 else:
     from io import BytesIO
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 
 ################################################################################
 
@@ -344,8 +344,8 @@ class FDSNDataSelectRealm(object):
         self.__access = access
 
     #---------------------------------------------------------------------------
-    def requestAvatar(self, avatarId, mind, *interfaces):
-        if resource.IResource in interfaces:
+    def requestAvatar(self, avatarId, _mind, *interfaces_):
+        if resource.IResource in interfaces_:
             return (resource.IResource,
                     FDSNDataSelect(self.__inv, self.__bufferSize, self.__access,
                                    {"mail": utils.py3ustr(avatarId), "blacklisted": False}),
@@ -366,8 +366,8 @@ class FDSNDataSelectAuthRealm(object):
         self.__userdb = userdb
 
     #---------------------------------------------------------------------------
-    def requestAvatar(self, avatarId, mind, *interfaces):
-        if resource.IResource in interfaces:
+    def requestAvatar(self, avatarId, _mind, *interfaces_):
+        if resource.IResource in interfaces_:
             return (resource.IResource,
                     FDSNDataSelect(self.__inv, self.__bufferSize, self.__access,
                                    self.__userdb.getAttributes(avatarId)),
@@ -508,7 +508,25 @@ class FDSNDataSelect(BaseResource):
                 if not ro.time.match(stream.start(), end):
                     continue
 
-            yield stream
+            yield stream, False
+
+        for i in range(loc.auxStreamCount()):
+            stream = loc.auxStream(i)
+
+            # stream code
+            if ro.channel and not ro.channel.matchCha(stream.code()):
+                continue
+
+            # start and end time
+            if ro.time:
+                try:
+                    end = stream.end()
+                except ValueError:
+                    end = None
+                if not ro.time.match(stream.start(), end):
+                    continue
+
+            yield stream, True
 
     #---------------------------------------------------------------------------
     def _processRequest(self, req, ro):
@@ -572,6 +590,7 @@ class FDSNDataSelect(BaseResource):
         rs = _MyRecordStream(self._rsURL, trackerList, self.__bufferSize)
 
         forbidden = None
+        auxStreamsFound = False
 
         # Add request streams
         # iterate over inventory networks
@@ -587,7 +606,7 @@ class FDSNDataSelect(BaseResource):
                         forbidden = forbidden or (forbidden is None)
                         continue
                     for loc in self._locationIter(sta, s):
-                        for cha in self._streamIter(loc, s):
+                        for cha, aux in self._streamIter(loc, s):
                             start_time = max(cha.start(), s.time.start)
 
                             try:
@@ -616,8 +635,15 @@ class FDSNDataSelect(BaseResource):
 
                             forbidden = False
 
+                            # aux streams are deprecated, mark aux streams as
+                            # present to report warning later on, also do not
+                            # count aux stream samples due to their loose
+                            # binding to a aux device and source which only
+                            # optionally contains a sampling rate
+                            if aux:
+                                auxStreamsFound = True
                             # enforce maximum sample per request restriction
-                            if maxSamples is not None:
+                            elif maxSamples is not None:
                                 try:
                                     n = cha.sampleRateNumerator()
                                     d = cha.sampleRateDenominator()
@@ -663,6 +689,14 @@ class FDSNDataSelect(BaseResource):
 
             msg = "no metadata found"
             return self.renderErrorPage(req, http.NO_CONTENT, msg, ro)
+
+        if auxStreamsFound:
+            seiscomp.logging.info(
+                "the request contains at least one auxillary stream which " \
+                "are deprecated{}".format(
+                    "" if maxSamples is None else \
+                    " and whose samples are not included in the maximum " \
+                    " sample per request limit"))
 
         # Build output filename
         fileName = Application.Instance()._fileNamePrefix.replace(
