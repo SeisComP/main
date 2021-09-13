@@ -1,24 +1,26 @@
 //- ****************************************************************************
-//- 
-//- Copyright 2009 Sandia Corporation. Under the terms of Contract
-//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
-//- retains certain rights in this software.
-//- 
-//- BSD Open Source License.
+//-
+//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
+//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
+//- Government retains certain rights in this software.
+//-
+//- BSD Open Source License
 //- All rights reserved.
-//- 
+//-
 //- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
-//- 
-//-    * Redistributions of source code must retain the above copyright notice,
+//-
+//-   1. Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-    * Redistributions in binary form must reproduce the above copyright
+//-
+//-   2. Redistributions in binary form must reproduce the above copyright
 //-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-    * Neither the name of Sandia National Laboratories nor the names of its
+//-
+//-   3. Neither the name of the copyright holder nor the names of its
 //-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
-//- 
+//-
 //- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 //- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 //- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -83,29 +85,29 @@ int GeoTessProfile::aClassCount = 0;
  */
 GeoTessProfile* GeoTessProfile::newProfile(float* radii, const int& nRadii, GeoTessData** data, const int& nData)
 {
-	if (nRadii > 0 && nData == 0)
-		// EMPTY layer defined by two radii and no data
-		return new GeoTessProfileEmpty(radii[0], radii[nRadii-1]);
-	if (nRadii == 1 && nData == 1)
-		// THIN layer defined by one radius and one data
-		return new GeoTessProfileThin(radii[0], data[0]);
-	if (nRadii == 2 && nData == 1)
-		// CONSTANT layer defined by two radii and one data object
-		return new GeoTessProfileConstant(radii[0], radii[1], data[0]);
-	if (nRadii >= 2 && nData == nRadii)
-		// NPOINT layer with 2 or more radii and one data object for each
-		// radius
-		return new GeoTessProfileNPoint(radii, data, nRadii);
-	if (nRadii == 0 && nData == 1)
-		// SURFACE layer with 0 radii and one data object
-		return new GeoTessProfileSurface(data[0]);
+    if (nRadii > 0 && nData == 0)
+        // EMPTY layer defined by two radii and no data
+        return new GeoTessProfileEmpty(radii[0], radii[nRadii-1]);
+    if (nRadii == 1 && nData == 1)
+        // THIN layer defined by one radius and one data
+        return new GeoTessProfileThin(radii[0], data[0]);
+    if (nRadii == 2 && nData == 1)
+        // CONSTANT layer defined by two radii and one data object
+        return new GeoTessProfileConstant(radii[0], radii[1], data[0]);
+    if (nRadii >= 2 && nData == nRadii)
+        // NPOINT layer with 2 or more radii and one data object for each
+        // radius
+        return new GeoTessProfileNPoint(radii, data, nRadii);
+    if (nRadii == 0 && nData == 1)
+        // SURFACE layer with 0 radii and one data object
+        return new GeoTessProfileSurface(data[0]);
 
-	ostringstream os;
-	os << endl << "ERROR in Profile::newProfile" << endl
-				<< "Cannot construct a Profile object with " << endl
-				<< nRadii << " radii and "<< nData << " Data objects. " << endl
-				<< " Options are (nRadii, nData) = (2,0), (1,1), (2,1), (0,1), (n>1, m=n)" << endl;
-	throw GeoTessException(os, __FILE__, __LINE__, 4001);
+    ostringstream os;
+    os << endl << "ERROR in Profile::newProfile" << endl
+                << "Cannot construct a Profile object with " << endl
+                << nRadii << " radii and "<< nData << " Data objects. " << endl
+                << " Options are (nRadii, nData) = (2,0), (1,1), (2,1), (0,1), (n>1, m=n)" << endl;
+    throw GeoTessException(os, __FILE__, __LINE__, 4001);
 }
 
 /**
@@ -129,29 +131,29 @@ GeoTessProfile* GeoTessProfile::newProfile(float* radii, const int& nRadii, GeoT
  */
 GeoTessProfile* GeoTessProfile::newProfile(const vector<float>& radii, vector<GeoTessData*>& data)
 {
-	if (radii.size() > 0 && data.size() == 0)
-		// EMPTY layer defined by two radii and no data
-		return new GeoTessProfileEmpty(radii[0], radii[radii.size()-1]);
-	if (radii.size() == 1 && data.size() == 1)
-		// THIN layer defined by one radius and one data
-		return new GeoTessProfileThin(radii[0], data[0]);
-	if (radii.size() == 2 && data.size() == 1)
-		// CONSTANT layer defined by two radii and one data object
-		return new GeoTessProfileConstant(radii[0], radii[1], data[0]);
-	if (radii.size() >= 2 && data.size() == radii.size())
-		// NPOINT layer with 2 or more radii and one data object for each
-		// radius
-		return new GeoTessProfileNPoint(radii, data);
-	if (radii.size() == 0 && data.size() == 1)
-		// SURFACE layer with 0 radii and one data object
-		return new GeoTessProfileSurface(data[0]);
+    if (radii.size() > 0 && data.size() == 0)
+        // EMPTY layer defined by two radii and no data
+        return new GeoTessProfileEmpty(radii[0], radii[radii.size()-1]);
+    if (radii.size() == 1 && data.size() == 1)
+        // THIN layer defined by one radius and one data
+        return new GeoTessProfileThin(radii[0], data[0]);
+    if (radii.size() == 2 && data.size() == 1)
+        // CONSTANT layer defined by two radii and one data object
+        return new GeoTessProfileConstant(radii[0], radii[1], data[0]);
+    if (radii.size() >= 2 && data.size() == radii.size())
+        // NPOINT layer with 2 or more radii and one data object for each
+        // radius
+        return new GeoTessProfileNPoint(radii, data);
+    if (radii.size() == 0 && data.size() == 1)
+        // SURFACE layer with 0 radii and one data object
+        return new GeoTessProfileSurface(data[0]);
 
-	ostringstream os;
-	os << endl << "ERROR in Profile::newProfile" << endl
-				<< "Cannot construct a Profile object with " << endl
-				<< radii.size() << " radii and "<< data.size() << " Data objects. " << endl
-				<< " Options are (nRadii, nData) = (2,0), (1,1), (2,1), (0,1), (n>1, m=n)" << endl;
-	throw GeoTessException(os, __FILE__, __LINE__, 4002);
+    ostringstream os;
+    os << endl << "ERROR in Profile::newProfile" << endl
+                << "Cannot construct a Profile object with " << endl
+                << radii.size() << " radii and "<< data.size() << " Data objects. " << endl
+                << " Options are (nRadii, nData) = (2,0), (1,1), (2,1), (0,1), (n>1, m=n)" << endl;
+    throw GeoTessException(os, __FILE__, __LINE__, 4002);
 }
 
 /**
@@ -173,9 +175,9 @@ GeoTessProfile* GeoTessProfile::newProfile(const vector<float>& radii, vector<Ge
  */
 GeoTessProfile* GeoTessProfile::newProfile(const vector<float>& radii, vector<vector<double> >& data)
 {
-	vector<GeoTessData*> d((int)data.size());
-	for (int i=0; i<(int)data.size(); ++i) d[i] = GeoTessData::getData(data[i]);
-	return GeoTessProfile::newProfile(radii, d);
+    vector<GeoTessData*> d((int)data.size());
+    for (int i=0; i<(int)data.size(); ++i) d[i] = GeoTessData::getData(data[i]);
+    return GeoTessProfile::newProfile(radii, d);
 }
 
 /**
@@ -197,9 +199,9 @@ GeoTessProfile* GeoTessProfile::newProfile(const vector<float>& radii, vector<ve
  */
 GeoTessProfile* GeoTessProfile::newProfile(const vector<float>& radii, vector<vector<float> >& data)
 {
-	vector<GeoTessData*> d((int)data.size());
-	for (int i=0; i<(int)data.size(); ++i) d[i] = GeoTessData::getData(data[i]);
-	return GeoTessProfile::newProfile(radii, d);
+    vector<GeoTessData*> d((int)data.size());
+    for (int i=0; i<(int)data.size(); ++i) d[i] = GeoTessData::getData(data[i]);
+    return GeoTessProfile::newProfile(radii, d);
 }
 
 /**
@@ -221,9 +223,9 @@ GeoTessProfile* GeoTessProfile::newProfile(const vector<float>& radii, vector<ve
  */
 GeoTessProfile* GeoTessProfile::newProfile(const vector<float>& radii, vector<vector<LONG_INT> >& data)
 {
-	vector<GeoTessData*> d((int)data.size());
-	for (int i=0; i<(int)data.size(); ++i) d[i] = GeoTessData::getData(data[i]);
-	return GeoTessProfile::newProfile(radii, d);
+    vector<GeoTessData*> d((int)data.size());
+    for (int i=0; i<(int)data.size(); ++i) d[i] = GeoTessData::getData(data[i]);
+    return GeoTessProfile::newProfile(radii, d);
 }
 
 /**
@@ -245,9 +247,9 @@ GeoTessProfile* GeoTessProfile::newProfile(const vector<float>& radii, vector<ve
  */
 GeoTessProfile* GeoTessProfile::newProfile(const vector<float>& radii, vector<vector<int> >& data)
 {
-	vector<GeoTessData*> d((int)data.size());
-	for (int i=0; i<(int)data.size(); ++i) d[i] = GeoTessData::getData(data[i]);
-	return GeoTessProfile::newProfile(radii, d);
+    vector<GeoTessData*> d((int)data.size());
+    for (int i=0; i<(int)data.size(); ++i) d[i] = GeoTessData::getData(data[i]);
+    return GeoTessProfile::newProfile(radii, d);
 }
 
 /**
@@ -269,9 +271,9 @@ GeoTessProfile* GeoTessProfile::newProfile(const vector<float>& radii, vector<ve
  */
 GeoTessProfile* GeoTessProfile::newProfile(const vector<float>& radii, vector<vector<short> >& data)
 {
-	vector<GeoTessData*> d((int)data.size());
-	for (int i=0; i<(int)data.size(); ++i) d[i] = GeoTessData::getData(data[i]);
-	return GeoTessProfile::newProfile(radii, d);
+    vector<GeoTessData*> d((int)data.size());
+    for (int i=0; i<(int)data.size(); ++i) d[i] = GeoTessData::getData(data[i]);
+    return GeoTessProfile::newProfile(radii, d);
 }
 
 /**
@@ -293,9 +295,9 @@ GeoTessProfile* GeoTessProfile::newProfile(const vector<float>& radii, vector<ve
  */
 GeoTessProfile* GeoTessProfile::newProfile(const vector<float>& radii, vector<vector<byte> >& data)
 {
-	vector<GeoTessData*> d((int)data.size());
-	for (int i=0; i<(int)data.size(); ++i) d[i] = GeoTessData::getData(data[i]);
-	return GeoTessProfile::newProfile(radii, d);
+    vector<GeoTessData*> d((int)data.size());
+    for (int i=0; i<(int)data.size(); ++i) d[i] = GeoTessData::getData(data[i]);
+    return GeoTessProfile::newProfile(radii, d);
 }
 
 
@@ -304,36 +306,36 @@ GeoTessProfile* GeoTessProfile::newProfile(const vector<float>& radii, vector<ve
  */
 GeoTessProfile* GeoTessProfile::newProfile(IFStreamBinary& ifs, GeoTessMetaData& gtmd)
 {
-	// read ProfileType and return new Profile object.
+    // read ProfileType and return new Profile object.
 
-	int profileType = ifs.readByte();
-	switch (profileType)
-	{
-	case 0:
-		// EMPTY layer defined by two radii and no data
-		return new GeoTessProfileEmpty(ifs);
-	case 1:
-		// THIN layer defined by one radius and one data
-		return new GeoTessProfileThin(ifs, gtmd);
-	case 2:
-		// CONSTANT layer defined by two radii and one data object
-		return new GeoTessProfileConstant(ifs, gtmd);
-	case 3:
-		// NPOINT layer with 2 or more radii and one data object for each
-		// radius
-		return new GeoTessProfileNPoint(ifs, gtmd);
-	case 4:
-		// SURFACE layer with 0 radii and one data object
-		return new GeoTessProfileSurface(ifs, gtmd);
-	case 5:
-		// SURFACE layer with 0 radii and one data object
-		return new GeoTessProfileSurfaceEmpty(ifs, gtmd);
-	default:
-		ostringstream os;
-		os << endl << "ERROR in Profile::newProfile" << endl
-		<< profileType << " is not a recognized ProfileType." << endl;
-		throw GeoTessException(os, __FILE__, __LINE__, 4003);
-	}
+    int profileType = ifs.readByte();
+    switch (profileType)
+    {
+    case 0:
+        // EMPTY layer defined by two radii and no data
+        return new GeoTessProfileEmpty(ifs);
+    case 1:
+        // THIN layer defined by one radius and one data
+        return new GeoTessProfileThin(ifs, gtmd);
+    case 2:
+        // CONSTANT layer defined by two radii and one data object
+        return new GeoTessProfileConstant(ifs, gtmd);
+    case 3:
+        // NPOINT layer with 2 or more radii and one data object for each
+        // radius
+        return new GeoTessProfileNPoint(ifs, gtmd);
+    case 4:
+        // SURFACE layer with 0 radii and one data object
+        return new GeoTessProfileSurface(ifs, gtmd);
+    case 5:
+        // SURFACE layer with 0 radii and one data object
+        return new GeoTessProfileSurfaceEmpty(ifs, gtmd);
+    default:
+        ostringstream os;
+        os << endl << "ERROR in Profile::newProfile" << endl
+        << profileType << " is not a recognized ProfileType." << endl;
+        throw GeoTessException(os, __FILE__, __LINE__, 4003);
+    }
 }
 
 /**
@@ -341,37 +343,37 @@ GeoTessProfile* GeoTessProfile::newProfile(IFStreamBinary& ifs, GeoTessMetaData&
  */
 GeoTessProfile* GeoTessProfile::newProfile(IFStreamAscii& ifs, GeoTessMetaData& gtmd)
 {
-	// read ProfileType and return new Profile object.
+    // read ProfileType and return new Profile object.
 
-	int profileType = -1;
-	ifs.readInteger(profileType);
-	switch (profileType)
-	{
-	case 0:
-		// EMPTY layer defined by two radii and no data
-		return new GeoTessProfileEmpty(ifs);
-	case 1:
-		// THIN layer defined by one radius and one data
-		return new GeoTessProfileThin(ifs, gtmd);
-	case 2:
-		// CONSTANT layer defined by two radii and one data object
-		return new GeoTessProfileConstant(ifs, gtmd);
-	case 3:
-		// NPOINT layer with 2 or more radii and one data object for each
-		// radius
-		return new GeoTessProfileNPoint(ifs, gtmd);
-	case 4:
-		// SURFACE layer with 0 radii and one data object
-		return new GeoTessProfileSurface(ifs, gtmd);
-	case 5:
-		// SURFACE_EMPTY layer with 0 radii and 0 data
-		return new GeoTessProfileSurfaceEmpty(ifs, gtmd);
-	default:
-		ostringstream os;
-		os << endl << "ERROR in Profile::newProfile" << endl << "Unrecognized ProfileType "
-				<< profileType << endl;
-		throw GeoTessException(os, __FILE__, __LINE__, 4004);
-	}
+    int profileType = -1;
+    ifs.readInteger(profileType);
+    switch (profileType)
+    {
+    case 0:
+        // EMPTY layer defined by two radii and no data
+        return new GeoTessProfileEmpty(ifs);
+    case 1:
+        // THIN layer defined by one radius and one data
+        return new GeoTessProfileThin(ifs, gtmd);
+    case 2:
+        // CONSTANT layer defined by two radii and one data object
+        return new GeoTessProfileConstant(ifs, gtmd);
+    case 3:
+        // NPOINT layer with 2 or more radii and one data object for each
+        // radius
+        return new GeoTessProfileNPoint(ifs, gtmd);
+    case 4:
+        // SURFACE layer with 0 radii and one data object
+        return new GeoTessProfileSurface(ifs, gtmd);
+    case 5:
+        // SURFACE_EMPTY layer with 0 radii and 0 data
+        return new GeoTessProfileSurfaceEmpty(ifs, gtmd);
+    default:
+        ostringstream os;
+        os << endl << "ERROR in Profile::newProfile" << endl << "Unrecognized ProfileType "
+                << profileType << endl;
+        throw GeoTessException(os, __FILE__, __LINE__, 4004);
+    }
 }
 
 } // end namespace geotess

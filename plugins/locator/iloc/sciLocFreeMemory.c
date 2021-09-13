@@ -59,7 +59,7 @@
  *     LocalTTInfo   - pointer to ILOC_TTINFO structure
  *     LocalTTtables - array of ILOC_TT_TABLE structures
  *  Called by:
- *     SeisComP iLoc app
+ *     SeisComp3 iLoc app
  *  Calls:
  *     iLoc_FreePhaseIdInfo
  *     iLoc_FreeTTtables

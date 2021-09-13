@@ -1,21 +1,23 @@
 //- ****************************************************************************
 //-
-//- Copyright 2009 Sandia Corporation. Under the terms of Contract
-//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-//- certain rights in this software.
+//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
+//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
+//- Government retains certain rights in this software.
 //-
-//- BSD Open Source License.
+//- BSD Open Source License
 //- All rights reserved.
 //-
 //- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
 //-
-//-    * Redistributions of source code must retain the above copyright notice,
+//-   1. Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-    * Redistributions in binary form must reproduce the above copyright
+//-
+//-   2. Redistributions in binary form must reproduce the above copyright
 //-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-    * Neither the name of Sandia National Laboratories nor the names of its
+//-
+//-   3. Neither the name of the copyright holder nor the names of its
 //-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
 //-
@@ -31,6 +33,7 @@
 //- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //- POSSIBILITY OF SUCH DAMAGE.
 //-
+//- ****************************************************************************
 
 //! \file
 //!
@@ -119,16 +122,16 @@
 
 #if defined(_WIN32) || defined(WIN32)
 
-	#ifndef SLBM_C_EXPORT
-	#define SLBM_LIB __declspec(dllimport)
-	#else
-	#define SLBM_LIB __declspec(dllexport)
-	#endif
+    #ifndef SLBM_C_EXPORT
+    #define SLBM_LIB __declspec(dllimport)
+    #else
+    #define SLBM_LIB __declspec(dllexport)
+    #endif
 
 #else
 
-	#define SLBM_LIB
-	
+    #define SLBM_LIB
+
 #endif
 
 #ifdef __cplusplus
@@ -148,7 +151,7 @@ extern "C"
 // places.
 //
 
-//static const char* SlbmVersion = "3.0.0";
+//static const char* SlbmVersion = "3.1.0";
 
 //! \brief Convenience constant for P wave index.
 //!
@@ -220,7 +223,7 @@ static const int TOP_LAYER = 1;
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_getVersion ( char* str );
 
-	//! \brief Retrieve last error message.
+    //! \brief Retrieve last error message.
 //!
 //! Retrieves last error message. This method should be called
 //! following any function call that returns a "1" indicating an error
@@ -392,7 +395,7 @@ SLBM_LIB int slbm_shell_saveVelocityModel ( const char* modelFileName );
 //! @param receiverDepth the depth of the receiver in km.
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_createGreatCircle ( char* phase, double* sourceLat, double* sourceLon, double* sourceDepth,
-									double* receiverLat, double* receiverLon, double* receiverDepth );
+                                    double* receiverLat, double* receiverLon, double* receiverDepth );
 //! \brief Returns true if the current GreatCirlce object has
 //! been instantiated and is ready to be interrogated.
 //!
@@ -641,7 +644,7 @@ SLBM_LIB int slbm_shell_getNHeadWavePoints ( int* npoints );
 //! velocity gradients in the mantle, in 1/sec.
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_getGridData ( int* nodeId, double* latitude, double* longitude, double* depth,
-						   double* pvelocity, double* svelocity, double* gradient );
+                           double* pvelocity, double* svelocity, double* gradient );
 
 //! \brief Modify the velocity and gradient information
 //! associated with a specified node in the Grid.
@@ -692,7 +695,7 @@ SLBM_LIB int slbm_shell_setGridData ( int* nodeId, double* depth, double* pveloc
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 // TODO: test this
 SLBM_LIB int slbm_shell_getGreatCircleData ( char* phase, double* path_increment, double sourceDepth[], double sourceVelocity[],
-	double receiverDepth[],	double receiverVelocity[], int* npoints, double headWaveVelocity[], double gradient[]);
+    double receiverDepth[],	double receiverVelocity[], int* npoints, double headWaveVelocity[], double gradient[]);
 
 //! \brief Retrieve information about the interpolated points along the headwave
 //! path, including the number of points, the indexes of the grid nodes that contributed
@@ -724,7 +727,7 @@ SLBM_LIB int slbm_shell_getGreatCircleData ( char* phase, double* path_increment
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 // TODO: test this
 SLBM_LIB int slbm_shell_getGreatCircleNodeInfo( int** neighbors, double** coefficients, const int* maxpoints,
-	const int* maxnodes, int* npoints, int* nnodes );
+    const int* maxnodes, int* npoints, int* nnodes );
 
 //! \brief Retrieve interpolated data from the earth model at a single
 //! specified latitude, longitude.
@@ -751,8 +754,8 @@ SLBM_LIB int slbm_shell_getGreatCircleNodeInfo( int** neighbors, double** coeffi
 //! all other returned arrays are populated with BaseObject::NA_VALUE.
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_getInterpolatedPoint ( double* lat, double* lon,
-		int* nodeIds, double* coefficients, int* nnodes, double* depth, double* pvelocity,
-		double* svelocity, double* pgradient, double* sgradient );
+        int* nodeIds, double* coefficients, int* nnodes, double* depth, double* pvelocity,
+        double* svelocity, double* pgradient, double* sgradient );
 
 //! \brief Retrieve interpolated data from the earth model along a
 //! transect defined by equal sized, 1 dimensional arrays of latitude and longitude.
@@ -782,8 +785,8 @@ SLBM_LIB int slbm_shell_getInterpolatedPoint ( double* lat, double* lon,
 //! @return "0" if all points were in model range (nInvalid == 0).
 // TODO: test this
 SLBM_LIB int slbm_shell_getInterpolatedTransect ( double lat[], double lon[], int* nLatLon, int** nodeId,
-	double** coefficients, int* nNodes, double depth[][NLAYERS], double pvelocity[][NLAYERS],
-	double svelocity[][NLAYERS], double pgradient[NLAYERS], double sgradient[NLAYERS], int* nInvalid );
+    double** coefficients, int* nNodes, double depth[][NLAYERS], double pvelocity[][NLAYERS],
+    double svelocity[][NLAYERS], double pgradient[NLAYERS], double sgradient[NLAYERS], int* nInvalid );
 
 //! \brief Specify the latitude and longitude range in radians for active nodes.
 //!
@@ -900,7 +903,7 @@ SLBM_LIB int slbm_shell_getNodeAzimuth ( int* node1, int* node2, double* azimuth
 
 //! \brief Retrieve the travel time uncertainty in sec
 //! for specified phase, distance.
-//! 
+//!
 //! Retrieve the travel time uncertainty in sec
 //! for specified phase, distance.
 //! @param phase Pn, Sn, Pg or Lg
@@ -909,14 +912,37 @@ SLBM_LIB int slbm_shell_getNodeAzimuth ( int* node1, int* node2, double* azimuth
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_getTravelTimeUncertainty ( int* phase, double* distance, double* uncertainty );
 
-//! \brief Retrieve travel time uncertainty in sec 
-//! using the phase and distance specified in last call to getGreatCircle().
+//! \brief Retrieve travel time uncertainty in sec. This function will call either
+//! the path-dependent or 1D uncertainty, depending on the model file being used.
 //!
-//! Retrieve travel time uncertainty in sec 
-//! using the phase and distance specified in last call to getGreatCircle().
+//! Retrieve travel time uncertainty in sec. This function will call either
+//! the path-dependent or 1D uncertainty, depending on the model file being used.
 //! @param uncertainty uncertainty of the travel time in seconds.
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_getTTUncertainty ( double* uncertainty );
+
+//! \brief Retrieve travel time uncertainty in sec. This function will call either
+//! the path-dependent or 1D uncertainty, depending on the model file being used.
+//! This function includes randomError in the computation.
+//!
+//! Retrieve travel time uncertainty in sec. This function will call either
+//! the path-dependent or 1D uncertainty, depending on the model file being used.
+//! This function includes randomError in the computation.
+//! @param uncertainty uncertainty of the travel time in seconds.
+//! @return "0" if this call was successful, positive error code if this call generated an error.
+SLBM_LIB int slbm_shell_getTTUncertainty_useRandErr ( double* uncertainty );
+
+//! \brief Retrieve travel time uncertainty in sec.
+//! This function will return the non-path-dependent 1D uncertainty regardless
+//! of the model in use.
+//!
+//! Retrieve travel time uncertainty in sec
+//! using the phase and distance specified in last call to getGreatCircle().
+//! This function will return the non-path-dependent 1D uncertainty regardless
+//! of the model in use.
+//! @param uncertainty uncertainty of the travel time in seconds.
+//! @return "0" if this call was successful, positive error code if this call generated an error.
+SLBM_LIB int slbm_shell_getTTUncertainty1D ( double* uncertainty );
 
 //! \brief Retrieve the slowness uncertainty in sec/radian
 //! for specified phase, distance.
@@ -929,10 +955,10 @@ SLBM_LIB int slbm_shell_getTTUncertainty ( double* uncertainty );
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_getSlownessUncertainty( int* phase, double* distance, double* uncert );
 
-//! \brief Retrieve uncertainty of the horizontal slowness, in seconds/radian 
+//! \brief Retrieve uncertainty of the horizontal slowness, in seconds/radian
 //! using the phase and distance specified in last call to getGreatCircle().
 //!
-//! Retrieve uncertainty of the horizontal slowness, in seconds/radian, 
+//! Retrieve uncertainty of the horizontal slowness, in seconds/radian,
 //! using the phase and distance specified in last call to getGreatCircle().
 //! @param slownessUncertainty uncertainty of the horizontal slowness, in seconds/radian.
 //! @return "0" if this call was successful, positive error code if this call generated an error.
@@ -1040,7 +1066,7 @@ SLBM_LIB int slbm_shell_getActiveNodeNeighbors ( int* nid, int neighbors[], int*
 //! which is 8.  The actual number of neighbors is returned in nNeighbors.
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_getActiveNodeNeighborInfo ( int* nid, int neighbors[], double distance[],
-	double azimuth[], int* nNeighbors );
+    double azimuth[], int* nNeighbors );
 
 //! \brief Retrieve the lat (radians), lon (radians),
 //! interface depths (km), P and S wave interval velocities (km/sec)
@@ -1063,12 +1089,12 @@ SLBM_LIB int slbm_shell_getActiveNodeNeighborInfo ( int* nid, int neighbors[], d
 //! velocity gradients in the mantle, in 1/sec.
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_getActiveNodeData (	int* nodeId,
-									double* latitude,
-									double* longitude,
-									double depth[NLAYERS],
-									double pvelocity[NLAYERS],
-									double svelocity[NLAYERS],
-									double gradient[2] );
+                                    double* latitude,
+                                    double* longitude,
+                                    double depth[NLAYERS],
+                                    double pvelocity[NLAYERS],
+                                    double svelocity[NLAYERS],
+                                    double gradient[2] );
 
 //! \brief Modify the velocity and gradient information
 //! associated with a specified active node in the Grid.
@@ -1087,10 +1113,10 @@ SLBM_LIB int slbm_shell_getActiveNodeData (	int* nodeId,
 //! velocity gradients in the mantle, in 1/sec.
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_setActiveNodeData (	int* nodeId,
-									double depth[NLAYERS],
-									double pvelocity[NLAYERS],
-									double svelocity[NLAYERS],
-									double gradient[2] );
+                                    double depth[NLAYERS],
+                                    double pvelocity[NLAYERS],
+                                    double svelocity[NLAYERS],
+                                    double gradient[2] );
 
 //! \brief Set the value of chMax.  c is the zhao c parameter and h is
 //! the turning depth of the ray below the moho.  Zhao method only valid
@@ -1206,7 +1232,7 @@ SLBM_LIB int slbm_shell_getMaxDepth ( double* maxDepth );
 //! @param trHeadwave is the radius at which the headwave ray turned, in km.
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_getPgLgComponents(double* tTotal, double* tTaup,
-			double* tHeadwave, double* pTaup, double* pHeadwave, double* trTaup, double* trHeadwave );
+            double* tHeadwave, double* pTaup, double* pHeadwave, double* trTaup, double* trHeadwave );
 
 //! \brief Retrieve the horizontal slowness, i.e., the derivative of travel time
 //! wrt to receiver-source distance, in seconds/radian.
@@ -1302,7 +1328,7 @@ SLBM_LIB int slbm_shell_get_dtt_ddepth(double* dtt_ddepth);
 //! @param naValue value to return if result is invalid, in radians.
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_getDistAz(double aLat, double aLon, double bLat, double bLon,
-	double* distance, double* azimuth, double naValue);
+    double* distance, double* azimuth, double naValue);
 
 //! \brief Find point B that is the specified distance and azimuth
 //! from point A.  All quantities are in radians.
@@ -1317,7 +1343,7 @@ SLBM_LIB int slbm_shell_getDistAz(double aLat, double aLon, double bLat, double 
 //! @param bLon the longitude of the second specified point, in radians.
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_movePoint(double aLat, double aLon, double distance, double azimuth,
-	double* bLat, double* bLon);
+    double* bLat, double* bLon);
 
 //! \brief Retrieve the latitudes, longitudes and depths of all the profile positions
 //! along the moho.
@@ -1333,7 +1359,7 @@ SLBM_LIB int slbm_shell_movePoint(double aLat, double aLon, double distance, dou
 //! @param npoints the number of horizontal increments sampled along the head wave interface.
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_getGreatCircleLocations ( double latitude[], double longitude[] ,
-										double depth[], int* npoints);
+                                        double depth[], int* npoints);
 
 //! \brief Retrieve an array of lat, lon points along a great circle
 //! path between two specified points, a and b.
@@ -1353,7 +1379,7 @@ SLBM_LIB int slbm_shell_getGreatCircleLocations ( double latitude[], double long
 //! @param longitude the longitudes of the points along the great circle, in radians.
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_getGreatCirclePoints(double aLat, double aLon, double bLat, double bLon,
-	int npoints, double latitude[], double longitude[]);
+    int npoints, double latitude[], double longitude[]);
 
 //! \brief Retrieve an array of lat, lon points along a great circle
 //! path between two specified points, a and b.
@@ -1371,7 +1397,7 @@ SLBM_LIB int slbm_shell_getGreatCirclePoints(double aLat, double aLon, double bL
 //! @param longitude the longitudes of the points along the great circle, in radians.
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_getGreatCirclePointsOnCenters(double aLat, double aLon, double bLat, double bLon,
-	int npoints, double latitude[], double longitude[]);
+    int npoints, double latitude[], double longitude[]);
 
 //! \brief Retrieve the latitude  and longitude of the moho pierce point below the source,
 //! in radians.
@@ -1429,33 +1455,47 @@ SLBM_LIB int slbm_shell_getDelDepth(double* delDepth);
 //! @return "0" if this call was successful, positive error code if this call generated an error.
 SLBM_LIB int slbm_shell_setDelDepth( double delDepth);
 
-//! \brief Set the desired spacing of great circle nodes 
-//! along the head wave interface, in radians.  
+//! \brief Retrieve the ray parameter in sec/km.
 //!
-//! Set the desired spacing of great circle nodes 
-//! along the head wave interface, in radians.  
-//! The actual spacing will be
-//! reduced from the requested value in order that an integral 
-//! number of equally spaced LayerProfile objects will exactly
-//! span the source-receiver separation.  Defaults to 
-//! 0.1 degrees if not specified.  
-//!
-//! @param pathIncrement the desired spacing of great circle nodes
-//! along the head wave interface, in radians.  
-SLBM_LIB int slbm_shell_setPathIncrement(double pathIncrement);
+//! Retrieve the ray parameter in sec/km.
+//! @param rayParameter in sec/km
+//! @return "0" if this call was successful, positive error code if this call generated an error.
+SLBM_LIB int slbm_shell_getRayParameter(double* rayParameter);
 
-//! \brief Retrieve the current value of the spacing of great circle nodes 
-//! along the head wave interface, in radians.  
+//! \brief Retrieve turning radius in km.
 //!
-//! Retrieve the current value of the spacing of great circle nodes 
+//! Retrieve turning radius in km
+//! @param turningRadius in km.
+//! @return "0" if this call was successful, positive error code if this call generated an error.
+SLBM_LIB int slbm_shell_getTurningRadius(double* turningRadius);
+
+//! \brief Set the desired spacing of great circle nodes
+//! along the head wave interface, in radians.
+//!
+//! Set the desired spacing of great circle nodes
 //! along the head wave interface, in radians.
 //! The actual spacing will be
-//! reduced from the requested value in order that an integral 
+//! reduced from the requested value in order that an integral
+//! number of equally spaced LayerProfile objects will exactly
+//! span the source-receiver separation.  Defaults to
+//! 0.1 degrees if not specified.
+//!
+//! @param pathIncrement the desired spacing of great circle nodes
+//! along the head wave interface, in radians.
+SLBM_LIB int slbm_shell_setPathIncrement(double pathIncrement);
+
+//! \brief Retrieve the current value of the spacing of great circle nodes
+//! along the head wave interface, in radians.
+//!
+//! Retrieve the current value of the spacing of great circle nodes
+//! along the head wave interface, in radians.
+//! The actual spacing will be
+//! reduced from the requested value in order that an integral
 //! number of equally spaced LayerProfile objects will exactly
 //! span the source-receiver separation.  The default value is 0.1 degrees.
 //!
 //! @param pathIncrement the current value of the spacing of great circle nodes
-//! along the head wave interface, in radians.  
+//! along the head wave interface, in radians.
 SLBM_LIB int slbm_shell_getPathIncrement(double* pathIncrement);
 
 //! \brief Specify the interpolation type to use, either
@@ -1495,7 +1535,7 @@ SLBM_LIB int slbm_shell_getModelString(char* modelString, int* allocatedSize);
 //! return value is -1, and errorMessage will indicate how much space was
 //! required.
 SLBM_LIB int slbm_shell_getUncertaintyTable(int* phaseIndex, int* attributeIndex, char* uncertaintyTable,
-		int* allocatedSize);
+        int* allocatedSize);
 
 //! \brief Retrieve an inconveniently formated table of the uncertainty
 //! values for the specified phaseIndex and attributeIndex.
@@ -1511,7 +1551,7 @@ SLBM_LIB int slbm_shell_getUncertaintyTable(int* phaseIndex, int* attributeIndex
 //! return value is -1, and errorMessage will indicate how much space was
 //! required.
 SLBM_LIB int slbm_shell_getUncertaintyTableFileFormat(int* phaseIndex, int* attributeIndex, char* uncertaintyTable,
-		int* allocatedSize);
+        int* allocatedSize);
 
 //-------------------------------------------------------------
 

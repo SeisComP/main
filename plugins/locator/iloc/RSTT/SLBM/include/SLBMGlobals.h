@@ -1,50 +1,54 @@
 //- ****************************************************************************
-//- 
-//- Copyright 2009 Sandia Corporation. Under the terms of Contract 
-//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains 
-//- certain rights in this software.
 //-
-//- BSD Open Source License.
+//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
+//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
+//- Government retains certain rights in this software.
+//-
+//- BSD Open Source License
 //- All rights reserved.
-//- 
-//- Redistribution and use in source and binary forms, with or without 
+//-
+//- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
 //-
-//-    * Redistributions of source code must retain the above copyright notice, 
+//-   1. Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-    * Redistributions in binary form must reproduce the above copyright 
-//-      notice, this list of conditions and the following disclaimer in the 
+//-
+//-   2. Redistributions in binary form must reproduce the above copyright
+//-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-    * Neither the name of Sandia National Laboratories nor the names of its 
-//-      contributors may be used to endorse or promote products derived from  
+//-
+//-   3. Neither the name of the copyright holder nor the names of its
+//-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
 //-
-//- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-//- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-//- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-//- ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-//- LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-//- CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-//- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-//- INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-//- CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-//- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+//- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+//- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+//- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+//- ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+//- LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+//- CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+//- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+//- INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+//- CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+//- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //- POSSIBILITY OF SUCH DAMAGE.
 //-
+//- ****************************************************************************
 
 #ifndef SLBMGlobals_H
 #define SLBMGlobals_H
 
 #include "CPPGlobals.h"
+#include <algorithm>
 
 // **** _BEGIN SLBM NAMESPACE_ **************************************************
 
 namespace slbm {
 
 //! \brief Software Version Number
-//! 
+//!
 //! Software Version Number
-static const char* SlbmVersion = "3.0.5";
+static const char* SlbmVersion = "3.1.0";
 
 // version 3.0.3 4/22/2014  sballar
 // fixed bug in GridGeoTess::getActiveNodeNeighbors that caused the
@@ -62,22 +66,22 @@ static const char* SlbmVersion = "3.0.5";
 // circumvent conflict in new version of gcc compiler on Linxux
 
 //! \brief Util Library Version Number
-//! 
+//!
 //! Util Library  Version Number
 //static const char* UtilVersion = "1.0.4";
 
 //! \brief TauPLoc Library Version Number
-//! 
+//!
 //! TauPLoc Library  Version Number
 //static const char* TauPLocVersion = "1.1.2";
 
 //! \brief Convenience constant for P wave index.
-//! 
+//!
 //! Convenience constant for P wave index.
 static const int PWAVE = 0;
 
 //! \brief Convenience constant for S wave index
-//! 
+//!
 //! Convenience constant for S wave index
 static const int SWAVE = 1;
 
@@ -125,21 +129,21 @@ static const int MIDDLE_CRUST_N = 5;
 static const int MIDDLE_CRUST_G = 6;
 static const int LOWER_CRUST    = 7;
 static const int MANTLE         = 8;
-static const int NLAYERS        = 9;		
+static const int NLAYERS        = 9;
 // MANTLE has to be last layer and must == NLAYERS-1
 
-// Parameter TOP_LAYER controls behavior when sources/receivers 
-// are in layer WATER.  
-// If TOP_LAYER = 0, and phase = Pn/Pg then rays that travel 
-// through the WATER layer travel at the velocity of water.  
-// If TOP_LAYER = 0, and phase = Sn/Lg then rays that travel 
+// Parameter TOP_LAYER controls behavior when sources/receivers
+// are in layer WATER.
+// If TOP_LAYER = 0, and phase = Pn/Pg then rays that travel
+// through the WATER layer travel at the velocity of water.
+// If TOP_LAYER = 0, and phase = Sn/Lg then rays that travel
 // through the WATER layer cause an exception to be thrown.
-// If TOP_LAYER = 1 and the depth of a source or receiver is 
+// If TOP_LAYER = 1 and the depth of a source or receiver is
 // less than the depth of the top of layer SEDIMENT1, then
-// the code will search downward through the layers, starting 
+// the code will search downward through the layers, starting
 // at layer SEDIMENT1, until if finds a layer with non-zero
 // thickness.  It will then extend the top of that layer up
-// to the depth of the source/receiver.  This essentially 
+// to the depth of the source/receiver.  This essentially
 // assumes that all sources/receivers in the ocean are actually
 // located on islands that are too small to have been explicitly
 // defined in the model.
@@ -174,7 +178,7 @@ static const int TOP_LAYER = 1;
 #else  // Sun does not need these
 
   #define SLBM_EXP_IMP
-  #define SLBM_EXP 
+  #define SLBM_EXP
 
 #endif
 //--------------------------

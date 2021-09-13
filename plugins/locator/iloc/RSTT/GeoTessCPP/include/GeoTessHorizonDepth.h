@@ -1,24 +1,26 @@
 //- ****************************************************************************
-//- 
-//- Copyright 2009 Sandia Corporation. Under the terms of Contract
-//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
-//- retains certain rights in this software.
-//- 
-//- BSD Open Source License.
+//-
+//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
+//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
+//- Government retains certain rights in this software.
+//-
+//- BSD Open Source License
 //- All rights reserved.
-//- 
+//-
 //- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
-//- 
-//-    * Redistributions of source code must retain the above copyright notice,
+//-
+//-   1. Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-    * Redistributions in binary form must reproduce the above copyright
+//-
+//-   2. Redistributions in binary form must reproduce the above copyright
 //-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-    * Neither the name of Sandia National Laboratories nor the names of its
+//-
+//-   3. Neither the name of the copyright holder nor the names of its
 //-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
-//- 
+//-
 //- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 //- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 //- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -74,97 +76,97 @@ class GEOTESS_EXP_IMP GeoTessHorizonDepth : public GeoTessHorizon
 
 private:
 
-	/**
-	 * The depth in the model, in km.
-	 */
-	double depth;
+    /**
+     * The depth in the model, in km.
+     */
+    double depth;
 
 public:
 
-	/**
-	 * Constructor for a Horizon object that represents a constant
-	 * depth within the Earth.  Units are km below the surface of the
-	 * GRS80 ellipsoid.
-	 * <p>Since the layerIndex is not specified, the depth is not
-	 * constrained to be within any particular layer.
-	 * @param dpth depth in km below the surface of the GRS80 ellipsoid.
-	 */
-	GeoTessHorizonDepth(const double& dpth) : GeoTessHorizon(-1), depth(dpth)
-	{};
+    /**
+     * Constructor for a Horizon object that represents a constant
+     * depth within the Earth.  Units are km below the surface of the
+     * GRS80 ellipsoid.
+     * <p>Since the layerIndex is not specified, the depth is not
+     * constrained to be within any particular layer.
+     * @param dpth depth in km below the surface of the GRS80 ellipsoid.
+     */
+    GeoTessHorizonDepth(const double& dpth) : GeoTessHorizon(-1), depth(dpth)
+    {};
 
-	/**
-	 * Constructor for a Horizon object that represents a constant
-	 * depth in the Earth, in km.  Depth is measured relative to the
-	 * surface of the WGS84 ellipsoid in km.
-	 * <p>Since the layerIndex is specified, the depth will be
-	 * constrained to be within the specified layer.
-	 * @param dpth depth below the surface of WGS84 ellipsoid, in km.
-	 * @param lyrIndex the index of the layer within which
-	 * the radius will be constrained.
-	 */
-	GeoTessHorizonDepth(const double& dpth, const int& lyrIndex) : GeoTessHorizon(lyrIndex), depth(dpth)
-	{};
+    /**
+     * Constructor for a Horizon object that represents a constant
+     * depth in the Earth, in km.  Depth is measured relative to the
+     * surface of the WGS84 ellipsoid in km.
+     * <p>Since the layerIndex is specified, the depth will be
+     * constrained to be within the specified layer.
+     * @param dpth depth below the surface of WGS84 ellipsoid, in km.
+     * @param lyrIndex the index of the layer within which
+     * the radius will be constrained.
+     */
+    GeoTessHorizonDepth(const double& dpth, const int& lyrIndex) : GeoTessHorizon(lyrIndex), depth(dpth)
+    {};
 
-	/**
-	 * Destructor.
-	 */
-	virtual ~GeoTessHorizonDepth() {};
+    /**
+     * Destructor.
+     */
+    virtual ~GeoTessHorizonDepth() {};
 
-	/**
-	 * Copy constructor.
-	 */
-	GeoTessHorizonDepth(GeoTessHorizonDepth& other) : GeoTessHorizon(other.getLayerIndex()), depth(other.depth)
-	{
-	}
+    /**
+     * Copy constructor.
+     */
+    GeoTessHorizonDepth(GeoTessHorizonDepth& other) : GeoTessHorizon(other.getLayerIndex()), depth(other.depth)
+    {
+    }
 
-	/**
-	 * Overloaded assignment operator
-	 */
-	GeoTessHorizonDepth& operator=(const GeoTessHorizonDepth& other)
-	{
-		layerIndex = other.layerIndex;
-		depth = other.depth;
-		return *this;
-	}
+    /**
+     * Overloaded assignment operator
+     */
+    GeoTessHorizonDepth& operator=(const GeoTessHorizonDepth& other)
+    {
+        layerIndex = other.layerIndex;
+        depth = other.depth;
+        return *this;
+    }
 
-	virtual string class_name() { return "HorizonDepth"; };
+    virtual string class_name() { return "HorizonDepth"; };
 
-	virtual double getValue() { return depth; };
+    virtual double getValue() { return depth; };
 
-	virtual double getRadius(const double* position, GeoTessProfile** profiles)
-	{
-		double radius = GeoTessUtils::getEarthRadius(position)-depth;
+    virtual double getRadius(const double* position, GeoTessProfile** profiles)
+    {
+        double radius = GeoTessUtils::getEarthRadius(position)-depth;
 
-		if (layerIndex < 0)
-			return radius;
-		double bottom = profiles[layerIndex]->getRadiusBottom();
-		if (radius <= bottom)
-			return bottom;
-		double top = profiles[layerIndex]->getRadiusTop();
-		if (radius >= top)
-			return top;
-		return radius;
-	}
+        if (layerIndex < 0)
+            return radius;
+        double bottom = profiles[layerIndex]->getRadiusBottom();
+        if (radius <= bottom)
+            return bottom;
+        double top = profiles[layerIndex]->getRadiusTop();
+        if (radius >= top)
+            return top;
+        return radius;
+    }
 
-	virtual double getRadius(GeoTessPosition& position)
-	{
-		double radius = position.getEarthRadius()-depth;
-		if (layerIndex < 0)
-			return radius;
-		double bottom = position.getRadiusBottom(layerIndex);
-		if (radius <= bottom)
-			return bottom;
-		double top = position.getRadiusTop(layerIndex);
-		if (radius >= top)
-			return top;
-		return radius;
-	}
+    virtual double getRadius(GeoTessPosition& position)
+    {
+        double radius = position.getEarthRadius()-depth;
+        if (layerIndex < 0)
+            return radius;
+        double bottom = position.getRadiusBottom(layerIndex);
+        if (radius <= bottom)
+            return bottom;
+        double top = position.getRadiusTop(layerIndex);
+        if (radius >= top)
+            return top;
+        return radius;
+    }
 
-	virtual string str()
-	{
-		string s = "depth " + CPPUtils::dtos(depth) + " " + CPPUtils::itos(layerIndex);
-		return s;
-	}
+    virtual string str()
+    {
+        string s = "depth " + CPPUtils::dtos(depth) + " " + CPPUtils::itos(layerIndex);
+        return s;
+    }
 
 }; // end class DataValue
 
