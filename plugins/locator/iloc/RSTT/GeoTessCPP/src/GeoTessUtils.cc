@@ -1,24 +1,26 @@
 //- ****************************************************************************
-//- 
-//- Copyright 2009 Sandia Corporation. Under the terms of Contract
-//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
-//- retains certain rights in this software.
-//- 
-//- BSD Open Source License.
+//-
+//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
+//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
+//- Government retains certain rights in this software.
+//-
+//- BSD Open Source License
 //- All rights reserved.
-//- 
+//-
 //- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
-//- 
-//-    * Redistributions of source code must retain the above copyright notice,
+//-
+//-   1. Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-    * Redistributions in binary form must reproduce the above copyright
+//-
+//-   2. Redistributions in binary form must reproduce the above copyright
 //-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-    * Neither the name of Sandia National Laboratories nor the names of its
+//-
+//-   3. Neither the name of the copyright holder nor the names of its
 //-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
-//- 
+//-
 //- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 //- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 //- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -141,7 +143,7 @@ double GeoTessUtils::azimuthDegrees(const double* const v1, const double* const 
 }
 
 void GeoTessUtils::rotate(const double* const x, const double* const p,
-													double a, double* const z)
+                                                    double a, double* const z)
 {
   if (abs(a) < 1e-15)
   {
@@ -197,12 +199,12 @@ void GeoTessUtils::rotate(const double* const x, const double* const p,
  *             if v0 and v1 are parallel.
  */
 void GeoTessUtils::getGreatCircle(const double* const v0,
-																	const double* const v1,
-																	double** const gc)
+                                                                    const double* const v1,
+                                                                    double** const gc)
 {
   if (parallel(v0, v1))
-		throw GeoTessException("Cannot create a GreatCicle with two vectors that are parallel.",
-													 __FILE__, __LINE__, 7001);
+        throw GeoTessException("Cannot create a GreatCicle with two vectors that are parallel.",
+                                                     __FILE__, __LINE__, 7001);
 
   gc[0][0] = v0[0];
   gc[0][1] = v0[1];
@@ -235,8 +237,8 @@ void GeoTessUtils::getGreatCircle(const double* const v0,
 double** GeoTessUtils::getGreatCircle(const double* const v0,const double* const v1)
 {
   if (parallel(v0, v1))
-		throw GeoTessException("Cannot create a GreatCicle with two vectors that are parallel.",
-													 __FILE__, __LINE__, 7002);
+        throw GeoTessException("Cannot create a GreatCicle with two vectors that are parallel.",
+                                                     __FILE__, __LINE__, 7002);
 
   double** greatCircle = new double* [2];
   greatCircle[0] = new double [6];
@@ -260,7 +262,7 @@ double** GeoTessUtils::getGreatCircle(const double* const v0,const double* const
  * This method returns a great circle that is defined by an initial point
  * and an azimuth.
  *
- * <p>Caller assumes ownership of the resulting double** array 
+ * <p>Caller assumes ownership of the resulting double** array
  * and should delete it when it is no longer needed.
  *
  * @param v
@@ -279,8 +281,8 @@ double** GeoTessUtils::getGreatCircle(const double* const v0,const double* const
 double** GeoTessUtils::getGreatCircle(const double* const v, double azimuth)
 {
   if (isPole(v))
-		throw GeoTessException("Cannot create a GreatCicle with north/south pole and an azimuth.",
-													 __FILE__, __LINE__, 7003);
+        throw GeoTessException("Cannot create a GreatCicle with north/south pole and an azimuth.",
+                                                     __FILE__, __LINE__, 7003);
 
   double** greatCircle = new double* [2];
   greatCircle[0] = new double [6];
@@ -319,11 +321,11 @@ double** GeoTessUtils::getGreatCircle(const double* const v, double azimuth)
  *             if v is located at north or south pole.
  */
 void GeoTessUtils::getGreatCircle(const double* const v, double azimuth,
-		double** const gc)
+        double** const gc)
 {
   if (isPole(v))
-		throw GeoTessException("Cannot create a GreatCicle with north/south pole and an azimuth.",
-													 __FILE__, __LINE__, 7004);
+        throw GeoTessException("Cannot create a GreatCicle with north/south pole and an azimuth.",
+                                                     __FILE__, __LINE__, 7004);
 
   gc[0][0] = v[0];
   gc[0][1] = v[1];
@@ -334,107 +336,107 @@ void GeoTessUtils::getGreatCircle(const double* const v, double azimuth,
 
 int GeoTessUtils::getGreatCirclePoints(double* ptA, double* ptB, const double& delta, const bool& onCenters)
 {
-	if (delta <= 0.)
-		throw GeoTessException("ERROR in GeoTessUtils::getGreatCirclePoints(). delta <= 0.", __FILE__, __LINE__, 7007);
+    if (delta <= 0.)
+        throw GeoTessException("ERROR in GeoTessUtils::getGreatCirclePoints(). delta <= 0.", __FILE__, __LINE__, 7007);
 
-	// find distance from a to b, in radians
-	double distance = angle(ptA, ptB);
+    // find distance from a to b, in radians
+    double distance = angle(ptA, ptB);
 
-	if (distance == 0.) return onCenters ? 1 : 2;
+    if (distance == 0.) return onCenters ? 1 : 2;
 
-	// at this point both distance and delta are > 0.
-	// find number of intervals (minimum of 1)
-	return onCenters ? (int)ceil(distance/delta) : ((int)ceil(distance/delta))+1;
+    // at this point both distance and delta are > 0.
+    // find number of intervals (minimum of 1)
+    return onCenters ? (int)ceil(distance/delta) : ((int)ceil(distance/delta))+1;
 
 }
 
 double GeoTessUtils::getGreatCirclePoints(double* ptA, double* ptB, const double& delta, const bool& onCenters,
-		double** points, int& npoints)
+        double** points, int& npoints)
 {
-	if (delta <= 0.)
-		throw GeoTessException("ERROR in GeoTessUtils::getGreatCirclePoints(). delta <= 0.", __FILE__, __LINE__, 7007);
+    if (delta <= 0.)
+        throw GeoTessException("ERROR in GeoTessUtils::getGreatCirclePoints(). delta <= 0.", __FILE__, __LINE__, 7007);
 
-	// find distance from a to b, in radians
-	double distance = angle(ptA, ptB);
+    // find distance from a to b, in radians
+    double distance = angle(ptA, ptB);
 
-	if (distance == 0.)
-	{
-		points[0][0] = ptA[0];
-		points[0][1] = ptA[1];
-		points[0][2] = ptA[2];
-		npoints = 1;
-		if (!onCenters)
-		{
-			points[1][0] = ptB[0];
-			points[1][1] = ptB[1];
-			points[1][2] = ptB[2];
-			npoints = 2;
-		}
-		return 0.;
-	}
+    if (distance == 0.)
+    {
+        points[0][0] = ptA[0];
+        points[0][1] = ptA[1];
+        points[0][2] = ptA[2];
+        npoints = 1;
+        if (!onCenters)
+        {
+            points[1][0] = ptB[0];
+            points[1][1] = ptB[1];
+            points[1][2] = ptB[2];
+            npoints = 2;
+        }
+        return 0.;
+    }
 
-	// at this point both distance and delta are > 0.
-	// find number of intervals (minimum of 1)
-	npoints = (int)ceil(distance/delta);
+    // at this point both distance and delta are > 0.
+    // find number of intervals (minimum of 1)
+    npoints = (int)ceil(distance/delta);
 
-	// dx0 is distance from ptA to first point in points array.
-	double dx0 = 0.;
+    // dx0 is distance from ptA to first point in points array.
+    double dx0 = 0.;
 
-	// dx is the actual spacing between points.
-	double dx = distance/npoints;
+    // dx is the actual spacing between points.
+    double dx = distance/npoints;
 
-	if (onCenters)
-		// npoints equals number of intervals and distance to
-		// first point is half the point spacing
-		dx0 = dx/2;
-	else
-		// npoint is number of intervals + 1, and distance to
-		// first point is zero.
-		++npoints;
+    if (onCenters)
+        // npoints equals number of intervals and distance to
+        // first point is half the point spacing
+        dx0 = dx/2;
+    else
+        // npoint is number of intervals + 1, and distance to
+        // first point is zero.
+        ++npoints;
 
-	double** gc = CPPUtils::new2DArray<double>(2,3);
-	getGreatCircle(ptA, ptB, gc);
+    double** gc = CPPUtils::new2DArray<double>(2,3);
+    getGreatCircle(ptA, ptB, gc);
 
-	for (int i=0; i<npoints; ++i)
-		getGreatCirclePoint(gc, dx0+i*dx, points[i]);
+    for (int i=0; i<npoints; ++i)
+        getGreatCirclePoint(gc, dx0+i*dx, points[i]);
 
-	CPPUtils::delete2DArray(gc);
+    CPPUtils::delete2DArray(gc);
 
-	return dx;
+    return dx;
 }
 
 double GeoTessUtils::getGreatCirclePoints(double* ptA, double* ptB, const int& npoints,
-		const bool& onCenters, double** points)
+        const bool& onCenters, double** points)
 {
-	if (npoints <= 0) return 0.;
+    if (npoints <= 0) return 0.;
 
-	double distance = angle(ptA, ptB);
+    double distance = angle(ptA, ptB);
 
-	if (distance <= 0.)
-	{
-		for (int i=0; i<npoints; ++i)
-		{
-			points[i][0] = ptA[0];
-			points[i][1] = ptA[1];
-			points[i][2] = ptA[2];
-		}
-		return 0.;
-	}
+    if (distance <= 0.)
+    {
+        for (int i=0; i<npoints; ++i)
+        {
+            points[i][0] = ptA[0];
+            points[i][1] = ptA[1];
+            points[i][2] = ptA[2];
+        }
+        return 0.;
+    }
 
-	double dx = onCenters ? angle(ptA, ptB) / npoints
-			: npoints == 1 ? 0. : angle(ptA, ptB)/(npoints-1);
+    double dx = onCenters ? angle(ptA, ptB) / npoints
+            : npoints == 1 ? 0. : angle(ptA, ptB)/(npoints-1);
 
-	double dx0 = onCenters ? dx/2 : 0.;
+    double dx0 = onCenters ? dx/2 : 0.;
 
-	double** gc = CPPUtils::new2DArray<double>(2,3);
-	getGreatCircle(ptA, ptB, gc);
+    double** gc = CPPUtils::new2DArray<double>(2,3);
+    getGreatCircle(ptA, ptB, gc);
 
-	for (int i=0; i<npoints; ++i)
-		getGreatCirclePoint(gc, dx0+i*dx, points[i]);
+    for (int i=0; i<npoints; ++i)
+        getGreatCirclePoint(gc, dx0+i*dx, points[i]);
 
-	CPPUtils::delete2DArray(gc);
+    CPPUtils::delete2DArray(gc);
 
-	return dx;
+    return dx;
 }
 
 /**
@@ -449,27 +451,27 @@ double GeoTessUtils::getGreatCirclePoints(double* ptA, double* ptB, const int& n
  * @throws GeoTessException
  */
 void GeoTessUtils::getTransform(const double* const u, const double* const v,
-																double** const t)
+                                                                double** const t)
 {
-	// t[0] will be x direction -- observer's right
-	// t[1] will be y direction -- observer's up
-	// t[2] will be z direction -- points toward the observer
+    // t[0] will be x direction -- observer's right
+    // t[1] will be y direction -- observer's up
+    // t[2] will be z direction -- points toward the observer
 
-	// set t[2] equal to unit vector normal to plan containing u and v
-	if (crossNormal(v, u, t[2]) == 0.)
-		throw GeoTessException("u and v are parallel: |v x u| == 0",
-													 __FILE__, __LINE__, 7005);
+    // set t[2] equal to unit vector normal to plan containing u and v
+    if (crossNormal(v, u, t[2]) == 0.)
+        throw GeoTessException("u and v are parallel: |v x u| == 0",
+                                                     __FILE__, __LINE__, 7005);
 
-	// set t[1] to mean of vectors u and v, normalized to unit length.
-	t[1][0] = u[0] + v[0];
-	t[1][1] = u[1] + v[1];
-	t[1][2] = u[2] + v[2];
-	if (normalize(t[1]) == 0.)
-		throw GeoTessException("u and v are anti-parallel",
-													 __FILE__, __LINE__, 7006);
+    // set t[1] to mean of vectors u and v, normalized to unit length.
+    t[1][0] = u[0] + v[0];
+    t[1][1] = u[1] + v[1];
+    t[1][2] = u[2] + v[2];
+    if (normalize(t[1]) == 0.)
+        throw GeoTessException("u and v are anti-parallel",
+                                                     __FILE__, __LINE__, 7006);
 
-	// set t[0] equal to t[1] cross t[2]
-	crossNormal(t[1], t[2], t[0]);
+    // set t[0] equal to t[1] cross t[2]
+    crossNormal(t[1], t[2], t[0]);
 }
 
 } // end namespace geotess

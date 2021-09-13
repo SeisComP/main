@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019, Istvan Bondar,
+ * Copyright (c) 2020, Istvan Bondar,
  * Written by Istvan Bondar, ibondar2014@gmail.com
  *
  * BSD Open Source License.
@@ -97,7 +97,7 @@ static double **ReadDefaultDepthGrid(char *filename, double *gres, int *ngrid);
  *  Return:
  *     Success/error
  *  Called by:
- *     SeisComP iLoc app
+ *     SeisComp3 iLoc app
  *  Calls:
  *     ReadPhaseTTConfigFile
  *     ReadIASPEIPhaseMapFile

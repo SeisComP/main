@@ -1,46 +1,37 @@
 //- ****************************************************************************
-//- 
-//- Copyright 2009 Sandia Corporation. Under the terms of Contract 
-//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains 
-//- certain rights in this software.
 //-
-//- BSD Open Source License.
+//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
+//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
+//- Government retains certain rights in this software.
+//-
+//- BSD Open Source License
 //- All rights reserved.
-//- 
-//- Redistribution and use in source and binary forms, with or without 
+//-
+//- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
 //-
-//-    * Redistributions of source code must retain the above copyright notice, 
+//-   1. Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-    * Redistributions in binary form must reproduce the above copyright 
-//-      notice, this list of conditions and the following disclaimer in the 
+//-
+//-   2. Redistributions in binary form must reproduce the above copyright
+//-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-    * Neither the name of Sandia National Laboratories nor the names of its 
-//-      contributors may be used to endorse or promote products derived from  
+//-
+//-   3. Neither the name of the copyright holder nor the names of its
+//-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
 //-
-//- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-//- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-//- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-//- ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-//- LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-//- CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-//- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-//- INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-//- CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-//- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+//- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+//- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+//- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+//- ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+//- LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+//- CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+//- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+//- INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+//- CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+//- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //- POSSIBILITY OF SUCH DAMAGE.
-//-
-
-//- ****************************************************************************
-//-
-//- Program:       SNL Base Utility Library (Util)
-//- Module:        $RCSfile: IntegrateFunction.h,v $
-//- Creator:       Jim Hipp
-//- Creation Date: April 17, 2007
-//- Revision:      $Revision: 1.6 $
-//- Last Modified: $Date: 2011/10/03 14:43:30 $
-//- Last Check-in: $Author: avencar $
 //-
 //- ****************************************************************************
 
@@ -115,7 +106,7 @@ namespace util {
 //! the final result. The iterations are continued until convergence occurs or
 //! an unbounded result terminates the solution with an accuracy less than that
 //! which was requested.
-//! 
+//!
 // *****************************************************************************
 template<class F>
 class UTIL_EXP IntegrateFunction
@@ -287,7 +278,7 @@ inline double IntegrateFunction<F>::integrateAOpenS(double a, double b)
   // calculate integral from just shy of the asymptote to b and
   // loop over successive steps getting closer to a each step
   // (e to e/10 each loop). Loop while  the stepsize is decremented by
-  // an order of magnitude at each step. 
+  // an order of magnitude at each step.
 
   ae = a + e;
   s = integrateClosed(ae, b);
@@ -303,7 +294,7 @@ inline double IntegrateFunction<F>::integrateAOpenS(double a, double b)
     // decrement e by 10 and try again
 
     fs = fabs(s);
-    if ((fabs(senew) < ifTol * fs) || (fs < ifTol)) 
+    if ((fabs(senew) < ifTol * fs) || (fs < ifTol))
       return s;
     else
       e /= 10.0;

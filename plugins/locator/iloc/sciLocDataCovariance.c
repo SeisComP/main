@@ -130,6 +130,11 @@ double **iLoc_GetDataCovarianceMatrix(int nsta, int numPhase, int nd,
             dcov[k][k] = variogram->sill + Assocs[i].Deltim * Assocs[i].Deltim;
             Assocs[i].CovIndTime = k;
 /*
+ *          RSTT provides path-dependent uncertainties (model + pick error)
+ */
+            if (Assocs[i].rsttTotalErr > 0)
+                dcov[k][k] = Assocs[i].rsttTotalErr * Assocs[i].rsttTotalErr;
+/*
  *          covariances
  */
             for (m = k + 1, j = i + 1; j < numPhase; j++) {

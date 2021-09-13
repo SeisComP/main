@@ -1,47 +1,40 @@
 //- ****************************************************************************
-//- 
-//- Copyright 2009 Sandia Corporation. Under the terms of Contract 
-//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains 
-//- certain rights in this software.
 //-
-//- BSD Open Source License.
+//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
+//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
+//- Government retains certain rights in this software.
+//-
+//- BSD Open Source License
 //- All rights reserved.
-//- 
-//- Redistribution and use in source and binary forms, with or without 
+//-
+//- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
 //-
-//-    * Redistributions of source code must retain the above copyright notice, 
+//-   1. Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-    * Redistributions in binary form must reproduce the above copyright 
-//-      notice, this list of conditions and the following disclaimer in the 
+//-
+//-   2. Redistributions in binary form must reproduce the above copyright
+//-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-    * Neither the name of Sandia National Laboratories nor the names of its 
-//-      contributors may be used to endorse or promote products derived from  
+//-
+//-   3. Neither the name of the copyright holder nor the names of its
+//-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
 //-
-//- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-//- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-//- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-//- ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-//- LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-//- CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-//- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-//- INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-//- CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-//- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+//- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+//- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+//- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+//- ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+//- LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+//- CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+//- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+//- INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+//- CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+//- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //- POSSIBILITY OF SUCH DAMAGE.
 //-
-
-
 //- ****************************************************************************
-//-
-//- Program:       Location
-//- Module:        $RCSfile: Location.cc,v $
-//- Revision:      $Revision: 1.16 $
-//- Last Modified: $Date: 2011/10/07 13:14:58 $
-//- Last Check-in: $Author: sballar $
-//-
-//- ****************************************************************************
+
 //#include <iostream>
 
 #include "Location.h"
@@ -63,7 +56,7 @@ double Location::EARTH_RADIUS = -1;
  */
 Location::Location() : radius(EARTH_A)
 {
-	++locationClassCount;
+    ++locationClassCount;
   v[0] = 1.; 
   v[1] = v[2] = 0.0;
 }  // END Location Default Constructor
@@ -75,7 +68,7 @@ Location::Location() : radius(EARTH_A)
  */
 Location::~Location()
 {
-	--locationClassCount;
+    --locationClassCount;
 }  // END Destructor
 
 /**
@@ -84,18 +77,18 @@ Location::~Location()
  */
 Location::Location(const Location &other) : radius(other.radius)
 {
-	++locationClassCount;
-	v[0] = other.v[0]; v[1] = other.v[1]; v[2] = other.v[2];
+    ++locationClassCount;
+    v[0] = other.v[0]; v[1] = other.v[1]; v[2] = other.v[2];
 }
 
 // constructor specifying 3D unit vector with origin at center of earth.
 Location::Location(const double u[], const double &r)
 {
-	++locationClassCount;
-	v[0] = u[0];
-	v[1] = u[1]; 
-	v[2] = u[2];
-	radius = r;
+    ++locationClassCount;
+    v[0] = u[0];
+    v[1] = u[1]; 
+    v[2] = u[2];
+    radius = r;
 }
 
 /**
@@ -105,9 +98,9 @@ Location::Location(const double u[], const double &r)
   @param depth depth in km.  Defaults to zero if not specified.  
  */
 Location::Location(const double &latitude, const double &longitude, 
-				   const double &depth)
+                   const double &depth)
 {
-	++locationClassCount;
+    ++locationClassCount;
   setLocation(latitude, longitude, depth);
 }
 
@@ -117,12 +110,12 @@ Location::Location(const double &latitude, const double &longitude,
  */
 Location::Location(const Location& loc1, const Location& loc2)
 {
-	++locationClassCount;
-	v[0] = loc1.v[0] + loc2.v[0];
-	v[1] = loc1.v[1] + loc2.v[1]; 
-	v[2] = loc1.v[2] + loc2.v[2];
-	normalize(v);
-	radius = 0.5*(loc1.radius + loc2.radius);
+    ++locationClassCount;
+    v[0] = loc1.v[0] + loc2.v[0];
+    v[1] = loc1.v[1] + loc2.v[1]; 
+    v[2] = loc1.v[2] + loc2.v[2];
+    normalize(v);
+    radius = 0.5*(loc1.radius + loc2.radius);
 }
 
 /**
@@ -131,8 +124,8 @@ Location::Location(const Location& loc1, const Location& loc2)
  */
 Location& Location::operator=(const Location& other)
 {
-	v[0] = other.v[0]; v[1] = other.v[1]; v[2] = other.v[2];
-	radius = other.radius;
+    v[0] = other.v[0]; v[1] = other.v[1]; v[2] = other.v[2];
+    radius = other.radius;
   return *this;
 }
 
@@ -142,7 +135,7 @@ Location& Location::operator=(const Location& other)
  */
 bool Location::operator==(const Location& other) const
 {
-	return ((v[0] == other.v[0]) && (v[1] == other.v[1]) &&
+    return ((v[0] == other.v[0]) && (v[1] == other.v[1]) &&
           (v[2] == other.v[2]) && (radius == other.radius));
 }
 
@@ -159,32 +152,32 @@ bool Location::operator==(const Location& other) const
  */
 double Location::distanceKm(Location &other) const
 {
-	double distance = angle(v,other.v);
+    double distance = angle(v,other.v);
 
-	if (EARTH_RADIUS > 0.)
-		return distance*EARTH_RADIUS;
+    if (EARTH_RADIUS > 0.)
+        return distance*EARTH_RADIUS;
 
-	// n = aproximate number of 1 degree increments in distance, 
-	// minimum of 1.
-	int n = (int) ceil(distance / DEG_TO_RAD);
+    // n = aproximate number of 1 degree increments in distance, 
+    // minimum of 1.
+    int n = (int) ceil(distance / DEG_TO_RAD);
 
-	if (n == 1)
-		return distance * 0.5 * (getEarthRadius() + other.getEarthRadius());
+    if (n == 1)
+        return distance * 0.5 * (getEarthRadius() + other.getEarthRadius());
 
-	double dx = distance/n;
+    double dx = distance/n;
 
-	double vtp[3];
-	Location loc;
-	
-	vectorTripleProduct(other, vtp);
-	distance = 0;
+    double vtp[3];
+    Location loc;
+    
+    vectorTripleProduct(other, vtp);
+    distance = 0;
 
-	for (int i=0; i<n; i++)
-	{
-		move(vtp, dx * (((double) i) + 0.5), loc);
-		distance += dx * loc.getEarthRadius();
-	}
-	return distance;
+    for (int i=0; i<n; i++)
+    {
+        move(vtp, dx * (((double) i) + 0.5), loc);
+        distance += dx * loc.getEarthRadius();
+    }
+    return distance;
 }
 
 int Location::getClassCount()
@@ -194,8 +187,8 @@ int Location::getClassCount()
 
 double Location::getEarthRadius() const
 {
-	if (EARTH_RADIUS > 0.) return EARTH_RADIUS;
-	return EARTH_A / sqrt(1. + v[2] * v[2] * EARTH_E / (1.-EARTH_E));
+    if (EARTH_RADIUS > 0.) return EARTH_RADIUS;
+    return EARTH_A / sqrt(1. + v[2] * v[2] * EARTH_E / (1.-EARTH_E));
 }
 
 } // end slbm namespace

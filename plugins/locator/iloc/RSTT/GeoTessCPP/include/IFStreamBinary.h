@@ -1,24 +1,26 @@
 //- ****************************************************************************
-//- 
-//- Copyright 2009 Sandia Corporation. Under the terms of Contract
-//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
-//- retains certain rights in this software.
-//- 
-//- BSD Open Source License.
+//-
+//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
+//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
+//- Government retains certain rights in this software.
+//-
+//- BSD Open Source License
 //- All rights reserved.
-//- 
+//-
 //- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
-//- 
-//-    * Redistributions of source code must retain the above copyright notice,
+//-
+//-   1. Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-    * Redistributions in binary form must reproduce the above copyright
+//-
+//-   2. Redistributions in binary form must reproduce the above copyright
 //-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-    * Neither the name of Sandia National Laboratories nor the names of its
+//-
+//-   3. Neither the name of the copyright holder nor the names of its
 //-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
-//- 
+//-
 //- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 //- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 //- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -80,631 +82,667 @@ class GEOTESS_EXP_IMP IFStreamBinary
 {
   protected:
 
-		/**
-		 * A string object is used to contain the actual data.
-		 */
-		string*					bData;
+        /**
+         * A string object is used to contain the actual data.
+         */
+        string*						bData;
 
-		/**
-		 * The current iterator position in the data container (dbData).
-		 */
-		int							bDataPos;
+        /**
+         * The current iterator position in the data container (dbData).
+         */
+        int							bDataPos;
 
-		/**
-		 * The current size of the data container.
-		 */
-		int							bSize;
+        /**
+         * The current size of the data container.
+         */
+        int							bSize;
 
-		/**
-		 * A boolean, that if true, maintains 4 and 8 byte alignment in
-		 * support of double alignment compilation.
-		 */
-		bool						bAlign;
+        /**
+         * A boolean, that if true, maintains 4 and 8 byte alignment in
+         * support of double alignment compilation.
+         */
+        bool						bAlign;
 
-		/**
-		 * A boolean, that if true, reverses the byte order of all 2, 4, and
-		 * 8 byte intrinsics (shorts, ints, long, floats, doubles, etc.). This
-		 * flag is set by client using this IFStreamBinary (default to false ...
-		 * no reversal). The flag is used to convert byte order between big- and
-		 * little- endian formats.
-		 */
-		bool						bReverse;
+        /**
+         * A boolean, that if true, reverses the byte order of all 2, 4, and
+         * 8 byte intrinsics (shorts, ints, long, floats, doubles, etc.). This
+         * flag is set by client using this IFStreamBinary (default to false ...
+         * no reversal). The flag is used to convert byte order between big- and
+         * little- endian formats.
+         */
+        bool						bReverse;
 
-		/**
-		 * A boolean, that if true, indicates the storage string for this
-		 * IFStreamBinary is owned and therefore deleted when the IFStreamBinary
-		 * is deleted.
-		 */
-		bool						bOwnStr;
+        /**
+         * A boolean, that if true, indicates the storage string for this
+         * IFStreamBinary is owned and therefore deleted when the IFStreamBinary
+         * is deleted.
+         */
+        bool						bOwnStr;
 
-		string					bFileName;
+        string						bFileName;
 
-		int							bMemIncr;
+        int							bMemIncr;
 
-    /**
-		 * Ensure that the buffer position pointer (dbDataPos) is
-		 * aligned on a 4 byte boundary.
-     */
-    void						align2Byte()
-		{
-			int sm = bDataPos % CPPUtils::SSHT;
-			if (sm && bAlign) bDataPos += CPPUtils::SSHT - sm;
-		}
+        /**
+         * Ensure that the buffer position pointer (dbDataPos) is
+         * aligned on a 4 byte boundary.
+        */
+        void						align2Byte()
+        {
+            int sm = bDataPos % CPPUtils::SSHT;
+            if (sm && bAlign) bDataPos += CPPUtils::SSHT - sm;
+        }
 
-    /**
-		 * Ensure that the buffer position pointer (dbDataPos) is
-		 * aligned on a 4 byte boundary.
-     */
-    void						align4Byte()
-		{
-			int sm = bDataPos % CPPUtils::SINT;
-			if (sm && bAlign) bDataPos += CPPUtils::SINT - sm;
-		}
+        /**
+             * Ensure that the buffer position pointer (dbDataPos) is
+             * aligned on a 4 byte boundary.
+         */
+        void						align4Byte()
+        {
+            int sm = bDataPos % CPPUtils::SINT;
+            if (sm && bAlign) bDataPos += CPPUtils::SINT - sm;
+        }
 
-    /**
-		 * Ensure that the buffer position pointer (dbDataPos) is
-		 * aligned on a 8 byte boundary.
-     */
-    void						align8Byte()
-		{
-			int sm = bDataPos % CPPUtils::SDBL;
-			if (sm && bAlign) bDataPos += CPPUtils::SDBL - sm;
-		}
+        /**
+             * Ensure that the buffer position pointer (dbDataPos) is
+             * aligned on a 8 byte boundary.
+         */
+        void						align8Byte()
+        {
+            int sm = bDataPos % CPPUtils::SDBL;
+            if (sm && bAlign) bDataPos += CPPUtils::SDBL - sm;
+        }
 
-		/**
-		 * This function checks to make sure that the buffer is large enough to
-		 * contain sincr more bytes ... if not it is resized so that it can.
-		 */
-    void						checkBufferSize(int sincr)
-		{
-			if (bDataPos + sincr > (int) bData->size())
-			{
-				if (sincr + bData->size() > bData->capacity())
-					bData->reserve(bData->capacity() + bMemIncr);
-				bData->append(bDataPos + sincr - bData->size(), ' ');
-			}
-		}
+        /**
+         * This function checks to make sure that the buffer is large enough to
+         * contain sincr more bytes ... if not it is resized so that it can.
+         */
+        void						checkBufferSize(int sincr)
+        {
+            if (bDataPos + sincr > (int)bData->size())
+            {
+                if (sincr + bData->size() > bData->capacity())
+                    bData->reserve(bData->capacity() + bMemIncr);
+                bData->append(bDataPos + sincr - bData->size(), ' ');
+            }
+        }
 
-		/*
-		 * Reverses each s-byte element of array a containing n elements
-		 * (s*n bytes). The element size s must be 2, 4, or 8.
-		 */
-		static void			reverseBOArray(int n, char* a, int s);
+        /*
+         * Reverses each s-byte element of array a containing n elements
+         * (s*n bytes). The element size s must be 2, 4, or 8.
+         */
+        static void					reverseBOArray(int n, char* a, int s);
 
-		/*
-		 * Reverses the byte order of each element of a where a is an array of n
-		 * 2, 4, or 8 byte elements. Used to convert between big-and
-		 * little-endian formats.
-		 */
-		static void			reverseBO2Array(int n, char* a);
-		static void			reverseBO4Array(int n, char* a);
-		static void			reverseBO8Array(int n, char* a);
+        /*
+         * Reverses the byte order of each element of a where a is an array of n
+         * 2, 4, or 8 byte elements. Used to convert between big-and
+         * little-endian formats.
+         */
+        static void					reverseBO2Array(int n, char* a);
+        static void					reverseBO4Array(int n, char* a);
+        static void					reverseBO8Array(int n, char* a);
 
-		/*
-		 * Reverses the byte order of d, where d is a 2, 4, or 8 byte array. Used
-		 * to convert between big-and little-endian formats.
-		 */
-		static void			reverseBO2(char* d);
-		static void			reverseBO4(char* d);
-		static void			reverseBO8(char* d);
+        /*
+         * Reverses the byte order of d, where d is a 2, 4, or 8 byte array. Used
+         * to convert between big-and little-endian formats.
+         */
+        static void					reverseBO2(char* d);
+        static void					reverseBO4(char* d);
+        static void					reverseBO8(char* d);
 
-	public:
+    public:
 
-		/**
-		 * Public Default Constructor.
-		 */
-										IFStreamBinary();
+        /**
+         * Public Default Constructor.
+         */
+        IFStreamBinary();
 
-		/**
-		 * Standard constructor that sets the padding (alignment) option to align.
-		 */
-										IFStreamBinary(bool align);
+        /**
+         * Standard constructor that sets the padding (alignment) option to align.
+         */
+        IFStreamBinary(bool align);
 
-		/**
-		 * Standard constructor creates a new IFStreamBinary and opens reads its
-		 * buffer from the input filename
-		 */
-										IFStreamBinary(const string& filename);
+        /**
+         * Standard constructor creates a new IFStreamBinary and opens reads its
+         * buffer from the input filename
+         */
+        IFStreamBinary(const string& filename);
 
-		/**
-		 * Standard constructor creates a new IFStreamBinary and opens reads its
-		 * buffer from the input filename
-		 */
-										IFStreamBinary(const string& filename, int num_bytes);
+        /**
+         * Standard constructor creates a new IFStreamBinary and opens reads its
+         * buffer from the input filename
+         */
+        IFStreamBinary(const string& filename, int num_bytes);
 
-		/**
-		 * Standard constructor that uses a provided string ptr as the data
-		 * container.
-		 */
-										IFStreamBinary(string* str);
+        /**
+         * Standard constructor that uses a provided string ptr as the data
+         * container.
+         */
+        IFStreamBinary(string* str);
 
-		/**
-		 * Copy Constructor.
-		 */
-										IFStreamBinary(const IFStreamBinary& db);
+        /**
+         * Copy Constructor.
+         */
+        IFStreamBinary(const IFStreamBinary& db);
 
-		/**
-		 * Public destructor
-		 */
-		virtual					~IFStreamBinary();
+        /**
+         * Public destructor
+         */
+        virtual						~IFStreamBinary();
 
-		/**
-		 * Assignment operator
-		 */
-		IFStreamBinary&	operator=(const IFStreamBinary& db);
+        /**
+         * Assignment operator
+         */
+        IFStreamBinary&	operator=(const IFStreamBinary& db);
 
-		/**
-		 * Debug dump of the data.
-		 */
-		void						dumpBuffer();
+        /**
+         * Debug dump of the data.
+         */
+        void						dumpBuffer();
 
-		/**
-		 * Static function that returns true if the input filename exists.
-		 */
-		static bool 		exists(const string& filename);
+        /**
+         * Static function that returns true if the input filename exists.
+         */
+        static bool 				exists(const string& filename);
 
-		/**
-		 * Write the buffer to the output file name.
-		 */
-		void						writeToFile(const string& filename);
+        /**
+         * Write the buffer to the output file name.
+         */
+        void						writeToFile(const string& filename);
 
-		/**
-		 * Write the buffer to the output stream.
-		 */
-		void						writeToFile(ofstream& ofs);
+        /**
+         * Write the buffer to the output stream.
+         */
+        void						writeToFile(ofstream& ofs);
 
-		/**
+        /**
      * Read and fills the buffer from the input file name.
-		 */
-		void						readFromFile(const string& filename);
+         */
+        void						readFromFile(const string& filename);
 
-		/**
-		 * Read num_bytes from input file (Partial read).
-		 */
-		void						readFromFile(const string& filename, int num_bytes);
+        /**
+         * Read num_bytes from input file (Partial read).
+         */
+        void						readFromFile(const string& filename, int num_bytes);
 
-		/**
-		 * Reads num_bytes data from the input ifstream into this buffer.
-		 * the read begins at position file_pos in the input stream.
-		 */
-//		void						readFromFile(ifstream& ifs, streampos file_pos,
-//																	int num_bytes);
+        /**
+         * Reads num_bytes data from the input ifstream into this buffer.
+         * the read begins at position file_pos in the input stream.
+         */
+         //		void						readFromFile(ifstream& ifs, streampos file_pos,
+         //																	int num_bytes);
 
-		/**
-		 * Reads num_bytes data from the input ifstream into this buffer.
-		 */
-		void						readFromFile(ifstream& ifs, int num_bytes);
+         /**
+          * Reads num_bytes data from the input ifstream into this buffer.
+          */
+        void						readFromFile(ifstream& ifs, int num_bytes);
 
-		/**
-		 * Return the file name with which this binary reader was opened
-		 */
-		const string&		getFileName() const { return bFileName; }
+        /**
+         * Return the file name with which this binary reader was opened
+         */
+        const string&				getFileName() const { return bFileName; }
 
-		/**
-		 * Clears the buffer.
-		 */
-		void						clear()
-		{
-			(*bData) = "";
-			bDataPos = 0;
-			bSize = 0;
-		}
+        /**
+         * Clears the buffer.
+         */
+        void						clear()
+        {
+            (*bData) = "";
+            bDataPos = 0;
+            bSize = 0;
+        }
 
-		/**
-		 * Set the amount of memory increase (bytes) for bData everytime it's
-		 * current capacity is exceeded (defaults to 1MB = 1000000).
-		 */
-		void						setMemoryCapacityIncrement(int mci)
-		{
-			if (mci > 0) bMemIncr = mci;
-		}
+        /**
+         * Set the amount of memory increase (bytes) for bData everytime it's
+         * current capacity is exceeded (defaults to 1MB = 1000000).
+         */
+        void						setMemoryCapacityIncrement(int mci)
+        {
+            if (mci > 0) bMemIncr = mci;
+        }
 
-		/**
-		 * Read string data. readString() assumes the string length immediately
-		 * precedes the string data. readString(string& s) is the same as the
-		 * first but assigns the string to the input reference. The next two
-		 * functions read in num_chars and assign them into the input string
-		 * reference s, or presized character array, respectively. The functions
-		 * readType* are for templatized access.
-		 */
-		string					readString();
-		void						readString(string& s);
-		void						readCharArray(string& s, int num_chars);
-		void						readCharArray(char* array, int num_chars);
-		void						readType(string& s);
-		void						readTypeArray(string& array, int num_chars);
+        /**
+         * Read string data. readString() assumes the string length immediately
+         * precedes the string data. readString(string& s) is the same as the
+         * first but assigns the string to the input reference. The next two
+         * functions read in num_chars and assign them into the input string
+         * reference s, or presized character array, respectively. The functions
+         * readType* are for templatized access.
+         */
+        string						readString();
+        void						readString(string& s);
+        void						readCharArray(string& s, int num_chars);
+        void						readCharArray(char* array, int num_chars);
+        void						readType(string& s);
+        void						readTypeArray(string& array, int num_chars);
 
-		/**
-		 * Read bool data. readBool() reads one bool from the IFStreamBinary and
-		 * updates buffer iterator. The second form specifies where to read but
-		 * does not update the iterator. The last form reads num_bool into the
-		 * input array. readType is for templatization and behaves like readBool().
-		 * Similarly, readTypeArray behaves as readBoolArray.
-		 */
-		bool						readBool();
-		bool						readBool(int pos);
-		void						readBoolArray(bool* array, int num_bools);
-		void						readType(bool& b);
-		void						readTypeArray(bool* array, int num_bools);
+        /**
+         * Read bool data. readBool() reads one bool from the IFStreamBinary and
+         * updates buffer iterator. The second form specifies where to read but
+         * does not update the iterator. The last form reads num_bool into the
+         * input array. readType is for templatization and behaves like readBool().
+         * Similarly, readTypeArray behaves as readBoolArray.
+         */
+        bool						readBool();
+        bool						readBool(int pos);
+        void						readBoolArray(bool* array, int num_bools);
+        void						readType(bool& b);
+        void						readTypeArray(bool* array, int num_bools);
 
-		/**
-		 * Read byte data. readByte() reads one byte from the IFStreamBinary and
-		 * updates buffer iterator. The second form specifies where to read but
-		 * does not update the iterator. The last form reads num_bytes into the
-		 * input array. readType is for templatization and behaves like readByte().
-		 * Similarly, readTypeArray behaves as readByteArray.
-		 */
-		byte						readByte();
-		byte						readByte(int pos);
-		void						readByteArray(byte* array, int num_bs);
-		void						readType(byte& b);
-		void						readTypeArray(byte* array, int num_bs);
+        /**
+         * Read byte data. readByte() reads one byte from the IFStreamBinary and
+         * updates buffer iterator. The second form specifies where to read but
+         * does not update the iterator. The last form reads num_bytes into the
+         * input array. readType is for templatization and behaves like readByte().
+         * Similarly, readTypeArray behaves as readByteArray.
+         */
+        byte						readByte();
+        byte						readByte(int pos);
+        void						readByteArray(byte* array, int num_bs);
+        void						readType(byte& b);
+        void						readTypeArray(byte* array, int num_bs);
 
-		/**
-		 * Read short data. readShort() reads one short from the IFStreamBinary
-		 * and updates buffer iterator. The second form is like the first except
-		 * that byte alignment is assumed to be ok (not checked). The third
-		 * form specifies where to read but does not update the iterator or
-		 * check alignment. The last form reads num_shorts into the input array.
-		 * readType is for templatization and behaves like readShort(). Similarly,
-		 * readTypeArray behaves as readShortArray.
-		 */
-		short						readShort();
-		short						readShortNC();
-		short						readShort(int pos);
-		void						readShortArray(short* array, int num_shorts);
-		void						readType(short& s);
-		void						readTypeArray(short* array, int num_shorts);
+        /**
+         * Read short data. readShort() reads one short from the IFStreamBinary
+         * and updates buffer iterator. The second form is like the first except
+         * that byte alignment is assumed to be ok (not checked). The third
+         * form specifies where to read but does not update the iterator or
+         * check alignment. The last form reads num_shorts into the input array.
+         * readType is for templatization and behaves like readShort(). Similarly,
+         * readTypeArray behaves as readShortArray.
+         */
+        short						readShort();
+        short						readShortNC();
+        short						readShort(int pos);
+        void						readShortArray(short* array, int num_shorts);
+        void						readType(short& s);
+        void						readTypeArray(short* array, int num_shorts);
 
-		/**
-		 * Read int data. readInt() reads one int from the IFStreamBinary and
-		 * updates buffer iterator. The second form is like the first except
-		 * that byte alignment is assumed to be ok (not checked). The third
-		 * form specifies where to read but does not update the iterator or
-		 * check alignment. The last form reads num_ints into the input array.
-		 * readType is for templatization and behaves like readInt(). Similarly,
-		 * readTypeArray behaves as readIntArray.
-		 */
-		int							readInt();
-		int							readIntNC();
-		int							readInt(int pos);
-		void						readIntArray(int* array, int num_ints);
-		void						readType(int& i);
-		void						readTypeArray(int* array, int num_ints);
+        /**
+         * Read int data. readInt() reads one int from the IFStreamBinary and
+         * updates buffer iterator. The second form is like the first except
+         * that byte alignment is assumed to be ok (not checked). The third
+         * form specifies where to read but does not update the iterator or
+         * check alignment. The last form reads num_ints into the input array.
+         * readType is for templatization and behaves like readInt(). Similarly,
+         * readTypeArray behaves as readIntArray.
+         */
+        int							readInt();
+        int							readIntNC();
+        int							readInt(int pos);
+        void						readIntArray(int* array, int num_ints);
+        void						readType(int& i);
+        void						readTypeArray(int* array, int num_ints);
 
-		/**
-		 * Read long data. readLong() reads one long from the IFStreamBinary and
-		 * updates buffer iterator. The second form is like the first except
-		 * that byte alignment is assumed to be ok (not checked). The third
-		 * form specifies where to read but does not update the iterator or
-		 * check alignment. The last form reads num_longs into the input array.
-		 * readType is for templatization and behaves like readLong(). Similarly,
-		 * readTypeArray behaves as readLongArray.
-		 */
-		LONG_INT						readLong();
-		LONG_INT						readLongNC();
-		LONG_INT						readLong(int pos);
-		void						readLongArray(LONG_INT* array, int num_longs);
-		void						readType(LONG_INT& l);
-		void						readTypeArray(LONG_INT* array, int num_longs);
+        /**
+         * Read long data. readLong() reads one long from the IFStreamBinary and
+         * updates buffer iterator. The second form is like the first except
+         * that byte alignment is assumed to be ok (not checked). The third
+         * form specifies where to read but does not update the iterator or
+         * check alignment. The last form reads num_longs into the input array.
+         * readType is for templatization and behaves like readLong(). Similarly,
+         * readTypeArray behaves as readLongArray.
+         */
+        LONG_INT					readLong();
+        LONG_INT					readLongNC();
+        LONG_INT					readLong(int pos);
+        void						readLongArray(LONG_INT* array, int num_longs);
+        void						readType(LONG_INT& l);
+        void						readTypeArray(LONG_INT* array, int num_longs);
 
-		/**
-		 * Read float data. readFloat() reads one float from the IFStreamBinary
-		 * and updates buffer iterator. The second form is like the first except
-		 * that byte alignment is assumed to be ok (not checked). The third
-		 * form specifies where to read but does not update the iterator or
-		 * check alignment. The last form reads num_floats into the input array.
-		 * readType is for templatization and behaves like readFloat(). Similarly,
-		 * readTypeArray behaves as readFloatArray.
-		 */
-		float						readFloat();
-		float						readFloatNC();
-		float						readFloat(int pos);
-		void						readFloatArray(float* array, int num_floats);
-		void						readType(float& f);
-		void						readTypeArray(float* array, int num_floats);
+        /**
+         * Read float data. readFloat() reads one float from the IFStreamBinary
+         * and updates buffer iterator. The second form is like the first except
+         * that byte alignment is assumed to be ok (not checked). The third
+         * form specifies where to read but does not update the iterator or
+         * check alignment. The last form reads num_floats into the input array.
+         * readType is for templatization and behaves like readFloat(). Similarly,
+         * readTypeArray behaves as readFloatArray.
+         */
+        float						readFloat();
+        float						readFloatNC();
+        float						readFloat(int pos);
+        void						readFloatArray(float* array, int num_floats);
+        void						readType(float& f);
+        void						readTypeArray(float* array, int num_floats);
 
-		/**
-		 * Read double data. readDouble() reads one double from the IFStreamBinary
-		 * and updates buffer iterator. The second form is like the first except
-		 * that byte alignment is assumed to be ok (not checked). The third
-		 * form specifies where to read but does not update the iterator or
-		 * check alignment. The last form reads num_doubles into the input array.
-		 * readType is for templatization and behaves like readDouble(). Similarly,
-		 * readTypeArray behaves as readDoubleArray.
-		 */
-		double					readDouble();
-		double					readDoubleNC();
-		double					readDouble(int pos);
-		void						readDoubleArray(double* array, int num_doubles);
-		void						readType(double& d);
-		void						readTypeArray(double* array, int num_doubles);
+        /**
+         * Read double data. readDouble() reads one double from the IFStreamBinary
+         * and updates buffer iterator. The second form is like the first except
+         * that byte alignment is assumed to be ok (not checked). The third
+         * form specifies where to read but does not update the iterator or
+         * check alignment. The last form reads num_doubles into the input array.
+         * readType is for templatization and behaves like readDouble(). Similarly,
+         * readTypeArray behaves as readDoubleArray.
+         */
+        double						readDouble();
+        double						readDoubleNC();
+        double						readDouble(int pos);
+        void						readDoubleArray(double* array, int num_doubles);
+        void						readType(double& d);
+        void						readTypeArray(double* array, int num_doubles);
 
-		/**
-		 * Write string data to 'this' IFStreamBinary. The two writeString functions
-		 * first writes the the input string length immediately followed by the
-		 * string data. The next function writes num_chars from the input character
-		 * array into 'this' IFStreamBinary. readType is for templatization and
-		 * behaves like readString(). Similarly, readTypeArray behaves like
-		 * readCharArray.
-		 */
-		void						writeString(const string& str);
-		void						writeString(const char* char_string);
-		void						writeCharArray(const char* array, int num_chars);
-		void            writeType(const string& str);
-		void						writeType(const char* char_string);
+        /**
+         * Write string data to 'this' IFStreamBinary. The two writeString functions
+         * first writes the the input string length immediately followed by the
+         * string data. The next function writes num_chars from the input character
+         * array into 'this' IFStreamBinary. readType is for templatization and
+         * behaves like readString(). Similarly, readTypeArray behaves like
+         * readCharArray.
+         */
+        void						writeString(const string& str);
+        void						writeString(const char* char_string);
+        void						writeCharArray(const char* array, int num_chars);
+        void						writeType(const string& str);
+        void						writeType(const char* char_string);
 
-		/**
-		 * Write bool data. writeBool writes one byte to the IFStreamBinary
-		 * and updates buffer iterator. The second form is like the first except
-		 * that sufficient buffer size is not checked. The third form simply
-		 * writes the data at the input position (pos) but does not check for
-		 * buffer size, nor does it update the internal buffer iterator. The
-		 * last method writes num_bools from the input array into 'this'
-		 * IFStreamBinary. writeType is for templatization and behaves like
-		 * writeBool. Similarly, writeTypeArray behaves like writeBoolArray.
-		 */
-		void						writeBool(bool b);
-		void						writeBoolNC(bool b);
-		void						writeBool(bool b, int pos);
-		void						writeBoolArray(const bool* array, int num_bools);
-		void						writeType(bool b);
-		void						writeTypeArray(const bool* array, int num_bools);
+        /**
+         * Write bool data. writeBool writes one byte to the IFStreamBinary
+         * and updates buffer iterator. The second form is like the first except
+         * that sufficient buffer size is not checked. The third form simply
+         * writes the data at the input position (pos) but does not check for
+         * buffer size, nor does it update the internal buffer iterator. The
+         * last method writes num_bools from the input array into 'this'
+         * IFStreamBinary. writeType is for templatization and behaves like
+         * writeBool. Similarly, writeTypeArray behaves like writeBoolArray.
+         */
+        void						writeBool(bool b);
+        void						writeBoolNC(bool b);
+        void						writeBool(bool b, int pos);
+        void						writeBoolArray(const bool* array, int num_bools);
+        void						writeType(bool b);
+        void						writeTypeArray(const bool* array, int num_bools);
 
-		/**
-		 * Write byte data. writeByte writes one byte to the IFStreamBinary
-		 * and updates buffer iterator. The second form is like the first except
-		 * that sufficient buffer size is not checked. The third form simply
-		 * writes the data at the input position (pos) but does not check for
-		 * buffer size, nor does it update the internal buffer iterator. The
-		 * last method writes num_bytes from the input array into 'this'
-		 * IFStreamBinary. writeType is for templatization and behaves like
-		 * writeByte. Similarly, writeTypeArray behaves like writeByteArray.
-		 */
-		void						writeByte(byte b);
-		void						writeByteNC(byte b);
-		void						writeByte(byte b, int pos);
-		void						writeByteArray(const byte* array, int num_bytes);
-		void						writeType(byte b);
-		void						writeTypeArray(const byte* array, int num_bytes);
+        /**
+         * Write byte data. writeByte writes one byte to the IFStreamBinary
+         * and updates buffer iterator. The second form is like the first except
+         * that sufficient buffer size is not checked. The third form simply
+         * writes the data at the input position (pos) but does not check for
+         * buffer size, nor does it update the internal buffer iterator. The
+         * last method writes num_bytes from the input array into 'this'
+         * IFStreamBinary. writeType is for templatization and behaves like
+         * writeByte. Similarly, writeTypeArray behaves like writeByteArray.
+         */
+        void						writeByte(byte b);
+        void						writeByteNC(byte b);
+        void						writeByte(byte b, int pos);
+        void						writeByteArray(const byte* array, int num_bytes);
+        void						writeType(byte b);
+        void						writeTypeArray(const byte* array, int num_bytes);
 
-		/**
-		 * Write short data. writeShort writes one short to the IFStreamBinary
-		 * and updates buffer iterator. The second form is like the first except
-		 * that byte alignment and sufficient buffer size are not checked. The
-		 * third form simply writes the data at the input position (pos) but does
-		 * not check for alignment, buffer size, nor does it update the internal
-		 * buffer iterator. The last method writes num_shorts from the input
-		 * array into 'this' IFStreamBinary. writeType is for templatization and
-		 * behaves like writeShort. Similarly, writeTypeArray behaves like
-		 * writeShortArray.
-		 */
-		void						writeShort(short i);
-		void						writeShortNC(short i);
-		void						writeShort(short i, int pos);
-		void						writeShortArray(const short* array, int num_ints);
-		void						writeType(short i);
-		void						writeTypeArray(const short* array, int num_ints);
+        /**
+         * Write short data. writeShort writes one short to the IFStreamBinary
+         * and updates buffer iterator. The second form is like the first except
+         * that byte alignment and sufficient buffer size are not checked. The
+         * third form simply writes the data at the input position (pos) but does
+         * not check for alignment, buffer size, nor does it update the internal
+         * buffer iterator. The last method writes num_shorts from the input
+         * array into 'this' IFStreamBinary. writeType is for templatization and
+         * behaves like writeShort. Similarly, writeTypeArray behaves like
+         * writeShortArray.
+         */
+        void						writeShort(short i);
+        void						writeShortNC(short i);
+        void						writeShort(short i, int pos);
+        void						writeShortArray(const short* array, int num_ints);
+        void						writeType(short i);
+        void						writeTypeArray(const short* array, int num_ints);
 
-		/**
-		 * Write int data. writeInt writes one int to the IFStreamBinary
-		 * and updates buffer iterator. The second form is like the first except
-		 * that byte alignment and sufficient buffer size are not checked. The
-		 * third form simply writes the data at the input position (pos) but does
-		 * not check for alignment, buffer size, nor does it update the internal
-		 * buffer iterator. The last method writes num_ints from the input
-		 * array into 'this' IFStreamBinary. writeType is for templatization and
-		 * behaves like writeInt. Similarly, writeTypeArray behaves like
-		 * writeIntArray.
-		 */
-		void						writeInt(int i);
-		void						writeIntNC(int i);
-		void						writeInt(int i, int pos);
-		void						writeIntArray(const int* array, int num_ints);
-		void						writeType(int i);
-		void						writeTypeArray(const int* array, int num_ints);
+        /**
+         * Write int data. writeInt writes one int to the IFStreamBinary
+         * and updates buffer iterator. The second form is like the first except
+         * that byte alignment and sufficient buffer size are not checked. The
+         * third form simply writes the data at the input position (pos) but does
+         * not check for alignment, buffer size, nor does it update the internal
+         * buffer iterator. The last method writes num_ints from the input
+         * array into 'this' IFStreamBinary. writeType is for templatization and
+         * behaves like writeInt. Similarly, writeTypeArray behaves like
+         * writeIntArray.
+         */
+        void						writeInt(int i);
+        void						writeIntNC(int i);
+        void						writeInt(int i, int pos);
+        void						writeIntArray(const int* array, int num_ints);
+        void						writeType(int i);
+        void						writeTypeArray(const int* array, int num_ints);
 
-		/**
-		 * Write long data. writeLong writes one long to the IFStreamBinary
-		 * and updates buffer iterator. The second form is like the first except
-		 * that byte alignment and sufficient buffer size are not checked. The
-		 * third form simply writes the data at the input position (pos) but does
-		 * not check for alignment, buffer size, nor does it update the internal
-		 * buffer iterator. The last method writes num_longs from the input
-		 * array into 'this' IFStreamBinary. writeType is for templatization and
-		 * behaves like writeLong. Similarly, writeTypeArray behaves like
-		 * writeLongArray.
-		 */
-		void						writeLong(LONG_INT l);
-		void						writeLongNC(LONG_INT l);
-		void						writeLong(LONG_INT l, int pos);
-		void						writeLongArray(const LONG_INT* array, int num_longs);
-		void						writeType(LONG_INT l);
-		void						writeTypeArray(const LONG_INT* array, int num_longs);
+        /**
+         * Write long data. writeLong writes one long to the IFStreamBinary
+         * and updates buffer iterator. The second form is like the first except
+         * that byte alignment and sufficient buffer size are not checked. The
+         * third form simply writes the data at the input position (pos) but does
+         * not check for alignment, buffer size, nor does it update the internal
+         * buffer iterator. The last method writes num_longs from the input
+         * array into 'this' IFStreamBinary. writeType is for templatization and
+         * behaves like writeLong. Similarly, writeTypeArray behaves like
+         * writeLongArray.
+         */
+        void						writeLong(LONG_INT l);
+        void						writeLongNC(LONG_INT l);
+        void						writeLong(LONG_INT l, int pos);
+        void						writeLongArray(const LONG_INT* array, int num_longs);
+        void						writeType(LONG_INT l);
+        void						writeTypeArray(const LONG_INT* array, int num_longs);
 
-		/**
-		 * Write float data. writeFloat writes one float to the IFStreamBinary
-		 * and updates buffer iterator. The second form is like the first except
-		 * that byte alignment and sufficient buffer size are not checked. The
-		 * third form simply writes the data at the input position (pos) but does
-		 * not check for alignment, buffer size, nor does it update the internal
-		 * buffer iterator. The last method writes num_floats from the input
-		 * array into 'this' IFStreamBinary. writeType is for templatization and
-		 * behaves like writeFloat. Similarly, writeTypeArray behaves like
-		 * writeFloatArray.
-		 */
-		void						writeFloat(float f);
-		void						writeFloatNC(float f);
-		void						writeFloat(float f, int pos);
-		void						writeFloatArray(const float* array, int num_floats);
-		void						writeType(float f);
-		void						writeTypeArray(const float* array, int num_floats);
+        /**
+         * Write float data. writeFloat writes one float to the IFStreamBinary
+         * and updates buffer iterator. The second form is like the first except
+         * that byte alignment and sufficient buffer size are not checked. The
+         * third form simply writes the data at the input position (pos) but does
+         * not check for alignment, buffer size, nor does it update the internal
+         * buffer iterator. The last method writes num_floats from the input
+         * array into 'this' IFStreamBinary. writeType is for templatization and
+         * behaves like writeFloat. Similarly, writeTypeArray behaves like
+         * writeFloatArray.
+         */
+        void						writeFloat(float f);
+        void						writeFloatNC(float f);
+        void						writeFloat(float f, int pos);
+        void						writeFloatArray(const float* array, int num_floats);
+        void						writeType(float f);
+        void						writeTypeArray(const float* array, int num_floats);
 
-		/**
-		 * Write double data. writeDouble writes one double to the IFStreamBinary
-		 * and updates buffer iterator. The second form is like the first except
-		 * that byte alignment and sufficient buffer size are not checked. The
-		 * third form simply writes the data at the input position (pos) but does
-		 * not check for alignment, buffer size, nor does it update the internal
-		 * buffer iterator. The last method writes num_doubles from the input
-		 * array into 'this' IFStreamBinary. writeType is for templatization and
-		 * behaves like writeDouble. Similarly, writeTypeArray behaves like
-		 * writeDoubleArray.
-		 */
-		void						writeDouble(double d);
-		void						writeDoubleNC(double d);
-		void						writeDouble(double d, int pos);
-		void						writeDoubleArray(const double* array, int num_doubles);
-		void						writeType(double d);
-		void						writeTypeArray(const double* array, int num_doubles);
+        /**
+         * Write double data. writeDouble writes one double to the IFStreamBinary
+         * and updates buffer iterator. The second form is like the first except
+         * that byte alignment and sufficient buffer size are not checked. The
+         * third form simply writes the data at the input position (pos) but does
+         * not check for alignment, buffer size, nor does it update the internal
+         * buffer iterator. The last method writes num_doubles from the input
+         * array into 'this' IFStreamBinary. writeType is for templatization and
+         * behaves like writeDouble. Similarly, writeTypeArray behaves like
+         * writeDoubleArray.
+         */
+        void						writeDouble(double d);
+        void						writeDoubleNC(double d);
+        void						writeDouble(double d, int pos);
+        void						writeDoubleArray(const double* array, int num_doubles);
+        void						writeType(double d);
+        void						writeTypeArray(const double* array, int num_doubles);
 
-		/*
-		 * Return class name.
-		 */
-		static string		className()
-		{ return "IFStreamBinary"; }
+        /*
+         * Return class name.
+         */
+        static string				className()
+        {
+            return "IFStreamBinary";
+        }
 
-		/*
-		 * Return class size.
-		 */
-		static int			classSize()
-		{ return (int) sizeof(IFStreamBinary); }
+        /*
+         * Return class size.
+         */
+        static int					classSize()
+        {
+            return (int) sizeof(IFStreamBinary);
+        }
 
-		/**
-		 * This function allocates spc bytes in the buffer. Used to
-		 * minimize reallocation.
-		 */
-		void						reSize(int spc)
-		{ bData->resize(spc); }
+        /**
+         * This function allocates spc bytes in the buffer. Used to
+         * minimize reallocation.
+         */
+        void						reSize(int spc)
+        {
+            bData->resize(spc);
+        }
 
-		/**
-		 * Sets the storage capacity. Attained on next required resize.
-		 */
-		void						reserve(int sze)
-		{ bData->reserve(sze); }
+        /**
+         * Sets the storage capacity. Attained on next required resize.
+         */
+        void						reserve(int sze)
+        {
+            bData->reserve(sze);
+        }
 
-		/**
-		 * Returns the IFStreamBinary size.
-		 */
-		int							size()
-		{
-			if (bDataPos > bSize) bSize = bDataPos;
-			return bSize;
-		}
+        /**
+         * Returns the IFStreamBinary size.
+         */
+        int							size()
+        {
+            if (bDataPos > bSize) bSize = bDataPos;
+            return bSize;
+        }
 
-		/**
-		 * Reset the current iterator position to the beginning of the buffer.
-		 */
-		void						resetPos()
-		{
-			if (bDataPos > bSize) bSize = bDataPos;
-			bDataPos = 0;
-		}
+        /**
+         * Reset the current iterator position to the beginning of the buffer.
+         */
+        void						resetPos()
+        {
+            if (bDataPos > bSize) bSize = bDataPos;
+            bDataPos = 0;
+        }
 
-		/**
-		 * Set the current iterator position to the end of the buffer.
-		 */
-		void						setPosToEnd()
-		{
-			if (bDataPos > bSize) bSize = bDataPos;
-			bDataPos = bSize;
-		}
+        /**
+         * Set the current iterator position to the end of the buffer.
+         */
+        void						setPosToEnd()
+        {
+            if (bDataPos > bSize) bSize = bDataPos;
+            bDataPos = bSize;
+        }
 
-		/**
-		 * Get the current iterator position.
-		 */
-		int							getPos() const
-		{ return bDataPos; }
+        /**
+         * Get the current iterator position.
+         */
+        int							getPos() const
+        {
+            return bDataPos;
+        }
 
-		/**
-		 * Increment the iterator position.
-		 */
-		void						incrementPos(int increment = 1)
-		{ bDataPos += increment; }
+        /**
+         * Increment the iterator position.
+         */
+        void						incrementPos(int increment = 1)
+        {
+            bDataPos += increment;
+        }
 
-		/**
-		 * Decrement the iterator position.
-		 */
-		void						decrementPos(int decrement = 1)
-		{ bDataPos -= decrement; }
+        /**
+         * Decrement the iterator position.
+         */
+        void						decrementPos(int decrement = 1)
+        {
+            bDataPos -= decrement;
+        }
 
-		/**
-		 * Return a const reference to 'this' IFStreamBinarys data.
-		 */
-		const string&		getData() const
-		{	return *bData; }
+        /**
+         * Return a const reference to 'this' IFStreamBinarys data.
+         */
+        const string&				getData() const
+        {
+            return *bData;
+        }
 
-		/**
-		 * Return the allocated capacity of this IFStreamBinary.
-		 */
-		int							getCapacity() const
-		{ return (int) bData->capacity(); }
+        /**
+         * Return the allocated capacity of this IFStreamBinary.
+         */
+        int							getCapacity() const
+        {
+            return (int)bData->capacity();
+        }
 
-		/**
-		 * Return a pointer at the current iterator location in the IFStreamBinary
-		 * data.
-		 */
-		char*						getPosPointer()
-		{	return getPosPointer(bDataPos); }
+        /**
+         * Return a pointer at the current iterator location in the IFStreamBinary
+         * data.
+         */
+        char*						getPosPointer()
+        {
+            return getPosPointer(bDataPos);
+        }
 
-		/**
-		 * Return a pointer to position pos in 'this' IFStreamBinarys data.
-		 */
-		char*						getPosPointer(int pos)
-		{
-			char* p = &(*bData)[pos];
-			return p;
-		}
+        /**
+         * Return a pointer to position pos in 'this' IFStreamBinarys data.
+         */
+        char*						getPosPointer(int pos)
+        {
+            char* p = &(*bData)[pos];
+            return p;
+        }
 
-		/**
-		 * Sets the byte order reverse flag to bor.
-		 */
-		void						setByteOrderReverse(bool bor)
-		{ bReverse = bor; }
+        /**
+         * Sets the byte order reverse flag to bor.
+         */
+        void						setByteOrderReverse(bool bor)
+        {
+            bReverse = bor;
+        }
 
-		/**
-		 * Turns on byte order reversal.
-		 */
-		void						byteOrderReverseOn()
-		{ bReverse = true; }
+        /**
+         * Turns on byte order reversal.
+         */
+        void						byteOrderReverseOn()
+        {
+            bReverse = true;
+        }
 
-		/**
-		 * Turns off byte order reversal.
-		 */
-		void						byteOrderReverseOff()
-		{ bReverse = false; }
+        /**
+         * Turns off byte order reversal.
+         */
+        void						byteOrderReverseOff()
+        {
+            bReverse = false;
+        }
 
-		/**
-		 * Returns true if the byte order in reads and writes is reversed for all
-		 * 2, 4, or 8 byte intrinsincs (short, int, long, float, double, etc.).
-		 */
-		bool						isByteOrderReversalOn() const
-		{ return bReverse; }
+        /**
+         * Returns true if the byte order in reads and writes is reversed for all
+         * 2, 4, or 8 byte intrinsincs (short, int, long, float, double, etc.).
+         */
+        bool						isByteOrderReversalOn() const
+        {
+            return bReverse;
+        }
 
-		/**
-		 * Sets the intrinsic boundary alignment flag to align.
-		 */
-		void						setBoundaryAlignment(bool align)
-		{ bAlign = align; }
+        /**
+         * Sets the intrinsic boundary alignment flag to align.
+         */
+        void						setBoundaryAlignment(bool align)
+        {
+            bAlign = align;
+        }
 
-		/**
-		 * Turns on intrinsic boundary alignment.
-		 */
-		void						boundaryAlignmentOn()
-		{ bAlign = true; }
+        /**
+         * Turns on intrinsic boundary alignment.
+         */
+        void						boundaryAlignmentOn()
+        {
+            bAlign = true;
+        }
 
-		/**
-		 * Turns off intrinsic boundary alignment.
-		 */
-		void						boundaryAlignmentOff()
-		{ bAlign = false; }
+        /**
+         * Turns off intrinsic boundary alignment.
+         */
+        void						boundaryAlignmentOff()
+        {
+            bAlign = false;
+        }
 
-		/**
-		 * Returns true if the byte order in reads and writes is reversed for all
-		 * 2, 4, or 8 byte intrinsincs (short, int, long, float, double, etc.).
-		 */
-		bool						isBoundaryAlignmentOn() const
-		{ return bAlign; }
+        /**
+         * Returns true if the byte order in reads and writes is reversed for all
+         * 2, 4, or 8 byte intrinsincs (short, int, long, float, double, etc.).
+         */
+        bool						isBoundaryAlignmentOn() const
+        {
+            return bAlign;
+        }
 
 }; // end class IFStreamBinary
 
@@ -729,12 +767,12 @@ inline void IFStreamBinary::readString(string& s)
   // check for zero added by sballar 2013-01-04
   len = readInt();
   if (len == 0)
-	  s="";
+      s="";
   else
   {
-	  // read the data
-	  s = bData->substr(bDataPos, len);
-	  bDataPos += len;
+      // read the data
+      s = bData->substr(bDataPos, len);
+      bDataPos += len;
   }
 }
 
@@ -743,8 +781,8 @@ inline void IFStreamBinary::readString(string& s)
  */
 inline void IFStreamBinary::readCharArray(string& s, int num_chars)
 {
-	s.resize(num_chars);
-	readCharArray(&s[0], num_chars);
+    s.resize(num_chars);
+    readCharArray(&s[0], num_chars);
 }
 
 /**
@@ -763,7 +801,7 @@ inline void IFStreamBinary::readCharArray(char* array, int num_chars)
  */
 inline void IFStreamBinary::readType(string& s)
 {
-	readString(s);
+    readString(s);
 }
 
 /**
@@ -771,7 +809,7 @@ inline void IFStreamBinary::readType(string& s)
  */
 inline void IFStreamBinary::readTypeArray(string& s, int num_chars)
 {
-	readCharArray(s, num_chars);
+    readCharArray(s, num_chars);
 }
 
 //************* Read Bools ****************************************************
@@ -783,9 +821,9 @@ inline bool IFStreamBinary::readBool()
 {
   // read the data
 
-	int pos = bDataPos;
-	bDataPos += CPPUtils::SBOL;
-	return readBool(pos);
+    int pos = bDataPos;
+    bDataPos += CPPUtils::SBOL;
+    return readBool(pos);
 }
 
 /**
@@ -802,12 +840,12 @@ inline bool IFStreamBinary::readBool(int pos)
  */
 inline void IFStreamBinary::readBoolArray(bool* array, int num_bools)
 {
-	// get bytes and perform alignment
+    // get bytes and perform alignment
 
   int num_bytes = num_bools * CPPUtils::SBOL;
 
-	// copy from buffer into array ...
-	// update buffer position and exit
+    // copy from buffer into array ...
+    // update buffer position and exit
 
   memcpy(array, &(*bData)[bDataPos], num_bytes);
   bDataPos += num_bytes;
@@ -818,7 +856,7 @@ inline void IFStreamBinary::readBoolArray(bool* array, int num_bools)
  */
 inline void IFStreamBinary::readType(bool& b)
 {
-	b = readBool();
+    b = readBool();
 }
 
 /**
@@ -826,7 +864,7 @@ inline void IFStreamBinary::readType(bool& b)
  */
 inline void IFStreamBinary::readTypeArray(bool* array, int num_bools)
 {
-	readBoolArray(array, num_bools);
+    readBoolArray(array, num_bools);
 }
 
 //************* Read Bytes ****************************************************
@@ -838,9 +876,9 @@ inline byte IFStreamBinary::readByte()
 {
   // read the data
 
-	int pos = bDataPos;
-	bDataPos += CPPUtils::SBYT;
-	return readByte(pos);
+    int pos = bDataPos;
+    bDataPos += CPPUtils::SBYT;
+    return readByte(pos);
 }
 
 /**
@@ -857,12 +895,12 @@ inline byte IFStreamBinary::readByte(int pos)
  */
 inline void IFStreamBinary::readByteArray(byte* array, int num_bytes)
 {
-	// get bytes and perform alignment
+    // get bytes and perform alignment
 
   num_bytes *= CPPUtils::SBYT;
 
-	// copy from buffer into array ...
-	// update buffer position and exit
+    // copy from buffer into array ...
+    // update buffer position and exit
 
   memcpy(array, &(*bData)[bDataPos], num_bytes);
   bDataPos += num_bytes;
@@ -873,7 +911,7 @@ inline void IFStreamBinary::readByteArray(byte* array, int num_bytes)
  */
 inline void IFStreamBinary::readType(byte& b)
 {
-	b = readByte();
+    b = readByte();
 }
 
 /**
@@ -881,7 +919,7 @@ inline void IFStreamBinary::readType(byte& b)
  */
 inline void IFStreamBinary::readTypeArray(byte* array, int num_bytes)
 {
-	readByteArray(array, num_bytes);
+    readByteArray(array, num_bytes);
 }
 
 //************* Read Shorts ***************************************************
@@ -902,9 +940,9 @@ inline short IFStreamBinary::readShortNC()
 {
   // read the data
 
-	int pos = bDataPos;
-	bDataPos += CPPUtils::SSHT;
-	return readShort(pos);
+    int pos = bDataPos;
+    bDataPos += CPPUtils::SSHT;
+    return readShort(pos);
 }
 
 /**
@@ -915,14 +953,14 @@ inline short IFStreamBinary::readShort(int pos)
 {
   // read the data ... use memcpy if alignment is off
 
-	short s;
-	if (bAlign)
+    short s;
+    if (bAlign)
     s = *((short*) &(*bData)[pos]);
-	else
-	  memcpy(&s, &(*bData)[pos], 2);
+    else
+      memcpy(&s, &(*bData)[pos], 2);
 
   if (bReverse) reverseBO2((char*) &s);
-	return s;
+    return s;
 }
 
 /**
@@ -930,13 +968,13 @@ inline short IFStreamBinary::readShort(int pos)
  */
 inline void IFStreamBinary::readShortArray(short* array, int num_shorts)
 {
-	// get bytes and perform alignment
+    // get bytes and perform alignment
 
   int num_bytes = num_shorts * CPPUtils::SSHT;
   align2Byte();
 
-	// copy from buffer into array ... reverse data if necessary ...
-	// update buffer position and exit
+    // copy from buffer into array ... reverse data if necessary ...
+    // update buffer position and exit
 
   memcpy(array, &(*bData)[bDataPos], num_bytes);
   if (bReverse) reverseBO2Array(num_shorts, (char*) array);
@@ -948,7 +986,7 @@ inline void IFStreamBinary::readShortArray(short* array, int num_shorts)
  */
 inline void IFStreamBinary::readType(short& s)
 {
-	s = readShort();
+    s = readShort();
 }
 
 /**
@@ -956,7 +994,7 @@ inline void IFStreamBinary::readType(short& s)
  */
 inline void IFStreamBinary::readTypeArray(short* array, int num_shorts)
 {
-	readShortArray(array, num_shorts);
+    readShortArray(array, num_shorts);
 }
 
 //************* Read Ints *****************************************************
@@ -977,9 +1015,9 @@ inline int IFStreamBinary::readIntNC()
 {
   // read the data
 
-	int pos = bDataPos;
-	bDataPos += CPPUtils::SINT;
-	return readInt(pos);
+    int pos = bDataPos;
+    bDataPos += CPPUtils::SINT;
+    return readInt(pos);
 }
 
 /**
@@ -990,14 +1028,14 @@ inline int IFStreamBinary::readInt(int pos)
 {
   // read the data ... use memcpy if alignment is off
 
-	int i;
-	if (bAlign)
-		i = *((int*) &(*bData)[pos]);
-	else
-		memcpy(&i, &(*bData)[pos], 4);
+    int i;
+    if (bAlign)
+        i = *((int*) &(*bData)[pos]);
+    else
+        memcpy(&i, &(*bData)[pos], 4);
 
   if (bReverse) reverseBO4((char*) &i);
-	return i;
+    return i;
 }
 
 /**
@@ -1005,13 +1043,13 @@ inline int IFStreamBinary::readInt(int pos)
  */
 inline void IFStreamBinary::readIntArray(int* array, int num_ints)
 {
-	// get bytes and perform alignment
+    // get bytes and perform alignment
 
   int num_bytes = num_ints * CPPUtils::SINT;
   align4Byte();
 
-	// copy from buffer into array ... reverse data if necessary ...
-	// update buffer position and exit
+    // copy from buffer into array ... reverse data if necessary ...
+    // update buffer position and exit
 
   memcpy(array, &(*bData)[bDataPos], num_bytes);
   if (bReverse) reverseBO4Array(num_ints, (char*) array);
@@ -1023,7 +1061,7 @@ inline void IFStreamBinary::readIntArray(int* array, int num_ints)
  */
 inline void IFStreamBinary::readType(int& i)
 {
-	i = readInt();
+    i = readInt();
 }
 
 /**
@@ -1031,7 +1069,7 @@ inline void IFStreamBinary::readType(int& i)
  */
 inline void IFStreamBinary::readTypeArray(int* array, int num_ints)
 {
-	readIntArray(array, num_ints);
+    readIntArray(array, num_ints);
 }
 
 //************* Read Longs ****************************************************
@@ -1052,9 +1090,9 @@ inline LONG_INT IFStreamBinary::readLongNC()
 {
   // read the data
 
-	int pos = bDataPos;
-	bDataPos += CPPUtils::SLNG;
-	return readLong(pos);
+    int pos = bDataPos;
+    bDataPos += CPPUtils::SLNG;
+    return readLong(pos);
 }
 
 /**
@@ -1065,14 +1103,14 @@ inline LONG_INT IFStreamBinary::readLong(int pos)
 {
   // read the data ... use memcpy if alignment is off
 
-	LONG_INT l;
-	if (bAlign)
-		l = *((LONG_INT*) &(*bData)[pos]);
-	else
-	  memcpy(&l, &(*bData)[pos], 8);
+    LONG_INT l;
+    if (bAlign)
+        l = *((LONG_INT*) &(*bData)[pos]);
+    else
+      memcpy(&l, &(*bData)[pos], 8);
 
   if (bReverse) reverseBO8((char*) &l);
-	return l;
+    return l;
 }
 
 /**
@@ -1080,13 +1118,13 @@ inline LONG_INT IFStreamBinary::readLong(int pos)
  */
 inline void IFStreamBinary::readLongArray(LONG_INT* array, int num_longs)
 {
-	// get bytes and perform alignment
+    // get bytes and perform alignment
 
   int num_bytes = num_longs * CPPUtils::SLNG;
   align8Byte();
 
-	// copy from buffer into array ... reverse data if necessary ...
-	// update buffer position and exit
+    // copy from buffer into array ... reverse data if necessary ...
+    // update buffer position and exit
 
   memcpy(array, &(*bData)[bDataPos], num_bytes);
   if (bReverse) reverseBO8Array(num_longs, (char*) array);
@@ -1098,7 +1136,7 @@ inline void IFStreamBinary::readLongArray(LONG_INT* array, int num_longs)
  */
 inline void IFStreamBinary::readType(LONG_INT& l)
 {
-	l = readLong();
+    l = readLong();
 }
 
 /**
@@ -1106,7 +1144,7 @@ inline void IFStreamBinary::readType(LONG_INT& l)
  */
 inline void IFStreamBinary::readTypeArray(LONG_INT* array, int num_longs)
 {
-	readLongArray(array, num_longs);
+    readLongArray(array, num_longs);
 }
 
 //************* Read Floats ***************************************************
@@ -1127,9 +1165,9 @@ inline float IFStreamBinary::readFloatNC()
 {
   // read the data
 
-	int pos = bDataPos;
-	bDataPos += CPPUtils::SFLT;
-	return readFloat(pos);
+    int pos = bDataPos;
+    bDataPos += CPPUtils::SFLT;
+    return readFloat(pos);
 }
 
 /**
@@ -1140,14 +1178,14 @@ inline float IFStreamBinary::readFloat(int pos)
 {
   // read the data ... use memcpy if alignment is off
 
-	float f;
-	if (bAlign)
-		f = *((float*) &(*bData)[pos]);
-	else
-	  memcpy(&f, &(*bData)[pos], 4);
+    float f;
+    if (bAlign)
+        f = *((float*) &(*bData)[pos]);
+    else
+      memcpy(&f, &(*bData)[pos], 4);
 
   if (bReverse) reverseBO4((char*) &f);
-	return f;
+    return f;
 }
 
 /**
@@ -1155,13 +1193,13 @@ inline float IFStreamBinary::readFloat(int pos)
  */
 inline void IFStreamBinary::readFloatArray(float* array, int num_floats)
 {
-	// get bytes and perform alignment
+    // get bytes and perform alignment
 
   int num_bytes = num_floats * CPPUtils::SFLT;
   align4Byte();
 
-	// copy from buffer into array ... reverse data if necessary ...
-	// update buffer position and exit
+    // copy from buffer into array ... reverse data if necessary ...
+    // update buffer position and exit
 
   memcpy(array, &(*bData)[bDataPos], num_bytes);
   if (bReverse) reverseBO4Array(num_floats, (char*) array);
@@ -1173,7 +1211,7 @@ inline void IFStreamBinary::readFloatArray(float* array, int num_floats)
  */
 inline void IFStreamBinary::readType(float& f)
 {
-	f = readFloat();
+    f = readFloat();
 }
 
 /**
@@ -1181,7 +1219,7 @@ inline void IFStreamBinary::readType(float& f)
  */
 inline void IFStreamBinary::readTypeArray(float* array, int num_floats)
 {
-	readFloatArray(array, num_floats);
+    readFloatArray(array, num_floats);
 }
 
 //************* Read Doubles **************************************************
@@ -1202,9 +1240,9 @@ inline double IFStreamBinary::readDoubleNC()
 {
   // read the data
 
-	int pos = bDataPos;
-	bDataPos += CPPUtils::SDBL;
-	return readDouble(pos);
+    int pos = bDataPos;
+    bDataPos += CPPUtils::SDBL;
+    return readDouble(pos);
 }
 
 /**
@@ -1215,14 +1253,14 @@ inline double IFStreamBinary::readDouble(int pos)
 {
   // read the data ... use memcpy if alignment is off
 
-	double d;
-	if (bAlign)
-		d = *((double*) &(*bData)[pos]);
-	else
-	  memcpy(&d, &(*bData)[pos], 8);
+    double d;
+    if (bAlign)
+        d = *((double*) &(*bData)[pos]);
+    else
+      memcpy(&d, &(*bData)[pos], 8);
 
   if (bReverse) reverseBO8((char*) &d);
-	return d;
+    return d;
 }
 
 /**
@@ -1230,13 +1268,13 @@ inline double IFStreamBinary::readDouble(int pos)
  */
 inline void IFStreamBinary::readDoubleArray(double* array, int num_doubles)
 {
-	// get bytes and perform alignment
+    // get bytes and perform alignment
 
   int num_bytes = num_doubles * CPPUtils::SDBL;
   align8Byte();
 
-	// copy from buffer into array ... reverse data if necessary ...
-	// update buffer position and exit
+    // copy from buffer into array ... reverse data if necessary ...
+    // update buffer position and exit
 
   memcpy(array, &(*bData)[bDataPos], num_bytes);
   if (bReverse) reverseBO8Array(num_doubles, (char*) array);
@@ -1248,7 +1286,7 @@ inline void IFStreamBinary::readDoubleArray(double* array, int num_doubles)
  */
 inline void IFStreamBinary::readType(double& d)
 {
-	d = readDouble();
+    d = readDouble();
 }
 
 /**
@@ -1256,7 +1294,7 @@ inline void IFStreamBinary::readType(double& d)
  */
 inline void IFStreamBinary::readTypeArray(double* array, int num_doubles)
 {
-	readDoubleArray(array, num_doubles);
+    readDoubleArray(array, num_doubles);
 }
 
 //************* Write Strings *************************************************
@@ -1271,13 +1309,13 @@ inline void IFStreamBinary::writeString(const string& str)
 {
   // get total size, align, and check capacity
 
-	int sz = (int) str.size() + CPPUtils::SINT;
+    int sz = (int) str.size() + CPPUtils::SINT;
   align4Byte();
   checkBufferSize(sz);
 
   // write the data
 
-	writeIntNC((int) str.size());
+    writeIntNC((int) str.size());
   memcpy(&(*bData)[bDataPos], &str[0], str.size());
   bDataPos += (int) str.size();
 }
@@ -1314,7 +1352,7 @@ inline void IFStreamBinary::writeCharArray(const char* array, int num_chars)
  */
 inline void IFStreamBinary::writeType(const string& str)
 {
-	writeString(str);
+    writeString(str);
 }
 
 /**
@@ -1324,7 +1362,7 @@ inline void IFStreamBinary::writeType(const string& str)
  */
 inline void IFStreamBinary::writeType(const char* char_string)
 {
-	writeString(char_string);
+    writeString(char_string);
 }
 
 //************* Write Bools ***************************************************
@@ -1336,7 +1374,7 @@ inline void IFStreamBinary::writeType(const char* char_string)
  */
 inline void IFStreamBinary::writeBool(bool b)
 {
-	checkBufferSize(CPPUtils::SBOL);
+    checkBufferSize(CPPUtils::SBOL);
 
   writeBoolNC(b);
 }
@@ -1348,7 +1386,7 @@ inline void IFStreamBinary::writeBool(bool b)
  */
 inline void IFStreamBinary::writeBoolNC(bool b)
 {
-	writeBool(b, bDataPos);
+    writeBool(b, bDataPos);
   bDataPos += CPPUtils::SBOL;
 }
 
@@ -1367,14 +1405,14 @@ inline void IFStreamBinary::writeBool(bool b, int pos)
  */
 inline void IFStreamBinary::writeBoolArray(const bool* array, int num_bools)
 {
-	// get number of bytes to be written and check for alignment and buffer
-	// size
+    // get number of bytes to be written and check for alignment and buffer
+    // size
 
   num_bools *= CPPUtils::SBOL;
   checkBufferSize(num_bools);
 
-	// copy array into data buffer. Reverse data buffer entries if necessary
-	// and increment the buffer output pointer.
+    // copy array into data buffer. Reverse data buffer entries if necessary
+    // and increment the buffer output pointer.
 
   memcpy(&(*bData)[bDataPos], array, num_bools);
   bDataPos += num_bools;
@@ -1387,7 +1425,7 @@ inline void IFStreamBinary::writeBoolArray(const bool* array, int num_bools)
  */
 inline void IFStreamBinary::writeType(bool b)
 {
-	writeBool(b);
+    writeBool(b);
 }
 
 /**
@@ -1395,7 +1433,7 @@ inline void IFStreamBinary::writeType(bool b)
  */
 inline void IFStreamBinary::writeTypeArray(const bool* array, int num_bools)
 {
-	writeBoolArray(array, num_bools);
+    writeBoolArray(array, num_bools);
 }
 
 //************* Write Bytes ***************************************************
@@ -1419,7 +1457,7 @@ inline void IFStreamBinary::writeByte(byte b)
  */
 inline void IFStreamBinary::writeByteNC(byte b)
 {
-	writeByte(b, bDataPos);
+    writeByte(b, bDataPos);
   bDataPos += CPPUtils::SBYT;
 }
 
@@ -1438,14 +1476,14 @@ inline void IFStreamBinary::writeByte(byte b, int pos)
  */
 inline void IFStreamBinary::writeByteArray(const byte* array, int num_bytes)
 {
-	// get number of bytes to be written and check for alignment and buffer
-	// size
+    // get number of bytes to be written and check for alignment and buffer
+    // size
 
   num_bytes *= CPPUtils::SBYT;
   checkBufferSize(num_bytes);
 
-	// copy array into data buffer. Reverse data buffer entries if necessary
-	// and increment the buffer output pointer.
+    // copy array into data buffer. Reverse data buffer entries if necessary
+    // and increment the buffer output pointer.
 
   memcpy(&(*bData)[bDataPos], array, num_bytes);
   bDataPos += num_bytes;
@@ -1458,7 +1496,7 @@ inline void IFStreamBinary::writeByteArray(const byte* array, int num_bytes)
  */
 inline void IFStreamBinary::writeType(byte b)
 {
-	writeByte(b);
+    writeByte(b);
 }
 
 /**
@@ -1466,7 +1504,7 @@ inline void IFStreamBinary::writeType(byte b)
  */
 inline void IFStreamBinary::writeTypeArray(const byte* array, int num_bytes)
 {
-	writeByteArray(array, num_bytes);
+    writeByteArray(array, num_bytes);
 }
 
 //************* Write Shorts **************************************************
@@ -1491,7 +1529,7 @@ inline void IFStreamBinary::writeShort(short s)
  */
 inline void IFStreamBinary::writeShortNC(short s)
 {
-	writeShort(s, bDataPos);
+    writeShort(s, bDataPos);
   bDataPos += CPPUtils::SSHT;
 }
 
@@ -1505,7 +1543,7 @@ inline void IFStreamBinary::writeShort(short s, int pos)
   if (bReverse) reverseBO2((char*) &s);
 
   if (bAlign)
-  	*((short*) &(*bData)[pos]) = s;
+    *((short*) &(*bData)[pos]) = s;
   else
     memcpy(&(*bData)[pos], &s, CPPUtils::SSHT);
 }
@@ -1515,15 +1553,15 @@ inline void IFStreamBinary::writeShort(short s, int pos)
  */
 inline void IFStreamBinary::writeShortArray(const short* array, int num_shorts)
 {
-	// get number of bytes to be written and check for alignment and buffer
-	// size
+    // get number of bytes to be written and check for alignment and buffer
+    // size
 
   int num_bytes = num_shorts * CPPUtils::SSHT;
   align2Byte();
   checkBufferSize(num_bytes);
 
-	// copy array into data buffer. Reverse data buffer entries if necessary
-	// and increment the buffer output pointer.
+    // copy array into data buffer. Reverse data buffer entries if necessary
+    // and increment the buffer output pointer.
 
   memcpy(&(*bData)[bDataPos], array, num_bytes);
   if (bReverse) reverseBO2Array(num_shorts, &(*bData)[bDataPos]);
@@ -1537,7 +1575,7 @@ inline void IFStreamBinary::writeShortArray(const short* array, int num_shorts)
  */
 inline void IFStreamBinary::writeType(short s)
 {
-	writeShort(s);
+    writeShort(s);
 }
 
 /**
@@ -1545,7 +1583,7 @@ inline void IFStreamBinary::writeType(short s)
  */
 inline void IFStreamBinary::writeTypeArray(const short* array, int num_shorts)
 {
-	writeShortArray(array, num_shorts);
+    writeShortArray(array, num_shorts);
 }
 
 //************* Write Ints ****************************************************
@@ -1570,7 +1608,7 @@ inline void IFStreamBinary::writeInt(int i)
  */
 inline void IFStreamBinary::writeIntNC(int i)
 {
-	writeInt(i, bDataPos);
+    writeInt(i, bDataPos);
   bDataPos += CPPUtils::SINT;
 }
 
@@ -1584,7 +1622,7 @@ inline void IFStreamBinary::writeInt(int i, int pos)
   if (bReverse) reverseBO4((char*) &i);
 
   if (bAlign)
-  	*((int*) &(*bData)[pos]) = i;
+    *((int*) &(*bData)[pos]) = i;
   else
     memcpy(&(*bData)[pos], &i, CPPUtils::SINT);
 }
@@ -1594,15 +1632,15 @@ inline void IFStreamBinary::writeInt(int i, int pos)
  */
 inline void IFStreamBinary::writeIntArray(const int* array, int num_ints)
 {
-	// get number of bytes to be written and check for alignment and buffer
-	// size
+    // get number of bytes to be written and check for alignment and buffer
+    // size
 
   int num_bytes = num_ints * CPPUtils::SINT;
   align4Byte();
   checkBufferSize(num_bytes);
 
-	// copy array into data buffer. Reverse data buffer entries if necessary
-	// and increment the buffer output pointer.
+    // copy array into data buffer. Reverse data buffer entries if necessary
+    // and increment the buffer output pointer.
 
   memcpy(&(*bData)[bDataPos], array, num_bytes);
   if (bReverse) reverseBO4Array(num_ints, &(*bData)[bDataPos]);
@@ -1616,7 +1654,7 @@ inline void IFStreamBinary::writeIntArray(const int* array, int num_ints)
  */
 inline void IFStreamBinary::writeType(int i)
 {
-	writeInt(i);
+    writeInt(i);
 }
 
 /**
@@ -1624,7 +1662,7 @@ inline void IFStreamBinary::writeType(int i)
  */
 inline void IFStreamBinary::writeTypeArray(const int* array, int num_ints)
 {
-	writeIntArray(array, num_ints);
+    writeIntArray(array, num_ints);
 }
 
 //************* Write Longs ***************************************************
@@ -1649,7 +1687,7 @@ inline void IFStreamBinary::writeLong(LONG_INT l)
  */
 inline void IFStreamBinary::writeLongNC(LONG_INT l)
 {
-	writeLong(l, bDataPos);
+    writeLong(l, bDataPos);
   bDataPos += CPPUtils::SLNG;
 }
 
@@ -1663,7 +1701,7 @@ inline void IFStreamBinary::writeLong(LONG_INT l, int pos)
   if (bReverse) reverseBO8((char*) &l);
 
   if (bAlign)
-  	*((LONG_INT*) &(*bData)[pos]) = l;
+    *((LONG_INT*) &(*bData)[pos]) = l;
   else
     memcpy(&(*bData)[pos], &l, CPPUtils::SLNG);
 }
@@ -1673,15 +1711,15 @@ inline void IFStreamBinary::writeLong(LONG_INT l, int pos)
  */
 inline void IFStreamBinary::writeLongArray(const LONG_INT* array, int num_longs)
 {
-	// get number of bytes to be written and check for alignment and buffer
-	// size
+    // get number of bytes to be written and check for alignment and buffer
+    // size
 
   int num_bytes = num_longs * CPPUtils::SLNG;
   align8Byte();
   checkBufferSize(num_bytes);
 
-	// copy array into data buffer. Reverse data buffer entries if necessary
-	// and increment the buffer output pointer.
+    // copy array into data buffer. Reverse data buffer entries if necessary
+    // and increment the buffer output pointer.
 
   memcpy(&(*bData)[bDataPos], array, num_bytes);
   if (bReverse) reverseBO8Array(num_longs, &(*bData)[bDataPos]);
@@ -1695,7 +1733,7 @@ inline void IFStreamBinary::writeLongArray(const LONG_INT* array, int num_longs)
  */
 inline void IFStreamBinary::writeType(LONG_INT l)
 {
-	writeLong(l);
+    writeLong(l);
 }
 
 /**
@@ -1703,7 +1741,7 @@ inline void IFStreamBinary::writeType(LONG_INT l)
  */
 inline void IFStreamBinary::writeTypeArray(const LONG_INT* array, int num_longs)
 {
-	writeLongArray(array, num_longs);
+    writeLongArray(array, num_longs);
 }
 
 //************* Write Floats **************************************************
@@ -1728,7 +1766,7 @@ inline void IFStreamBinary::writeFloat(float f)
  */
 inline void IFStreamBinary::writeFloatNC(float f)
 {
-	writeFloat(f, bDataPos);
+    writeFloat(f, bDataPos);
   bDataPos += CPPUtils::SFLT;
 }
 
@@ -1742,7 +1780,7 @@ inline void IFStreamBinary::writeFloat(float f, int pos)
   if (bReverse) reverseBO4((char*) &f);
 
   if (bAlign)
-  	*((float*) &(*bData)[pos]) = f;
+    *((float*) &(*bData)[pos]) = f;
   else
     memcpy(&(*bData)[pos], &f, CPPUtils::SFLT);
 }
@@ -1752,15 +1790,15 @@ inline void IFStreamBinary::writeFloat(float f, int pos)
  */
 inline void IFStreamBinary::writeFloatArray(const float* array, int num_floats)
 {
-	// get number of bytes to be written and check for alignment and buffer
-	// size
+    // get number of bytes to be written and check for alignment and buffer
+    // size
 
   int num_bytes = num_floats * CPPUtils::SFLT;
   align4Byte();
   checkBufferSize(num_bytes);
 
-	// copy array into data buffer. Reverse data buffer entries if necessary
-	// and increment the buffer output pointer.
+    // copy array into data buffer. Reverse data buffer entries if necessary
+    // and increment the buffer output pointer.
 
   memcpy(&(*bData)[bDataPos], array, num_bytes);
   if (bReverse) reverseBO4Array(num_floats, &(*bData)[bDataPos]);
@@ -1774,7 +1812,7 @@ inline void IFStreamBinary::writeFloatArray(const float* array, int num_floats)
  */
 inline void IFStreamBinary::writeType(float f)
 {
-	writeFloat(f);
+    writeFloat(f);
 }
 
 /**
@@ -1782,7 +1820,7 @@ inline void IFStreamBinary::writeType(float f)
  */
 inline void IFStreamBinary::writeTypeArray(const float* array, int num_floats)
 {
-	writeFloatArray(array, num_floats);
+    writeFloatArray(array, num_floats);
 }
 
 //************* Write Doubles *************************************************
@@ -1795,7 +1833,7 @@ inline void IFStreamBinary::writeTypeArray(const float* array, int num_floats)
 inline void IFStreamBinary::writeDouble(double d)
 {
   align8Byte();
-	checkBufferSize(CPPUtils::SDBL);
+    checkBufferSize(CPPUtils::SDBL);
 
   writeDoubleNC(d);
 }
@@ -1807,7 +1845,7 @@ inline void IFStreamBinary::writeDouble(double d)
  */
 inline void IFStreamBinary::writeDoubleNC(double d)
 {
-	writeDouble(d, bDataPos);
+    writeDouble(d, bDataPos);
   bDataPos += CPPUtils::SDBL;
 }
 
@@ -1821,7 +1859,7 @@ inline void IFStreamBinary::writeDouble(double d, int pos)
   if (bReverse) reverseBO8((char*) &d);
 
   if (bAlign)
-  	*((double*) &(*bData)[pos]) = d;
+    *((double*) &(*bData)[pos]) = d;
   else
     memcpy(&(*bData)[pos], &d, CPPUtils::SDBL);
 }
@@ -1831,15 +1869,15 @@ inline void IFStreamBinary::writeDouble(double d, int pos)
  */
 inline void IFStreamBinary::writeDoubleArray(const double* array, int num_doubles)
 {
-	// get number of bytes to be written and check for alignment and buffer
-	// size
+    // get number of bytes to be written and check for alignment and buffer
+    // size
 
   int num_bytes = num_doubles * CPPUtils::SDBL;
   align8Byte();
   checkBufferSize(num_bytes);
 
-	// copy array into data buffer. Reverse data buffer entries if necessary
-	// and increment the buffer output pointer.
+    // copy array into data buffer. Reverse data buffer entries if necessary
+    // and increment the buffer output pointer.
 
   memcpy(&(*bData)[bDataPos], array, num_bytes);
   if (bReverse) reverseBO8Array(num_doubles, &(*bData)[bDataPos]);
@@ -1853,7 +1891,7 @@ inline void IFStreamBinary::writeDoubleArray(const double* array, int num_double
  */
 inline void IFStreamBinary::writeType(double d)
 {
-	writeDouble(d);
+    writeDouble(d);
 }
 
 /**
@@ -1861,7 +1899,7 @@ inline void IFStreamBinary::writeType(double d)
  */
 inline void IFStreamBinary::writeTypeArray(const double* array, int num_doubles)
 {
-	writeDoubleArray(array, num_doubles);
+    writeDoubleArray(array, num_doubles);
 }
 
 //************* Byte reversal functions ***************************************

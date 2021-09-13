@@ -1,46 +1,37 @@
 //- ****************************************************************************
-//- 
-//- Copyright 2009 Sandia Corporation. Under the terms of Contract 
-//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains 
-//- certain rights in this software.
 //-
-//- BSD Open Source License.
+//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
+//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
+//- Government retains certain rights in this software.
+//-
+//- BSD Open Source License
 //- All rights reserved.
-//- 
-//- Redistribution and use in source and binary forms, with or without 
+//-
+//- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
 //-
-//-    * Redistributions of source code must retain the above copyright notice, 
+//-   1. Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-    * Redistributions in binary form must reproduce the above copyright 
-//-      notice, this list of conditions and the following disclaimer in the 
+//-
+//-   2. Redistributions in binary form must reproduce the above copyright
+//-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-    * Neither the name of Sandia National Laboratories nor the names of its 
-//-      contributors may be used to endorse or promote products derived from  
+//-
+//-   3. Neither the name of the copyright holder nor the names of its
+//-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
 //-
-//- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-//- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-//- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-//- ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-//- LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-//- CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-//- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-//- INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-//- CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-//- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+//- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+//- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+//- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+//- ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+//- LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+//- CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+//- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+//- INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+//- CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+//- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //- POSSIBILITY OF SUCH DAMAGE.
-//-
-
-//- ****************************************************************************
-//-
-//- Program:       SNL TauP Location Library (TauPLoc)
-//- Module:        $RCSfile: TauPSite.cc,v $
-//- Creator:       Jim Hipp
-//- Creation Date: April 23, 2007
-//- Revision:      $Revision: 1.17 $
-//- Last Modified: $Date: 2011/10/07 13:15:00 $
-//- Last Check-in: $Author: sballar $
 //-
 //- ****************************************************************************
 
@@ -82,16 +73,16 @@ vector<TravelTimeResult*> TauPSite::tpsReuseTTR = vector<TravelTimeResult*>();
 //
 // *****************************************************************************
 TauPSite::TauPSite() : tpsIsVelModlOwned(false),
-					   tpsRcvrName(""),
-					   tpsRcvrPhase(""),
-					   tpsModelName(""),
-					   tpsRcvrRad(0.0),
-					   tpsRcvrDepth(0.0),
-					   tpsSrcRad(0.0),
-					   tpsSrcDepth(0.0),
+                       tpsRcvrName(""),
+                       tpsRcvrPhase(""),
+                       tpsModelName(""),
+                       tpsRcvrRad(0.0),
+                       tpsRcvrDepth(0.0),
+                       tpsSrcRad(0.0),
+                       tpsSrcDepth(0.0),
                        tpsDist(0.0),
                        tpsLastDist(-1.0),
-					   tpsLastDepth(-1.0)
+                       tpsLastDepth(-1.0)
 {
   ++tpsClassCount;
 
@@ -109,16 +100,16 @@ TauPSite::TauPSite() : tpsIsVelModlOwned(false),
 // *****************************************************************************
 TauPSite::TauPSite(const string& staname, const string& phase) :
                    tpsIsVelModlOwned(false),
-				   tpsRcvrName(staname),
-				   tpsRcvrPhase(phase),
-				   tpsModelName(""),
+                   tpsRcvrName(staname),
+                   tpsRcvrPhase(phase),
+                   tpsModelName(""),
                    tpsRcvrRad(0.0),
-				   tpsRcvrDepth(0.0),
+                   tpsRcvrDepth(0.0),
                    tpsSrcRad(0.0),
-				   tpsSrcDepth(0.0),
+                   tpsSrcDepth(0.0),
                    tpsDist(0.0),
-				   tpsLastDist(-1.0),
-				   tpsLastDepth(-1.0)
+                   tpsLastDist(-1.0),
+                   tpsLastDepth(-1.0)
 {
   ++tpsClassCount;
 
@@ -136,16 +127,16 @@ TauPSite::TauPSite(const string& staname, const string& phase) :
 // *****************************************************************************
 TauPSite::TauPSite(const TauPSite& tps) :
                    tpsIsVelModlOwned(tps.tpsIsVelModlOwned),
-				   tpsRcvrName(tps.tpsRcvrName),
-				   tpsRcvrPhase(tps.tpsRcvrPhase),
+                   tpsRcvrName(tps.tpsRcvrName),
+                   tpsRcvrPhase(tps.tpsRcvrPhase),
                    tpsModelName(tps.tpsModelName),
                    tpsRcvrRad(tps.tpsRcvrRad),
                    tpsRcvrDepth(tps.tpsRcvrDepth),
-				   tpsSrcRad(tps.tpsSrcRad),
-				   tpsSrcDepth(tps.tpsSrcDepth),
-				   tpsDist(tps.tpsDist),
-				   tpsLastDist(-1.0),
-				   tpsLastDepth(-1.0)
+                   tpsSrcRad(tps.tpsSrcRad),
+                   tpsSrcDepth(tps.tpsSrcDepth),
+                   tpsDist(tps.tpsDist),
+                   tpsLastDist(-1.0),
+                   tpsLastDepth(-1.0)
 {
   int i;
 
@@ -188,7 +179,7 @@ TauPSite::~TauPSite()
   tpsTTR.clear();
 
   // delete any owned velocity models
-  
+
   clearVelocityModels();
 
   // delete tpsReuseTTR stack if this is the last TauPSite object
@@ -202,12 +193,12 @@ TauPSite::~TauPSite()
       tpsReuseTTR.pop_back();
     }
 
-	//for (int i=0; i<tpsReuseTTR.size(); ++i)
-	//	delete tpsReuseTTR[i];
-	//tpsReuseTTR.clear();
+    //for (int i=0; i<tpsReuseTTR.size(); ++i)
+    //	delete tpsReuseTTR[i];
+    //tpsReuseTTR.clear();
   }
 }
-    
+
 // **** _FUNCTION DESCRIPTION_ *************************************************
 //
 //! Assignment operator.
@@ -341,24 +332,24 @@ void TauPSite::appendConstVelocityModel(double c, double rt, double rb,
         tpsVLayer.push_back(new VelocityConst(c, rt, rb, layrnam));
       else
       {
-		    ostringstream os;
+            ostringstream os;
         os << endl << "ERROR: Top radius (" << rt << " km) does not equal "
            << "previous layer bottom radius (" << tpsVLayer.back()->getRb()
            << " km) ..." << endl
-  			    << "TauPLoc Version " << TAUPLOC_VRSN << "  File "
+                << "TauPLoc Version " << TAUPLOC_VRSN << "  File "
             << __FILE__ << " line " << __LINE__ << endl << endl;
-		    throw TauPException(os.str());
+            throw TauPException(os.str());
       }
     }
     else
     {
-	    ostringstream os;
+        ostringstream os;
       os << endl << "ERROR: Attempting to add a new velocity model layer "
          << "to an existing \"Owned\" velocity model ..." << endl
          << "Operation is not allowed ..." << endl
-			   << "TauPLoc Version " << TAUPLOC_VRSN << "  File "
+               << "TauPLoc Version " << TAUPLOC_VRSN << "  File "
          << __FILE__ << " line " << __LINE__ << endl << endl;
-	    throw TauPException(os.str());
+        throw TauPException(os.str());
     }
   }
   else
@@ -404,24 +395,24 @@ void TauPSite::appendLinearVelocityModel(double a0, double a1,
                                                layrnam, normradius));
       else
       {
-		    ostringstream os;
+            ostringstream os;
         os << endl << "ERROR: Top radius (" << rt << " km) does not equal "
            << "previous layer bottom radius (" << tpsVLayer.back()->getRb()
            << " km) ..." << endl
-  			    << "TauPLoc Version " << TAUPLOC_VRSN << "  File "
+                << "TauPLoc Version " << TAUPLOC_VRSN << "  File "
             << __FILE__ << " line " << __LINE__ << endl << endl;
-		    throw TauPException(os.str());
+            throw TauPException(os.str());
       }
     }
     else
     {
-	    ostringstream os;
+        ostringstream os;
       os << endl << "ERROR: Attempting to add a new velocity model layer "
          << "to an existing \"Owned\" velocity model ..." << endl
          << "Operation is not allowed ..." << endl
-			   << "TauPLoc Version " << TAUPLOC_VRSN << "  File "
+               << "TauPLoc Version " << TAUPLOC_VRSN << "  File "
          << __FILE__ << " line " << __LINE__ << endl << endl;
-	    throw TauPException(os.str());
+        throw TauPException(os.str());
     }
   }
   else
@@ -468,24 +459,24 @@ void TauPSite::appendQuadraticVelocityModel(double a0, double a1, double a2,
                                                   layrnam, normradius));
       else
       {
-		    ostringstream os;
+            ostringstream os;
         os << endl << "ERROR: Top radius (" << rt << " km) does not equal "
            << "previous layer bottom radius (" << tpsVLayer.back()->getRb()
            << " km) ..." << endl
-  			    << "TauPLoc Version " << TAUPLOC_VRSN << "  File "
+                << "TauPLoc Version " << TAUPLOC_VRSN << "  File "
             << __FILE__ << " line " << __LINE__ << endl << endl;
-		    throw TauPException(os.str());
+            throw TauPException(os.str());
       }
     }
     else
     {
-	    ostringstream os;
+        ostringstream os;
       os << endl << "ERROR: Attempting to add a new velocity model layer "
          << "to an existing \"Owned\" velocity model ..." << endl
          << "Operation is not allowed ..." << endl
-			   << "TauPLoc Version " << TAUPLOC_VRSN << "  File "
+               << "TauPLoc Version " << TAUPLOC_VRSN << "  File "
          << __FILE__ << " line " << __LINE__ << endl << endl;
-	    throw TauPException(os.str());
+        throw TauPException(os.str());
     }
   }
   else
@@ -533,24 +524,24 @@ void TauPSite::appendCubicVelocityModel(double a0, double a1,
                                               layrnam, normradius));
       else
       {
-		    ostringstream os;
+            ostringstream os;
         os << endl << "ERROR: Top radius (" << rt << " km) does not equal "
            << "previous layer bottom radius (" << tpsVLayer.back()->getRb()
            << " km) ..." << endl
-  			    << "TauPLoc Version " << TAUPLOC_VRSN << "  File "
+                << "TauPLoc Version " << TAUPLOC_VRSN << "  File "
             << __FILE__ << " line " << __LINE__ << endl << endl;
-		    throw TauPException(os.str());
+            throw TauPException(os.str());
       }
     }
     else
     {
-	    ostringstream os;
+        ostringstream os;
       os << endl << "ERROR: Attempting to add a new velocity model layer "
          << "to an existing \"Owned\" velocity model ..." << endl
          << "Operation is not allowed ..." << endl
-			   << "TauPLoc Version " << TAUPLOC_VRSN << "  File "
+               << "TauPLoc Version " << TAUPLOC_VRSN << "  File "
          << __FILE__ << " line " << __LINE__ << endl << endl;
-	    throw TauPException(os.str());
+        throw TauPException(os.str());
     }
   }
   else
@@ -2065,7 +2056,7 @@ double TauPSite::getFirstNonDiffractedTravelTime() const
 //
 // *****************************************************************************
 double TauPSite::getTravelTime(const string& phase, bool matchPhase) const
-{ 
+{
   double tt = -1.0;
   map<double, TravelTimeResult*>::const_iterator itttr;
 
@@ -2093,7 +2084,7 @@ double TauPSite::getTravelTime(const string& phase, bool matchPhase) const
 
       // return partial match if found
 
-      if (((ttr.ttrPhaseName.size() > 0) && 
+      if (((ttr.ttrPhaseName.size() > 0) &&
            (phase == ttr.ttrPhaseName.substr(0, phase.size()))) ||
           (phase == ttr.ttrPhaseEval.substr(0, phase.size())))
         return itttr->first;
@@ -2115,7 +2106,7 @@ double TauPSite::getTravelTime(const string& phase, bool matchPhase) const
 // *****************************************************************************
 TravelTimeResult* TauPSite::getTravelTimeResult(const string& phase,
                                                 bool matchPhase)
-{ 
+{
   TravelTimeResult* ttr = (TravelTimeResult*) NULL;
   map<double, TravelTimeResult*>::const_iterator itttr;
 
@@ -2142,7 +2133,7 @@ TravelTimeResult* TauPSite::getTravelTimeResult(const string& phase,
 
       // see if exact entry can be found
 
-      if (((ttrit.ttrPhaseName.size() > 0) && 
+      if (((ttrit.ttrPhaseName.size() > 0) &&
            (phase == ttrit.ttrPhaseName.substr(0, phase.size()))) ||
           (phase == ttrit.ttrPhaseEval.substr(0, phase.size())))
         return &ttrit;
@@ -2570,7 +2561,7 @@ void TauPSite::findLimits()
       // ray can turn at bottom ... evaluate pb component here
       // layer type has already been set to turning (0)
       // or bottom half turning (1)
-      
+
       integrateDistance(tpsVLayer[i]->getPb(), d);
       tpsVLayer[i]->setDistB(d);
       if (tpsVLayer[i]->getPb() > tpsVLayer[i]->getPt())
@@ -2851,7 +2842,7 @@ void TauPSite::toStream(ostream& os, string indent) const
   os << indent << class_name() << " (" << this << ") "
      << string(79 - mns, '*') << endl << endl;
   indent.append(2, ' ');
-  
+
   // print out run-time data
 
   os << indent << "Class Count                  = "

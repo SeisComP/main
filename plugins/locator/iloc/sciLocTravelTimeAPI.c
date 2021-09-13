@@ -65,7 +65,7 @@
  *  Return:
  *     Array of ILOC_TT structure
  *  Called by:
- *     SeisComP iLoc TT app
+ *     SeisComp3 iLoc TT app
  *  Calls:
  *     iLoc_DistAzimuth, iLoc_GetTravelTimePrediction, iLoc_Free
  */

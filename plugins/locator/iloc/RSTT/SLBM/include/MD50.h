@@ -1,46 +1,37 @@
 //- ****************************************************************************
-//- 
-//- Copyright 2009 Sandia Corporation. Under the terms of Contract 
-//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains 
-//- certain rights in this software.
 //-
-//- BSD Open Source License.
+//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
+//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
+//- Government retains certain rights in this software.
+//-
+//- BSD Open Source License
 //- All rights reserved.
-//- 
-//- Redistribution and use in source and binary forms, with or without 
+//-
+//- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
 //-
-//-    * Redistributions of source code must retain the above copyright notice, 
+//-   1. Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-    * Redistributions in binary form must reproduce the above copyright 
-//-      notice, this list of conditions and the following disclaimer in the 
+//-
+//-   2. Redistributions in binary form must reproduce the above copyright
+//-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-    * Neither the name of Sandia National Laboratories nor the names of its 
-//-      contributors may be used to endorse or promote products derived from  
+//-
+//-   3. Neither the name of the copyright holder nor the names of its
+//-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
 //-
-//- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-//- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-//- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-//- ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-//- LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-//- CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-//- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-//- INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-//- CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-//- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+//- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+//- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+//- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+//- ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+//- LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+//- CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+//- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+//- INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+//- CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+//- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //- POSSIBILITY OF SUCH DAMAGE.
-//-
-
-//- ****************************************************************************
-//-
-//- Program:       SNL Base Utility Library (Util)
-//- Module:        $RCSfile: MD50.h,v $
-//- Creator:       Lee Jensen
-//- Creaton Date:  January 20, 2001
-//- Revision:      $Revision: 1.6 $
-//- Last Modified: $Date: 2012/10/25 00:25:13 $
-//- Last Check-in: $Author: sballar $
 //-
 //- ****************************************************************************
 
@@ -200,7 +191,7 @@ class UTIL_EXP_IMP MD50
 };
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief Returns the hexadecimal size of an MD5 hash key.
 //
 //******************************************************************************
@@ -210,7 +201,7 @@ inline int MD50::hexStringSize()
 }
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief Returns the hexadecimal size of an MD5 hash key.
 //
 //******************************************************************************
@@ -220,7 +211,7 @@ inline int MD50::hexSize()
 }
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief Returns the binary size of an MD5 hash key.
 //
 //******************************************************************************
@@ -230,7 +221,7 @@ inline int MD50::binSize()
 }
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief Sets the big endian flag to \em br.
 //
 //******************************************************************************
@@ -243,7 +234,7 @@ inline void MD50::setDefaultEndian()
 }
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief Sets the big endian flag to true.
 //
 //******************************************************************************
@@ -253,7 +244,7 @@ inline void MD50::setBigEndian()
 }
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief Sets the big endian flag to false.
 //
 //******************************************************************************
@@ -263,7 +254,7 @@ inline void MD50::setLittleEndian()
 }
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief Returns the big endian flag setting.
 //
 //******************************************************************************
@@ -273,7 +264,7 @@ inline bool MD50::getByteReverse() const
 }
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief Given an input \em data array and size \em sze, this function
 //! creates a 32 byte hexadecimal MD5 hash key from the data and returns the
 //! result as a string. No checking is performed on the size of the input array
@@ -290,7 +281,7 @@ inline const string& MD50::getMD5HashHex(uchar const* data, int sze)
 }
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief Given an input \em data array and size \em sze, this function
 //! creates a 32 byte hexadecimal MD5 hash key from the data and returns the
 //! result in \em hhstr. No checking is performed on the size of the input
@@ -307,7 +298,7 @@ inline const string& MD50::getMD5HashHex(uchar const* data, int sze)
 //}
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief Given an input string \em sin, this function creates a 32 byte
 //! hexadecimal MD5 hash key from the strings data and returns the
 //! result in \em hhstr.
@@ -324,7 +315,7 @@ inline void MD50::getMD5HashHex(const string& sin, string& hhstr)
 }
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief Given an input \em data array and size \em sze, this function
 //! creates an MD5 hash key from the data and stores the 16 byte binary
 //! key in the attribute array \em hashkey. No checking is performed on the
@@ -340,7 +331,7 @@ inline cuchar const* MD50::getMD5HashBin(uchar const* data, int sze)
 }
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief Returns the 16 byte binary hash key. This function assumes that the
 //! MD5 conversion has already been performed.
 //
@@ -351,7 +342,7 @@ inline cuchar const* MD50::getMD5HashBin()
 }
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief Primary MD5 algorithmic step function object. The function object is
 //! templated (class f) off of the four MD5 functions f1, f2, f3, and f4
 //! defined below.
@@ -374,7 +365,7 @@ class md5step
 };
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief First MD5 algorithmic operation function object. Optimized from
 //! x & y | ~x & z
 //
@@ -391,7 +382,7 @@ class f1
 };
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief Second MD5 algorithmic operation function object.
 //
 //******************************************************************************
@@ -408,7 +399,7 @@ class f2
 };
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief Third MD5 algorithmic operation function object.
 //
 //******************************************************************************
@@ -424,7 +415,7 @@ class f3
 };
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
-// 
+//
 //! \brief Fourth MD5 algorithmic operation function object.
 //
 //******************************************************************************

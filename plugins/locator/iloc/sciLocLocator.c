@@ -127,7 +127,7 @@ static double Ftest(int m, int n);
  *  Return:
  *     Success/error
  *  Called by:
- *     SeisComP iLoc app
+ *     SeisComp3 iLoc app
  *  Calls:
  *     iLoc_InitializeEvent, iLoc_Readings, ResidualsForFixedHypocenter,
  *     iLoc_Free, iLoc_GetDistanceMatrix, iLoc_HierarchicalCluster,
@@ -316,19 +316,6 @@ int iLoc_Locator(ILOC_CONF *iLocConfig, ILOC_PHASEIDINFO *PhaseIdInfo,
         iLoc_IdentifyPhases(iLocConfig, Hypocenter, Assocs, StaLocs, rdindx,
                        PhaseIdInfo, ec, TTInfo, TTtables, LocalTTInfo,
                        LocalTTtables, DefaultDepth->Topo, &is2nderiv);
-        if (!Hypocenter->FixOT) {
-/*
- *          Check if we have any time defining phases left
- */
-            if (Hypocenter->numTimedef < Hypocenter->numUnknowns) {
-                fprintf(stderr, "%d time defining phase left, fixing origin time!\n",
-                        Hypocenter->numTimedef);
-                sprintf(Hypocenter->iLocInfo, "%s  %d time defining phase left, fixing origin time\n",
-                        Hypocenter->iLocInfo, Hypocenter->numTimedef);
-                Hypocenter->FixOT = 1;
-                Hypocenter->numUnknowns--;
-            }
-        }
 /*
  *
  *      Neighbourhood algorithm search to get initial hypocentre guess
@@ -465,23 +452,6 @@ int iLoc_Locator(ILOC_CONF *iLocConfig, ILOC_PHASEIDINFO *PhaseIdInfo,
                 strcat(Hypocenter->iLocInfo, "  No depth resolution for free-depth solution\n");
                 if (fabs(Hypocenter->Depth - mediandepth) > 20.)
                     firstpass = 1;
-                continue;
-            }
-        }
-        if (!Hypocenter->FixOT) {
-/*
- *          Check again if we have any time defining phases left
- */
-            if (Hypocenter->numTimedef < Hypocenter->numUnknowns) {
-                fprintf(stderr, "%d time defining phase left, fixing origin time!\n",
-                        Hypocenter->numTimedef);
-                sprintf(Hypocenter->iLocInfo, "%s  %d time defining phase left, fixing origin time\n",
-                        Hypocenter->iLocInfo, Hypocenter->numTimedef);
-                Hypocenter->Time = medianot;
-                Hypocenter->FixOT = 1;
-                Hypocenter->numUnknowns--;
-                firstpass = 1;
-                isfixed = 0;
                 continue;
             }
         }
@@ -1032,21 +1002,6 @@ static int LocateEvent(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
         if (retval)
             break;
         ndef = Hypocenter->numDef;
-        if (!Hypocenter->FixOT) {
-/*
- *          Check if we have any time defining phases left
- */
-            if (Hypocenter->numTimedef < Hypocenter->numUnknowns) {
-                if (iLocConfig->Verbose)
-                    fprintf(stderr, "%d time defining phases left, fixing origin time!\n",
-                            Hypocenter->numTimedef);
-                sprintf(Hypocenter->iLocInfo, "%s  %d time defining phases left, fixing origin time\n",
-                        Hypocenter->iLocInfo, Hypocenter->numTimedef);
-                Hypocenter->FixOT = 1;
-                Hypocenter->numUnknowns--;
-                m--;
-            }
-        }
         if (ndef <= Hypocenter->numUnknowns) {
             if (iLocConfig->Verbose)
                 fprintf(stderr, "Insufficient number (%d) of phases left; ",
@@ -1193,21 +1148,6 @@ static int LocateEvent(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
  *              Check if we have any time defining phases left
  */
                 iLoc_GetNumDef(Hypocenter, Assocs);
-                if (!Hypocenter->FixOT) {
-/*
- *                  Check if we have any time defining phases left
- */
-                    if (Hypocenter->numTimedef < Hypocenter->numUnknowns) {
-                        if (iLocConfig->Verbose)
-                            fprintf(stderr, "%d time defining phases left, fixing origin time!\n",
-                                    Hypocenter->numTimedef);
-                        sprintf(Hypocenter->iLocInfo, "%s  %d time defining phases left, fixing origin time\n",
-                                Hypocenter->iLocInfo, Hypocenter->numTimedef);
-                        Hypocenter->FixOT = 1;
-                        Hypocenter->numUnknowns--;
-                        m--;
-                    }
-                }
                 if (iLoc_ProjectionMatrix(TTInfo->numPhaseTT, PhaDef,
                                     Hypocenter->numPhase, Assocs, nd, 95.,
                                     dcov, w, &nrank, nunp, phundef, ispchange,

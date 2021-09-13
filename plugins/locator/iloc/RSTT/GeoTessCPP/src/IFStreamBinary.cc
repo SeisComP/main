@@ -1,24 +1,26 @@
 //- ****************************************************************************
-//- 
-//- Copyright 2009 Sandia Corporation. Under the terms of Contract
-//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
-//- retains certain rights in this software.
-//- 
-//- BSD Open Source License.
+//-
+//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
+//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
+//- Government retains certain rights in this software.
+//-
+//- BSD Open Source License
 //- All rights reserved.
-//- 
+//-
 //- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
-//- 
-//-    * Redistributions of source code must retain the above copyright notice,
+//-
+//-   1. Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-    * Redistributions in binary form must reproduce the above copyright
+//-
+//-   2. Redistributions in binary form must reproduce the above copyright
 //-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-    * Neither the name of Sandia National Laboratories nor the names of its
+//-
+//-   3. Neither the name of the copyright holder nor the names of its
 //-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
-//- 
+//-
 //- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 //- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 //- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -54,8 +56,8 @@ namespace geotess {
  * Public Default Constructor.
  */
 IFStreamBinary::IFStreamBinary() :	bData(new string("")), bDataPos(0),
-															bSize(0), bAlign(true), bReverse(false),
-															bOwnStr(true), bFileName(""), bMemIncr(1000000)
+                                                            bSize(0), bAlign(true), bReverse(false),
+                                                            bOwnStr(true), bFileName(""), bMemIncr(1000000)
 {
 }
 
@@ -63,9 +65,9 @@ IFStreamBinary::IFStreamBinary() :	bData(new string("")), bDataPos(0),
  * Standard constructor that sets the padding (alignment) option to align.
  */
 IFStreamBinary::IFStreamBinary(bool align) :	bData(new string("")),
-															bDataPos(0), bSize(0), bAlign(align),
-															bReverse(false), bOwnStr(true), bFileName(""),
-															bMemIncr(1000000)
+                                                            bDataPos(0), bSize(0), bAlign(align),
+                                                            bReverse(false), bOwnStr(true), bFileName(""),
+                                                            bMemIncr(1000000)
 {
 }
 
@@ -74,12 +76,12 @@ IFStreamBinary::IFStreamBinary(bool align) :	bData(new string("")),
  * buffer from the input filename
  */
 IFStreamBinary::IFStreamBinary(const string& filename) :
-															bData(new string("")), bDataPos(0),
-															bSize(0), bAlign(true), bReverse(false),
-															bOwnStr(true), bFileName(filename),
-															bMemIncr(1000000)
+                                                            bData(new string("")), bDataPos(0),
+                                                            bSize(0), bAlign(true), bReverse(false),
+                                                            bOwnStr(true), bFileName(filename),
+                                                            bMemIncr(1000000)
 {
-	readFromFile(filename);
+    readFromFile(filename);
 }
 
 /**
@@ -87,12 +89,12 @@ IFStreamBinary::IFStreamBinary(const string& filename) :
  * buffer from the input filename
  */
 IFStreamBinary::IFStreamBinary(const string& filename, int num_bytes) :
-															bData(new string("")), bDataPos(0),
-															bSize(0), bAlign(true), bReverse(false),
-															bOwnStr(true), bFileName(filename),
-															bMemIncr(1000000)
+                                                            bData(new string("")), bDataPos(0),
+                                                            bSize(0), bAlign(true), bReverse(false),
+                                                            bOwnStr(true), bFileName(filename),
+                                                            bMemIncr(1000000)
 {
-	readFromFile(filename, num_bytes);
+    readFromFile(filename, num_bytes);
 }
 
 /**
@@ -100,9 +102,9 @@ IFStreamBinary::IFStreamBinary(const string& filename, int num_bytes) :
  * container.
  */
 IFStreamBinary::IFStreamBinary(string* str) :	bData(str),
-															bDataPos(0), bSize(0), bAlign(true),
-															bReverse(false), bOwnStr(false), bFileName(""),
-															bMemIncr(1000000)
+                                                            bDataPos(0), bSize(0), bAlign(true),
+                                                            bReverse(false), bOwnStr(false), bFileName(""),
+                                                            bMemIncr(1000000)
 {
 }
 
@@ -110,11 +112,11 @@ IFStreamBinary::IFStreamBinary(string* str) :	bData(str),
  * Copy Constructor.
  */
 IFStreamBinary::IFStreamBinary(const IFStreamBinary& db) :
-															bData(new string("")),
-															bDataPos(db.bDataPos), bSize(db.bSize),
-															bAlign(db.bAlign), bReverse(db.bReverse),
-															bOwnStr(true), bFileName(db.bFileName),
-															bMemIncr(db.bMemIncr)
+                                                            bData(new string("")),
+                                                            bDataPos(db.bDataPos), bSize(db.bSize),
+                                                            bAlign(db.bAlign), bReverse(db.bReverse),
+                                                            bOwnStr(true), bFileName(db.bFileName),
+                                                            bMemIncr(db.bMemIncr)
 {
   (*bData) = (*db.bData);
 }
@@ -173,12 +175,12 @@ void	IFStreamBinary::dumpBuffer()
  */
 bool IFStreamBinary::exists(const string& filename)
 {
-	ifstream ifs;
-	ifs.open(filename.c_str(), std::ios::in|std::ios::binary);
-	bool opn = ifs.is_open();
-	ifs.close();
+    ifstream ifs;
+    ifs.open(filename.c_str(), std::ios::in|std::ios::binary);
+    bool opn = ifs.is_open();
+    ifs.close();
 
-	return opn;
+    return opn;
 }
 
 /**
@@ -186,27 +188,27 @@ bool IFStreamBinary::exists(const string& filename)
  */
 void	IFStreamBinary::writeToFile(const string& filename)
 {
-	ofstream ofs;
-	ofs.open(filename.c_str(), std::ios::out|std::ios::binary);
-	if (!ofs.is_open())
-	{
-		ostringstream os;
-		os << endl << "ERROR in IFStreamBinary::writeToFile" << endl
-			 << "Could not open output file: " << filename << endl;
-		throw GeoTessException(os, __FILE__, __LINE__, 9101);
-	}
+    ofstream ofs;
+    ofs.open(filename.c_str(), std::ios::out|std::ios::binary);
+    if (!ofs.is_open())
+    {
+        ostringstream os;
+        os << endl << "ERROR in IFStreamBinary::writeToFile" << endl
+             << "Could not open output file: " << filename << endl;
+        throw GeoTessException(os, __FILE__, __LINE__, 9101);
+    }
 
-	writeToFile(ofs);
-	if (ofs.bad())
-	{
-		ostringstream os;
-		os << endl << "ERROR in IFStreamBinary::writeToFile" << endl
-			 << "Error writing " << size()
-			 << " bytes to file: " << filename << endl;
-		throw GeoTessException(os, __FILE__, __LINE__, 9102);
-	}
+    writeToFile(ofs);
+    if (ofs.bad())
+    {
+        ostringstream os;
+        os << endl << "ERROR in IFStreamBinary::writeToFile" << endl
+             << "Error writing " << size()
+             << " bytes to file: " << filename << endl;
+        throw GeoTessException(os, __FILE__, __LINE__, 9102);
+    }
 
-	ofs.close();
+    ofs.close();
 }
 
 /**
@@ -225,36 +227,36 @@ void	IFStreamBinary::writeToFile(ofstream& ofs)
  */
 void	IFStreamBinary::readFromFile(const string& filename)
 {
-	ifstream ifs;
-	ifs.open(filename.c_str(), std::ios::in|std::ios::binary);
-	if (!ifs.is_open())
-	{
-		ostringstream os;
-		os << endl << "ERROR in IFStreamBinary::readFromFile" << endl
-			 << "Could not open input file: " << filename << endl;
+    ifstream ifs;
+    ifs.open(filename.c_str(), std::ios::in|std::ios::binary);
+    if (!ifs.is_open())
+    {
+        ostringstream os;
+        os << endl << "ERROR in IFStreamBinary::readFromFile" << endl
+             << "Could not open input file: " << filename << endl;
 
-		cout << os.str() << endl;
+        cout << os.str() << endl;
 
-		throw GeoTessException(os, __FILE__, __LINE__, 9103);
-	}
+        throw GeoTessException(os, __FILE__, __LINE__, 9103);
+    }
 
-	// Get size of file.
+    // Get size of file.
 
-	ifs.seekg(0, ios::end);
-	int fileSize = ifs.tellg();
-	ifs.seekg(0, ios::beg);
+    ifs.seekg(0, ios::end);
+    int fileSize = ifs.tellg();
+    ifs.seekg(0, ios::beg);
 
-	readFromFile(ifs, fileSize);
-	if (ifs.fail() || ifs.eof())
-	{
-		ostringstream os;
-		os << endl << "ERROR in IFStreamBinary::readFromFile" << endl
-			 << "Error reading " << fileSize
-			 << " bytes from input file: " << filename << endl;
-		throw GeoTessException(os, __FILE__, __LINE__, 9104);
-	}
+    readFromFile(ifs, fileSize);
+    if (ifs.fail() || ifs.eof())
+    {
+        ostringstream os;
+        os << endl << "ERROR in IFStreamBinary::readFromFile" << endl
+             << "Error reading " << fileSize
+             << " bytes from input file: " << filename << endl;
+        throw GeoTessException(os, __FILE__, __LINE__, 9104);
+    }
 
-	ifs.close();
+    ifs.close();
 }
 
 /**
@@ -264,27 +266,27 @@ void	IFStreamBinary::readFromFile(const string& filename)
  */
 void	IFStreamBinary::readFromFile(const string& filename, int num_bytes)
 {
-	ifstream ifs;
-	ifs.open(filename.c_str(), std::ios::in|std::ios::binary);
-	if (!ifs.is_open())
-	{
-		ostringstream os;
-		os << endl << "ERROR in IFStreamBinary::readFromFile" << endl
-			 << "Could not open input file: " << filename << endl;
-		throw GeoTessException(os, __FILE__, __LINE__, 9105);
-	}
+    ifstream ifs;
+    ifs.open(filename.c_str(), std::ios::in|std::ios::binary);
+    if (!ifs.is_open())
+    {
+        ostringstream os;
+        os << endl << "ERROR in IFStreamBinary::readFromFile" << endl
+             << "Could not open input file: " << filename << endl;
+        throw GeoTessException(os, __FILE__, __LINE__, 9105);
+    }
 
-	readFromFile(ifs, num_bytes);
-	if (ifs.fail() || ifs.eof())
-	{
-		ostringstream os;
-		os << endl << "ERROR in IFStreamBinary::readFromFile" << endl
-			 << "Error reading " << num_bytes
-			 << " bytes from input file: " << filename << endl;
-		throw GeoTessException(os, __FILE__, __LINE__, 9106);
-	}
+    readFromFile(ifs, num_bytes);
+    if (ifs.fail() || ifs.eof())
+    {
+        ostringstream os;
+        os << endl << "ERROR in IFStreamBinary::readFromFile" << endl
+             << "Error reading " << num_bytes
+             << " bytes from input file: " << filename << endl;
+        throw GeoTessException(os, __FILE__, __LINE__, 9106);
+    }
 
-	ifs.close();
+    ifs.close();
 }
 
 /**

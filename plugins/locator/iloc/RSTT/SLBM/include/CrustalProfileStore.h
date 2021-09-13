@@ -1,47 +1,40 @@
 //- ****************************************************************************
-//- 
-//- Copyright 2009 Sandia Corporation. Under the terms of Contract 
-//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains 
-//- certain rights in this software.
 //-
-//- BSD Open Source License.
+//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
+//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
+//- Government retains certain rights in this software.
+//-
+//- BSD Open Source License
 //- All rights reserved.
-//- 
-//- Redistribution and use in source and binary forms, with or without 
+//-
+//- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
 //-
-//-    * Redistributions of source code must retain the above copyright notice, 
+//-   1. Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-    * Redistributions in binary form must reproduce the above copyright 
-//-      notice, this list of conditions and the following disclaimer in the 
+//-
+//-   2. Redistributions in binary form must reproduce the above copyright
+//-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-    * Neither the name of Sandia National Laboratories nor the names of its 
-//-      contributors may be used to endorse or promote products derived from  
+//-
+//-   3. Neither the name of the copyright holder nor the names of its
+//-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
 //-
-//- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-//- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-//- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-//- ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-//- LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-//- CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-//- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-//- INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-//- CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-//- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+//- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+//- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+//- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+//- ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+//- LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+//- CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+//- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+//- INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+//- CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+//- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //- POSSIBILITY OF SUCH DAMAGE.
 //-
-
-
 //- ****************************************************************************
-//-
-//- Program:       CrustalProfileStore
-//- Module:        $RCSfile: CrustalProfileStore.h,v $
-//- Revision:      $Revision: 1.6 $
-//- Last Modified: $Date: 2011/08/23 20:56:50 $
-//- Last Check-in: $Author: sballar $
-//-
-//- ****************************************************************************
+
 #ifndef CrustalProfileStore_H
 #define CrustalProfileStore_H
 
@@ -62,7 +55,7 @@ using namespace std;
 namespace slbm {
 
 //! \brief CrustalProfileStore supports pool allocation for
-//! CrustalProfile objects.  
+//! CrustalProfile objects.
 //!
 //! CrustalProfileStore supports pool allocation for
 //! CrustalProfile objects.  Grid owns two CrustalProfileStore
@@ -85,14 +78,14 @@ namespace slbm {
 //! that it keeps in a pool of previously instantiated but
 //! currently unused objects and resets the data in the
 //! CrustalProfile object for the new phase/location.  If the
-//! pool is empty, it constructs a new CrustalProfile object. 
+//! pool is empty, it constructs a new CrustalProfile object.
 //! It then pushes the Crustal Profile object onto the head of
 //! the priority list.  If the priority list reaches its maximum
 //! size, then CrustalProfileStore pops the CrustalProfile
 //! object with the lowest priority off the back of the priority
 //! list and returns it to the pool of unused CrustalProfile
-//! objects. 
-//! 
+//! objects.
+//!
 //! There is an important assumption being made here and that is
 //! that when CrustalProfileStore::getCrustalProfile(phase, lat,
 //! lon, depth) is called, there are no valid references to any
@@ -116,52 +109,52 @@ class SLBM_EXP_IMP CrustalProfileStore
 
 public:
 
-	//! Constructor.
-	CrustalProfileStore(Grid& grid, const int& maxSize);
+    //! Constructor.
+    CrustalProfileStore(Grid& grid, const int& maxSize);
 
-	//! Destructor.
-	~CrustalProfileStore();
+    //! Destructor.
+    ~CrustalProfileStore();
 
-	void clear();
+    void clear();
 
-	CrustalProfile* getCrustalProfile(const int& phase, 
-		const double& lat, const double& lon, const double& depth);
+    CrustalProfile* getCrustalProfile(const int& phase,
+        const double& lat, const double& lon, const double& depth);
 
-	int getNCrustalProfiles() { return (int)profiles.size(); };
+    int getNCrustalProfiles() { return (int)profiles.size(); };
 
-	size_t memSize();
+    size_t memSize();
 
 private:
 
-	Grid& grid;
+    Grid& grid;
 
-	int maxSize;
+    int maxSize;
 
-	map<string, CrustalProfile*> profiles;
+    map<string, CrustalProfile*> profiles;
 
-	list<string> priority;
+    list<string> priority;
 
-	list<CrustalProfile*> pool;
+    list<CrustalProfile*> pool;
 
-	string locString;
+    string locString;
 
 };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-//  INLINE FUNCTIONS 
+//  INLINE FUNCTIONS
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-inline size_t CrustalProfileStore::memSize() 
-{ 
-	size_t n = 0;
-	for (map<string, CrustalProfile*>::iterator 
-		it  = profiles.begin();
-		it != profiles.end(); 
-		it++)
-			n += it->second->memSize();
-	return (int)n;
+inline size_t CrustalProfileStore::memSize()
+{
+    size_t n = 0;
+    for (map<string, CrustalProfile*>::iterator
+        it  = profiles.begin();
+        it != profiles.end();
+        it++)
+            n += it->second->memSize();
+    return (int)n;
 }
 
 } // end slbm namespace
