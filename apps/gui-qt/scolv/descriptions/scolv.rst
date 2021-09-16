@@ -6,46 +6,98 @@
 .. figure:: ../../../../doc/base/media/apps/scolv-location.png
    :alt: scolv
 
-   scolv: OriginLocatorView Location tab with event and phase information
+   scolv: OriginLocatorView :ref:`Location tab <scolv-sec-location-tab>`
+   with event and phase information
 
 .. figure:: ../../../../doc/base/media/apps/scolv-picker.png
    :alt: scolv picker
 
-   scolv: OriginLocatorView phase picker with waveforms and phase information
+   scolv: OriginLocatorView :ref:`phase picker <scolv-sec-waveform-review>`
+   with waveforms and phase information
 
 .. figure:: ../../../../doc/base/media/apps/scolv-event.png
    :alt: scolv picker
 
-   scolv: OriginLocatorView Event tab with all origins
+   scolv: OriginLocatorView :ref:`Event tab <fig-scolv-event>` with all origins
 
 .. figure:: ../../../../doc/base/media/apps/scolv-magnitude-picker.png
    :alt: scolv picker
 
-   scolv: OriginLocatorView amplitude waveform review with station magnitudes
+   scolv: OriginLocatorView :ref:`amplitude waveform review <scolv-sec-amplitude-review>`
+   with station magnitudes
 
 .. raw:: html
 
    </div>
 
-scolv is the main interactive tool to revise or review the origin information
-such as picks, location, depth, time, magnitudes and event association.
-Therefore, scolv is divided into 6 main logical units (main window with tabs and external windows):
+scolv is the main interactive tool to revise or review origin and event information.
+It thus provides the entire functionality to analyze earthquake parameters:
 
-- :ref:`Location: <scolv-sec-location-tab>` (tab) Details of the selected :term:`origin`
-- :ref:`Magnitudes: <scolv-sec-magnitude-tab>` (tab) Magnitude details of the selected origin
-- :ref:`Event: <fig-scolv-event>` (tab) Origins and focal mechanisms referenced by the selected :term:`event`
-- :ref:`Events: <fig-scolv-events>` (tab) Table of event parameters of the loaded events
-- :ref:`Phase picker: <scolv-sec-waveform-review>` (external window) Waveform review for phase picking
-- :ref:`Amplitude waveform review: <scolv-sec-amplitude-review>` (external window)
-  Waveform review for measuring amplitudes and for computing magnitudes.
+* Phase picks and arrivals in diagrams and waveforms
+* Hypocenter location and source time with uncertainties
+* Focal mechanism from first-motion polarities
+* Magnitudes in diagrams and waveforms
+* Origin status and certainty
+* Event association
+* Event type
 
-scolv provides the whole functionality to review and revise earthquake
-parameters.
+The main scolv window is divided into 4 perspectives (tabs) from which external windows
+can be opened:
+
+- :ref:`Location tab<scolv-sec-location-tab>`: Details of the selected :term:`origin` with
+
+  * :ref:`Phase picker <scolv-sec-waveform-review>` (external window): Review
+    waveforms for phase picking including polarities, uncertainties, spectra and
+    spectrograms,
+  * :ref:`Extended commit <scolv-sec-commit>` (external window): Commit solution
+    with additional options.
+
+- :ref:`Magnitudes tab <scolv-sec-magnitude-tab>`: Magnitude details of the
+  selected origin with
+
+  * :ref:`Amplitude waveform review <scolv-sec-amplitude-review>` (external window):
+    Waveform review for measuring amplitudes and for computing magnitudes.
+
+- :ref:`Event tab <fig-scolv-event>`: Origins and focal mechanisms referenced
+  by the selected :term:`event`.
+- :ref:`Events tab<fig-scolv-events>`: Table of event parameters of the loaded
+  events with interactive filtering of database requests and loaded events.
+
+
+Modes of Operation
+==================
+
+scolv can be operated in 2 modes:
+
+* **Connected to the messaging** where all event and station inventory parameters
+  are received from the :ref:`messaging <concepts_messaging>` or the database and
+  *updated in real time*. New or updated
+  parameters can be commited to the messaging. Simply start scolv without any argument
+  or connect to a specific host providing the messaging, e.g.: ::
+
+     scolv
+     scolv -H [host]
+
+* **Offline without messaging** where all event and station
+  inventory parameters are read from an XML files or from the database and
+  *updated interactively*. New or updated parameters can be written to an XML file.
+  Open scolv with the option
+  :option:`--offline` and optionally provide the database or inventory and bindings
+  parameters in :term:`SCML` format to fetch event parameters as well as inventory
+  and bindings configuration parameters. Examples: ::
+
+     scolv --offline
+     scolv --offline -d [database]
+     scolv --offline --inventory-db [inventory] --config-db [config]
+
+  Select one XML file in the `File` menu to read event parameters.
+  After processing, the parameters can be saved to another XML file though the
+  `File` menu.
 
 
 .. _scolv-sec-location-tab:
 
-Location tab
+Location Tab
 ============
 
 The Location tab shows detailed information of the associated
@@ -590,6 +642,9 @@ all available magnitudes are shown and can be interactively re-processed
 in the :ref:`magnitudes tab <scolv-sec-magnitude-tab>`.
 
 
+
+.. _scolv-sec-commit:
+
 Commit a solution
 -----------------
 
@@ -666,7 +721,7 @@ With custom commit buttons origin and event paramters can be set, e.g.:
 
 .. _scolv-sec-magnitude-tab:
 
-Magnitudes tab
+Magnitudes Tab
 ==============
 
 The Magnitude tab shows all available magnitude information for the current
@@ -922,7 +977,7 @@ calculated and the network magnitude is calculated according to the available
 settings: *Mean*, *Median* or *Trimmed mean*.
 
 
-Event tab
+Event Tab
 =========
 
 The Event tab gives all information of associated origins and magnitude of the
@@ -1015,7 +1070,7 @@ press the right mouse button to copy the row or cell, respectively.
 
 .. _scolv-events-tab:
 
-Events tab
+Events Tab
 ==========
 
 The Events tab gives an overview of the events in the defined time span. Listed
@@ -1184,7 +1239,7 @@ Database request filters can be applied interactively or automatically by
        eventlist.region.chile.rect = -40, -80, -10, -60
 
 
-Custom actions
+Custom Actions
 ==============
 
 Since the internal data model is limited, scolv allows addition of custom quantities
