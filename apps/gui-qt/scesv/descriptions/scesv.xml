@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="scesv" category="GUI">
-		<description>Event summary view.</description>
+		<description>Event summary view</description>
 		<configuration>
 			<parameter name="loadEventDB" type="double" unit="days" default="1">
 				<description>
