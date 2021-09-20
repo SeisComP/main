@@ -434,7 +434,7 @@ public:
 template<>
 inline bool	GeoTessDataArray<double>::isNaN(int attributeIndex) const
 {
-    return (isnan(values[attributeIndex]));
+    return (std::isnan(values[attributeIndex]));
 }
 
 /**
@@ -444,7 +444,7 @@ template<>
 inline bool	GeoTessDataArray<float>::isNaN(int attributeIndex) const
 {
     double v = (double) values[attributeIndex];
-    return (isnan(v));
+    return (std::isnan(v));
 }
 
 /**
