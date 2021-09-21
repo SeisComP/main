@@ -20,8 +20,8 @@
 #include <seiscomp/utils/timer.h>
 
 #include <seiscomp/datamodel/databasearchive.h>
-#include <seiscomp/datamodel/eventparameters_package.h>
 #include <seiscomp/datamodel/diff.h>
+#include <seiscomp/datamodel/eventparameters_package.h>
 
 
 using namespace std;
@@ -530,6 +530,9 @@ class DispatchTool : public Seiscomp::Client::Application {
 			commandline().addOption("Dispatch", "print-objects", "Print names of routable objects");
 			commandline().addOption("Dispatch", "print-routingtable", "Print routing table");
 			commandline().addOption("Dispatch", "test", "Do not send any object");
+			commandline().addOption("Dispatch", "no-events,e", "Do not send any "
+			                        "event object. This is a wrapper to setting a "
+			                        "routing table without EVENT objects");
 		}
 
 
@@ -548,8 +551,17 @@ class DispatchTool : public Seiscomp::Client::Application {
 				}
 			}
 
-			if ( _notifierOperation != "merge" && _notifierOperation != "merge-without-remove" )
+			if ( commandline().hasOption("no-events") ) {
+				cout << "erased EVENT group from routing table" << endl;
+				auto it = _routingTable.find(Event::ClassName());
+				if ( it != _routingTable.end() ) {
+					_routingTable.erase(it);
+				}
+			}
+
+			if ( _notifierOperation != "merge" && _notifierOperation != "merge-without-remove" ) {
 				setDatabaseEnabled(false, false);
+			}
 
 			if ( commandline().hasOption("operation") ) {
 				if ( _notifierOperation != "merge" && _notifierOperation != "merge-without-remove" ) {

@@ -91,6 +91,12 @@
 					Test mode. Does not send any object.
 					</description>
 				</option>
+				<option flag="e" long-flag="no-events">
+					<description>
+					Do not send any event object. This is a wrapper to setting a
+					routing table without EVENT objects
+					</description>
+				</option>
 			</group>
 		</command-line>
 	</module>
