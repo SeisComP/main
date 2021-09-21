@@ -6,24 +6,29 @@
 			<group name="database">
 				<group name="cleanup">
 					<group name="keep">
+					<description>
+					Parameters controlling the time to keep objects in the database.
+					The time comparison considers the object time, not the time of
+					their creation.
+					</description>
 						<parameter name="days" type="int" default="30">
 							<description>
 							The number of days to preserve in the database. This
-							value is just one part of the whole timespan. Hours
+							value is added to the whole timespan. Hours
 							and minutes are configured separately.
 							</description>
 						</parameter>
 						<parameter name="hours" type="int" default="0">
 							<description>
 							The number of hours to preserve in the database. This
-							value is just one part of the whole timespan. Days
+							value is added to the whole timespan. Days
 							and minutes are configured separately.
 							</description>
 						</parameter>
 						<parameter name="minutes" type="int" default="0">
 							<description>
 							The number of minutes to preserve in the database. This
-							value is just one part of the whole timespan. Days
+							value is added to the whole timespan. Days
 							and hours are configured separately.
 							</description>
 						</parameter>
