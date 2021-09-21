@@ -1,7 +1,8 @@
-SeisComPs processing is continuously writing to the database. This causes
+SeisComP's :ref:`scmaster` is continuously writing to the database. This causes
 the database to grow and to occupy much space on the harddisc. scdbstrip taggles
-this problem and removed processed objects from the database older than a
-configurable time span.
+this problem and removes processed objects from the database older than a
+configurable time span. The time comparison considers the object time, not the
+time of their creation.
 
 This clean-up procedure is based on events. scdbstrip will remove all events
 with an origin time older than specified. It will also remove all associated

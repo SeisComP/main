@@ -286,13 +286,17 @@ class DBCleaner(seiscomp.client.Application):
             try:
                 self.commandline().addGroup("Settings")
                 self.commandline().addIntOption("Settings", "days",
-                                                "Specify the number of days to keep")
+                                                "Specify the number of days to keep. "
+                                                "Added to hours and minutes.")
                 self.commandline().addIntOption("Settings", "hours",
-                                                "Specify the number of hours to keep")
+                                                "Specify the number of hours to keep. "
+                                                "Added to days and minutes.")
                 self.commandline().addIntOption("Settings", "minutes",
-                                                "Specify the number of minutes to keep")
+                                                "Specify the number of minutes to keep. "
+                                                "Added to days and hours.")
                 self.commandline().addStringOption("Settings", "datetime",
-                                                   "Specify the datetime (UTC) from which to keep all events in format [%Y-%m-%d %H:%M:%S]")
+                                                   "Specify the datetime (UTC) from which "
+                                                   "to keep all events in format [%Y-%m-%d %H:%M:%S]")
                 self.commandline().addOption("Settings", "invert,i",
                                              "Delete all events after the specified time period")
                 self.commandline().addStringOption("Settings", "keep-events",
