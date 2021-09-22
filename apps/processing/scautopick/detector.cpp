@@ -229,18 +229,20 @@ bool Detector::handleGap(Filter *filter, const Core::TimeSpan& gapLength,
 bool Detector::emitPick(const Record *rec, const Core::Time &t) {
 	// Is there a last pick and a last snr amplitude? Then defer the pick
 	// until the max amplitude has been calculated
-	if ( _lastAmplitude && (bool)_lastPick ) {
-		double dt = (double)(t - _lastPick);
-		double deadTime = (double)_deadTime;
+	if ( _lastAmplitude && bool(_lastPick )) {
+		double dt = double(t - _lastPick);
+		double deadTime = double(_deadTime);
 
 		if ( deadTime > 0 ) {
 			double dtn = dt/deadTime;
 			_minAmplitude = _amplitudeThreshold + *_lastAmplitude * exp(-dtn*dtn);
 		}
-		else
+		else {
 			_minAmplitude = _amplitudeThreshold;
+		}
 
-		SEISCOMP_DEBUG("Time to last pick = %.2f sec, last amplitude = %.2f, minimum amplitude = %.2f", dt, *_lastAmplitude, *_minAmplitude);
+		SEISCOMP_DEBUG("Time to last pick = %.2f sec, last amplitude = %.2f, "
+		               "minimum amplitude = %.2f", dt, *_lastAmplitude, *_minAmplitude);
 
 		if ( *_minAmplitude > _triggeredAmplitude ) {
 			_currentPick = t;
@@ -250,7 +252,8 @@ bool Detector::emitPick(const Record *rec, const Core::Time &t) {
 			return false;
 		}
 
-		SEISCOMP_DEBUG("Deferred sending disabled, pick already reached minimum amplitude: %.2f >= %.2f", _triggeredAmplitude, *_minAmplitude);
+		SEISCOMP_DEBUG("Deferred sending disabled, pick already reached minimum "
+		               "amplitude: %.2f >= %.2f", _triggeredAmplitude, *_minAmplitude);
 	}
 
 	return sendPick(rec, t);

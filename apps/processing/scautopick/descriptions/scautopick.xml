@@ -138,10 +138,19 @@
 				</parameter>
 				<parameter name="deadTime" type="double" default="30" unit="s">
 					<description>
-						The dead time in seconds.
+						The time used together with measured amplitude and
+						`thresholds.minAmplOffset` for scaling the amplitude below which
+						the picker is inactive after a P pick. Read the documentation!
 					</description>
 				</parameter>
-				<parameter name="minAmplOffset" type="double" default="3"/>
+				<parameter name="minAmplOffset" type="double" default="3">
+					<description>
+					The amplitude used together with measured amplitude and
+					`thresholds.deadTime` for scaling the amplitude below which
+					the picker is inactive after a P pick. The value is typically
+					similar to the trigger threshold. Read the documentation!
+					</description>
+				</parameter>
 			</group>
 			<group name="amplitudes">
 				<parameter name="enableUpdate" type="list:string" default="" unit="">
