@@ -15,10 +15,19 @@ detection filters can be choosen from the :ref:`list of SeisComP filters <filter
 The waveforms are typically :ref:`pre-filtered<filter-grammar>`.
 Without further configuration a running-mean highpass, a cosine taper and a Butterworth
 bandpass filter of third order with corner frequencies of 0.7 and 2 Hz are applied before
-the STALTA filter. Once the STA/LTA ratio has reached a configurable threshold
-(by default 3) for a particular stream, a :term:`pick` is set to the time when this
-threshold is exceeded and the picker is set inactive. The picker is reactivated
-for this stream once the STA/LTA ratio falls to the value of 1.5.
+the STALTA filter. The entire filter sequence is configurable by :confval:`filter`,
+module configuration, or :confval:`detecFilter`, binding configuration.
+Once the STA/LTA ratio has reached a configurable threshold (by default 3) for a
+particular stream, a :term:`pick` is set to the time when this
+threshold is exceeded (pick time) and the picker is set inactive. The picker is reactivated
+for this stream once the STA/LTA ratio falls to the value of 1.5 (default).
+
+The trigger thresholds are configurable:
+
+* Trigger on: :confval:`thresholds.triggerOn` in module configuration or
+  :confval:`trigOn` in binding configuration,
+* Trigger off: :confval:`thresholds.triggerOff`, module configuration or :confval:`trigOff`,
+  binding configuration.
 
 Following inital P-phase detections a second-stage P-phase picker (post picker) and
 a S-phase picker (secondary picker) can be applied. Configure :confval:`picker`,
@@ -31,6 +40,33 @@ a S-phase picker (secondary picker) can be applied. Configure :confval:`picker`,
    "AIC", "x", "", "picker.AIC"
    "BK", "x", "", "picker.BK"
    "S-L2", "", "x", "spicker.L2"
+
+After having detected a P phase, scautopick will not accept any further P detection
+until
+
+* The amplitudes measured after filtering (:confval:`filter` in module configuration
+  or :confval:`detecFilter` in binding configuration) fall below the
+  :confval:`thresholds.triggerOff` (module configuration) or :confval:`trigOff`
+  (binding configuration) and
+* Amplitudes, :math:`A_{trigger}`, measured after filtering reach or
+  exceed a threshold determined by :math:`T_{minOffset}` (:confval:`thresholds.minAmplOffset`),
+  :math:`T_{dead}` (:confval:`thresholds.deadTime`) and the amplitude of the
+  previous pick, :math:`A_{prev}`:
+
+  .. math ::
+
+     A_{trigger} \ge T_{minOffset} + A_{prev} * exp\left(-(dt/T_{dead})^2\right)
+
+  if :math:`T_{dead} > 0`. Otherwise:
+
+  .. math ::
+
+     A_{trigger} \ge T_{minOffset}
+
+  Here, :math:`dt` is the time passed since the last pick.
+  :math:`T_{minOffset}` (:confval:`thresholds.minAmplOffset`) is typically similar to
+  the trigger threshold, :confval:`thresholds.triggerOn` (module configuration) or
+  :confval:`trigOn` (binding configuration).
 
 
 Amplitude Measurements
