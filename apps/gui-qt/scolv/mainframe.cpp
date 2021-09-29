@@ -686,7 +686,7 @@ MainFrame::MainFrame(){
 	connect(_eventList, SIGNAL(visibleEventCountChanged()),
 	        this, SLOT(updateEventTabText()));
 
-	_originLocator->map()->canvas().addLayer(eventMapLayer);
+	_originLocator->map()->addLayer(eventMapLayer);
 
 	QLayout* layoutEventList = new QVBoxLayout(_ui.tabEventList);
 	layoutEventList->addWidget(_eventList);
@@ -700,6 +700,7 @@ MainFrame::MainFrame(){
 	delete _ui.actionShowSummary;
 #endif
 	addAction(_ui.actionShowStations);
+	addAction(_ui.actionShowStationAnnotations);
 	addAction(_ui.actionShowEventList);
 
 	connect(SCApp, SIGNAL(addObject(const QString&, Seiscomp::DataModel::Object*)),
@@ -901,11 +902,15 @@ MainFrame::MainFrame(){
 #endif
 	connect(_ui.actionAutoSelect, SIGNAL(toggled(bool)), _eventList, SLOT(setAutoSelect(bool)));
 	connect(_ui.actionShowStations, SIGNAL(toggled(bool)), _originLocator, SLOT(drawStations(bool)));
+	connect(_ui.actionShowStationAnnotations, SIGNAL(toggled(bool)), _originLocator, SLOT(drawStationAnnotations(bool)));
 	connect(_ui.actionShowStations, SIGNAL(toggled(bool)), _magnitudes, SLOT(drawStations(bool)));
+	connect(_ui.actionShowStationAnnotations, SIGNAL(toggled(bool)), _magnitudes, SLOT(drawStationAnnotations(bool)));
 	connect(_ui.actionShowEventList, SIGNAL(triggered(bool)), this, SLOT(showEventList()));
 
 	_originLocator->drawStations(_ui.actionShowStations->isChecked());
+	_originLocator->drawStationAnnotations(_ui.actionShowStationAnnotations->isChecked());
 	_magnitudes->drawStations(_ui.actionShowStations->isChecked());
+	_magnitudes->drawStationAnnotations(_ui.actionShowStationAnnotations->isChecked());
 
 #ifdef WITH_SMALL_SUMMARY
 	_ui.frameSummary->setVisible(_ui.actionShowSummary->isChecked());
