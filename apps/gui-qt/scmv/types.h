@@ -26,7 +26,7 @@ struct StationGlyphs {
 	static const char WARNING  = '!';
 	static const char ERROR    = '?';
 	static const char DISABLED = 'x';
-	static const char DEFAULT  = '#';
+	static const char DEFAULT  = '\0';
 };
 
 

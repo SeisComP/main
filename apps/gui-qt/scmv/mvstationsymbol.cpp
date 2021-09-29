@@ -22,10 +22,8 @@ using namespace Seiscomp::Gui;
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-MvStationSymbol::MvStationSymbol(Map::Decorator* decorator)
-: StationSymbol(decorator) {
-	init();
-}
+bool   MvStationSymbol::_drawFullId = true;
+QColor MvStationSymbol::_characterDrawingColor = Qt::black;
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -33,37 +31,10 @@ MvStationSymbol::MvStationSymbol(Map::Decorator* decorator)
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 MvStationSymbol::MvStationSymbol(double latitude, double longitude,
-                                 Map::Decorator* decorator)
-: StationSymbol(latitude, longitude, decorator) {
-	init();
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MvStationSymbol::setIdDrawingColor(const QColor& color) {
-	_idDrawingColor = color;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MvStationSymbol::setIdDrawingEnabled(bool enabled) {
-	_isDrawingIdEnabled = enabled;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool MvStationSymbol::isIdDrawingEnabled() const {
-	return _isDrawingIdEnabled;
-}
+                                 Map::AnnotationItem *annotation,
+                                 Map::Decorator *decorator)
+: StationSymbol(latitude, longitude, decorator)
+, _annotation(annotation) {}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -81,24 +52,6 @@ void MvStationSymbol::setCharacter(const QChar& c) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MvStationSymbol::setCharacterDrawingColor(const QColor& color) {
 	_characterDrawingColor = color;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MvStationSymbol::setCharacterDrawingEnabled(bool val) {
-	_isCharacterDrawingEnabled = val;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool MvStationSymbol::isCharacterDrawingEnabled() const {
-	return _isCharacterDrawingEnabled;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -142,35 +95,13 @@ void MvStationSymbol::setStationCode(const std::string& stationCode) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-const std::string& MvStationSymbol::locationCode() const {
-	return _locationCode;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MvStationSymbol::setLocationCode(const std::string& locationCode) {
-	_locationCode = locationCode;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-const std::string& MvStationSymbol::channelCode() const {
-	return _channelCode;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MvStationSymbol::setChannleCode(const std::string& channelCode) {
-	_channelCode = channelCode;
+void MvStationSymbol::updateAnnotation() {
+	if ( _annotation ) {
+		if ( _drawFullId )
+			_annotation->text = id().c_str();
+		else
+			_annotation->text = (networkCode() + "." + stationCode()).c_str();
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -187,14 +118,10 @@ void MvStationSymbol::setDrawFullID(bool f) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MvStationSymbol::init() {
-	_isDrawingIdEnabled = false;
-	_idDrawingColor     = Qt::black;
-
-	_char                      = ' ';
-	_characterDrawingColor     = Qt::black;
-	_isCharacterDrawingEnabled = false;
-	_drawFullId                = true;
+void MvStationSymbol::calculateMapPosition(const Seiscomp::Gui::Map::Canvas *canvas) {
+	StationSymbol::calculateMapPosition(canvas);
+	if ( _annotation )
+		_annotation->visible = !isClipped() && isVisible();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -202,48 +129,14 @@ void MvStationSymbol::init() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MvStationSymbol::customDraw(const Map::Canvas *canvas, QPainter& painter) {
+void MvStationSymbol::customDraw(const Map::Canvas *canvas, QPainter &painter) {
 	StationSymbol::customDraw(canvas, painter);
 
-	if ( isCharacterDrawingEnabled() ) drawCharacter(painter);
+	if ( _annotation )
+		_annotation->updateLabelRect(painter, _position - QPoint(0, radius() + painter.fontMetrics().height() / 2));
 
-	if ( isIdDrawingEnabled() ) drawID(painter);
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MvStationSymbol::drawID(QPainter& painter) {
-	std::string stationId = networkCode () + "." + stationCode();
-
-	painter.save();
-
-	QFont idFont = painter.font();
-	idFont.setBold(true);
-	painter.setFont(idFont);
-
-	painter.setPen(_idDrawingColor);
-
-	QPoint p0 = stationPolygon().point(0);
-	QPoint p1 = stationPolygon().point(1);
-	QPoint p2 = stationPolygon().point(2);
-	QPoint p3(p0.x() + (int)std::ceil((p0.x() - p2.x()) * 0.4),
-	          p0.y() - (int)std::ceil((p2.y() - p0.y()) * 0.4));
-	QPoint p4(p1.x() + (int)std::ceil((p0.x() - p2.x()) * 0.1), p3.y());
-
-	painter.drawLine(p0, p3);
-	painter.drawLine(p3, p4);
-
-	painter.setPen(Qt::darkGray);
-	painter.drawText(p4.x(), p4.y() + 1, (_drawFullId ? id() : stationId).c_str());
-
-	painter.setPen(_idDrawingColor);
-
-	painter.drawText(p4.x() + 1, p4.y(), stationId.c_str());
-
-	painter.restore();
+	if ( !_char.isNull() )
+		drawCharacter(painter);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

@@ -12,66 +12,59 @@
  ***************************************************************************/
 
 
-#ifndef __MVSTATIONSYMBOL_H___
-#define __MVSTATIONSYMBOL_H___
+#ifndef MVSTATIONSYMBOL_H
+#define MVSTATIONSYMBOL_H
 
 
 #include <seiscomp/gui/datamodel/stationsymbol.h>
+#include <seiscomp/gui/map/annotations.h>
 
 
 class MvStationSymbol : public Seiscomp::Gui::StationSymbol {
 	public:
-		MvStationSymbol(Seiscomp::Gui::Map::Decorator* decorator = NULL);
 		MvStationSymbol(double latitude, double longitude,
-		                Seiscomp::Gui::Map::Decorator* decorator = NULL);
+		                Seiscomp::Gui::Map::AnnotationItem *annotation,
+		                Seiscomp::Gui::Map::Decorator* decorator = nullptr);
 
 	public:
-		void setIdDrawingColor(const QColor& color);
-		void setIdDrawingEnabled(bool val);
-		bool isIdDrawingEnabled() const;
-		void setDrawFullID(bool);
+		static void setDrawFullID(bool);
+		static void setCharacterDrawingColor(const QColor& color);
 
 		void setCharacter(const QChar& c);
-		void setCharacterDrawingColor(const QColor& color);
-		void setCharacterDrawingEnabled(bool val);
-		bool isCharacterDrawingEnabled() const;
 
-		const std::string& networkCode() const;
-		void setNetworkCode(const std::string& networkCode);
+		const std::string &networkCode() const;
+		void setNetworkCode(const std::string &networkCode);
 
-		const std::string& stationCode() const;
-		void setStationCode(const std::string& stationCode);
-
-		const std::string& locationCode() const;
-		void setLocationCode(const std::string& locationCode);
-
-		const std::string& channelCode() const;
-		void setChannleCode(const std::string& channelCode);
+		const std::string &stationCode() const;
+		void setStationCode(const std::string &stationCode);
 
 		void setPos(const QPoint &p) { _position = p; }
 
+		Seiscomp::Gui::Map::AnnotationItem *annotation() const;
+		void updateAnnotation();
+
 	protected:
-		virtual void customDraw(const Seiscomp::Gui::Map::Canvas *canvas, QPainter& painter);
+		void calculateMapPosition(const Seiscomp::Gui::Map::Canvas *canvas) override;
+		void customDraw(const Seiscomp::Gui::Map::Canvas *canvas, QPainter& painter) override;
 
 	private:
-		void init();
-
-		void drawID(QPainter& painter);
 		void drawCharacter(QPainter& painter);
 
 	private:
-		std::string _networkCode;
-		std::string _stationCode;
-		std::string _locationCode;
-		std::string _channelCode;
+		Seiscomp::Gui::Map::AnnotationItem *_annotation;
+		std::string                         _networkCode;
+		std::string                         _stationCode;
 
-		QColor      _idDrawingColor;
-		bool        _isDrawingIdEnabled;
-		bool        _drawFullId;
+		QChar                               _char;
 
-		QChar       _char;
-		QColor      _characterDrawingColor;
-		bool        _isCharacterDrawingEnabled;
+		static QColor                       _characterDrawingColor;
+		static bool                         _drawFullId;
 };
+
+
+inline Seiscomp::Gui::Map::AnnotationItem *MvStationSymbol::annotation() const {
+	return _annotation;
+}
+
 
 #endif

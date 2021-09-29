@@ -29,6 +29,7 @@
 #include <seiscomp/datamodel/waveformquality.h>
 #include <seiscomp/datamodel/pick.h>
 #include <seiscomp/datamodel/configstation.h>
+#include <seiscomp/gui/map/layers/annotationlayer.h>
 
 #include "stationdata.h"
 #include "stationdatahandler.h"
@@ -228,6 +229,7 @@ class MvMainWindow : public Seiscomp::Gui::MainWindow {
 		QAction                         *_eventModeControls[Seiscomp::DataModel::EvaluationMode::Quantity+1];
 		QAction                         *_eventStatusControls[Seiscomp::DataModel::EvaluationStatus::Quantity+1];
 
+		Seiscomp::Gui::Map::AnnotationLayer *_annotationLayer;
 		MvMapWidget                     *_mapWidget;
 		EventTableWidget                *_eventTableWidgetRef;
 		SearchWidget*                    _searchWidgetRef;
