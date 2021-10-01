@@ -1,10 +1,13 @@
-scorgls lists all available origin ids within a given time range to stdout.
-Use :ref:`scevtls` for listing all event ids.
+*scorgls* lists all available origin IDs within a given time range to stdout.
+
+Use :ref:`scevtls` for listing all event IDs. In extension to :ref:`scevts` and scorgls
+:ref:`scquery` can search for parameters based on complex custom queries.
+
 
 Example
 =======
 
-Print all origin ids for the complete year 2012.
+Print all origin IDs for the complete year 2012.
 
 .. code-block:: sh
 
