@@ -2,7 +2,7 @@
 <seiscomp>
 	<module name="scquery" category="Utilities">
 		<description>
-			Reads database objects and writes them to the command line.
+			Read database objects and writes them to the command line.
 		</description>
 		<configuration>
 		</configuration>

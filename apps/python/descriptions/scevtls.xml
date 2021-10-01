@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="scevtls" category="Utilities">
-		<description>List event ids from database.</description>
+		<description>List event IDs from database.</description>
 		<command-line>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
