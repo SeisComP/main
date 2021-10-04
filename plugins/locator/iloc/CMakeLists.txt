@@ -52,6 +52,7 @@ SET(RSTT_SLBM_SOURCES
 	RSTT/SLBM/src/CrustalProfileStore.cc
 	RSTT/SLBM/src/DataBuffer.cc
 	RSTT/SLBM/src/GeoStack.cc
+	RSTT/SLBM/src/GeoTessModelPathUnc.cc
 	RSTT/SLBM/src/GeoTessModelSLBM.cc
 	RSTT/SLBM/src/GreatCircle.cc
 	RSTT/SLBM/src/GreatCircleFactory.cc
@@ -77,6 +78,7 @@ SET(RSTT_SLBM_SOURCES
 	RSTT/SLBM/src/TPVelocityModels.cc
 	RSTT/SLBM/src/Triangle.cc
 	RSTT/SLBM/src/Uncertainty.cc
+	RSTT/SLBM/src/UncertaintyPathDep.cc
 )
 
 
@@ -89,24 +91,23 @@ SET(ILOC_SOURCES
 	${RSTT_SLBM_SOURCES}
 	${RSTT_SLBM_C_SHELL_SOURCES}
 	sciLocCluster.c
-	sciLocDistAzimuth.c
-	sciLocInitializations.c
-	sciLocLocalTT.c
-	sciLocNA.c
-	sciLocReadAuxDataFiles.c
 	sciLocDataCovariance.c
-	sciLocFreeMemory.c
-	sciLocInterface.h
-	sciLocLocationQuality.c
-	sciLocPhaseIdentification.c
-	sciLocSVD.c
 	sciLocDepthPhases.c
+	sciLocDistAzimuth.c
+	sciLocFreeMemory.c
 	sciLocGregion.c
+	sciLocInitializations.c
 	sciLocInterpolate.c
+	sciLocLocalTT.c
+	sciLocLocationQuality.c
 	sciLocLocator.c
+	sciLocNA.c
+	sciLocPhaseIdentification.c
 	sciLocPrintEvent.c
-	sciLocTravelTimes.c
+	sciLocReadAuxDataFiles.c
+	sciLocSVD.c
 	sciLocTravelTimeAPI.c
+	sciLocTravelTimes.c
 )
 
 INCLUDE_DIRECTORIES(RSTT/GeoTessCPP/include)
