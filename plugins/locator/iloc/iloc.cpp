@@ -256,9 +256,9 @@ ILoc::IDList ILoc::_allowedParameters;
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 ILoc::AuxData::AuxData()
-: tablesTT(NULL)
-, tablesLocalTT(NULL)
-, ec(NULL)
+: tablesTT(nullptr)
+, tablesLocalTT(nullptr)
+, ec(nullptr)
 , useRSTT(false)
 , valid(false) {}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

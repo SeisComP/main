@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<plugin name="iLoc">
+		<extends>global</extends>
+		<description>
+			This plugin allows the use of the iLoc locator with SeisComP.
+		</description>
+		<configuration>
+			<group name="iLoc">
+				<description>
+					Locator parameters: iLoc
+				</description>
+				<parameter name="profiles" type="list:string" default="iasp91,ak135">
+					<description>
+					iLoc profile name.
+					Multiples names may be set separated by comma.
+					Each profile can have different velocity or parameters.
+					</description>
+				</parameter>
+				<group name="profile">
+					<description>
+						Profiles containing the specific locator parameters. For
+						the global models, iasp91 and ak135, profiles are
+						automatically considered with defaults.
+						To adjust the profile parameters the corresponding profile
+						must be created.
+					</description>
+					<struct type="iLoc profile" link = "iLoc.profiles">
+						<parameter name="Verbose" type="boolean" default="true">
+							<description>
+							</description>
+						</parameter>
+
+						<parameter name="globalModel" type="string" default="">
+							<description>
+							Name of globally applied velocity model
+							into which RSTT or the local model is integrated. If
+							unset, the name of the profile is considered instead.
+							</description>
+						</parameter>
+						<parameter name="UseRSTT" type="boolean" default="false">
+							<description>
+							Use regional seismic travel-time tables
+							</description>
+						</parameter>
+						<parameter name="UseRSTTPnSn" type="boolean" default="true">
+							<description>
+							Use regional seismic travel-time tables for Pn and Sn
+							</description>
+						</parameter>
+						<parameter name="UseRSTTPgLg" type="boolean" default="true">
+							<description>
+							Use regional seismic travel-time tables for Pg and Lg
+							</description>
+						</parameter>
+						<parameter name="LocalVmodel" type="string" default="">
+							<description>
+							Full path to a file containing the local velocity model.
+							Requires: UseLocalTT = true. Empty string or unset
+							disables using a local model in this profile.
+
+							Example:
+
+							 @DATADIR@/iloc/localmodels/model.localmodel.dat.
+							</description>
+						</parameter>
+
+						<parameter name="DoGridSearch" type="boolean" default="true">
+							<description>
+							Perform neighbourhood algorithm
+							</description>
+						</parameter>
+						<parameter name="NAsearchRadius" type="float" default="5" unit="deg">
+							<description>
+							Neighbourhood Algorithm: Search radius around initial
+							epicentre
+							</description>
+						</parameter>
+						<parameter name="NAsearchDepth" type="float" default="300" unit="km">
+							<description>
+							Neighbourhood Algorithm: Search radius around initial
+							depth
+							</description>
+						</parameter>
+						<parameter name="NAsearchOT" type="float" default="30" unit="s">
+							<description>
+							Neighbourhood Algorithm: Search radius around initial
+							origin time
+							</description>
+						</parameter>
+						<parameter name="NAlpNorm" type="float" default="1">
+							<description>
+							Neighbourhood Algorithm: p-value for norm to compute
+							misfit [1,2]
+							</description>
+						</parameter>
+						<parameter name="NAiterMax" type="integer" default="5">
+							<description>
+							Neighbourhood Algorithm: Maximum number of iterations
+							</description>
+						</parameter>
+						<parameter name="NAcells" type="integer" default="25">
+							<description>
+							Neighbourhood Algorithm: Number of cells to be resampled
+							at each iteration
+							</description>
+						</parameter>
+						<parameter name="NAinitialSample" type="integer" default="1000" unit="">
+							<description>
+							Neighbourhood Algorithm: Size of initial sample
+							</description>
+						</parameter>
+						<parameter name="NAnextSample" type="integer" default="100" unit="">
+							<description>
+							Neighbourhood Algorithm: Size of subsequent samples
+							</description>
+						</parameter>
+
+						<parameter name="MinDepthPhases" type="integer" default="3" unit="">
+							<description>
+							Depth resolution: Minimum number of depth phases for depdp
+							</description>
+						</parameter>
+						<parameter name="MaxLocalDistDeg" type="float" default="0.2" unit="deg">
+							<description>
+							Depth resolution: Maximum local distance
+							</description>
+						</parameter>
+						<parameter name="MinLocalStations" type="integer" default="1">
+							<description>
+							Depth resolution: Minimum number of local defining stations
+							</description>
+						</parameter>
+						<parameter name="MaxSPDistDeg" type="float" default="2.0" unit="deg">
+							<description>
+							Depth resolution: Maximum distance for using S-P travel-time differences.
+							</description>
+						</parameter>
+						<parameter name="MinSPpairs" type="integer" default="3">
+							<description>
+							Depth resolution: Minimum number of defining S-P phase pairs
+							</description>
+						</parameter>
+						<parameter name="MinCorePhases" type="integer" default="3">
+							<description>
+							Depth resolution: Minimum number of defining core reflection phases
+							</description>
+						</parameter>
+						<parameter name="MaxShallowDepthError" type="float" default="30.0" unit="km">
+							<description>
+							Depth resolution: Maximum depth error for crustal free-depth
+							</description>
+						</parameter>
+						<parameter name="MaxDeepDepthError" type="float" default="60.0" unit="km">
+							<description>
+							Depth resolution: Maximum depth error for deep free-depth
+							</description>
+						</parameter>
+
+						<parameter name="DoCorrelatedErrors" type="boolean" default="true">
+							<description>
+							Linearized inversion: Account for correlated errors
+							</description>
+						</parameter>
+						<parameter name="SigmaThreshold" type="float" default="6.0" unit="s">
+							<description>
+							Linearized inversion: Used to exclude big residuals from solution
+							</description>
+						</parameter>
+						<parameter name="AllowDamping" type="boolean" default="true">
+							<description>
+							Linearized inversion: Allow damping of model vector
+							</description>
+						</parameter>
+						<parameter name="MinIterations" type="integer" default="4">
+							<description>
+							Linearized inversion: Minimum number of iterations
+							</description>
+						</parameter>
+						<parameter name="MaxIterations" type="integer" default="20">
+							<description>
+							Linearized inversion: Maximum number of iterations
+							</description>
+						</parameter>
+						<parameter name="MinNdefPhases" type="integer" default="4">
+							<description>
+							Linearized inversion: Minimum number of defining phases
+							</description>
+						</parameter>
+						<parameter name="DoNotRenamePhases" type="boolean" default="false">
+							<description>
+							Linearized inversion: Do not rename phases. Deactivating
+							allows to rename the phases automatically for this
+							profile.
+							</description>
+						</parameter>
+
+					</struct>
+				</group>
+			</group>
+		</configuration>
+	</plugin>
+</seiscomp>
