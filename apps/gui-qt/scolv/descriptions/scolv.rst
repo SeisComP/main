@@ -1202,11 +1202,13 @@ An example script which just returns the standard error looks like this:
 
 .. code-block:: python
 
-   #!/usr/bin/env python
-   import seiscomp.datamodel, seiscomp.io
+   #!/usr/bin/env seiscomp-python
+   from __future__ import print_function
+   import sys
+   from seiscomp import datamodel, io
 
    def main():
-       ar = seiscomp.io.BinaryArchive()
+       ar = io.BinaryArchive()
 
        # Open standard input
        if not ar.open("-"):
@@ -1218,21 +1220,22 @@ An example script which just returns the standard error looks like this:
        ar.close()
 
        # Try to cast obj to an origin
-       org = seiscomp.datamodel.Origin.Cast(obj)
-
+       org = datamodel.Origin.Cast(obj)
        # No origin -> error
        if not org:
            return 1
 
        # Try to print the standard error to stdout
-       try: print org.quality().standardError()
+       try:
+           print(org.quality().standardError())
        # Field not set, return error
-       except: return 1
+       except Exception:
+           return 1
 
        return 0
 
-    if __name__ == "__main__":
-        sys.exit(main())
+   if __name__ == "__main__":
+       sys.exit(main())
 
 .. important:: The script must be executable. In Linux don't forget
    to call
