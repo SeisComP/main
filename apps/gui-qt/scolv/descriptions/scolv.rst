@@ -1229,28 +1229,33 @@ Database request filters can be applied interactively or automatically by
     .. code-block:: sh
 
        # Configured a list of regions that can be used as filter of the result set.
-       eventlist.regions = chile
+       eventlist.filter.regions.profiles = chile
 
        # Defines the name of the region that shows up in the listbox.
-       eventlist.region.chile.name = Chile
+       eventlist.filter.regions.region.chile.name = Chile
 
        # Defines a rectangular region with a list of 4 values: latmin, lonmin, latmax,
        # lonmax.
-       eventlist.region.chile.rect = -40, -80, -10, -60
+       eventlist.filter.regions.region.chile.rect = -40, -80, -10, -60
 
+
+.. _scolv-custom-actions:
 
 Custom Actions
 ==============
 
-Since the internal data model is limited, scolv allows addition of custom quantities
-derived from the origin objects to the information panel, to the origin list of
-Event tab and to the Event list. This can help to evaluate origins in a better
-way.
+Since the internal data model is limited, scolv allows
+deriving custom quantities from the event or origin objects. These quantities can
+be displayed or processed further by external script.
+This procedure can help to evaluate origins in a better or more specific way.
 
-Two sources are currently supported
+Two sources of information are currently supported
 
-* :ref:`Origin comments <sec-scolv-comments>` provided along with origins,
-* :ref:`Custom scripts <sec-scolv-scripts>` provided by the |scname| operator.
+* :ref:`Origin comments <sec-scolv-comments>` provided along with origins to be
+  shown in scolv tabs,
+* :ref:`External scripts <sec-scolv-scripts>` provided by the |scname| operator
+  to extract specific information from events or origins which are shown in tabs
+  or processed further.
 
 
 .. _sec-scolv-comments:
@@ -1260,11 +1265,12 @@ Origin comments
 
 Currently only one comment of an origin can be added to the different panels.
 
+
 Location tab
 ^^^^^^^^^^^^
 
-To add a comment value to the information panel of the Location tab, the
-following configuration can be used (:file:`scolv.cfg`):
+To add an origin comment value to the information panel of the Location tab,
+configure display paramters in scolv. Example (:file:`scolv.cfg`):
 
 .. code-block:: sh
 
@@ -1281,35 +1287,37 @@ following configuration can be used (:file:`scolv.cfg`):
 Event tab
 ^^^^^^^^^
 
-To add a custom column to the **origin list of the Event tab** using a comment
-value, configure (:file:`scolv.cfg`):
+To add a custom column to the **origin list of the Event tab** showing an origin
+comment value, configure eventedit parameters in scolv or global. Example
+(:file:`scolv.cfg` or :file:`global.cfg`):
 
 .. code-block:: sh
 
    # Define the default value if no comment is present
-   eventedit.customColumn.default = "-"
+   eventedit.origin.customColumn.default = "-"
 
    # Define the comment id to be used
-   eventedit.customColumn.originCommentID = SED.quality
+   eventedit.origin.customColumn.originCommentID = SED.quality
 
    # Define the column header label
-   eventedit.customColumn = "Qual"
+   eventedit.origin.customColumn.name = "Qual"
 
    # Define the column position in the table
-   eventedit.customColumn.pos = 4
+   eventedit.origin.customColumn.pos = 4
 
    # Allows to map comment values (strings) to colors. In this case the
    # comment will have A,B,C or D which is mapped to green, yellow, orange and
    # red
-   eventedit.customColumn.colors = "A:00FF00","B:rgb(64,192,0)",\
-                                   "C:rgb(192,64,0)","D:FF0000"
+   eventedit.origin.customColumn.colors = "A:00FF00","B:rgb(64,192,0)",\
+                                           "C:rgb(192,64,0)","D:FF0000"
 
 
 Events tab
 ^^^^^^^^^^
 
 To add a custom column to the **event list of the Events tab** using a comment
-value, the following configuration can be used (:file:`scolv.cfg` or :file:`global.cfg`):
+value, configure eventlist parameters in scolv or global. Example
+(:file:`scolv.cfg` or :file:`global.cfg`):
 
 .. code-block:: sh
 
@@ -1320,7 +1328,7 @@ value, the following configuration can be used (:file:`scolv.cfg` or :file:`glob
    eventlist.customColumn.originCommentID = "SED.quality"
 
    # Define the column header label
-   eventlist.customColumn = "Qual"
+   eventlist.customColumn.name = "Qual"
 
    # Define the column position in the table
    eventlist.customColumn.pos = 5
@@ -1341,22 +1349,49 @@ is set by the :ref:`NonLinLoc locator plugin <global_nonlinloc>`.
 External scripts
 ----------------
 
+User-defined scripts may generated and executed
+
+* By :ref:`custom buttons <sec-scolv-buttons>`
+* Automatically to show :ref:`custom information <sec-scolv-information>` in the
+  Location, Event and the Events tabs.
+  The information may include parameters derived from origins.
+
+
+.. _sec-scolv-buttons:
 
 Custom buttons
 ^^^^^^^^^^^^^^
 
-scolv allows to add custom buttons to the **summary window** and the **Location tab**.
+scolv allows to add one custom button to the **Summary window** and two custom
+buttons to the **Location tab**.
 When pressing the custom buttons, user-defined external scripts are executed.
 Configuration (:file:`scolv.cfg`):
 
-* Button in summary window: :confval:`scripts.export`
+* Button in Summary window: :confval:`scripts.export`. Read :confval:`scripts.export`
+  for the description of the parameters passed to the script.
 * Up to 2 buttons in Location tab: :confval:`button0`, :confval:`scripts.script0`,
-  :confval:`button1`,  :confval:`scripts.script0`
+  :confval:`button1`,  :confval:`scripts.script1` Read :confval:`scripts.script0`
+  and :confval:`scripts.script1` for the description of the parameters passed to
+  the scripts.
 
-Another option to add derived origin parameters is to use external scripts.
-scolv will call those scripts and writes a binary serialized origin object
+
+.. _sec-scolv-information:
+
+Custom information in tabs
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Origin parameters can be derived by external scripts.
+When configured for the scolv tabs *Location*, *Event* or *Events*, scolv will call
+those scripts and writes a binary serialized origin object
 to its standard input. scolv reads the script output and displays this value
 only if the return code of the script is 0.
+
+Below you find examples for
+
+* Example custom script
+* :ref:`Custom information in the Location tab <sec-scolv-parameters-location>`
+* :ref:`Custom information in the Event tab <sec-scolv-parameters-event>`
+* :ref:`Custom information in the Events tab <sec-scolv-parameters-events>`
 
 An example script which just returns the standard error looks like this:
 
@@ -1415,11 +1450,13 @@ As many scripts as necessary for evaluation can be created.
    The slower the database access, the longer it takes to display the results.
 
 
-Add information to Location tab
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _sec-scolv-parameters-location:
+
+Location tab
+~~~~~~~~~~~~
 
 To add the output of an external custom script to the information panel of the Location tab,
-configure (:file:`scolv.cfg`):
+configure display parameters in scolv. Example (:file:`scolv.cfg`):
 
 .. code-block:: sh
 
@@ -1434,11 +1471,13 @@ configure (:file:`scolv.cfg`):
    display.origin.addon.qual2.script = "@CONFIGDIR@/scripts/scolv/qual2"
 
 
-Add information to Event tab
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _sec-scolv-parameters-event:
 
-Provide an external script and add the output to the **origin list of the Event tab**
-(:file:`scolv.cfg`):
+Event tab
+~~~~~~~~~
+
+Provide an external script and add the output to the **origin list of the Event tab**,
+configure the eventedit parameters in scolv or global. Example (:file:`scolv.cfg` or :file:`scolv.cfg`):
 
 .. code-block:: sh
 
@@ -1451,11 +1490,13 @@ Provide an external script and add the output to the **origin list of the Event 
    eventedit.scripts.column.qual2.script = "@CONFIGDIR@/scripts/scolv/qual2"
 
 
-Add information to Events tab
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _sec-scolv-parameters-events:
 
-Provide an external script and add the output to **event list of the Events tab**
-(:file:`scolv.cfg` or :file:`global.cfg`):
+Events tab
+~~~~~~~~~~
+
+Provide an external script and add the output to **event list of the Events tab**,
+configure the eventlist parameters in scolv or global. Example (:file:`scolv.cfg` or :file:`global.cfg`):
 
 .. code-block:: sh
 
@@ -1490,6 +1531,7 @@ available which can be opened by pressing :kbd:`F3`.
    When pressing the Save button in the scolv settings menu, the parameters will be written
    to :file:`$HOME/.seiscomp/scolv.cfg` (use mode configuration) where they take
    priority over configurations in :file:`$SEISCOMP_ROOT/etc/scolv.cfg` (system mode configuration).
+
 
 Global
 ------

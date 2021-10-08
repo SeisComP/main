@@ -23,12 +23,14 @@
 			</parameter>
 			<parameter name="button0" type="string">
 				<description>
-				Label of the button that triggers the script defined in &quot;script0&quot;.
+				Label of the button that triggers the script defined in
+				&quot;scripts.script0&quot;.
 				</description>
 			</parameter>
 			<parameter name="button1" type="string">
 				<description>
-				Label of the button that triggers the script defined in &quot;script1&quot;.
+				Label of the button that triggers the script defined in
+				&quot;scripts.script1&quot;.
 				</description>
 			</parameter>
 			<group name="scripts">
@@ -107,14 +109,15 @@
 				</parameter>
 				<parameter name="enableMagnitudeSelection" type="boolean" default="true">
 					<description>
-						If enabled, a magnitude selection pop window will open in advance
-						to compute magnitudes. The default selection reflects the configuration
-						parameter &quot;magnitudes&quot;.
+						If enabled, a magnitude selection pop window will open
+						in advance to compute magnitudes. The default selection
+						reflects the configuration parameter &quot;magnitudes&quot;.
 					</description>
 				</parameter>
-				<parameter name="Pvel" type="double"  unit="km/s" default="6.0">
+				<parameter name="Pvel" type="double" unit="km/s" default="6.0">
 					<description>
-						The P reduction velocity used in the &quot;move out&quot; plot.
+						The velocity applied to reduce travel times in the
+						&quot;MoveOut&quot; plot of the Location tab.
 					</description>
 				</parameter>
 				<parameter name="drawMapLines" type="boolean" default="true">
@@ -135,7 +138,7 @@
 						in the arrivals or not.
 					</description>
 				</parameter>
-				<parameter name="defaultAddStationsDistance" type="double" unit="deg" default="15">
+				<parameter name="defaultAddStationsDistance" type="double" unit="deg" default="15.0">
 					<description>
 						The default value for adding unassociated stations in the picker.
 					</description>
@@ -151,7 +154,7 @@
 						If enabled, all traces of disabled stations without picks are hidden.
 					</description>
 				</parameter>
-				<parameter name="defaultDepth" type="double" unit="km" default="10">
+				<parameter name="defaultDepth" type="double" unit="km" default="10.0">
 					<description>
 						When creating an artificial origin this is the default depth used.
 					</description>
@@ -170,16 +173,16 @@
 				</parameter>
 				<group name="map">
 					<group name="stations">
-						<parameter name="unassociatedMaxDist" type="double" unit="deg" default="360">
+						<parameter name="unassociatedMaxDist" type="double" unit="deg" default="360.0">
 							<description>
 								Maximum distance in degrees up to which also unassociated stations are
-								shown in the map. The default value is 360 which will
+								shown in the map. 360.0 deg which will
 								show all unassociated stations.
 							</description>
 						</parameter>
 					</group>
 					<group name="event">
-						<parameter name="defaultRadius" type="double" unit="deg" default="-1">
+						<parameter name="defaultRadius" type="double" unit="deg" default="-1.0">
 							<description>
 								Default map radius in degrees if a new event is selected.
 								A negative value restores the default behavior.
@@ -603,7 +606,10 @@
 					</description>
 					<parameter name="addons" type="list:string">
 						<description>
-							Name(s) of quality addon(s) to be considered.
+							Name(s) of quality addon profile(s) to be considered.
+							The profiles provide values through a script which are
+							shown in the location tab. The scolv documentation
+							provides an example script.
 						</description>
 					</parameter>
 					<group name="comment">
@@ -627,7 +633,7 @@
 						</parameter>
 					</group>
 					<group name="addon">
-						<struct type="Quality addon" link="display.origin.addons">
+						<struct type="Quality addon profile" link="display.origin.addons">
 							<parameter name="label" type="string">
 								<description>
 								Defines the label text of the information panel in the
