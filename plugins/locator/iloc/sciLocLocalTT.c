@@ -71,7 +71,7 @@ static void CriticalDistanceTTIntercept(int n, double *v, double *vsq,
  *     ReadLocalVelocityModel, GenerateLocalTT, iLoc_GetPhaseIndex,
  *     FreeLocalVelocityModel, iLoc_Free
  */
-ILOC_TT_TABLE *iLoc_GenerateLocalTTtables(char *auxdir, ILOC_TTINFO *LocalTTInfo,
+ILOC_TT_TABLE *iLoc_GenerateLocalTTtables(char *LocalVmodel, ILOC_TTINFO *LocalTTInfo,
         int verbose)
 {
     ILOC_PHASELIST *phcd = (ILOC_PHASELIST *)NULL;
@@ -84,7 +84,6 @@ ILOC_TT_TABLE *iLoc_GenerateLocalTTtables(char *auxdir, ILOC_TTINFO *LocalTTInfo
     double *h = (double *)NULL;
     ILOC_TT_TABLE *tt_tables = (ILOC_TT_TABLE *)NULL;
     ILOC_VMODEL LocalVelocityModel;
-    char filename[ILOC_FILENAMELEN];
     double hmax, hd, delta, depth;
     int npha, n, i, j, k, ind, ndists, ndepths, icon, imoh;
     double dists[ILOC_NDIS] = {
@@ -99,11 +98,28 @@ ILOC_TT_TABLE *iLoc_GenerateLocalTTtables(char *auxdir, ILOC_TTINFO *LocalTTInfo
     };
     ndists = ILOC_NDIS;
 /*
+ *  local phase names
+ */
+    LocalTTInfo->numPhaseTT = 11;
+    LocalTTInfo->PhaseTT = (ILOC_PHASELIST *)calloc(LocalTTInfo->numPhaseTT, sizeof(ILOC_PHASELIST));
+    if (LocalTTInfo->PhaseTT == NULL) {
+        fprintf(stderr, "iLoc_GenerateLocalTTtables: cannot allocate memory\n");
+    }
+    strcpy(LocalTTInfo->PhaseTT[0].Phase, "firstP");
+    strcpy(LocalTTInfo->PhaseTT[1].Phase, "firstS");
+    strcpy(LocalTTInfo->PhaseTT[2].Phase, "Pg");
+    strcpy(LocalTTInfo->PhaseTT[3].Phase, "Pb");
+    strcpy(LocalTTInfo->PhaseTT[4].Phase, "Pn");
+    strcpy(LocalTTInfo->PhaseTT[5].Phase, "P");
+    strcpy(LocalTTInfo->PhaseTT[6].Phase, "Lg");
+    strcpy(LocalTTInfo->PhaseTT[7].Phase, "Sg");
+    strcpy(LocalTTInfo->PhaseTT[8].Phase, "Sb");
+    strcpy(LocalTTInfo->PhaseTT[9].Phase, "Sn");
+    strcpy(LocalTTInfo->PhaseTT[10].Phase, "S");
+/*
  *  read local velocity model
  */
-    sprintf(filename, "%s/localmodels/%s.localmodel.dat",
-            auxdir, LocalTTInfo->TTmodel);
-    if (ReadLocalVelocityModel(filename, &LocalVelocityModel, LocalTTInfo))
+    if (ReadLocalVelocityModel(LocalVmodel, &LocalVelocityModel, LocalTTInfo))
         return (ILOC_TT_TABLE *)NULL;
     n = LocalVelocityModel.n;
     icon = LocalVelocityModel.iconr;

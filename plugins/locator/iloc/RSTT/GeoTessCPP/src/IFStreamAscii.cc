@@ -1,26 +1,24 @@
 //- ****************************************************************************
-//-
-//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
-//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
-//- Government retains certain rights in this software.
-//-
-//- BSD Open Source License
+//- 
+//- Copyright 2009 Sandia Corporation. Under the terms of Contract
+//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
+//- retains certain rights in this software.
+//- 
+//- BSD Open Source License.
 //- All rights reserved.
-//-
+//- 
 //- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
-//-
-//-   1. Redistributions of source code must retain the above copyright notice,
+//- 
+//-    * Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-
-//-   2. Redistributions in binary form must reproduce the above copyright
+//-    * Redistributions in binary form must reproduce the above copyright
 //-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-
-//-   3. Neither the name of the copyright holder nor the names of its
+//-    * Neither the name of Sandia National Laboratories nor the names of its
 //-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
-//-
+//- 
 //- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 //- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 //- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -57,16 +55,16 @@ namespace geotess {
  */
 void	IFStreamAscii::openForRead(const string& fn)
 {
-    resetReader();
-    strFileName = fn;
-    ifs.open(fn.c_str(), std::ios::in);
-    if (!ifs.is_open())
-    {
-        ostringstream os;
-        os << endl << "ERROR in IFStreamBinary::readFromFile" << endl
-             << "Could not open input file: " << fn << endl;
-        throw GeoTessException(os, __FILE__, __LINE__, 9207);
-    }
+	resetReader();
+	strFileName = fn;
+	ifs.open(fn.c_str(), std::ios::in);
+	if (!ifs.is_open())
+	{
+		ostringstream os;
+		os << endl << "ERROR in IFStreamBinary::readFromFile" << endl
+			 << "Could not open input file: " << fn << endl;
+		throw GeoTessException(os, __FILE__, __LINE__, 9207);
+	}
 }
 
 /**
@@ -74,17 +72,17 @@ void	IFStreamAscii::openForRead(const string& fn)
  */
 void	IFStreamAscii::openForWrite(const string& fn)
 {
-    resetReader();
-    strFileName = fn;
-    ofs.open(fn.c_str(), std::ios::out);
-    if (!ofs.is_open())
-    {
-        ostringstream os;
-        os << endl << "ERROR in IFStreamBinary::writeToFile" << endl
-             << "Could not open output file: " << fn << endl;
-        throw GeoTessException(os, __FILE__, __LINE__, 9208);
-    }
-    ofs.precision(numeric_limits<double>::digits10 + 2);
+	resetReader();
+	strFileName = fn;
+	ofs.open(fn.c_str(), std::ios::out);
+	if (!ofs.is_open())
+	{
+		ostringstream os;
+		os << endl << "ERROR in IFStreamBinary::writeToFile" << endl
+			 << "Could not open output file: " << fn << endl;
+		throw GeoTessException(os, __FILE__, __LINE__, 9208);
+	}
+	ofs.precision(numeric_limits<double>::digits10 + 2);
 }
 
 /**
@@ -100,7 +98,7 @@ void IFStreamAscii::resetReader()
 
   strTotlLinesRead = strDataLinesRead = strBytesRead = 0;
   strBlankLinesRead = strCommentLinesRead = strBlkCommentLinesRead = 0;
-    strBlkCommntSet  = false;
+	strBlkCommntSet  = false;
   strFileName = "";
 
   // clear tokens and reset token pointer
@@ -191,8 +189,8 @@ bool IFStreamAscii::readLine(string& ln)
     // lines read
 
     getLine(buf);
-        ln = buf.c_str();
-        CPPUtils::removeEOL(ln);
+		ln = buf.c_str();
+		CPPUtils::removeEOL(ln);
     ++strTotlLinesRead;
     strBytesRead += ln.length();
     if (ln.length() == 0) ++strBlankLinesRead;
@@ -383,12 +381,12 @@ void IFStreamAscii::tokenize(const string& str, vector<string>& tokens)
           // error: no match was found for string delimiter print warning and
           // assign remainder of string as token
 
-                    ostringstream os;
-                    os << endl << "ERROR in IFStreamAscii::tokenize" << endl
-                         << "  Could not find a closing string delimiter match: " << endl
-                         << "    Current Line: " << str << endl
-                         << "    String Start: " << strg.substr(strt_strng, 1) << endl;
-                    throw GeoTessException(os, __FILE__, __LINE__, 9209);
+					ostringstream os;
+					os << endl << "ERROR in IFStreamAscii::tokenize" << endl
+						 << "  Could not find a closing string delimiter match: " << endl
+						 << "    Current Line: " << str << endl
+						 << "    String Start: " << strg.substr(strt_strng, 1) << endl;
+					throw GeoTessException(os, __FILE__, __LINE__, 9209);
         }
         else
           // else increment to next position after ending string delimiter

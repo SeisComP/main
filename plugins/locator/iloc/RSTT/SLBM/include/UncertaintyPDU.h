@@ -35,18 +35,21 @@
 //-
 //- ****************************************************************************
 
-#ifndef UncertaintyPathDep_H
-#define UncertaintyPathDep_H
+#ifndef UncertaintyPDU_H
+#define UncertaintyPDU_H
 
 // **** _SYSTEM INCLUDES_ ******************************************************
 
 #include <string>
 #include <vector>
+#include <list>
+#include <map>
 
 #include "SLBMGlobals.h"
 #include "IFStreamAscii.h"
 #include "IFStreamBinary.h"
-#include "Uncertainty.h"
+#include "UncertaintyPIU.h"
+#include "CpuTimer.h"
 
 using namespace std;
 
@@ -57,11 +60,11 @@ namespace slbm {
     // **** _LOCAL INCLUDES_ *******************************************************
 
     //!
-    //! \brief A UncertaintyPathDep object contains the raw data to calculate a
+    //! \brief A UncertaintyPDU object contains the raw data to calculate a
     //! path dependent modeling error in seconds as a function of distance in
     //! radians along a specific source-receiver path traced through the model.
     //!
-    //! A UncertaintyPathDep object contains the raw data to calculate a
+    //! A UncertaintyPDU object contains the raw data to calculate a
     //! path dependent modeling error in seconds as a function of distance in
     //! radians along a specific source-receiver path traced through the model.
     //!
@@ -74,7 +77,7 @@ namespace slbm {
     //! and not for azimuth and slowness. The latter two attributes still use
     //! the 2D uncertainty definitions.
     //!
-    class SLBM_EXP UncertaintyPathDep
+    class SLBM_EXP UncertaintyPDU
     {
 
     public:
@@ -82,21 +85,21 @@ namespace slbm {
         //! \brief Default constructor.
         //!
         //! Default constructor.
-        UncertaintyPathDep();
+        UncertaintyPDU();
 
         //! \brief Parameterized constructor that defines an empty path
         //! path specific model error for the input phase.
         //!
         //! Parameterized constructor that defines an empty path
         //! path specific model error for the input phase.
-        UncertaintyPathDep(int phase);
+        UncertaintyPDU(int phase);
 
         //! \brief Parameterized constructor that that defines an empty path
         //! path specific model error for the input phase.
         //!
         //! Parameterized constructor that that defines an empty path
         //! path specific model error for the input phase.
-        UncertaintyPathDep(const string& phase);
+        UncertaintyPDU(const string& phase);
 
         //! \brief Parameterized constructor that loads path dependent model error
         //! definition from a specified file.
@@ -104,7 +107,7 @@ namespace slbm {
         //! Parameterized constructor that loads path dependent model error
         //! definition from a specified file. Uses the input phase ordering
         //! index to define the file name.
-        UncertaintyPathDep(string modelPath, int phase);
+        UncertaintyPDU(string modelPath, int phase);
 
         // \brief Parameterized constructor that loads path dependent model error
         //! definition from a specified file.
@@ -113,100 +116,83 @@ namespace slbm {
         //! definition from a specified file. Uses the input phase string
         //! to find the uncertainty data file and assigns a phase ordering
         //! index.
-        UncertaintyPathDep(string modelPath, const string& phase);
+        UncertaintyPDU(string modelPath, const string& phase);
 
         //! \brief Copy constructor.
         //!
         //! Copy constructor.
-        UncertaintyPathDep(const UncertaintyPathDep& u);
+        UncertaintyPDU(const UncertaintyPDU& u);
 
         //! \brief Destructor.
         //!
         //! Destructor.
-        ~UncertaintyPathDep();
+        virtual ~UncertaintyPDU();
 
         //! \brief Assignment operator.
         //!
         //! Assignment operator.
-        UncertaintyPathDep& operator=(const UncertaintyPathDep& u);
+        UncertaintyPDU& operator=(const UncertaintyPDU& u);
 
         /**
         * Overloaded equality operator
-        * @param other reference to the other UncertaintyPathDep object to which
-        * this UncertaintyPathDep object is to be compared
+        * @param other reference to the other UncertaintyPDU object to which
+        * this UncertaintyPDU object is to be compared
         * @return true if this and other are equal.
         */
-        bool operator==(const UncertaintyPathDep& other);
+        virtual bool operator == (const UncertaintyPDU& other) const;
+        virtual bool operator != (const UncertaintyPDU& other) const { return !(*this == other); } ;
 
         /**
         * Overloaded inequality operator
-        * @param other reference to the other UncertaintyPathDep object to which
-        * this UncertaintyPathDep object is to be compared
+        * @param other reference to the other UncertaintyPDU object to which
+        * this UncertaintyPDU object is to be compared
         * @return true if this and other are not equal.
         */
-        bool operator!=(const UncertaintyPathDep& other) { return !(*this == other); }
+        bool operator!=(const UncertaintyPDU& other) { return !(*this == other); }
 
         /**
-        * Retrieve a new UncertaintyPathDep object for the specified phase
+        * Retrieve a new UncertaintyPDU object for the specified phase
         * loaded from specified input source.
         * @param input data source
         * @param phase 0:Pn, 1:Sn, 2:Pg, 3:Lg
-        * @return pointer to an UncertaintyPathDep object.
+        * @return pointer to an UncertaintyPDU object.
         */
-        static UncertaintyPathDep* getUncertainty(ifstream& input, int phase);
+        static UncertaintyPDU* getUncertainty(ifstream& input, int phase);
 
         /**
-        * Retrieve a new UncertaintyPathDep object for the specified phase
+        * Retrieve a new UncertaintyPDU object for the specified phase
         * @param input data source
         * @param phase 0:Pn, 1:Sn, 2:Pg, 3:Lg
-        * @return pointer to an UncertaintyPathDep object.
+        * @return pointer to an UncertaintyPDU object.
         */
-        static UncertaintyPathDep* getUncertainty(ifstream& input, const string& phase);
+        static UncertaintyPDU* getUncertainty(ifstream& input, const string& phase);
 
         /**
-        * Retrieve a new UncertaintyPathDep object for the specified phase
+        * Retrieve a new UncertaintyPDU object for the specified phase
         * loaded from specified input source.
         * @param input data source
         * @param phase 0:Pn, 1:Sn, 2:Pg, 3:Lg
-        * @return pointer to an UncertaintyPathDep object.
+        * @return pointer to an UncertaintyPDU object.
         */
-        static UncertaintyPathDep* getUncertainty(geotess::IFStreamAscii& input, int phase);
+        static UncertaintyPDU* getUncertainty(geotess::IFStreamAscii& input);
 
         /**
-        * Retrieve a new UncertaintyPathDep object for the specified phase
+        * Retrieve a new UncertaintyPDU object for the specified phase
         * loaded from specified input source.
         * @param input data source
         * @param phase 0:Pn, 1:Sn, 2:Pg, 3:Lg
-        * @return pointer to an UncertaintyPathDep object.
+        * @return pointer to an UncertaintyPDU object.
         */
-        static UncertaintyPathDep* getUncertainty(geotess::IFStreamAscii& input, const string& phase);
+        static UncertaintyPDU* getUncertainty(geotess::IFStreamBinary& input);
 
         /**
-        * Retrieve a new UncertaintyPathDep object for the specified phase
-        * loaded from specified input source.
-        * @param input data source
-        * @param phase 0:Pn, 1:Sn, 2:Pg, 3:Lg
-        * @return pointer to an UncertaintyPathDep object.
-        */
-        static UncertaintyPathDep* getUncertainty(geotess::IFStreamBinary& input, int phase);
-
-        /**
-        * Retrieve a new UncertaintyPathDep object for the specified phase
-        * loaded from specified input source.
-        * @param input data source
-        * @param phase 0:Pn, 1:Sn, 2:Pg, 3:Lg
-        * @return pointer to an UncertaintyPathDep object.
-        */
-        static UncertaintyPathDep* getUncertainty(geotess::IFStreamBinary& input, const string& phase);
-
-        /**
-        * Retrieve a new UncertaintyPathDep object for the specified phase
+        * Retrieve a new UncertaintyPDU object for the specified phase
         * loaded from specified input source.
         * @param modelPath data source path
         * @param phase 0:Pn, 1:Sn, 2:Pg, 3:Lg
-        * @return pointer to an UncertaintyPathDep object.
+        * @return pointer to an UncertaintyPDU object.
         */
-        static UncertaintyPathDep* getUncertainty(const string& modelPath, int phase);
+        static UncertaintyPDU* getUncertainty(const string& modelPath, int phase);
 
         void readFile(ifstream& fin);
 
@@ -218,6 +204,8 @@ namespace slbm {
 
         void writeFile(geotess::IFStreamBinary& fout);
 
+        void writeFile(const string& directoryName);
+        
         //! \brief A public convenience accessor used to verify the error data for the
         //! correct model phase is loaded in memory.
         //!
@@ -284,12 +272,12 @@ namespace slbm {
 
         static string getPhase(const int& phaseIndex)
         {
-            return Uncertainty::getPhase(phaseIndex);
+            return UncertaintyPIU::getPhase(phaseIndex);
         }
 
         static int getPhase(const string& phase)
         {
-            return Uncertainty::getPhase(phase);
+            return UncertaintyPIU::getPhase(phase);
         }
 
         vector<double>& getPathUncCrustError() {
@@ -331,6 +319,15 @@ namespace slbm {
         const vector<vector<double> >& getPathUncBias() const {
             return pathUncBias;
         }
+
+        string toString();
+
+        //! \brief A map to store metadata like phase, gridId, nBins, nVertices, etc..
+        //!
+        map<string, string> properties;
+
+        vector<string>  keys;
+        
 
     private:
 
@@ -399,4 +396,4 @@ namespace slbm {
 
 } // end slbm namespace
 
-#endif // UncertaintyPathDep_H
+#endif // UncertaintyPDU_H

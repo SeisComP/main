@@ -1,26 +1,24 @@
 //- ****************************************************************************
-//-
-//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
-//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
-//- Government retains certain rights in this software.
-//-
-//- BSD Open Source License
+//- 
+//- Copyright 2009 Sandia Corporation. Under the terms of Contract
+//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
+//- retains certain rights in this software.
+//- 
+//- BSD Open Source License.
 //- All rights reserved.
-//-
+//- 
 //- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
-//-
-//-   1. Redistributions of source code must retain the above copyright notice,
+//- 
+//-    * Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-
-//-   2. Redistributions in binary form must reproduce the above copyright
+//-    * Redistributions in binary form must reproduce the above copyright
 //-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-
-//-   3. Neither the name of the copyright holder nor the names of its
+//-    * Neither the name of Sandia National Laboratories nor the names of its
 //-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
-//-
+//- 
 //- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 //- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 //- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -75,46 +73,46 @@ class GEOTESS_EXP_IMP GeoTessPolygonFactory
 {
 public:
 
-    static GeoTessPolygon* getPolygon(string inputFileName)
-    {
-        if (inputFileName.find(".kmz", inputFileName.length() - 4) != string::npos
-                || inputFileName.find(".kml", inputFileName.length() - 4) != string::npos)
-        {
-            ostringstream os;
-            os << endl << "ERROR in Polygon::constructor" << endl
-                    << "Cannot read files in kml or kmz format (Google Earth)." << endl
-                    << "GeoTessExplorer has a utility to translate to ascii." << endl;
-            throw GeoTessException(os, __FILE__, __LINE__, 10201);
-        }
+	static GeoTessPolygon* getPolygon(string inputFileName)
+	{
+		if (inputFileName.find(".kmz", inputFileName.length() - 4) != string::npos
+				|| inputFileName.find(".kml", inputFileName.length() - 4) != string::npos)
+		{
+			ostringstream os;
+			os << endl << "ERROR in Polygon::constructor" << endl
+					<< "Cannot read files in kml or kmz format (Google Earth)." << endl
+					<< "GeoTessExplorer has a utility to translate to ascii." << endl;
+			throw GeoTessException(os, __FILE__, __LINE__, 10201);
+		}
 
-        GeoTessPolygon* polygon = NULL;
+		GeoTessPolygon* polygon = NULL;
 
-        vector<string> records;
+		vector<string> records;
 
-        IFStreamAscii input;
-        input.openForRead(inputFileName);
-        string line;
-        while (input.readLine(line))
-        {
-            line = CPPUtils::uppercase_string(CPPUtils::trim(line));
-            if (line.length() > 0 && line.find('#') != 0)
-                records.push_back(line);
-        }
-        input.close();
+		IFStreamAscii input;
+		input.openForRead(inputFileName);
+		string line;
+		while (input.readLine(line))
+		{
+			line = CPPUtils::uppercase_string(CPPUtils::trim(line));
+			if (line.length() > 0 && line.find('#') != 0)
+				records.push_back(line);
+		}
+		input.close();
 
-        if (records[0].find("POLYGON3D") == 0)
-        {
-            polygon = new GeoTessPolygon3D();
-            polygon->loadAscii(records);
-        }
-        else
-        {
-            polygon = new GeoTessPolygon();
-            polygon->loadAscii(records);
-        }
+		if (records[0].find("POLYGON3D") == 0)
+		{
+			polygon = new GeoTessPolygon3D();
+			polygon->loadAscii(records);
+		}
+		else
+		{
+			polygon = new GeoTessPolygon();
+			polygon->loadAscii(records);
+		}
 
-        return polygon;
-    }
+		return polygon;
+	}
 
 
 }; // end class PolygonFactory

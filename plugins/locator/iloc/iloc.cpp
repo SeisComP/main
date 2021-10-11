@@ -211,7 +211,7 @@ void initConfig(ILOC_CONF &cfg, const Config::Config *config,
 	cfg.DoNotRenamePhases = 0;
 
 	// RSTT
-	strcpy(cfg.RSTTmodel, (auxdir + "/RSTTmodel/rstt201404um.geotess").c_str());
+	strcpy(cfg.RSTTmodel, (auxdir + "/RSTTmodels/pdu202009Du.geotess").c_str());
 	//strcpy(cfg.RSTTmodel, "");
 	cfg.UseRSTTPnSn = 1;
 	cfg.UseRSTTPgLg = 1;
@@ -418,7 +418,7 @@ string ILoc::parameter(const string &name) const {
 	if ( !_currentConfig )
 		return string();
 
-	     RET_STRING(Verbose);
+	RET_STRING(Verbose);
 	else if ( name == "UsePickUncertainties" )
 		return Core::toString(_usePickUncertainties);
 	else if ( name == "FixOriginTime" )

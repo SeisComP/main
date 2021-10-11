@@ -60,9 +60,10 @@ using namespace std;
 #include "Location.h"
 #include "SLBMException.h"
 #include "Triangle.h"
-#include "Uncertainty.h"
-#include "UncertaintyPathDep.h"
+#include "UncertaintyPIU.h"
+#include "UncertaintyPDU.h"
 #include "GeoTessPolygon.h"
+#include "GeoTessModelSLBM.h"
 
 #include "DataBuffer.h"
 #include "MD50.h"
@@ -286,32 +287,33 @@ public:
     virtual QueryProfile* getQueryProfile(Location& location);
 
     //!
-    //! Retrieve an nPhases by nAttributes array of Uncertainty objects.
+    //! Retrieve an nPhases by nAttributes array of UncertaintyPIU objects.
     //! The 4 phases are 0:Pn, 1:Sn, 2:Pg, 3:Lg.
     //! The 3 attributes are 0:TT, 1:SH, 2:AZ.
     //!
-    vector<vector<Uncertainty*> >& getUncertainty() { return uncertainty; }
+    vector<vector<UncertaintyPIU*> >& getUncertainty() { return piu; }
+    vector<vector<UncertaintyPIU*> >& getUncertaintyPIU() { return piu; }
 
     //!
     //! Retrieve the uncertainty for specified phase and attribute
     //! @param phase one of 0:Pn, 1:Sn, 2:Pg, 3:Lg.
     //! @param attribute one of 0:TT, 1:SH, 2:AZ.
-    //! @return reference to an uncertainty object.
+    //! @return reference to an UncertaintyPIU object.
     //!
-    Uncertainty& getUncertainty(int phase, int attribute) { return *uncertainty[phase][attribute]; }
+    UncertaintyPIU& getUncertaintyPIU(int phase, int attribute) { return *piu[phase][attribute]; }
 
     //!
-    //! Retrieve an nPhases array of UncertaintyPathDep objects.
+    //! Retrieve an nPhases array of UncertaintyPDU objects.
     //! The 4 phases are 0:Pn, 1:Sn, 2:Pg, 3:Lg.
     //!
-    vector<UncertaintyPathDep*>& getUncertaintyPathDep() { return uncertaintyPathDep; }
+    vector<UncertaintyPDU*>& getUncertaintyPDU() { return pdu; }
 
     //!
-    //! Retrieve the uncertaintyPathDep for specified phase
+    //! Retrieve the path-dependent uncertainty for specified phase
     //! @param phase one of 0:Pn, 1:Sn, 2:Pg, 3:Lg.
-    //! @return reference to an uncertaintyPathDep object.
+    //! @return reference to an uncertaintyPDU object.
     //!
-    UncertaintyPathDep& getUncertaintyPathDep(int phase) { return *uncertaintyPathDep[phase]; }
+    UncertaintyPDU& getUncertaintyPDU(int phase) { return *pdu[phase]; }
 
     //! \brief Retrieve the average P or S wave velocity of the mantle, in km/sec.
     //!
@@ -482,6 +484,8 @@ public:
 
     void specifyOutputDirectory(const string& outputDir);
 
+    virtual GeoTessModelSLBM* getModel() { return model; }
+
 protected:
 
     //! \brief The name of the file or directory from which the velocity model was loaded.
@@ -496,14 +500,16 @@ protected:
 
     vector<int> activeNodes;
 
+    GeoTessModelSLBM* model;
+
     GeoTessPolygon* polygon;
 
     CrustalProfileStore* sources;
     CrustalProfileStore* receivers;
 
-    vector<vector<Uncertainty*> > uncertainty;
+    vector<vector<UncertaintyPIU*> > piu;
 
-    vector<UncertaintyPathDep*> uncertaintyPathDep;
+    vector<UncertaintyPDU*> pdu;
 
     void writeBufferToFile(util::DataBuffer& buffer, string fileName);
 
@@ -513,7 +519,6 @@ protected:
 private:
 
     string outputDirectory;
-
 
 };
 

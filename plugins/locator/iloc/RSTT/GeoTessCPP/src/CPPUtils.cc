@@ -1,26 +1,24 @@
 //- ****************************************************************************
-//-
-//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
-//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
-//- Government retains certain rights in this software.
-//-
-//- BSD Open Source License
+//- 
+//- Copyright 2009 Sandia Corporation. Under the terms of Contract
+//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
+//- retains certain rights in this software.
+//- 
+//- BSD Open Source License.
 //- All rights reserved.
-//-
+//- 
 //- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
-//-
-//-   1. Redistributions of source code must retain the above copyright notice,
+//- 
+//-    * Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-
-//-   2. Redistributions in binary form must reproduce the above copyright
+//-    * Redistributions in binary form must reproduce the above copyright
 //-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-
-//-   3. Neither the name of the copyright holder nor the names of its
+//-    * Neither the name of Sandia National Laboratories nor the names of its
 //-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
-//-
+//- 
 //- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 //- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 //- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -62,32 +60,34 @@ const int		CPPUtils::SDBL		= sizeof(double);
 // **** _FUNCTION IMPLEMENTATIONS_ *********************************************
 
 // Definition of OpSys = one of Windows, Linux, SunOS, MacOs, Undefined
-#if defined WIN32 || defined _WIN32
-    #define OpSys "Windows"
+// Definition of OpSys = one of Windows, Linux, SunOS, MacOs, Undefined
+#if defined WIN32 || defined _WIN32 || defined __WIN32__ || defined __NT__
+	#define OpSys "Windows"
 #else
-    #if defined Linux
-        #define OpSys "Linux"
-    #else
-        #if defined SunOS
-            #define OpSys "SunOS"
-        #else
-            #if defined Darwin
-                #define OpSys "MacOSX"
-            #else
-                #define OpSys "Undefined"
-            #endif
-        #endif
-    #endif
+	#if defined Linux || defined __linux__ || defined __unix__ || defined __posix__
+		#define OpSys "Linux"
+	#else
+		#if defined SunOS
+			#define OpSys "SunOS"
+		#else
+			#if defined Darwin || defined __APPLE__
+				#define OpSys "MacOSX"
+			#else
+				#define OpSys "Undefined"
+			#endif
+		#endif
+	#endif
 #endif
+
 
 // Definition of  NEWLINE
 #if defined WIN32 || defined _WIN32
-    string const CPPUtils::NEWLINE = "\r\n";
+	string const CPPUtils::NEWLINE = "\r\n";
 #else
 //	#if defined Darwin
 //		string const CPPUtils::NEWLINE = "\r";
 //	#else
-        string const CPPUtils::NEWLINE = "\n";
+		string const CPPUtils::NEWLINE = "\n";
 //	#endif
 #endif
 
@@ -306,7 +306,7 @@ string CPPUtils::uppercase_string(const string& str)
  */
 string CPPUtils::trim(const string& str, const string& delim)
 {
-    return trimRight(trimLeft(str, delim), delim);
+	return trimRight(trimLeft(str, delim), delim);
 }
 
 /**
@@ -382,12 +382,12 @@ void CPPUtils::getProperties(const string& str, map<string, string>& props)
   vector<string> pair;
   string s1, s2;
 
-    // clear the properties map and tokenize the string on ";"
+	// clear the properties map and tokenize the string on ";"
 
   props.clear();
   tokenizeString(str, ";", properties);
 
-    // loop over all discovered tokens
+	// loop over all discovered tokens
 
   for (i = 0; i < (int) properties.size(); i++)
   {
@@ -396,7 +396,7 @@ void CPPUtils::getProperties(const string& str, map<string, string>& props)
     string::size_type indx = properties[i].find('=');
     if (indx != string::npos)
     {
-            // get tag and trim ... get property and trim ... add to map
+			// get tag and trim ... get property and trim ... add to map
 
       s1 = properties[i].substr(0, indx);
       s1 = trimRight(trimLeft(lowercase_string(s1)));
@@ -420,7 +420,7 @@ void CPPUtils::getProperties(const string& str, map<string, string>& props)
  * @return True if the tag --> value association was found.
  */
 bool CPPUtils::getProperty(const map<string, string>& props,
-                                                     const string& tag, string& value)
+													 const string& tag, string& value)
 {
   map<string, string>::const_iterator it;
 
@@ -445,16 +445,16 @@ bool CPPUtils::getProperty(const map<string, string>& props,
  * @return   The new string with sf replaced by sr everywhere.
  */
 string CPPUtils::stringReplaceAll(const string& sf, const string& sr,
-                                                                     const string& s)
+																	 const string& s)
 {
-    string sout = s;
-    size_t i = sout.find(sf);
-    while (i != string::npos)
-    {
-        sout = sout.substr(0, i) + sr + sout.substr(i+sf.length());
-        i = sout.find(sf);
-    }
-    return sout;
+	string sout = s;
+	size_t i = sout.find(sf);
+	while (i != string::npos)
+	{
+		sout = sout.substr(0, i) + sr + sout.substr(i+sf.length());
+		i = sout.find(sf);
+	}
+	return sout;
 }
 
 /**
@@ -471,7 +471,7 @@ string CPPUtils::stringReplaceAll(const string& sf, const string& sr,
  * @param tokens The returned vector of string tokens.
  */
 void CPPUtils::tokenizeString(const string& str, const string& delim,
-                                                         vector<string>& tokens)
+														 vector<string>& tokens)
 {
   string::size_type beg_pos, end_pos;
   end_pos = 0;

@@ -162,6 +162,12 @@ private:
     //! The ray parameter for the crustal stack at the source, in sec/km.
     double pSource;
 
+    //! \brief The ray parameter for the crustal stack at the receiver,
+    //! in sec/km.
+    //!
+    //! The ray parameter for the crustal stack at the receiver, in sec/km.
+    double pReceiver;
+
     //! Total travel time using headwave solution method.
     double tHeadwave;
 

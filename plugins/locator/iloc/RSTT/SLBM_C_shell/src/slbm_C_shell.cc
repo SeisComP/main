@@ -1836,3 +1836,24 @@ int slbm_shell_getUncertaintyFileFormat(int* phaseIndex, int* attributeIndex, ch
 
 }
 
+//==============================================================================
+int slbm_shell_modelsEqual(const char* modelPath1, const char* modelPath2)
+{
+    int retval = 1;
+    errortext = "";
+    try
+    {
+        bool result = SlbmInterface::modelsEqual(modelPath1, modelPath2);
+        if (result == true)
+            retval = 0;
+        else
+            retval = 1;
+
+    }
+    catch (SLBMException &ex)
+    {
+        errortext = ex.emessage;
+        retval = ex.ecode;
+    }
+    return retval;
+}

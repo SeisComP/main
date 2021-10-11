@@ -151,7 +151,7 @@ extern "C"
 // places.
 //
 
-//static const char* SlbmVersion = "3.1.0";
+//static const char* SlbmVersion = "3.2.0";
 
 //! \brief Convenience constant for P wave index.
 //!
@@ -1552,6 +1552,14 @@ SLBM_LIB int slbm_shell_getUncertaintyTable(int* phaseIndex, int* attributeIndex
 //! required.
 SLBM_LIB int slbm_shell_getUncertaintyTableFileFormat(int* phaseIndex, int* attributeIndex, char* uncertaintyTable,
         int* allocatedSize);
+
+//! \brief Check if two models are equal
+//!
+//! Check if two models are equal
+//! @param modelPath1 /path/to/model1.geotess
+//! @param modelPath2 /path/to/model2.geotess
+//! @return "0" if the models are equal, else 1 or a positive error code if this call generated an error.
+SLBM_LIB int slbm_shell_modelsEqual(const char* modelPath1, const char* modelPath2);
 
 //-------------------------------------------------------------
 

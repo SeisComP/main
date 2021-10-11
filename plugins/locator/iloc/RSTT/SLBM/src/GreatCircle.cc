@@ -72,6 +72,12 @@ GreatCircle::GreatCircle(
         const double& depthReceiver)
         :   grid(_grid),
             phase(_phase),
+            latSource(latSource),
+            lonSource(lonSource),
+            depthSource(depthSource),
+            latReceiver(latReceiver),
+            lonReceiver(lonReceiver),
+            depthReceiver(depthReceiver),
             headWaveInterface((_phase/2==0 ? MANTLE : MIDDLE_CRUST_G)),
             source(NULL),
             receiver(NULL),
@@ -175,6 +181,12 @@ GreatCircle::~GreatCircle()
 GreatCircle::GreatCircle(const GreatCircle &other)
 : grid(other.grid),
     phase(other.phase),
+    latSource(other.latSource),
+    lonSource(other.lonSource),
+    depthSource(other.depthSource),
+    latReceiver(other.latReceiver),
+    lonReceiver(other.lonReceiver),
+    depthReceiver(other.depthReceiver),
     headWaveInterface(other.headWaveInterface),
     source(other.source),
     receiver(other.receiver),
@@ -243,6 +255,21 @@ GreatCircle& GreatCircle::operator=(const GreatCircle& other)
     //ttZplus = other.ttZplus;
 
     return *this;
+}
+
+bool GreatCircle::operator == (const GreatCircle& other) const
+{
+    if (phase         == other.phase         &&
+        latSource     == other.latSource     &&
+        lonSource     == other.lonSource     &&
+        depthSource   == other.depthSource   &&
+        latReceiver   == other.latReceiver   &&
+        lonReceiver   == other.lonReceiver   &&
+        depthReceiver == other.depthReceiver)
+        return true;
+    else
+        return false;
+
 }
 
 LayerProfile* GreatCircle::getProfile(const int& i)

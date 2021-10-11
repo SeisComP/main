@@ -1,26 +1,24 @@
 //- ****************************************************************************
-//-
-//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
-//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
-//- Government retains certain rights in this software.
-//-
-//- BSD Open Source License
+//- 
+//- Copyright 2009 Sandia Corporation. Under the terms of Contract
+//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
+//- retains certain rights in this software.
+//- 
+//- BSD Open Source License.
 //- All rights reserved.
-//-
+//- 
 //- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
-//-
-//-   1. Redistributions of source code must retain the above copyright notice,
+//- 
+//-    * Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-
-//-   2. Redistributions in binary form must reproduce the above copyright
+//-    * Redistributions in binary form must reproduce the above copyright
 //-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-
-//-   3. Neither the name of the copyright holder nor the names of its
+//-    * Neither the name of Sandia National Laboratories nor the names of its
 //-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
-//-
+//- 
 //- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 //- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 //- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -64,21 +62,21 @@ GeoTessPointMap::GeoTessPointMap(GeoTessPointMap& other)
 : grid(other.grid), profiles(other.profiles), metaData(other.metaData),
   polygon(other.polygon), populated(other.populated)
 {
-    if (polygon != NULL)
-        polygon->addReference();
+	if (polygon != NULL)
+		polygon->addReference();
 
-    if (populated)
-    {
-        vector<int> v3(3,0);
-        pointMap.resize(other.pointMap.size(), v3);
+	if (populated)
+	{
+		vector<int> v3(3,0);
+		pointMap.resize(other.pointMap.size(), v3);
 
-        for (int i=0; i<(int)other.pointMap.size(); ++i)
-        {
-            pointMap[i][0] = other.pointMap[i][0];
-            pointMap[i][1] = other.pointMap[i][1];
-            pointMap[i][2] = other.pointMap[i][2];
-        }
-    }
+		for (int i=0; i<(int)other.pointMap.size(); ++i)
+		{
+			pointMap[i][0] = other.pointMap[i][0];
+			pointMap[i][1] = other.pointMap[i][1];
+			pointMap[i][2] = other.pointMap[i][2];
+		}
+	}
 }
 
 
@@ -87,193 +85,193 @@ GeoTessPointMap::GeoTessPointMap(GeoTessPointMap& other)
  */
 GeoTessPointMap& GeoTessPointMap::operator=(const GeoTessPointMap& other)
 {
-    grid = other.grid;
-    metaData = other.metaData;
-    profiles = other.profiles;
+	grid = other.grid;
+	metaData = other.metaData;
+	profiles = other.profiles;
 
-    polygon = other.polygon;
-    polygon->addReference();
+	polygon = other.polygon;
+	polygon->addReference();
 
-    populated = other.populated;
+	populated = other.populated;
 
-    if (populated)
-    {
-        vector<int> v3(3,0);
-        pointMap.resize(other.pointMap.size(), v3);
+	if (populated)
+	{
+		vector<int> v3(3,0);
+		pointMap.resize(other.pointMap.size(), v3);
 
-        for (int i=0; i<(int)other.pointMap.size(); ++i)
-        {
-            pointMap[i][0] = other.pointMap[i][0];
-            pointMap[i][1] = other.pointMap[i][1];
-            pointMap[i][2] = other.pointMap[i][2];
-        }
-    }
-    else
-        pointMap.clear();
+		for (int i=0; i<(int)other.pointMap.size(); ++i)
+		{
+			pointMap[i][0] = other.pointMap[i][0];
+			pointMap[i][1] = other.pointMap[i][1];
+			pointMap[i][2] = other.pointMap[i][2];
+		}
+	}
+	else
+		pointMap.clear();
 
-    return *this;
+	return *this;
 }
 
 /**
  * Overloaded equality operator
  */
 bool GeoTessPointMap::operator==(const GeoTessPointMap& other)
-                                                                                                {
-    //cout << endl << "PointMap::operator==(const PointMap& other)" << endl;
+																								{
+	//cout << endl << "PointMap::operator==(const PointMap& other)" << endl;
 
-    if (grid != other.grid) return false;
-    if (metaData != other.metaData) return false;
+	if (grid != other.grid) return false;
+	if (metaData != other.metaData) return false;
 
-    if (!other.populated)
-    {
-        ostringstream os;
-        os << endl << "ERROR in PointMap::operator==(const PointMap& other)" << endl
-                << "other has not been populated." << endl
-                << "Call other.setActiveRegions() to populate other."
-                << endl;
-        throw GeoTessException(os, __FILE__, __LINE__, 8001);
-    }
+	if (!other.populated)
+	{
+		ostringstream os;
+		os << endl << "ERROR in PointMap::operator==(const PointMap& other)" << endl
+				<< "other has not been populated." << endl
+				<< "Call other.setActiveRegions() to populate other."
+				<< endl;
+		throw GeoTessException(os, __FILE__, __LINE__, 8001);
+	}
 
-    if (!populated)
-        setActiveRegion();
+	if (!populated)
+		setActiveRegion();
 
-    if (pointMap.size() != other.pointMap.size()) return false;
+	if (pointMap.size() != other.pointMap.size()) return false;
 
-    for (int i=0; i<(int)pointMap.size(); ++i)
-    {
-        if (pointMap[i][0] != other.pointMap[i][0]) return false;
-        if (pointMap[i][1] != other.pointMap[i][1]) return false;
-        if (pointMap[i][2] != other.pointMap[i][2]) return false;
-    }
+	for (int i=0; i<(int)pointMap.size(); ++i)
+	{
+		if (pointMap[i][0] != other.pointMap[i][0]) return false;
+		if (pointMap[i][1] != other.pointMap[i][1]) return false;
+		if (pointMap[i][2] != other.pointMap[i][2]) return false;
+	}
 
-    return true;
-                                                                                                }
+	return true;
+																								}
 
 GeoTessPointMap::~GeoTessPointMap()
 {
-    clear();
+	clear();
 }
 
 void GeoTessPointMap::clear()
 {
-    pointMap.clear();
-    populated = false;
+	pointMap.clear();
+	populated = false;
 
-    if (polygon != NULL)
-    {
-        polygon->removeReference();
-        if (polygon->isNotReferenced())
-            delete polygon;
-        polygon = NULL;
-    }
+	if (polygon != NULL)
+	{
+		polygon->removeReference();
+		if (polygon->isNotReferenced())
+			delete polygon;
+		polygon = NULL;
+	}
 
-    GeoTessProfile** pp;
-    for (int vertex = 0; vertex < grid.getNVertices(); ++vertex)
-    {
-        pp = profiles[vertex];
-        for (int layer = 0; layer < metaData.getNLayers(); ++layer)
-            pp[layer]->resetPointIndices();
-    }
+	GeoTessProfile** pp;
+	for (int vertex = 0; vertex < grid.getNVertices(); ++vertex)
+	{
+		pp = profiles[vertex];
+		for (int layer = 0; layer < metaData.getNLayers(); ++layer)
+			pp[layer]->resetPointIndices();
+	}
 }
 
 void GeoTessPointMap::setActiveRegion()
 {
-    clear();
+	clear();
 
-    GeoTessProfile** pp;
-    GeoTessProfile* p;
-    for (int vertex = 0; vertex < grid.getNVertices(); ++vertex)
-    {
-        pp = profiles[vertex];
-        for (int layer = 0; layer < metaData.getNLayers(); ++layer)
-        {
-            p = pp[layer];
-            for (int node = 0; node < p->getNData(); ++node)
-            {
-                p->setPointIndex(node, (int)pointMap.size());
-                vector<int> v(3,0);
-                v[0] = vertex;
-                v[1] = layer;
-                v[2] = node;
-                pointMap.push_back(v);
-            }
-        }
-    }
-    populated = true;
+	GeoTessProfile** pp;
+	GeoTessProfile* p;
+	for (int vertex = 0; vertex < grid.getNVertices(); ++vertex)
+	{
+		pp = profiles[vertex];
+		for (int layer = 0; layer < metaData.getNLayers(); ++layer)
+		{
+			p = pp[layer];
+			for (int node = 0; node < p->getNData(); ++node)
+			{
+				p->setPointIndex(node, (int)pointMap.size());
+				vector<int> v(3,0);
+				v[0] = vertex;
+				v[1] = layer;
+				v[2] = node;
+				pointMap.push_back(v);
+			}
+		}
+	}
+	populated = true;
 }
 
 void GeoTessPointMap::setActiveRegion(GeoTessPolygon* _polygon)
 {
-    clear();
+	clear();
 
-    polygon = _polygon;
-    polygon->addReference();
+	polygon = _polygon;
+	polygon->addReference();
 
-    GeoTessProfile** pp;
-    GeoTessProfile* p;
+	GeoTessProfile** pp;
+	GeoTessProfile* p;
 
-    if (polygon->class_name() == "Polygon")
-    {
-        for (int vertex = 0; vertex < grid.getNVertices(); ++vertex)
-            if (polygon->contains(grid.getVertex(vertex)))
-            {
-                pp = profiles[vertex];
-                for (int layer = 0; layer < metaData.getNLayers(); ++layer)
-                {
-                    p = pp[layer];
-                    for (int node = 0; node < p->getNData(); ++node)
-                    {
-                        p->setPointIndex(node, (int)pointMap.size());
-                        vector<int> v(3,0);
-                        v[0] = vertex;
-                        v[1] = layer;
-                        v[2] = node;
-                        pointMap.push_back(v);
-                    }
-                }
-            }
+	if (polygon->class_name() == "Polygon")
+	{
+		for (int vertex = 0; vertex < grid.getNVertices(); ++vertex)
+			if (polygon->contains(grid.getVertex(vertex)))
+			{
+				pp = profiles[vertex];
+				for (int layer = 0; layer < metaData.getNLayers(); ++layer)
+				{
+					p = pp[layer];
+					for (int node = 0; node < p->getNData(); ++node)
+					{
+						p->setPointIndex(node, (int)pointMap.size());
+						vector<int> v(3,0);
+						v[0] = vertex;
+						v[1] = layer;
+						v[2] = node;
+						pointMap.push_back(v);
+					}
+				}
+			}
 
-    }
-    else
-    {
-        GeoTessHorizon* top = ((GeoTessPolygon3D*)polygon)->getTop();
-        GeoTessHorizon* bottom = ((GeoTessPolygon3D*)polygon)->getBottom();
+	}
+	else
+	{
+		GeoTessHorizon* top = ((GeoTessPolygon3D*)polygon)->getTop();
+		GeoTessHorizon* bottom = ((GeoTessPolygon3D*)polygon)->getBottom();
 
-        double rTop, rBottom;
+		double rTop, rBottom;
 
-        int layerTop = top->getLayerIndex();
-        if (layerTop < 0 || layerTop >= metaData.getNLayers())
-            layerTop = metaData.getNLayers()-1;
+		int layerTop = top->getLayerIndex();
+		if (layerTop < 0 || layerTop >= metaData.getNLayers())
+			layerTop = metaData.getNLayers()-1;
 
-        int layerBottom = bottom->getLayerIndex();
-        if (layerBottom < 0)
-            layerBottom = 0;
+		int layerBottom = bottom->getLayerIndex();
+		if (layerBottom < 0)
+			layerBottom = 0;
 
-        for (int vertex = 0; vertex < grid.getNVertices(); ++vertex)
-            if (polygon->contains(grid.getVertex(vertex)))
-            {
-                pp = profiles[vertex];
+		for (int vertex = 0; vertex < grid.getNVertices(); ++vertex)
+			if (polygon->contains(grid.getVertex(vertex)))
+			{
+				pp = profiles[vertex];
 
-                rBottom = bottom->getRadius(grid.getVertex(vertex), profiles[vertex]);
-                rTop = top->getRadius(grid.getVertex(vertex), profiles[vertex]);
+				rBottom = bottom->getRadius(grid.getVertex(vertex), profiles[vertex]);
+				rTop = top->getRadius(grid.getVertex(vertex), profiles[vertex]);
 
-                for (int layer = layerBottom; layer <= layerTop; ++layer)
-                {
-                    p = pp[layer];
-                    for (int node = 0; node < p->getNData(); ++node)
-                        if (p->getRadius(node) >= rBottom && p->getRadius(node) <= rTop)
-                        {
-                            p->setPointIndex(node, (int)pointMap.size());
-                            vector<int> v(3,0);
-                            v[0] = vertex;
-                            v[1] = layer;
-                            v[2] = node;
-                            pointMap.push_back(v);
-                        }
-                }
-            }
-    }
-    populated = true;
+				for (int layer = layerBottom; layer <= layerTop; ++layer)
+				{
+					p = pp[layer];
+					for (int node = 0; node < p->getNData(); ++node)
+						if (p->getRadius(node) >= rBottom && p->getRadius(node) <= rTop)
+						{
+							p->setPointIndex(node, (int)pointMap.size());
+							vector<int> v(3,0);
+							v[0] = vertex;
+							v[1] = layer;
+							v[2] = node;
+							pointMap.push_back(v);
+						}
+				}
+			}
+	}
+	populated = true;
 }
 
 /**
@@ -305,36 +303,36 @@ void GeoTessPointMap::setActiveRegion(GeoTessPolygon* _polygon)
  */
 void GeoTessPointMap::getPointNeighbors(set<int>& pointNeighbors, int pointIndex)
 {
-    // find the vertexID, layerID and nodeID of point in question
+	// find the vertexID, layerID and nodeID of point in question
 
-    int vertex = pointMap[pointIndex][0];
-    int layer = pointMap[pointIndex][1];
-    int node = pointMap[pointIndex][2];
+	int vertex = pointMap[pointIndex][0];
+	int layer = pointMap[pointIndex][1];
+	int node = pointMap[pointIndex][2];
 
-    // find the tessID, levelID and radius of point in question
-    int tessid = metaData.getTessellation(layer);
-    int level = grid.getNLevels(tessid) - 1;
-    double radius = profiles[vertex][layer]->getRadius(node);
+	// find the tessID, levelID and radius of point in question
+	int tessid = metaData.getTessellation(layer);
+	int level = grid.getNLevels(tessid) - 1;
+	double radius = profiles[vertex][layer]->getRadius(node);
 
-    // get the vertex neighbors
+	// get the vertex neighbors
 
-    pointNeighbors.clear();
-    set<int> vertexNeighbors;
-    grid.getVertexNeighbors(tessid, level, vertex, vertexNeighbors);
+	pointNeighbors.clear();
+	set<int> vertexNeighbors;
+	grid.getVertexNeighbors(tessid, level, vertex, vertexNeighbors);
 
-    // loop over all vertex neighbors and find the closest point index at
-    // the input points radius ... add those to the neighbor set
+	// loop over all vertex neighbors and find the closest point index at
+	// the input points radius ... add those to the neighbor set
 
-    GeoTessProfile* p;
-    int ptId;
-    set<int>::iterator it;
-    for (it = vertexNeighbors.begin(); it != vertexNeighbors.end(); ++it)
-    {
-        p = profiles[*it][layer];
-        ptId = p->getPointIndex(p->findClosestRadiusIndex(radius));
-        if (ptId > 0)
-            pointNeighbors.insert(ptId);
-    }
+	GeoTessProfile* p;
+	int ptId;
+	set<int>::iterator it;
+	for (it = vertexNeighbors.begin(); it != vertexNeighbors.end(); ++it)
+	{
+		p = profiles[*it][layer];
+		ptId = p->getPointIndex(p->findClosestRadiusIndex(radius));
+		if (ptId > 0)
+			pointNeighbors.insert(ptId);
+	}
 }
 
 } // end namespace geotess

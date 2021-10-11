@@ -289,7 +289,7 @@ void GreatCircle_Xg::computeTravelTimeTaup()
     taupResult = tps->getFirstTravelTimeResult();
 }
 
-
+/*
 void GreatCircle_Xg::computeTravelTimeHeadwave()
 {
     double dkm;
@@ -324,6 +324,14 @@ void GreatCircle_Xg::computeTravelTimeHeadwave()
             pHeadwave = 0.;
     }
 
+    // for the source and receiver arms, it's not robust to do p = t/x. so
+    // we'll compute the ray parameter for the source and receiver legs
+    // individually as 1/velocity[MIDDLE_CRUST_G]. this helps prevent the
+    // terms inside the sqrt(1-sqrt()) in tReceiver and tSource below from
+    // evaluating as zero.
+    pSource   = 1 /   source->getVelocity(MIDDLE_CRUST_G);
+    pReceiver = 1 / receiver->getVelocity(MIDDLE_CRUST_G);
+
     // getLayid returns the indeces of the crustal layers that have non-zero
     // thickness.  
     const int* rlayid = receiver->getLayid();
@@ -345,8 +353,7 @@ void GreatCircle_Xg::computeTravelTimeHeadwave()
             // set h = the radius of the top of layer[j] minus top of layer[j+1]
             h = receiver->getInterfaceRadius(j)-receiver->getInterfaceRadius(j+1);
 
-        tReceiver += h/receiver->getVelocity(j) 
-            * sqrt(max( 0., 1.-sqr(pHeadwave*receiver->getVelocity(j))));
+        tReceiver += h / receiver->getVelocity(j) * sqrt(max( 0., 1.-sqr(pReceiver*receiver->getVelocity(j)) ));
 
         ++k;
     }
@@ -356,8 +363,6 @@ void GreatCircle_Xg::computeTravelTimeHeadwave()
         // source is above the top of the middle crust.  
         
         // Same calculation as for receiver.
-
-        pSource = pHeadwave;
 
         // turning radius is top of middle crust
         trHeadwave = source->getInterfaceRadius(MIDDLE_CRUST_G);
@@ -376,8 +381,7 @@ void GreatCircle_Xg::computeTravelTimeHeadwave()
                 // set r = the radius of the top of layer[j]
                 h = source->getInterfaceRadius(j)-source->getInterfaceRadius(j+1);
 
-            tSource += h/source->getVelocity(j) 
-                * sqrt(max(0., 1.-sqr(pHeadwave*source->getVelocity(j))));
+            tSource += h / source->getVelocity(j) * sqrt(max( 0., 1.-sqr(pSource*source->getVelocity(j)) ));
 
             ++k;
         }
@@ -415,7 +419,65 @@ void GreatCircle_Xg::computeTravelTimeHeadwave()
     tHeadwave = tSource + tReceiver + tHorizontal;
 
 }
+//*/
 
+//*
+// rewrite to use xtcrust() for more accurate results (following Mike Begnaud @ LANL)
+void GreatCircle_Xg::computeTravelTimeHeadwave()
+{
+
+    // declare/set some variables
+    double h;  // vertical distance between the middle crust and the source
+    xSource     = zSource   = sSource   = tSource     = 0.;  // source leg
+    xReceiver   = zReceiver = sReceiver = tReceiver   = 0.;  // receiver leg
+    xHorizontal =                         tHorizontal = 0.;  // headwave
+
+    // get the indices of non-zero thickness layers
+    const int* rlayid = receiver->getLayid();
+
+    // compute the distances/travel time of the receiver leg (pcrit = radius/velocity of headwave interface)
+    receiver->xtCrust(this, receiver->getPCrit(this), xReceiver, zReceiver, sReceiver, tReceiver);
+
+    // if the source is above the middle crust (MIDDLE_CRUST_G)
+    if (source->getLocation().getRadius() > source->getInterfaceRadius(MIDDLE_CRUST_G))
+    {
+        // compute the distances/tracvel time of the source leg
+        source->xtCrust(this, source->getPCrit(this), xSource, zSource, sSource, tSource);
+        
+    }
+
+    // the source is below the middle crust (MIDDLE_CRUST_G)
+    else
+    {
+        // vertical distance between the middle crust and the source
+        h = source->getInterfaceRadius(MIDDLE_CRUST_G) - source->getLocation().getRadius();
+
+		// travel time of the source leg using vertical slowness
+        pTaup = source->getLocation().getRadius() / source->getInterfaceRadius(MIDDLE_CRUST_G);
+		tSource = h / source->getVelocity(MIDDLE_CRUST_G) * sqrt(1.-pTaup*pTaup);
+
+    }
+
+    // find the first index of the headwave portion of the ray path (minimum of 0)
+    sourceIndex = max(0, (int)floor(xSource/actual_path_increment));
+
+	// find the last index within the headwave portion of the ray path but less than the last profile
+	receiverIndex = min( (int)floor((getDistance()-xReceiver)/actual_path_increment), (int)profiles.size()-1 );
+
+	// calculate distance and travel time of the headwave portion of the ray path
+    double dkm;
+	for (int i = sourceIndex; i <= receiverIndex; ++i)
+	{
+        dkm = actual_path_increment * getProfile(i)->getRadius();
+        xHorizontal += dkm;
+        tHorizontal += dkm / profiles[i]->getVelocity();
+	}
+
+    // total equals the sum of the parts.
+    tHeadwave = tSource + tReceiver + tHorizontal;
+
+}
+//*/
 
 string GreatCircle_Xg::toString(const int& verbosity)
 {

@@ -1,26 +1,24 @@
 //- ****************************************************************************
-//-
-//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
-//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
-//- Government retains certain rights in this software.
-//-
-//- BSD Open Source License
+//- 
+//- Copyright 2009 Sandia Corporation. Under the terms of Contract
+//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
+//- retains certain rights in this software.
+//- 
+//- BSD Open Source License.
 //- All rights reserved.
-//-
+//- 
 //- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
-//-
-//-   1. Redistributions of source code must retain the above copyright notice,
+//- 
+//-    * Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-
-//-   2. Redistributions in binary form must reproduce the above copyright
+//-    * Redistributions in binary form must reproduce the above copyright
 //-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-
-//-   3. Neither the name of the copyright holder nor the names of its
+//-    * Neither the name of Sandia National Laboratories nor the names of its
 //-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
-//-
+//- 
 //- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 //- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 //- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -77,81 +75,81 @@ class GEOTESS_EXP_IMP GeoTessHorizonLayer : public GeoTessHorizon
 
 private:
 
-    /**
-     * The fractional position in the layer.
-     * 0 is the bottom, 1 is the top.
-     */
-    double fraction;
+	/**
+	 * The fractional position in the layer.
+	 * 0 is the bottom, 1 is the top.
+	 */
+	double fraction;
 
 public:
 
-    /**
-     * Constructor for a Horizon object that represents a constant
-     * fractional radius within a layer.  Zero represents the bottom of
-     * the layer and 1. represents the top of the layer.
-     * <p>Since the layerIndex is specified, the radius will be
-     * constrained to be within the specified layer.
-     * @param fractionalPosition radius within the Earth, in km.
-     * @param lyrIndex the index of the layer within which
-     * the radius will be constrained.
-     */
-    GeoTessHorizonLayer(const double& fractionalPosition, const int& lyrIndex)
-    : GeoTessHorizon(lyrIndex), fraction(fractionalPosition)
-    {};
+	/**
+	 * Constructor for a Horizon object that represents a constant
+	 * fractional radius within a layer.  Zero represents the bottom of
+	 * the layer and 1. represents the top of the layer.
+	 * <p>Since the layerIndex is specified, the radius will be
+	 * constrained to be within the specified layer.
+	 * @param fractionalPosition radius within the Earth, in km.
+	 * @param lyrIndex the index of the layer within which
+	 * the radius will be constrained.
+	 */
+	GeoTessHorizonLayer(const double& fractionalPosition, const int& lyrIndex)
+	: GeoTessHorizon(lyrIndex), fraction(fractionalPosition)
+	{};
 
-    /**
-     * Copy constructor.
-     */
-    GeoTessHorizonLayer(GeoTessHorizonLayer& other) : GeoTessHorizon(other.getLayerIndex()), fraction(other.fraction)
-    {
-    }
+	/**
+	 * Copy constructor.
+	 */
+	GeoTessHorizonLayer(GeoTessHorizonLayer& other) : GeoTessHorizon(other.getLayerIndex()), fraction(other.fraction)
+	{
+	}
 
-    /**
-     * Overloaded assignment operator
-     */
-    GeoTessHorizonLayer& operator=(const GeoTessHorizonLayer& other)
-    {
-        layerIndex = other.layerIndex;
-        fraction = other.fraction;
-        return *this;
-    }
+	/**
+	 * Overloaded assignment operator
+	 */
+	GeoTessHorizonLayer& operator=(const GeoTessHorizonLayer& other)
+	{
+		layerIndex = other.layerIndex;
+		fraction = other.fraction;
+		return *this;
+	}
 
-    /**
-     * Destructor.
-     */
-    virtual ~GeoTessHorizonLayer() {};
+	/**
+	 * Destructor.
+	 */
+	virtual ~GeoTessHorizonLayer() {};
 
-    virtual double getValue() { return fraction; };
+	virtual double getValue() { return fraction; };
 
-    virtual double getRadius(const double* position, GeoTessProfile** profiles)
-    {
-        double bottom = profiles[layerIndex]->getRadiusBottom();
-        if (fraction <= 0. )
-            return bottom;
-        double top = profiles[layerIndex]->getRadiusTop();
-        if (fraction >= 1.)
-            return top;
-        return bottom + fraction*(top-bottom);
-    }
+	virtual double getRadius(const double* position, GeoTessProfile** profiles)
+	{
+		double bottom = profiles[layerIndex]->getRadiusBottom();
+		if (fraction <= 0. )
+			return bottom;
+		double top = profiles[layerIndex]->getRadiusTop();
+		if (fraction >= 1.)
+			return top;
+		return bottom + fraction*(top-bottom);
+	}
 
-    virtual string class_name() { return "HorizonLayer"; };
+	virtual string class_name() { return "HorizonLayer"; };
 
-    virtual double getRadius(GeoTessPosition& position)
-    {
-        double bottom = position.getRadiusBottom(layerIndex);
-        if (fraction <= 0. )
-            return bottom;
-        double top = position.getRadiusTop(layerIndex);
-        if (fraction >= 1.)
-            return top;
-        return bottom + fraction*(top-bottom);
-    }
+	virtual double getRadius(GeoTessPosition& position)
+	{
+		double bottom = position.getRadiusBottom(layerIndex);
+		if (fraction <= 0. )
+			return bottom;
+		double top = position.getRadiusTop(layerIndex);
+		if (fraction >= 1.)
+			return top;
+		return bottom + fraction*(top-bottom);
+	}
 
-    virtual string str()
-    {
-        string s = "layer " + CPPUtils::dtos(fraction) + " " + CPPUtils::itos(layerIndex);
-        return s;
-    }
+	virtual string str()
+	{
+		string s = "layer " + CPPUtils::dtos(fraction) + " " + CPPUtils::itos(layerIndex);
+		return s;
+	}
 
 }; // end class DataValue
 

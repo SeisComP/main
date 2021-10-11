@@ -175,6 +175,8 @@ public:
 
     void accessGridNodeNeighbors(int nid );
 
+    static bool modelsEqual(const string modelPath1, const string modelPath2);
+
 
 private:
 
@@ -430,6 +432,10 @@ inline void SlbmInterfaceToJNI::computeWeightsReceiver()
 {
     nodeIds = greatCircle->getReceiverProfile()->getNodeIds();
     weights = greatCircle->getReceiverProfile()->getCoefficients();
+}
+bool SlbmInterfaceToJNI::modelsEqual(const string modelPath1, const string modelPath2)
+{
+    return SlbmInterface::modelsEqual(modelPath1, modelPath2);
 }
 
 } // end slbm namespace

@@ -1,4 +1,3 @@
-
 //- ****************************************************************************
 //-
 //- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
@@ -155,6 +154,12 @@ public:
     //!
     //! Equal operator.
     GreatCircle& operator=(const GreatCircle& other);
+
+    //! \brief isEqualTo operator
+    //!
+    //! isEqualTo operator
+    virtual bool operator == (const GreatCircle& other) const;
+    virtual bool operator != (const GreatCircle& other) const { return !(*this == other); } ;
 
     //! \brief Retrieve a reference to the Grid object that this
     //! GreatCircle is associated with.
@@ -762,6 +767,13 @@ protected:
     //! Will be one of Pn, Sn, Pg or Lg, which are int constants
     //! defined in SLBMGlobals.h.
     int phase;
+
+    double latSource;
+    double lonSource;
+    double depthSource;
+    double latReceiver;
+    double lonReceiver;
+    double depthReceiver;
 
     //! \brief The index of the earth model interface along which
     //! head waves propagate.

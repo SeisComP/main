@@ -44,7 +44,7 @@
 
 //using namespace std;
 
-#include "Uncertainty.h"
+#include "UncertaintyPIU.h"
 #include "SLBMException.h"
 #include "IFStreamAscii.h"
 #include "CPPUtils.h"
@@ -60,13 +60,13 @@ namespace slbm {
 // Default Constructor
 //
 // *****************************************************************************
-Uncertainty::Uncertainty() : fname("not_specified"), phaseNum(-1), attributeNum(-1)
+UncertaintyPIU::UncertaintyPIU() : fname("not_specified"), phaseNum(-1), attributeNum(-1)
 {
 }  // END Uncertainty Default Constructor
 
 
-Uncertainty::Uncertainty(string modelPath, const string& phase, int phasenum)
-: fname("not_specified"), phaseNum(phasenum), attributeNum(Uncertainty::getAttribute(phase))
+UncertaintyPIU::UncertaintyPIU(string modelPath, const string& phase, int phasenum)
+: fname("not_specified"), phaseNum(phasenum), attributeNum(UncertaintyPIU::getAttribute(phase))
 {
     fname = "Uncertainty_" + phase + "_" +
             getAttribute(attributeNum) + ".txt";
@@ -81,7 +81,7 @@ Uncertainty::Uncertainty(string modelPath, const string& phase, int phasenum)
 // "TT", "Sh", "Az"
 //
 // *****************************************************************************
-Uncertainty::Uncertainty(const int& phase, const int& attribute)
+UncertaintyPIU::UncertaintyPIU(const int& phase, const int& attribute)
 : fname("not_specified"), phaseNum(phase), attributeNum(attribute)
 {
 }
@@ -92,8 +92,8 @@ Uncertainty::Uncertainty(const int& phase, const int& attribute)
 // "TT", "Sh", "Az"
 //
 // *****************************************************************************
-Uncertainty::Uncertainty(const string& phase, const string& attribute)
-: fname("not_specified"), phaseNum(Uncertainty::getPhase(phase)), attributeNum(Uncertainty::getAttribute(phase))
+UncertaintyPIU::UncertaintyPIU(const string& phase, const string& attribute)
+: fname("not_specified"), phaseNum(UncertaintyPIU::getPhase(phase)), attributeNum(UncertaintyPIU::getAttribute(phase))
 {
 }
 
@@ -103,7 +103,7 @@ Uncertainty::Uncertainty(const string& phase, const string& attribute)
 // "TT", "Sh", "Az"
 //
 // *****************************************************************************
-Uncertainty::Uncertainty(string modelPath, const int& phase, const int& attribute)
+UncertaintyPIU::UncertaintyPIU(string modelPath, const int& phase, const int& attribute)
 : fname("not_specified"), phaseNum(phase), attributeNum(attribute)
 {
     fname = "Uncertainty_" + getPhase(phaseNum) + "_" +
@@ -119,13 +119,13 @@ Uncertainty::Uncertainty(string modelPath, const int& phase, const int& attribut
 // Copy constructor.
 //
 // *****************************************************************************
-Uncertainty::Uncertainty(const Uncertainty& u) :
-                        fname(u.fname),
-                        phaseNum(u.phaseNum),
-                        attributeNum(u.attributeNum),
-                        errDistances(u.errDistances),
-                        errDepths(u.errDepths),
-                        errVal(u.errVal)
+UncertaintyPIU::UncertaintyPIU(const UncertaintyPIU& u) :
+                                fname(u.fname),
+                                phaseNum(u.phaseNum),
+                                attributeNum(u.attributeNum),
+                                errDistances(u.errDistances),
+                                errDepths(u.errDepths),
+                                errVal(u.errVal)
 {
 }
 
@@ -134,7 +134,7 @@ Uncertainty::Uncertainty(const Uncertainty& u) :
 // Uncertainty Constructor that builds the object from the input DataBuffer.
 //
 // *****************************************************************************
-Uncertainty::Uncertainty(util::DataBuffer& buffer)
+UncertaintyPIU::UncertaintyPIU(util::DataBuffer& buffer)
 {
     deserialize(buffer);
 }
@@ -144,7 +144,7 @@ Uncertainty::Uncertainty(util::DataBuffer& buffer)
 // Uncertainty Destructor
 //
 // *****************************************************************************
-Uncertainty::~Uncertainty()
+UncertaintyPIU::~UncertaintyPIU()
 {
     fname = "not_specified";
     phaseNum = attributeNum = -1;
@@ -158,7 +158,7 @@ Uncertainty::~Uncertainty()
 // Assignment operator.
 //
 // *****************************************************************************
-Uncertainty& Uncertainty::operator=(const Uncertainty& u)
+UncertaintyPIU& UncertaintyPIU::operator=(const UncertaintyPIU& u)
 {
     phaseNum     = u.phaseNum;
     attributeNum = u.attributeNum;
@@ -169,8 +169,8 @@ Uncertainty& Uncertainty::operator=(const Uncertainty& u)
     return *this;
 }
 
-bool Uncertainty::operator==(const Uncertainty& other)
-                        {
+bool UncertaintyPIU::operator==(const UncertaintyPIU& other) const
+{
     if (this->attributeNum != other.attributeNum) return false;
     if (this->phaseNum != other.phaseNum) return false;
     if (this->errDepths.size() != other.errDepths.size()) return false;
@@ -178,11 +178,11 @@ bool Uncertainty::operator==(const Uncertainty& other)
     if (this->errVal.size() != other.errVal.size() ) return false;
 
     for (int i=0; i<(int)errDistances.size(); ++i)
-        if (this->errDistances[i] != other.errDistances[i])
+        if (abs(this->errDistances[i]/other.errDistances[i]-1.) > 1e-6)
             return false;
 
     for (int i=0; i<(int)errDepths.size(); ++i)
-        if (this->errDepths[i] != other.errDepths[i])
+        if (abs(this->errDepths[i]/(float)other.errDepths[i]-1.) > 1e-6)
             return false;
 
     for (int i=0; i<(int)errVal.size(); ++i)
@@ -190,13 +190,17 @@ bool Uncertainty::operator==(const Uncertainty& other)
         if (this->errVal[i].size() != other.errVal[i].size())
             return false;
         for (int j=0; j<(int)errVal[i].size(); ++j)
-            if (this->errVal[i][j] != other.errVal[i][j])
+            if (abs(this->errVal[i][j]/other.errVal[i][j]-1.) > 1e-6)
+            {
+                cout<< "UncertaintyPIU::operator== "
+                        << this->errVal[i][j] << " " << other.errVal[i][j] << endl;
                 return false;
+            }
     }
     return true;
-                        }
+                                }
 
-Uncertainty* Uncertainty::getUncertainty(const string& modelPath, const int& phase, const int& attribute)
+UncertaintyPIU* UncertaintyPIU::getUncertaintyPIU(const string& modelPath, const int& phase, const int& attribute)
 {
     string fname = "Uncertainty_" +
             getPhase(phase) + "_" +
@@ -210,16 +214,16 @@ Uncertainty* Uncertainty::getUncertainty(const string& modelPath, const int& pha
     if (fin.fail() || !fin.is_open())
         return NULL;
 
-    Uncertainty* u = getUncertainty(fin, phase, attribute);
+    UncertaintyPIU* u = getUncertaintyPIU(fin, phase, attribute);
 
     fin.close();
 
     return u;
 }
 
-Uncertainty* Uncertainty::getUncertainty(ifstream& input, const int& phase, const int& attribute)
+UncertaintyPIU* UncertaintyPIU::getUncertaintyPIU(ifstream& input, const int& phase, const int& attribute)
 {
-    Uncertainty* u = new Uncertainty(phase, attribute);
+    UncertaintyPIU* u = new UncertaintyPIU(phase, attribute);
     u->readFile(input);
     if (u->getDistances().size() == 0)
     {
@@ -229,9 +233,9 @@ Uncertainty* Uncertainty::getUncertainty(ifstream& input, const int& phase, cons
     return u;
 }
 
-Uncertainty* Uncertainty::getUncertainty(ifstream& input, const string& phase, const string& attribute)
+UncertaintyPIU* UncertaintyPIU::getUncertaintyPIU(ifstream& input, const string& phase, const string& attribute)
 {
-    Uncertainty* u = new Uncertainty(phase, attribute);
+    UncertaintyPIU* u = new UncertaintyPIU(phase, attribute);
     u->readFile(input);
     if (u->getDistances().size() == 0)
     {
@@ -241,9 +245,9 @@ Uncertainty* Uncertainty::getUncertainty(ifstream& input, const string& phase, c
     return u;
 }
 
-Uncertainty* Uncertainty::getUncertainty(geotess::IFStreamAscii& input, const int& phase, const int& attribute)
+UncertaintyPIU* UncertaintyPIU::getUncertaintyPIU(geotess::IFStreamAscii& input, const int& phase, const int& attribute)
 {
-    Uncertainty* u = new Uncertainty(phase, attribute);
+    UncertaintyPIU* u = new UncertaintyPIU(phase, attribute);
     u->readFile(input);
     if (u->getDistances().size() == 0)
     {
@@ -253,9 +257,9 @@ Uncertainty* Uncertainty::getUncertainty(geotess::IFStreamAscii& input, const in
     return u;
 }
 
-Uncertainty* Uncertainty::getUncertainty(geotess::IFStreamAscii& input, const string& phase, const string& attribute)
+UncertaintyPIU* UncertaintyPIU::getUncertaintyPIU(geotess::IFStreamAscii& input, const string& phase, const string& attribute)
 {
-    Uncertainty* u = new Uncertainty(phase, attribute);
+    UncertaintyPIU* u = new UncertaintyPIU(phase, attribute);
     u->readFile(input);
     if (u->getDistances().size() == 0)
     {
@@ -265,9 +269,9 @@ Uncertainty* Uncertainty::getUncertainty(geotess::IFStreamAscii& input, const st
     return u;
 }
 
-Uncertainty* Uncertainty::getUncertainty(geotess::IFStreamBinary& input, const int& phase, const int& attribute)
+UncertaintyPIU* UncertaintyPIU::getUncertaintyPIU(geotess::IFStreamBinary& input, const int& phase, const int& attribute)
 {
-    Uncertainty* u = new Uncertainty(phase, attribute);
+    UncertaintyPIU* u = new UncertaintyPIU(phase, attribute);
     u->readFile(input);
     if (u->getDistances().size() == 0)
     {
@@ -277,9 +281,9 @@ Uncertainty* Uncertainty::getUncertainty(geotess::IFStreamBinary& input, const i
     return u;
 }
 
-Uncertainty* Uncertainty::getUncertainty(geotess::IFStreamBinary& input, const string& phase, const string& attribute)
+UncertaintyPIU* UncertaintyPIU::getUncertaintyPIU(geotess::IFStreamBinary& input, const string& phase, const string& attribute)
 {
-    Uncertainty* u = new Uncertainty(phase, attribute);
+    UncertaintyPIU* u = new UncertaintyPIU(phase, attribute);
     u->readFile(input);
     if (u->getDistances().size() == 0)
     {
@@ -289,9 +293,9 @@ Uncertainty* Uncertainty::getUncertainty(geotess::IFStreamBinary& input, const s
     return u;
 }
 
-Uncertainty* Uncertainty::getUncertainty(util::DataBuffer& buffer, const int& phase, const int& attribute)
+UncertaintyPIU* UncertaintyPIU::getUncertaintyPIU(util::DataBuffer& buffer, const int& phase, const int& attribute)
 {
-    Uncertainty* u = new Uncertainty(phase, attribute);
+    UncertaintyPIU* u = new UncertaintyPIU(phase, attribute);
     u->deserialize(buffer);
     if (u->phaseNum < 0)
     {
@@ -301,9 +305,9 @@ Uncertainty* Uncertainty::getUncertainty(util::DataBuffer& buffer, const int& ph
     return u;
 }
 
-Uncertainty* Uncertainty::getUncertainty(util::DataBuffer& buffer, const string& phase, const string& attribute)
+UncertaintyPIU* UncertaintyPIU::getUncertaintyPIU(util::DataBuffer& buffer, const string& phase, const string& attribute)
 {
-    Uncertainty* u = new Uncertainty(phase, attribute);
+    UncertaintyPIU* u = new UncertaintyPIU(phase, attribute);
     u->deserialize(buffer);
     if (u->phaseNum < 0)
     {
@@ -313,7 +317,7 @@ Uncertainty* Uncertainty::getUncertainty(util::DataBuffer& buffer, const string&
     return u;
 }
 
-void Uncertainty::readFile(const string& filename)
+void UncertaintyPIU::readFile(const string& filename)
 {
     ifstream fin;
 
@@ -322,7 +326,7 @@ void Uncertainty::readFile(const string& filename)
     if (fin.fail() || !fin.is_open())
     {
         ostringstream os;
-        os << endl << "ERROR in Uncertainty::readFile" << endl
+        os << endl << "ERROR in UncertaintyPIU::readFile" << endl
                 <<"Could not open file " << filename << endl
                 << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
         throw SLBMException(os.str(),115);
@@ -333,19 +337,11 @@ void Uncertainty::readFile(const string& filename)
     fin.close();
 }
 
-void Uncertainty::readFile(ifstream& fin)
+void UncertaintyPIU::readFile(ifstream& fin)
 {
     errDepths.clear();
     errDistances.clear();
     errVal.clear();
-
-    //	int numdistances = -1;
-    //	int numdepths = 1;
-    //
-    //	string buf;
-    //	buf.resize(128);
-    //	fin.getline(&buf[0], buf.size());
-    //	sscanf(&buf[0], "%d %d", &numdistances, &numdepths);
 
     try
     {
@@ -396,14 +392,14 @@ void Uncertainty::readFile(ifstream& fin)
     catch( ... )
     {
         ostringstream os;
-        os << endl << "ERROR in Uncertainty::readFile" << endl
+        os << endl << "ERROR in UncertaintyPIU::readFile" << endl
                 <<"Invalid or corrupt file format" << endl
                 << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
         throw SLBMException(os.str(),115);
     }
 }
 
-void Uncertainty::readFile(geotess::IFStreamAscii& input)
+void UncertaintyPIU::readFile(geotess::IFStreamAscii& input)
 {
     // The number of depths can be zero and still have uncertainty values as
     // a function of distance.
@@ -414,19 +410,11 @@ void Uncertainty::readFile(geotess::IFStreamAscii& input)
         errVal.clear();
 
         string line;
-        input.getLine(line);
-        vector<string> tokens;
-//		geotess::CPPUtils::tokenizeString(line, " ", tokens);
-//		int numdistances = geotess::CPPUtils::stoi(tokens[0]);
         int numdistances = input.readInteger();
         int numdepths = input.readInteger();
 
         if (numdistances > 0)
         {
-//			int numdepths = 0;
-//			if (tokens.size() > 1)
-//				numdepths = geotess::CPPUtils::stoi(tokens[1]);
-
             errDistances.reserve(numdistances);
             for( int i = 0; i < numdistances; i++ )
                 errDistances.push_back(input.readDouble());
@@ -460,91 +448,58 @@ void Uncertainty::readFile(geotess::IFStreamAscii& input)
     catch( ... )
     {
         ostringstream os;
-        os << endl << "ERROR in Uncertainty::readFile" << endl
+        os << endl << "ERROR in UncertaintyPIU::readFile" << endl
                 <<"Invalid or corrupt file format" << endl
                 << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
         throw SLBMException(os.str(),115);
     }
 }
 
-void Uncertainty::writeFile(geotess::IFStreamAscii& output)
+void UncertaintyPIU::writeFile(geotess::IFStreamAscii& output)
 {
     int nlCount = 8;
+    int nDistances = errDistances.size();
+    int nDepths = errVal.size() > 1 ? errVal.size() : 0;
 
-    output.writeStringNL("# Uncertainty File");
-    output.writeStringNL("# Created for Seismic Phase, Attribute " + getPhaseStr() + ", " + getAttributeStr());
-    output.writeStringNL("");
+    ostringstream os;
 
-    output.writeStringNL("# Distances, Depths (can be zero)");
-    output.writeString("  ");
-    output.writeInt(errDistances.size());
-    output.writeString("  ");
-    if (errVal.size() > 1)
-        output.writeInt(errVal.size());
-    else
-        output.writeInt(0);
-    output.writeStringNL("");
+    os << nDistances << " " << nDepths << endl;
 
-    output.writeString("# Uncertainty Distance Values (deg) [");
-    output.writeInt(errDistances.size());
-    output.writeStringNL("]");
-    for (int i = 0; i < errDistances.size(); i++)
+    os << fixed << setprecision(4) << setw(7);
+
+    for (int i = 0; i < nDistances; i++)
     {
-        output.writeDouble(errDistances[i]);
+        os << errDistances[i];
         if (((i + 1) % nlCount == 0) ||
-            (i == errDistances.size() - 1))
-            output.writeStringNL("");
+                (i == errDistances.size() - 1))
+            os << endl;
         else
-            output.writeString("  ");
+            os << " ";
     }
-    output.writeStringNL("");
 
-    if (errVal.size() > 1)
+    for (int i = 0; i < nDepths; i++)
     {
-        output.writeString("# Uncertainty Depth Values (km) [");
-        output.writeInt(errDepths.size());
-        output.writeStringNL("]");
-        for (int i = 0; i < errDepths.size(); i++)
-        {
-            output.writeDouble(errDepths[i]);
-            if (((i + 1) % nlCount == 0) ||
+        os << errDepths[i];
+        if (((i + 1) % nlCount == 0) ||
                 (i == errDepths.size() - 1))
-                output.writeStringNL("");
-            else
-                output.writeString("  ");
-        }
-        output.writeStringNL("");
+            os << endl;
+        else
+            os << " ";
     }
 
-    output.writeStringNL("# Uncertainty Error Values [");
-    output.writeInt(errVal.size());
-    output.writeString("][");
-    output.writeInt(errVal[0].size());
-    output.writeStringNL("]");
+    // if attribute is 2:AZ, convert degrees to radians, if 1:SH convert sec/deg
+    // to sec/radian, if 0:TT no conversion.
+    double convert = attributeNum == 2 ? DEG_TO_RAD : attributeNum == 1 ? RAD_TO_DEG : 1.;
+
     for (int i = 0; i < errVal.size(); i++)
     {
-        if (errVal.size() > 1)
-        {
-            output.writeString("#		Error Value [");
-            output.writeInt(i);
-            output.writeStringNL("][]");
-        }
-        vector<double>& errDepth_i = errVal[i];
-        for (int j = 0; j < errDepth_i.size(); j++)
-        {
-            output.writeDouble(errDepth_i[j]);
-            if (((j + 1) % nlCount == 0) ||
-                (j == errDepth_i.size() - 1))
-                output.writeStringNL("");
-            else
-                output.writeString("  ");
-        }
-        output.writeStringNL("");
+        os << "#" << endl;
+        for (int j=0; j < nDistances; ++j)
+            os << errVal[i][j]/convert << endl;
     }
-    output.writeStringNL("");
 }
 
-void Uncertainty::readFile(geotess::IFStreamBinary& input)
+void UncertaintyPIU::readFile(geotess::IFStreamBinary& input)
 {
     // The number of depths can be zero and still have uncertainty values as
     // a function of distance.
@@ -589,14 +544,14 @@ void Uncertainty::readFile(geotess::IFStreamBinary& input)
     catch( ... )
     {
         ostringstream os;
-        os << endl << "ERROR in Uncertainty::readFile" << endl
+        os << endl << "ERROR in UncertaintyPIU::readFile" << endl
                 <<"Invalid or corrupt file format" << endl
                 << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
         throw SLBMException(os.str(),115);
     }
 }
 
-void Uncertainty::writeFile(geotess::IFStreamBinary& output)
+void UncertaintyPIU::writeFile(geotess::IFStreamBinary& output)
 {
     // if attribute is 2:AZ, convert degrees to radians, if 1:SH convert sec/deg
     // to sec/radian, if 0:TT no conversion.
@@ -616,7 +571,7 @@ void Uncertainty::writeFile(geotess::IFStreamBinary& output)
             output.writeDouble(errVal[i][j]/convert);
 }
 
-double Uncertainty::getUncertainty(const double& distance, double depth)
+double UncertaintyPIU::getUncertainty(const double& distance, double depth)
 {
     // Convert to degrees since model errors are defined in degrees.
     double distanceDeg = distance * RAD_TO_DEG;
@@ -666,7 +621,7 @@ double Uncertainty::getUncertainty(const double& distance, double depth)
     }
 }
 
-double Uncertainty::getVariance(const double& distance, double depth)
+double UncertaintyPIU::getVariance(const double& distance, double depth)
 {
     // Convert to degrees since model errors are defined in degrees.
     double distanceDeg = distance * RAD_TO_DEG;
@@ -716,7 +671,7 @@ double Uncertainty::getVariance(const double& distance, double depth)
     }
 }
 
-void Uncertainty::getIndex(double x, const vector<double>& v,
+void UncertaintyPIU::getIndex(double x, const vector<double>& v,
         int& index, double& w)
 {
     // if v consists of only 2 entries then set index to 0 ... otherwise,
@@ -747,7 +702,7 @@ void Uncertainty::getIndex(double x, const vector<double>& v,
     w = (x - v[index]) / (v[index+1] - v[index]);
 }
 
-string Uncertainty::toStringTable()
+string UncertaintyPIU::toStringTable()
 {
     ostringstream os;
     os << "Uncertainty Table for " << getPhase(phaseNum) << " / " << getAttribute(attributeNum) << endl;
@@ -772,7 +727,7 @@ string Uncertainty::toStringTable()
     return os.str();
 }
 
-string Uncertainty::toStringFile()
+string UncertaintyPIU::toStringFile()
 {
     ostringstream os;
     os << fixed << setprecision(3);
@@ -797,7 +752,7 @@ string Uncertainty::toStringFile()
         }
 
     double convert = attributeNum == 2 ? RAD_TO_DEG : attributeNum == 1 ? DEG_TO_RAD : 1.;
-    os << fixed << setprecision(attributeNum == 1 ? 4 : 3);
+    os << fixed << setprecision(4);
 
     for (int i=0; i<(int)errVal.size(); ++i)
     {
@@ -808,7 +763,7 @@ string Uncertainty::toStringFile()
     return os.str();
 }
 
-void Uncertainty::writeFile(const string& directoryName)
+void UncertaintyPIU::writeFile(const string& directoryName)
 {
     string fname = "Uncertainty_" + getPhase(phaseNum) + "_" +
             getAttribute(attributeNum) + ".txt";
@@ -851,7 +806,7 @@ void Uncertainty::writeFile(const string& directoryName)
     os.close();
 }
 
-int Uncertainty::getBufferSize()
+int UncertaintyPIU::getBufferSize()
 {
     int buffsize = sizeof(int);
     buffsize += sizeof(int)+getPhaseStr().size();
@@ -870,7 +825,7 @@ int Uncertainty::getBufferSize()
     return buffsize;
 }
 
-void Uncertainty::serialize(util::DataBuffer& buffer)
+void UncertaintyPIU::serialize(util::DataBuffer& buffer)
 {
     // write phaseNum, phaseStr, and fname
     buffer.writeInt32(phaseNum);
@@ -894,7 +849,7 @@ void Uncertainty::serialize(util::DataBuffer& buffer)
         buffer.writeDoubleArray(&errVal[i][0], errDistances.size());
 }
 
-void Uncertainty::deserialize(util::DataBuffer& buffer)
+void UncertaintyPIU::deserialize(util::DataBuffer& buffer)
 {
     int i;
 

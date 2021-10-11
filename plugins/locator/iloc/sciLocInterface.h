@@ -194,7 +194,7 @@ typedef struct iLocConfig {
     int UseRSTTPnSn;                          /* use RSTT Pn/Sn predictions */
     int UseRSTTPgLg;                          /* use RSTT Pg/Lg predictions */
     int UseRSTT;                                    /* use RSTT predictions */
-    char LocalVmodel[ILOC_VALLEN];         /* name for local velocity model */
+    char LocalVmodel[ILOC_FILENAMELEN];/* pathname for local velocity model */
     double MaxLocalTTDelta;             /* use local TT up to this distance */
     int UseLocalTT;                             /* use local TT predictions */
 /*
@@ -619,8 +619,8 @@ typedef struct TravelTimeInfo {
 typedef struct TTtables {
     char Phase[ILOC_PHALEN];                                       /* phase */
     int isbounce;                         /* surface reflection or multiple */
-	int	ndel;                                 /* number of distance samples */
-	int	ndep;                                    /* number of depth samples */
+    int ndel;                                 /* number of distance samples */
+    int ndep;                                    /* number of depth samples */
     double *depths;                                   /* depth samples [km] */
     double *deltas;                               /* distance samples [deg] */
     double **tt;                                   /* travel-time table [s] */

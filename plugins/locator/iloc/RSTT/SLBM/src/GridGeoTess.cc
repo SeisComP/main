@@ -24,7 +24,6 @@
 #include "GeoTessGrid.h"
 #include "CPPUtils.h"
 #include "GeoTessProfile.h"
-#include "GeoTessModelPathUnc.h"
 
 
 namespace slbm {
@@ -62,36 +61,9 @@ size_t GridGeoTess::memSize()
     return sizeof(*model);
 }
 
-GeoTessModelSLBM*	GridGeoTess::loadModel(const string& modelname, const string& relGridPath)
+GeoTessModelSLBM*   GridGeoTess::loadModel(const string& modelname, const string& relGridPath)
 {
-    GeoTessModelSLBM* mdl = NULL;
-    if (relGridPath.length() == 0)
-    {
-        if (GeoTessModelPathUnc::isGeoTessModelPathUnc(modelname))
-            mdl = new GeoTessModelPathUnc(modelname, uncertaintyPathDep, uncertainty);
-        else if (GeoTessModelSLBM::isGeoTessModelSLBM(modelname))
-            mdl = new GeoTessModelSLBM(modelname, uncertainty);
-        else if (GeoTessModel::isGeoTessModel(modelname))
-        {
-            GeoTessModelSLBM::setNewModelStyleReadFormat(false);
-            mdl = new GeoTessModelSLBM(modelname, uncertainty);
-            GeoTessModelSLBM::setNewModelStyleReadFormat(true);
-        }
-    }
-    else
-    {
-        if (GeoTessModelPathUnc::isGeoTessModelPathUnc(modelname))
-            mdl = new GeoTessModelPathUnc(modelname, relGridPath, uncertaintyPathDep, uncertainty);
-        else if (GeoTessModelSLBM::isGeoTessModelSLBM(modelname))
-            mdl = new GeoTessModelSLBM(modelname, relGridPath, uncertainty);
-        else if (GeoTessModel::isGeoTessModel(modelname))
-        {
-            GeoTessModelSLBM::setNewModelStyleReadFormat(false);
-            mdl = new GeoTessModelSLBM(modelname, relGridPath, uncertainty);
-            GeoTessModelSLBM::setNewModelStyleReadFormat(true);
-        }
-    }
-
+    GeoTessModelSLBM* mdl = new GeoTessModelSLBM(modelname, relGridPath);
     return mdl;
 }
 
@@ -111,6 +83,20 @@ void GridGeoTess::loadFromFile(const string& filename)
         location.setLocation(model->getGrid().getVertex(nodeId), 0.);
         profiles[nodeId] = new GridProfileGeoTess(*this, nodeId, location);
     }
+
+    // now load the uncertainties from files in modelPath.
+    // 4 phases (Pn, Sn, Pg, Lg) and 3 attributes (TT, SH, AZ)
+    // azimuth uncertainty will always be null.
+    for (int i=0; i<4; ++i)
+        for (int j=0; j<3; ++j)
+            piu[i][j] = model->getPIU()[i][j];
+
+    // now load path dependent uncertainties from files in modelPath.
+    // 4 phases (Pn, Sn, Pg, Lg) for travel time only
+    if (model->isPathDepUncModel())
+        for (int i=0; i<4; ++i)
+            pdu[i] = model->getPDU()[i];
+
 }
 
 void GridGeoTess::loadFromDirectory(const string& dirname)
@@ -131,12 +117,12 @@ void GridGeoTess::loadFromDirectory(const string& dirname)
     for (int i=0; i<4; i++)
         for (int j=0; j<3; ++j)
         {
-            if (uncertainty[i][j] != NULL)
-                delete uncertainty[i][j];
-            uncertainty[i][j] = Uncertainty::getUncertainty(modelPath, i, j);
+            if (piu[i][j] != NULL)
+                delete piu[i][j];
+            piu[i][j] = UncertaintyPIU::getUncertaintyPIU(modelPath, i, j);
         }
 
-    if (uncertainty[Pn][TT] == NULL)
+    if (piu[Pn][TT] == NULL)
     {
         string fname = CPPUtils::insertPathSeparator(modelPath, "Uncertainty_Pn_TT.txt");
 
@@ -154,18 +140,18 @@ void GridGeoTess::loadFromDirectory(const string& dirname)
     {
         for (int i = 0; i<4; i++)
         {
-            if (uncertaintyPathDep[i] != NULL)
-                delete uncertaintyPathDep[i];
-            uncertaintyPathDep[i] = UncertaintyPathDep::getUncertainty(modelPath, i);
+            if (pdu[i] != NULL)
+                delete pdu[i];
+            pdu[i] = UncertaintyPDU::getUncertainty(modelPath, i);
         }
 
-        if (uncertaintyPathDep[Pn] == NULL)
+        if (pdu[Pn] == NULL)
         {
-            string fname = CPPUtils::insertPathSeparator(modelPath, "UncertaintyPathDep_Pn.txt");
+            string fname = CPPUtils::insertPathSeparator(modelPath, "UncertaintyPDU_Pn.txt");
 
             ostringstream os;
             os << endl << "ERROR in GridGeoTess::loadFromDirectory()" << endl
-                << "UncertaintyPathDep file does not exist:" << endl
+                << "UncertaintyPDU file does not exist:" << endl
                 << fname << endl
                 << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
             throw SLBMException(os.str(), 104);
@@ -185,309 +171,309 @@ void GridGeoTess::loadFromDirectory(const string& dirname)
 
 void GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)
 {
-    //clear();
-
-    string s;
-
-    // get the GeoTess name (GEOTESSMODEL) and validate
-
-    input.readString(s, 12);
-    if (s != "GEOTESSMODEL")
-    {
-        ostringstream os;
-        os << endl << "GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl
-                << "  expected char array \"GEOTESSMODEL\" as first entry of file "
-                << "but found \"";
-        for (int i = 0; i < 12; ++i)
-            if ((s[i] != 127) && (s[i] > 31))
-                os << s[i];
-            else
-                os << "[" << (int) s[i] << "]";
-        os << "\" instead ..." << endl;
-
-        throw GeoTessException(os, __FILE__, __LINE__, 6021);
-    }
-
-    // get the fileFormatVersion. Only recognized value right now is 1.
-
-    int fileFormatVersion = input.readInt32();
-    //	if ((fileFormatVersion < 0) || (fileFormatVersion > 65536))
-    //	{
-    //		input.setByteOrderReverse(!input.isByteOrderReversalOn());
-    //		input.decrementPos(CPPUtils::SINT);
-    //		fileFormatVersion = input.readInt();
-    //	}
-
-    if (fileFormatVersion != 1)
-    {
-        ostringstream os;
-        os << endl << "GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl
-                << fileFormatVersion << " is not a recognized file format version." << endl;
-        throw GeoTessException(os, __FILE__, __LINE__, 6022);
-    }
-
-    GeoTessMetaData* md = new GeoTessMetaData();
-
-    s = input.readString();
-    md->setOptimizationType(s);
-
-    // read model population software version and file creation date
-    s = input.readString();
-    md->setModelSoftwareVersion(s);
-
-    s = input.readString();
-    md->setModelGenerationDate(s);
-
-    s = input.readString();
-    md->setDescription(s);
-
-    s = input.readString();
-    md->setAttributes(s, input.readString());
-
-    s = input.readString();
-    md->setLayerNames(s);
-
-    s = input.readString();
-    md->setDataType(s);
-
-    md->setNVertices(input.readInt32());
-
-    // an array of length nLayers where each element is the
-    // index of the tessellation that supports that layer.
-    vector<int> tessIds;
-    for (int i = 0; i < md->getNLayers(); ++i)
-        tessIds.push_back(input.readInt32());
-    md->setLayerTessIds(tessIds);
-
-    // done populating GeoTessMetaData.
-
-    GeoTessProfile*** gtProfiles = CPPUtils::new2DArray<GeoTessProfile*>(md->getNVertices(), md->getNLayers());
-
-    vector<float> radii;
-    int nAttributes = md->getNAttributes();
-    float* velocities = new float[nAttributes];
-    vector<GeoTessData*> data;
-
-    for (int v=0; v<md->getNVertices(); ++v)
-    {
-        for (int layer=0; layer<md->getNLayers(); ++layer)
-        {
-            // read ProfileType and return new Profile object.
-            int profileType = input.readByte();
-            switch (profileType)
-            {
-            case 0:
-            {
-                // EMPTY layer defined by two radii and no data
-                radii.push_back(input.readFloat());
-                radii.push_back(input.readFloat());
-                break;
-            }
-            case 1:
-            {
-                // THIN layer defined by one radius and one data
-                radii.push_back(input.readFloat());
-                for (int a=0; a<nAttributes; ++a)
-                    velocities[a] = input.readFloat();
-                data.push_back(GeoTessData::getData(velocities, nAttributes));
-                break;
-            }
-            case 2:
-            {
-                // CONSTANT layer defined by two radii and one data object
-                radii.push_back(input.readFloat());
-                radii.push_back(input.readFloat());
-                for (int a=0; a<nAttributes; ++a)
-                    velocities[a] = input.readFloat();
-                data.push_back(GeoTessData::getData(velocities, nAttributes));
-                break;
-            }
-            case 3:
-            {
-                // NPOINT layer with 2 or more radii and one data object for each
-                // radius
-                for (int n=0; n<input.readInt32(); ++n)
-                {
-                    radii.push_back(input.readFloat());
-                    for (int a=0; a<nAttributes; ++a)
-                        velocities[a] = input.readFloat();
-                    data.push_back(GeoTessData::getData(velocities, nAttributes));
-                }
-                break;
-            }
-            case 4:
-            {
-                // SURFACE layer with 0 radii and one data object
-                for (int a=0; a<nAttributes; ++a)
-                    velocities[a] = input.readFloat();
-                data.push_back(GeoTessData::getData(velocities, nAttributes));
-                break;
-            }
-            case 5:
-            {
-                // SURFACE_EMPTY layer with 0 radii and 0 data objects
-                break;
-            }
-            default:
-            {
-                ostringstream os;
-                os << endl << "ERROR in GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl
-                        << "Unrecognized ProfileType " << profileType << endl;
-                throw GeoTessException(os, __FILE__, __LINE__, 4003);
-                break;
-            }
-            }
-            gtProfiles[v][layer] = GeoTessProfile::newProfile(radii, data);
-            radii.clear();
-            data.clear();
-        }
-
-    }
-
-    delete[] velocities;
-
-    s = input.readString();
-    if (s != "*")
-    {
-        ostringstream os;
-        os << endl << "GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl
-                << "Expected '*' but found " << s << endl;
-        throw GeoTessException(os, __FILE__, __LINE__, 6022);
-    }
-
-
-    string gridId = input.readString();
-
-    input.readString(s, 11);
-    if (s != "GEOTESSGRID")
-    {
-        ostringstream os;
-        os << endl << "GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl
-                << "Expected buffer to start with 'GEOTESSGRID' but found " << s << endl;
-        throw GeoTessException(os, __FILE__, __LINE__, 6022);
-    }
-
-    fileFormatVersion = input.readInt32();
-    if (fileFormatVersion != 2)
-    {
-        ostringstream os;
-        os << endl << "GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl
-                << fileFormatVersion << " is not a recognized GeoTessGrid file format version." << endl;
-        throw GeoTessException(os, __FILE__, __LINE__, 6022);
-    }
-
-
-    string gridInputFile = input.readString();
-    string gridOutputFile = input.readString();
-    string gridSoftwareVersion = input.readString();
-    string gridGenerationDate = input.readString();
-    s = input.readString(); // repeat of gridId
-
-    int nTessellations = input.readInt32();
-    int nLevels = input.readInt32();
-    int nTriangles = input.readInt32();
-    int nVertices = input.readInt32();
-
-    int** tessellations = CPPUtils::new2DArray<int>(nTessellations, 2);
-    input.readIntArray(tessellations[0], nTessellations*2);
-
-    int** levels = CPPUtils::new2DArray<int>(nLevels, 2);
-    input.readIntArray(levels[0], nLevels*2);
-
-    double** vertices = CPPUtils::new2DArray<double>(nVertices, 3);
-    input.readDoubleArray(vertices[0], nVertices*3);
-
-    int** triangles = CPPUtils::new2DArray<int>(nTriangles, 3);
-    input.readIntArray(triangles[0], nTriangles*3);
-
-    GeoTessGrid* grid = new GeoTessGrid(
-            vertices, nVertices,
-            triangles, nTriangles,
-            levels, nLevels,
-            tessellations, nTessellations,
-            gridId,
-            gridInputFile,
-            gridOutputFile,
-            gridSoftwareVersion,
-            gridGenerationDate);
-
-
-    s = input.readString();
-    if (s != "SLBM")
-    {
-        ostringstream os;
-        os << endl << "ERROR in GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl <<
-                "Expecting string SLBM but found " << s << endl
-                << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-        throw SLBMException(os.str(),105);
-    }
-
-    fileFormatVersion = input.readInt32();
-    if (fileFormatVersion != 1)
-    {
-        ostringstream os;
-        os << endl << "ERROR in GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl <<
-                "Expecting fileFormatVersion = 1 but found " << fileFormatVersion << endl
-                << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-        throw SLBMException(os.str(),105);
-    }
-
-    double averageMantleVelocity[2];
-    averageMantleVelocity[0] = (double)input.readFloat();
-    averageMantleVelocity[1] = (double)input.readFloat();
-
-    // now load the uncertainties from buffer.
-    int np = input.readInt32();
-    int na = input.readInt32();
-    if (na > 0 && np > 0)
-    {
-        if (na != 3 || np != 4)
-        {
-            ostringstream os;
-            os << endl << "ERROR in GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl <<
-                    "Expecting uncertainty information for 3 attributes and 4 phases." << endl
-                    << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-            throw SLBMException(os.str(),105);
-        }
-        for (int i=0; i<np; i++)
-            for (int j=0; j<na; ++j)
-            {
-                int iphase = Uncertainty::getPhase(input.readString());
-                int iattribute = Uncertainty::getAttribute(input.readString());
-                if (uncertainty[iphase][iattribute] != NULL)
-                    delete uncertainty[iphase][iattribute];
-                uncertainty[iphase][iattribute] = Uncertainty::getUncertainty(input, iphase, iattribute);
-            }
-
-    }
-
-    model = new GeoTessModelSLBM(grid, md, uncertainty, averageMantleVelocity);
-
-    // it is possible that some other grid object with the same gridId has already been loaded by GeoTessModel
-    // and is already stored in reuseGrid.  If true then the current grid was not adopted by the new
-    // GeoTessModel and this new grid should be deleted.
-    if (grid->isNotReferenced()) delete grid;
-
-    for (int v=0; v<md->getNVertices(); ++v)
-        for (int layer=0; layer<md->getNLayers(); ++layer)
-            model->setProfile(v,layer, gtProfiles[v][layer]);
-
-    CPPUtils::delete2DArray(gtProfiles);
-
-    position = model->getPosition(GeoTessInterpolatorType::NATURAL_NEIGHBOR);
-
-    profiles.resize(model->getNVertices());
-    Location location;
-    for (int nodeId=0; nodeId<model->getNVertices(); ++nodeId)
-    {
-        location.setLocation(model->getGrid().getVertex(nodeId), 0.);
-        profiles[nodeId] = new GridProfileGeoTess(*this, nodeId, location);
-    }
+//    //clear();
+//
+//    string s;
+//
+//    // get the GeoTess name (GEOTESSMODEL) and validate
+//
+//    input.readString(s, 12);
+//    if (s != "GEOTESSMODEL")
+//    {
+//        ostringstream os;
+//        os << endl << "GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl
+//                << "  expected char array \"GEOTESSMODEL\" as first entry of file "
+//                << "but found \"";
+//        for (int i = 0; i < 12; ++i)
+//            if ((s[i] != 127) && (s[i] > 31))
+//                os << s[i];
+//            else
+//                os << "[" << (int) s[i] << "]";
+//        os << "\" instead ..." << endl;
+//
+//        throw GeoTessException(os, __FILE__, __LINE__, 6021);
+//    }
+//
+//    // get the fileFormatVersion. Only recognized value right now is 1.
+//
+//    int fileFormatVersion = input.readInt32();
+//    //    if ((fileFormatVersion < 0) || (fileFormatVersion > 65536))
+//    //    {
+//    //        input.setByteOrderReverse(!input.isByteOrderReversalOn());
+//    //        input.decrementPos(CPPUtils::SINT);
+//    //        fileFormatVersion = input.readInt();
+//    //    }
+//
+//    if (fileFormatVersion != 1)
+//    {
+//        ostringstream os;
+//        os << endl << "GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl
+//                << fileFormatVersion << " is not a recognized file format version." << endl;
+//        throw GeoTessException(os, __FILE__, __LINE__, 6022);
+//    }
+//
+//    GeoTessMetaData* md = new GeoTessMetaData();
+//
+//    s = input.readString();
+//    md->setOptimizationType(s);
+//
+//    // read model population software version and file creation date
+//    s = input.readString();
+//    md->setModelSoftwareVersion(s);
+//
+//    s = input.readString();
+//    md->setModelGenerationDate(s);
+//
+//    s = input.readString();
+//    md->setDescription(s);
+//
+//    s = input.readString();
+//    md->setAttributes(s, input.readString());
+//
+//    s = input.readString();
+//    md->setLayerNames(s);
+//
+//    s = input.readString();
+//    md->setDataType(s);
+//
+//    md->setNVertices(input.readInt32());
+//
+//    // an array of length nLayers where each element is the
+//    // index of the tessellation that supports that layer.
+//    vector<int> tessIds;
+//    for (int i = 0; i < md->getNLayers(); ++i)
+//        tessIds.push_back(input.readInt32());
+//    md->setLayerTessIds(tessIds);
+//
+//    // done populating GeoTessMetaData.
+//
+//    GeoTessProfile*** gtProfiles = CPPUtils::new2DArray<GeoTessProfile*>(md->getNVertices(), md->getNLayers());
+//
+//    vector<float> radii;
+//    int nAttributes = md->getNAttributes();
+//    float* velocities = new float[nAttributes];
+//    vector<GeoTessData*> data;
+//
+//    for (int v=0; v<md->getNVertices(); ++v)
+//    {
+//        for (int layer=0; layer<md->getNLayers(); ++layer)
+//        {
+//            // read ProfileType and return new Profile object.
+//            int profileType = input.readByte();
+//            switch (profileType)
+//            {
+//            case 0:
+//            {
+//                // EMPTY layer defined by two radii and no data
+//                radii.push_back(input.readFloat());
+//                radii.push_back(input.readFloat());
+//                break;
+//            }
+//            case 1:
+//            {
+//                // THIN layer defined by one radius and one data
+//                radii.push_back(input.readFloat());
+//                for (int a=0; a<nAttributes; ++a)
+//                    velocities[a] = input.readFloat();
+//                data.push_back(GeoTessData::getData(velocities, nAttributes));
+//                break;
+//            }
+//            case 2:
+//            {
+//                // CONSTANT layer defined by two radii and one data object
+//                radii.push_back(input.readFloat());
+//                radii.push_back(input.readFloat());
+//                for (int a=0; a<nAttributes; ++a)
+//                    velocities[a] = input.readFloat();
+//                data.push_back(GeoTessData::getData(velocities, nAttributes));
+//                break;
+//            }
+//            case 3:
+//            {
+//                // NPOINT layer with 2 or more radii and one data object for each
+//                // radius
+//                for (int n=0; n<input.readInt32(); ++n)
+//                {
+//                    radii.push_back(input.readFloat());
+//                    for (int a=0; a<nAttributes; ++a)
+//                        velocities[a] = input.readFloat();
+//                    data.push_back(GeoTessData::getData(velocities, nAttributes));
+//                }
+//                break;
+//            }
+//            case 4:
+//            {
+//                // SURFACE layer with 0 radii and one data object
+//                for (int a=0; a<nAttributes; ++a)
+//                    velocities[a] = input.readFloat();
+//                data.push_back(GeoTessData::getData(velocities, nAttributes));
+//                break;
+//            }
+//            case 5:
+//            {
+//                // SURFACE_EMPTY layer with 0 radii and 0 data objects
+//                break;
+//            }
+//            default:
+//            {
+//                ostringstream os;
+//                os << endl << "ERROR in GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl
+//                        << "Unrecognized ProfileType " << profileType << endl;
+//                throw GeoTessException(os, __FILE__, __LINE__, 4003);
+//                break;
+//            }
+//            }
+//            gtProfiles[v][layer] = GeoTessProfile::newProfile(radii, data);
+//            radii.clear();
+//            data.clear();
+//        }
+//
+//    }
+//
+//    delete[] velocities;
+//
+//    s = input.readString();
+//    if (s != "*")
+//    {
+//        ostringstream os;
+//        os << endl << "GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl
+//                << "Expected '*' but found " << s << endl;
+//        throw GeoTessException(os, __FILE__, __LINE__, 6022);
+//    }
+//
+//
+//    string gridId = input.readString();
+//
+//    input.readString(s, 11);
+//    if (s != "GEOTESSGRID")
+//    {
+//        ostringstream os;
+//        os << endl << "GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl
+//                << "Expected buffer to start with 'GEOTESSGRID' but found " << s << endl;
+//        throw GeoTessException(os, __FILE__, __LINE__, 6022);
+//    }
+//
+//    fileFormatVersion = input.readInt32();
+//    if (fileFormatVersion != 2)
+//    {
+//        ostringstream os;
+//        os << endl << "GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl
+//                << fileFormatVersion << " is not a recognized GeoTessGrid file format version." << endl;
+//        throw GeoTessException(os, __FILE__, __LINE__, 6022);
+//    }
+//
+//
+//    string gridInputFile = input.readString();
+//    string gridOutputFile = input.readString();
+//    string gridSoftwareVersion = input.readString();
+//    string gridGenerationDate = input.readString();
+//    s = input.readString(); // repeat of gridId
+//
+//    int nTessellations = input.readInt32();
+//    int nLevels = input.readInt32();
+//    int nTriangles = input.readInt32();
+//    int nVertices = input.readInt32();
+//
+//    int** tessellations = CPPUtils::new2DArray<int>(nTessellations, 2);
+//    input.readIntArray(tessellations[0], nTessellations*2);
+//
+//    int** levels = CPPUtils::new2DArray<int>(nLevels, 2);
+//    input.readIntArray(levels[0], nLevels*2);
+//
+//    double** vertices = CPPUtils::new2DArray<double>(nVertices, 3);
+//    input.readDoubleArray(vertices[0], nVertices*3);
+//
+//    int** triangles = CPPUtils::new2DArray<int>(nTriangles, 3);
+//    input.readIntArray(triangles[0], nTriangles*3);
+//
+//    GeoTessGrid* grid = new GeoTessGrid(
+//            vertices, nVertices,
+//            triangles, nTriangles,
+//            levels, nLevels,
+//            tessellations, nTessellations,
+//            gridId,
+//            gridInputFile,
+//            gridOutputFile,
+//            gridSoftwareVersion,
+//            gridGenerationDate);
+//
+//
+//    s = input.readString();
+//    if (s != "SLBM")
+//    {
+//        ostringstream os;
+//        os << endl << "ERROR in GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl <<
+//                "Expecting string SLBM but found " << s << endl
+//                << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+//        throw SLBMException(os.str(),105);
+//    }
+//
+//    fileFormatVersion = input.readInt32();
+//    if (fileFormatVersion != 1)
+//    {
+//        ostringstream os;
+//        os << endl << "ERROR in GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl <<
+//                "Expecting fileFormatVersion = 1 but found " << fileFormatVersion << endl
+//                << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+//        throw SLBMException(os.str(),105);
+//    }
+//
+//    double averageMantleVelocity[2];
+//    averageMantleVelocity[0] = (double)input.readFloat();
+//    averageMantleVelocity[1] = (double)input.readFloat();
+//
+//    // now load the uncertainties from buffer.
+//    int np = input.readInt32();
+//    int na = input.readInt32();
+//    if (na > 0 && np > 0)
+//    {
+//        if (na != 3 || np != 4)
+//        {
+//            ostringstream os;
+//            os << endl << "ERROR in GridGeoTess::loadFromDataBuffer(util::DataBuffer& input)" << endl <<
+//                    "Expecting uncertainty information for 3 attributes and 4 phases." << endl
+//                    << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+//            throw SLBMException(os.str(),105);
+//        }
+//        for (int i=0; i<np; i++)
+//            for (int j=0; j<na; ++j)
+//            {
+//                int iphase = UncertaintyPIU::getPhase(input.readString());
+//                int iattribute = UncertaintyPIU::getAttribute(input.readString());
+//                if (uncertainty[iphase][iattribute] != NULL)
+//                    delete uncertainty[iphase][iattribute];
+//                uncertainty[iphase][iattribute] = UncertaintyPIU::getUncertainty(input, iphase, iattribute);
+//            }
+//
+//    }
+//
+//    model = new GeoTessModelSLBM(grid, md, uncertainty, averageMantleVelocity);
+//
+//    // it is possible that some other grid object with the same gridId has already been loaded by GeoTessModel
+//    // and is already stored in reuseGrid.  If true then the current grid was not adopted by the new
+//    // GeoTessModel and this new grid should be deleted.
+//    if (grid->isNotReferenced()) delete grid;
+//
+//    for (int v=0; v<md->getNVertices(); ++v)
+//        for (int layer=0; layer<md->getNLayers(); ++layer)
+//            model->setProfile(v,layer, gtProfiles[v][layer]);
+//
+//    CPPUtils::delete2DArray(gtProfiles);
+//
+//    position = model->getPosition(GeoTessInterpolatorType::NATURAL_NEIGHBOR);
+//
+//    profiles.resize(model->getNVertices());
+//    Location location;
+//    for (int nodeId=0; nodeId<model->getNVertices(); ++nodeId)
+//    {
+//        location.setLocation(model->getGrid().getVertex(nodeId), 0.);
+//        profiles[nodeId] = new GridProfileGeoTess(*this, nodeId, location);
+//    }
 }
 
 void GridGeoTess::saveVelocityModel(util::DataBuffer& buffer)
 {
-    model->writeModelDataBuffer(buffer);
+    //model->writeModelDataBuffer(buffer);
 }
 
 void GridGeoTess::saveVelocityModel(const string& destination, const int& format)
@@ -503,7 +489,7 @@ void GridGeoTess::saveVelocityModel(const string& destination, const int& format
 
     if (format == 4)
     {
-        model->setIOUncertainty(true);
+        //model->setIOUncertainty(true);
         model->writeModel(destination, "*");
     }
     else if (format == 3)
@@ -530,13 +516,16 @@ void GridGeoTess::saveVelocityModel(const string& destination, const int& format
         }
 
 
-        model->setIOUncertainty(false);
+        //model->setIOUncertainty(false);
         model->writeModel(filename, model->getGrid().getGridID());
 
-        for (int i=0; i<(int)uncertainty.size(); ++i)
-            for (int j=0; j<(int)uncertainty[i].size(); ++j)
-                if (uncertainty[i][j])
-                    uncertainty[i][j]->writeFile(destination);
+        for (int i=0; i<(int)piu.size(); ++i)
+            for (int j=0; j<(int)piu[i].size(); ++j)
+                if (piu[i][j])
+                    piu[i][j]->writeFile(destination);
+
+        for (int i=0; i<(int)pdu.size(); ++i)
+            pdu[i]->writeFile(destination);
     }
     else if (format == 2)
     {
@@ -694,10 +683,10 @@ void GridGeoTess::saveVelocityModel(const string& destination, const int& format
 
         buffer.clear();
 
-        for (int i=0; i<(int)uncertainty.size(); ++i)
-            for (int j=0; j<(int)uncertainty[i].size(); ++j)
-                if (uncertainty[i][j])
-                    uncertainty[i][j]->writeFile(destination);
+        for (int i=0; i<(int)piu.size(); ++i)
+            for (int j=0; j<(int)piu[i].size(); ++j)
+                if (piu[i][j])
+                    piu[i][j]->writeFile(destination);
 
     }
 }
@@ -706,10 +695,10 @@ string GridGeoTess::toString()
 {
     ostringstream os;
     os << model->toString() << endl;
-    for (int i=0; i<(int)uncertainty.size(); ++i)
-        for (int j=0; j<(int)uncertainty[i].size(); ++j)
-            if (uncertainty[i][j] != NULL)
-                os << uncertainty[i][j]->toStringTable();
+    for (int i=0; i<(int)piu.size(); ++i)
+        for (int j=0; j<(int)piu[i].size(); ++j)
+            if (piu[i][j] != NULL)
+                os << piu[i][j]->toStringTable();
     return os.str();
 }
 
