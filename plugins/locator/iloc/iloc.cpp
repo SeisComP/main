@@ -165,6 +165,11 @@ void readConfig(ILOC_CONF &cfg, const Config::Config &config, const string &pref
 	GET_CFG(UseRSTT);
 	cfg.UseRSTT = UseRSTT ? 1 : 0;
 
+	string globalModel;
+	GET_CFG(globalModel);
+	if ( !globalModel.empty() )
+		strncpy(cfg.TTmodel, globalModel.c_str(), sizeof(cfg.TTmodel)-1);
+
 	string LocalVmodel;
 	GET_CFG(LocalVmodel);
 	memset(cfg.LocalVmodel, '\0', sizeof(cfg.LocalVmodel));
