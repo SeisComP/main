@@ -98,6 +98,12 @@ void getCfg(bool &value, const Config::Config &config, const string &key) {
 }
 
 
+template <>
+void getCfg(string &value, const Config::Config &config, const string &key) {
+	value = config.getString(key);
+}
+
+
 void readConfig(ILOC_CONF &cfg, const Config::Config &config, const string &prefix) {
 #define GET_CFG_STRUCT(NAME) \
 	do {\
@@ -158,6 +164,11 @@ void readConfig(ILOC_CONF &cfg, const Config::Config &config, const string &pref
 	bool UseRSTT = cfg.UseRSTT;
 	GET_CFG(UseRSTT);
 	cfg.UseRSTT = UseRSTT ? 1 : 0;
+
+	string LocalVmodel;
+	GET_CFG(LocalVmodel);
+	memset(cfg.LocalVmodel, '\0', sizeof(cfg.LocalVmodel));
+	strncpy(cfg.LocalVmodel, LocalVmodel.c_str(), sizeof(cfg.LocalVmodel)-1);
 }
 
 
@@ -310,6 +321,7 @@ ILoc::ILoc() {
 		_allowedParameters.push_back("DoGridSearch");
 		_allowedParameters.push_back("DoNotRenamePhases");
 		_allowedParameters.push_back("UseRSTT");
+		_allowedParameters.push_back("LocalVmodel");
 		_allowedParameters.push_back("MaxLocalTTDelta");
 		_allowedParameters.push_back("UseLocalTT");
 		_allowedParameters.push_back("MinIterations");
@@ -428,6 +440,7 @@ string ILoc::parameter(const string &name) const {
 	else RET_STRING(DoGridSearch);
 	else RET_STRING(DoNotRenamePhases);
 	else RET_STRING(UseRSTT);
+	else RET_STRING(LocalVmodel);
 	else RET_STRING(MaxLocalTTDelta);
 	else RET_STRING(UseLocalTT);
 	else RET_STRING(MinIterations);
@@ -466,7 +479,7 @@ bool ILoc::setParameter(const string &name, const string &value) {
 	if ( !_currentConfig )
 		return false;
 
-	     INP_STRING(Verbose, int)
+	INP_STRING(Verbose, int)
 	else if ( name == "UsePickUncertainties" ) {
 		bool v;
 		if ( !Core::fromString(v, value) )
@@ -503,7 +516,10 @@ bool ILoc::setParameter(const string &name, const string &value) {
 			_auxDirty = true;
 		}
 	}
-	else INP_STRING(UseRSTT, int)
+	else if ( name == "LocalVmodel" ) {
+		memset(_currentConfig->LocalVmodel, '\0', sizeof(_currentConfig->LocalVmodel));
+		strncpy(_currentConfig->LocalVmodel, value.c_str(), sizeof(_currentConfig->LocalVmodel)-1);
+	}
 	else INP_STRING(MaxLocalTTDelta, double)
 	else INP_STRING(UseLocalTT, int)
 	else INP_STRING(MinIterations, int)
