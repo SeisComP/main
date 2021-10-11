@@ -50,7 +50,7 @@
  *     ReadTTtables
  *     ReadRSTTModel
  */
-static int ReadPhaseTTConfigFile(char *filename, ILOC_TTINFO *TTInfo);
+static int ReadGlobal1DModelPhaseList(char *filename, ILOC_TTINFO *TTInfo);
 static int ReadIASPEIPhaseMapFile(char *filename, ILOC_PHASEIDINFO *PhaseIdInfo);
 static int GetNumPhases(FILE *fp);
 static int GetPhaseCodes(ILOC_PHASELIST *pc, FILE *fp);
@@ -70,7 +70,7 @@ static double **ReadDefaultDepthGrid(char *filename, double *gres, int *ngrid);
  *     read data files from auxiliary data directory, iLocConfig.auxdir
  *
  *     iLocConfig->auxdir/iLocpars/IASPEIPhaseMap.txt
- *     iLocConfig->auxdir/iLocpars/PhaseConfig.iLocConfig->TTmodel.txt
+ *     iLocConfig->auxdir/iLocpars/Global1DModelPhaseList.txt
  *     iLocConfig->auxdir/iLocConfig->TTmodel/iLocConfig->TTmodel.*.tab
  *     iLocConfig->auxdir/iLocConfig->TTmodel/ELCOR.dat
  *     iLocConfig->auxdir/FlinnEngdahl/FE.dat
@@ -78,8 +78,7 @@ static double **ReadDefaultDepthGrid(char *filename, double *gres, int *ngrid);
  *     iLocConfig->auxdir/FlinnEngdahl/GRNDefaultDepth.iLocConfig->TTmodel.dat
  *     iLocConfig->auxdir/topo/etopo5_bed_g_i2.bin
  *     iLocConfig->auxdir/variogram/variogram.dat
- *     iLocConfig->auxdir/iLocpars/PhaseConfig.iLocConfig->LocalVmodel.txt
- *     iLocConfig->auxdir/localmodels/iLocConfig->LocalVmodel.localmodel.dat
+ *     iLocConfig->LocalVmodel
  *     iLocConfig->RSTTmodel
  *
  *  Input Arguments:
@@ -99,7 +98,7 @@ static double **ReadDefaultDepthGrid(char *filename, double *gres, int *ngrid);
  *  Called by:
  *     SeisComp3 iLoc app
  *  Calls:
- *     ReadPhaseTTConfigFile
+ *     ReadGlobal1DModelPhaseList
  *     ReadIASPEIPhaseMapFile
  *     ReadFlinnEngdahl
  *     ReadDefaultDepthGregion
@@ -116,7 +115,7 @@ int iLoc_ReadAuxDataFiles(ILOC_CONF *iLocConfig, ILOC_PHASEIDINFO *PhaseIdInfo,
         ILOC_TTINFO *TTInfo, ILOC_TT_TABLE *TTtables[], ILOC_EC_COEF *ec[],
         ILOC_TTINFO *LocalTTInfo, ILOC_TT_TABLE *LocalTTtables[])
 {
-    char filename[ILOC_FILENAMELEN];
+    char filename[ILOC_FILENAMELEN], q[ILOC_FILENAMELEN], *s;
     double *GrnDepth = (double *)NULL;
     double **DepthGrid = (double **)NULL;
     short int **Topo = (short int **)NULL;
@@ -128,9 +127,8 @@ int iLoc_ReadAuxDataFiles(ILOC_CONF *iLocConfig, ILOC_PHASEIDINFO *PhaseIdInfo,
  *      auxdir/iLocpars/PhaseConfig.<iLocConfig.TTmodel>.txt
  *
  */
-    sprintf(filename, "%s/iLocpars/PhaseConfig.%s.txt",
-            iLocConfig->auxdir, iLocConfig->TTmodel);
-    if (ReadPhaseTTConfigFile(filename, TTInfo))
+    sprintf(filename, "%s/iLocpars/Global1DModelPhaseList.txt", iLocConfig->auxdir);
+    if (ReadGlobal1DModelPhaseList(filename, TTInfo))
         return ILOC_FAILURE;
 /*
  *
@@ -259,30 +257,24 @@ int iLoc_ReadAuxDataFiles(ILOC_CONF *iLocConfig, ILOC_PHASEIDINFO *PhaseIdInfo,
  */
     if (iLocConfig->UseLocalTT) {
 /*
- *
- *      Read local velocity specific info
- *          auxdir/iLocpars/PhaseConfig.<iLocConfig.LocalVmodel>.txt
+ *      Set LocalTTInfo and get local velocity model name from its filename
  *
  */
-        sprintf(filename, "%s/iLocpars/PhaseConfig.%s.txt",
-                iLocConfig->auxdir, iLocConfig->LocalVmodel);
-        if (ReadPhaseTTConfigFile(filename, LocalTTInfo)) {
-            iLoc_Free(TTInfo->PhaseTT);
-            iLoc_FreePhaseIdInfo(PhaseIdInfo);
-            iLoc_FreeFlinnEngdahl(fe);
-            iLoc_FreeDefaultDepth(DefaultDepth);
-            iLoc_FreeVariogram(Variogram);
-            iLoc_FreeEllipticityCorrections(TTInfo->numECPhases, *ec);
-            iLoc_FreeTTtables(TTInfo->numPhaseTT, *TTtables);
-            return ILOC_FAILURE;
-        }
         LocalTTInfo->numECPhases = 0;
-        strcpy(LocalTTInfo->TTmodel, iLocConfig->LocalVmodel);
+        LocalTTInfo->MaxHypocenterDepth = TTInfo->MaxHypocenterDepth;
+        LocalTTInfo->PSurfVel = TTInfo->PSurfVel;
+        LocalTTInfo->SSurfVel = TTInfo->SSurfVel;
+        strcpy(filename, iLocConfig->LocalVmodel);
+        s = strtok(filename, "/");
+        while ((s = strtok(NULL, "/")) != NULL) {
+            strcpy(q, s);
+        }
+        s = strtok(q, ".");
+        strcpy(LocalTTInfo->TTmodel, s);
 /*
  *      read local velocity model and generate local TT tables
- *          auxdir/localmodels/<iLocConfig.LocalVmodel>.localmodel.dat
  */
-        if ((*LocalTTtables = iLoc_GenerateLocalTTtables(iLocConfig->auxdir,
+        if ((*LocalTTtables = iLoc_GenerateLocalTTtables(iLocConfig->LocalVmodel,
                               LocalTTInfo, iLocConfig->Verbose)) == NULL) {
             fprintf(stderr, "Cannot generate %s TT tables!\n", LocalTTInfo->TTmodel);
             iLoc_Free(TTInfo->PhaseTT);
@@ -320,7 +312,7 @@ int iLoc_ReadAuxDataFiles(ILOC_CONF *iLocConfig, ILOC_PHASEIDINFO *PhaseIdInfo,
 
 /*
  *  Title:
- *     ReadPhaseTTConfigFile
+ *     ReadGlobal1DModelPhaseList
  *  Synopsis:
  *     Read velocity model parameters and list of phases with TT tables
  *  Input Arguments:
@@ -334,7 +326,7 @@ int iLoc_ReadAuxDataFiles(ILOC_CONF *iLocConfig, ILOC_PHASEIDINFO *PhaseIdInfo,
  *  Calls:
  *     GetNumPhases, GetPhaseCodes, iLoc_Free
  */
-static int ReadPhaseTTConfigFile(char *filename, ILOC_TTINFO *TTInfo)
+static int ReadGlobal1DModelPhaseList(char *filename, ILOC_TTINFO *TTInfo)
 {
     FILE *fp;
     int j;
@@ -345,7 +337,7 @@ static int ReadPhaseTTConfigFile(char *filename, ILOC_TTINFO *TTInfo)
  *  Open model file or return an error.
  */
     if ((fp = fopen(filename, "r")) == NULL) {
-        fprintf(stderr, "ReadPhaseTTConfigFile: cannot open %s\n", filename);
+        fprintf(stderr, "ReadGlobal1DModelPhaseList: cannot open %s\n", filename);
         return ILOC_CANNOT_OPEN_FILE;
     }
 /*
@@ -382,7 +374,7 @@ static int ReadPhaseTTConfigFile(char *filename, ILOC_TTINFO *TTInfo)
     TTInfo->numPhaseTT = GetNumPhases(fp);
     TTInfo->PhaseTT = (ILOC_PHASELIST *)calloc(TTInfo->numPhaseTT, sizeof(ILOC_PHASELIST));
     if (TTInfo->PhaseTT == NULL) {
-        fprintf(stderr, "ReadPhaseTTConfigFile: cannot allocate memory\n");
+        fprintf(stderr, "ReadGlobal1DModelPhaseList: cannot allocate memory\n");
         iLoc_Free(line);
         fclose(fp);
         return ILOC_MEMORY_ALLOCATION_ERROR;
@@ -683,7 +675,7 @@ static int GetNumPhases(FILE *fp)
  *  Return:
  *     Success/error
  *  Called by:
- *     iLoc_ReadAuxDataFiles, ReadIASPEIPhaseMapFile, ReadPhaseTTConfigFile
+ *     iLoc_ReadAuxDataFiles, ReadIASPEIPhaseMapFile, ReadGlobal1DModelPhaseList
  */
 static int GetPhaseCodes(ILOC_PHASELIST *pc, FILE *fp)
 {

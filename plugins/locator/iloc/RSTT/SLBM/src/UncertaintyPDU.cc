@@ -44,7 +44,7 @@
 
 //using namespace std;
 
-#include "UncertaintyPathDep.h"
+#include "UncertaintyPDU.h"
 #include "SLBMException.h"
 #include "IFStreamAscii.h"
 #include "CPPUtils.h"
@@ -60,7 +60,7 @@ namespace slbm {
     // Default Constructor
     //
     // *****************************************************************************
-    UncertaintyPathDep::UncertaintyPathDep() : fname("not_specified"), phaseNum(-1)
+    UncertaintyPDU::UncertaintyPDU() : fname("not_specified"), phaseNum(-1)
     {
     }
 
@@ -68,8 +68,8 @@ namespace slbm {
     //
     // Parameterized Path Dependent Uncertainty Constructor used by SLBM.
     //
-    // *****************************************************************************
-    UncertaintyPathDep::UncertaintyPathDep(int phase)
+    // **********************************************UncertaintyPDU*************
+    UncertaintyPDU::UncertaintyPDU(int phase)
         : fname("not_specified"), phaseNum(phase)
     {
     }
@@ -79,7 +79,7 @@ namespace slbm {
     // Parameterized Path Dependent Uncertainty Constructor used by SLBM.
     //
     // *****************************************************************************
-    UncertaintyPathDep::UncertaintyPathDep(const string& phase)
+    UncertaintyPDU::UncertaintyPDU(const string& phase)
         : fname("not_specified"), phaseNum(getPhase(phase))
     {
     }
@@ -90,10 +90,10 @@ namespace slbm {
     // used to construct file name which is loaded from the input path.
     //
     // *****************************************************************************
-    UncertaintyPathDep::UncertaintyPathDep(string modelPath, const string& phase)
+    UncertaintyPDU::UncertaintyPDU(string modelPath, const string& phase)
         : fname("not_specified"), phaseNum(getPhase(phase))
     {
-        fname = "UncertaintyPathDep_" + phase + ".txt";
+        fname = "UncertaintyPDU_" + phase + ".txt";
         fname = CPPUtils::insertPathSeparator(modelPath, fname);
 
         readFile(fname);
@@ -105,8 +105,9 @@ namespace slbm {
     // used to construct file name which is loaded from the input path.
     //
     // *****************************************************************************
-    UncertaintyPathDep::UncertaintyPathDep(string modelPath, int phase)
-        : fname("not_specified"), phaseNum(phase)
+    UncertaintyPDU::UncertaintyPDU(string modelPath, int phase)
+        : fname("not_specified"), phaseNum(phase),
+          gridId("????????????????????????????????")
     {
         fname = "Uncertainty_" + getPhase(phaseNum) + ".txt";
         fname = CPPUtils::insertPathSeparator(modelPath, fname);
@@ -119,12 +120,13 @@ namespace slbm {
     // Copy constructor.
     //
     // *****************************************************************************
-    UncertaintyPathDep::UncertaintyPathDep(const UncertaintyPathDep& u) :
+    UncertaintyPDU::UncertaintyPDU(const UncertaintyPDU& u) :
         fname(u.fname),
         phaseNum(u.phaseNum),
+        gridId(u.gridId),
         pathUncCrustError(u.pathUncCrustError),
-        pathUncRandomError(u.pathUncRandomError),
         pathUncDistanceBins(u.pathUncDistanceBins),
+        pathUncRandomError(u.pathUncRandomError),
         pathUncModelError(u.pathUncModelError),
         pathUncBias(u.pathUncBias)
     {
@@ -135,10 +137,11 @@ namespace slbm {
     // Uncertainty Destructor
     //
     // *****************************************************************************
-    UncertaintyPathDep::~UncertaintyPathDep()
+    UncertaintyPDU::~UncertaintyPDU()
     {
         fname = "not_specified";
         phaseNum = -1;
+        gridId = "????????????????????????????????";
         pathUncCrustError.clear();
         pathUncRandomError.clear();
         pathUncDistanceBins.clear();
@@ -151,9 +154,10 @@ namespace slbm {
     // Assignment operator.
     //
     // *****************************************************************************
-    UncertaintyPathDep& UncertaintyPathDep::operator=(const UncertaintyPathDep& u)
+    UncertaintyPDU& UncertaintyPDU::operator=(const UncertaintyPDU& u)
     {
         phaseNum = u.phaseNum;
+        gridId = u.gridId;
         pathUncCrustError = u.pathUncCrustError;
         pathUncRandomError = u.pathUncRandomError;
         pathUncDistanceBins = u.pathUncDistanceBins;
@@ -163,24 +167,25 @@ namespace slbm {
         return *this;
     }
 
-    bool UncertaintyPathDep::operator==(const UncertaintyPathDep& other)
+    bool UncertaintyPDU::operator==(const UncertaintyPDU& other) const
     {
         if (this->phaseNum != other.phaseNum) return false;
+        if (this->gridId != other.gridId) return false;
         if (this->pathUncCrustError.size() != other.pathUncCrustError.size()) return false;
         if (this->pathUncRandomError.size() != other.pathUncRandomError.size()) return false;
         if (this->pathUncDistanceBins.size() != other.pathUncDistanceBins.size()) return false;
         if (this->pathUncModelError.size() != other.pathUncModelError.size()) return false;
         if (this->pathUncBias.size() != other.pathUncBias.size()) return false;
 
+        // NOTE: lots of values of type double but they were stored in files as
+        // floats.  So only compare with 6 digits of precision.
         for (int i = 0; i < (int)pathUncDistanceBins.size(); ++i)
             if (this->pathUncDistanceBins[i] != other.pathUncDistanceBins[i])
                 return false;
 
         for (int i = 0; i < (int)pathUncCrustError.size(); ++i)
-        {
-            if (this->pathUncCrustError[i] != other.pathUncCrustError[i])
+            if (abs(1.-this->pathUncCrustError[i]/other.pathUncCrustError[i]) > 1e-6)
                 return false;
-        }
 
         for (int i = 0; i < (int)pathUncRandomError.size(); ++i)
         {
@@ -188,7 +193,7 @@ namespace slbm {
             const vector<double>& otherRandomError_i = other.pathUncRandomError[i];
             if (thisRandomError_i.size() != otherRandomError_i.size()) return false;
             for (int j = 0; j < (int)thisRandomError_i.size(); ++j)
-                if (thisRandomError_i[j] != otherRandomError_i[j])
+                if (abs(1.-thisRandomError_i[j]/otherRandomError_i[j]) > 1e-6)
                     return false;
         }
 
@@ -198,26 +203,26 @@ namespace slbm {
             const vector<double>& otherModelError_i = other.pathUncModelError[i];
             if (thisModelError_i.size() != otherModelError_i.size()) return false;
             for (int j = 0; j < (int)thisModelError_i.size(); ++j)
-                if (thisModelError_i[j] != otherModelError_i[j])
+                if (abs(1.-thisModelError_i[j]/otherModelError_i[j]) > 1e-6)
                     return false;
         }
 
-        for (int i = 0; i < (int)pathUncBias.size(); ++i)
+       for (int i = 0; i < (int)pathUncBias.size(); ++i)
         {
             const vector<double>& thisBias_i = this->pathUncBias[i];
             const vector<double>& otherBias_i = other.pathUncBias[i];
             if (thisBias_i.size() != otherBias_i.size()) return false;
             for (int j = 0; j < (int)thisBias_i.size(); ++j)
-                if (thisBias_i[j] != otherBias_i[j])
+                if (abs(1.-thisBias_i[j]/otherBias_i[j]) > 1e-6)
                     return false;
         }
 
         return true;
     }
 
-    UncertaintyPathDep* UncertaintyPathDep::getUncertainty(ifstream& input, int phase)
+    UncertaintyPDU* UncertaintyPDU::getUncertainty(ifstream& input, int phase)
     {
-        UncertaintyPathDep* u = new UncertaintyPathDep(phase);
+        UncertaintyPDU* u = new UncertaintyPDU(phase);
         u->readFile(input);
         if (u->getPathUncDistanceBins().size() == 0)
         {
@@ -227,9 +232,10 @@ namespace slbm {
         return u;
     }
 
-    UncertaintyPathDep* UncertaintyPathDep::getUncertainty(ifstream& input, const string& phase)
+    UncertaintyPDU* UncertaintyPDU::getUncertainty(ifstream& input, const string& phase)
     {
-        UncertaintyPathDep* u = new UncertaintyPathDep(phase);
+        // cout << __FILE__ << ":" << __LINE__ << " UncertaintyPDU::getUncertainty(ifstream& input, '"<<phase<<"')" << endl;
+        UncertaintyPDU* u = new UncertaintyPDU(phase);
         u->readFile(input);
         if (u->getPathUncDistanceBins().size() == 0)
         {
@@ -239,9 +245,9 @@ namespace slbm {
         return u;
     }
 
-    UncertaintyPathDep* UncertaintyPathDep::getUncertainty(geotess::IFStreamAscii& input, int phase)
+    UncertaintyPDU* UncertaintyPDU::getUncertainty(geotess::IFStreamAscii& input)
     {
-        UncertaintyPathDep* u = new UncertaintyPathDep(phase);
+        UncertaintyPDU* u = new UncertaintyPDU();
         u->readFile(input);
         if (u->getPathUncDistanceBins().size() == 0)
         {
@@ -251,9 +257,9 @@ namespace slbm {
         return u;
     }
 
-    UncertaintyPathDep* UncertaintyPathDep::getUncertainty(geotess::IFStreamAscii& input, const string& phase)
+    UncertaintyPDU* UncertaintyPDU::getUncertainty(geotess::IFStreamBinary& input)
     {
-        UncertaintyPathDep* u = new UncertaintyPathDep(phase);
+        UncertaintyPDU* u = new UncertaintyPDU();
         u->readFile(input);
         if (u->getPathUncDistanceBins().size() == 0)
         {
@@ -263,74 +269,88 @@ namespace slbm {
         return u;
     }
 
-    UncertaintyPathDep* UncertaintyPathDep::getUncertainty(geotess::IFStreamBinary& input, int phase)
+    UncertaintyPDU* UncertaintyPDU::getUncertainty(const string& modelPath, int phase)
     {
-        UncertaintyPathDep* u = new UncertaintyPathDep(phase);
-        u->readFile(input);
-        if (u->getPathUncDistanceBins().size() == 0)
-        {
-            delete u;
-            u = NULL;
-        }
-        return u;
-    }
-
-    UncertaintyPathDep* UncertaintyPathDep::getUncertainty(geotess::IFStreamBinary& input, const string& phase)
-    {
-        UncertaintyPathDep* u = new UncertaintyPathDep(phase);
-        u->readFile(input);
-        if (u->getPathUncDistanceBins().size() == 0)
-        {
-            delete u;
-            u = NULL;
-        }
-        return u;
-    }
-
-    UncertaintyPathDep* UncertaintyPathDep::getUncertainty(const string& modelPath, int phase)
-    {
-        string fname = "Uncertainty_" + getPhase(phase) + ".txt";
+        string fname = "UncertaintyPDU_" + getPhase(phase) + ".txt";
         fname = CPPUtils::insertPathSeparator(modelPath, fname);
+        // cout << __FILE__ << ":" << __LINE__ << " UncertaintyPDU::getUncertainty('"<<modelPath<<"', "<<phase<<")" << endl;
 
-        ifstream fin;
-        fin.open(fname.c_str());
-        if (fin.fail() || !fin.is_open())
-            return NULL;
+        // ifstream fin;
+        // fin.open(fname.c_str());
+        // if (fin.fail() || !fin.is_open())
+        //     return NULL;
 
-        UncertaintyPathDep* u = getUncertainty(fin, phase);
+        // UncertaintyPDU* u = getUncertainty(fin, phase);
+        // fin.close();
+        IFStreamAscii fin;
+        fin.openForRead(fname);
+        UncertaintyPDU* u = getUncertainty(fin);
         fin.close();
 
         return u;
     }
 
-    void UncertaintyPathDep::readFile(const string& filename)
+    void UncertaintyPDU::readFile(const string& filename)
     {
-        ifstream fin;
+        // cout << __FILE__ << ":" << __LINE__ << " UncertaintyPDU::readFile('"<<filename<<"')" << endl;
+        // ifstream fin;
 
-        //open the file.  Return an error if cannot open the file.
-        fin.open(filename.c_str());
-        if (fin.fail() || !fin.is_open())
-        {
-            ostringstream os;
-            os << endl << "ERROR in Uncertainty::readFile" << endl
-                << "Could not open file " << filename << endl
-                << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-            throw SLBMException(os.str(), 115);
-        }
+        // //open the file.  Return an error if cannot open the file.
+        // fin.open(filename.c_str());
+        // if (fin.fail() || !fin.is_open())
+        // {
+        //     ostringstream os;
+        //     os << endl << "ERROR in UncertaintyPIU::readFile" << endl
+        //         << "Could not open file " << filename << endl
+        //         << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+        //     throw SLBMException(os.str(), 115);
+        // }
 
-        readFile(fin);
-        fin.close();
+        // readFile(fin);
+        // fin.close();
     }
 
-    void UncertaintyPathDep::readFile(ifstream& fin)
+    void UncertaintyPDU::readFile(ifstream& fin)
     {
-        //clear point arrays
-        pathUncCrustError.clear();   //points
-        pathUncRandomError.clear();  //points
-        pathUncDistanceBins.clear(); //dist
-        pathUncModelError.clear();   //points, dist
-        pathUncBias.clear();         //points, dist
+        // cout << __FILE__ << ":" << __LINE__ << " UncertaintyPDU::readFile(ifstream& fin)" << endl;
+        // pathUncDistanceBins.clear(); // nBins
+        // pathUncCrustError.clear();   // nVertices
+        // pathUncRandomError.clear();  // nBins x nVertices (optional)
+        // pathUncModelError.clear();   // nBins x nVertices
+        // pathUncBias.clear();         // nBins x nVertices
 
+        // string line;
+        // string comment;
+
+        // try
+        // {
+        //     // comment line
+        //     getline(fin, line);
+        //     if (line.rfind("# RSTT Path Dependent Uncertainty", 0) != 0)
+        //         throw SLBMException("Expected file to start with '# RSTT Path Dependent Uncertainty' but found: " + line, 115);
+
+        //     // fileFormatVersion
+        //     getline(fin, line);
+        //     cout << __FILE__ << ":" << __LINE__ << " '" << line << "'" << endl;
+        //     if (line.rfind("FileFormatVersion ", 0) != 0)
+        //         throw SLBMException("Expected to find 'FileFormatVersion int' but found: " + line, 115);
+        //     int fileFormatVersion;
+        //     sscanf(line.c_str(), "%*s %d", &fileFormatVersion);
+
+        //     // comment line
+        //     getline(fin, line);
+        //     if (line.rfind("# Properties", 0) != 0)
+        //         throw SLBMException("Expected file to start with '# Properties' but found: " + line, 115);
+        // }
+        // catch (SLBMException e)
+        // {
+        //     ostringstream os;
+        //     os << endl << "ERROR in UncertaintyPDU::readFile" << endl
+        //         << e.emessage << endl
+        //         << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+        //     throw SLBMException(os.str(), e.ecode);
+        // }
+        /*
         try
         {
             string comment;
@@ -405,288 +425,348 @@ namespace slbm {
         catch (...)
         {
             ostringstream os;
-            os << endl << "ERROR in Uncertainty::readFile" << endl
+            os << endl << "ERROR in UncertaintyPDU::readFile" << endl
                 << "Invalid or corrupt file format" << endl
                 << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
             throw SLBMException(os.str(), 115);
         }
+        */
 
     }
 
-    void UncertaintyPathDep::writeFile(geotess::IFStreamAscii& output)
+    void UncertaintyPDU::writeFile(geotess::IFStreamAscii& output)
     {
-        int nlCount = 8;
+        int nDistanceBins = pathUncDistanceBins.size();
+        int nVertices = pathUncCrustError.size();
+        bool includeRandomError = pathUncRandomError.size() > 0;
 
-        output.writeStringNL("# UncertaintyPathDep File");
-        output.writeStringNL("# Created for Seismic Phase " + getPhaseStr());
-        output.writeStringNL("");
+        output.writeStringNL("# RSTT Path Dependent Uncertainty Parameters");
+        output.writeStringNL("FileFormatVersion 1");
+        output.writeStringNL("# Properties: (phase, gridId, nDistanceBins, nVertices, includeRandomError are required; others optional)");
 
-        output.writeStringNL("# Number of Distance Bins, Number of Grid Points, Uses Random Error boolean");
-        output.writeString("  ");
-        output.writeInt(pathUncDistanceBins.size());
-        output.writeString("  ");
-        output.writeInt(pathUncModelError.size());
-        output.writeString("  ");
-        output.writeBoolNL(pathUncRandomError.size() > 0);
-        output.writeStringNL("");
+        // update properties that may have changed.  Other properties
+        // are simply copied from the input file.
+        properties["phase"] = getPhaseStr();
+        properties["gridId"] = gridId;
+        properties["nDistanceBins"] = CPPUtils::itos(nDistanceBins);
+        properties["nVertices"] = CPPUtils::itos(nVertices);
+        properties["includeRandomError"] = includeRandomError ? "true" : "false";
 
-        output.writeStringNL("# Created for GeoTessGrid Grid Id:");
-        output.writeStringNL(getGridId());
-        output.writeStringNL("");
+        for (int i=0; i<keys.size(); ++i)
+            output.writeStringNL(keys[i]+" = "+
+                    CPPUtils::stringReplaceAll(CPPUtils::NEWLINE, "<NEWLINE>", properties[keys[i]]));
 
-        output.writeString("# Path Dependent Travel Time Uncertainty Distance Bins (km) [");
-        output.writeInt(pathUncDistanceBins.size());
-        output.writeStringNL("]");
-        for (int i = 0; i < pathUncDistanceBins.size(); i++)
+        output.writeNL();
+
+        ostringstream os;
+        os << fixed << setprecision(2);
+
+        os << "# Distance Bins" << endl;
+        for (int i = 0; i < nDistanceBins; i++)
+            os << " " << pathUncDistanceBins[i];
+        os << endl;
+        output.writeStringNL(os.str());
+        os.str("");
+        os.clear();
+
+        os << scientific << setprecision(7);
+
+        os << "# Crustal Error" << endl;
+        for (int i = 0; i < nVertices; i++)
+            os << pathUncCrustError[i] << endl;
+        output.writeStringNL(os.str());
+        os.str("");
+        os.clear();
+
+
+        if (includeRandomError)
         {
-            output.writeDouble(pathUncDistanceBins[i]);
-            if ((i % nlCount == 0) && (i > 0))
-                output.writeStringNL("");
-            else
-                output.writeString("  ");
-        }
-        output.writeStringNL("");
-
-        output.writeString("# Path Dependent Travel Time Crust Error (sec) [");
-        output.writeInt(pathUncCrustError.size());
-        output.writeStringNL("]");
-        for (int i = 0; i < pathUncCrustError.size(); i++)
-        {
-            output.writeDouble(pathUncCrustError[i]);
-            if ((i % nlCount == 0) && (i > 0))
-                output.writeStringNL("");
-            else
-                output.writeString("  ");
-        }
-        output.writeStringNL("");
-
-        if (pathUncRandomError.size() > 0)
-        {
-            output.writeStringNL("# Path Dependent Travel Time Random Error (sec) [");
-            output.writeInt(pathUncDistanceBins.size());
-            output.writeString("][");
-            output.writeInt(pathUncRandomError.size());
-            output.writeStringNL("]");
-            for (int i = 0; i < pathUncRandomError.size(); i++)
+            os << "# Random Error" << endl;
+            for (int j=0; j<nVertices; ++j)
             {
-                output.writeString("#        Point[");
-                output.writeInt(i);
-                output.writeStringNL("][]");
-                vector<double>& randomError_i = pathUncRandomError[i];
-                for (int j = 0; j < randomError_i.size(); j++)
-                {
-                    output.writeDouble(randomError_i[j]);
-                    if ((j % nlCount == 0) && (j > 0))
-                        output.writeStringNL("");
-                    else
-                        output.writeString("  ");
-                }
-                output.writeStringNL("");
+                for (int i = 0; i < nDistanceBins; i++)
+                    os << " " << pathUncRandomError[i][j];
+                os << endl;
             }
-            output.writeStringNL("");
+            output.writeStringNL(os.str());
+            os.str("");
+            os.clear();
         }
 
-        output.writeStringNL("# Path Dependent Travel Time Model Error (sec) [");
-        output.writeInt(pathUncDistanceBins.size());
-        output.writeString("][");
-        output.writeInt(pathUncModelError.size());
-        output.writeStringNL("]");
-        for (int i = 0; i < pathUncModelError.size(); i++)
+        os << "# Model Error" << endl;
+        for (int j=0; j<nVertices; ++j)
         {
-            output.writeString("#        Point[");
-            output.writeInt(i);
-            output.writeStringNL("][]");
-            vector<double>& modelError_i = pathUncModelError[i];
-            for (int j = 0; j < modelError_i.size(); j++)
-            {
-                output.writeDouble(modelError_i[j]);
-                if ((j % nlCount == 0) && (j > 0))
-                    output.writeStringNL("");
-                else
-                    output.writeString("  ");
-            }
-            output.writeStringNL("");
+            for (int i = 0; i < nDistanceBins; i++)
+                os << " " << pathUncModelError[i][j];
+            os << endl;
         }
-        output.writeStringNL("");
+        output.writeStringNL(os.str());
+        os.str("");
+        os.clear();
 
-        output.writeStringNL("# Path Dependent Travel Time Bias (sec) [");
-        output.writeInt(pathUncDistanceBins.size());
-        output.writeString("][");
-        output.writeInt(pathUncBias.size());
-        output.writeStringNL("]");
-        for (int i = 0; i < pathUncBias.size(); i++)
+        os << "# Bias" << endl;
+        for (int j=0; j<nVertices; ++j)
         {
-            output.writeString("#        Point[");
-            output.writeInt(i);
-            output.writeStringNL("][]");
-            vector<double>& bias_i = pathUncBias[i];
-            for (int j = 0; j < bias_i.size(); j++)
-            {
-                output.writeDouble(bias_i[j]);
-                if ((j % nlCount == 0) && (j > 0))
-                    output.writeStringNL("");
-                else
-                    output.writeString("  ");
-            }
-            output.writeStringNL("");
+            for (int i = 0; i < nDistanceBins; i++)
+                os << " " << pathUncBias[i][j];
+            os << endl;
         }
-        output.writeStringNL("");
-
-        output.writeStringNL("# EOF");
+        output.writeString(os.str());
+        os.str("");
+        os.clear();
     }
 
-    void UncertaintyPathDep::readFile(geotess::IFStreamAscii& input)
+    void UncertaintyPDU::readFile(geotess::IFStreamAscii& input)
     {
         try
         {
-            //clear point arrays
-            pathUncCrustError.clear();   //points
-            pathUncRandomError.clear();  //points
-            pathUncDistanceBins.clear(); //dist
-            pathUncModelError.clear();   //points, dist
-            pathUncBias.clear();         //points, dist
+            pathUncDistanceBins.clear(); // nBins
+            pathUncCrustError.clear();   // nVertices
+            pathUncRandomError.clear();  // nBins x nVertices (optional)
+            pathUncModelError.clear();   // nBins x nVertices
+            pathUncBias.clear();         // nBins x nVertices
 
-            // Read in number of points, number of distances, and a boolean
-            // (0=false, >1=true) indicating random error is stored (if true).
-            string line;
+            string line, key, value;
             input.getLine(line);
-            vector<string> tokens;
-            geotess::CPPUtils::tokenizeString(line, " ", tokens);
-            int numDistances = geotess::CPPUtils::stoi(tokens[1]);
-            int numPoints = geotess::CPPUtils::stoi(tokens[0]);
-            bool usesRandomError = geotess::CPPUtils::stoi(tokens[2]) > 0;
+            input.getLine(line);
 
-            // Read in grid id
+            // start reading properties
+            properties.clear();
+            keys.clear();
 
-            gridId = input.readString();
+            input.readLine(line);
+            while (line != "")
+            {
+                int pos = line.find("=");
+                if (pos !=std::string::npos)
+                {
+                    key = CPPUtils::trim(line.substr(0, pos));
+                    value = CPPUtils::stringReplaceAll("<NEWLINE>", CPPUtils::NEWLINE,
+                            CPPUtils::trim(line.substr(pos+1, line.length())));
+                    keys.push_back(key);
+                    properties[key] = value;
+                }
+                input.getline(line);
+            }
+
+            phaseNum = UncertaintyPIU::getPhase(properties["phase"]);
+
+            if (phaseNum < 0 || phaseNum > 3)
+            {
+                ostringstream os;
+                os << endl << "ERROR in UncertaintyPIU::readFile" << endl
+                        << "Phase " << line << " is not a recognized phase." << endl
+                        << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+                throw SLBMException(os.str(), 115);
+            }
+
+            gridId = properties["gridId"];
+
+            if (gridId.length() != 32 || gridId.find("?", 0) != string::npos)
+            {
+                ostringstream os;
+                os << endl << "ERROR in UncertaintyPIU::readFile" << endl
+                        << "GridId " << gridId << " is not a valid gridId." << endl
+                        << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+                throw SLBMException(os.str(), 115);
+            }
+
+            int nDistanceBins = geotess::CPPUtils::stoi(properties["nDistanceBins"]);
+            int nVertices = geotess::CPPUtils::stoi(properties["nVertices"]);
+            bool usesRandomError = properties["includeRandomError"] == "true";
 
             //valid only if number of points and distances are greater than zero
-            if (numPoints > 0)
+            if (nVertices > 0)
             {
-                if (numDistances > 0)
+                if (nDistanceBins > 0)
                 {
                     // read in distance bins
-                    pathUncDistanceBins.resize(numDistances);
-                    for (int i = 0; i < numDistances; i++)
+                    input.getline(line);
+                    while (line != "# Distance Bins")
+                        input.getline(line);
+
+                    pathUncDistanceBins.resize(nDistanceBins);
+                    for (int i = 0; i < nDistanceBins; i++)
                         pathUncDistanceBins[i] = input.readDouble();
 
+                    input.getline(line);
+                    while (line != "# Crustal Error")
+                        input.getline(line);
+
                     // read in crust error for each point
-                    pathUncCrustError.resize(numPoints);
-                    for (int i = 0; i < numPoints; i++)
+                    pathUncCrustError.resize(nVertices);
+                    for (int i = 0; i < nVertices; i++)
                         pathUncCrustError[i] = input.readDouble();
 
-                    // read in random error for each point. Only read if present
-                    // (usesRandomError = true)
                     if (usesRandomError) {
-                        pathUncRandomError.resize(numDistances);
-                        for (int i = 0; i < numDistances; ++i)
-                        {
-                            pathUncRandomError[i].resize(numPoints);
-                            vector<double>& randomError_i = pathUncRandomError[i];
-                            for (int j = 0; j < numPoints; j++)
-                                randomError_i[j] = input.readDouble();
-                        }
+
+                        input.getline(line);
+                        while (line != "# Random Error")
+                            input.getline(line);
+
+                        pathUncRandomError.resize(nDistanceBins, vector<double>(nVertices));
+                        for (int j = 0; j < nVertices; j++)
+                            for (int i = 0; i < nDistanceBins; ++i)
+                                pathUncRandomError[i][j] = input.readDouble();
                     }
 
-                    // read in model error for all distance bins of all points
-                    pathUncModelError.resize(numDistances);
-                    for (int i = 0; i < numDistances; ++i)
-                    {
-                        pathUncModelError[i].resize(numPoints);
-                        vector<double>& modelError_i = pathUncModelError[i];
-                        for (int j = 0; j < numPoints; j++)
-                            modelError_i[j] = input.readDouble();
-                    }
+                    input.getline(line);
+                    while (line != "# Model Error")
+                        input.getline(line);
 
-                    // read in bias for all distance bins of all points
-                    pathUncBias.resize(numDistances);
-                    for (int i = 0; i < numDistances; ++i)
-                    {
-                        pathUncBias[i].resize(numPoints);
-                        vector<double>& bias_i = pathUncBias[i];
-                        for (int j = 0; j < numPoints; j++)
-                            bias_i[j] = input.readDouble();
-                    }
+                    pathUncModelError.resize(nDistanceBins, vector<double>(nVertices));
+                    for (int j = 0; j < nVertices; j++)
+                        for (int i = 0; i < nDistanceBins; ++i)
+                            pathUncModelError[i][j] = input.readDouble();
+
+                    input.getline(line);
+                    while (line != "# Bias")
+                        input.getline(line);
+
+                    pathUncBias.resize(nDistanceBins, vector<double>(nVertices));
+                    for (int j = 0; j < nVertices; j++)
+                        for (int i = 0; i < nDistanceBins; ++i)
+                            pathUncBias[i][j] = input.readDouble();
+
                 }
             }
         }
         catch (...)
         {
             ostringstream os;
-            os << endl << "ERROR in Uncertainty::readFile" << endl
+            os << endl << "ERROR in UncertaintyPIU::readFile" << endl
                 << "Invalid or corrupt file format" << endl
                 << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
             throw SLBMException(os.str(), 115);
         }
     }
 
-    void UncertaintyPathDep::readFile(geotess::IFStreamBinary& input)
+    void UncertaintyPDU::readFile(geotess::IFStreamBinary& input)
     {
         try
         {
-            //clear point arrays
-            pathUncCrustError.clear();   //points
-            pathUncRandomError.clear();  //points
-            pathUncDistanceBins.clear(); //dist
-            pathUncModelError.clear();   //points, dist
-            pathUncBias.clear();         //points, dist
+            pathUncDistanceBins.clear(); // nBins
+            pathUncCrustError.clear();   // nVertices
+            pathUncRandomError.clear();  // nBins x nVertices (optional)
+            pathUncModelError.clear();   // nBins x nVertices
+            pathUncBias.clear();         // nBins x nVertices
+
+            // start reading properties
+            properties.clear();
+            keys.clear();
+
+            string classname;
+            input.readCharArray(classname, 14);
+
+            if (classname != "UncertaintyPDU")
+            {
+                ostringstream os;
+                os << endl << "ERROR in UncertaintyPIU::readFile" << endl
+                        << "Expected first 14 characters to be UncertaintyPDU but found " << endl
+                        << "'" << classname << "'" << endl
+                        << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+                cout << os.str() << endl;
+                throw SLBMException(os.str(), 115);
+            }
+
+            int fileFormat = input.readInt();
+
+            if (fileFormat != 1)
+            {
+                ostringstream os;
+                os << endl << "ERROR in UncertaintyPIU::readFile" << endl
+                        << "Expected fileFormat == 1 but found " << fileFormat << endl
+                        << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+                throw SLBMException(os.str(), 115);
+            }
+
+            int nProperties = input.readInt();
+
+            string key, value;
+
+            for (int i=0; i<nProperties; ++i)
+            {
+                key = input.readString();
+                value = CPPUtils::stringReplaceAll("<NEWLINE>", CPPUtils::NEWLINE,
+                        input.readString());
+                keys.push_back(key);
+                properties[key] = value;
+            }
+
+            phaseNum = UncertaintyPIU::getPhase(properties["phase"]);
+
+            if (phaseNum < 0 || phaseNum > 3)
+            {
+                ostringstream os;
+                os << endl << "ERROR in UncertaintyPIU::readFile" << endl
+                        << "Phase " << phaseNum << " is not a recognized phase." << endl
+                        << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+                throw SLBMException(os.str(), 115);
+            }
+
+            gridId = properties["gridId"];
+
+            if (gridId.length() != 32 || gridId.find("?", 0) != string::npos)
+            {
+                ostringstream os;
+                os << endl << "ERROR in UncertaintyPIU::readFile" << endl
+                        << "GridId " << gridId << " is not a valid gridId." << endl
+                        << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+                throw SLBMException(os.str(), 115);
+            }
 
             // Read in number of points, number of distances, and a boolean
             // (0=false, >1=true) indicating random error is stored (if true).
-            int numDistances = input.readInt();
-            int numPoints = input.readInt();
-            bool usesRandomError = input.readBool();
-
-            // Read in grid id
-
-            gridId = input.readString();
+            int nDistanceBins = CPPUtils::stoi(properties["nDistanceBins"]);
+            int nVertices = CPPUtils::stoi(properties["nVertices"]);
+            int includeRandomError = properties["includeRandomError"] == "true";
 
             //valid only if number of points and distances are greater than zero
-            if (numPoints > 0)
+            if (nDistanceBins > 0)
             {
-                if (numDistances > 0)
+                if (nVertices > 0)
                 {
                     // read in distance bins
-                    pathUncDistanceBins.resize(numDistances);
-                    for (int i = 0; i < numDistances; i++)
-                        pathUncDistanceBins[i] = input.readDouble();
+                    pathUncDistanceBins.resize(nDistanceBins);
+                    for (int i = 0; i < nDistanceBins; i++)
+                        pathUncDistanceBins[i] = input.readFloat();
 
                     // read in crust error for each point
-                    pathUncCrustError.resize(numPoints);
-                    for (int i = 0; i < numPoints; i++)
-                        pathUncCrustError[i] = input.readDouble();
+                    pathUncCrustError.resize(nVertices);
+                    for (int i = 0; i < nVertices; i++)
+                        pathUncCrustError[i] = input.readFloat();
 
                     // read in random error for each point. Only read if present
                     // (usesRandomError = true)
-                    if (usesRandomError) {
-                        pathUncRandomError.resize(numDistances);
-                        for (int i = 0; i < numDistances; ++i)
+                    if (includeRandomError) {
+                        pathUncRandomError.resize(nDistanceBins);
+                        for (int i = 0; i < nDistanceBins; ++i)
                         {
-                            pathUncRandomError[i].resize(numPoints);
+                            pathUncRandomError[i].resize(nVertices);
                             vector<double>& randomError_i = pathUncRandomError[i];
-                            for (int j = 0; j < numPoints; j++)
-                                randomError_i[j] = input.readDouble();
+                            for (int j = 0; j < nVertices; j++)
+                                randomError_i[j] = input.readFloat();
                         }
                     }
 
                     // read in model error for all distance bins of all points
-                    pathUncModelError.resize(numDistances);
-                    for (int i = 0; i < numDistances; ++i)
+                    pathUncModelError.resize(nDistanceBins);
+                    for (int i = 0; i < nDistanceBins; ++i)
                     {
-                        pathUncModelError[i].resize(numPoints);
+                        pathUncModelError[i].resize(nVertices);
                         vector<double>& modelError_i = pathUncModelError[i];
-                        for (int j = 0; j < numPoints; j++)
-                            modelError_i[j] = input.readDouble();
+                        for (int j = 0; j < nVertices; j++)
+                            modelError_i[j] = input.readFloat();
                     }
 
                     // read in bias for all distance bins of all points
-                    pathUncBias.resize(numDistances);
-                    for (int i = 0; i < numDistances; ++i)
+                    pathUncBias.resize(nDistanceBins);
+                    for (int i = 0; i < nDistanceBins; ++i)
                     {
-                        pathUncBias[i].resize(numPoints);
+                        pathUncBias[i].resize(nVertices);
                         vector<double>& bias_i = pathUncBias[i];
-                        for (int j = 0; j < numPoints; j++)
-                            bias_i[j] = input.readDouble();
+                        for (int j = 0; j < nVertices; j++)
+                            bias_i[j] = input.readFloat();
                     }
                 }
             }
@@ -694,47 +774,173 @@ namespace slbm {
         catch (...)
         {
             ostringstream os;
-            os << endl << "ERROR in Uncertainty::readFile" << endl
+            os << endl << "ERROR in UncertaintyPIU::readFile" << endl
                 << "Invalid or corrupt file format" << endl
                 << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
             throw SLBMException(os.str(), 115);
         }
     }
 
-    void UncertaintyPathDep::writeFile(geotess::IFStreamBinary& output)
+    void UncertaintyPDU::writeFile(geotess::IFStreamBinary& output)
     {
-        output.writeString(gridId);
+        output.writeCharArray("UncertaintyPDU", 14);
+        output.writeInt(1); // file format version number
 
-        output.writeInt(pathUncDistanceBins.size());
-        output.writeInt(pathUncModelError.size());
-        output.writeBool(pathUncRandomError.size() > 0);
+        int nDistanceBins = pathUncDistanceBins.size();
+        int nVertices = pathUncCrustError.size();
+        bool includeRandomError = pathUncRandomError.size() > 0;
 
-        for (int i = 0; i < pathUncDistanceBins.size(); i++)
-            output.writeDouble(pathUncDistanceBins[i]);
+        // update properties that may have changed.  Other properties
+        // are simply copied from the input file.
+        properties["phase"] = getPhaseStr();
+        properties["gridId"] = gridId;
+        properties["nDistanceBins"] = CPPUtils::itos(nDistanceBins);
+        properties["nVertices"] = CPPUtils::itos(nVertices);
+        properties["includeRandomError"] = includeRandomError ? "true" : "false";
 
-        for (int i = 0; i < pathUncCrustError.size(); i++)
-            output.writeDouble(pathUncCrustError[i]);
-
-        for (int i = 0; i < pathUncRandomError.size(); ++i)
+        output.writeInt(keys.size());
+        for (int i=0; i<keys.size(); ++i)
         {
-            vector<double>& randomError_i = pathUncRandomError[i];
-            for (int j = 0; j < randomError_i.size(); j++)
-                output.writeDouble(randomError_i[j]);
+            output.writeString(keys[i]);
+            output.writeString(CPPUtils::stringReplaceAll(CPPUtils::NEWLINE, "<NEWLINE>",
+                    properties[keys[i]]));
         }
 
-        for (int i = 0; i < pathUncModelError.size(); ++i)
-        {
-            vector<double>& modelError_i = pathUncModelError[i];
-            for (int j = 0; j < modelError_i.size(); j++)
-                output.writeDouble(modelError_i[j]);
+        for (int i = 0; i < nDistanceBins; ++i)
+            output.writeFloat(pathUncDistanceBins[i]);
+
+        for (int i = 0; i < nVertices; ++i)
+            output.writeFloat(pathUncCrustError[i]);
+
+        if (includeRandomError) {
+            for (int i = 0; i < nDistanceBins; ++i)
+                for (int j = 0; j < nVertices; ++j)
+                    output.writeFloat(pathUncRandomError[i][j]);
         }
 
-        for (int i = 0; i < pathUncBias.size(); ++i)
+        for (int i = 0; i < nDistanceBins; ++i)
+            for (int j = 0; j < nVertices; ++j)
+                output.writeFloat(pathUncModelError[i][j]);
+
+        for (int i = 0; i < nDistanceBins; ++i)
+            for (int j = 0; j < nVertices; ++j)
+                output.writeFloat(pathUncBias[i][j]);
+
+    }
+
+    void UncertaintyPDU::writeFile(const string& directoryName)
+    {
+        // make a filename
+        string fname = "UncertaintyPDU_" + getPhase(phaseNum) + ".txt";
+        string filename = CPPUtils::insertPathSeparator(directoryName, fname);
+
+        IFStreamAscii output;
+        output.openForWrite(filename);
+        writeFile(output);
+        output.close();
+
+        /*
+        // code based off of GeoTessExplorer UncertaintyPDU.writeFileAscii()
+
+        // make a filename
+        string fname = "UncertaintyPDU_" + getPhase(phaseNum) + ".txt";
+        string filename = CPPUtils::insertPathSeparator(directoryName, fname);
+
+        // get
+        int nDistanceBins = pathUncDistanceBins.size();
+        int nVertices = pathUncCrustError.size();
+        bool includeRandomError = pathUncRandomError.size() > 0;
+
+        // update properties that may have changed.  Other properties
+        // are simply copied from the input file.
+        properties["phase"] = getPhaseStr();
+        properties["gridId"] = gridId;
+        properties["nDistanceBins"] = CPPUtils::itos(nDistanceBins);
+        properties["nVertices"] = CPPUtils::itos(nVertices);
+        properties["includeRandomError"] = includeRandomError ? "true" : "false";
+
+        // create and open a text file
+        ofstream os(filename.c_str());
+
+        // First line of the file must be "# RSTT Path Dependent Uncertainty".
+        os << "# RSTT Path Dependent Uncertainty" << endl;
+
+        // write the fileFormatVersion.  The currently supported version is 1 but
+        // could change in the future if it becomes necessary to add additional information.
+        os << "FileFormatVersion 1" << endl;
+
+        // write out required and optional properties.  Required properties will be 
+        // loaded here and may be modified if this model is later written to output.
+        // Optional properties will not be modified by this code and will be output 
+        // to new files and by the toString function.
+        os << "# Properties: (phase, gridId, nDistanceBins, nVertices, includeRandomError are required; others optional)" << endl;
+
+        // os << keys.size() << endl;
+        for (int i=0; i<keys.size(); ++i)
         {
-            vector<double>& bias_i = pathUncBias[i];
-            for (int j = 0; j < bias_i.size(); j++)
-                output.writeDouble(bias_i[j]);
+            os << keys[i] << " = " << properties[keys[i]] << endl;
         }
+        os << endl;
+
+        // write distance binds
+        os << "# Distance Bins" << endl;
+        for (int i = 0; i < nDistanceBins; ++i)
+        {
+            os << setw(5) << setprecision(2) << fixed << pathUncDistanceBins[i];
+            os << (i == nDistanceBins - 1 ? "\n" : " ");
+        }
+        os << endl;
+
+        // write crustal error
+        os << "# Crustal Error" << endl;
+        for (int i = 0; i < nVertices; ++i)
+            os << " " << setw(13) << setprecision(7) << scientific << pathUncCrustError[i] << endl;
+        os << endl;
+
+        // write random error
+        if (includeRandomError)
+        {
+            os <<  "# Random Error" << endl;
+            for (int j = 0; j < nVertices; ++j)                
+                for (int i = 0; i < nDistanceBins; ++i)
+                {
+                    os << " " << setw(13) << setprecision(7) << scientific << pathUncRandomError[i][j];
+                    os << (i == nDistanceBins - 1 ? "\n" : " ");
+                }
+            os << endl;
+        }
+
+        // write model error
+        os << "# Model Error" << endl;
+        for (int j = 0; j < nVertices; ++j)
+            for (int i = 0; i < nDistanceBins; ++i)
+            {
+                os << " " << setw(13) << setprecision(7) << scientific << pathUncModelError[i][j];
+                os << (i == nDistanceBins - 1 ? "\n" : " ");
+            }
+        os << endl;
+
+        // bias
+        os << "# Bias" << endl;
+        for (int j = 0; j < nVertices; ++j)
+            for (int i = 0; i < nDistanceBins; ++i)
+            {
+                os << " " << setw(13) << setprecision(7) << scientific << pathUncBias[i][j];
+                os << (i == nDistanceBins - 1 ? "\n" : " ");
+            }
+
+        // close the file
+        os.close();
+        */
+    }
+
+    string UncertaintyPDU::toString()
+    {
+        ostringstream os;
+        for (int i=0; i<keys.size(); ++i)
+            os << keys[i] << " = " << properties[keys[i]] << endl;
+
+        return os.str();
     }
 
     //
@@ -757,7 +963,7 @@ namespace slbm {
      * sigma = random error
      * tau   = model error
      */
-    double UncertaintyPathDep::getUncertainty(double distance,
+    double UncertaintyPDU::getUncertainty(double distance,
         const vector<int>& crustNodeIds, const vector<double>& crustWeights,
         const vector<int>& headWaveNodeIds, const vector<double>& headWaveWeights,
         const vector<vector<int> >& headWaveNodeNeighbors, const bool& calcRandomError,
@@ -880,7 +1086,7 @@ namespace slbm {
 
             // main information
             cout << endl;
-            cout << "---- DEBUG ---\\/\\/---- UncertaintyPathDep::getUncertainty ----\\/\\/--- DEBUG ----" << endl;
+            cout << "---- DEBUG ---\\/\\/---- UncertaintyPDU::getUncertainty ----\\/\\/--- DEBUG ----" << endl;
             cout << endl;
             cout << "numCrustNodes:     " << numCrustNodes << endl;
             cout << "numHeadwaveNodes:  " << numHeadwaveNodes << endl;
@@ -1085,7 +1291,7 @@ namespace slbm {
             cout << "Total:       " << fixed << setprecision(4) << ttUnc_crust + ttUnc_headwave << " s^2 (crust + mantle)" << endl;
             cout << "Total:       " << fixed << setprecision(4) << sqrt(ttUnc_crust + ttUnc_headwave) << " s   (crust + mantle)" << endl;
             cout << endl;
-            cout << "---- DEBUG ---/\\/\\---- UncertaintyPathDep::getUncertainty ----/\\/\\--- DEBUG ----" << endl;
+            cout << "---- DEBUG ---/\\/\\---- UncertaintyPDU::getUncertainty ----/\\/\\--- DEBUG ----" << endl;
         }
 
 
@@ -1097,11 +1303,11 @@ namespace slbm {
 
     }
 
-    string UncertaintyPathDep::toStringTable() {
+    string UncertaintyPDU::toStringTable() {
         return "";
     }
 
-    string UncertaintyPathDep::toStringFile() {
+    string UncertaintyPDU::toStringFile() {
         return "";
     }
 

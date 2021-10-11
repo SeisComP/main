@@ -48,7 +48,7 @@ namespace slbm {
 //! \brief Software Version Number
 //!
 //! Software Version Number
-static const char* SlbmVersion = "3.1.0";
+static const char* SlbmVersion = "3.2.0";
 
 // version 3.0.3 4/22/2014  sballar
 // fixed bug in GridGeoTess::getActiveNodeNeighbors that caused the
@@ -100,6 +100,11 @@ static const int Sn = 1;
 //! Convenience constant for Pg phase
 static const int Pg = 2;
 
+//! \brief Convenience constant for Lg phase
+//!
+//! Convenience constant for Lg phase
+static const int Lg = 3;
+
 //! \brief Convenience constant for attribute TT
 //!
 //! Convenience constant for attribute TT
@@ -114,11 +119,6 @@ static const int SH = 1;
 //!
 //! Convenience constant for attribute AZ
 static const int AZ = 2;
-
-//! \brief Convenience constant for Lg phase
-//!
-//! Convenience constant for Lg phase
-static const int Lg = 3;
 
 static const int WATER          = 0;
 static const int SEDIMENT1      = 1;

@@ -247,11 +247,11 @@ void GridSLBM::loadFromFile(const string& filename)
         for (int j=0; j<na; ++j)
         {
             fin >> phase >> attribute;
-            iphase = Uncertainty::getPhase(phase);
-            iattribute = Uncertainty::getAttribute(attribute);
-            if (uncertainty[iphase][iattribute] != NULL)
-                delete uncertainty[iphase][iattribute];
-            uncertainty[iphase][iattribute] = Uncertainty::getUncertainty(fin, iphase, iattribute);
+            iphase = UncertaintyPIU::getPhase(phase);
+            iattribute = UncertaintyPIU::getAttribute(attribute);
+            if (piu[iphase][iattribute] != NULL)
+                delete piu[iphase][iattribute];
+            piu[iphase][iattribute] = UncertaintyPIU::getUncertaintyPIU(fin, iphase, iattribute);
         }
 
     fin.close();
@@ -354,10 +354,10 @@ void GridSLBM::saveVelocityModel(util::DataBuffer& buffer)
     for (int p=0; p<4; ++p)
         for (int a=0; a<3; ++a)
         {
-            buffer.writeString(Uncertainty::getPhase(p));
-            buffer.writeString(Uncertainty::getAttribute(a));
-            if (uncertainty[p][a] != NULL)
-                uncertainty[p][a]->serialize(buffer);
+            buffer.writeString(UncertaintyPIU::getPhase(p));
+            buffer.writeString(UncertaintyPIU::getAttribute(a));
+            if (piu[p][a] != NULL)
+                piu[p][a]->serialize(buffer);
             else
                 buffer.writeInt32(-1);
         }
@@ -395,10 +395,10 @@ int  GridSLBM::getBufferSize() const
     for (int p=0; p<4; ++p)
         for (int a=0; a<3; ++a)
         {
-            bsiz += sizeof(int)+Uncertainty::getPhase(p).length();
-            bsiz += sizeof(int)+Uncertainty::getAttribute(a).length();
-            if (uncertainty[p][a] != NULL)
-                bsiz += uncertainty[p][a]->getBufferSize();
+            bsiz += sizeof(int)+UncertaintyPIU::getPhase(p).length();
+            bsiz += sizeof(int)+UncertaintyPIU::getAttribute(a).length();
+            if (piu[p][a] != NULL)
+                bsiz += piu[p][a]->getBufferSize();
             else
                 bsiz += sizeof(int);
         }
@@ -475,12 +475,12 @@ void GridSLBM::loadFromDirectory(const string& dirname)
     for (int i=0; i<4; i++)
         for (int j=0; j<3; ++j)
         {
-            if (uncertainty[i][j] != NULL)
-                delete uncertainty[i][j];
-            uncertainty[i][j] = Uncertainty::getUncertainty(modelPath, i, j);
+            if (piu[i][j] != NULL)
+                delete piu[i][j];
+            piu[i][j] = UncertaintyPIU::getUncertaintyPIU(modelPath, i, j);
         }
 
-    if (uncertainty[Pn][TT] == NULL)
+    if (piu[Pn][TT] == NULL)
     {
         string fname = CPPUtils::insertPathSeparator(modelPath, "Uncertainty_Pn_TT.txt");
 
@@ -544,11 +544,11 @@ void GridSLBM::loadFromDataBuffer(util::DataBuffer& buffer)
         for (int i=0; i<np; i++)
             for (int j=0; j<na; ++j)
             {
-                int iphase = Uncertainty::getPhase(buffer.readString());
-                int iattribute = Uncertainty::getAttribute(buffer.readString());
-                if (uncertainty[iphase][iattribute] != NULL)
-                    delete uncertainty[iphase][iattribute];
-                uncertainty[iphase][iattribute] = Uncertainty::getUncertainty(buffer, iphase, iattribute);
+                int iphase = UncertaintyPIU::getPhase(buffer.readString());
+                int iattribute = UncertaintyPIU::getAttribute(buffer.readString());
+                if (piu[iphase][iattribute] != NULL)
+                    delete piu[iphase][iattribute];
+                piu[iphase][iattribute] = UncertaintyPIU::getUncertaintyPIU(buffer, iphase, iattribute);
             }
 
     }
@@ -561,10 +561,10 @@ string GridSLBM::toString()
     os << "ModelPath  " << modelPath << endl;
     os << "NNodes     " << profiles.size() << endl;
     os << "NTriangles " << triangles.size() << endl;
-    for (int i=0; i<(int)uncertainty.size(); ++i)
-        for (int j=0; j<(int)uncertainty[i].size(); ++j)
-            if (uncertainty[i][j] != NULL)
-                os << uncertainty[i][j]->toStringTable();
+    for (int i=0; i<(int)piu.size(); ++i)
+        for (int j=0; j<(int)piu[i].size(); ++j)
+            if (piu[i][j] != NULL)
+                os << piu[i][j]->toStringTable();
     return os.str();
 }
 
@@ -1118,10 +1118,10 @@ void GridSLBM::saveSlbmDirectory(const string& directoryName)
 
     buffer.clear();
 
-    for (int i=0; i<(int)uncertainty.size(); ++i)
-        for (int j=0; j<(int)uncertainty[i].size(); ++j)
-            if (uncertainty[i][j])
-                uncertainty[i][j]->writeFile(directoryName);
+    for (int i=0; i<(int)piu.size(); ++i)
+        for (int j=0; j<(int)piu[i].size(); ++j)
+            if (piu[i][j])
+                piu[i][j]->writeFile(directoryName);
 
 }
 
@@ -1205,11 +1205,11 @@ void GridSLBM::saveSlbmFile(const string& filename)
     for (int p=0; p<4; ++p)
         for (int a=0; a<3; ++a)
         {
-            fout << Uncertainty::getPhase(p) << " " << Uncertainty::getAttribute(a) << endl;
-            if (uncertainty[p][a] == NULL)
+            fout << UncertaintyPIU::getPhase(p) << " " << UncertaintyPIU::getAttribute(a) << endl;
+            if (piu[p][a] == NULL)
                 fout << "0" << endl;
             else
-                fout << uncertainty[p][a]->toStringFile();
+                fout << piu[p][a]->toStringFile();
         }
     fout.close();
 }
@@ -1255,10 +1255,10 @@ void GridSLBM::saveGeotessDirectory(const string& directoryName)
 
         saveGeotess(outputFile, gridFilePath, gridFilePath);
 
-        for (int i=0; i<(int)uncertainty.size(); ++i)
-            for (int j=0; j<(int)uncertainty[i].size(); ++j)
-                if (uncertainty[i][j])
-                    uncertainty[i][j]->writeFile(directoryName);
+        for (int i=0; i<(int)piu.size(); ++i)
+            for (int j=0; j<(int)piu[i].size(); ++j)
+                if (piu[i][j])
+                    piu[i][j]->writeFile(directoryName);
     }
     else
     {
@@ -1360,7 +1360,7 @@ void GridSLBM::saveGeotess(const string& path, const string& pathToGrid, const s
         // call a GeoTessModel constructor to build the model. This will
         // load the grid, and initialize all the data structures to null.
         // To be useful, we will have to populate the data structures.
-        GeoTessModelSLBM model(pathToGrid, metaData, uncertainty, vAvg);
+        GeoTessModelSLBM model(pathToGrid, metaData);
 
         try
         {
@@ -1426,15 +1426,15 @@ void GridSLBM::saveGeotess(const string& path, const string& pathToGrid, const s
             gridFileName = tokens[tokens.size()-1];
         }
 
-        // if writing the grid to model file, then write the
-        // uncertainties to the file as well.
-        if (gridFileName == "*")
-        {
-            model.setIOUncertainty(true);
-            //model.uncertainty = uncertainty;
-        }
-        else
-            model.setIOUncertainty(false);
+        // // if writing the grid to model file, then write the
+        // // uncertainties to the file as well.
+        // if (gridFileName == "*")
+        // {
+        //     model.setIOUncertainty(true);
+        //     model.uncertainty = uncertainty;
+        // }
+        // else
+        //     model.setIOUncertainty(false);
 
         model.writeModel(path, gridFileName);
 

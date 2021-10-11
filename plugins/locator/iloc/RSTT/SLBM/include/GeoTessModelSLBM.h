@@ -56,8 +56,9 @@
 #include "GeoTessUtils.h"
 #include "GeoTessException.h"
 #include "GeoTessModel.h"
-#include "GeoTessOptimizationType.h"
-#include "Uncertainty.h"
+#include "UncertaintyPDU.h"
+#include "UncertaintyPIU.h"
+#include "SLBMException.h"
 
 using namespace geotess;
 using namespace std;
@@ -93,16 +94,21 @@ private:
      * nPhases x nAttriubtes where nPhases = 4 (Pn, Sn, Pg, Lg) and
      * nAttributes is 3 (TT, SH, AZ).
      */
-    vector<vector<Uncertainty*> >& uncertainty;
+    vector<vector<UncertaintyPIU*> > piu;
 
     /**
-     * If true, then uncertainty information is read/written by  io operations.
+     * Path dependent uncertainty for each supported phase.
      */
-    bool ioUncertainty;
+    vector<UncertaintyPDU*> pdu;
+
+    /**
+     * RSTT file format version
+     */
+    int fileFormatVer;
 
     void init();
 
-    static bool newModelStyleReadFormat;
+    void checkMiddleCrustLayers();
 
 protected:
 
@@ -168,29 +174,18 @@ protected:
 public:
 
     /**
-    * Returns false. The virtual method is also declared in GeoTessModelPathUnc
-    * where it returns true.
-    */
-    virtual bool isPathDepUncModel()
-    {
-        return false;
-    }
-
-    static void setNewModelStyleReadFormat(bool omsrf)
-    {
-        newModelStyleReadFormat = omsrf;
-    }
+     * Default constructor.
+     */
+    GeoTessModelSLBM();
 
     /**
-     * Default constructor.
+     * Construct a new GeoTessModel object and populate it with information from
+     * the specified file.
      *
-     * @param uncert the Uncertainty obects to set.
-     * @param optimization
-     *            either OptimizationType.SPEED or OptimizationType.MEMORY.
-     *            This argument is deprecated and has no effect.
-     */
-    GeoTessModelSLBM(vector<vector<Uncertainty*> >& uncert,
-            const GeoTessOptimizationType* optimization = &GeoTessOptimizationType::SPEED);
+     * @param modelInputFile
+     *            name of file containing the model.
+    */
+    GeoTessModelSLBM(const string& modelInputFile);
 
     /**
      * Construct a new GeoTessModel object and populate it with information from
@@ -212,34 +207,8 @@ public:
      *            the default value is appropriate when the grid is stored in
      *            the same file as the model, or the model file is in the same
      *            directory as the model file.
-     * @param uncertainties the Uncertainty obects to set.
-     * @param optimization
-     *            either OptimizationType.SPEED or OptimizationType.MEMORY.
-     *            This argument is deprecated and has no effect.
      */
-    GeoTessModelSLBM(const string& modelInputFile, const string& relativeGridPath,
-            vector<vector<Uncertainty*> >& uncertainties,
-            const GeoTessOptimizationType* optimization = &GeoTessOptimizationType::SPEED);
-
-    /**
-     * Construct a new GeoTessModel object and populate it with information from
-     * the specified file.
-     *
-     * <p>relativeGridPath is assumed to be "" (empty string), which is appropriate
-     * when the grid information is stored in the same file as the model or when
-     * the grid is stored in a separate file located in the same directory as the
-     * model file.
-     *
-     * @param modelInputFile
-     *            name of file containing the model.
-     * @param uncertainties the Uncertainty obects to set.
-     * @param optimization
-     *            either OptimizationType.SPEED or OptimizationType.MEMORY.
-     *            This argument is deprecated and has no effect.
-     */
-    GeoTessModelSLBM(const string& modelInputFile,
-            vector<vector<Uncertainty*> >& uncertainties,
-            const GeoTessOptimizationType* optimization = &GeoTessOptimizationType::SPEED);
+    GeoTessModelSLBM(const string& modelInputFile, const string& relativeGridPath);
 
     /**
      * Parameterized constructor, specifying the grid and metadata for the
@@ -260,7 +229,6 @@ public:
      * <li>setDataType()
      * <li>setLayerTessIds() (only required if grid has more than one
      * multi-level tessellation)
-     * <li>setOptimization() (optional: defaults to SPEED)
      * </ul>
      *
      * @param gridFileName
@@ -268,14 +236,10 @@ public:
      * @param metaData
      *            MetaData the new GeoTessModel instantiates a reference to the
      *            supplied metaData. No copy is made.
-     * @param uncertainties the Uncertainty obects to set.
-     * @param avgMantleVel a 2-element array containing the average P and S velocity
-     * of the upper mantle.
      * @throws GeoTessException
      *             if metadata is incomplete.
      */
-    GeoTessModelSLBM(const string& gridFileName, GeoTessMetaData* metaData,
-            vector<vector<Uncertainty*> >& uncertainties, double* avgMantleVel);
+    GeoTessModelSLBM(const string& gridFileName, GeoTessMetaData* metaData);
 
     /**
      * Parameterized constructor, specifying the grid and metadata for the
@@ -296,7 +260,6 @@ public:
      * <li>setDataType()
      * <li>setLayerTessIds() (only required if grid has more than one
      * multi-level tessellation)
-     * <li>setOptimization() (optional: defaults to SPEED)
      * <li>setSoftwareVersion()
      * <li>setGenerationDate()
      * </ul>
@@ -309,14 +272,14 @@ public:
      * @param metaData
      *            MetaData the new GeoTessModel instantiates a reference to the
      *            supplied metaData. No copy is made.
-     * @param uncertainties the Uncertainties to set.
-     * @param avgMantleVel a 2-element array containing the average P and S
-     * velocity of the top of the mantle, in km/sec
      * @throws GeoTessException
      *             if metadata is incomplete.
      */
-    GeoTessModelSLBM(GeoTessGrid* grid, GeoTessMetaData* metaData,
-            vector<vector<Uncertainty*> >& uncertainties, double* avgMantleVel);
+    GeoTessModelSLBM(GeoTessGrid* grid, GeoTessMetaData* metaData);
+
+    virtual bool operator == (const GeoTessModelSLBM& other) const;
+
+    virtual bool operator != (const GeoTessModelSLBM& other) const { return !(*this == other); } ;
 
     /**
      * Destructor.
@@ -327,20 +290,17 @@ public:
     * Returns the class name.
     * @return class name
     */
-    static  string class_name() { return "GeoTessModelSLBM"; }
+    virtual  string class_name() { return "GeoTessModelSLBM"; }
 
     /**
-     * Tests the input file (fileName) to see if this is a GeoTessModelSLBM file.
+     * Returns true if this model contains pdu information
      */
-    static bool isGeoTessModelSLBM(const string& fileName);
+    inline bool isPathDepUncModel() { return (pdu.size() > 0) ? true : false; }
 
     /**
-     * Write the model currently in memory to a DataBuffer.  GeoTessModel does
-     * not have a method to write itself to a DataBuffer so this method will
-     * write the entire model, including all the information from the base class
-     * (GeoTessModel) and all the extra data from the derived class (GeoTessModelSLBM).
+     * Returns the file format verison of the model file
      */
-    void writeModelDataBuffer(util::DataBuffer& buffer);
+    inline int getFileFormatVersion() { return fileFormatVer; }
 
     /**
      * Get the average mantle velocity for P (index=0)
@@ -361,16 +321,36 @@ public:
     }
 
     /**
-     * If true then uncertainty information is output to output file
-     * next time writeModel is called.
+     * A 2D array of Uncertainty objects.  The array dimensions are
+     * nPhases x nAttriubtes where nPhases = 4 (Pn, Sn, Pg, Lg) and
+     * nAttributes is 3 (TT, SH, AZ).
      */
-    void setIOUncertainty(bool io) { ioUncertainty = io; }
+    const vector<vector<UncertaintyPIU*> >& getPIU() const { return piu; }
 
-    bool isIOUncertainty() const {
-        return ioUncertainty;
+    /**
+    * Path dependent uncertainty for each supported phase.
+    */
+    vector<UncertaintyPDU*>& getPDU()
+    {
+        if (isPathDepUncModel())
+        {
+            return pdu;
+        }
+        else
+        {
+            ostringstream os;
+            os << endl << "ERROR in GeoTessModelSLBM::getPDU()." << endl <<
+                    "File " << getMetaData().getInputModelFile() << endl <<
+                    "This model does not contain any PDU information." << endl
+                    << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+            throw SLBMException(os.str(), 105);
+        }
     }
 
-    int getBufferSize();
+
+    int getBufferSize() { return 0; }
+
+    string toString();
 
 };
 // end class GeoTessModelSLBM

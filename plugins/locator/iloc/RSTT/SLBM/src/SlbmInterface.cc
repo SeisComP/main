@@ -60,6 +60,7 @@ SlbmInterface::SlbmInterface() :
     srcLat(NaN_DOUBLE), srcLon(NaN_DOUBLE), srcDep(NaN_DOUBLE),
     rcvLat(NaN_DOUBLE), rcvLon(NaN_DOUBLE), rcvDep(NaN_DOUBLE)
 {
+    // cout << "Created SlbmInterface" << endl;
 }  // END SlbmInterface Default Constructor
 
 SlbmInterface::SlbmInterface(const double& earthRadius) : 
@@ -74,6 +75,7 @@ SlbmInterface::SlbmInterface(const double& earthRadius) :
 
 SlbmInterface::~SlbmInterface()
 {
+    // cout << "SlbmInterface deleted." << endl;
     clear();
     if (grid) delete grid;
 
@@ -82,6 +84,7 @@ SlbmInterface::~SlbmInterface()
 
 void SlbmInterface::clear()
 {
+    // cout << "SlbmInterface cleared." << endl;
     clearGreatCircles();
     if (grid) 
         grid->clearCrustalProfiles();
@@ -378,8 +381,8 @@ void SlbmInterface::getTravelTimeUncertainty(double& travelTimeUncertainty, bool
 
     // test for path dependent error definition
 
-    if ((grid->getUncertaintyPathDep().size() > 0) &&
-        (grid->getUncertaintyPathDep()[greatCircle->getPhase()] != NULL))
+    if ((grid->getUncertaintyPDU().size() > 0) &&
+        (grid->getUncertaintyPDU()[greatCircle->getPhase()] != NULL))
     {
         // path dependent uncertainty is defined ... get crust and head wave influence node ids and weights
 
@@ -399,7 +402,7 @@ void SlbmInterface::getTravelTimeUncertainty(double& travelTimeUncertainty, bool
             crustWeights[i] *= (tSource + tReceiver) / (sSource + sReceiver);  // multiply in time, divide out distance
         
         // get ray parameter
-        double rayParameter = greatCircle->getRayParameter();
+        // double rayParameter = greatCircle->getRayParameter();
 
         // get node neighbors of each headwave node
         int numheadWaveNodes = headWaveNodeIds.size();  // number of nodes
@@ -409,7 +412,7 @@ void SlbmInterface::getTravelTimeUncertainty(double& travelTimeUncertainty, bool
 
         // calculate travel time uncertainty
 
-        travelTimeUncertainty = grid->getUncertaintyPathDep()[greatCircle->getPhase()]->
+        travelTimeUncertainty = grid->getUncertaintyPDU()[greatCircle->getPhase()]->
             getUncertainty(greatCircle->getDistance() * RAD_TO_DEG,
                 crustNodeIds, crustWeights, headWaveNodeIds, headWaveWeights,
                 headWaveNodeNeighbors, calcRandomError);
@@ -449,5 +452,63 @@ void SlbmInterface::getTravelTimeUncertainty1D(double& travelTimeUncertainty)
     getTravelTimeUncertainty(greatCircle->getPhase(),
         greatCircle->getDistance(), travelTimeUncertainty);
 }
+
+bool SlbmInterface::isEqual(SlbmInterface *other)
+{
+    // check to make sure we have grids
+    Grid* grid1 = getGridObject();
+    Grid* grid2 = other->getGridObject();
+
+    // throw an error if either the current or the second SlbmInterface instance
+    // haven't loaded a model
+    if (!grid || !grid2)
+    {
+        ostringstream os;
+        os << endl << "ERROR in SlbmInterface::isEqual()" << endl
+            << "SlbmInterface object has not yet loaded a velocity model." << endl
+            << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+        throw SLBMException(os.str(),109);
+    }
+
+    // throw an error if one SlbmInterface has a greatCircle and the other doesn't
+    if (isValid() + (*other).isValid() == 1)
+    {
+        ostringstream os;
+        os << endl << "ERROR in SlbmInterface::isEqual()" << endl
+            << "One SlbmInterface object has a greatCircle and the other does not." << endl
+            << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+        throw SLBMException(os.str(),109);
+    }
+
+    // if both have a greatCircle
+    if (isValid() + (*other).isValid() == 2)
+    {
+        // get great circle objects
+        GreatCircle *gc1 = getGreatCircleObject();
+        GreatCircle *gc2 = other->getGreatCircleObject();
+
+        // compare the two models and great circles
+        return ( *(grid1->getModel()) == *(grid2->getModel()) && *gc1 == *gc2 );
+    }
+
+    // neither have a greatCircle
+    else
+    {
+        // compare just the two models
+        return ( *(grid1->getModel()) == *(grid2->getModel()) );
+    }
+
+}
+
+bool SlbmInterface::modelsEqual(const string modelPath1, const string modelPath2)
+{
+    // instatiate two new grid objects and load the models
+    Grid* grid1 = Grid::getGrid(modelPath1);
+    Grid* grid2 = Grid::getGrid(modelPath2);
+
+    // compare the two models
+    return ( *(grid1->getModel()) == *(grid2->getModel()) );
+}
+
 
 } // end slbm namespace

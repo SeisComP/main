@@ -220,7 +220,7 @@ void GreatCircle_Xn::computeTravelTimeCrust()
         // within the interval.
         receiverIndex = min((int)profiles.size()-1, (int)floor((getDistance()-xReceiver)/actual_path_increment));
 
-        // horizontal distance traveled along moho, in km.  This is horinzontal
+        // horizontal distance traveled along moho, in km.  This is horizontal
         // distance between the source and receiver pierce points.
         xHorizontal = 0;
 

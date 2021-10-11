@@ -49,8 +49,8 @@ using namespace std;
 #include "GreatCircle.h"
 #include "GreatCircleFactory.h"
 #include "GridGeoTess.h"
-#include "Uncertainty.h"
-#include "UncertaintyPathDep.h"
+#include "UncertaintyPIU.h"
+#include "UncertaintyPDU.h"
 #include "SLBMException.h"
 
 // **** _BEGIN SLBM NAMESPACE_ **************************************************
@@ -103,6 +103,24 @@ public:
     //! Destructor.  Deletes the GreatCircle object
     //! and the Grid object.
     virtual ~SlbmInterface();
+
+    //! \brief Check if the model and/or greatCircle attached to the current
+    //! SlbmInterface is equal that in another SlbmInterface
+    //!
+    //! Check if the model and/or greatCircle attached to the current
+    //! SlbmInterface is equal that in another SlbmInterface
+    bool isEqual(SlbmInterface *other);
+
+    bool operator == (SlbmInterface &other) { return isEqual(&other); };
+    bool operator != (SlbmInterface &other) { return !(*this == other); };
+
+
+    //! \brief Check if two models are equal
+    //!
+    //! Check if two models are equal
+    //! @param modelPath1 /path/to/model1.geotess
+    //! @param modelPath2 /path/to/model2.geotess
+    static bool modelsEqual(const string modelPath1, const string modelPath2);
 
     //! \brief Retrieve the SLBM Version number.
     //!
@@ -361,6 +379,7 @@ public:
     //! on the headwave interface.
     //! @param dist the horizontal offset below the source, in radians.
     void getSourceDistance(double& dist);
+    double getSourceDistance() { double x; getSourceDistance(x); return x; };
 
     //! \brief Retrieve horizontal offset below the receiver, in radians.
     //!
@@ -370,6 +389,7 @@ public:
     //! on the headwave interface.
     //! @param dist the horizontal offset below the receiver, in radians.
     void getReceiverDistance(double& dist);
+    double getReceiverDistance() { double x; getReceiverDistance(x); return x; };
 
     //! \brief Retrieve angular distance traveled by the ray
     //! below the headwave interface, in radians.
@@ -383,6 +403,7 @@ public:
     //! @param dist the angular distance traveled by the ray
     //! below the headwave interface, in radians.
     void getHeadwaveDistance(double& dist);
+    double getHeadwaveDistance() { double x; getHeadwaveDistance(x); return x; };
 
     //! \brief Retrieve horizontal distance traveled by the ray
     //! below the headwave interface, in radians.
@@ -397,6 +418,7 @@ public:
     //! @param dist the horizontal distance traveled by the ray
     //! below the headwave interface, in km.
     void getHeadwaveDistanceKm(double& dist);
+    double getHeadwaveDistanceKm() { double x; getHeadwaveDistanceKm(x); return x; };
 
     //! \brief Retrieve the total travel time for the GreatCircle,
     //! in seconds.
@@ -407,6 +429,7 @@ public:
     //! in travelTime.  If the GreatCircle is invalid, travelTime
     //! will equal SLBMGlobals::NA_VALUE.
     void getTravelTime(double& travelTime);
+    double getTravelTime() { double x; getTravelTime(x); return x; };
 
     //! \brief Retrieve the total travel time and the 4 components that
     //! contribute to it for the current GreatCircle.
@@ -431,6 +454,7 @@ public:
     //! Retrieve the horizontal slowness, in seconds/radian.
     //! @param slowness the derivative of travel time wrt to source latitude.
     void getSlowness(double& slowness);
+    double getSlowness() { double x; getSlowness(x); return x; };
 
     //! \brief Retrieve the horizontal slowness, i.e., the derivative of travel time
     //! wrt to receiver-source distance, in seconds/radian.
@@ -678,6 +702,7 @@ public:
     //! @param weights the weights associated with each nodeid
     //! @param nWeights the number of nodeids and weights returned.
     void getWeightsSource(int nodeids[], double weights[], int& nWeights);
+    void getWeightsSource(vector<int> &nodeids, vector<double> &weights);
 
     //! \brief Retrieve the active node IDs and the interpolation
     //! coefficients for the source CrustalProfile.
@@ -693,6 +718,7 @@ public:
     //! @param weights the weights associated with each nodeid
     //! @param nWeights the number of nodeids and weights returned.
     void getActiveNodeWeightsSource(int nodeids[], double weights[], int& nWeights);
+    void getActiveNodeWeightsSource(vector<int> &nodeids, vector<double> &weights);
 
     //! \brief Retrieve the node IDs and the interpolation
     //! coefficients for the receiver CrustalProfile.
@@ -705,6 +731,7 @@ public:
     //! @param weights the weights associated with each nodeid
     //! @param nWeights the number of nodeids and weights returned.
     void getWeightsReceiver(int nodeids[], double weights[], int& nWeights);
+    void getWeightsReceiver(vector<int> &nodeids, vector<double> &weights);
 
     //! \brief Retrieve the active node IDs and the interpolation
     //! coefficients for the receiver CrustalProfile.
@@ -717,6 +744,7 @@ public:
     //! @param weights the weights associated with each nodeid
     //! @param nWeights the number of nodeids and weights returned.
     void getActiveNodeWeightsReceiver(int nodeids[], double weights[], int& nWeights);
+    void getActiveNodeWeightsReceiver(vector<int> &nodeids, vector<double> &weights);
 
     //! \brief Returns a human-readable string representation
     //! of the GreatCircle object.
@@ -761,6 +789,7 @@ public:
     //! populated in parameters headWaveVelocity[], neighbors[] and
     //! coefficients[].
     void getNHeadWavePoints(int& nHeadWavePoints);
+    int getNHeadWavePoints() { int x; getNHeadWavePoints(x); return x; };
 
     //! \brief Retrieve the lat (radians), lon (radians),
     //! interface depths (km), P and S wave interval velocities (km/sec)
@@ -909,6 +938,17 @@ public:
         double headWaveVelocity[],
         double gradient[]
         );
+    void getGreatCircleData(
+        string &phase,
+        double &actual_path_increment,
+        vector<double> &sourceDepth,
+        vector<double> &sourceVelocity,
+        vector<double> &receiverDepth,
+        vector<double> &receiverVelocity,
+        int &npoints,
+        vector<double> &headWaveVelocity,
+        vector<double> &gradient
+        );
 
     //! \brief Retrieve the latitudes, longitudes and depths of all the profile positions
     //! along the headwave interface.
@@ -924,6 +964,7 @@ public:
     //! @param npoints the number of horizontal increments sampled along the
     //! head wave interface.
     void getGreatCircleLocations(double lat[], double lon[], double depth[], int& npoints);
+    void getGreatCircleLocations(vector<double> &lat, vector<double> &lon, vector<double> &depth);
 
     //! \brief Retrieve information about the interpolated points along the headwave
     //! path, including the number of points, the indexes of the grid nodes that contributed
@@ -960,6 +1001,7 @@ public:
         int& npoints,
         int* nnodes
         );
+    void getGreatCircleNodeInfo(vector<vector<int> >& neighbors, vector<vector<double> >& coefficients);
 
     //! \brief Retrieve interpolated data from the earth model at a single
     //! specified latitude, longitude.
@@ -974,7 +1016,7 @@ public:
     //! in the interpolation.
     //! @param coefficients the interpolation coefficients that were applied to
     //! the information from the neighboring grid nodes.
-    //! @param nnodes the number of grid nodes involved in the interpolation.
+    //! @param nWeights the number of grid nodes involved in the interpolation.
     //! @param depth the depths of the tops of the interfaces in the Earth model,
     //! in km.  There will be one of these for each layer of the model.
     //! @param pvelocity the P velocities of each layer of the model, in km/sec.
@@ -987,14 +1029,48 @@ public:
     void getInterpolatedPoint(
         const double& lat,
         const double& lon,
-        int* nodeId,
+        int* nodeIds,
         double* coefficients,
-        int& nnodes,
+        int& nWeights,
         double depth[NLAYERS],
         double pvelocity[NLAYERS],
         double svelocity[NLAYERS],
         double& pgradient,
         double& sgradient
+        );
+
+    //! \brief Retrieve interpolated data from the earth model at a single
+    //! specified latitude, longitude.
+    //!
+    //! Retrieve interpolated data from the earth model at a single
+    //! specified latitude, longitude.
+    //! @param lat the latitude where information is to be interpolated,
+    //! in radians.
+    //! @param lon the longitude where information is to be interpolated,
+    //! in radians.
+    //! @param nodeId the nodeIds of the grid nodes that were involved
+    //! in the interpolation.
+    //! @param coefficients the interpolation coefficients that were applied to
+    //! the information from the neighboring grid nodes.
+    //! @param depth the depths of the tops of the interfaces in the Earth model,
+    //! in km.  There will be one of these for each layer of the model.
+    //! @param pvelocity the P velocities of each layer of the model, in km/sec.
+    //! @param svelocity the S velocities of each layer of the model, in km/sec.
+    //! @param pgradient the mantle P velocity gradient, in 1/sec.
+    //! @param sgradient the mantle S velocity gradient, in 1/sec.
+    //! @return true if successful.  If not successful, nodeIds are all -1 and
+    //! all other returned arrays are populated with SLBMGlobals::NA_VALUE.
+    //!
+    void getInterpolatedPoint(
+        const double &lat,
+        const double &lon,
+        vector<int> &nodeId,
+        vector<double> &coefficients,
+        vector<double> &depth,
+        vector<double> &pvelocity,
+        vector<double> &svelocity,
+        double &pgradient,
+        double &sgradient
         );
 
     //! \brief Retrieve interpolated data from the earth model along a
@@ -1034,6 +1110,38 @@ public:
         double svelocity[][NLAYERS],
         double pgradient[NLAYERS],
         double sgradient[NLAYERS],
+        int& nInvalid
+        );
+
+    //! \brief Retrieve interpolated data from the earth model along a
+    //! transect defined by equal sized, 1 dimensional arrays of latitude and longitude.
+    //!
+    //! Retrieve interpolated data from the earth model along a
+    //! transect defined by equal sized, 1 dimensional arrays of latitude and longitude.
+    //! @param lat the latitudes along the transect, in radians.
+    //! @param lon the longitudes along the transect, in radians.
+    //! @param nodeId the nodeIds of the grid nodes that were involved
+    //! in the interpolations. Caller can supply an empty vector.
+    //! @param coefficients the interpolation coefficients that were applied to
+    //! the information from the neighboring grid nodes. Caller can supply an empty vector.
+    //! @param depth the depths of the tops of the interfaces in the Earth model, in km.
+    //! @param pvelocity the P velocities of each layer of the model, in km/sec.
+    //! @param svelocity the S velocities of each layer of the model, in km/sec.
+    //! @param pgradient the mantle P velocity gradient, in 1/sec.
+    //! @param sgradient the mantle S velocity gradient, in 1/sec.
+    //! @param nInvalid the number of points that were out of model range.
+    //! For any points outside of the model range, nodeIds are all -1 and
+    //! all other returned arrays are populated with SLBMGlobals::NA_VALUE.
+    void getInterpolatedTransect(
+        vector<double> lat,
+        vector<double> lon,
+        vector<vector<int> > &nodeId,
+        vector<vector<double> > &coefficients,
+        vector<vector<double> > &depth,
+        vector<vector<double> > &pvelocity,
+        vector<vector<double> > &svelocity,
+        vector<double> &pgradient,
+        vector<double> &sgradient,
         int& nInvalid
         );
 
@@ -1110,6 +1218,27 @@ public:
     //! \brief Specify a list of points that define a polygon that encloses the set of grid nodes
     //! that are to be considered active nodes.
     //!
+    //! Specify a list of points that define a polygon that enclose the set of grid nodes
+    //! that are to be considered active nodes.
+    //! Active nodes are defined as follows:  for each triangle in the
+    //! tessellation, if any of the 3 nodes that define the triangle is
+    //! within the polygon specified by this method, then
+    //! all 3 nodes are defined to be active nodes.
+    //! <p>If the last point and first point are not coincident, then the polygon is 'closed'
+    //! by connecting the first and last point by an edge.
+    //!
+    //! @param lat a 1D vector of doubles specifying the latitudes of the points that define
+    //! the polygon. Whether units are degrees or radians depends on parameter inDegrees.
+    //! @param lon a 1D vector of doubles specifying the longitudes of the points that define
+    //! the polygon. Whether units are degrees or radians depends on parameter inDegrees.
+    //! @param inDegrees if true, latitudes and longitudes are assumed to be in degrees,
+    //! if false, they are assumed to be in radians.
+    //!
+    void initializeActiveNodes(const vector<double> lat, const vector<double> lon, const bool& inDegrees=true);
+
+    //! \brief Specify a list of points that define a polygon that encloses the set of grid nodes
+    //! that are to be considered active nodes.
+    //!
     //! Specify a list of points that define a polygon that encloses the set of grid nodes
     //! that are to be considered active nodes.
     //! Active nodes are defined as follows:  for each triangle in the
@@ -1156,6 +1285,8 @@ public:
     //! for a particular GreatCircle object, all the nodeIds that contribute any
     //! weight to that GreatCircle object have their hit count incremented by one.
     void getNodeHitCount(const int& nodeId, int& hitCount);
+    int getNodeHitCount(const int &nodeId) { int x; getNodeHitCount(nodeId, x); return x; };
+
 
     //! \brief Clear the node hit count by setting the hit count of every
     //! node to zero.
@@ -1203,6 +1334,8 @@ public:
     //! which is 8.  The actual number of neighbors is returned in nNeighbors.
     void getNodeNeighborInfo(const int& nid, int neighbors[], double distance[],
         double azimuth[], int& nNeighbors);
+    void getNodeNeighborInfo(const int nid,
+        vector<int> &neighbors, vector<double> &distance, vector<double> &azimuth);
 
     //! \brief Retrieve the active node IDs of the nodes that surround the
     //! specified node.
@@ -1250,6 +1383,12 @@ public:
     //! available through any interfaces other than the c++ interface.
     Grid* getGridObject() { return grid; };
 
+    //! \brief Retrieve a pointer to the GeoTessModelSLBM object.
+    //!
+    //! Retrieve a pointer to the GeoTessModelSLBM object. This method will not
+    //! be available through any interfaces other than the c++ interface.
+    GeoTessModelSLBM* getModelObject() { return grid->getModel(); }
+
     //! \brief Retrieve the travel time uncertainty in sec
     //! for specified phase, distance (in radians).
     //!
@@ -1296,9 +1435,9 @@ public:
     //! @param slownessUncertainty uncertainty of the horizontal slowness, in seconds/radian.
     void getSlownessUncertainty(double& slownessUncertainty);
 
-    string getUncertaintyTable(const int& attribute, const int& phase);
+    string getUncertaintyTable(const int& phase, const int& attribute);
 
-    string getUncertaintyFileFormat(const int& attribute, const int& phase);
+    string getUncertaintyFileFormat(const int& phase, const int& attribute);
 
     //! \brief Retrieve some of the parameters that contribute to the calculation of
     //! of total travel time using the Zhao algorithm.
@@ -1339,10 +1478,8 @@ public:
     //! @param pHeadwave headwave ray parameter.
     //! @param trTaup is the radius at which the taup ray turned, in km.
     //! @param trHeadwave is the radius at which the headwave ray turned, in km.
-    void getPgLgComponents(double& tTotal,
-                                              double& tTaup, double& tHeadwave,
-                                              double& pTaup, double& pHeadwave,
-                                              double& trTaup, double& trHeadwave);
+    void getPgLgComponents(double& tTotal, double& tTaup, double& tHeadwave,
+        double& pTaup, double& pHeadwave, double& trTaup, double& trHeadwave);
 
     //! \brief Set the value of chMax.  c is the zhao c parameter and h is
     //! the turning depth of the ray below the moho.  Zhao method only valid
@@ -1363,6 +1500,7 @@ public:
     //! for c*h << 1. When c*h > chMax, then slbm will throw an exception.
     //! This call retrieves global parameter SLBMGlobals::CH_MAX
     void static getCHMax(double& chMax);
+    double static getCHMax() { double x; getCHMax(x); return x; }
 
     //! \brief Retrieve the average P or S wave mantle velocity that is specified
     //! in the model input file, in km/sec.
@@ -1374,6 +1512,7 @@ public:
     //! @param velocity the P or S wave velocity is returned in this parameter,
     //! in km/sec.
     void getAverageMantleVelocity(const int& type, double& velocity);
+    double getAverageMantleVelocity(const int &type);
 
     //! \brief Set the average P or S wave mantle velocity that is recorded
     //! in the model input file, in km/sec.
@@ -1392,6 +1531,7 @@ public:
     //!
     //! Retrieve the tessellation ID of the model currently in memory.
     void getTessId(string& tessId);
+    string getTessId() { string s; getTessId(s); return s; };
 
     //! \brief Retrieve the fraction of the path length of the current
     //! GreatCircle object that is within the currently defined active region.
@@ -1399,6 +1539,7 @@ public:
     //! Retrieve the fraction of the path length of the current
     //! GreatCircle object that is within the currently defined active region.
     void getFractionActive(double& fractionActive);
+    double getFractionActive() { double x; getFractionActive(x); return x; }
 
     //! \brief Set the maximum source-receiver separation for Pn/Sn phase,
     //! in radians.
@@ -1415,6 +1556,7 @@ public:
     //! Retrieve the current value for the maximum source-receiver
     //! separation, in radians.
     void static getMaxDistance(double& maxDistance);
+    double static getMaxDistance() { double x; getMaxDistance(x); return x; }
 
     //! \brief Set the maximum source depth for Pn/Sn phase,
     //! in km.
@@ -1429,6 +1571,7 @@ public:
     //!
     //! Retrieve the current value for the maximum source depth, in km.
     void static getMaxDepth(double& maxDepth);
+    double static getMaxDepth() { double x; getMaxDepth(x); return x; }
 
     //! \brief Retrieve a table that lists the number of instances of various
     //! SLBM classes that are currently instantiated.
@@ -1523,6 +1666,14 @@ public:
         const int& npoints,
         double latitude[],
         double longitude[]);
+    void getGreatCirclePoints(
+        const double& aLat,
+        const double& aLon,
+        const double& bLat,
+        const double& bLon,
+        const int& npoints,
+        vector<double> &latitude,
+        vector<double> &longitude);
 
     //! \brief Retrieve an array of lat, lon points along a great circle
     //! path between two specified points, a and b.
@@ -1546,6 +1697,14 @@ public:
         const int& npoints,
         double latitude[],
         double longitude[]);
+    void getGreatCirclePointsOnCenters(
+        const double& aLat,
+        const double& aLon,
+        const double& bLat,
+        const double& bLon,
+        const int& npoints,
+        vector<double> &latitude,
+        vector<double> &longitude);
 
     //! \brief Change the value of step change in distance used to compute
     //! horizontal derivatives(in radians).
@@ -1560,6 +1719,7 @@ public:
     //! Retrieve the value of step change in distance used to compute
     //! horizontal derivatives (radians)
     void getDelDistance(double& del_distance);
+    double getDelDistance() { double x; getDelDistance(x); return x; };
 
     //! \brief Change the value of step change in depth used to compute
     //! depth derivatives (km)
@@ -1573,16 +1733,19 @@ public:
     //!
     //! Retrieve the value of step change in depth used to compute
     void getDelDepth(double& del_depth);
+    double getDelDepth() { double x; getDelDepth(x); return x; };
 
     //! \brief Retrieve the ray parameter
     //!
     //! Retrieve the ray parameter
     void getRayParameter(double& ray_parameter);
+    double getRayParameter() { double x; getRayParameter(x); return x; };
 
     //! \brief Retrieve the turning radius of the ray
     //!
     //! Retrieve the turning radius of the ray
     void getTurningRadius(double& turning_radius);
+    double getTurningRadius() { double x; getTurningRadius(x); return x; };
 
     //! \brief Set the desired spacing of great circle nodes
     //! along the head wave interface, in radians.
@@ -1628,6 +1791,31 @@ public:
     double getPathIncrement();
 
     string getModelString() { return grid->toString(); }
+
+    //! \brief getter for read-only attributes property
+    //! getter for read-only attributes property
+    double getSrcLat() { return srcLat; }
+
+    //! \brief getter for read-only attributes property
+    //! getter for read-only attributes property
+    double getSrcLon() { return srcLon; }
+
+    //! \brief getter for read-only attributes property
+    //! getter for read-only attributes property
+    double getSrcDep() { return srcDep; }
+
+    //! \brief getter for read-only attributes property
+    //! getter for read-only attributes property
+    double getRcvLat() { return rcvLat; }
+
+    //! \brief getter for read-only attributes property
+    //! getter for read-only attributes property
+    double getRcvLon() { return rcvLon; }
+
+    //! \brief getter for read-only attributes property
+    //! getter for read-only attributes property
+    double getRcvDep() { return rcvDep; }
+
 
 protected:
 
@@ -1989,8 +2177,7 @@ inline void SlbmInterface::getActiveNodeWeights(int nodeId[], double weight[], i
         nodeId[i] = grid->getActiveNodeId(nodeId[i]);
 }
 
-inline void SlbmInterface::getWeights(
-            vector<int>& nodeId, vector<double>& weight)
+inline void SlbmInterface::getWeights(vector<int>& nodeId, vector<double>& weight)
 {
     if (!isValid())
     {
@@ -2006,8 +2193,7 @@ inline void SlbmInterface::getWeights(
     greatCircle->getWeights(nodeId, weight);
 }
 
-inline void SlbmInterface::getActiveNodeWeights(
-            vector<int>& nodeId, vector<double>& weight)
+inline void SlbmInterface::getActiveNodeWeights(vector<int>& nodeId, vector<double>& weight)
 {
     getWeights(nodeId, weight);
     for (int i=0; i<(int)nodeId.size(); ++i)
@@ -2028,11 +2214,37 @@ inline void SlbmInterface::getWeightsSource(int nodeids[], double weights[], int
     greatCircle->getSourceProfile()->getWeights(nodeids, weights, nWeights);
 }
 
+inline void SlbmInterface::getWeightsSource(vector<int> &nodeids, vector<double> &weights)
+{
+    // get the number of weights
+    int nWeights = greatCircle->getSourceProfile()->getNCoefficients();
+
+    // resize arrays to proper size
+    nodeids.resize(nWeights);
+    weights.resize(nWeights);
+
+    // call getWeightsSource (v.data() sends a pointer similar to a c++ array)
+    getWeightsSource(nodeids.data(), weights.data(), nWeights);
+}
+
 inline void SlbmInterface::getActiveNodeWeightsSource(int nodeids[], double weights[], int& nWeights)
 {
     getWeightsSource(nodeids, weights, nWeights);
     for (int i=0; i<nWeights; ++i)
         nodeids[i] = grid->getActiveNodeId(nodeids[i]);
+}
+
+inline void SlbmInterface::getActiveNodeWeightsSource(vector<int> &nodeids, vector<double> &weights)
+{
+    // get the number of weights
+    int nWeights = greatCircle->getSourceProfile()->getNCoefficients();
+
+    // resize arrays to proper size
+    nodeids.resize(nWeights);
+    weights.resize(nWeights);
+
+    // call getActiveNodeWeightsSource (v.data() sends a pointer similar to a c++ array)
+    getActiveNodeWeightsSource(nodeids.data(), weights.data(), nWeights);
 }
 
 inline void SlbmInterface::getWeightsReceiver(int nodeids[], double weights[], int& nWeights)
@@ -2049,11 +2261,37 @@ inline void SlbmInterface::getWeightsReceiver(int nodeids[], double weights[], i
     greatCircle->getReceiverProfile()->getWeights(nodeids, weights, nWeights);
 }
 
+inline void SlbmInterface::getWeightsReceiver(vector<int> &nodeids, vector<double> &weights)
+{
+    // get the number of weights
+    int nWeights = greatCircle->getReceiverProfile()->getNCoefficients();
+
+    // resize arrays to proper size
+    nodeids.resize(nWeights);
+    weights.resize(nWeights);
+
+    // call getActiveNodeWeightsSource (v.data() sends a pointer similar to a c++ array)
+    getWeightsReceiver(nodeids.data(), weights.data(), nWeights);
+}
+
 inline void SlbmInterface::getActiveNodeWeightsReceiver(int nodeids[], double weights[], int& nWeights)
 {
     getWeightsReceiver(nodeids, weights, nWeights);
     for (int i=0; i<nWeights; ++i)
         nodeids[i] = grid->getActiveNodeId(nodeids[i]);
+}
+
+inline void SlbmInterface::getActiveNodeWeightsReceiver(vector<int> &nodeids, vector<double> &weights)
+{
+    // get the number of weights
+    int nWeights = greatCircle->getReceiverProfile()->getNCoefficients();
+
+    // resize arrays to proper size
+    nodeids.resize(nWeights);
+    weights.resize(nWeights);
+
+    // call getActiveNodeWeightsSource (v.data() sends a pointer similar to a c++ array)
+    getActiveNodeWeightsReceiver(nodeids.data(), weights.data(), nWeights);
 }
 
 inline string SlbmInterface::toString(const int& verbosity)
@@ -2114,8 +2352,51 @@ inline void SlbmInterface::getGreatCircleData(
 
     int p;
     greatCircle->getData(p, actual_path_increment,
-        sourceDepth, sourceVelocity, receiverDepth,	receiverVelocity,
+        sourceDepth, sourceVelocity, receiverDepth, receiverVelocity,
         npoints, headWaveVelocity, gradient);
+    phase = (p==Pn ? "Pn" : (p==Sn ? "Sn" : (p==Pg ? "Pg" : (p==Lg ? "Lg"
+        : "unknown phase"))));
+}
+
+inline void SlbmInterface::getGreatCircleData(
+        string &phase,
+        double &actual_path_increment,
+        vector<double> &sourceDepth,
+        vector<double> &sourceVelocity,
+        vector<double> &receiverDepth,
+        vector<double> &receiverVelocity,
+        int &npoints,
+        vector<double> &headWaveVelocity,
+        vector<double> &gradient
+        )
+{
+    if (!isValid())
+    {
+        phase = "";
+        actual_path_increment = NA_VALUE;
+        ostringstream os;
+        os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
+          os << endl << "ERROR in SlbmInterface::getGreatCircleData" << endl
+            << "GreatCircle is invalid." << endl
+              << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+        throw SLBMException(os.str(),113);
+    }
+
+    // figure out how many points there are
+    getNHeadWavePoints(npoints);
+
+    // make some room in memory
+    sourceDepth.resize(NLAYERS);
+    sourceVelocity.resize(NLAYERS);
+    receiverDepth.resize(NLAYERS);
+    receiverVelocity.resize(NLAYERS);
+    headWaveVelocity.resize(npoints);
+    gradient.resize(npoints);
+
+    int p;
+    greatCircle->getData(p, actual_path_increment,
+        sourceDepth.data(), sourceVelocity.data(), receiverDepth.data(),
+        receiverVelocity.data(), npoints, headWaveVelocity.data(), gradient.data());
     phase = (p==Pn ? "Pn" : (p==Sn ? "Sn" : (p==Pg ? "Pg" : (p==Lg ? "Lg"
         : "unknown phase"))));
 }
@@ -2141,6 +2422,21 @@ inline void SlbmInterface::getGreatCircleNodeInfo(
 
     greatCircle->getNodeInfo(neighbors, coefficients, maxpoints, maxnodes, npoints, nnodes);
 }
+inline void SlbmInterface::getGreatCircleNodeInfo(
+    vector<vector<int> >& neighbors, vector<vector<double> >& coefficients)
+    {
+        if (!isValid())
+        {
+            ostringstream os;
+            os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
+              os << endl << "ERROR in SlbmInterface::getGreatCircleNodeInfo" << endl
+                << "GreatCircle is invalid." << endl
+                  << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+            throw SLBMException(os.str(),113);
+        }
+
+        greatCircle->getNodeInfo(neighbors, coefficients);
+    }
 
 inline void SlbmInterface::getGreatCircleLocations(
         double lat[],
@@ -2171,13 +2467,35 @@ inline void SlbmInterface::getGreatCircleLocations(
     }
 }
 
+inline void SlbmInterface::getGreatCircleLocations(
+        vector<double> &lat,
+        vector<double> &lon,
+        vector<double> &depth
+        )
+{
+    if (!isValid())
+    {
+        ostringstream os;
+        os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
+          os << endl << "ERROR in SlbmInterface::getGreatCircleData" << endl
+            << "GreatCircle is invalid." << endl
+              << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+        throw SLBMException(os.str(),113);
+    }
+    int npoints = getNHeadWavePoints();
+    lat.resize(npoints);
+    lon.resize(npoints);
+    depth.resize(npoints);
+    getGreatCircleLocations(lat.data(), lon.data(), depth.data(), npoints);
+}
+
 
 inline void SlbmInterface::getInterpolatedPoint(
         const double& lat,
         const double& lon,
-        int* nodeId,
+        int* nodeIds,
         double* coefficients,
-        int& nNeighbors,
+        int& nWeights,
         double depth[NLAYERS],
         double pvelocity[NLAYERS],
         double svelocity[NLAYERS],
@@ -2187,7 +2505,41 @@ inline void SlbmInterface::getInterpolatedPoint(
 {
     Location location(lat, lon, 0.);
     QueryProfile* profile = grid->getQueryProfile(location);
-    profile->getData(nodeId, coefficients, nNeighbors, depth, pvelocity, svelocity, pgradient, sgradient);
+    profile->getData(nodeIds, coefficients, nWeights, depth, pvelocity, svelocity, pgradient, sgradient);
+    delete profile;
+}
+
+inline void SlbmInterface::getInterpolatedPoint(
+        const double &lat,
+        const double &lon,
+        vector<int> &nodeIds,
+        vector<double> &coefficients,
+        vector<double> &depth,
+        vector<double> &pvelocity,
+        vector<double> &svelocity,
+        double &pgradient,
+        double &sgradient
+        )
+{
+    // create a new location at the lat/lon
+    Location location(lat, lon, 0.);
+
+    // interpolate a profile at that location
+    QueryProfile* profile = grid->getQueryProfile(location);
+
+    // get the number of points used for that interpolation
+    int nWeights = profile->getNCoefficients();
+
+    // allocate some memory
+    nodeIds.resize(nWeights);
+    coefficients.resize(nWeights);
+    depth.resize(NLAYERS);
+    pvelocity.resize(NLAYERS);
+    svelocity.resize(NLAYERS);
+
+    // call the method
+    profile->getData(nodeIds.data(), coefficients.data(), nWeights,
+        depth.data(), pvelocity.data(), svelocity.data(), pgradient, sgradient);
     delete profile;
 }
 
@@ -2232,6 +2584,92 @@ inline void SlbmInterface::getInterpolatedTransect(
 
             pgradient[i] = NA_VALUE;
             sgradient[i] = NA_VALUE;
+
+            ++nInvalid;
+        }
+    }
+}
+inline void SlbmInterface::getInterpolatedTransect(
+        vector<double> lat,
+        vector<double> lon,
+        vector<vector<int> > &nodeId,
+        vector<vector<double> > &coefficients,
+        vector<vector<double> > &depth,
+        vector<vector<double> > &pvelocity,
+        vector<vector<double> > &svelocity,
+        vector<double> &pgradient,
+        vector<double> &sgradient,
+        int &nInvalid
+        )
+{
+    nInvalid = 0;
+
+    // check lat/lon sizes match
+    int nLatLon;
+    if (lat.size() == lon.size())
+    {
+        nLatLon = lat.size();
+    }
+    else
+    {
+        ostringstream os;
+        os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
+          os << endl << "ERROR in SlbmInterface::getInterpolatedTransect" << endl
+            << "Size of lat and lon vectors do not match." << endl
+            << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+        throw SLBMException(os.str(),114);
+    }
+
+    // resize vectors
+    nodeId.resize(nLatLon);
+    coefficients.resize(nLatLon);
+    depth.resize(nLatLon);
+    pvelocity.resize(nLatLon);
+    svelocity.resize(nLatLon);
+    pgradient.resize(nLatLon);
+    sgradient.resize(nLatLon);
+    for (int i=0; i<nLatLon; i++)
+    {
+        depth[i].resize(NLAYERS);
+        pvelocity[i].resize(NLAYERS);
+        svelocity[i].resize(NLAYERS);
+    }
+
+
+    for (int i=0; i<nLatLon; i++)
+    {
+        try
+        {
+            // create a new Location at the input lat/lon
+            Location location(lat[i], lon[i], 0.);
+
+            // interpolate a profile at that location
+            QueryProfile profile(*grid, location);  // create a query profile at that location
+
+            // get the number of points used for that interpolation
+            int nWeights = profile.getNCoefficients();
+
+            // resize vectors
+            nodeId[i].resize(nWeights);
+            coefficients[i].resize(nWeights);
+
+            getInterpolatedPoint(lat[i], lon[i], nodeId[i].data(), coefficients[i].data(), nWeights,
+                depth[i].data(), pvelocity[i].data(), svelocity[i].data(), pgradient[i], sgradient[i]);
+
+        }
+        catch (SLBMException ex)
+        {
+            nodeId[i].push_back(-1);
+            coefficients[i].push_back(NA_VALUE);
+            pgradient[i] = NA_VALUE;
+            sgradient[i] = NA_VALUE;
+
+            for (int j=0; j<NLAYERS; j++)
+            {
+                depth[i][j]     = NA_VALUE;
+                pvelocity[i][j] = NA_VALUE;
+                svelocity[i][j] = NA_VALUE;
+            }
 
             ++nInvalid;
         }
@@ -2361,8 +2799,8 @@ inline 	string SlbmInterface::getUncertaintyTable(const int& phase, const int& a
     {
         ostringstream os;
         os << "No uncertainty information is available for phase " <<
-                Uncertainty::getPhase(phase) << " attribute " <<
-                Uncertainty::getAttribute(attribute) << endl;
+                UncertaintyPIU::getPhase(phase) << " attribute " <<
+                UncertaintyPIU::getAttribute(attribute) << endl;
         return os.str();
     }
     return grid->getUncertainty()[phase][attribute]->toStringTable();
@@ -2478,7 +2916,7 @@ inline 	void SlbmInterface::getActiveNodeNeighbors(const int& nid, vector<int>& 
     grid->getActiveNodeNeighbors(nid, neighbors);
 }
 
-inline 	void SlbmInterface::getNodeNeighborInfo(const int& nid, int neighbors[],
+inline  void SlbmInterface::getNodeNeighborInfo(const int& nid, int neighbors[],
             double distance[], double azimuth[], int& nNeighbors)
 {
     if (!grid)
@@ -2491,6 +2929,21 @@ inline 	void SlbmInterface::getNodeNeighborInfo(const int& nid, int neighbors[],
         throw SLBMException(os.str(),114);
     }
     grid->getNodeNeighborInfo(nid, neighbors, distance, azimuth, nNeighbors);
+}
+
+inline  void SlbmInterface::getNodeNeighborInfo(const int nid,
+        vector<int> &neighbors, vector<double> &distance, vector<double> &azimuth)
+{
+    if (!grid)
+    {
+        ostringstream os;
+        os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
+          os << endl << "ERROR in SlbmInterface::getNodeNeighborInfo" << endl
+            << "Grid is invalid.  Has the earth model been loaded with call to loadVelocityModel()?" << endl
+            << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+        throw SLBMException(os.str(),114);
+    }
+    grid->getNodeNeighborInfo(nid, neighbors, distance, azimuth);
 }
 
 inline 	void SlbmInterface::getActiveNodeNeighborInfo(const int& nid, int neighbors[],
@@ -2566,11 +3019,37 @@ inline void SlbmInterface::initializeActiveNodes(const double& latmin, const dou
     grid->initializeActiveNodes(latmin, lonmin, latmax, lonmax);
 }
 
-inline void SlbmInterface::initializeActiveNodes(double* lat, double* lon, const int& npoints, const bool& degrees)
+inline void SlbmInterface::initializeActiveNodes(double* lat, double* lon, const int& npoints, const bool& inDegrees)
 {
     vector<double*> v;
     v.reserve(npoints);
-    if (degrees)
+    if (inDegrees)
+        for (int i=0; i<npoints; ++i)
+            v.push_back(GeoTessUtils::getVectorDegrees(lat[i], lon[i]));
+    else
+        for (int i=0; i<npoints; ++i)
+            v.push_back(GeoTessUtils::getVector(lat[i], lon[i]));
+    initializeActiveNodes(v);
+}
+inline void SlbmInterface::initializeActiveNodes(const vector<double> lat, const vector<double> lon, const bool& inDegrees)
+{
+    int npoints;
+    if (lat.size() == lon.size())
+    {
+        npoints = lat.size();
+    }
+    else
+    {
+        ostringstream os;
+        os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
+          os << endl << "ERROR in SlbmInterface::getInterpolatedTransect" << endl
+            << "Size of lat and lon vectors do not match." << endl
+            << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+        throw SLBMException(os.str(),114);
+    }
+    vector<double*> v;
+    v.reserve(npoints);
+    if (inDegrees)
         for (int i=0; i<npoints; ++i)
             v.push_back(GeoTessUtils::getVectorDegrees(lat[i], lon[i]));
     else
@@ -2684,6 +3163,20 @@ inline void SlbmInterface::getAverageMantleVelocity(const int& type, double& vel
     velocity = grid->getAverageMantleVelocity(type);
 }
 
+inline double SlbmInterface::getAverageMantleVelocity(const int &type)
+{
+    if (!grid)
+    {
+        ostringstream os;
+        os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
+          os << endl << "ERROR in SlbmInterface::setAverageMantleVelocity" << endl
+            << "Grid is invalid.  Has the earth model been loaded with call to loadVelocityModel()?" << endl
+            << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+        throw SLBMException(os.str(),114);
+    }
+    return grid->getAverageMantleVelocity(type);
+}
+
 inline void SlbmInterface::setAverageMantleVelocity(const int& type,
                                                     const double& velocity)
 {
@@ -2759,24 +3252,13 @@ inline void SlbmInterface::getPiercePointSource(double& lat, double& lon, double
     }
 
 
-    if (greatCircle->getPhase() == Pg || greatCircle->getPhase() == Lg)
+    if ((greatCircle->getPhase() == Pg || greatCircle->getPhase() == Lg) && !greatCircle->getSourceProfile()->isInCrust())
     {
         lat = lon = NA_VALUE;
         ostringstream os;
         os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
           os << endl << "ERROR in SlbmInterface::getPiercePointSource" << endl
-            << "Cannot compute moho pierce points for " << getPhase() << endl
-              << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-        throw SLBMException(os.str(),113);
-    }
-
-    if (!greatCircle->getSourceProfile()->isInCrust())
-    {
-        lat = lon = NA_VALUE;
-        ostringstream os;
-        os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
-          os << endl << "ERROR in SlbmInterface::getPiercePointSource" << endl
-            << "Cannot compute moho pierce point for source in the mantle." << endl
+            << "Cannot compute moho pierce points for crustal phase (" << getPhase() << ") when source is in the mantle." << endl
               << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
         throw SLBMException(os.str(),113);
     }
@@ -2789,7 +3271,10 @@ inline void SlbmInterface::getPiercePointSource(double& lat, double& lon, double
 
     QueryProfile* profile = NULL;
     profile = grid->getQueryProfile(loc);
-    depth = profile->getDepth()[MANTLE];
+    if (greatCircle->getPhase() == Pg || greatCircle->getPhase() == Lg)
+        depth = profile->getDepth()[MIDDLE_CRUST_G];
+    else
+        depth = profile->getDepth()[MANTLE];
     delete profile;
 }
 
@@ -2807,24 +3292,13 @@ inline void SlbmInterface::getPiercePointReceiver(double& lat, double& lon, doub
     }
 
 
-    if (greatCircle->getPhase() == Pg || greatCircle->getPhase() == Lg)
+    if ((greatCircle->getPhase() == Pg || greatCircle->getPhase() == Lg) && !greatCircle->getReceiverProfile()->isInCrust())
     {
         lat = lon = NA_VALUE;
         ostringstream os;
         os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
           os << endl << "ERROR in SlbmInterface::getPiercePointReceiver" << endl
-            << "Cannot compute moho pierce points for " << getPhase() << endl
-              << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-        throw SLBMException(os.str(),113);
-    }
-
-    if (!greatCircle->getReceiverProfile()->isInCrust())
-    {
-        lat = lon = NA_VALUE;
-        ostringstream os;
-        os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
-          os << endl << "ERROR in SlbmInterface::getPiercePointReceiver" << endl
-            << "Cannot compute moho pierce point for receiver in the mantle." << endl
+            << "Cannot compute moho pierce points for crustal phase (" << getPhase() << ") when receiver is in the mantle." << endl
               << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
         throw SLBMException(os.str(),113);
     }
@@ -2838,7 +3312,10 @@ inline void SlbmInterface::getPiercePointReceiver(double& lat, double& lon, doub
 
     QueryProfile* profile = NULL;
     profile = grid->getQueryProfile(loc);
-    depth = profile->getDepth()[MANTLE];
+    if (greatCircle->getPhase() == Pg || greatCircle->getPhase() == Lg)
+        depth = profile->getDepth()[MIDDLE_CRUST_G];
+    else
+        depth = profile->getDepth()[MANTLE];
     delete profile;
 }
 
@@ -2865,6 +3342,32 @@ inline void SlbmInterface::getGreatCirclePoints(
     }
 }
 
+inline void SlbmInterface::getGreatCirclePoints(
+        const double& aLat,
+        const double& aLon,
+        const double& bLat,
+        const double& bLon,
+        const int& npoints,
+        vector<double> &latitude,
+        vector<double> &longitude)
+{
+    latitude.resize(npoints);
+    longitude.resize(npoints);
+
+    Location a(aLat, aLon, 0.);
+    Location b(bLat, bLon, 0.);
+    double dx = a.distance(b)/(npoints-1);
+
+    double moveDirection[3];
+    a.vectorTripleProduct(b, moveDirection);
+    for (int i=0; i<npoints; i++)
+    {
+        a.move(moveDirection, i*dx, b);
+        latitude[i] = b.getLat();
+        longitude[i] = b.getLon();
+    }
+}
+
 inline void SlbmInterface::getGreatCirclePointsOnCenters(
         const double& aLat,
         const double& aLon,
@@ -2874,6 +3377,32 @@ inline void SlbmInterface::getGreatCirclePointsOnCenters(
         double latitude[],
         double longitude[])
 {
+    Location a(aLat, aLon, 0.);
+    Location b(bLat, bLon, 0.);
+    double dx = a.distance(b)/npoints;
+
+    double moveDirection[3];
+    a.vectorTripleProduct(b, moveDirection);
+    for (int i=0; i<npoints; i++)
+    {
+        a.move(moveDirection, (i+0.5)*dx, b);
+        latitude[i] = b.getLat();
+        longitude[i] = b.getLon();
+    }
+}
+
+inline void SlbmInterface::getGreatCirclePointsOnCenters(
+        const double& aLat,
+        const double& aLon,
+        const double& bLat,
+        const double& bLon,
+        const int& npoints,
+        vector<double> &latitude,
+        vector<double> &longitude)
+{
+    latitude.resize(npoints);
+    longitude.resize(npoints);
+
     Location a(aLat, aLon, 0.);
     Location b(bLat, bLon, 0.);
     double dx = a.distance(b)/npoints;

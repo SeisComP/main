@@ -35,8 +35,8 @@
 //-
 //- ****************************************************************************
 
-#ifndef Uncertainty_H
-#define Uncertainty_H
+#ifndef UncertaintyPIU_H
+#define UncertaintyPIU_H
 
 // **** _SYSTEM INCLUDES_ ******************************************************
 
@@ -57,10 +57,10 @@ namespace slbm {
 // **** _LOCAL INCLUDES_ *******************************************************
 
 //!
-//! \brief A Uncertainty object contains the raw data to calculate a modeling
+//! \brief A UncertaintyPIU object contains the raw data to calculate a modeling
 //! error in seconds as a function of distance in radians.
 //!
-//! A Uncertainty object contains the raw data to calculate a modeling
+//! A UncertaintyPIU object contains the raw data to calculate a modeling
 //! error in seconds as a function of distance in radians.
 //!
 //! <p>Code includes functionality to store and compute uncertainty for
@@ -69,7 +69,7 @@ namespace slbm {
 //! information.  All uncertainties are a function of distance only.
 //! Therefore, functionality to handle 2D uncertainty has not been tested and
 //! it is considered unlikely that it will work as currently coded.
-class SLBM_EXP Uncertainty
+class SLBM_EXP UncertaintyPIU
 {
 
 public:
@@ -77,21 +77,21 @@ public:
     //! \brief Default constructor.
     //!
     //! Default constructor.
-    Uncertainty();
+    UncertaintyPIU();
 
     //! \brief Parameterized constructor that loads model error
     //! from a specified file.
     //!
     //! Parameterized constructor that loads model error data
     //! from a file. Uses an SLBM specific phase ordering index.
-    Uncertainty(const int& phase, const int& attribute);
+    UncertaintyPIU(const int& phase, const int& attribute);
 
     //! \brief Parameterized constructor that loads model error
     //! from a specified file.
     //!
     //! Parameterized constructor that loads model error data
     //! from a file. Uses an SLBM specific phase ordering index.
-    Uncertainty(const string& phase, const string& attribute);
+    UncertaintyPIU(const string& phase, const string& attribute);
 
     // \brief Parameterized constructor that loads model error
     //! from a specified file.
@@ -99,151 +99,153 @@ public:
     //! Parameterized constructor that loads model error data
     //! from a file. Uses the input phase string to find the uncertainty
     //! data file and assigns a phase ordering index.
-    Uncertainty(string modelPath, const string& phase, int phasenum);
+    UncertaintyPIU(string modelPath, const string& phase, int phasenum);
 
     //! \brief Parameterized constructor that loads model error
     //! from a specified file.
     //!
     //! Parameterized constructor that loads model error data
     //! from a file. Uses an SLBM specific phase ordering index.
-    Uncertainty(string modelPath, const int& phase, const int& attribute);
+    UncertaintyPIU(string modelPath, const int& phase, const int& attribute);
 
     //! \brief Parameterized constructor that loads uncertainty data
     //! from the input DataBuffer.
     //!
     //! Parameterized constructor that loads model error data
     //! from a file.
-    Uncertainty(util::DataBuffer& buffer);
+    UncertaintyPIU(util::DataBuffer& buffer);
 
     //! \brief Copy constructor.
     //!
     //! Copy constructor.
-    Uncertainty(const Uncertainty& u);
+    UncertaintyPIU(const UncertaintyPIU& u);
 
     /**
-     * Retrieve a new Uncertainty object for the specified phase and attribute,
+     * Retrieve a new UncertaintyPIU object for the specified phase and attribute,
      * loaded from specified input source.
      * @param input data source
      * @param phase 0:Pn, 1:Sn, 2:Pg, 3:Lg
      * @param attribute 0:TT, 1:SH, 2:AZ
-     * @return pointer to an Uncertainty object.  Will return null if the
+     * @return pointer to an UncertaintyPIU object.  Will return null if the
      * number of distances in the file is zero.
      */
-    static Uncertainty* getUncertainty(ifstream& input, const int& phase, const int& attribute);
+    static UncertaintyPIU* getUncertaintyPIU(ifstream& input, const int& phase, const int& attribute);
 
     /**
-     * Retrieve a new Uncertainty object for the specified phase and attribute,
+     * Retrieve a new UncertaintyPIU object for the specified phase and attribute,
      * loaded from specified input source.
      * @param input data source
      * @param phase 0:Pn, 1:Sn, 2:Pg, 3:Lg
      * @param attribute 0:TT, 1:SH, 2:AZ
-     * @return pointer to an Uncertainty object.  Will return null if the
+     * @return pointer to an UncertaintyPIU object.  Will return null if the
      * number of distances in the file is zero.
      */
-    static Uncertainty* getUncertainty(ifstream& input, const string& phase, const string& attribute);
+    static UncertaintyPIU* getUncertaintyPIU(ifstream& input, const string& phase, const string& attribute);
 
     /**
-     * Retrieve a new Uncertainty object for the specified phase and attribute,
+     * Retrieve a new UncertaintyPIU object for the specified phase and attribute,
      * loaded from specified input source.
      * @param input data source
      * @param phase 0:Pn, 1:Sn, 2:Pg, 3:Lg
      * @param attribute 0:TT, 1:SH, 2:AZ
-     * @return pointer to an Uncertainty object.  Will return null if the
+     * @return pointer to an UncertaintyPIU object.  Will return null if the
      * number of distances in the file is zero.
      */
-    static Uncertainty* getUncertainty(geotess::IFStreamAscii& input, const int& phase, const int& attribute);
+    static UncertaintyPIU* getUncertaintyPIU(geotess::IFStreamAscii& input, const int& phase, const int& attribute);
 
     /**
-     * Retrieve a new Uncertainty object for the specified phase and attribute,
+     * Retrieve a new UncertaintyPIU object for the specified phase and attribute,
      * loaded from specified input source.
      * @param input data source
      * @param phase 0:Pn, 1:Sn, 2:Pg, 3:Lg
      * @param attribute 0:TT, 1:SH, 2:AZ
-     * @return pointer to an Uncertainty object.  Will return null if the
+     * @return pointer to an UncertaintyPIU object.  Will return null if the
      * number of distances in the file is zero.
      */
-    static Uncertainty* getUncertainty(geotess::IFStreamAscii& input, const string& phase, const string& attribute);
+    static UncertaintyPIU* getUncertaintyPIU(geotess::IFStreamAscii& input, const string& phase, const string& attribute);
 
     /**
-     * Retrieve a new Uncertainty object for the specified phase and attribute,
+     * Retrieve a new UncertaintyPIU object for the specified phase and attribute,
      * loaded from specified input source.
      * @param input data source
      * @param phase 0:Pn, 1:Sn, 2:Pg, 3:Lg
      * @param attribute 0:TT, 1:SH, 2:AZ
-     * @return pointer to an Uncertainty object.  Will return null if the
+     * @return pointer to an UncertaintyPIU object.  Will return null if the
      * number of distances in the file is zero.
      */
-    static Uncertainty* getUncertainty(geotess::IFStreamBinary& input, const int& phase, const int& attribute);
+    static UncertaintyPIU* getUncertaintyPIU(geotess::IFStreamBinary& input, const int& phase, const int& attribute);
 
     /**
-     * Retrieve a new Uncertainty object for the specified phase and attribute,
+     * Retrieve a new UncertaintyPIU object for the specified phase and attribute,
      * loaded from specified input source.
      * @param input data source
      * @param phase 0:Pn, 1:Sn, 2:Pg, 3:Lg
      * @param attribute 0:TT, 1:SH, 2:AZ
-     * @return pointer to an Uncertainty object.  Will return null if the
+     * @return pointer to an UncertaintyPIU object.  Will return null if the
      * number of distances in the file is zero.
      */
-    static Uncertainty* getUncertainty(geotess::IFStreamBinary& input, const string& phase, const string& attribute);
+    static UncertaintyPIU* getUncertaintyPIU(geotess::IFStreamBinary& input, const string& phase, const string& attribute);
 
     /**
-     * Retrieve a new Uncertainty object for the specified phase and attribute,
+     * Retrieve a new UncertaintyPIU object for the specified phase and attribute,
      * loaded from specified input source.
      * @param input data source
      * @param phase 0:Pn, 1:Sn, 2:Pg, 3:Lg
      * @param attribute 0:TT, 1:SH, 2:AZ
-     * @return pointer to an Uncertainty object.  Will return null if the
+     * @return pointer to an UncertaintyPIU object.  Will return null if the
      * number of distances in the file is zero.
      */
-    static Uncertainty* getUncertainty(util::DataBuffer& input, const int& phase, const int& attribute);
+    static UncertaintyPIU* getUncertaintyPIU(util::DataBuffer& input, const int& phase, const int& attribute);
 
     /**
-     * Retrieve a new Uncertainty object for the specified phase and attribute,
+     * Retrieve a new UncertaintyPIU object for the specified phase and attribute,
      * loaded from specified input source.
      * @param input data source
      * @param phase 0:Pn, 1:Sn, 2:Pg, 3:Lg
      * @param attribute 0:TT, 1:SH, 2:AZ
-     * @return pointer to an Uncertainty object.  Will return null if the
+     * @return pointer to an UncertaintyPIU object.  Will return null if the
      * number of distances in the file is zero.
      */
-    static Uncertainty* getUncertainty(util::DataBuffer& input, const string& phase, const string& attribute);
+    static UncertaintyPIU* getUncertaintyPIU(util::DataBuffer& input, const string& phase, const string& attribute);
 
     /**
-     * Retrieve a new Uncertainty object for the specified phase and attribute,
+     * Retrieve a new UncertaintyPIU object for the specified phase and attribute,
      * loaded from specified input source.
      * @param directoryName data source
      * @param phase 0:Pn, 1:Sn, 2:Pg, 3:Lg
      * @param attribute 0:TT, 1:SH, 2:AZ
-     * @return pointer to an Uncertainty object.  Will return null if the
+     * @return pointer to an UncertaintyPIU object.  Will return null if the
      * number of distances in the file is zero.
      */
-    static Uncertainty* getUncertainty(const string& directoryName, const int& phase, const int& attribute);
+    static UncertaintyPIU* getUncertaintyPIU(const string& directoryName, const int& phase, const int& attribute);
 
     //! \brief Destructor.
     //!
     //! Destructor.
-    ~Uncertainty();
+    virtual ~UncertaintyPIU();
 
     //! \brief Assignment operator.
     //!
     //! Assignment operator.
-    Uncertainty& operator=(const Uncertainty& u);
+    UncertaintyPIU& operator=(const UncertaintyPIU& u);
 
     /**
      * Overloaded equality operator
-     * @param other reference to the other Uncertainty object to which
-     * this Uncertainty object is to be compared
+     * @param other reference to the other UncertaintyPIU object to which
+     * this UncertaintyPIU object is to be compared
      * @return true if this and other are equal.
      */
-    bool operator==(const Uncertainty& other);
+    virtual bool operator == (const UncertaintyPIU& other) const;
+
+    virtual bool operator != (const UncertaintyPIU& other) const { return !(*this == other); } ;
 
     /**
      * Overloaded inequality operator
-     * @param other reference to the other Uncertainty object to which
-     * this Uncertainty object is to be compared
+     * @param other reference to the other UncertaintyPIU object to which
+     * this UncertaintyPIU object is to be compared
      * @return true if this and other are not equal.
      */
-    bool operator!=(const Uncertainty& other) { return !(*this == other); }
+    bool operator!=(const UncertaintyPIU& other) { return !(*this == other); }
 
     void readFile(ifstream& fin);
 
@@ -496,33 +498,33 @@ private:
 
 };
 
-inline int Uncertainty::getPhase()
+inline int UncertaintyPIU::getPhase()
 {
     return phaseNum;
 }
 
-inline int Uncertainty::getAttribute()
+inline int UncertaintyPIU::getAttribute()
 {
     return attributeNum;
 }
 
-inline string Uncertainty::getPhaseStr()
+inline string UncertaintyPIU::getPhaseStr()
 {
     return getPhase(phaseNum);
 }
 
-inline string Uncertainty::getAttributeStr()
+inline string UncertaintyPIU::getAttributeStr()
 {
     return getAttribute(attributeNum);
 }
 
-inline double Uncertainty::getUncertainty(double f, int idist, int idepth)
+inline double UncertaintyPIU::getUncertainty(double f, int idist, int idepth)
 {
     return (f * (errVal[idepth][idist+1] - errVal[idepth][idist]) +
             errVal[idepth][idist]);
 }
 
-inline double Uncertainty::getVariance(double f, int idist, int idepth)
+inline double UncertaintyPIU::getVariance(double f, int idist, int idepth)
 {
     return (f * (errVal[idepth][idist+1] * errVal[idepth][idist+1] -
             errVal[idepth][idist] * errVal[idepth][idist]) +

@@ -1,23 +1,21 @@
 //- ****************************************************************************
 //-
-//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
-//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
-//- Government retains certain rights in this software.
+//- Copyright 2009 Sandia Corporation. Under the terms of Contract
+//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
+//- retains certain rights in this software.
 //-
-//- BSD Open Source License
+//- BSD Open Source License.
 //- All rights reserved.
 //-
 //- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
 //-
-//-   1. Redistributions of source code must retain the above copyright notice,
+//-    * Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-
-//-   2. Redistributions in binary form must reproduce the above copyright
+//-    * Redistributions in binary form must reproduce the above copyright
 //-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-
-//-   3. Neither the name of the copyright holder nor the names of its
+//-    * Neither the name of Sandia National Laboratories nor the names of its
 //-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
 //-
@@ -72,1142 +70,1142 @@ class GEOTESS_EXP_IMP GeoTessUtils
 {
 private:
 
-    /*
-     * Private copy constructor. Not used.
-     */
-    GeoTessUtils(const GeoTessUtils& gtu) { }
+	/*
+	 * Private copy constructor. Not used.
+	 */
+	GeoTessUtils(const GeoTessUtils& gtu) { }
 
-    /*
-     * Private assignment operator. Not used.
-     */
-    GeoTessUtils& operator=(const GeoTessUtils& gtu) { return *this; }
+	/*
+	 * Private assignment operator. Not used.
+	 */
+	GeoTessUtils& operator=(const GeoTessUtils& gtu) { return *this; }
 
 public:
 
-    /**
-     * If true, then an approximate algorithm will be used to
-     * convert back and forth between geocentric and geographic latitudes.
-     * The approximation incurs an error of about 0.1 meters in latitude
-     * calculations but is faster than the correct calculation.
-     * <p>Note that the existence of this static, mutable variable technically
-     * violates thread-safety of this class. But given the assumption that
-     * the approximation is just as good as the true conversions, this is
-     * not a significant violation.
-     */
-    static bool approximateLatitudes;
+	/**
+	 * If true, then an approximate algorithm will be used to
+	 * convert back and forth between geocentric and geographic latitudes.
+	 * The approximation incurs an error of about 0.1 meters in latitude
+	 * calculations but is faster than the correct calculation.
+	 * <p>Note that the existence of this static, mutable variable technically
+	 * violates thread-safety of this class. But given the assumption that
+	 * the approximation is just as good as the true conversions, this is
+	 * not a significant violation.
+	 */
+	static bool approximateLatitudes;
 
-    /**
-     * Default constructor.
-     */
-    GeoTessUtils() { }
+	/**
+	 * Default constructor.
+	 */
+	GeoTessUtils() { }
 
-    /**
-     * Destructor.
-     */
-    virtual ~GeoTessUtils() { }
+	/**
+	 * Destructor.
+	 */
+	virtual ~GeoTessUtils() { }
 
-    /**
-     * Returns the class name.
-     * @return class name
-     */
-    static string class_name()
-    { return "GeoTessUtils"; }
+	/**
+	 * Returns the class name.
+	 * @return class name
+	 */
+	static string class_name()
+	{ return "GeoTessUtils"; }
 
-    /**
-     * Returns the class size.
-     * @return class size
-     */
-    virtual int class_size() const
-    { return (int) sizeof(GeoTessUtils); }
+	/**
+	 * Returns the class size.
+	 * @return class size
+	 */
+	virtual int class_size() const
+	{ return (int) sizeof(GeoTessUtils); }
 
-    /**
-     * The current GeoTess version.
-     * @return the current GeoTess version
-     */
-    static string getVersion() { return "2.2.3"; }
+	/**
+	 * The current GeoTess version.
+	 * @return the current GeoTess version
+	 */
+	static string getVersion() { return "2.6.1"; }
 
-    /**
-     * Return the dot product of two vectors.
-     *
-     * @param v0 a 3 component vector
-     * @param v1 a 3 component vector
-     * @return dot product
-     */
-    static double dot(const double* const v0, const double* const v1)
-    { return v0[0] * v1[0] + v0[1] * v1[1] + v0[2] * v1[2]; }
+	/**
+	 * Return the dot product of two vectors.
+	 *
+	 * @param v0 a 3 component vector
+	 * @param v1 a 3 component vector
+	 * @return dot product
+	 */
+	static double dot(const double* const v0, const double* const v1)
+	{ return v0[0] * v1[0] + v0[1] * v1[1] + v0[2] * v1[2]; }
 
-    /**
-     * Calculate the scalar triple product of 3 3-component vectors: (v0 cross
-     * v1) dot v2
-     *
-     * @param v0 double[]
-     * @param v1 double[]
-     * @param v2 double[]
-     * @return scalar triple product (v0 cross v1) dot v2
-     */
-    static double scalarTripleProduct(const double* const v0,
-            const double* const v1, const double* const v2)
-    {
-        return v0[0] * v1[1] * v2[2] + v1[0] * v2[1] * v0[2]
-                + v2[0] * v0[1] * v1[2] - v2[0] * v1[1] * v0[2]
-                - v0[0] * v2[1] * v1[2] - v1[0] * v0[1] * v2[2];
-    }
+	/**
+	 * Calculate the scalar triple product of 3 3-component vectors: (v0 cross
+	 * v1) dot v2
+	 *
+	 * @param v0 double[]
+	 * @param v1 double[]
+	 * @param v2 double[]
+	 * @return scalar triple product (v0 cross v1) dot v2
+	 */
+	static double scalarTripleProduct(const double* const v0,
+			const double* const v1, const double* const v2)
+	{
+		return v0[0] * v1[1] * v2[2] + v1[0] * v2[1] * v0[2]
+				+ v2[0] * v0[1] * v1[2] - v2[0] * v1[1] * v0[2]
+				- v0[0] * v2[1] * v1[2] - v1[0] * v0[1] * v2[2];
+	}
 
-    /**
-     * Return geocentric latitude given a geographic latitude using the WGS84 ellipsoid
-     *
-     * @param lat
-     *            geographic latitude in radians
-     * @return geocentric latitude in radians
-     */
-    static double getGeocentricLat(const double& lat);
+	/**
+	 * Return geocentric latitude given a geographic latitude using the WGS84 ellipsoid
+	 *
+	 * @param lat
+	 *            geographic latitude in radians
+	 * @return geocentric latitude in radians
+	 */
+	static double getGeocentricLat(const double& lat);
 
-    /**
-     * Return geographic latitude given a geocentric latitude using the WGS84 ellipsoid
-     *
-     * @param lat
-     *            geocentric latitude in radians
-     * @return geographic latitude in radians
-     */
-    static double getGeographicLat(const double& lat);
+	/**
+	 * Return geographic latitude given a geocentric latitude using the WGS84 ellipsoid
+	 *
+	 * @param lat
+	 *            geocentric latitude in radians
+	 * @return geographic latitude in radians
+	 */
+	static double getGeographicLat(const double& lat);
 
-    /// @cond PROTECTED  Turn off doxygen documentation until 'endcond' is found
+	/// @cond PROTECTED  Turn off doxygen documentation until 'endcond' is found
 
-    /**
-     * DEPRECATED: use getGeocentricLat() instead.
-     * Return geocentric latitude given a geographic latitude
-     *
-     * @param lat
-     *            geographic latitude in radians
-     * @return geocentric latitude in radians
-     */
-    static double getGeoCentricLatitude(const double& lat) { return getGeocentricLat(lat); }
+	/**
+	 * DEPRECATED: use getGeocentricLat() instead.
+	 * Return geocentric latitude given a geographic latitude
+	 *
+	 * @param lat
+	 *            geographic latitude in radians
+	 * @return geocentric latitude in radians
+	 */
+	static double getGeoCentricLatitude(const double& lat) { return getGeocentricLat(lat); }
 
-    /**
-     * DEPRECATED: use getGeographicLat() instead.
-     * Return geographic latitude given a geocentric latitude
-     *
-     * @param lat
-     *            geocentric latitude in radians
-     * @return geographic latitude in radians
-     */
-    static double getGeoGraphicLatitude(const double& lat) { return getGeographicLat(lat); }
+	/**
+	 * DEPRECATED: use getGeographicLat() instead.
+	 * Return geographic latitude given a geocentric latitude
+	 *
+	 * @param lat
+	 *            geocentric latitude in radians
+	 * @return geographic latitude in radians
+	 */
+	static double getGeoGraphicLatitude(const double& lat) { return getGeographicLat(lat); }
 
-    ///@endcond
+	///@endcond
 
-    /**
-     * @param v unit vector to be converted to lat, lon string
-     * @return a String of lat,lon in degrees formatted with "%10.6f %11.6f"
-     */
-    static string getLatLonString(const double* const v);
+	/**
+	 * @param v unit vector to be converted to lat, lon string
+	 * @return a String of lat,lon in degrees formatted with "%10.6f %11.6f"
+	 */
+	static string getLatLonString(const double* const v);
 
-    /**
-     * @param v unit vector to be converted to lon,lat string
-     * @return a String of lon,lat in degrees formatted with "%11.6f %10.6f"
-     */
-    static string getLonLatString(const double* const v);
+	/**
+	 * @param v unit vector to be converted to lon,lat string
+	 * @return a String of lon,lat in degrees formatted with "%11.6f %10.6f"
+	 */
+	static string getLonLatString(const double* const v);
 
 
-    /**
-     * Find the azimuth from unit vectors v1 to v2. Result will be between -180
-     * and 180 degrees
-     *
-     * @param v1
-     *            The point from which the azimuth will be directed toward v2.
-     * @param v2
-     *            The point to which the azimuth will be directed from v1.
-     * @param errorValue
-     *            if v1 and v2 are parallel, or if v1 is either the north or
-     *            south pole, then return errorValue
-     * @return the azimuth from v1 to v2, in degrees clockwise from north, or
-     *         errorValue
-     */
-    static double azimuthDegrees(const double* const v1, const double* const v2,
-            double errorValue);
+	/**
+	 * Find the azimuth from unit vectors v1 to v2. Result will be between -180
+	 * and 180 degrees
+	 *
+	 * @param v1
+	 *            The point from which the azimuth will be directed toward v2.
+	 * @param v2
+	 *            The point to which the azimuth will be directed from v1.
+	 * @param errorValue
+	 *            if v1 and v2 are parallel, or if v1 is either the north or
+	 *            south pole, then return errorValue
+	 * @return the azimuth from v1 to v2, in degrees clockwise from north, or
+	 *         errorValue
+	 */
+	static double azimuthDegrees(const double* const v1, const double* const v2,
+			double errorValue);
 
-    /**
-     * Find the azimuth from unit vectors v1 to v2. Result will be between -PI
-     * and PI radians.
-     *
-     * @param v1
-     *            The point from which the azimuth will be directed toward v2.
-     * @param v2
-     *            The point to which the azimuth will be directed from v1.
-     * @param errorValue
-     *            if v1 and v2 are parallel, or if v1 is either the north or
-     *            south pole, then return errorValue
-     * @return the azimuth from v1 to v2, in radians clockwise from north, or
-     *         errorValue
-     */
-    static double azimuth(const double* const v1, const double* const v2,
-            double errorValue);
+	/**
+	 * Find the azimuth from unit vectors v1 to v2. Result will be between -PI
+	 * and PI radians.
+	 *
+	 * @param v1
+	 *            The point from which the azimuth will be directed toward v2.
+	 * @param v2
+	 *            The point to which the azimuth will be directed from v1.
+	 * @param errorValue
+	 *            if v1 and v2 are parallel, or if v1 is either the north or
+	 *            south pole, then return errorValue
+	 * @return the azimuth from v1 to v2, in radians clockwise from north, or
+	 *         errorValue
+	 */
+	static double azimuth(const double* const v1, const double* const v2,
+			double errorValue);
 
-    /**
-     * Rotate unit vector x clockwise around unit vector p, by angle a. x and z
-     * may be references to the same array.  Clockwise rotation as viewed
-     * from outside the unit sphere is positive.
-     *
-     * @param x
-     *            vector to be rotated
-     * @param p
-     *            pole about which rotation is to occur.
-     * @param a
-     *            double the amount of rotation, in radians.
-     * @param z
-     *            the rotated vector, normalized to unit length.
-     */
+	/**
+	 * Rotate unit vector x clockwise around unit vector p, by angle a. x and z
+	 * may be references to the same array.  Clockwise rotation as viewed
+	 * from outside the unit sphere is positive.
+	 *
+	 * @param x
+	 *            vector to be rotated
+	 * @param p
+	 *            pole about which rotation is to occur.
+	 * @param a
+	 *            double the amount of rotation, in radians.
+	 * @param z
+	 *            the rotated vector, normalized to unit length.
+	 */
 static void rotate(const double* const x, const double* const p, double a,
-            double* const z);
+			double* const z);
 
-    /**
-     * A great circle is defined by two unit vectors that are 90 degrees apart.
-     * A great circle is stored in a double[2][3] array, which is the structure
-     * returned by this method. A great circle can be passed to the method
-     * getGreatCirclePoint() to retrieve a unit vector that is on the great
-     * circle and located some distance from the first point of the great
-     * circle.
-     * <p>
-     * This method returns a great circle that is computed from two unit vectors
-     * that are not necessarily 90 degrees apart.
-     *
-     * @param v0
-     *            the first point on the great circle
-     * @param v1
-     *            some other point that is also on the great circle but which is
-     *            not necessarily 90 degrees away from v0.
-     * @return a 2 x 3 array specifying two unit vectors. The first one is a
-     *         clone of unit vector v0 passed as first argument to this method.
-     *         The second is located 90 degrees away from v0.
-     * @throws GeoTessException
-     *             if v0 and v1 are parallel.
-     */
-    static double** getGreatCircle(const double* const v0,
-            const double* const v1);
+	/**
+	 * A great circle is defined by two unit vectors that are 90 degrees apart.
+	 * A great circle is stored in a double[2][3] array, which is the structure
+	 * returned by this method. A great circle can be passed to the method
+	 * getGreatCirclePoint() to retrieve a unit vector that is on the great
+	 * circle and located some distance from the first point of the great
+	 * circle.
+	 * <p>
+	 * This method returns a great circle that is computed from two unit vectors
+	 * that are not necessarily 90 degrees apart.
+	 *
+	 * @param v0
+	 *            the first point on the great circle
+	 * @param v1
+	 *            some other point that is also on the great circle but which is
+	 *            not necessarily 90 degrees away from v0.
+	 * @return a 2 x 3 array specifying two unit vectors. The first one is a
+	 *         clone of unit vector v0 passed as first argument to this method.
+	 *         The second is located 90 degrees away from v0.
+	 * @throws GeoTessException
+	 *             if v0 and v1 are parallel.
+	 */
+	static double** getGreatCircle(const double* const v0,
+			const double* const v1);
 
-    /**
-     * A great circle is defined by two unit vectors that are 90 degrees apart.
-     * A great circle is stored in a double[2][3] array, which is the structure
-     * returned by this method. A great circle can be passed to the method
-     * getGreatCirclePoint() to retrieve a unit vector that is on the great
-     * circle and located some distance from the first point of the great
-     * circle.
-     * <p>
-     * This method returns a great circle that is computed from two unit vectors
-     * that are not necessarily 90 degrees apart.
-     *
-     * @param v0
-     *            the first point on the great circle
-     * @param v1
-     *            some other point that is also on the great circle but which is
-     *            not necessarily 90 degrees away from v0.
-     * @param gc a 2 x 3 array specifying two unit vectors. The first one is a
-     *         clone of unit vector v0 passed as first argument to this method.
-     *         The second is located 90 degrees away from v0.
-     * @throws GeoTessException
-     *             if v0 and v1 are parallel.
-     */
-    static void getGreatCircle(const double* const v0, const double* const v1,
-            double** const gc);
+	/**
+	 * A great circle is defined by two unit vectors that are 90 degrees apart.
+	 * A great circle is stored in a double[2][3] array, which is the structure
+	 * returned by this method. A great circle can be passed to the method
+	 * getGreatCirclePoint() to retrieve a unit vector that is on the great
+	 * circle and located some distance from the first point of the great
+	 * circle.
+	 * <p>
+	 * This method returns a great circle that is computed from two unit vectors
+	 * that are not necessarily 90 degrees apart.
+	 *
+	 * @param v0
+	 *            the first point on the great circle
+	 * @param v1
+	 *            some other point that is also on the great circle but which is
+	 *            not necessarily 90 degrees away from v0.
+	 * @param gc a 2 x 3 array specifying two unit vectors. The first one is a
+	 *         clone of unit vector v0 passed as first argument to this method.
+	 *         The second is located 90 degrees away from v0.
+	 * @throws GeoTessException
+	 *             if v0 and v1 are parallel.
+	 */
+	static void getGreatCircle(const double* const v0, const double* const v1,
+			double** const gc);
 
-    /**
-     * A great circle is defined by two unit vectors that are 90 degrees apart.
-     * A great circle is stored in a double[2][3] array, which is the structure
-     * returned by this method. A great circle can be passed to the method
-     * getGreatCirclePoint() to retrieve a unit vector that is on the great
-     * circle and located some distance from the first point of the great
-     * circle.
-     * <p>
-     * This method returns a great circle that is defined by an initial point
-     * and an azimuth.
-     *
-     * @param v
-     *            a unit vector that will be the first point on the great
-     *            circle.
-     * @param azimuth
-     *            a direction, in radians, in which to move relative to v in
-     *            order to define the great circle
-     * @return a 2 x 3 array specifying two unit vectors. The first one is a
-     *         clone of unit vector v passed as an argument to this method. The
-     *         second is located 90 degrees away from v in the direction
-     *         specified by azimuth.
-     * @throws GeoTessException
-     *             if v is located at north or south pole.
-     */
-    static double** getGreatCircle(const double* const v, double azimuth);
+	/**
+	 * A great circle is defined by two unit vectors that are 90 degrees apart.
+	 * A great circle is stored in a double[2][3] array, which is the structure
+	 * returned by this method. A great circle can be passed to the method
+	 * getGreatCirclePoint() to retrieve a unit vector that is on the great
+	 * circle and located some distance from the first point of the great
+	 * circle.
+	 * <p>
+	 * This method returns a great circle that is defined by an initial point
+	 * and an azimuth.
+	 *
+	 * @param v
+	 *            a unit vector that will be the first point on the great
+	 *            circle.
+	 * @param azimuth
+	 *            a direction, in radians, in which to move relative to v in
+	 *            order to define the great circle
+	 * @return a 2 x 3 array specifying two unit vectors. The first one is a
+	 *         clone of unit vector v passed as an argument to this method. The
+	 *         second is located 90 degrees away from v in the direction
+	 *         specified by azimuth.
+	 * @throws GeoTessException
+	 *             if v is located at north or south pole.
+	 */
+	static double** getGreatCircle(const double* const v, double azimuth);
 
-    /**
-     * A great circle is defined by two unit vectors that are 90 degrees apart.
-     * A great circle is stored in a double[2][3] array, which is the structure
-     * returned by this method. A great circle can be passed to the method
-     * getGreatCirclePoint() to retrieve a unit vector that is on the great
-     * circle and located some distance from the first point of the great
-     * circle.
-     * <p>
-     * This method returns a great circle that is defined by an initial point
-     * and an azimuth.
-     *
-     * @param v
-     *            a unit vector that will be the first point on the great
-     *            circle.
-     * @param azimuth
-     *            a direction, in radians, in which to move relative to v in
-     *            order to define the great circle
-     * @param gc  a 2 x 3 array specifying two unit vectors. The first one is a
-     *         clone of unit vector v passed as an argument to this method. The
-     *         second is located 90 degrees away from v in the direction
-     *         specified by azimuth.
-     * @throws GeoTessException
-     *             if v is located at north or south pole.
-     */
-    static void getGreatCircle(const double* const v, double azimuth,
-            double** const gc);
+	/**
+	 * A great circle is defined by two unit vectors that are 90 degrees apart.
+	 * A great circle is stored in a double[2][3] array, which is the structure
+	 * returned by this method. A great circle can be passed to the method
+	 * getGreatCirclePoint() to retrieve a unit vector that is on the great
+	 * circle and located some distance from the first point of the great
+	 * circle.
+	 * <p>
+	 * This method returns a great circle that is defined by an initial point
+	 * and an azimuth.
+	 *
+	 * @param v
+	 *            a unit vector that will be the first point on the great
+	 *            circle.
+	 * @param azimuth
+	 *            a direction, in radians, in which to move relative to v in
+	 *            order to define the great circle
+	 * @param gc  a 2 x 3 array specifying two unit vectors. The first one is a
+	 *         clone of unit vector v passed as an argument to this method. The
+	 *         second is located 90 degrees away from v in the direction
+	 *         specified by azimuth.
+	 * @throws GeoTessException
+	 *             if v is located at north or south pole.
+	 */
+	static void getGreatCircle(const double* const v, double azimuth,
+			double** const gc);
 
-    /**
-     * Retrieve the number of points that would be required to populate a great circle path from
-     * point A to point B with equally spaced points given that the spacing can be no greater than
-     * delta.
-     * @param ptA unit vector of first point on great circle (input)
-     * @param ptB unit vector of last point on great circle (input)
-     * @param delta desired point spacing in radians (input)
-     * @param onCenters if true, returned points will be located in the centers of equal size
-     * path increments.  If false, first point will coincide with ptA, last point will coincide
-     * with ptB and the remaining points will be equally spaced in between. (input)
-     * @return number of points required
-     */
-    static int getGreatCirclePoints(double* ptA, double* ptB,
-            const double& delta, const bool& onCenters);
+	/**
+	 * Retrieve the number of points that would be required to populate a great circle path from
+	 * point A to point B with equally spaced points given that the spacing can be no greater than
+	 * delta.
+	 * @param ptA unit vector of first point on great circle (input)
+	 * @param ptB unit vector of last point on great circle (input)
+	 * @param delta desired point spacing in radians (input)
+	 * @param onCenters if true, returned points will be located in the centers of equal size
+	 * path increments.  If false, first point will coincide with ptA, last point will coincide
+	 * with ptB and the remaining points will be equally spaced in between. (input)
+	 * @return number of points required
+	 */
+	static int getGreatCirclePoints(double* ptA, double* ptB,
+			const double& delta, const bool& onCenters);
 
-    /**
-     * Retrieve the unit vectors of a bunch of points distributed along a great circle path between
-     * two points.
-     * @param ptA unit vector of first point on great circle (input)
-     * @param ptB unit vector of last point on great circle (input)
-     * @param npoints the number of points to distribute along the great circle path (input)
-     * @param onCenters if true, returned points will be located in the centers of equal size
-     * path increments.  If false, first point will coincide with ptA, last point will coincide
-     * with ptB and the remaining points will be equally spaced in between. (input)
-     * @param points an npoints by 3 array that will be populated with computed points.  Must be
-     * large enough to hold all the computed points.
-     * @return actual point spacing in radians
-     */
-    static double getGreatCirclePoints(double* ptA, double* ptB,
-            const int& npoints, const bool& onCenters, double** points);
+	/**
+	 * Retrieve the unit vectors of a bunch of points distributed along a great circle path between
+	 * two points.
+	 * @param ptA unit vector of first point on great circle (input)
+	 * @param ptB unit vector of last point on great circle (input)
+	 * @param npoints the number of points to distribute along the great circle path (input)
+	 * @param onCenters if true, returned points will be located in the centers of equal size
+	 * path increments.  If false, first point will coincide with ptA, last point will coincide
+	 * with ptB and the remaining points will be equally spaced in between. (input)
+	 * @param points an npoints by 3 array that will be populated with computed points.  Must be
+	 * large enough to hold all the computed points.
+	 * @return actual point spacing in radians
+	 */
+	static double getGreatCirclePoints(double* ptA, double* ptB,
+			const int& npoints, const bool& onCenters, double** points);
 
-    /**
-     * Retrieve the unit vectors of a bunch of points distributed along a great circle path between
-     * two points.  Caller specifies desired spacing of the points, not the number of points.  The
-     * acutal spacing will generally be somewhat less than the request spacing in order that an
-     * integral number of points can be equally spaced along the path.
-     * @param ptA unit vector of first point on great circle (input)
-     * @param ptB unit vector of last point on great circle (input)
-     * @param delta desired point spacing in radians (input)
-     * @param onCenters if true, returned points will be located in the centers of equal size
-     * path increments.  If false, first point will coincide with ptA, last point will coincide
-     * with ptB and the remaining points will be equally spaced in between. (input)
-     * @param points an npoints by 3 array that will be populated with computed points.  Must be
-     * large enough to hold all the computed points.
-     * @param npoints the number of points being returned.
-     * @return actual point spacing in radians
-     */
-    static double getGreatCirclePoints(double* ptA, double* ptB,
-            const double& delta, const bool& onCenters, double** points,
-            int& npoints);
+	/**
+	 * Retrieve the unit vectors of a bunch of points distributed along a great circle path between
+	 * two points.  Caller specifies desired spacing of the points, not the number of points.  The
+	 * acutal spacing will generally be somewhat less than the request spacing in order that an
+	 * integral number of points can be equally spaced along the path.
+	 * @param ptA unit vector of first point on great circle (input)
+	 * @param ptB unit vector of last point on great circle (input)
+	 * @param delta desired point spacing in radians (input)
+	 * @param onCenters if true, returned points will be located in the centers of equal size
+	 * path increments.  If false, first point will coincide with ptA, last point will coincide
+	 * with ptB and the remaining points will be equally spaced in between. (input)
+	 * @param points an npoints by 3 array that will be populated with computed points.  Must be
+	 * large enough to hold all the computed points.
+	 * @param npoints the number of points being returned.
+	 * @return actual point spacing in radians
+	 */
+	static double getGreatCirclePoints(double* ptA, double* ptB,
+			const double& delta, const bool& onCenters, double** points,
+			int& npoints);
 
-    /**
-     * Find the length of a 3-element vector.
-     *
-     * @param u double[]
-     * @return the length of the vector. Guaranteed to be >= 0.
-     */
-     static double length(const double* const u)
-    {
-        double l = u[0] * u[0] + u[1] * u[1] + u[2] * u[2];
-        return l > 0 ? sqrt(l) : 0.;
-    }
+	/**
+	 * Find the length of a 3-element vector.
+	 *
+	 * @param u double[]
+	 * @return the length of the vector. Guaranteed to be >= 0.
+	 */
+	 static double length(const double* const u)
+	{
+		double l = u[0] * u[0] + u[1] * u[1] + u[2] * u[2];
+		return l > 0 ? sqrt(l) : 0.;
+	}
 
-    /**
-     * Transform is a 3 x 3 matrix such that when a vector is multiplied by
-     * transform, the vector will be projected onto the plane of this
-     * GreatCircle. The z direction will point out of the plane of the great
-     * circle in the direction of the observer (lastPoint cross firstPoint;
-     * parallel to normal). The y direction will correspond to the mean of
-     * firstPoint and lastPoint. The x direction will correspond to y cross z,
-     * forming a right handed coordinate system.
-     * @param u a 3-component unit vector defining start of great circle
-     * @param v a 3-component unit vector defining end of great circle
-     * @param t 3 x 3 array that will be populated with the transform
-     */
-    static void getTransform(const double* const u, const double* const v,
-            double** const t);
+	/**
+	 * Transform is a 3 x 3 matrix such that when a vector is multiplied by
+	 * transform, the vector will be projected onto the plane of this
+	 * GreatCircle. The z direction will point out of the plane of the great
+	 * circle in the direction of the observer (lastPoint cross firstPoint;
+	 * parallel to normal). The y direction will correspond to the mean of
+	 * firstPoint and lastPoint. The x direction will correspond to y cross z,
+	 * forming a right handed coordinate system.
+	 * @param u a 3-component unit vector defining start of great circle
+	 * @param v a 3-component unit vector defining end of great circle
+	 * @param t 3 x 3 array that will be populated with the transform
+	 */
+	static void getTransform(const double* const u, const double* const v,
+			double** const t);
 
-    /**
-     * Project vector x onto the plane of a great circle. Consider a great
-     * circle defined by two unti vectors, u and v. Find the transform of x by
-     * calling t = getTransform(u, v). Then call this method: transform(x, t,
-     * g), which will calculate unit vector g such that
-     * <ul>
-     * <li>g[2] is the z direction, i.e., the component of x that points out of
-     * the plane of the great circle, toward the observer (v cross u).
-     * <li>g[1] is the y direction, i.e., the mean of u and v, and
-     * <li>g[0] is the x direction, i.e, g[1] cross g2.
-     * </ul>
-     * @param x unit vector to be transformed
-     * @param t transform obtained with call to getTransform()
-     * @param g transformed unit vector
-     */
-    static void transform(const double* x,
-            double const* const * const t, double* const g)
-    {
-        g[0] = x[0] * t[0][0] + x[1] * t[0][1] + x[2] * t[0][2];
-        g[1] = x[0] * t[1][0] + x[1] * t[1][1] + x[2] * t[1][2];
-        g[2] = x[0] * t[2][0] + x[1] * t[2][1] + x[2] * t[2][2];
-    }
+	/**
+	 * Project vector x onto the plane of a great circle. Consider a great
+	 * circle defined by two unti vectors, u and v. Find the transform of x by
+	 * calling t = getTransform(u, v). Then call this method: transform(x, t,
+	 * g), which will calculate unit vector g such that
+	 * <ul>
+	 * <li>g[2] is the z direction, i.e., the component of x that points out of
+	 * the plane of the great circle, toward the observer (v cross u).
+	 * <li>g[1] is the y direction, i.e., the mean of u and v, and
+	 * <li>g[0] is the x direction, i.e, g[1] cross g2.
+	 * </ul>
+	 * @param x unit vector to be transformed
+	 * @param t transform obtained with call to getTransform()
+	 * @param g transformed unit vector
+	 */
+	static void transform(const double* x,
+			double const* const * const t, double* const g)
+	{
+		g[0] = x[0] * t[0][0] + x[1] * t[0][1] + x[2] * t[0][2];
+		g[1] = x[0] * t[1][0] + x[1] * t[1][1] + x[2] * t[1][2];
+		g[2] = x[0] * t[2][0] + x[1] * t[2][1] + x[2] * t[2][2];
+	}
 
-    /**
-     * Read a string from the input file stream and set into s
-     * @param s the string that will be populated with results
-     * @param ifs input stream
-     */
-    static void readString(string& s, ifstream& ifs)
-    {
-        int sze;
-        ifs >> sze;
-        char* c = new char[sze];
-        ifs.read(c, sze);
-        s = c;
-        delete[] c;
-    }
+	/**
+	 * Read a string from the input file stream and set into s
+	 * @param s the string that will be populated with results
+	 * @param ifs input stream
+	 */
+	static void readString(string& s, ifstream& ifs)
+	{
+		int sze;
+		ifs >> sze;
+		char* c = new char[sze];
+		ifs.read(c, sze);
+		s = c;
+		delete[] c;
+	}
 
-    /**
-     * Write the string s to the output file stream.
-     * @param ofs output stream
-     * @param s the string to write the output stream.
-     */
-    static void writeString(ofstream& ofs, const string& s)
-    {
-        ofs << s.length();
-        ofs.write(s.c_str(), s.length());
-    }
+	/**
+	 * Write the string s to the output file stream.
+	 * @param ofs output stream
+	 * @param s the string to write the output stream.
+	 */
+	static void writeString(ofstream& ofs, const string& s)
+	{
+		ofs << s.length();
+		ofs.write(s.c_str(), s.length());
+	}
 
-    /**
-     * Return the angular distance in radians between two unit vectors.
-     *
-     * @param v0 a 3 component unit vector
-     * @param v1 a 3 component unit vector
-     * @return angular distance in radians.
-     */
-    static double angle(const double* const v0,
-            const double* const v1)
-    {
-        double dot = v0[0] * v1[0] + v0[1] * v1[1] + v0[2] * v1[2];
-        if (dot >= 1.0)
-            return 0.0;
-        if (dot <= -1.0)
-            return PI;
-        return acos(dot);
-    }
+	/**
+	 * Return the angular distance in radians between two unit vectors.
+	 *
+	 * @param v0 a 3 component unit vector
+	 * @param v1 a 3 component unit vector
+	 * @return angular distance in radians.
+	 */
+	static double angle(const double* const v0,
+			const double* const v1)
+	{
+		double dot = v0[0] * v1[0] + v0[1] * v1[1] + v0[2] * v1[2];
+		if (dot >= 1.0)
+			return 0.0;
+		if (dot <= -1.0)
+			return PI;
+		return acos(dot);
+	}
 
-    /**
-     * Return the angular distance in degrees between two unit vectors.
-     *
-     * @param v0 a 3 component unit vector
-     * @param v1 a 3 component unit vector
-     * @return angular distance in degrees.
-     */
-    static double angleDegrees(const double* const v0,
-            const double* const v1)
-    {
-        double dot = v0[0] * v1[0] + v0[1] * v1[1] + v0[2] * v1[2];
-        if (dot >= 1.)
-            return 0.;
-        if (dot <= -1.)
-            return 180.;
-        return CPPUtils::toDegrees(acos(dot));
-    }
+	/**
+	 * Return the angular distance in degrees between two unit vectors.
+	 *
+	 * @param v0 a 3 component unit vector
+	 * @param v1 a 3 component unit vector
+	 * @return angular distance in degrees.
+	 */
+	static double angleDegrees(const double* const v0,
+			const double* const v1)
+	{
+		double dot = v0[0] * v1[0] + v0[1] * v1[1] + v0[2] * v1[2];
+		if (dot >= 1.)
+			return 0.;
+		if (dot <= -1.)
+			return 180.;
+		return CPPUtils::toDegrees(acos(dot));
+	}
 
-    /**
-     * Given two unit vectors and their radii, return the straight line separation
-     * between their tips.  Assuming that the radii are in km, the result will
-     * also be in km.
-     *
-     * @param v0 Point 0 unit vector.
-     * @param r0 Point 0 length (km).
-     * @param v1 Point 1 unit vector.
-     * @param r1 Point 1 length (km).
-     * @return Distance between tip of v0*r0 and v1*r1, in km.
-     */
-    static double getDistance3D(const double* const v0, double r0,
-            const double* const v1, double r1)
-    {
-        double v[3] = { v0[0] * r0 - v1[0] * r1, v0[1] * r0 - v1[1] * r1, v0[2] * r0
-                - v1[2] * r1 };
-        return length(v);
-    }
+	/**
+	 * Given two unit vectors and their radii, return the straight line separation
+	 * between their tips.  Assuming that the radii are in km, the result will
+	 * also be in km.
+	 *
+	 * @param v0 Point 0 unit vector.
+	 * @param r0 Point 0 length (km).
+	 * @param v1 Point 1 unit vector.
+	 * @param r1 Point 1 length (km).
+	 * @return Distance between tip of v0*r0 and v1*r1, in km.
+	 */
+	static double getDistance3D(const double* const v0, double r0,
+			const double* const v1, double r1)
+	{
+		double v[3] = { v0[0] * r0 - v1[0] * r1, v0[1] * r0 - v1[1] * r1, v0[2] * r0
+				- v1[2] * r1 };
+		return length(v);
+	}
 
-    /**
-     * Retrieve the radius of the Earth in km at the position specified by an
-     * Earth-centered unit vector.
-     * Uses the WGS84 ellipsoid.
-     *
-     * @param v Earth-centered unit vector
-     * @return radius of the Earth in km at specified position.
-     */
-    static double getEarthRadius(const double* const v)
-    { return EARTH_A / sqrt(1. + EARTH_E / (1 - EARTH_E) * v[2] * v[2]); }
+	/**
+	 * Retrieve the radius of the Earth in km at the position specified by an
+	 * Earth-centered unit vector.
+	 * Uses the WGS84 ellipsoid.
+	 *
+	 * @param v Earth-centered unit vector
+	 * @return radius of the Earth in km at specified position.
+	 */
+	static double getEarthRadius(const double* const v)
+	{ return EARTH_A / sqrt(1. + EARTH_E / (1 - EARTH_E) * v[2] * v[2]); }
 
-    /**
-     * Convert a 3-component unit vector to geographic latitude, in radians.
-     * Uses the WGS84 ellipsoid.
-     *
-     * @param v 3-component unit vector
-     * @return geographic latitude in radians.
-     */
-    static double getLat(const double* const v)
-    { return getGeographicLat(asin(v[2])); }
+	/**
+	 * Convert a 3-component unit vector to geographic latitude, in radians.
+	 * Uses the WGS84 ellipsoid.
+	 *
+	 * @param v 3-component unit vector
+	 * @return geographic latitude in radians.
+	 */
+	static double getLat(const double* const v)
+	{ return getGeographicLat(asin(v[2])); }
 
-    /**
-     * Convert a 3-component unit vector to a longitude, in radians.
-     *
-     * @param v 3 component unit vector
-     * @return longitude in radians.
-     */
-    static double getLon(const double* const v)
-    { return atan2(v[1], v[0]); }
+	/**
+	 * Convert a 3-component unit vector to a longitude, in radians.
+	 *
+	 * @param v 3 component unit vector
+	 * @return longitude in radians.
+	 */
+	static double getLon(const double* const v)
+	{ return atan2(v[1], v[0]); }
 
-    /**
-     * Convert a 3-component unit vector to geographic latitude, in degrees.
-     * Uses the WGS84 ellipsoid.
-     *
-     * @param v 3-component unit vector
-     * @return geographic latitude in degrees.
-     */
-    static double getLatDegrees(const double* const v)
-    {
-        // the constant 0.9933 is (1-e*e) where e is the eccentricity of the
-        // earth as defined by the WGS84 ellipsoid.
-        return CPPUtils::toDegrees(atan(tan(asin(v[2])) / 0.9933056199770992));
-    }
+	/**
+	 * Convert a 3-component unit vector to geographic latitude, in degrees.
+	 * Uses the WGS84 ellipsoid.
+	 *
+	 * @param v 3-component unit vector
+	 * @return geographic latitude in degrees.
+	 */
+	static double getLatDegrees(const double* const v)
+	{
+		// the constant 0.9933 is (1-e*e) where e is the eccentricity of the
+		// earth as defined by the WGS84 ellipsoid.
+		return CPPUtils::toDegrees(atan(tan(asin(v[2])) / 0.9933056199770992));
+	}
 
-    /**
-     * Convert a 3-component unit vector to a longitude, in degrees.
-     *
-     * @param v 3 component unit vector
-     * @return longitude in degrees.
-     */
-    static double getLonDegrees(const double* const v)
-    { return CPPUtils::toDegrees(atan2(v[1], v[0])); }
+	/**
+	 * Convert a 3-component unit vector to a longitude, in degrees.
+	 *
+	 * @param v 3 component unit vector
+	 * @return longitude in degrees.
+	 */
+	static double getLonDegrees(const double* const v)
+	{ return CPPUtils::toDegrees(atan2(v[1], v[0])); }
 
-    /**
-     * Convert geographic lat, lon into a geocentric unit vector. The
-     * x-component points toward lat,lon = 0, 0. The y-component points toward
-     * lat,lon = 0, 90. The z-component points toward north pole.
-     * Uses the WGS84 ellipsoid.
-     *
-     * @param lat
-     *            geographic latitude in degrees.
-     * @param lon
-     *            longitude in degrees.
-     * @return 3 component unit vector.
-     */
-    static double* getVectorDegrees(const double& lat,
-            const double& lon)
-    { return getVector(CPPUtils::toRadians(lat), CPPUtils::toRadians(lon)); }
+	/**
+	 * Convert geographic lat, lon into a geocentric unit vector. The
+	 * x-component points toward lat,lon = 0, 0. The y-component points toward
+	 * lat,lon = 0, 90. The z-component points toward north pole.
+	 * Uses the WGS84 ellipsoid.
+	 *
+	 * @param lat
+	 *            geographic latitude in degrees.
+	 * @param lon
+	 *            longitude in degrees.
+	 * @return 3 component unit vector.
+	 */
+	static double* getVectorDegrees(const double& lat,
+			const double& lon)
+	{ return getVector(CPPUtils::toRadians(lat), CPPUtils::toRadians(lon)); }
 
-    /**
-     * Convert geographic lat, lon into a geocentric unit vector. The
-     * x-component points toward lat,lon = 0, 0. The y-component points toward
-     * lat,lon = 0, 90. The z-component points toward north pole.
-     * Uses the WGS84 ellipsoid.
-     *
-     * @param lat geographic latitude in degrees.
-     * @param lon longitude in degrees.
-     * @param v 3 component unit vector.
-     * @return pointer to v
-     */
-    static double* getVectorDegrees(const double& lat,
-            const double& lon, double* v)
-    { return getVector(CPPUtils::toRadians(lat), CPPUtils::toRadians(lon), v); }
+	/**
+	 * Convert geographic lat, lon into a geocentric unit vector. The
+	 * x-component points toward lat,lon = 0, 0. The y-component points toward
+	 * lat,lon = 0, 90. The z-component points toward north pole.
+	 * Uses the WGS84 ellipsoid.
+	 *
+	 * @param lat geographic latitude in degrees.
+	 * @param lon longitude in degrees.
+	 * @param v 3 component unit vector.
+	 * @return pointer to v
+	 */
+	static double* getVectorDegrees(const double& lat,
+			const double& lon, double* v)
+	{ return getVector(CPPUtils::toRadians(lat), CPPUtils::toRadians(lon), v); }
 
-    /**
-     * Convert geographic lat, lon into a geocentric unit vector. The
-     * x-component points toward lat,lon = 0, 0. The y-component points toward
-     * lat,lon = 0, PI/2. The z-component points toward north pole.
-     * Uses the WGS84 ellipsoid.
-     *
-     * @param lat
-     *            geographic latitude in radians.
-     * @param lon
-     *            longitude in radians.
-     * @return 3 component unit vector.
-     */
-    static double* getVector(const double& lat, const double& lon)
-    {
-        double* v = new double[3];
-        getVector(lat, lon, v);
-        return v;
-    }
+	/**
+	 * Convert geographic lat, lon into a geocentric unit vector. The
+	 * x-component points toward lat,lon = 0, 0. The y-component points toward
+	 * lat,lon = 0, PI/2. The z-component points toward north pole.
+	 * Uses the WGS84 ellipsoid.
+	 *
+	 * @param lat
+	 *            geographic latitude in radians.
+	 * @param lon
+	 *            longitude in radians.
+	 * @return 3 component unit vector.
+	 */
+	static double* getVector(const double& lat, const double& lon)
+	{
+		double* v = new double[3];
+		getVector(lat, lon, v);
+		return v;
+	}
 
-    /**
-     * Convert geographic lat, lon into a geocentric unit vector. The
-     * x-component points toward lat,lon = 0, 0. The y-component points toward
-     * lat,lon = 0, PI/2 The z-component points toward north pole.
-     * Uses the WGS84 ellipsoid.
-     *
-     * @param lat geographic latitude in radians.
-     * @param lon longitude in radians.
-     * @param v 3-component unit vector.
-     * @return a pointer to v
-     */
-    static double* getVector(const double& lat, const double& lon, double* v)
-    {
-        // convert lat from geographic to geocentric latitude.
-        double temp = getGeocentricLat(lat);
+	/**
+	 * Convert geographic lat, lon into a geocentric unit vector. The
+	 * x-component points toward lat,lon = 0, 0. The y-component points toward
+	 * lat,lon = 0, PI/2 The z-component points toward north pole.
+	 * Uses the WGS84 ellipsoid.
+	 *
+	 * @param lat geographic latitude in radians.
+	 * @param lon longitude in radians.
+	 * @param v 3-component unit vector.
+	 * @return a pointer to v
+	 */
+	static double* getVector(const double& lat, const double& lon, double* v)
+	{
+		// convert lat from geographic to geocentric latitude.
+		double temp = getGeocentricLat(lat);
 
-        // z component of v is sin of geocentric latitude.
-        v[2] = sin(temp);
+		// z component of v is sin of geocentric latitude.
+		v[2] = sin(temp);
 
-        // set lat = to cos of geocentric latitude
-        temp = cos(temp);
+		// set lat = to cos of geocentric latitude
+		temp = cos(temp);
 
-        // compute x and y components of v
-        v[0] = temp * cos(lon);
-        v[1] = temp * sin(lon);
+		// compute x and y components of v
+		v[0] = temp * cos(lon);
+		v[1] = temp * sin(lon);
 
-        return v;
-    }
+		return v;
+	}
 
-    /**
-     * Normalize the input vector to unit length. Unlike normalize(),
-     * this method does not check to ensure that the length of the
-     * input vector is not zero.  Only call this version if
-     * certain that the length of the vector is > 0.
-     *
-     * @param u vector<double>
-     */
-    static void normalizeFast(double* const u)
-    {
-        double len = u[0] * u[0] + u[1] * u[1] + u[2] * u[2];
-        len = sqrt(len);
-        u[0] /= len;
-        u[1] /= len;
-        u[2] /= len;
-    }
+	/**
+	 * Normalize the input vector to unit length. Unlike normalize(),
+	 * this method does not check to ensure that the length of the
+	 * input vector is not zero.  Only call this version if
+	 * certain that the length of the vector is > 0.
+	 *
+	 * @param u vector<double>
+	 */
+	static void normalizeFast(double* const u)
+	{
+		double len = u[0] * u[0] + u[1] * u[1] + u[2] * u[2];
+		len = sqrt(len);
+		u[0] /= len;
+		u[1] /= len;
+		u[2] /= len;
+	}
 
-    /**
-     * Normalize the input vector to unit length. Returns the length of the
-     * vector prior to normalization.
-     *
-     * @param u vector<double>
-     * @return length of the vector prior to normalization ( >= 0.)
-     */
-    static double normalize(double* const u)
-    {
-        double len = u[0] * u[0] + u[1] * u[1] + u[2] * u[2];
-        if (len > 0.)
-        {
-            len = sqrt(len);
-            u[0] /= len;
-            u[1] /= len;
-            u[2] /= len;
-        }
-        else
-        {
-            len = u[0] = u[1] = u[2] = 0.0;
-        }
-        return len;
-    }
+	/**
+	 * Normalize the input vector to unit length. Returns the length of the
+	 * vector prior to normalization.
+	 *
+	 * @param u vector<double>
+	 * @return length of the vector prior to normalization ( >= 0.)
+	 */
+	static double normalize(double* const u)
+	{
+		double len = u[0] * u[0] + u[1] * u[1] + u[2] * u[2];
+		if (len > 0.)
+		{
+			len = sqrt(len);
+			u[0] /= len;
+			u[1] /= len;
+			u[2] /= len;
+		}
+		else
+		{
+			len = u[0] = u[1] = u[2] = 0.0;
+		}
+		return len;
+	}
 
-    /**
-     * Cross product of two 3-component vectors. Result is not normalized.
-     *
-     * @param v1
-     *            vector<double> vector one.
-     * @param v2
-     *            vector<double> vector two.
-     * @param rslt
-     *            set to v1 cross v2 Result is not a unit vector.
-     */
-    static void cross(const double* const v1, const double* const v2,
-            double* const rslt)
-    {
-        rslt[0] = v1[1] * v2[2] - v1[2] * v2[1];
-        rslt[1] = v1[2] * v2[0] - v1[0] * v2[2];
-        rslt[2] = v1[0] * v2[1] - v1[1] * v2[0];
-    }
+	/**
+	 * Cross product of two 3-component vectors. Result is not normalized.
+	 *
+	 * @param v1
+	 *            vector<double> vector one.
+	 * @param v2
+	 *            vector<double> vector two.
+	 * @param rslt
+	 *            set to v1 cross v2 Result is not a unit vector.
+	 */
+	static void cross(const double* const v1, const double* const v2,
+			double* const rslt)
+	{
+		rslt[0] = v1[1] * v2[2] - v1[2] * v2[1];
+		rslt[1] = v1[2] * v2[0] - v1[0] * v2[2];
+		rslt[2] = v1[0] * v2[1] - v1[1] * v2[0];
+	}
 
-    /**
-     * Normalized cross product of two 3-component unit vectors.
-     *
-     * @param u
-     *            vector one.
-     * @param v
-     *            vector two.
-     * @return Normalized cross product of u x v. Will be [0,0,0] if u and v are
-     *         parallel.
-     */
-    static double* crossNormal(const double* const u,
-            const double* const v)
-    {
-        double* w = new double[3];
-        w[0] = u[1] * v[2] - u[2] * v[1];
-        w[1] = u[2] * v[0] - u[0] * v[2];
-        w[2] = u[0] * v[1] - u[1] * v[0];
-        normalize(w);
-        return w;
-    }
+	/**
+	 * Normalized cross product of two 3-component unit vectors.
+	 *
+	 * @param u
+	 *            vector one.
+	 * @param v
+	 *            vector two.
+	 * @return Normalized cross product of u x v. Will be [0,0,0] if u and v are
+	 *         parallel.
+	 */
+	static double* crossNormal(const double* const u,
+			const double* const v)
+	{
+		double* w = new double[3];
+		w[0] = u[1] * v[2] - u[2] * v[1];
+		w[1] = u[2] * v[0] - u[0] * v[2];
+		w[2] = u[0] * v[1] - u[1] * v[0];
+		normalize(w);
+		return w;
+	}
 
-    /**
-     * Normalized cross product of two 3-component unit vectors.
-     *
-     * @param u
-     *            vector one.
-     * @param v
-     *            vector two.
-     * @param w
-     *            set to u cross v, normalized to unit length. If u cross v has
-     *            zero length, w will equal (0,0,0).
-     * @return the length of u cross v prior to normalization. Guaranteed >= 0.
-     */
-    static double crossNormal(const double* const u,
-            const double* const v, double* const w)
-    {
-        w[0] = u[1] * v[2] - u[2] * v[1];
-        w[1] = u[2] * v[0] - u[0] * v[2];
-        w[2] = u[0] * v[1] - u[1] * v[0];
-        return normalize(w);
-    }
+	/**
+	 * Normalized cross product of two 3-component unit vectors.
+	 *
+	 * @param u
+	 *            vector one.
+	 * @param v
+	 *            vector two.
+	 * @param w
+	 *            set to u cross v, normalized to unit length. If u cross v has
+	 *            zero length, w will equal (0,0,0).
+	 * @return the length of u cross v prior to normalization. Guaranteed >= 0.
+	 */
+	static double crossNormal(const double* const u,
+			const double* const v, double* const w)
+	{
+		w[0] = u[1] * v[2] - u[2] * v[1];
+		w[1] = u[2] * v[0] - u[0] * v[2];
+		w[2] = u[0] * v[1] - u[1] * v[0];
+		return normalize(w);
+	}
 
-    /**
-     * Normalized cross product of a 3-component unit vector with the north
-     * pole.
-     *
-     * @param u
-     *            vector<double> vector one.
-     * @param w
-     *            set to u cross north, normalized to unit length. If u cross
-     *            north has zero length, w will equal (0,0,0).
-     * @return the length of u cross north prior to normalization. Guaranteed >=
-     *         0.
-     */
-    static double crossNorth(const double* const u, double* const w)
-    {
-        double len = u[0] * u[0] + u[1] * u[1];
-        if (len <= 0.)
-        {
-            len = w[0] = w[1] = w[2] = 0.;
-        }
-        else
-        {
-            len = sqrt(len);
-            w[0] = u[1] / len;
-            w[1] = -u[0] / len;
-            w[2] = 0.;
-        }
-        return len;
-    }
+	/**
+	 * Normalized cross product of a 3-component unit vector with the north
+	 * pole.
+	 *
+	 * @param u
+	 *            vector<double> vector one.
+	 * @param w
+	 *            set to u cross north, normalized to unit length. If u cross
+	 *            north has zero length, w will equal (0,0,0).
+	 * @return the length of u cross north prior to normalization. Guaranteed >=
+	 *         0.
+	 */
+	static double crossNorth(const double* const u, double* const w)
+	{
+		double len = u[0] * u[0] + u[1] * u[1];
+		if (len <= 0.)
+		{
+			len = w[0] = w[1] = w[2] = 0.;
+		}
+		else
+		{
+			len = sqrt(len);
+			w[0] = u[1] / len;
+			w[1] = -u[0] / len;
+			w[2] = 0.;
+		}
+		return len;
+	}
 
-    /**
-     * Compute the normalized vector triple product (v0 x v1) x v2 and store
-     * result in rslt. It is ok if rslt is a reference to one of the input
-     * vectors. Local variables are used to ensure memory is not corrupted.
-     *
-     * @param v0
-     *            double[]
-     * @param v1
-     *            double[]
-     * @param v2
-     *            double[]
-     * @param rslt
-     *            double[]
-     * @return true if rslt has finite length, false if length(rslt) is zero.
-     */
-    static bool vectorTripleProduct(const double* const v0,
-            const double* const v1, const double* const v2, double* const rslt)
-    {
-        // set q = v0 cross v1
-        double q0 = v0[1] * v1[2] - v0[2] * v1[1];
-        double q1 = v0[2] * v1[0] - v0[0] * v1[2];
-        double q2 = v0[0] * v1[1] - v0[1] * v1[0];
+	/**
+	 * Compute the normalized vector triple product (v0 x v1) x v2 and store
+	 * result in rslt. It is ok if rslt is a reference to one of the input
+	 * vectors. Local variables are used to ensure memory is not corrupted.
+	 *
+	 * @param v0
+	 *            double[]
+	 * @param v1
+	 *            double[]
+	 * @param v2
+	 *            double[]
+	 * @param rslt
+	 *            double[]
+	 * @return true if rslt has finite length, false if length(rslt) is zero.
+	 */
+	static bool vectorTripleProduct(const double* const v0,
+			const double* const v1, const double* const v2, double* const rslt)
+	{
+		// set q = v0 cross v1
+		double q0 = v0[1] * v1[2] - v0[2] * v1[1];
+		double q1 = v0[2] * v1[0] - v0[0] * v1[2];
+		double q2 = v0[0] * v1[1] - v0[1] * v1[0];
 
-        // set w = q cross v2
-        double w0 = q1 * v2[2] - q2 * v2[1];
-        double w1 = q2 * v2[0] - q0 * v2[2];
-        double w2 = q0 * v2[1] - q1 * v2[0];
+		// set w = q cross v2
+		double w0 = q1 * v2[2] - q2 * v2[1];
+		double w1 = q2 * v2[0] - q0 * v2[2];
+		double w2 = q0 * v2[1] - q1 * v2[0];
 
-        // set rslt = w
-        rslt[0] = w0;
-        rslt[1] = w1;
-        rslt[2] = w2;
+		// set rslt = w
+		rslt[0] = w0;
+		rslt[1] = w1;
+		rslt[2] = w2;
 
-        // normalize rslt to unit length. if the length
-        // of v1 or v2 is zero or they are nearly parallel then
-        // rslt will = {0,0,0} and the function will return false;
-        return normalize(rslt) != 0.;
-    }
+		// normalize rslt to unit length. if the length
+		// of v1 or v2 is zero or they are nearly parallel then
+		// rslt will = {0,0,0} and the function will return false;
+		return normalize(rslt) != 0.;
+	}
 
-    /**
-     * Compute the normalized vector triple product (u x northPole) x u and
-     * store result in w. Returns false is u is north or south pole.
-     *
-     * @param u
-     *            double[]
-     * @param w
-     *            double[]
-     * @return true if w has finite length, false if length(w) is zero.
-     */
-    static bool vectorTripleProductNorthPole(const double* const u,
-            double* const w)
-    {
-        w[0] = -u[0] * u[2];
-        w[1] = -u[1] * u[2];
-        w[2] = u[1] * u[1] + u[0] * u[0];
-        return normalize(w) != 0.;
-    }
+	/**
+	 * Compute the normalized vector triple product (u x northPole) x u and
+	 * store result in w. Returns false is u is north or south pole.
+	 *
+	 * @param u
+	 *            double[]
+	 * @param w
+	 *            double[]
+	 * @return true if w has finite length, false if length(w) is zero.
+	 */
+	static bool vectorTripleProductNorthPole(const double* const u,
+			double* const w)
+	{
+		w[0] = -u[0] * u[2];
+		w[1] = -u[1] * u[2];
+		w[2] = u[1] * u[1] + u[0] * u[0];
+		return normalize(w) != 0.;
+	}
 
-    /**
-     * Given three unit vectors, v0, v1 and v2, find the circumcenter, vs. The
-     * circumcenter is the unit vector of the center of a small circle that has
-     * all three unit vectors on its circumference.
-     *
-     * @param v0
-     * @param v1
-     * @param v2
-     * @param vs
-     */
-    static void circumCenter(const double* const v0,
-            const double* const v1, const double* const v2, double* const vs)
-    {
-        vs[0] = v0[1] * (v2[2] - v1[2]) + v2[1] * (v1[2] - v0[2]) + v1[1] * (v0[2] - v2[2]);
-        vs[1] = v0[2] * (v2[0] - v1[0]) + v2[2] * (v1[0] - v0[0]) + v1[2] * (v0[0] - v2[0]);
-        vs[2] = v0[0] * (v2[1] - v1[1]) + v2[0] * (v1[1] - v0[1]) + v1[0] * (v0[1] - v2[1]);
-        double len = vs[0] * vs[0] + vs[1] * vs[1] + vs[2] * vs[2];
-        len = sqrt(len);
-        vs[0] /= len;
-        vs[1] /= len;
-        vs[2] /= len;
-    }
+	/**
+	 * Given three unit vectors, v0, v1 and v2, find the circumcenter, vs. The
+	 * circumcenter is the unit vector of the center of a small circle that has
+	 * all three unit vectors on its circumference.
+	 *
+	 * @param v0
+	 * @param v1
+	 * @param v2
+	 * @param vs
+	 */
+	static void circumCenter(const double* const v0,
+			const double* const v1, const double* const v2, double* const vs)
+	{
+		vs[0] = v0[1] * (v2[2] - v1[2]) + v2[1] * (v1[2] - v0[2]) + v1[1] * (v0[2] - v2[2]);
+		vs[1] = v0[2] * (v2[0] - v1[0]) + v2[2] * (v1[0] - v0[0]) + v1[2] * (v0[0] - v2[0]);
+		vs[2] = v0[0] * (v2[1] - v1[1]) + v2[0] * (v1[1] - v0[1]) + v1[0] * (v0[1] - v2[1]);
+		double len = vs[0] * vs[0] + vs[1] * vs[1] + vs[2] * vs[2];
+		len = sqrt(len);
+		vs[0] /= len;
+		vs[1] /= len;
+		vs[2] /= len;
+	}
 
-    /**
-     * Given three unit vectors, v0, v1 and v2, find the circumcenter, vs. The
-     * circumcenter is the unit vector of the center of a small circle that has
-     * all three unit vectors on its circumference. The fourth element of vs is
-     * the dot product of the new circumcenter with one of the vertices.  In other
-     * words, cc[3] = cos(ccRadius).
-     *
-     * @param v0
-     * @param v1
-     * @param v2
-     * @param vs
-     */
-    static void circumCenterPlus(const double* const v0,
-            const double* const v1, const double* const v2, double* const vs)
-    {
-        vs[0] = v0[1] * (v2[2] - v1[2]) + v2[1] * (v1[2] - v0[2]) + v1[1] * (v0[2] - v2[2]);
-        vs[1] = v0[2] * (v2[0] - v1[0]) + v2[2] * (v1[0] - v0[0]) + v1[2] * (v0[0] - v2[0]);
-        vs[2] = v0[0] * (v2[1] - v1[1]) + v2[0] * (v1[1] - v0[1]) + v1[0] * (v0[1] - v2[1]);
-        double len = vs[0] * vs[0] + vs[1] * vs[1] + vs[2] * vs[2];
-        len = sqrt(len);
-        vs[0] /= len;
-        vs[1] /= len;
-        vs[2] /= len;
-        vs[3] = dot(vs, v0);
-    }
+	/**
+	 * Given three unit vectors, v0, v1 and v2, find the circumcenter, vs. The
+	 * circumcenter is the unit vector of the center of a small circle that has
+	 * all three unit vectors on its circumference. The fourth element of vs is
+	 * the dot product of the new circumcenter with one of the vertices.  In other
+	 * words, cc[3] = cos(ccRadius).
+	 *
+	 * @param v0
+	 * @param v1
+	 * @param v2
+	 * @param vs
+	 */
+	static void circumCenterPlus(const double* const v0,
+			const double* const v1, const double* const v2, double* const vs)
+	{
+		vs[0] = v0[1] * (v2[2] - v1[2]) + v2[1] * (v1[2] - v0[2]) + v1[1] * (v0[2] - v2[2]);
+		vs[1] = v0[2] * (v2[0] - v1[0]) + v2[2] * (v1[0] - v0[0]) + v1[2] * (v0[0] - v2[0]);
+		vs[2] = v0[0] * (v2[1] - v1[1]) + v2[0] * (v1[1] - v0[1]) + v1[0] * (v0[1] - v2[1]);
+		double len = vs[0] * vs[0] + vs[1] * vs[1] + vs[2] * vs[2];
+		len = sqrt(len);
+		vs[0] /= len;
+		vs[1] /= len;
+		vs[2] /= len;
+		vs[3] = dot(vs, v0);
+	}
 
-    /**
-     * Given three unit vectors, v0, v1 and v2, find the circumcenter, vs. The
-     * circumcenter is the unit vector of the center of a small circle that has
-     * all three unit vectors on its circumference. Vectors must be specified in
-     * clockwise order.  The fourth element of returned circumcenter is
-     * the dot product of the new circumcenter with one of the vertices.  In other
-     * words, cc[3] = cos(ccRadius).
-     *
-     * <p>Caller is responsible for deleting the double*  returned by this method.
-     *
-     * @param v0
-     * @param v1
-     * @param v2
-     * @return the circumCenter: a unit vector plus cos(ccRadius)
-     */
-    static double* circumCenterPlus(const double* const v0,
-            const double* const v1, const double* const v2)
-    {
-        double* vs = new double[4];
-        vs[0] = v0[1] * (v2[2] - v1[2]) + v2[1] * (v1[2] - v0[2]) + v1[1] * (v0[2] - v2[2]);
-        vs[1] = v0[2] * (v2[0] - v1[0]) + v2[2] * (v1[0] - v0[0]) + v1[2] * (v0[0] - v2[0]);
-        vs[2] = v0[0] * (v2[1] - v1[1]) + v2[0] * (v1[1] - v0[1]) + v1[0] * (v0[1] - v2[1]);
-        double len = vs[0] * vs[0] + vs[1] * vs[1] + vs[2] * vs[2];
-        len = sqrt(len);
-        vs[0] /= len;
-        vs[1] /= len;
-        vs[2] /= len;
-        vs[3] = dot(vs, v0);
-        return vs;
-    }
+	/**
+	 * Given three unit vectors, v0, v1 and v2, find the circumcenter, vs. The
+	 * circumcenter is the unit vector of the center of a small circle that has
+	 * all three unit vectors on its circumference. Vectors must be specified in
+	 * clockwise order.  The fourth element of returned circumcenter is
+	 * the dot product of the new circumcenter with one of the vertices.  In other
+	 * words, cc[3] = cos(ccRadius).
+	 *
+	 * <p>Caller is responsible for deleting the double*  returned by this method.
+	 *
+	 * @param v0
+	 * @param v1
+	 * @param v2
+	 * @return the circumCenter: a unit vector plus cos(ccRadius)
+	 */
+	static double* circumCenterPlus(const double* const v0,
+			const double* const v1, const double* const v2)
+	{
+		double* vs = new double[4];
+		vs[0] = v0[1] * (v2[2] - v1[2]) + v2[1] * (v1[2] - v0[2]) + v1[1] * (v0[2] - v2[2]);
+		vs[1] = v0[2] * (v2[0] - v1[0]) + v2[2] * (v1[0] - v0[0]) + v1[2] * (v0[0] - v2[0]);
+		vs[2] = v0[0] * (v2[1] - v1[1]) + v2[0] * (v1[1] - v0[1]) + v1[0] * (v0[1] - v2[1]);
+		double len = vs[0] * vs[0] + vs[1] * vs[1] + vs[2] * vs[2];
+		len = sqrt(len);
+		vs[0] /= len;
+		vs[1] /= len;
+		vs[2] /= len;
+		vs[3] = dot(vs, v0);
+		return vs;
+	}
 
-    /**
-     * Given the three unit vectors, t[0], t[1] and t[2], find the circumcenter,
-     * vs. The circumcenter is the unit vector of the center of a small circle
-     * that has all three unit vectors on its circumference.  The fourth element of
-     * returned circumcenter is the dot product of the new circumcenter with one
-     * of the vertices.  In other words, cc[3] = cos(ccRadius).
-     *
-     * @param t a 3 x 3 array of doubles that contains the three unit vectors
-     *            of a triangle.
-     * @param vs a 4 element array that will be populated with the unit vector
-     * and the cos(ccRadius).
-     * @return true if successful, false if the three input vectors do not
-     *         define a triangle.
-     */
-    static void circumCenterPlus(double const* const * const t, double* const vs)
-    { circumCenterPlus(t[0], t[1], t[2], vs); }
+	/**
+	 * Given the three unit vectors, t[0], t[1] and t[2], find the circumcenter,
+	 * vs. The circumcenter is the unit vector of the center of a small circle
+	 * that has all three unit vectors on its circumference.  The fourth element of
+	 * returned circumcenter is the dot product of the new circumcenter with one
+	 * of the vertices.  In other words, cc[3] = cos(ccRadius).
+	 *
+	 * @param t a 3 x 3 array of doubles that contains the three unit vectors
+	 *            of a triangle.
+	 * @param vs a 4 element array that will be populated with the unit vector
+	 * and the cos(ccRadius).
+	 * @return true if successful, false if the three input vectors do not
+	 *         define a triangle.
+	 */
+	static void circumCenterPlus(double const* const * const t, double* const vs)
+	{ circumCenterPlus(t[0], t[1], t[2], vs); }
 
-    /**
-     * Move unit vector w specified distance in direction given by azimuth and
-     * return the result in u. If w is north or south pole, u will be equal to
-     * the same pole and method returns false.
-     *
-     * @param w
-     *            double[] unit vector of starting position
-     * @param distance
-     *            distance to move in radians
-     * @param azimuth
-     *            direction to move in radians
-     * @param u
-     *            double[] unit vector of resulting position.
-     * @return true if successful, false if w is north or south pole
-     */
-    static bool moveDistAz(const double* const w, double distance,
-            double azimuth, double* const u)
-    {
-        double n[3] = { 0.0, 0.0, 0.0 };
-        if (moveNorth(w, distance, n))
-        {
-            rotate(n, w, azimuth, u);
-            return true;
-        }
-        u[0] = w[0];
-        u[1] = w[1];
-        u[2] = w[2];
-        return false;
-    }
+	/**
+	 * Move unit vector w specified distance in direction given by azimuth and
+	 * return the result in u. If w is north or south pole, u will be equal to
+	 * the same pole and method returns false.
+	 *
+	 * @param w
+	 *            double[] unit vector of starting position
+	 * @param distance
+	 *            distance to move in radians
+	 * @param azimuth
+	 *            direction to move in radians
+	 * @param u
+	 *            double[] unit vector of resulting position.
+	 * @return true if successful, false if w is north or south pole
+	 */
+	static bool moveDistAz(const double* const w, double distance,
+			double azimuth, double* const u)
+	{
+		double n[3] = { 0.0, 0.0, 0.0 };
+		if (moveNorth(w, distance, n))
+		{
+			rotate(n, w, azimuth, u);
+			return true;
+		}
+		u[0] = w[0];
+		u[1] = w[1];
+		u[2] = w[2];
+		return false;
+	}
 
-    /**
-     * Move unit vector w in direction of vtp by distance a and store result in
-     * u. vtp is assumed to be a unit vector normal to w on input.
-     *
-     * @param w
-     *            double[]
-     * @param vtp
-     *            double[]
-     * @param a
-     *            double
-     * @param u
-     *            double[]
-     */
-    static void move(const double* const w, const double* const vtp,
-            double a, double* const u)
-    {
-        double cosa = cos(a);
-        double sina = sin(a);
-        u[0] = cosa * w[0] + sina * vtp[0];
-        u[1] = cosa * w[1] + sina * vtp[1];
-        u[2] = cosa * w[2] + sina * vtp[2];
-    }
+	/**
+	 * Move unit vector w in direction of vtp by distance a and store result in
+	 * u. vtp is assumed to be a unit vector normal to w on input.
+	 *
+	 * @param w
+	 *            double[]
+	 * @param vtp
+	 *            double[]
+	 * @param a
+	 *            double
+	 * @param u
+	 *            double[]
+	 */
+	static void move(const double* const w, const double* const vtp,
+			double a, double* const u)
+	{
+		double cosa = cos(a);
+		double sina = sin(a);
+		u[0] = cosa * w[0] + sina * vtp[0];
+		u[1] = cosa * w[1] + sina * vtp[1];
+		u[2] = cosa * w[2] + sina * vtp[2];
+	}
 
-    /**
-     * Return a unit vector that is distance radians due north of positon x. If
-     * x is the north or south pole, then z is set equal to x.
-     *
-     * @param x
-     *            the position to be moved.
-     * @param distance
-     *            the distance, in radians, that x is to be moved toward the
-     *            north.
-     * @param z
-     *            the 3-element unit vector representing the position after
-     *            having moved distance north.
-     * @return true if operation successful, false if x is north or south pole.
-     */
-    static bool moveNorth(const double* const x, double distance,
-            double* const z)
-    {
-        double vtp[3] = { 0.0, 0.0, 0.0 };
-        if (vectorTripleProductNorthPole(x, vtp))
-        {
-            move(x, vtp, distance, z);
-            return true;
-        }
+	/**
+	 * Return a unit vector that is distance radians due north of positon x. If
+	 * x is the north or south pole, then z is set equal to x.
+	 *
+	 * @param x
+	 *            the position to be moved.
+	 * @param distance
+	 *            the distance, in radians, that x is to be moved toward the
+	 *            north.
+	 * @param z
+	 *            the 3-element unit vector representing the position after
+	 *            having moved distance north.
+	 * @return true if operation successful, false if x is north or south pole.
+	 */
+	static bool moveNorth(const double* const x, double distance,
+			double* const z)
+	{
+		double vtp[3] = { 0.0, 0.0, 0.0 };
+		if (vectorTripleProductNorthPole(x, vtp))
+		{
+			move(x, vtp, distance, z);
+			return true;
+		}
 
-        z[0] = x[0];
-        z[1] = x[1];
-        z[2] = x[2];
-        return false;
-    }
+		z[0] = x[0];
+		z[1] = x[1];
+		z[2] = x[2];
+		return false;
+	}
 
-    /**
-     * Returns true if unit vector u is very close to [0, 0, +/- 1]
-     *
-     * @param u
-     *            unit vector
-     * @return true if unit vector u is very close to [0, 0, +/- 1]
-     */
-    static bool isPole(const double* const u)
-    {
-        return (u[0] * u[0] + u[1] * u[1]) < 1.0e-15;
-    }
+	/**
+	 * Returns true if unit vector u is very close to [0, 0, +/- 1]
+	 *
+	 * @param u
+	 *            unit vector
+	 * @return true if unit vector u is very close to [0, 0, +/- 1]
+	 */
+	static bool isPole(const double* const u)
+	{
+		return (u[0] * u[0] + u[1] * u[1]) < 1.0e-15;
+	}
 
-    /**
-     * Returns true if unit vector u and v are parallel or very close to it
-     *
-     * @param u
-     *            a unit vector
-     * @param v
-     *            another unit vector
-     * @return 1.-abs(dot(u,v)) < 2e-15
-     */
-    static bool parallel(const double* const u, const double* const v)
-    {
-        return 1.0 - abs(u[0] * v[0] + u[1] * v[1] + u[2] * v[2]) < 2.0e-15;
-    }
+	/**
+	 * Returns true if unit vector u and v are parallel or very close to it
+	 *
+	 * @param u
+	 *            a unit vector
+	 * @param v
+	 *            another unit vector
+	 * @return 1.-abs(dot(u,v)) < 2e-15
+	 */
+	static bool parallel(const double* const u, const double* const v)
+	{
+		return 1.0 - abs(u[0] * v[0] + u[1] * v[1] + u[2] * v[2]) < 2.0e-15;
+	}
 
-    /**
-     * A great circle is defined by two unit vectors that are 90 degrees apart.
-     * A great circle is stored in a double[2][3] array and one can be obtained
-     * by calling one of the getGreatCircle() methods.
-     * <p>
-     * In this method, a great circle and a distance are specified and a point
-     * is returned which is on the great circle path and is the specified
-     * distance away from the first point of the great circle.
-     *
-     * @param greatCircle
-     *            a great circle structure
-     * @param distance
-     *            distance in radians from first point of great circle
-     * @return unit vector of point which is on great circle and located
-     *         specified distance away from first point of great circle.
-     */
-    static double* getGreatCirclePoint(
-            double const* const * const greatCircle, double distance)
-    {
-        double* v = new double[3];
-        getGreatCirclePoint(greatCircle, distance, v);
-        return v;
-    }
+	/**
+	 * A great circle is defined by two unit vectors that are 90 degrees apart.
+	 * A great circle is stored in a double[2][3] array and one can be obtained
+	 * by calling one of the getGreatCircle() methods.
+	 * <p>
+	 * In this method, a great circle and a distance are specified and a point
+	 * is returned which is on the great circle path and is the specified
+	 * distance away from the first point of the great circle.
+	 *
+	 * @param greatCircle
+	 *            a great circle structure
+	 * @param distance
+	 *            distance in radians from first point of great circle
+	 * @return unit vector of point which is on great circle and located
+	 *         specified distance away from first point of great circle.
+	 */
+	static double* getGreatCirclePoint(
+			double const* const * const greatCircle, double distance)
+	{
+		double* v = new double[3];
+		getGreatCirclePoint(greatCircle, distance, v);
+		return v;
+	}
 
-    /**
-     * A great circle is defined by two unit vectors that are 90 degrees apart.
-     * A great circle is stored in a double[2][3] array and one can be obtained
-     * by calling one of the getGreatCircle() methods.
-     * <p>
-     * In this method, a great circle and a distance are specified and a point
-     * is returned which is on the great circle path and is the specified
-     * distance away from the first point of the great circle.
-     *
-     * @param greatCircle
-     *            a great circle structure
-     * @param distance
-     *            distance in radians from first point of great circle
-     * @param v
-     *            unit vector of point which is on great circle and located
-     *            specified distance away from first point of great circle.
-     */
-    static void getGreatCirclePoint(
-            double const* const * const greatCircle, double distance,
-            double* const v)
-    {
-        double cosa = cos(distance);
-        double sina = sin(distance);
-        v[0] = cosa * greatCircle[0][0] + sina * greatCircle[1][0];
-        v[1] = cosa * greatCircle[0][1] + sina * greatCircle[1][1];
-        v[2] = cosa * greatCircle[0][2] + sina * greatCircle[1][2];
-    }
+	/**
+	 * A great circle is defined by two unit vectors that are 90 degrees apart.
+	 * A great circle is stored in a double[2][3] array and one can be obtained
+	 * by calling one of the getGreatCircle() methods.
+	 * <p>
+	 * In this method, a great circle and a distance are specified and a point
+	 * is returned which is on the great circle path and is the specified
+	 * distance away from the first point of the great circle.
+	 *
+	 * @param greatCircle
+	 *            a great circle structure
+	 * @param distance
+	 *            distance in radians from first point of great circle
+	 * @param v
+	 *            unit vector of point which is on great circle and located
+	 *            specified distance away from first point of great circle.
+	 */
+	static void getGreatCirclePoint(
+			double const* const * const greatCircle, double distance,
+			double* const v)
+	{
+		double cosa = cos(distance);
+		double sina = sin(distance);
+		v[0] = cosa * greatCircle[0][0] + sina * greatCircle[1][0];
+		v[1] = cosa * greatCircle[0][1] + sina * greatCircle[1][1];
+		v[2] = cosa * greatCircle[0][2] + sina * greatCircle[1][2];
+	}
 
-    /**
-     * @param v0 first corner of triangle
-     * @param v1 second corner of triangle
-     * @param v2 third corner of triangle
-     * @return the area of a triangle defined by three 3-component vectors
-     */
-    static double getTriangleArea(const double* const v0,
-            const double* const v1, const double* const v2)
-    {
-        double v10[3] = { v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2] };
-        double v20[3] = { v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2] };
-        double u[3] = { v10[1] * v20[2] - v10[2] * v20[1], v10[2] * v20[0]
-                - v10[0] * v20[2], v10[0] * v20[1] - v10[1] * v20[0] };
-        return sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2]) / 2.;
-    }
+	/**
+	 * @param v0 first corner of triangle
+	 * @param v1 second corner of triangle
+	 * @param v2 third corner of triangle
+	 * @return the area of a triangle defined by three 3-component vectors
+	 */
+	static double getTriangleArea(const double* const v0,
+			const double* const v1, const double* const v2)
+	{
+		double v10[3] = { v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2] };
+		double v20[3] = { v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2] };
+		double u[3] = { v10[1] * v20[2] - v10[2] * v20[1], v10[2] * v20[0]
+				- v10[0] * v20[2], v10[0] * v20[1] - v10[1] * v20[0] };
+		return sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2]) / 2.;
+	}
 
-    /**
-     * @param v0 first corner of triangle
-     * @param v1 second corner of triangle
-     * @param v2 third corner of triangle
-     * @param work1 a double[3] used as work space
-     * @param work2 a double[3] used as work space
-     * @param work3 a double[3] used as work space
-     * @return the area of a triangle defined by three 3-component vectors
-     */
-    static double getTriangleArea(const double* const v0,
-            const double* const v1, const double* const v2, double* work1, double* work2, double* work3)
-    {
-        work1[0] = v1[0] - v0[0];
-        work1[1] = v1[1] - v0[1];
-        work1[2] = v1[2] - v0[2];
+	/**
+	 * @param v0 first corner of triangle
+	 * @param v1 second corner of triangle
+	 * @param v2 third corner of triangle
+	 * @param work1 a double[3] used as work space
+	 * @param work2 a double[3] used as work space
+	 * @param work3 a double[3] used as work space
+	 * @return the area of a triangle defined by three 3-component vectors
+	 */
+	static double getTriangleArea(const double* const v0,
+			const double* const v1, const double* const v2, double* work1, double* work2, double* work3)
+	{
+		work1[0] = v1[0] - v0[0];
+		work1[1] = v1[1] - v0[1];
+		work1[2] = v1[2] - v0[2];
 
-        work2[0] = v2[0] - v0[0];
-        work2[1] = v2[1] - v0[1];
-        work2[2] = v2[2] - v0[2];
+		work2[0] = v2[0] - v0[0];
+		work2[1] = v2[1] - v0[1];
+		work2[2] = v2[2] - v0[2];
 
-        work3[0] = work1[1] * work2[2] - work1[2] * work2[1];
-        work3[1] = work1[2] * work2[0] - work1[0] * work2[2];
-        work3[2] = work1[0] * work2[1] - work1[1] * work2[0];
+		work3[0] = work1[1] * work2[2] - work1[2] * work2[1];
+		work3[1] = work1[2] * work2[0] - work1[0] * work2[2];
+		work3[2] = work1[0] * work2[1] - work1[1] * work2[0];
 
-        return sqrt(work3[0] * work3[0] + work3[1] * work3[1] + work3[2] * work3[2]) / 2.;
-    }
+		return sqrt(work3[0] * work3[0] + work3[1] * work3[1] + work3[2] * work3[2]) / 2.;
+	}
 
-    /**
-     * Return the normalized vector sum of the supplied unit vectors.
-     *
-     * @param v one or more unit vectors
-     * @param n size of v
-     * @return the normalized vector sum of the supplied unit vectors.
-     */
-    static double* center(double const * const * const v, int n)
-    {
-        double* x = new double[3];
-        x[0] = x[1] = x[2] = 0.0;
-        if (n == 0)
-            return x;
+	/**
+	 * Return the normalized vector sum of the supplied unit vectors.
+	 *
+	 * @param v one or more unit vectors
+	 * @param n size of v
+	 * @return the normalized vector sum of the supplied unit vectors.
+	 */
+	static double* center(double const * const * const v, int n)
+	{
+		double* x = new double[3];
+		x[0] = x[1] = x[2] = 0.0;
+		if (n == 0)
+			return x;
 
-        for (int i = 0; i < n; ++i)
-        {
-            x[0] += v[i][0];
-            x[1] += v[i][1];
-            x[2] += v[i][2];
-        }
-        normalize(x);
-        return x;
-    }
+		for (int i = 0; i < n; ++i)
+		{
+			x[0] += v[i][0];
+			x[1] += v[i][1];
+			x[2] += v[i][2];
+		}
+		normalize(x);
+		return x;
+	}
 
-    /**
-     * Return the normalized vector sum of the supplied unit vectors.
-     *
-     * @param v one or more unit vectors
-     * @param x the 3-element array of double in which to place the
-     * computed unit vector.
-     */
-    static void center(vector<double*> v, double* x)
-    {
-        x[0] = x[1] = x[2] = 0.0;
+	/**
+	 * Return the normalized vector sum of the supplied unit vectors.
+	 *
+	 * @param v one or more unit vectors
+	 * @param x the 3-element array of double in which to place the
+	 * computed unit vector.
+	 */
+	static void center(vector<double*> v, double* x)
+	{
+		x[0] = x[1] = x[2] = 0.0;
 
-        for (size_t i = 0; i < v.size(); ++i)
-        {
-            x[0] += v[i][0];
-            x[1] += v[i][1];
-            x[2] += v[i][2];
-        }
-        normalize(x);
-    }
+		for (size_t i = 0; i < v.size(); ++i)
+		{
+			x[0] += v[i][0];
+			x[1] += v[i][1];
+			x[2] += v[i][2];
+		}
+		normalize(x);
+	}
 };
 // end class GeoTessUtils
 
@@ -1750,26 +1748,26 @@ static const double GEOTESS_E = 0.99330562000985870000;
 
 inline double GeoTessUtils::getGeographicLat(const double& lat)
 {
-    // convert lat from geocentric to geographic latitude.
-    if (approximateLatitudes)
-    {
-        double tmp = (lat - GEOTESS_LAT0) / GEOTESS_DLAT;
-        int i = (int) tmp;
-        return geographic[i] + (tmp - i) * (geographic[i + 1] - geographic[i]);
-    }
-    return atan(tan(lat) / GEOTESS_E);
+	// convert lat from geocentric to geographic latitude.
+	if (approximateLatitudes)
+	{
+		double tmp = (lat - GEOTESS_LAT0) / GEOTESS_DLAT;
+		int i = (int) tmp;
+		return geographic[i] + (tmp - i) * (geographic[i + 1] - geographic[i]);
+	}
+	return atan(tan(lat) / GEOTESS_E);
 }
 
 inline double GeoTessUtils::getGeocentricLat(const double& lat)
 {
-    // convert lat from geographic to geocentric latitude.
-    if (approximateLatitudes)
-    {
-        double tmp = (lat - GEOTESS_LAT0) / GEOTESS_DLAT;
-        int i = (int) tmp;
-        return geocentric[i] + (tmp - i) * (geocentric[i + 1] - geocentric[i]);
-    }
-    return atan(tan(lat) * GEOTESS_E);
+	// convert lat from geographic to geocentric latitude.
+	if (approximateLatitudes)
+	{
+		double tmp = (lat - GEOTESS_LAT0) / GEOTESS_DLAT;
+		int i = (int) tmp;
+		return geocentric[i] + (tmp - i) * (geocentric[i + 1] - geocentric[i]);
+	}
+	return atan(tan(lat) * GEOTESS_E);
 }
 
 } // end namespace geotess

@@ -60,68 +60,67 @@ namespace slbm {
 
 // **** _STATIC INITIALIZATIONS_************************************************
 
-bool GeoTessModelSLBM::newModelStyleReadFormat = true;
-
 // **** _FUNCTION IMPLEMENTATIONS_ *********************************************
 
-GeoTessModelSLBM::GeoTessModelSLBM(vector<vector<Uncertainty*> >& uncert,
-        const GeoTessOptimizationType* optimization)
-: GeoTessModel(optimization), uncertainty(uncert), ioUncertainty(true)
+GeoTessModelSLBM::GeoTessModelSLBM() : GeoTessModel()
 {
     init();
 }
 
-GeoTessModelSLBM::GeoTessModelSLBM(const string& modelInputFile, const string& relativeGridPath,
-        vector<vector<Uncertainty*> >& uncert, const GeoTessOptimizationType* optimization)
-: GeoTessModel(optimization), uncertainty(uncert), ioUncertainty(true)
-{
-    init();
-    loadModel(modelInputFile, relativeGridPath);
-}
-
-GeoTessModelSLBM::GeoTessModelSLBM(const string& modelInputFile,
-        vector<vector<Uncertainty*> >& uncert, const GeoTessOptimizationType* optimization)
-: GeoTessModel(optimization), uncertainty(uncert), ioUncertainty(true)
+GeoTessModelSLBM::GeoTessModelSLBM(const string& modelInputFile)
+: GeoTessModel()
 {
     init();
     loadModel(modelInputFile, ".");
 }
 
-GeoTessModelSLBM::GeoTessModelSLBM(const string& gridFileName, GeoTessMetaData* metaData,
-        vector<vector<Uncertainty*> >& uncert, double* avgMantleVel)
-: GeoTessModel(gridFileName, metaData), uncertainty(uncert), ioUncertainty(true)
+GeoTessModelSLBM::GeoTessModelSLBM(const string& modelInputFile, const string& relativeGridPath)
+: GeoTessModel()
 {
     init();
-    averageMantleVelocity[0] = avgMantleVel[0];
-    averageMantleVelocity[1] = avgMantleVel[1];
+    loadModel(modelInputFile, relativeGridPath);
+}
+
+GeoTessModelSLBM::GeoTessModelSLBM(const string& gridFileName, GeoTessMetaData* metaData)
+: GeoTessModel(gridFileName, metaData)
+{
+    init();
 }
 
 
-GeoTessModelSLBM::GeoTessModelSLBM(GeoTessGrid* grid, GeoTessMetaData* metaData,
-        vector<vector<Uncertainty*> >& uncert, double* avgMantleVel)
-: GeoTessModel(grid, metaData), uncertainty(uncert), ioUncertainty(true)
+GeoTessModelSLBM::GeoTessModelSLBM(GeoTessGrid* grid, GeoTessMetaData* metaData)
+: GeoTessModel(grid, metaData)
 {
     init();
-    averageMantleVelocity[0] = avgMantleVel[0];
-    averageMantleVelocity[1] = avgMantleVel[1];
 }
 
 /**
  * Destructor.
  */
-GeoTessModelSLBM::~GeoTessModelSLBM()
-{
-}
+GeoTessModelSLBM::~GeoTessModelSLBM()  { }
 
-/**
-* Test a file to see if it is a GeoTessModelSLBM file.
-*
-* @param fileName
-* @return true if fileName is a GeoTessModelSLBM file.
-*/
-bool GeoTessModelSLBM::isGeoTessModelSLBM(const string& fileName)
+bool GeoTessModelSLBM::operator == (const GeoTessModelSLBM& other) const
 {
-    return GeoTessModel::isGeoTessModel(fileName, CPPUtils::uppercase_string(GeoTessModelSLBM::class_name()));
+    if (abs(averageMantleVelocity[0]/other.averageMantleVelocity[0]-1.) > 1.e-6
+            || abs(averageMantleVelocity[0]/other.averageMantleVelocity[0]-1.) > 1.e-6)
+        return false;
+
+    for (int i=0; i<piu.size(); ++i)
+        for (int j=0; j<piu[i].size(); ++j)
+        {
+            if (!(piu[i][j] == NULL && other.piu[i][j] == NULL) &&
+                    !(*piu[i][j] == *other.piu[i][j]))
+                return false;
+        }
+
+    for (int i=0; i<pdu.size(); ++i)
+        if (!(*pdu[i] == *other.pdu[i]))
+            return false;
+
+    if (!GeoTessModel::operator==(other))
+        return false;
+
+    return true;
 }
 
 void GeoTessModelSLBM::init()
@@ -129,276 +128,382 @@ void GeoTessModelSLBM::init()
     averageMantleVelocity[0]=averageMantleVelocity[1]=0;
 }
 
+string GeoTessModelSLBM::toString()
+{
+    ostringstream os;
+
+    os << GeoTessModel::toString() << endl;
+
+    os << "GeoTessModelSLBM Data:" << endl << endl;
+
+    os << "averageMantleVelocity = [" << averageMantleVelocity[0] << ", "
+            << averageMantleVelocity[1] << "]" << endl << endl;
+
+    ostringstream t;
+    for (int i=0; i<piu.size(); ++i)
+        for (int j=0; j<piu[i].size(); ++j)
+            if (piu[i][j] != NULL)
+                t << " " << piu[i][j]->getPhaseStr() << "-" << piu[i][j]->getAttributeStr();
+    os << "Path independent uncertainty supported phase-attributes:" << t.str() << endl;
+
+    ostringstream t2;
+    for (int i=0; i<pdu.size(); ++i)
+        if (pdu[i] != NULL)
+            t2 << " " << pdu[i]->getPhaseStr();
+    os << "Path dependent uncertainty supported phases:" << t2.str() << endl << endl;
+
+    os << "UncertaintyPDU Data: " << endl << endl;
+    for (int i=0; i<pdu.size(); ++i)
+        os << pdu[i]->toString() << endl;
+
+    return os.str();
+}
+
 void GeoTessModelSLBM::loadModelAscii(IFStreamAscii& input, const string& inputDirectory,
         const string& relGridFilePath)
 {
-    // read in the class name and verify this is a GeoTessModelSLBM file.
-
-    string s;
-    if (newModelStyleReadFormat)
-    {
-        if (!input.readLine(s) || s != CPPUtils::uppercase_string(GeoTessModelSLBM::class_name()))
-        {
-            ostringstream os;
-            os << endl << "ERROR in GeoTessModelSLBM::loadModelAscii()." << endl <<
-                "  File " << getMetaData().getInputModelFile() << endl <<
-                "  This file is NOT a GeoTessModelSLBM file. Exiting ..." << endl << endl;
-            throw SLBMException(os.str(), 105);
-        }
-    }
-
     // read all the information from the standard GeoTessModel object, including the
     // model values of P and S velocity
-
     GeoTessModel::loadModelAscii(input, inputDirectory, relGridFilePath);
 
-    if (newModelStyleReadFormat)
-    {
-        if (!input.readLine(s) || s != CPPUtils::uppercase_string(GeoTessModelSLBM::class_name()))
-        {
-            ostringstream os;
-            os << endl << "ERROR in GeoTessModelSLBM::loadModelAscii()." << endl <<
-                "File " << getMetaData().getInputModelFile() << endl <<
-                "While this file is a GeoTessModel file, it does not appear to be GeoTessModelSLBM file." <<
-                " Extra 'GeoTessModelSLBM' data is missing." << endl
-                << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-            throw SLBMException(os.str(), 105);
-        }
-    }
-    else
-    {
-        if (!input.readLine(s) || s != "SLBM")
-        {
-            ostringstream os;
-            os << endl << "ERROR in GeoTessModelSLBM::loadModelAscii()." << endl <<
-                "File " << getMetaData().getInputModelFile() << endl <<
-                "While this file is a GeoTessModel file, it does not appear to be GeoTessModelSLBM file." <<
-                " Extra 'SLBM' data is missing." << endl
-                << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-            throw SLBMException(os.str(), 105);
-        }
-    }
+    // make sure that middle_crust_N and middle_crust_G are in the right order.
+    checkMiddleCrustLayers();
 
-    int version = input.readInteger();
-    if (version < 1 || version > 2)
+    // read the model type after the base geotess info
+    string s;
+    input.readLine(s);
+
+    // if there's nothing in string s, this isn't an rstt model
+    if (s.length() == 0)
     {
         ostringstream os;
         os << endl << "ERROR in GeoTessModelSLBM::loadModelAscii()." << endl <<
                 "File " << getMetaData().getInputModelFile() << endl <<
-                "SLBM IO Version number is " << version << " but that is not a supported version number." << endl
+                "While this file is a GeoTessModel file, it does not appear to be GeoTessModelSLBM file." <<
+                " Extra 'SLBM' data is missing." << endl
                 << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
         throw SLBMException(os.str(),105);
     }
 
+    // get the file format verison
+    int fileFormatVersion = input.readInteger();
+    fileFormatVer = fileFormatVersion;  // record the version to a property 
+
+    // check to ensure file format is valid (this string of conditionals could be compressed a little,
+    // but it's more readable broken down by version and doesn't really impact execution speed)
+    if (fileFormatVersion < 1)  // probably something went wrong and the fileFormatVersion is 0
+    {
+        ostringstream os;
+        os << endl << "ERROR in GeoTessModelSLBM::loadModelAscii()." << endl <<
+                "File " << getMetaData().getInputModelFile() << endl <<
+                "SLBM IO Version number is " << fileFormatVersion << " but that is not a supported version number." << endl
+                << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+        throw SLBMException(os.str(),105);
+    }
+    else if (fileFormatVersion < 3)  // fileFormatVersion is 1 or 2
+    {
+        // first thing after base model info is the name of this class, which should be SLBMN
+        if (s != "SLBM" && s != "GeoTessModelSLBM")
+        {
+            ostringstream os;
+            os << endl << "ERROR in GeoTessModelSLBM::loadModelAscii()." << endl <<
+                    "File " << getMetaData().getInputModelFile() << endl <<
+                    "While this file is a GeoTessModel file, it does not appear to be GeoTessModelSLBM file." <<
+                    " Extra 'SLBM' data is missing." << endl
+                    << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+            throw SLBMException(os.str(), 105);
+        }
+    }
+    else if (fileFormatVersion >= 3) // v3 files should be of type GeoTessModelSLBM
+    {
+        if (s != class_name())
+        {
+            ostringstream os;
+            os << endl << "ERROR in GeoTessModelSLBM::loadModelAscii()." << endl <<
+                    "File " << getMetaData().getInputModelFile() << endl <<
+                    "While this file is a GeoTessModel file, it does not appear to be GeoTessModelSLBM file." <<
+                    " Extra 'SLBM' data is missing." << endl
+                    << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+            throw SLBMException(os.str(), 105);
+        }
+    }
+    else  // something has gone terribly wrong (negative file format version?)
+    {
+        ostringstream os;
+        os << endl << "ERROR in GeoTessModelSLBM::loadModelAscii()." << endl <<
+                "File " << getMetaData().getInputModelFile() << endl <<
+                "SLBM IO Version number is " << fileFormatVersion << " but that is not a supported version number." << endl
+                << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+        throw SLBMException(os.str(),105);
+    }
+
+    // read the standard GeoTessModelSLBM info
     averageMantleVelocity[0] = input.readFloat();
     averageMantleVelocity[1] = input.readFloat();
 
-    // read uncertainty information.
+    // read path independent uncertainty (piu) information.
     // np is the number of phases (Pn, Sn, Pg, Lg); always 4
     // na is the number of attribute (TT, SH, AZ); always 3
+    // nModels is the number of non-NULL models that actually
+    // got written to the file.
     int np = input.readInteger();
     int na = input.readInteger();
-    int phase, attribute;
+    int pIndex, aIndex;
+    string phase, attribute;
 
-    for (int p=0; p<np; ++p)
-        for (int a=0; a<na; ++a)
-        {
-            phase = Uncertainty::getPhase(input.readString());
-            attribute = Uncertainty::getAttribute(input.readString());
-            uncertainty[phase][attribute] = Uncertainty::getUncertainty(input, phase, attribute);
-        }
+    piu.resize(np);
+    for (int i=0; i<np; i++)
+        piu[i].resize(na);
 
-
-
-    if (version > 1)
+    for (int i=0; i<np*na; ++i)
     {
-        float vn[2], vg[2];
-        GeoTessData *dn, *dg;
-        vector<string> layerNames;
+        phase = input.readString();
+        attribute = input.readString();
+        pIndex = UncertaintyPIU::getPhase(phase);
+        aIndex = UncertaintyPIU::getAttribute(attribute);
+        piu[pIndex][aIndex] = UncertaintyPIU::getUncertaintyPIU(input, pIndex, aIndex);
+    }
 
-        getMetaData().getLayerNames(layerNames);
-        layerNames[3] = "middle_crust_G";
-        layerNames[4] = "middle_crust_N";
-        getMetaData().setLayerNames(layerNames);
-        for (int v = 0; v < getNVertices(); ++v)
+    // if fileFormatVersion == 3 then this file also contains
+    // path dependent uncertainty information.
+    if (fileFormatVersion >= 3)
+    {
+        np = input.readInteger();
+        pdu.resize(np);
+        for (int i = 0; i < np; ++i)
         {
-            dn = getProfile(v, 3)->getData(0);
-            dg = getProfile(v, 4)->getData(0);
-
-            dn->getValues(vn, 2);
-            dg->getValues(vg, 2);
-            dn->setValue(0, vg[0]);
-            dn->setValue(1, vg[1]);
-            dg->setValue(0, vn[0]);
-            dg->setValue(1, vn[1]);
+            UncertaintyPDU* u = UncertaintyPDU::getUncertainty(input);
+            pdu[u->getPhase()] = u;
         }
     }
 }
 
 void GeoTessModelSLBM::writeModelAscii(IFStreamAscii& output, const string& gridFileName)
 {
-    // update software version
-    getMetaData().setModelSoftwareVersion("RSTT." + string(SlbmVersion));
+    // make sure that middle_crust_N and middle_crust_G are in the right order.
+    checkMiddleCrustLayers();
 
-    // update model generation date
-    CpuTimer cpu;
-    getMetaData().setModelGenerationDate(cpu.now());
-
-    float vn[2], vg[2];
-    GeoTessData *dn, *dg;
-    vector<string> layerNames;
-    getMetaData().getLayerNames(layerNames);
-    layerNames[3] = "middle_crust_N";
-    layerNames[4] = "middle_crust_G";
-    getMetaData().setLayerNames(layerNames);
-
-    for (int v = 0; v < getNVertices(); ++v)
-    {
-        dn = getProfile(v, 3)->getData(0);
-        dg = getProfile(v, 4)->getData(0);
-
-        dn->getValues(vn, 2);
-        dg->getValues(vg, 2);
-        dn->setValue(0, vg[0]);
-        dn->setValue(1, vg[1]);
-        dg->setValue(0, vn[0]);
-        dg->setValue(1, vn[1]);
-    }
-
-    output.writeStringNL(CPPUtils::uppercase_string(GeoTessModelSLBM::class_name()));
+    // write all the information from the standard GeoTessModel object, including the
+    // model values of P and S velocity
     GeoTessModel::writeModelAscii(output, gridFileName);
 
-    getMetaData().getLayerNames(layerNames);
-    layerNames[3] = "middle_crust_G";
-    layerNames[4] = "middle_crust_N";
-    getMetaData().setLayerNames(layerNames);
-    for (int v = 0; v < getNVertices(); ++v)
-    {
-        dn = getProfile(v, 3)->getData(0);
-        dg = getProfile(v, 4)->getData(0);
+    output.writeStringNL(class_name());
 
-        dn->getValues(vn, 2);
-        dg->getValues(vg, 2);
-        dn->setValue(0, vg[0]);
-        dn->setValue(1, vg[1]);
-        dg->setValue(0, vn[0]);
-        dg->setValue(1, vn[1]);
-    }
+    // if path dependent uncertainty information is available, write version = 3.
+    // if not, write version = 2;
+    int fileFormatVersion = pdu.size() == 0 ? 2 : 3;
 
-    output.writeStringNL(CPPUtils::uppercase_string(GeoTessModelSLBM::class_name()));
-    output.writeIntNL(2); // slbm-specific io version number
+    output.writeIntNL(fileFormatVersion);
+
     output.writeFloatNL((float)averageMantleVelocity[0]);
     output.writeFloatNL((float)averageMantleVelocity[1]);
 
-    if (ioUncertainty)
-    {
-        // uncertainty
-        output.writeStringNL("4 3");
-        for (int p=0; p<4; ++p)
-            for (int a=0; a<3; ++a)
-            {
-                output.writeString(Uncertainty::getPhase(p));
-                output.writeString(" ");
-                output.writeStringNL(Uncertainty::getAttribute(a));
-                if (uncertainty[p][a] == NULL)
-                    output.writeStringNL("0 0");
-                else
-                    output.writeString(uncertainty[p][a]->toStringFile());
-            }
-    }
-    else
-        output.writeStringNL("0");
+    int nphases = 4;
+    int nattributes = 3;
 
+    // path independent uncertainty
+    output.writeInt(nphases);
+    output.writeString(" ");
+    output.writeIntNL(nattributes);
+
+    for (int p=0; p<nphases; ++p)
+        for (int a=0; a<nattributes; ++a)
+        {
+            output.writeString(UncertaintyPIU::getPhase(p));
+            output.writeString(" ");
+            output.writeStringNL(UncertaintyPIU::getAttribute(a));
+            if (piu[p][a] == NULL)
+                output.writeStringNL("  0  0");
+            else
+                output.writeString(piu[p][a]->toStringFile());
+        }
+
+    // if path dependent uncertainty information is available, write it
+    if (fileFormatVersion == 3)
+    {
+        output.writeIntNL(pdu.size());
+        for (int p=0; p<pdu.size(); ++p)
+            pdu[p]->writeFile(output);
+    }
 }
 
 void GeoTessModelSLBM::loadModelBinary(IFStreamBinary& input, const string& inputDirectory,
         const string& relGridFilePath)
 {
-    // read in the class name and verify this is a GeoTessModelSLBM file.
-
-    string s;
-    if (newModelStyleReadFormat)
-    {
-        input.readCharArray(s, GeoTessModelSLBM::class_name().size());
-        if (s != CPPUtils::uppercase_string(GeoTessModelSLBM::class_name()))
-        {
-            ostringstream os;
-            os << endl << "ERROR in GeoTessModelSLBM::loadModelBinary()." << endl <<
-                "  File " << getMetaData().getInputModelFile() << endl <<
-                "  This file is NOT a GeoTessModelSLBM file. Exiting ..." << endl << endl;
-            throw SLBMException(os.str(), 105);
-        }
-    }
-
-    // read in basic GeoTessModel information first
-
+    // read all the information from the standard GeoTessModel object, including the
+    // model values of P and S velocity
     GeoTessModel::loadModelBinary(input, inputDirectory, relGridFilePath);
 
-    input.readString(s);
-    if (newModelStyleReadFormat)
-    {
-        if (s != CPPUtils::uppercase_string(GeoTessModelSLBM::class_name()))
-        {
-            ostringstream os;
-            os << endl << "ERROR in GeoTessModelSLBM::loadModelBinary()." << endl <<
-                "File " << getMetaData().getInputModelFile() << endl <<
-                "While this file is a GeoTessModel file, it does not appear to be 'GeoTessModelSLBM' file." <<
-                " Extra GeoTessModelSLBM data is missing." << endl
-                << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-            throw SLBMException(os.str(), 105);
-        }
-    }
-    else
-    {
-        if (s != "SLBM")
-        {
-            ostringstream os;
-            os << endl << "ERROR in GeoTessModelSLBM::loadModelBinary()." << endl <<
-                "File " << getMetaData().getInputModelFile() << endl <<
-                "While this file is a GeoTessModel file, it does not appear to be GeoTessModelSLBM file. Extra 'SLBM' data is missing." << endl
-                << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-            throw SLBMException(os.str(), 105);
-        }
-    }
+    // make sure that middle_crust_N and middle_crust_G are in the right order.
+    checkMiddleCrustLayers();
 
-    int version = input.readInt();
-    if (version > 2)
+    // read the model type after the base geotess info
+    string s;
+    input.readString(s);
+
+    // if there's nothing in string s, this isn't an rstt model
+    if (s.length() == 0)
     {
         ostringstream os;
         os << endl << "ERROR in GeoTessModelSLBM::loadModelBinary()." << endl <<
                 "File " << getMetaData().getInputModelFile() << endl <<
-                "SLBM IO Version number is " << version << " but that is not a supported version number." << endl
+                "While this file is a GeoTessModel file, it does not appear to be GeoTessModelSLBM file." <<
+                " Extra 'SLBM' data is missing." << endl
                 << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
         throw SLBMException(os.str(),105);
     }
 
-    averageMantleVelocity[0] = input.readFloat();
-    averageMantleVelocity[1] = input.readFloat();
+    // get the file format verison
+    int fileFormatVersion = input.readInt();
+    fileFormatVer = fileFormatVersion;  // record the version to a property 
 
-    int np = input.readInt();
-    int na = input.readInt();
-    if (na > 0 && np > 0)
+    // check to ensure file format is valid (this string of conditionals could be compressed a little,
+    // but it's more readable broken down by version and doesn't really impact execution speed)
+    if (fileFormatVersion < 1)  // probably something went wrong and the fileFormatVersion is 0
     {
-        if (na != 3 || np != 4)
+        ostringstream os;
+        os << endl << "ERROR in GeoTessModelSLBM::loadModelBinary()." << endl <<
+                "File " << getMetaData().getInputModelFile() << endl <<
+                "SLBM IO Version number is " << fileFormatVersion << " but that is not a supported version number." << endl
+                << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+        throw SLBMException(os.str(),105);
+    }
+    else if (fileFormatVersion < 3)  // fileFormatVersion is 1 or 2
+    {
+        // first thing after base model info is the name of this class, which should be SLBMN
+        if (s != "SLBM" && s != "GeoTessModelSLBM")
         {
             ostringstream os;
             os << endl << "ERROR in GeoTessModelSLBM::loadModelBinary()." << endl <<
                     "File " << getMetaData().getInputModelFile() << endl <<
-                    "Expecting uncertainty information for 3 attributes and 4 phases." << endl
+                    "While this file is a GeoTessModel file, it does not appear to be GeoTessModelSLBM file." <<
+                    " Extra 'SLBM' data is missing." << endl
                     << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-            throw SLBMException(os.str(),105);
+            throw SLBMException(os.str(), 105);
         }
-        for (int p=0; p<np; ++p)
-            for (int a=0; a<na; ++a)
-            {
-                int phase = Uncertainty::getPhase(input.readString());
-                int attribute = Uncertainty::getAttribute(input.readString());
-                // will be null if numDistances is zero
-                uncertainty[phase][attribute] = Uncertainty::getUncertainty(input, phase, attribute);
-            }
+    }
+    else if (fileFormatVersion >= 3) // v3 files should be of type GeoTessModelSLBM
+    {
+        if (s != class_name())
+        {
+            ostringstream os;
+            os << endl << "ERROR in GeoTessModelSLBM::loadModelBinary()." << endl <<
+                    "File " << getMetaData().getInputModelFile() << endl <<
+                    "While this file is a GeoTessModel file, it does not appear to be GeoTessModelSLBM file." <<
+                    " Extra 'SLBM' data is missing." << endl
+                    << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+            throw SLBMException(os.str(), 105);
+        }
+    }
+    else  // something has gone terribly wrong (negative file format version?)
+    {
+        ostringstream os;
+        os << endl << "ERROR in GeoTessModelSLBM::loadModelBinary()." << endl <<
+                "File " << getMetaData().getInputModelFile() << endl <<
+                "SLBM IO Version number is " << fileFormatVersion << " but that is not a supported version number." << endl
+                << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+        throw SLBMException(os.str(),105);
     }
 
-    if (version > 1)
+    // read the standard GeoTessModelSLBM info
+    averageMantleVelocity[0] = input.readFloat();
+    averageMantleVelocity[1] = input.readFloat();
+
+    // read path independent uncertainty (piu) information.
+    // np is the number of phases (Pn, Sn, Pg, Lg); always 4
+    // na is the number of attribute (TT, SH, AZ); always 3
+    // nModels is the number of non-NULL models that actually
+    // got written to the file.
+    int np = input.readInt();
+    int na = input.readInt();
+    int pIndex, aIndex;
+    string phase, attribute;
+
+    piu.resize(np);
+    for (int i=0; i<np; i++)
+        piu[i].resize(na);
+
+    for (int i=0; i<np*na; ++i)
+    {
+        input.readString(phase);
+        input.readString(attribute);
+        pIndex = UncertaintyPIU::getPhase(phase);
+        aIndex = UncertaintyPIU::getAttribute(attribute);
+        piu[pIndex][aIndex] = UncertaintyPIU::getUncertaintyPIU(input, pIndex, aIndex);
+    }
+
+    // if fileFormatVersion == 3 then this file also contains
+    // path dependent uncertainty information.
+    if (fileFormatVersion >= 3)
+    {
+        np = input.readInt();
+        pdu.resize(np);
+        for (int i = 0; i < np; ++i)
+        {
+            UncertaintyPDU* u = UncertaintyPDU::getUncertainty(input);
+            pdu[u->getPhase()] = u;
+        }
+    }
+}
+
+void GeoTessModelSLBM::writeModelBinary(IFStreamBinary& output, const string& gridFileName)
+{
+    // make sure that middle_crust_N and middle_crust_G are in the right order.
+    checkMiddleCrustLayers();
+
+    // write all the information from the standard GeoTessModel object, including the
+    // model values of P and S velocity
+    GeoTessModel::writeModelBinary(output, gridFileName);
+
+    output.writeString(class_name());
+
+    // if path dependent uncertainty information is available, write version = 3.
+    // if not, write version = 2;
+    int fileFormatVersion = pdu.size() == 0 ? 2 : 3;
+
+    output.writeInt(fileFormatVersion);
+
+    output.writeFloat((float)averageMantleVelocity[0]);
+    output.writeFloat((float)averageMantleVelocity[1]);
+
+    output.writeInt(4);
+    output.writeInt(3);
+
+    for (int p=0; p<4; ++p)
+        for (int a=0; a<3; ++a)
+        {
+            output.writeString(UncertaintyPIU::getPhase(p));
+            output.writeString(UncertaintyPIU::getAttribute(a));
+            if (piu[p][a] == NULL)
+            {
+                output.writeInt(0);
+                output.writeInt(0);
+            }
+            else
+                piu[p][a]->writeFile(output);
+        }
+
+    // if path dependent uncertainty information is available, write it
+    if (fileFormatVersion == 3)
+    {
+        output.writeInt(pdu.size());
+        for (int p=0; p<pdu.size(); ++p)
+            if (pdu[p] != NULL)
+                pdu[p]->writeFile(output);
+    }
+}
+
+/**
+ * Some old versions of SLBM incorrectly wrote the model slowness values
+ * in the wrong order.  They had the attribute names and attribute values
+ * for layers middle_crust_N and middle_crust_G reversed.  This
+ * method checks to see if the layers are in the right order and,
+ * if not, swaps them.
+ */
+void GeoTessModelSLBM::checkMiddleCrustLayers()
+{
+    if (getMetaData().getLayerIndex("middle_crust_N") == 3 &&
+            getMetaData().getLayerIndex("middle_crust_G") == 4)
     {
         float vn[2], vg[2];
         GeoTessData *dn, *dg;
@@ -421,310 +526,6 @@ void GeoTessModelSLBM::loadModelBinary(IFStreamBinary& input, const string& inpu
             dg->setValue(1, vn[1]);
         }
     }
-}
-
-void GeoTessModelSLBM::writeModelBinary(IFStreamBinary& output, const string& gridFileName)
-{
-    // update software version
-    getMetaData().setModelSoftwareVersion("RSTT." + string(SlbmVersion));
-
-    // update model generation date
-    CpuTimer cpu;
-    getMetaData().setModelGenerationDate(cpu.now());
-
-    float vn[2], vg[2];
-    GeoTessData *dn, *dg;
-    vector<string> layerNames;
-    getMetaData().getLayerNames(layerNames);
-    layerNames[3] = "middle_crust_N";
-    layerNames[4] = "middle_crust_G";
-    getMetaData().setLayerNames(layerNames);
-
-    for (int v = 0; v < getNVertices(); ++v)
-    {
-        dn = getProfile(v, 3)->getData(0);
-        dg = getProfile(v, 4)->getData(0);
-
-        dn->getValues(vn, 2);
-        dg->getValues(vg, 2);
-        dn->setValue(0, vg[0]);
-        dn->setValue(1, vg[1]);
-        dg->setValue(0, vn[0]);
-        dg->setValue(1, vn[1]);
-    }
-
-    output.writeCharArray(CPPUtils::uppercase_string(GeoTessModelSLBM::class_name()).c_str(), GeoTessModelSLBM::class_name().length());
-    GeoTessModel::writeModelBinary(output, gridFileName);
-
-    getMetaData().getLayerNames(layerNames);
-    layerNames[3] = "middle_crust_G";
-    layerNames[4] = "middle_crust_N";
-    getMetaData().setLayerNames(layerNames);
-    for (int v = 0; v < getNVertices(); ++v)
-    {
-        dn = getProfile(v, 3)->getData(0);
-        dg = getProfile(v, 4)->getData(0);
-
-        dn->getValues(vn, 2);
-        dg->getValues(vg, 2);
-        dn->setValue(0, vg[0]);
-        dn->setValue(1, vg[1]);
-        dg->setValue(0, vn[0]);
-        dg->setValue(1, vn[1]);
-    }
-
-    output.writeString(CPPUtils::uppercase_string(GeoTessModelSLBM::class_name()));
-    output.writeInt(2); // slbm-specific io version number
-    output.writeFloat((float)averageMantleVelocity[0]);
-    output.writeFloat((float)averageMantleVelocity[1]);
-
-    if (ioUncertainty)
-    {
-        // uncertainty
-        output.writeInt(4);  // 4 phases: Pn, Sn, Pg, Lg
-        output.writeInt(3);  // 3 attributes: TT, AZ, SH
-        for (int p=0; p<4; ++p)
-            for (int a=0; a<3; ++a)
-            {
-                output.writeString(Uncertainty::getPhase(p));
-                output.writeString(Uncertainty::getAttribute(a));
-                if (uncertainty[p][a] != NULL)
-                    uncertainty[p][a]->writeFile(output);
-                else
-                {
-                    // number of distances and number of depths both = 0
-                    output.writeInt(0); output.writeInt(0);
-                }
-            }
-    }
-    else { output.writeInt(0); output.writeInt(0); }
-
-}
-
-/**
- * Write the model currently in memory to a DataBuffer.  GeoTessModel does
- * not have a method to write itself to a DataBuffer so this method will
- * write the entire model, including all the information from the base class
- * (GeoTessModel) and all the extra data from the derived class (GeoTessModelSLBM).
- */
-void GeoTessModelSLBM::writeModelDataBuffer(util::DataBuffer& buffer)
-{
-    // write out file type identifier ("GEOTESSMODEL"), format version,
-    // code version, and data stamp
-
-    buffer.writeCharArray("GEOTESSMODEL", 12);
-
-    buffer.writeInt32(1);
-
-    buffer.writeString(metaData->getOptimizationType().toString());
-
-    buffer.writeString(metaData->getModelSoftwareVersion());
-    buffer.writeString(metaData->getModelGenerationDate());
-
-    buffer.writeString(metaData->getDescription());
-
-    buffer.writeString(metaData->getAttributeNamesString());
-    buffer.writeString(metaData->getAttributeUnitsString());
-    buffer.writeString(metaData->getLayerNamesString());
-
-    buffer.writeString(metaData->getDataType().toString());
-    buffer.writeInt32(grid->getNVertices());
-
-    // tessellation ids
-    for (int i = 0; i < metaData->getNLayers(); ++i)
-        buffer.writeInt32(metaData->getTessellation(i));
-
-    for (int i = 0; i < grid->getNVertices(); ++i)
-        for (int j = 0; j < metaData->getNLayers(); ++j)
-        {
-            const GeoTessProfile* p = getProfile(i,j);
-            buffer.writeByte((uByte)p->getType().ordinal());
-            if (p->getType() == GeoTessProfileType::CONSTANT)
-            {
-                buffer.writeFloat(p->getRadiusBottom());
-                buffer.writeFloat(p->getRadiusTop());
-                buffer.writeFloat(p->getData(0).getFloat(0));
-                buffer.writeFloat(p->getData(0).getFloat(1));
-            }
-            else if (p->getType() == GeoTessProfileType::EMPTY)
-            {
-                buffer.writeFloat(p->getRadiusBottom());
-                buffer.writeFloat(p->getRadiusTop());
-            }
-            else if (p->getType() == GeoTessProfileType::THIN)
-            {
-                buffer.writeFloat(p->getRadiusTop());
-                buffer.writeFloat(p->getData(0).getFloat(0));
-                buffer.writeFloat(p->getData(0).getFloat(1));
-            }
-            else if (p->getType() == GeoTessProfileType::NPOINT)
-            {
-                buffer.writeInt32(p->getNRadii());
-                for (int k=0; k<p->getNRadii(); ++k)
-                {
-                    buffer.writeFloat(p->getRadius(k));
-                    buffer.writeFloat(p->getData(k).getFloat(0));
-                    buffer.writeFloat(p->getData(k).getFloat(1));
-                }
-            }
-            else if (p->getType() == GeoTessProfileType::SURFACE)
-            {
-                buffer.writeFloat(p->getData(0).getFloat(0));
-                buffer.writeFloat(p->getData(0).getFloat(1));
-            }
-            else if (p->getType() == GeoTessProfileType::SURFACE_EMPTY)
-            {
-            }
-        }
-
-    buffer.writeString((string)"*");
-    buffer.writeString(grid->getGridID());
-
-    // Done with GeoTessModel information.  Now write GeoTessGrid info.
-
-    // write out file type identifier ("GEOTESSGRID"), format version,
-    // code version, and data stamp
-
-    buffer.writeCharArray("GEOTESSGRID", 11);
-    buffer.writeInt32(2);
-
-    buffer.writeString(grid->getGridInputFile());
-    buffer.writeString(grid->getGridOutputFile());
-
-    buffer.writeString(grid->getGridSoftwareVersion());
-    buffer.writeString(grid->getGridGenerationDate());
-
-    buffer.writeString(grid->getGridID());
-
-    buffer.writeInt32(grid->getNTessellations());
-    buffer.writeInt32(grid->getNLevels());
-    buffer.writeInt32(grid->getNTriangles());
-    buffer.writeInt32(grid->getNVertices());
-
-    buffer.writeIntArray(grid->getTessellations()[0], grid->getNTessellations()*2);
-
-    buffer.writeIntArray(grid->getLevels()[0], grid->getNLevels()*2);
-
-    buffer.writeDoubleArray(grid->getVertices()[0], grid->getNVertices()*3);
-
-    buffer.writeIntArray(grid->getTriangles()[0], grid->getNTriangles()*3);
-
-    // Done with GeoTessGrid.  Now write GeoTessModelSLBM
-    // 'extra' data.
-
-    buffer.writeString((string)"SLBM");
-    buffer.writeInt32(1); // slbm-specific io version number is 1
-    buffer.writeFloat((float)averageMantleVelocity[0]);
-    buffer.writeFloat((float)averageMantleVelocity[1]);
-
-    // uncertainty
-    buffer.writeInt32(4);  // 4 phases: Pn, Sn, Pg, Lg
-    buffer.writeInt32(3);  // 3 attributes: TT, AZ, SH
-    for (int p=0; p<4; ++p)
-        for (int a=0; a<3; ++a)
-        {
-            buffer.writeString(Uncertainty::getPhase(p));
-            buffer.writeString(Uncertainty::getAttribute(a));
-            if (uncertainty[p][a] != NULL)
-                uncertainty[p][a]->serialize(buffer);
-            else
-                buffer.writeInt32(-1);
-        }
-}
-
-int  GeoTessModelSLBM::getBufferSize()
-{
-    int bsiz = 12;
-
-    bsiz += sizeof(int);
-
-    bsiz += sizeof(int)+metaData->getModelSoftwareVersion().size();
-    bsiz += sizeof(int)+metaData->getModelGenerationDate().size();
-
-    bsiz += sizeof(int)+metaData->getDescription().size();
-
-    bsiz += sizeof(int)+metaData->getAttributeNamesString().size();
-    bsiz += sizeof(int)+metaData->getAttributeUnitsString().size();
-    bsiz += sizeof(int)+metaData->getLayerNamesString().size();
-
-    bsiz += sizeof(int)+metaData->getDataType().toString().size();
-
-    bsiz += sizeof(int);  // nvertices
-
-    bsiz += metaData->getNLayers()*sizeof(int);
-
-    // tessellation ids
-    bsiz += metaData->getNLayers()*sizeof(int);
-
-
-    for (int i = 0; i < grid->getNVertices(); ++i)
-        for (int j = 0; j < metaData->getNLayers(); ++j)
-        {
-            const GeoTessProfile* p = getProfile(i,j);
-
-            bsiz += sizeof(uByte);
-            if (p->getType() == GeoTessProfileType::CONSTANT)
-                bsiz += 4*sizeof(float);
-            else if (p->getType() == GeoTessProfileType::EMPTY)
-                bsiz += 2*sizeof(float);
-            else if (p->getType() == GeoTessProfileType::THIN)
-                bsiz += 3*sizeof(float);
-            else if (p->getType() == GeoTessProfileType::NPOINT)
-                bsiz += sizeof(int) + p->getNRadii()*3*sizeof(float);
-            else if (p->getType() == GeoTessProfileType::SURFACE)
-                bsiz += 2*sizeof(float);
-        }
-
-    bsiz += sizeof(int)+1;
-    bsiz += sizeof(int)+grid->getGridID().size();
-
-    // Done with GeoTessModel information.  Now write GeoTessGrid info.
-
-    // write out file type identifier ("GEOTESSGRID"), format version,
-    // code version, and data stamp
-
-    bsiz += 11;
-    bsiz += sizeof(int);
-
-    bsiz += sizeof(int)+grid->getGridSoftwareVersion().size();
-    bsiz += sizeof(int)+grid->getGridGenerationDate().size();
-
-    bsiz += sizeof(int)+grid->getGridID().size();
-
-    bsiz += 4*sizeof(int);
-
-    bsiz += grid->getNTessellations()*2*sizeof(int);
-
-    bsiz += grid->getNLevels()*2*sizeof(int);
-
-    // vertices
-    bsiz += grid->getNVertices()*3*sizeof(double);
-
-    // triangles
-    bsiz += grid->getNTriangles()*3*sizeof(int);
-
-    // Done with GeoTessGrid.  Now write GeoTessModelSLBM
-    // 'extra' data.
-
-    bsiz += sizeof(int)+4;  // (string)"SLBM"
-
-    bsiz += sizeof(int); // slbm-specific io version number is 1
-    bsiz += 2*sizeof(float); // average P and S velocities
-
-    bsiz += 2*sizeof(int);
-    //if (ioUncertainty)
-        for (int p=0; p<4; ++p)
-            for (int a=0; a<3; ++a)
-            {
-                bsiz += sizeof(int)+Uncertainty::getPhase(p).size();
-                bsiz += sizeof(int)+Uncertainty::getAttribute(a).size();
-
-                if (uncertainty[p][a] != NULL)
-                    bsiz += uncertainty[p][a]->getBufferSize();
-                else
-                    bsiz += sizeof(int)+4; // "NULL"
-            }
-    return bsiz;
 }
 
 } // end namespace slbm

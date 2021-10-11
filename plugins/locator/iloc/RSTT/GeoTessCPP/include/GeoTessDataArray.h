@@ -1,26 +1,24 @@
 //- ****************************************************************************
-//-
-//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
-//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
-//- Government retains certain rights in this software.
-//-
-//- BSD Open Source License
+//- 
+//- Copyright 2009 Sandia Corporation. Under the terms of Contract
+//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
+//- retains certain rights in this software.
+//- 
+//- BSD Open Source License.
 //- All rights reserved.
-//-
+//- 
 //- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
-//-
-//-   1. Redistributions of source code must retain the above copyright notice,
+//- 
+//-    * Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-
-//-   2. Redistributions in binary form must reproduce the above copyright
+//-    * Redistributions in binary form must reproduce the above copyright
 //-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-
-//-   3. Neither the name of the copyright holder nor the names of its
+//-    * Neither the name of Sandia National Laboratories nor the names of its
 //-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
-//-
+//- 
 //- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 //- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 //- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -75,354 +73,354 @@ class GEOTESS_EXP_IMP GeoTessDataArray : public GeoTessData
 {
 private:
 
-    /**
-     * Number of values stored by this DataArray.
-     */
-    int											nValues;
+	/**
+	 * Number of values stored by this DataArray.
+	 */
+	int											nValues;
 
-    /**
-     * Array of values stored by this DataArray.
-     */
-    T*											values;
+	/**
+	 * Array of values stored by this DataArray.
+	 */
+	T*											values;
 
-    /**
-     * Default constructor. Not Used.
-     */
-    GeoTessDataArray() : GeoTessData(), nValues(0), values(NULL) {};
+	/**
+	 * Default constructor. Not Used.
+	 */
+	GeoTessDataArray() : GeoTessData(), nValues(0), values(NULL) {};
 
 public:
 
-    /**
-     * Standard constructor. Copies the contents of the new DataArray from the
-     * provided input array.
-     */
-    GeoTessDataArray(T v[], const int& n) : GeoTessData(), nValues(n), values(NULL)
-    {
-        values = new T [nValues];
-        for (int i = 0; i < nValues; ++i) values[i] = v[i];
-    }
+	/**
+	 * Standard constructor. Copies the contents of the new DataArray from the
+	 * provided input array.
+	 */
+	GeoTessDataArray(T v[], const int& n) : GeoTessData(), nValues(n), values(NULL)
+	{
+		values = new T [nValues];
+		for (int i = 0; i < nValues; ++i) values[i] = v[i];
+	}
 
-    /**
-     * Standard constructor. Copies the contents of the new DataArray from the
-     * provided input array.
-     */
-    GeoTessDataArray(const vector<T>& v) : GeoTessData(), nValues(v.size()), values(NULL)
-    {
-        values = new T [nValues];
-        for (int i = 0; i < nValues; ++i) values[i] = v[i];
-    }
+	/**
+	 * Standard constructor. Copies the contents of the new DataArray from the
+	 * provided input array.
+	 */
+	GeoTessDataArray(const vector<T>& v) : GeoTessData(), nValues(v.size()), values(NULL)
+	{
+		values = new T [nValues];
+		for (int i = 0; i < nValues; ++i) values[i] = v[i];
+	}
 
-    /**
-     * Standard constructor. Creates a new array of n entries and initializes each to 0
-     */
-    GeoTessDataArray(const int& n) : GeoTessData(), nValues(n), values(NULL)
-    {
-        values = new T [nValues];
-        for (int i = 0; i < n; ++i) values[i] = (T) 0;
-    }
+	/**
+	 * Standard constructor. Creates a new array of n entries and initializes each to 0
+	 */
+	GeoTessDataArray(const int& n) : GeoTessData(), nValues(n), values(NULL)
+	{
+		values = new T [nValues];
+		for (int i = 0; i < n; ++i) values[i] = (T) 0;
+	}
 
-    /// @cond PROTECTED  Turn off doxygen documentation until 'endcond' is found
+	/// @cond PROTECTED  Turn off doxygen documentation until 'endcond' is found
 
-    /**
-     * Standard constructor. Reads the contents of the new DataArray from the
-     * provided input file stream.
-     */
-    GeoTessDataArray(IFStreamAscii& ifs, int n) : GeoTessData(), nValues(n), values(NULL)
-    {
-        if (nValues > 0)
-        {
-            values = new T [nValues];
-            for (int i = 0; i < nValues; ++i) ifs.readType(values[i]);
-        }
-    }
+	/**
+	 * Standard constructor. Reads the contents of the new DataArray from the
+	 * provided input file stream.
+	 */
+	GeoTessDataArray(IFStreamAscii& ifs, int n) : GeoTessData(), nValues(n), values(NULL)
+	{
+		if (nValues > 0)
+		{
+			values = new T [nValues];
+			for (int i = 0; i < nValues; ++i) ifs.readType(values[i]);
+		}
+	}
 
-    /**
-     * Standard constructor. Reads the contents of the new DataArray from the
-     * provided input file stream.
-     */
-    GeoTessDataArray(IFStreamBinary& ifs, int n) : GeoTessData(), nValues(n), values(NULL)
-    {
-        if (nValues > 0)
-        {
-            values = new T [nValues];
-            ifs.readTypeArray(values, nValues);
-        }
-    }
+	/**
+	 * Standard constructor. Reads the contents of the new DataArray from the
+	 * provided input file stream.
+	 */
+	GeoTessDataArray(IFStreamBinary& ifs, int n) : GeoTessData(), nValues(n), values(NULL)
+	{
+		if (nValues > 0)
+		{
+			values = new T [nValues];
+			ifs.readTypeArray(values, nValues);
+		}
+	}
 
-    /**
-     * Standard constructor. Reads value from the provided input file stream.
-     * @param ifs the input stream
-     * @param n the number of values that are to be loaded into memory
-     * @param filter a vector containing n or more integers.  It musts contain
-     * every integer >= 0 and < n.  In addition, it can contain a bunch of negative
-     * numbers.  The number of values that will be read from the file is filter.size().
-     * Entries with negative numbers will be discarded.
-     */
-    GeoTessDataArray(IFStreamAscii& ifs, int n, vector<int>& filter) : GeoTessData(),  nValues(n), values(NULL)
-    {
-        if (nValues > 0)
-        {
-            values = new T [nValues];
-            T val;
-            for (int i=0; i<(int)filter.size(); ++i)
-            {
-                ifs.readType(val);
-                if (filter[i] >= 0)
-                    values[filter[i]] = val;
-            }
-        }
-    }
+	/**
+	 * Standard constructor. Reads value from the provided input file stream.
+	 * @param ifs the input stream
+	 * @param n the number of values that are to be loaded into memory
+	 * @param filter a vector containing n or more integers.  It musts contain
+	 * every integer >= 0 and < n.  In addition, it can contain a bunch of negative
+	 * numbers.  The number of values that will be read from the file is filter.size().
+	 * Entries with negative numbers will be discarded.
+	 */
+	GeoTessDataArray(IFStreamAscii& ifs, int n, vector<int>& filter) : GeoTessData(),  nValues(n), values(NULL)
+	{
+		if (nValues > 0)
+		{
+			values = new T [nValues];
+			T val;
+			for (int i=0; i<(int)filter.size(); ++i)
+			{
+				ifs.readType(val);
+				if (filter[i] >= 0)
+					values[filter[i]] = val;
+			}
+		}
+	}
 
-    /**
-     * Standard constructor. Reads value from the provided input file stream.
-     * @param ifs the input stream
-     * @param n the number of values that are to be loaded into memory
-     * @param filter a vector containing n or more integers.  It musts contain
-     * every integer >= 0 and < n.  In addition, it can contain a bunch of negative
-     * numbers.  The number of values that will be read from the file is filter.size().
-     * Entries with negative numbers will be discarded.
-     */
-    GeoTessDataArray(IFStreamBinary& ifs, int n, vector<int>& filter) : GeoTessData(),  nValues(n), values(NULL)
-    {
-        if (nValues > 0)
-        {
-            values = new T [nValues];
+	/**
+	 * Standard constructor. Reads value from the provided input file stream.
+	 * @param ifs the input stream
+	 * @param n the number of values that are to be loaded into memory
+	 * @param filter a vector containing n or more integers.  It musts contain
+	 * every integer >= 0 and < n.  In addition, it can contain a bunch of negative
+	 * numbers.  The number of values that will be read from the file is filter.size().
+	 * Entries with negative numbers will be discarded.
+	 */
+	GeoTessDataArray(IFStreamBinary& ifs, int n, vector<int>& filter) : GeoTessData(),  nValues(n), values(NULL)
+	{
+		if (nValues > 0)
+		{
+			values = new T [nValues];
 
-            T val;
-            for (int i=0; i<(int)filter.size(); ++i)
-            {
-                ifs.readType(val);
-                if (filter[i] >= 0)
-                    values[filter[i]] = val;
-            }
-        }
-    }
+			T val;
+			for (int i=0; i<(int)filter.size(); ++i)
+			{
+				ifs.readType(val);
+				if (filter[i] >= 0)
+					values[filter[i]] = val;
+			}
+		}
+	}
 
-    /**
-     * Destructor.
-     */
-    virtual									~GeoTessDataArray()
-    { if (values != NULL) delete [] values; };
+	/**
+	 * Destructor.
+	 */
+	virtual									~GeoTessDataArray()
+	{ if (values != NULL) delete [] values; };
 
-    /**
-     * Writes the contents of this DataArray to the provided output file stream.
-     */
-    virtual void write(IFStreamBinary& ofs)
-    {
-        for (int i = 0; i < nValues; ++i) ofs.writeType(values[i]);
-    }
+	/**
+	 * Writes the contents of this DataArray to the provided output file stream.
+	 */
+	virtual void write(IFStreamBinary& ofs)
+	{
+		for (int i = 0; i < nValues; ++i) ofs.writeType(values[i]);
+	}
 
-    /**
-     * Writes the contents of this DataArray to the provided output file stream.
-     */
-    virtual void write(IFStreamAscii& ofs)
-    {
-        for (int i = 0; i < nValues; ++i)
-        { ofs.writeString(" "); ofs.writeType(values[i]); }
-    }
+	/**
+	 * Writes the contents of this DataArray to the provided output file stream.
+	 */
+	virtual void write(IFStreamAscii& ofs)
+	{
+		for (int i = 0; i < nValues; ++i)
+		{ ofs.writeString(" "); ofs.writeType(values[i]); }
+	}
 
-    ///@endcond
+	///@endcond
 
-    /*
-     * Return DataType.
-     */
-    virtual const GeoTessDataType&	getDataType() const { return GeoTessDataType::NONE; };
+	/*
+	 * Return DataType.
+	 */
+	virtual const GeoTessDataType&	getDataType() const { return GeoTessDataType::NONE; };
 
-    /**
-     * Returns the number of entries in the array of values.
-     */
-    virtual int			size() const { return nValues; };
+	/**
+	 * Returns the number of entries in the array of values.
+	 */
+	virtual int			size() const { return nValues; };
 
-    virtual LONG_INT getMemory()
-    { return (LONG_INT)sizeof(GeoTessDataArray<T>) + (LONG_INT)nValues * (LONG_INT)sizeof(T); }
+	virtual LONG_INT getMemory()
+	{ return (LONG_INT)sizeof(GeoTessDataArray<T>) + (LONG_INT)nValues * (LONG_INT)sizeof(T); }
 
-    /**
-     * Return true if the input DataArray<T> object (d) equals this DataArray<T>
-     * object.
-     */
-    bool				operator == (const GeoTessDataArray<T>& d) const
-    {
-        if (!GeoTessData::operator==(d)) return false;
-        if (nValues != d.nValues) return false;
+	/**
+	 * Return true if the input DataArray<T> object (d) equals this DataArray<T>
+	 * object.
+	 */
+	bool				operator == (const GeoTessDataArray<T>& d) const
+	{
+		if (!GeoTessData::operator==(d)) return false;
+		if (nValues != d.nValues) return false;
 
-        for (int i = 0; i < nValues; ++i)
-            if ((values[i] != d.values[i]) &&
-                    !(isNaN(i) && d.isNaN(i))) return false;
+		for (int i = 0; i < nValues; ++i)
+			if ((values[i] != d.values[i]) &&
+					!(isNaN(i) && d.isNaN(i))) return false;
 
-        return true;
-    }
+		return true;
+	}
 
-    /**
-     * Return true if the input DataArray<T> object (d) equals this DataArray<T>
-     * object.
-     */
-    virtual bool		operator == (const GeoTessData& d) const
-    {	return operator==(*((const GeoTessDataArray<T>*) &d)); }
+	/**
+	 * Return true if the input DataArray<T> object (d) equals this DataArray<T>
+	 * object.
+	 */
+	virtual bool		operator == (const GeoTessData& d) const
+	{	return operator==(*((const GeoTessDataArray<T>*) &d)); }
 
-    /**
-     * Returns value defined for the input attribute index as a double
-     */
-    virtual double		getDouble(int attributeIndex) const
-    { return (double) values[attributeIndex]; }
+	/**
+	 * Returns value defined for the input attribute index as a double
+	 */
+	virtual double		getDouble(int attributeIndex) const
+	{ return (double) values[attributeIndex]; }
 
-    /**
-     * Returns value defined for the input attribute index as a float
-     */
-    virtual float		getFloat(int attributeIndex) const
-    { return (float) values[attributeIndex]; };
+	/**
+	 * Returns value defined for the input attribute index as a float
+	 */
+	virtual float		getFloat(int attributeIndex) const
+	{ return (float) values[attributeIndex]; };
 
-    /**
-     * Returns value defined for the input attribute index as a long
-     */
-    virtual LONG_INT	getLong(int attributeIndex) const
-    { return (LONG_INT) values[attributeIndex]; };
+	/**
+	 * Returns value defined for the input attribute index as a long
+	 */
+	virtual LONG_INT	getLong(int attributeIndex) const
+	{ return (LONG_INT) values[attributeIndex]; };
 
-    /**
-     * Returns value defined for the input attribute index as an int
-     */
-    virtual int			getInt(int attributeIndex) const
-    { return (int) values[attributeIndex]; };
+	/**
+	 * Returns value defined for the input attribute index as an int
+	 */
+	virtual int			getInt(int attributeIndex) const
+	{ return (int) values[attributeIndex]; };
 
-    /**
-     * Returns value defined for the input attribute index as a short
-     */
-    virtual short		getShort(int attributeIndex) const
-    { return (short) values[attributeIndex]; };
+	/**
+	 * Returns value defined for the input attribute index as a short
+	 */
+	virtual short		getShort(int attributeIndex) const
+	{ return (short) values[attributeIndex]; };
 
-    /**
-     * Returns value defined for the input attribute index as a byte
-     */
-    virtual byte		getByte(int attributeIndex) const
-    { return (byte) values[attributeIndex]; };
+	/**
+	 * Returns value defined for the input attribute index as a byte
+	 */
+	virtual byte		getByte(int attributeIndex) const
+	{ return (byte) values[attributeIndex]; };
 
-    /**
-     * Returns the attribute at the input attribute index as a double value.
-     */
-    virtual void						getValue(int attributeIndex, double& val) const
-    { val = (double) values[attributeIndex]; };
+	/**
+	 * Returns the attribute at the input attribute index as a double value.
+	 */
+	virtual void						getValue(int attributeIndex, double& val) const
+	{ val = (double) values[attributeIndex]; };
 
-    /**
-     * Returns the attribute at the input attribute index as a float value.
-     */
-    virtual void						getValue(int attributeIndex, float& val) const
-    { val = (float) values[attributeIndex]; };
+	/**
+	 * Returns the attribute at the input attribute index as a float value.
+	 */
+	virtual void						getValue(int attributeIndex, float& val) const
+	{ val = (float) values[attributeIndex]; };
 
-    /**
-     * Returns the attribute at the input attribute index as a long value.
-     */
-    virtual void						getValue(int attributeIndex, LONG_INT& val) const
-    { val = (LONG_INT) values[attributeIndex]; };
+	/**
+	 * Returns the attribute at the input attribute index as a long value.
+	 */
+	virtual void						getValue(int attributeIndex, LONG_INT& val) const
+	{ val = (LONG_INT) values[attributeIndex]; };
 
-    /**
-     * Returns the attribute at the input attribute index as a int value.
-     */
-    virtual void						getValue(int attributeIndex, int& val) const
-    { val = (int) values[attributeIndex]; };
+	/**
+	 * Returns the attribute at the input attribute index as a int value.
+	 */
+	virtual void						getValue(int attributeIndex, int& val) const
+	{ val = (int) values[attributeIndex]; };
 
-    /**
-     * Returns the attribute at the input attribute index as a short value.
-     */
-    virtual void						getValue(int attributeIndex, short& val) const
-    { val = (short) values[attributeIndex]; };
+	/**
+	 * Returns the attribute at the input attribute index as a short value.
+	 */
+	virtual void						getValue(int attributeIndex, short& val) const
+	{ val = (short) values[attributeIndex]; };
 
-    /**
-     * Returns the attribute at the input attribute index as a byte value.
-     */
-    virtual void						getValue(int attributeIndex, byte& val) const
-    { val = (byte) values[attributeIndex]; };
+	/**
+	 * Returns the attribute at the input attribute index as a byte value.
+	 */
+	virtual void						getValue(int attributeIndex, byte& val) const
+	{ val = (byte) values[attributeIndex]; };
 
-    /**
-     * Copy the first n values into the supplied array as a double value.
-     */
-    virtual void getValues(double vals[], const int& n)
-    { for (int i=0; i<n && i<nValues; ++i) vals[i] = (double) values[i]; }
+	/**
+	 * Copy the first n values into the supplied array as a double value.
+	 */
+	virtual void getValues(double vals[], const int& n)
+	{ for (int i=0; i<n && i<nValues; ++i) vals[i] = (double) values[i]; }
 
-    /**
-     * Copy the first n values into the supplied array as a float value.
-     */
-    virtual void getValues(float vals[], const int& n)
-    { for (int i=0; i<n && i<nValues; ++i) vals[i] = (float) values[i]; }
+	/**
+	 * Copy the first n values into the supplied array as a float value.
+	 */
+	virtual void getValues(float vals[], const int& n)
+	{ for (int i=0; i<n && i<nValues; ++i) vals[i] = (float) values[i]; }
 
-    /**
-     * Copy the first n values into the supplied array as a LONG_INT value.
-     */
-    virtual void getValues(LONG_INT vals[], const int& n)
-    { for (int i=0; i<n && i<nValues; ++i) vals[i] = (LONG_INT) values[i]; }
+	/**
+	 * Copy the first n values into the supplied array as a LONG_INT value.
+	 */
+	virtual void getValues(LONG_INT vals[], const int& n)
+	{ for (int i=0; i<n && i<nValues; ++i) vals[i] = (LONG_INT) values[i]; }
 
-    /**
-     * Copy the first n values into the supplied array as an int value.
-     */
-    virtual void getValues(int vals[], const int& n)
-    { for (int i=0; i<n && i<nValues; ++i) vals[i] = (int) values[i]; }
+	/**
+	 * Copy the first n values into the supplied array as an int value.
+	 */
+	virtual void getValues(int vals[], const int& n)
+	{ for (int i=0; i<n && i<nValues; ++i) vals[i] = (int) values[i]; }
 
-    /**
-     * Copy the first n values into the supplied array as a short value.
-     */
-    virtual void getValues(short vals[], const int& n)
-    { for (int i=0; i<n && i<nValues; ++i) vals[i] = (short) values[i]; }
+	/**
+	 * Copy the first n values into the supplied array as a short value.
+	 */
+	virtual void getValues(short vals[], const int& n)
+	{ for (int i=0; i<n && i<nValues; ++i) vals[i] = (short) values[i]; }
 
-    /**
-     * Copy the first n values into the supplied array as a byte value.
-     */
-    virtual void getValues(byte vals[], const int& n)
-    { for (int i=0; i<n && i<nValues; ++i) vals[i] = (byte) values[i]; }
+	/**
+	 * Copy the first n values into the supplied array as a byte value.
+	 */
+	virtual void getValues(byte vals[], const int& n)
+	{ for (int i=0; i<n && i<nValues; ++i) vals[i] = (byte) values[i]; }
 
-    /**
-     * Set the value at the input attribute index to the input value.
-     */
-    virtual GeoTessData&						setValue(int attributeIndex, double v)
-    { values[attributeIndex] = (T) v; return *this; }
+	/**
+	 * Set the value at the input attribute index to the input value.
+	 */
+	virtual GeoTessData&						setValue(int attributeIndex, double v)
+	{ values[attributeIndex] = (T) v; return *this; }
 
-    /**
-     * Set the value at the input attribute index to the input value.
-     */
-    virtual GeoTessData&						setValue(int attributeIndex, float v)
-    { values[attributeIndex] = (T) v; return *this; }
+	/**
+	 * Set the value at the input attribute index to the input value.
+	 */
+	virtual GeoTessData&						setValue(int attributeIndex, float v)
+	{ values[attributeIndex] = (T) v; return *this; }
 
-    /**
-     * Set the value at the input attribute index to the input value.
-     */
-    virtual GeoTessData&						setValue(int attributeIndex, LONG_INT v)
-    { values[attributeIndex] = (T) v; return *this; }
+	/**
+	 * Set the value at the input attribute index to the input value.
+	 */
+	virtual GeoTessData&						setValue(int attributeIndex, LONG_INT v)
+	{ values[attributeIndex] = (T) v; return *this; }
 
-    /**
-     * Set the value at the input attribute index to the input value.
-     */
-    virtual GeoTessData&						setValue(int attributeIndex, int v)
-    { values[attributeIndex] = (T) v; return *this; }
+	/**
+	 * Set the value at the input attribute index to the input value.
+	 */
+	virtual GeoTessData&						setValue(int attributeIndex, int v)
+	{ values[attributeIndex] = (T) v; return *this; }
 
-    /**
-     * Set the value at the input attribute index to the input value.
-     */
-    virtual GeoTessData&						setValue(int attributeIndex, short v)
-    { values[attributeIndex] = (T) v; return *this; };
+	/**
+	 * Set the value at the input attribute index to the input value.
+	 */
+	virtual GeoTessData&						setValue(int attributeIndex, short v)
+	{ values[attributeIndex] = (T) v; return *this; };
 
-    /**
-     * Set the value at the input attribute index to the input value.
-     */
-    virtual GeoTessData&						setValue(int attributeIndex, byte v)
-    { values[attributeIndex] = (T) v; return *this; }
+	/**
+	 * Set the value at the input attribute index to the input value.
+	 */
+	virtual GeoTessData&						setValue(int attributeIndex, byte v)
+	{ values[attributeIndex] = (T) v; return *this; }
 
-    /**
-     * Returns true if the specified attribute is NaN. when Data values
-     * are of type Byte, Short, Int and Long, this method always returns
-     * false since those types do not support NaN. float and double types
-     * are overridden and returns true if value isNaN and false
-     * otherwise.
-     *
-     * @param attributeIndex The attribute value to be tested.
-     *
-     * @return true if the value of the specified attribute is NaN.
-     */
-    virtual bool            isNaN(int attributeIndex) const {return false;};
+	/**
+	 * Returns true if the specified attribute is NaN. when Data values
+	 * are of type Byte, Short, Int and Long, this method always returns
+	 * false since those types do not support NaN. float and double types
+	 * are overridden and returns true if value isNaN and false
+	 * otherwise.
+	 *
+	 * @param attributeIndex The attribute value to be tested.
+	 *
+	 * @return true if the value of the specified attribute is NaN.
+	 */
+	virtual bool            isNaN(int attributeIndex) const {return false;};
 
-    /**
-     * Returns a deep copy of this DataArray<T> object.
-     */
-    virtual GeoTessDataArray<T>*   copy()
-    {
-        return new GeoTessDataArray<T>(values, nValues);
-    }
+	/**
+	 * Returns a deep copy of this DataArray<T> object.
+	 */
+	virtual GeoTessDataArray<T>*   copy()
+	{
+		return new GeoTessDataArray<T>(values, nValues);
+	}
 
 }; // end class DataArray
 
@@ -434,7 +432,7 @@ public:
 template<>
 inline bool	GeoTessDataArray<double>::isNaN(int attributeIndex) const
 {
-    return (std::isnan(values[attributeIndex]));
+	return (std::isnan(values[attributeIndex]));
 }
 
 /**
@@ -443,8 +441,8 @@ inline bool	GeoTessDataArray<double>::isNaN(int attributeIndex) const
 template<>
 inline bool	GeoTessDataArray<float>::isNaN(int attributeIndex) const
 {
-    double v = (double) values[attributeIndex];
-    return (std::isnan(v));
+	double v = (double) values[attributeIndex];
+	return (std::isnan(v));
 }
 
 /**
@@ -453,7 +451,7 @@ inline bool	GeoTessDataArray<float>::isNaN(int attributeIndex) const
 template<>
 inline const GeoTessDataType&	GeoTessDataArray<double>::getDataType() const
 {
-    return GeoTessDataType::DOUBLE;
+	return GeoTessDataType::DOUBLE;
 }
 
 /**
@@ -462,7 +460,7 @@ inline const GeoTessDataType&	GeoTessDataArray<double>::getDataType() const
 template<>
 inline const GeoTessDataType&	GeoTessDataArray<float>::getDataType() const
 {
-    return GeoTessDataType::FLOAT;
+	return GeoTessDataType::FLOAT;
 }
 
 /**
@@ -471,7 +469,7 @@ inline const GeoTessDataType&	GeoTessDataArray<float>::getDataType() const
 template<>
 inline const GeoTessDataType&	GeoTessDataArray<LONG_INT>::getDataType() const
 {
-    return GeoTessDataType::LONG;
+	return GeoTessDataType::LONG;
 }
 
 /**
@@ -480,7 +478,7 @@ inline const GeoTessDataType&	GeoTessDataArray<LONG_INT>::getDataType() const
 template<>
 inline const GeoTessDataType&	GeoTessDataArray<int>::getDataType() const
 {
-    return GeoTessDataType::INT;
+	return GeoTessDataType::INT;
 }
 
 /**
@@ -489,7 +487,7 @@ inline const GeoTessDataType&	GeoTessDataArray<int>::getDataType() const
 template<>
 inline const GeoTessDataType&	GeoTessDataArray<short>::getDataType() const
 {
-    return GeoTessDataType::SHORT;
+	return GeoTessDataType::SHORT;
 }
 
 /**
@@ -498,7 +496,7 @@ inline const GeoTessDataType&	GeoTessDataArray<short>::getDataType() const
 template<>
 inline const GeoTessDataType&	GeoTessDataArray<byte>::getDataType() const
 {
-    return GeoTessDataType::BYTE;
+	return GeoTessDataType::BYTE;
 }
 
 ///@endcond

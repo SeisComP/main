@@ -1,26 +1,24 @@
 //- ****************************************************************************
-//-
-//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
-//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
-//- Government retains certain rights in this software.
-//-
-//- BSD Open Source License
+//- 
+//- Copyright 2009 Sandia Corporation. Under the terms of Contract
+//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
+//- retains certain rights in this software.
+//- 
+//- BSD Open Source License.
 //- All rights reserved.
-//-
+//- 
 //- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
-//-
-//-   1. Redistributions of source code must retain the above copyright notice,
+//- 
+//-    * Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-
-//-   2. Redistributions in binary form must reproduce the above copyright
+//-    * Redistributions in binary form must reproduce the above copyright
 //-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-
-//-   3. Neither the name of the copyright holder nor the names of its
+//-    * Neither the name of Sandia National Laboratories nor the names of its
 //-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
-//-
+//- 
 //- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 //- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 //- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -62,177 +60,177 @@ int       GeoTessData::aClassCount    = 0;
 
 GeoTessData::~GeoTessData()
 {
-    --aClassCount;
+	--aClassCount;
 }
 
 GeoTessData* GeoTessData::getData(IFStreamAscii& ifs, GeoTessMetaData& gtmd)
 {
-    // switch on the DataType and create a new Data object ... if not defined
-    // throw an error
+	// switch on the DataType and create a new Data object ... if not defined
+	// throw an error
 
-    int n = gtmd.getNAttributes();
-    if (gtmd.applyAttributeFilter())
-    {
-        switch (gtmd.getDataType().ordinal())
-        {
-        case 0 : // DOUBLE
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<double>(ifs, gtmd.getAttributeFilter()) :
-                    (GeoTessData*) new GeoTessDataArray<double>(ifs, n, gtmd.getAttributeFilter()));
-        case 1 : // FLOAT
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<float>(ifs, gtmd.getAttributeFilter()) :
-                    (GeoTessData*) new GeoTessDataArray<float>(ifs, n, gtmd.getAttributeFilter()));
-        case 2 : // LONG
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<LONG_INT>(ifs, gtmd.getAttributeFilter()) :
-                    (GeoTessData*) new GeoTessDataArray<LONG_INT>(ifs, n, gtmd.getAttributeFilter()));
-        case 3 : // INT
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<int>(ifs, gtmd.getAttributeFilter()) :
-                    (GeoTessData*) new GeoTessDataArray<int>(ifs, n, gtmd.getAttributeFilter()));
-        case 4 : // SHORT
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<short>(ifs, gtmd.getAttributeFilter()) :
-                    (GeoTessData*) new GeoTessDataArray<short>(ifs, n, gtmd.getAttributeFilter()));
-        case 5 : // BYTE
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<byte>(ifs, gtmd.getAttributeFilter()) :
-                    (GeoTessData*) new GeoTessDataArray<byte>(ifs, n, gtmd.getAttributeFilter()));
-        default :
-            ostringstream os;
-            os << endl << "ERROR in Data::getData" << endl
-                    << gtmd.getDataType().toString() << " is not a recognized data type." << endl;
-            throw GeoTessException(os, __FILE__, __LINE__, 5001);
-        }
-    }
-    else
-    {
-        switch (gtmd.getDataType().ordinal())
-        {
-        case 0 : // DOUBLE
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<double>(ifs) :
-                    (GeoTessData*) new GeoTessDataArray<double>(ifs, n));
-        case 1 : // FLOAT
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<float>(ifs) :
-                    (GeoTessData*) new GeoTessDataArray<float>(ifs, n));
-        case 2 : // LONG
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<LONG_INT>(ifs) :
-                    (GeoTessData*) new GeoTessDataArray<LONG_INT>(ifs, n));
-        case 3 : // INT
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<int>(ifs) :
-                    (GeoTessData*) new GeoTessDataArray<int>(ifs, n));
-        case 4 : // SHORT
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<short>(ifs) :
-                    (GeoTessData*) new GeoTessDataArray<short>(ifs, n));
-        case 5 : // BYTE
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<byte>(ifs) :
-                    (GeoTessData*) new GeoTessDataArray<byte>(ifs, n));
-        default :
-            ostringstream os;
-            os << endl << "ERROR in Data::getData" << endl
-                    << gtmd.getDataType().toString() << " is not a recognized data type." << endl;
-            throw GeoTessException(os, __FILE__, __LINE__, 5002);
-        }
-    }
+	int n = gtmd.getNAttributes();
+	if (gtmd.applyAttributeFilter())
+	{
+		switch (gtmd.getDataType().ordinal())
+		{
+		case 0 : // DOUBLE
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<double>(ifs, gtmd.getAttributeFilter()) :
+					(GeoTessData*) new GeoTessDataArray<double>(ifs, n, gtmd.getAttributeFilter()));
+		case 1 : // FLOAT
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<float>(ifs, gtmd.getAttributeFilter()) :
+					(GeoTessData*) new GeoTessDataArray<float>(ifs, n, gtmd.getAttributeFilter()));
+		case 2 : // LONG
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<LONG_INT>(ifs, gtmd.getAttributeFilter()) :
+					(GeoTessData*) new GeoTessDataArray<LONG_INT>(ifs, n, gtmd.getAttributeFilter()));
+		case 3 : // INT
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<int>(ifs, gtmd.getAttributeFilter()) :
+					(GeoTessData*) new GeoTessDataArray<int>(ifs, n, gtmd.getAttributeFilter()));
+		case 4 : // SHORT
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<short>(ifs, gtmd.getAttributeFilter()) :
+					(GeoTessData*) new GeoTessDataArray<short>(ifs, n, gtmd.getAttributeFilter()));
+		case 5 : // BYTE
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<byte>(ifs, gtmd.getAttributeFilter()) :
+					(GeoTessData*) new GeoTessDataArray<byte>(ifs, n, gtmd.getAttributeFilter()));
+		default :
+			ostringstream os;
+			os << endl << "ERROR in Data::getData" << endl
+					<< gtmd.getDataType().toString() << " is not a recognized data type." << endl;
+			throw GeoTessException(os, __FILE__, __LINE__, 5001);
+		}
+	}
+	else
+	{
+		switch (gtmd.getDataType().ordinal())
+		{
+		case 0 : // DOUBLE
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<double>(ifs) :
+					(GeoTessData*) new GeoTessDataArray<double>(ifs, n));
+		case 1 : // FLOAT
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<float>(ifs) :
+					(GeoTessData*) new GeoTessDataArray<float>(ifs, n));
+		case 2 : // LONG
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<LONG_INT>(ifs) :
+					(GeoTessData*) new GeoTessDataArray<LONG_INT>(ifs, n));
+		case 3 : // INT
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<int>(ifs) :
+					(GeoTessData*) new GeoTessDataArray<int>(ifs, n));
+		case 4 : // SHORT
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<short>(ifs) :
+					(GeoTessData*) new GeoTessDataArray<short>(ifs, n));
+		case 5 : // BYTE
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<byte>(ifs) :
+					(GeoTessData*) new GeoTessDataArray<byte>(ifs, n));
+		default :
+			ostringstream os;
+			os << endl << "ERROR in Data::getData" << endl
+					<< gtmd.getDataType().toString() << " is not a recognized data type." << endl;
+			throw GeoTessException(os, __FILE__, __LINE__, 5002);
+		}
+	}
 
-    // can't get here
+	// can't get here
 
-    return (GeoTessData*) NULL;
+	return (GeoTessData*) NULL;
 }
 
 GeoTessData* GeoTessData::getData(IFStreamBinary& ifs, GeoTessMetaData& gtmd)
 {
-    // switch on the DataType and create a new Data object ... if not defined
-    // throw an error
+	// switch on the DataType and create a new Data object ... if not defined
+	// throw an error
 
-    int n = gtmd.getNAttributes();
-    if (gtmd.applyAttributeFilter())
-    {
-        switch (gtmd.getDataType().ordinal())
-        {
-        case 0 : // DOUBLE
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<double>(ifs, gtmd.getAttributeFilter()) :
-                    (GeoTessData*) new GeoTessDataArray<double>(ifs, n, gtmd.getAttributeFilter()));
-        case 1 : // FLOAT
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<float>(ifs, gtmd.getAttributeFilter()) :
-                    (GeoTessData*) new GeoTessDataArray<float>(ifs, n, gtmd.getAttributeFilter()));
-        case 2 : // LONG
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<LONG_INT>(ifs, gtmd.getAttributeFilter()) :
-                    (GeoTessData*) new GeoTessDataArray<LONG_INT>(ifs, n, gtmd.getAttributeFilter()));
-        case 3 : // INT
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<int>(ifs, gtmd.getAttributeFilter()) :
-                    (GeoTessData*) new GeoTessDataArray<int>(ifs, n, gtmd.getAttributeFilter()));
-        case 4 : // SHORT
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<short>(ifs, gtmd.getAttributeFilter()) :
-                    (GeoTessData*) new GeoTessDataArray<short>(ifs, n, gtmd.getAttributeFilter()));
-        case 5 : // BYTE
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<byte>(ifs, gtmd.getAttributeFilter()) :
-                    (GeoTessData*) new GeoTessDataArray<byte>(ifs, n, gtmd.getAttributeFilter()));
-        default :
-            ostringstream os;
-            os << endl << "ERROR in Data::getData" << endl
-                    << gtmd.getDataType().toString() << " is not a recognized data type." << endl;
-            throw GeoTessException(os, __FILE__, __LINE__, 5003);
-        }
-    }
-    else
-    {
-        switch (gtmd.getDataType().ordinal())
-        {
-        case 0 : // DOUBLE
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<double>(ifs) :
-                    (GeoTessData*) new GeoTessDataArray<double>(ifs, n));
-        case 1 : // FLOAT
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<float>(ifs) :
-                    (GeoTessData*) new GeoTessDataArray<float>(ifs, n));
-        case 2 : // LONG
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<LONG_INT>(ifs) :
-                    (GeoTessData*) new GeoTessDataArray<LONG_INT>(ifs, n));
-        case 3 : // INT
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<int>(ifs) :
-                    (GeoTessData*) new GeoTessDataArray<int>(ifs, n));
-        case 4 : // SHORT
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<short>(ifs) :
-                    (GeoTessData*) new GeoTessDataArray<short>(ifs, n));
-        case 5 : // BYTE
-            return (n == 1 ? (GeoTessData*) new GeoTessDataValue<byte>(ifs) :
-                    (GeoTessData*) new GeoTessDataArray<byte>(ifs, n));
-        default :
-            ostringstream os;
-            os << endl << "ERROR in Data::getData" << endl
-                    << gtmd.getDataType().toString() << " is not a recognized data type." << endl;
-            throw GeoTessException(os, __FILE__, __LINE__, 5004);
-        }
-    }
+	int n = gtmd.getNAttributes();
+	if (gtmd.applyAttributeFilter())
+	{
+		switch (gtmd.getDataType().ordinal())
+		{
+		case 0 : // DOUBLE
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<double>(ifs, gtmd.getAttributeFilter()) :
+					(GeoTessData*) new GeoTessDataArray<double>(ifs, n, gtmd.getAttributeFilter()));
+		case 1 : // FLOAT
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<float>(ifs, gtmd.getAttributeFilter()) :
+					(GeoTessData*) new GeoTessDataArray<float>(ifs, n, gtmd.getAttributeFilter()));
+		case 2 : // LONG
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<LONG_INT>(ifs, gtmd.getAttributeFilter()) :
+					(GeoTessData*) new GeoTessDataArray<LONG_INT>(ifs, n, gtmd.getAttributeFilter()));
+		case 3 : // INT
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<int>(ifs, gtmd.getAttributeFilter()) :
+					(GeoTessData*) new GeoTessDataArray<int>(ifs, n, gtmd.getAttributeFilter()));
+		case 4 : // SHORT
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<short>(ifs, gtmd.getAttributeFilter()) :
+					(GeoTessData*) new GeoTessDataArray<short>(ifs, n, gtmd.getAttributeFilter()));
+		case 5 : // BYTE
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<byte>(ifs, gtmd.getAttributeFilter()) :
+					(GeoTessData*) new GeoTessDataArray<byte>(ifs, n, gtmd.getAttributeFilter()));
+		default :
+			ostringstream os;
+			os << endl << "ERROR in Data::getData" << endl
+					<< gtmd.getDataType().toString() << " is not a recognized data type." << endl;
+			throw GeoTessException(os, __FILE__, __LINE__, 5003);
+		}
+	}
+	else
+	{
+		switch (gtmd.getDataType().ordinal())
+		{
+		case 0 : // DOUBLE
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<double>(ifs) :
+					(GeoTessData*) new GeoTessDataArray<double>(ifs, n));
+		case 1 : // FLOAT
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<float>(ifs) :
+					(GeoTessData*) new GeoTessDataArray<float>(ifs, n));
+		case 2 : // LONG
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<LONG_INT>(ifs) :
+					(GeoTessData*) new GeoTessDataArray<LONG_INT>(ifs, n));
+		case 3 : // INT
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<int>(ifs) :
+					(GeoTessData*) new GeoTessDataArray<int>(ifs, n));
+		case 4 : // SHORT
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<short>(ifs) :
+					(GeoTessData*) new GeoTessDataArray<short>(ifs, n));
+		case 5 : // BYTE
+			return (n == 1 ? (GeoTessData*) new GeoTessDataValue<byte>(ifs) :
+					(GeoTessData*) new GeoTessDataArray<byte>(ifs, n));
+		default :
+			ostringstream os;
+			os << endl << "ERROR in Data::getData" << endl
+					<< gtmd.getDataType().toString() << " is not a recognized data type." << endl;
+			throw GeoTessException(os, __FILE__, __LINE__, 5004);
+		}
+	}
 
-    // can't get here
+	// can't get here
 
-    return (GeoTessData*) NULL;
+	return (GeoTessData*) NULL;
 }
 
 GeoTessData* GeoTessData::getData(const GeoTessDataType& dataType, int nAttributes)
 {
-    switch (dataType.ordinal())
-    {
-    case 0 : // DOUBLE
-        return (nAttributes == 1 ? (GeoTessData*) new GeoTessDataValue<double>(0.) :
-                (GeoTessData*) new GeoTessDataArray<double>(nAttributes));
-    case 1 : // FLOAT
-        return (nAttributes == 1 ? (GeoTessData*) new GeoTessDataValue<float>(0.F) :
-                (GeoTessData*) new GeoTessDataArray<float>(nAttributes));
-    case 2 : // LONG
-        return (nAttributes == 1 ? (GeoTessData*) new GeoTessDataValue<LONG_INT>(0) :
-                (GeoTessData*) new GeoTessDataArray<LONG_INT>(nAttributes));
-    case 3 : // INT
-        return (nAttributes == 1 ? (GeoTessData*) new GeoTessDataValue<int>(0) :
-                (GeoTessData*) new GeoTessDataArray<int>(nAttributes));
-    case 4 : // SHORT
-        return (nAttributes == 1 ? (GeoTessData*) new GeoTessDataValue<short>(0) :
-                (GeoTessData*) new GeoTessDataArray<short>(nAttributes));
-    case 5 : // BYTE
-        return (nAttributes == 1 ? (GeoTessData*) new GeoTessDataValue<byte>(0) :
-                (GeoTessData*) new GeoTessDataArray<byte>(nAttributes));
-    default :
-        ostringstream os;
-        os << endl << "ERROR in Data::getData" << endl
-                << dataType.toString() << " is not a recognized data type." << endl;
-        throw GeoTessException(os, __FILE__, __LINE__, 5004);
-    }
+	switch (dataType.ordinal())
+	{
+	case 0 : // DOUBLE
+		return (nAttributes == 1 ? (GeoTessData*) new GeoTessDataValue<double>(0.) :
+				(GeoTessData*) new GeoTessDataArray<double>(nAttributes));
+	case 1 : // FLOAT
+		return (nAttributes == 1 ? (GeoTessData*) new GeoTessDataValue<float>(0.F) :
+				(GeoTessData*) new GeoTessDataArray<float>(nAttributes));
+	case 2 : // LONG
+		return (nAttributes == 1 ? (GeoTessData*) new GeoTessDataValue<LONG_INT>(0) :
+				(GeoTessData*) new GeoTessDataArray<LONG_INT>(nAttributes));
+	case 3 : // INT
+		return (nAttributes == 1 ? (GeoTessData*) new GeoTessDataValue<int>(0) :
+				(GeoTessData*) new GeoTessDataArray<int>(nAttributes));
+	case 4 : // SHORT
+		return (nAttributes == 1 ? (GeoTessData*) new GeoTessDataValue<short>(0) :
+				(GeoTessData*) new GeoTessDataArray<short>(nAttributes));
+	case 5 : // BYTE
+		return (nAttributes == 1 ? (GeoTessData*) new GeoTessDataValue<byte>(0) :
+				(GeoTessData*) new GeoTessDataArray<byte>(nAttributes));
+	default :
+		ostringstream os;
+		os << endl << "ERROR in Data::getData" << endl
+				<< dataType.toString() << " is not a recognized data type." << endl;
+		throw GeoTessException(os, __FILE__, __LINE__, 5004);
+	}
 // can't get here
 return (GeoTessData*) NULL;
 }

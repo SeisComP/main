@@ -1,26 +1,24 @@
 //- ****************************************************************************
-//-
-//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
-//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
-//- Government retains certain rights in this software.
-//-
-//- BSD Open Source License
+//- 
+//- Copyright 2009 Sandia Corporation. Under the terms of Contract
+//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
+//- retains certain rights in this software.
+//- 
+//- BSD Open Source License.
 //- All rights reserved.
-//-
+//- 
 //- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
-//-
-//-   1. Redistributions of source code must retain the above copyright notice,
+//- 
+//-    * Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-
-//-   2. Redistributions in binary form must reproduce the above copyright
+//-    * Redistributions in binary form must reproduce the above copyright
 //-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-
-//-   3. Neither the name of the copyright holder nor the names of its
+//-    * Neither the name of Sandia National Laboratories nor the names of its
 //-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
-//-
+//- 
 //- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 //- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 //- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -68,77 +66,77 @@ class GEOTESS_EXP_IMP GeoTessException
 {
 public:
 
-    /**
-     *
-     */
-    string emessage;
+	/**
+	 *
+	 */
+	string emessage;
 
-    /**
-     * Public error code set to one of the error constantants defined in this file.
-     */
-    int ecode;
+	/**
+	 * Public error code set to one of the error constantants defined in this file.
+	 */
+	int ecode;
 
-    /**
-     * Parameterized constructor specifying the error message to be displayed.
-     */
-    GeoTessException(std::string message, int code)
-            : emessage(message), ecode(code)
-    {
-    }
+	/**
+	 * Parameterized constructor specifying the error message to be displayed.
+	 */
+	GeoTessException(std::string message, int code)
+			: emessage(message), ecode(code)
+	{
+	}
 
-    /**
-     * Standard Constructor taking a partially defined string stream, which contains
-     * the basic error message, and appending version, file, and line number (of error)
-     * to the stream before assigning its entire contents to the message of this
-     * exception. The error code is also assigned.
-     */
-    GeoTessException(ostringstream& os, const string& file, int line, int code)
-            : emessage(""), ecode(code)
-    {
-        os << "OS: " << CPPUtils::getOpSys() << ",  Version: "
-                << GeoTessUtils::getVersion() << ",  File: " << file
-                << ",  Line: " << line << endl << endl;
-        emessage = os.str();
-    }
+	/**
+	 * Standard Constructor taking a partially defined string stream, which contains
+	 * the basic error message, and appending version, file, and line number (of error)
+	 * to the stream before assigning its entire contents to the message of this
+	 * exception. The error code is also assigned.
+	 */
+	GeoTessException(ostringstream& os, const string& file, int line, int code)
+			: emessage(""), ecode(code)
+	{
+		os << "OS: " << CPPUtils::getOpSys() << ",  Version: "
+				<< GeoTessUtils::getVersion() << ",  File: " << file
+				<< ",  Line: " << line << endl << endl;
+		emessage = os.str();
+	}
 
-    /**
-     * Standard Constructor taking a partially defined string stream, which contains
-     * the basic error message, and appending version, file, and line number (of error)
-     * to the stream before assigning its entire contents to the message of this
-     * exception. The error code is also assigned.
-     */
-    GeoTessException(const string& msg, const string& file, int line, int code)
-            : emessage(""), ecode(code)
-    {
-        emessage = msg + "\nOS: " + CPPUtils::getOpSys() + ",  Version: "
-                + GeoTessUtils::getVersion() + ",  File: " + file + ",  Line: "
-                + CPPUtils::itos(line) + "\n\n";
-    }
+	/**
+	 * Standard Constructor taking a partially defined string stream, which contains
+	 * the basic error message, and appending version, file, and line number (of error)
+	 * to the stream before assigning its entire contents to the message of this
+	 * exception. The error code is also assigned.
+	 */
+	GeoTessException(const string& msg, const string& file, int line, int code)
+			: emessage(""), ecode(code)
+	{
+		emessage = msg + "\nOS: " + CPPUtils::getOpSys() + ",  Version: "
+				+ GeoTessUtils::getVersion() + ",  File: " + file + ",  Line: "
+				+ CPPUtils::itos(line) + "\n\n";
+	}
 
-    /**
-     * Destructor.
-     */
-    virtual ~GeoTessException()
-    {
-    }
+	/**
+	 * Destructor.
+	 */
+	virtual ~GeoTessException()
+	{
+	}
 
-    /**
-     * Appends version, file, and line number information to the input string stream.
-     */
-    static void appendInfo(ostringstream& os, const string& file, int line)
-    {
-        os << "Version: " << GeoTessUtils::getVersion() << ",  File: " << file
-                << ",  Line: " << line << endl << endl;
-    }
+	/**
+	 * Appends version, file, and line number information to the input string stream.
+	 */
+	static void appendInfo(ostringstream& os, const string& file, int line)
+	{
+		os << "Version: " << GeoTessUtils::getVersion() << ",  File: " << file
+				<< ",  Line: " << line << endl << endl;
+	}
 
-    /**
-     * Appends version, file, and line number information to the input string stream.
-     */
-    static void appendInfo(string& msg, const string& file, int line)
-    {
-        msg += "\nVersion: " + GeoTessUtils::getVersion() + ",  File: " + file
-                + ",  Line: " + CPPUtils::itos(line) + "\n\n";
-    }
+	/**
+	 * Appends version, file, and line number information to the input string stream.
+	 */
+	static void appendInfo(string& msg, const string& file, int line)
+	{
+		msg += "\nVersion: " + GeoTessUtils::getVersion() + ",  File: " + file
+				+ ",  Line: " + CPPUtils::itos(line) + "\n\n";
+	}
 
 };
 // end class GeoTessException

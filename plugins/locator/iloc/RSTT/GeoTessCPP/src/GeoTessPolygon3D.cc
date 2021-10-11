@@ -1,26 +1,24 @@
 //- ****************************************************************************
-//-
-//- Copyright 2009 National Technology & Engineering Solutions of Sandia, LLC
-//- (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
-//- Government retains certain rights in this software.
-//-
-//- BSD Open Source License
+//- 
+//- Copyright 2009 Sandia Corporation. Under the terms of Contract
+//- DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
+//- retains certain rights in this software.
+//- 
+//- BSD Open Source License.
 //- All rights reserved.
-//-
+//- 
 //- Redistribution and use in source and binary forms, with or without
 //- modification, are permitted provided that the following conditions are met:
-//-
-//-   1. Redistributions of source code must retain the above copyright notice,
+//- 
+//-    * Redistributions of source code must retain the above copyright notice,
 //-      this list of conditions and the following disclaimer.
-//-
-//-   2. Redistributions in binary form must reproduce the above copyright
+//-    * Redistributions in binary form must reproduce the above copyright
 //-      notice, this list of conditions and the following disclaimer in the
 //-      documentation and/or other materials provided with the distribution.
-//-
-//-   3. Neither the name of the copyright holder nor the names of its
+//-    * Neither the name of Sandia National Laboratories nor the names of its
 //-      contributors may be used to endorse or promote products derived from
 //-      this software without specific prior written permission.
-//-
+//- 
 //- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 //- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 //- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -58,132 +56,132 @@ namespace geotess {
 GeoTessPolygon3D::GeoTessPolygon3D(string inputFileName)
 : GeoTessPolygon(), bottom(NULL), top(NULL)
 {
-    if (inputFileName.find(".kmz", inputFileName.length() - 4) != string::npos
-            || inputFileName.find(".kml", inputFileName.length() - 4) != string::npos)
-    {
-        ostringstream os;
-        os << endl << "ERROR in Polygon::constructor" << endl
-                << "Cannot read files in kml or kmz format (Google Earth)." << endl
-                << "GeoTessExplorer has a utility to translate to ascii." << endl;
-        throw GeoTessException(os, __FILE__, __LINE__, 10101);
-    }
+	if (inputFileName.find(".kmz", inputFileName.length() - 4) != string::npos
+			|| inputFileName.find(".kml", inputFileName.length() - 4) != string::npos)
+	{
+		ostringstream os;
+		os << endl << "ERROR in Polygon::constructor" << endl
+				<< "Cannot read files in kml or kmz format (Google Earth)." << endl
+				<< "GeoTessExplorer has a utility to translate to ascii." << endl;
+		throw GeoTessException(os, __FILE__, __LINE__, 10101);
+	}
 
-    vector<string> records;
+	vector<string> records;
 
-    IFStreamAscii input;
-    input.openForRead(inputFileName);
-    string line;
-    while (input.readLine(line))
-    {
-        line = CPPUtils::uppercase_string(CPPUtils::trim(line));
-        if (line.length() > 0 && line.find('#') != 0)
-            records.push_back(line);
-    }
-    input.close();
+	IFStreamAscii input;
+	input.openForRead(inputFileName);
+	string line;
+	while (input.readLine(line))
+	{
+		line = CPPUtils::uppercase_string(CPPUtils::trim(line));
+		if (line.length() > 0 && line.find('#') != 0)
+			records.push_back(line);
+	}
+	input.close();
 
-    if (records[0].find("POLYGON3D") == 0)
-        loadAscii(records);
-    else
-    {
-        ostringstream os;
-        os << endl << "ERROR in Polygon3D::constructor" << endl
-                << "Expecting file to to start with string 'POLYGON3D' but first line is" << endl
-                << records[0] << endl;
-        throw GeoTessException(os, __FILE__, __LINE__, 10102);
-    }
+	if (records[0].find("POLYGON3D") == 0)
+		loadAscii(records);
+	else
+	{
+		ostringstream os;
+		os << endl << "ERROR in Polygon3D::constructor" << endl
+				<< "Expecting file to to start with string 'POLYGON3D' but first line is" << endl
+				<< records[0] << endl;
+		throw GeoTessException(os, __FILE__, __LINE__, 10102);
+	}
 
-    input.close();
+	input.close();
 
-    //cout << toString(true, true) << endl;
+	//cout << toString(true, true) << endl;
 }
 
 GeoTessPolygon3D::~GeoTessPolygon3D()
 {
-    if (top != NULL)
-        delete top;
-    if (bottom != NULL)
-        delete bottom;
+	if (top != NULL)
+		delete top;
+	if (bottom != NULL)
+		delete bottom;
 }
 
 bool GeoTessPolygon3D::contains(GeoTessPosition& position)
 {
-    map<int, double> weights;
-    position.getWeights(weights, 1.0);
-    return weights.count(-1) == 0;
+	map<int, double> weights;
+	position.getWeights(weights, 1.0);
+	return weights.count(-1) == 0;
 }
 
 void GeoTessPolygon3D::loadAscii(vector<string>& records)
 {
-    for (int i=0; i<(int)records.size(); ++i)
-        if (records[i].find("BOTTOM") != string::npos || records[i].find("TOP") != string::npos)
-        {
-            vector<string> tokens;
-            CPPUtils::tokenizeString(records[i], " ", tokens);
+	for (int i=0; i<(int)records.size(); ++i)
+		if (records[i].find("BOTTOM") != string::npos || records[i].find("TOP") != string::npos)
+		{
+			vector<string> tokens;
+			CPPUtils::tokenizeString(records[i], " ", tokens);
 
-            if (tokens.size() == 4)
-            {
-                double x = CPPUtils::stod(tokens[2]);
-                if (std::isnan(x))
-                {
-                    ostringstream os;
-                    os << endl << "ERROR in Polygon3D::loadAscii" << endl
-                            << "Trying to parse 4 tokens defining top or bottom horizon." << endl
-                            << "Line = " << records[i] << endl
-                            << "Cannot convert 3rd token to double: " << tokens[2] << endl;
-                    throw GeoTessException(os, __FILE__, __LINE__, 10103);
-                }
+			if (tokens.size() == 4)
+			{
+				double x = CPPUtils::stod(tokens[2]);
+				if (std::isnan(x))
+				{
+					ostringstream os;
+					os << endl << "ERROR in Polygon3D::loadAscii" << endl
+							<< "Trying to parse 4 tokens defining top or bottom horizon." << endl
+							<< "Line = " << records[i] << endl
+							<< "Cannot convert 3rd token to double: " << tokens[2] << endl;
+					throw GeoTessException(os, __FILE__, __LINE__, 10103);
+				}
 
-                int layer = CPPUtils::stoi(tokens[3]);
-                if (layer == -999999)
-                {
-                    ostringstream os;
-                    os << endl << "ERROR in Polygon3D::loadAscii" << endl
-                            << "Trying to parse 4 tokens defining top or bottom horizon." << endl
-                            << "Line = " << records[i] << endl
-                            << "Cannot convert 4th token to int: " << tokens[3] << endl;
-                    throw GeoTessException(os, __FILE__, __LINE__, 10104);
-                }
+				int layer = CPPUtils::stoi(tokens[3]);
+				if (layer == -999999)
+				{
+					ostringstream os;
+					os << endl << "ERROR in Polygon3D::loadAscii" << endl
+							<< "Trying to parse 4 tokens defining top or bottom horizon." << endl
+							<< "Line = " << records[i] << endl
+							<< "Cannot convert 4th token to int: " << tokens[3] << endl;
+					throw GeoTessException(os, __FILE__, __LINE__, 10104);
+				}
 
-                if (tokens[0].find("TOP") == 0 && tokens[1].find("LAYER") == 0)
-                    top = new GeoTessHorizonLayer(x, layer);
-                else if (tokens[0].find("TOP") == 0 && tokens[1].find("DEPTH") == 0)
-                    top = new GeoTessHorizonDepth(x, layer);
-                else if (tokens[0].find("TOP") == 0 && tokens[1].find("RADIUS") == 0)
-                    top = new GeoTessHorizonRadius(x, layer);
-                else if (tokens[0].find("BOTTOM") == 0 && tokens[1].find("LAYER") == 0)
-                    bottom = new GeoTessHorizonLayer(x, layer);
-                else if (tokens[0].find("BOTTOM") == 0 && tokens[1].find("DEPTH") == 0)
-                    bottom = new GeoTessHorizonDepth(x, layer);
-                else if (tokens[0].find("BOTTOM") == 0 && tokens[1].find("RADIUS") == 0)
-                    bottom = new GeoTessHorizonRadius(x, layer);
-                else
-                {
-                    ostringstream os;
-                    os << endl << "ERROR in Polygon3D::loadAscii" << endl
-                            << "Expected to find [top | bottom] [depth | radius | layer] value layerIndex" << endl
-                            << "but actually found: " << records[i] << endl;
-                    throw GeoTessException(os, __FILE__, __LINE__, 10105);
-                }
-            }
-        }
+				if (tokens[0].find("TOP") == 0 && tokens[1].find("LAYER") == 0)
+					top = new GeoTessHorizonLayer(x, layer);
+				else if (tokens[0].find("TOP") == 0 && tokens[1].find("DEPTH") == 0)
+					top = new GeoTessHorizonDepth(x, layer);
+				else if (tokens[0].find("TOP") == 0 && tokens[1].find("RADIUS") == 0)
+					top = new GeoTessHorizonRadius(x, layer);
+				else if (tokens[0].find("BOTTOM") == 0 && tokens[1].find("LAYER") == 0)
+					bottom = new GeoTessHorizonLayer(x, layer);
+				else if (tokens[0].find("BOTTOM") == 0 && tokens[1].find("DEPTH") == 0)
+					bottom = new GeoTessHorizonDepth(x, layer);
+				else if (tokens[0].find("BOTTOM") == 0 && tokens[1].find("RADIUS") == 0)
+					bottom = new GeoTessHorizonRadius(x, layer);
+				else
+				{
+					ostringstream os;
+					os << endl << "ERROR in Polygon3D::loadAscii" << endl
+							<< "Expected to find [top | bottom] [depth | radius | layer] value layerIndex" << endl
+							<< "but actually found: " << records[i] << endl;
+					throw GeoTessException(os, __FILE__, __LINE__, 10105);
+				}
+			}
+		}
 
-    GeoTessPolygon::loadAscii(records);
+	GeoTessPolygon::loadAscii(records);
 
 }
 
 void GeoTessPolygon3D::write(const string& outputFileName)
 {
-    IFStreamAscii output;
-    output.openForWrite(outputFileName);
-    output.writeStringNL("POLYGON3D");
-    output.writeStringNL("top "+top->str());
-    output.writeStringNL("bottom "+bottom->str());
-    output.writeStringNL("lat-lon");
-    output.writeString("referencePoint ");
-    output.writeString(GeoTessUtils::getLatLonString(referencePoint));
-    output.writeStringNL(referenceIn ? " in" : " out");
-    output.writeString(str(false, true, -180.));
-    output.close();
+	IFStreamAscii output;
+	output.openForWrite(outputFileName);
+	output.writeStringNL("POLYGON3D");
+	output.writeStringNL("top "+top->str());
+	output.writeStringNL("bottom "+bottom->str());
+	output.writeStringNL("lat-lon");
+	output.writeString("referencePoint ");
+	output.writeString(GeoTessUtils::getLatLonString(referencePoint));
+	output.writeStringNL(referenceIn ? " in" : " out");
+	output.writeString(str(false, true, -180.));
+	output.close();
 }
 
 } // end namespace geotess

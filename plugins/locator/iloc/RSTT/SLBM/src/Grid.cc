@@ -77,11 +77,11 @@ Grid::Grid() : polygon(NULL)
     sources = new CrustalProfileStore(*this, 10);
     receivers = new CrustalProfileStore(*this, 1000);
 
-    uncertainty.resize(4);
-    for (int i=0; i<(int)uncertainty.size(); ++i)
-        uncertainty[i].resize(3, NULL);
+    piu.resize(4);
+    for (int i=0; i<(int)piu.size(); ++i)
+        piu[i].resize(3, NULL);
 
-    uncertaintyPathDep.resize(4, NULL);
+    pdu.resize(4, NULL);
 }
 
 
@@ -104,12 +104,12 @@ Grid::~Grid()
     sources = NULL;
     receivers = NULL;
 
-    for (int i=0; i < (int)uncertainty.size(); ++i)
-        for (int j=0; j<(int)uncertainty[i].size(); ++j)
-            delete uncertainty[i][j];
+    for (int i=0; i < (int)piu.size(); ++i)
+        for (int j=0; j<(int)piu[i].size(); ++j)
+            delete piu[i][j];
 
-    for (int i = 0; i < (int)uncertaintyPathDep.size(); ++i)
-        delete uncertaintyPathDep[i];
+    for (int i = 0; i < (int)pdu.size(); ++i)
+        delete pdu[i];
 }
 
 void Grid::clear()
@@ -148,6 +148,20 @@ Grid* Grid::getGrid(const string& modelname)
         return grid;
     }
 
+    /*
+    // hack to loadFromFile() if it finds a directory with "geotessmodelpdu" in it
+    modelFileName = CPPUtils::insertPathSeparator(modelname, "geotessmodelpdu");
+
+    dataFile.open(modelFileName.c_str(), ios::in);
+    if (dataFile.is_open())
+    {
+        dataFile.close();
+        GridGeoTess* grid = new GridGeoTess();
+        grid->loadFromFile(modelFileName);
+        return grid;
+    }
+    */
+
     if (!fileExists(modelname))
     {
         ostringstream os;
@@ -157,9 +171,8 @@ Grid* Grid::getGrid(const string& modelname)
         throw SLBMException(os.str(),105);
     }
 
-    if (GeoTessModelPathUnc::isGeoTessModelPathUnc(modelname) ||
-        GeoTessModelSLBM::isGeoTessModelSLBM(modelname) ||
-        GeoTessModel::isGeoTessModel(modelname))
+    string modelClassName = GeoTessModel::getClassName(modelname);
+    if (modelClassName == "GeoTessModel" || modelClassName == "GeoTessModelSLBM" || modelClassName == "SLBM")
     {
         GridGeoTess* grid = new GridGeoTess();
         grid->loadFromFile(modelname);
