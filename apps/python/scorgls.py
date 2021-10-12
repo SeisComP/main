@@ -67,7 +67,6 @@ class OriginList(seiscomp.client.Application):
         except:
             self.author = False
 
-
 #   sys.stderr.write("Setting end to %s\n" % self._endTime.toString("%F %T"))
 
         return True
@@ -81,7 +80,9 @@ class OriginList(seiscomp.client.Application):
              self.database().timeToString(self._endTime))
         
         if self.author:
-            q = q + " and Origin.%s = '%s' " % (self.database().convertColumnName("creationInfo_author"), self.author)
+            q += " and Origin.%s = '%s' " %\
+                 (self.database().convertColumnName("creationInfo_author"),
+                  self.query().toString(self.author))
         
         for obj in self.query().getObjectIterator(q, seiscomp.datamodel.Origin.TypeInfo()):
             org = seiscomp.datamodel.Origin.Cast(obj)
