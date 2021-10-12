@@ -63,8 +63,8 @@ class OriginList(seiscomp.client.Application):
 
         try:
             self.author = self.commandline().optionString("author")
+            sys.stderr.write("%s author used for output\n" % (self.author))
         except:
-            sys.stderr.write("Any authors used in output\n")
             self.author = False
 
 
