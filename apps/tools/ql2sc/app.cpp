@@ -212,8 +212,8 @@ bool loadEventParam(EventParametersPtr &ep, const string &data,
 			SEISCOMP_ERROR("[xml] could not open stream buffer for reading");
 		else {
 			ar >> ep;
+			retn = ar.success() && ep;
 			ar.close();
-			retn = true;
 		}
 	}
 	catch (string &e) {
