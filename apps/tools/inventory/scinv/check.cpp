@@ -41,10 +41,6 @@ string id(const Stream *obj) {
 	return id(obj->sensorLocation()) + "." + obj->code();
 }
 
-string id(const PublicObject *obj) {
-	return obj->publicID();
-}
-
 
 string toString(const Core::TimeWindow &tw ) {
 	string res;
@@ -189,6 +185,16 @@ bool Check::check() {
 				lvalid = false;
 			}
 
+			try {
+				sta->elevation();
+			}
+			catch ( ... ) {
+				log(LogHandler::Warning,
+				    (string(sta->className()) + " " + id(sta) + "\n  "
+				     "elevation is not set").c_str(),
+				     nullptr, nullptr);
+			}
+
 			if ( lvalid && lat == 0.0 && lon == 0.0 ) {
 				log(LogHandler::Warning,
 				    (string(sta->className()) + " " + id(sta) + "\n  "
@@ -233,6 +239,16 @@ bool Check::check() {
 					     "longitude is not set").c_str(),
 					     nullptr, nullptr);
 					llvalid = false;
+				}
+
+				try {
+					loc->elevation();
+				}
+				catch ( ... ) {
+					log(LogHandler::Warning,
+					    (string(loc->className()) + " " + id(loc) + "\n  "
+					     "elevation is not set").c_str(),
+					     nullptr, nullptr);
 				}
 
 				if ( llvalid && llat == 0.0 && llon == 0.0 ) {
