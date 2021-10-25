@@ -118,7 +118,7 @@ class DBTool : public Seiscomp::Client::Application {
 			commandline().addOption("Database", "output,o", "database connection to write to", &_databaseWriteConnection);
 
 			commandline().addGroup("Import");
-			commandline().addOption("Import", "input,i", "import file", &_importFile, false);
+			commandline().addOption("Import", "input,i", "file to import. Provide multiple times to import multiple files", &_importFiles);
 			commandline().addOption("Import", "remove,r", "remove objects found in import file");
 			commandline().addOption("Import", "batchsize,b", "batch size of database transactions [0..1000]", &_importBatchSize, 1);
 		}
@@ -205,8 +205,14 @@ class DBTool : public Seiscomp::Client::Application {
 
 
 		bool run() {
-			if ( commandline().hasOption("input") )
-				return importDatabase();
+			if ( commandline().hasOption("input") ) {
+				for ( std::string filename: _importFiles ) {
+					if ( !importDatabase(filename) ) {
+						return false;
+					}
+				}
+				return true;
+			}
 
 			return Application::run();
 		}
@@ -275,12 +281,12 @@ class DBTool : public Seiscomp::Client::Application {
 		}
 
 
-		bool importDatabase() {
+		bool importDatabase(std::string filename) {
 			XMLArchive ar;
-			if ( _importFile == "-" )
+			if ( filename == "-" )
 				ar.open(std::cin.rdbuf());
-			else if ( !ar.open(_importFile.c_str()) ) {
-				cout << "Error: could not open input file '" << _importFile << "'" << endl;
+			else if ( !ar.open(filename.c_str()) ) {
+				cout << "Error: could not open input file '" << filename << "'" << endl;
 				return false;
 			}
 		
@@ -292,7 +298,7 @@ class DBTool : public Seiscomp::Client::Application {
 			}
 			*/
 		
-			cout << "Parsing file '" << _importFile << "'..." << endl;
+			cout << "Parsing file '" << filename << "'..." << endl;
 		
 			Util::StopWatch timer;
 			DataModel::ObjectPtr doc;
@@ -300,7 +306,7 @@ class DBTool : public Seiscomp::Client::Application {
 			ar.close();
 		
 			if ( doc == NULL ) {
-				cout << "Error: no valid object found in file '" << _importFile << "'" << endl;
+				cout << "Error: no valid object found in file '" << filename << "'" << endl;
 				return false;
 			}
 		
@@ -319,13 +325,15 @@ class DBTool : public Seiscomp::Client::Application {
 			cout << "While writing " << writer.count() << " objects " << writer.errors() << " errors occured" << endl;
 			cout << "Time needed to write " << writer.count() << " objects: " << Core::Time(timer.elapsed()).toString("%T.%f") << endl;
 
-			_returnCode = writer.errors() > 0?1:0;
+			if ( writer.errors() > 0 ) {
+				_returnCode = 1;
+			}
 			return true;
 		}
 
 
 	private:
-		std::string _importFile;
+		std::vector<std::string> _importFiles;
 		bool _remove;
 		unsigned int _importBatchSize;
 

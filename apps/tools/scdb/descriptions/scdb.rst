@@ -56,7 +56,8 @@ data model content. In combination with :ref:`scxmldump` it can be used to copy 
 from one database to another.
 
 For that it does not connect to a messaging server but reads data from XML
-files and writes it to the database.
+files and writes it to the database. Multiple input files can be specified by
+providing the '--input' option multiple times with separate filenames.
 
 
 .. warning::
@@ -66,4 +67,4 @@ files and writes it to the database.
 
 .. code-block:: sh
 
-   scdb -i data.xml -d mysql://sysop:sysop@db-server/seiscomp
+   scdb -i data1.xml -i data2.xml -d mysql://sysop:sysop@db-server/seiscomp
