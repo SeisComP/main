@@ -31,22 +31,12 @@ the database connection parameters.
 For that it connects to a messaging server and writes all received messages to a
 configured database, e.g. a backup database.
 
+.. note::
 
-.. code-block:: sh
-
-   scdb -H server -o mysql://sysop:sysop@db-server/seiscomp
-
-In the above example :ref:`scdb` connects to "server" and writes all messages to the
-output database. The database connection it received from the messaging server
-during the handshake is reported to client requesting a database address. To
-overwrite the read-only database, just override the application's database
-address (with the '-d' option):
-
-.. code-block:: sh
-
-   scdb -H server -d mysql://sysop:sysop@db-server/seiscomp \
-                  -o mysql://writer:12345@db-server/seiscomp
-
+   The database connection received from the messaging server during the
+   handshake is reported to clients requesting a database address. To overwrite
+   the read-only database, just override the application's database address
+   (with the '-d' option)
 
 Offline mode
 ------------
@@ -56,14 +46,43 @@ data model content. In combination with :ref:`scxmldump` it can be used to copy 
 from one database to another.
 
 For that it does not connect to a messaging server but reads data from XML
-files and writes it to the database.
-
+files and writes it to the database. Offline mode will be used if the
+'--input/-i' option is provided. Multiple input files can be specified by
+providing this option multiple times with separate filenames.
 
 .. warning::
 
    When reading XML files the output database address is not passed
    with -o but -d. The application's database address is used.
 
-.. code-block:: sh
+Examples
+--------
 
-   scdb -i data.xml -d mysql://sysop:sysop@db-server/seiscomp
+#. Connect to a messaging server and write all messages to the output database
+   `seiscomp` running on the host `db-server`:
+
+   .. code-block:: sh
+
+      scdb -H [server] -o mysql://sysop:sysop@db-server/seiscomp
+
+#. As above, but with the read-only database connection using the user `sysop`
+   and the output database connection using the user `writer`:
+
+   .. code-block:: sh
+
+      scdb -H [server] -d mysql://sysop:sysop@db-server/seiscomp \
+                       -o mysql://writer:12345@db-server/seiscomp
+
+#. Import data from the file :file:`data.xml` and write it to the database
+   `seiscomp` on the host `db-server`:
+
+   .. code-block:: sh
+
+      scdb -i data.xml -d mysql://sysop:sysop@db-server/seiscomp
+
+#. Import data from three files at once:
+
+   .. code-block:: sh
+
+      scdb -i data1.xml -i data2.xml -i data3.xml \
+           -d mysql://sysop:sysop@db-server/seiscomp
