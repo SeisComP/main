@@ -93,6 +93,7 @@
 				<option flag="i" long-flag="input" argument="arg">
 					<description>
 						Defines the import XML file to be written to database.
+						Can be provided multiple times to import multiple files.
 					</description>
 				</option>
 				<option flag="b" long-flag="batchsize" argument="arg">
