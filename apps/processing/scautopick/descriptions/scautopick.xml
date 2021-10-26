@@ -49,11 +49,17 @@
 					Configures the picker to use. By default only a simple detections
 					are emitted as picks. To enable real picking on a time window around
 					the detection, an algorithm (plugin) can be defined with this parameter.
+					Currently available is: &quot;AIC&quot;, &quot;BK&quot; or
+					&quot;GFZ&quot;. More options may be available by plugins.
+					Configure related parameters in global bindings.
 				</description>
 			</parameter>
 			<parameter name="spicker" type="string">
 				<description>
-					Configures the secondary picker to use.
+					Configures the secondary picker to use, e.g. for pick S-phases.
+					Currently available is: &quot;S-L2&quot;. More options may
+					be available by plugins. Configure related parameters
+					in global bindings.
 				</description>
 			</parameter>
 			<parameter name="useAllStreams" type="boolean" default="true">
@@ -78,15 +84,17 @@
 			</parameter>
 			<parameter name="sendDetections" type="boolean" default="false">
 				<description>
-					If enabled and &quot;picker&quot; is configured, then detections are sent as well.
-					To distinguish between detections and picks the evaluation mode of the pick is set
-					to manual. This is meant to be a debug option which can be used to compare detections
-					and picks by their evaluation mode.
+					If enabled and &quot;picker&quot; is configured, then initial detections
+					are sent as well. To distinguish between detections and picks
+					the evaluation status of the pick is set to &quot;rejected&quot;.
+					This is meant to be a debug option which can be used to compare
+					detections and picks by their evaluation status.
 				</description>
 			</parameter>
 			<parameter name="extraPickComments" type="boolean" default="false">
 				<description>
-					If enabled and picker or spicker is configured, then extra comments
+					If enabled and &quot;picker&quot; or &quot;spicker&quot; is
+					configured, then extra comments
 					will be added to the resulting pick.
 
 					Supported comments:

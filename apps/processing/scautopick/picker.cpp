@@ -1195,12 +1195,7 @@ void App::emitPPick(const Processing::Picker *proc,
 	pick->setMethodID(proc->methodID());
 	pick->setFilterID(proc->filterID());
 
-	// If the detections should be sent as well set the repicked Pick mode
-	// to manual to distinguish between detected picks and picked picks.
-	if ( _config.sendDetections )
-		pick->setEvaluationMode(DataModel::EvaluationMode(DataModel::MANUAL));
-	else
-		pick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
+	pick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
 
 	pick->setPhaseHint(DataModel::Phase(_config.phaseHint));
 	pick->setWaveformID(waveformStreamID(res.record));
@@ -1428,12 +1423,17 @@ void App::emitDetection(const Processing::Detector *proc, const Record *rec, con
 
 	const StreamConfig *sc = _stationConfig.get(&configuration(), configModuleName(),
 	                                            rec->networkCode(), rec->stationCode());
-	if ( sc != NULL )
+	if ( sc )
 		if ( !sc->filter.empty() ) filter = sc->filter;
 
 	pick->setFilterID(filter);
 
 	pick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
+	if ( !_config.pickerType.empty() && _config.sendDetections ) {
+		// set the status to rejected if sendDections has been activated and the
+		// repicker is active
+		pick->setEvaluationStatus(DataModel::EvaluationStatus(DataModel::REJECTED));
+	}
 	pick->setPhaseHint(DataModel::Phase(_config.phaseHint));
 	pick->setWaveformID(waveformStreamID(rec));
 
