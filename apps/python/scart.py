@@ -15,6 +15,8 @@
 
 from __future__ import print_function
 
+from getopt import getopt, GetoptError
+import bisect
 import glob
 import re
 import time
@@ -22,10 +24,13 @@ import sys
 import os
 if sys.version_info < (2, 4):
     from sets import Set as set
-import seiscomp.core, seiscomp.client, seiscomp.config
-import seiscomp.io, seiscomp.logging, seiscomp.system
-from getopt import getopt, GetoptError
-import bisect
+
+import seiscomp.core
+import seiscomp.client
+import seiscomp.config
+import seiscomp.io
+import seiscomp.logging
+import seiscomp.system
 
 
 class Archive:
@@ -40,7 +45,7 @@ class Archive:
 
         start_year = t[0]
 
-        for year in range(start_year, t_end[0]+1):
+        for year in range(start_year, t_end[0] + 1):
             if year > start_year:
                 begin = seiscomp.core.Time.FromYearDay(year, 1)
                 t = time.gmtime(begin.seconds())
@@ -49,14 +54,15 @@ class Archive:
                 netdir = self.archiveDirectory + str(year) + "/"
                 try:
                     files = os.listdir(netdir)
-                except:
-                    sys.stderr.write("info: skipping year %i - not found in archive %s\n"
-                                     % (year, netdir))
+                except BaseException:
+                    sys.stderr.write(
+                        "info: skipping year %i - not found in archive %s\n" %
+                        (year, netdir))
                     continue
 
                 its = []
                 for file in files:
-                    if os.path.isdir(netdir + file) == False:
+                    if not os.path.isdir(netdir + file):
                         continue
                     tmp_its = self.iterators(begin, end, file, sta, loc, cha)
                     for it in tmp_its:
@@ -69,14 +75,15 @@ class Archive:
 
                 try:
                     files = os.listdir(stadir)
-                except:
-                    sys.stderr.write("info: skipping network %s - not found in archive %s\n"
-                                     % (net, stadir))
+                except BaseException:
+                    sys.stderr.write(
+                        "info: skipping network '%s' - not found in archive %s\n" %
+                        (net, stadir))
                     continue
 
                 its = []
                 for file in files:
-                    if os.path.isdir(stadir + file) == False:
+                    if not os.path.isdir(stadir + file):
                         continue
                     tmp_its = self.iterators(begin, end, net, file, loc, cha)
                     for it in tmp_its:
@@ -92,16 +99,19 @@ class Archive:
                     str(year) + "/" + net + "/" + sta + "/"
                 try:
                     files = os.listdir(stadir)
-                except:
-                    sys.stderr.write("info: skipping station %s - no data files found in archive %s\n"
-                                     % (sta, stadir))
+                except BaseException:
+                    sys.stderr.write(
+                        "info: skipping station %s - no data files "
+                        "found in archive %s\n" %
+                        (sta, stadir))
                     return []
 
                 its = []
                 for file in files:
-                    if os.path.isdir(stadir + file) == False:
-                        sys.stderr.write("info: skipping data file %s - not found in archive %s\n"
-                                         % (file, stadir))
+                    if not os.path.isdir(stadir + file):
+                        sys.stderr.write(
+                            "info: skipping data file '%s' - not found in archive %s\n" %
+                            (file, stadir))
                         continue
 
                     part = file[:3]
@@ -130,21 +140,25 @@ class Archive:
                 files = glob.glob(dir + "*.%03d" % start_day)
 
                 # Find first day with data
-                while len(files) == 0 and start_day <= end_day:
+                while not files and start_day <= end_day:
                     start_day += 1
                     begin = seiscomp.core.Time.FromYearDay(year, start_day)
                     files = glob.glob(dir + "*.%03d" % start_day)
 
                 if not files:
                     t = time.gmtime(begin.seconds())
-                    sys.stderr.write("info: skipping streams %s.%s.*.%s on %s - no data found for this day in archive %s\n"
-                                     % (net,sta,cha,time.strftime("%Y-%m-%d",t), dir))
+                    sys.stderr.write(
+                        "info: skipping streams '%s.%s.*.%s on %s '"
+                        "- no data found for this day in archive %s\n" %
+                        (net, sta, cha, time.strftime(
+                            "%Y-%m-%d", t), dir))
 
                 for file in files:
                     file = file.split('/')[-1]
-                    if os.path.isfile(dir + file) == False:
-                        sys.stderr.write("info: skipping data file %s - not found in archive %s\n"
-                                         % (file, dir))
+                    if not os.path.isfile(dir + file):
+                        sys.stderr.write(
+                            "info: skipping data file '%s' - not found in archive %s\n" %
+                            (file, dir))
                         continue
 
                     tmp_its = self.iterators(
@@ -155,7 +169,7 @@ class Archive:
                 return its
 
             it = StreamIterator(self, begin, end, net, sta, loc, cha)
-            if not it.record is None:
+            if it.record is not None:
                 return [it]
 
         return []
@@ -170,7 +184,7 @@ class Archive:
     def findIndex(self, begin, end, file):
         rs = seiscomp.io.FileRecordStream()
         rs.setRecordType("mseed")
-        if rs.setSource(self.archiveDirectory + file) == False:
+        if not rs.setSource(self.archiveDirectory + file):
             return None, None
 
         ri = seiscomp.io.RecordInput(rs)
@@ -201,10 +215,10 @@ class Archive:
     def readRecord(self, file, index):
         try:
             rs = self.filePool[file]
-        except:
+        except BaseException:
             rs = seiscomp.io.FileRecordStream()
             rs.setRecordType("mseed")
-            if rs.setSource(self.archiveDirectory + file) == False:
+            if not rs.setSource(self.archiveDirectory + file):
                 return (None, None)
 
             rs.seek(index)
@@ -234,7 +248,7 @@ class Archive:
             rs.close()
             try:
                 self.filePool.pop(file)
-            except:
+            except BaseException:
                 pass
 
         return rec, index
@@ -317,6 +331,7 @@ class StreamIterator:
             return True
         return False
 
+
 class ArchiveIterator:
     def __init__(self, ar, sortByEndTime):
         self.archive = ar
@@ -333,7 +348,7 @@ class ArchiveIterator:
         self.append(beginTime, endTime, net, sta, "*", "*")
 
     def nextSort(self):
-        if len(self.streams) == 0:
+        if not self.streams:
             return None
 
         stream = self.streams.pop(0)
@@ -366,7 +381,7 @@ class Sorter:
         self.archiveIterator = archiveIterator
 
     def __iter__(self):
-        while 1:
+        while True:
             rec = self.archiveIterator.nextSort()
             if not rec:
                 return
@@ -391,7 +406,7 @@ def str2time(timestring):
         timestring = timestring.replace(c, " ")
     timestring = timestring.split()
     assert 3 <= len(timestring) <= 6
-    timestring.extend((6-len(timestring))*["0"])
+    timestring.extend((6 - len(timestring)) * ["0"])
     timestring = " ".join(timestring)
     format = "%Y %m %d %H %M %S"
     if timestring.find(".") != -1:
@@ -416,7 +431,7 @@ def create_dir(dir):
     try:
         os.makedirs(dir)
         return True
-    except:
+    except BaseException:
         return False
 
 
@@ -434,7 +449,7 @@ def readStreamList(file):
             file = "stdin"
         else:
             f = open(listFile, 'r')
-    except:
+    except BaseException:
         sys.stderr.write("%s: error: unable to open\n" % listFile)
         return []
 
@@ -443,33 +458,34 @@ def readStreamList(file):
         lineNumber = lineNumber + 1
         line = line.strip()
         # ignore comments
-        if len(line) > 0 and line[0] == '#':
-            continue
-
-        if len(line) == 0:
+        if not line or line[0] == '#':
             continue
 
         toks = line.split(';')
         if len(toks) != 3:
             f.close()
-            sys.stderr.write("%s:%d: error: invalid line format, expected 3 items separated by ';'\n" % (
-                listFile, lineNumber))
+            sys.stderr.write(
+                "%s:%d: error: invalid line format, expected 3 "
+                "items separated by ';'\n" %
+                (listFile, lineNumber))
             return []
 
         try:
             tmin = str2time(toks[0].strip())
-        except:
+        except BaseException:
             f.close()
             sys.stderr.write(
-                "%s:%d: error: invalid time format (tmin)\n" % (listFile, lineNumber))
+                "%s:%d: error: invalid time format (tmin)\n" %
+                (listFile, lineNumber))
             return []
 
         try:
             tmax = str2time(toks[1].strip())
-        except:
+        except BaseException:
             f.close()
             sys.stderr.write(
-                "%s:%d: error: invalid time format (tmax)\n" % (listFile, lineNumber))
+                "%s:%d: error: invalid time format (tmax)\n" %
+                (listFile, lineNumber))
             return []
 
         streamID = toks[2].strip()
@@ -544,7 +560,8 @@ def usage(exitcode=0):
 
 try:
     opts, files = getopt(sys.argv[1:], "I:dsmEn:c:t:l:hv",
-                         ["stdout", "with-filename", "dump", "list=", "sort", "modify", "speed=", "files=", "verbose", "test", "help"])
+                         ["stdout", "with-filename", "dump", "list=", "sort",
+                          "modify", "speed=", "files=", "verbose", "test", "help"])
 except GetoptError as e:
     usage(exitcode=1)
 
@@ -555,7 +572,7 @@ sort = False
 modifyTime = False
 dump = False
 listFile = None
-withFilename = False # Whether to output accessed files for import or not
+withFilename = False  # Whether to output accessed files for import or not
 test = False
 filePoolSize = 100
 # default = stdin
@@ -568,7 +585,6 @@ channels = "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
 networks = "*"
 
 archiveDirectory = "./"
-
 
 
 for flag, arg in opts:
@@ -613,17 +629,18 @@ if files:
 else:
     try:
         archiveDirectory = os.environ["SEISCOMP_ROOT"] + "/var/lib/archive"
-    except:
+    except BaseException:
         pass
 
 try:
     if archiveDirectory[-1] != '/':
         archiveDirectory = archiveDirectory + '/'
-except:
+except BaseException:
     pass
 
-if os.path.isdir(archiveDirectory) == False:
-    sys.stderr.write("info: archive %s not found - stopping\n" % archiveDirectory)
+if not stdout and not os.path.isdir(archiveDirectory):
+    sys.stderr.write("info: archive directory '%s' not found - stopping\n" %
+                     archiveDirectory)
     sys.exit(-1)
 
 archive = Archive(archiveDirectory)
@@ -716,9 +733,14 @@ if dump:
 
         if verbose:
             etime = rec.endTime()
-            sys.stderr.write("%s %s %s %s\n" % (rec.streamID(), seiscomp.core.Time.LocalTime().iso(), rec.startTime().iso(), etime.iso()))
+            sys.stderr.write(
+                "%s %s %s %s\n" %
+                (rec.streamID(),
+                 seiscomp.core.Time.LocalTime().iso(),
+                 rec.startTime().iso(),
+                 etime.iso()))
 
-        if test == False:
+        if not test:
             out.write(rec.raw().str())
 
 else:
@@ -739,9 +761,10 @@ else:
         sys.stderr.write("Unable to open recordstream '%s'\n" % recordURL)
         sys.exit(-1)
 
-    if rs.setRecordType("mseed") == False:
+    if not rs.setRecordType("mseed"):
         sys.stderr.write(
-            "Format 'mseed' is not supported by recordstream '%s'\n" % recordURL)
+            "Format 'mseed' is not supported by recordstream '%s'\n" %
+            recordURL)
         sys.exit(-1)
 
     if not isFile(recordURL):
@@ -753,14 +776,22 @@ else:
         streams = readStreamList(listFile)
         for stream in streams:
             # Add stream to recordstream
-            if rs.addStream(stream[2], stream[3], stream[4], stream[5], stream[0], stream[1]) == False:
+            if not rs.addStream(
+                    stream[2],
+                    stream[3],
+                    stream[4],
+                    stream[5],
+                    stream[0],
+                    stream[1]):
                 if verbose:
-                    sys.stderr.write("error: adding stream: %s %s %s.%s.%s.%s\n" % (
-                        stream[0], stream[1], stream[2], stream[3], stream[4], stream[5]))
+                    sys.stderr.write(
+                        "error: adding stream: %s %s %s.%s.%s.%s\n" %
+                        (stream[0], stream[1], stream[2], stream[3], stream[4], stream[5]))
             else:
                 if verbose:
-                    sys.stderr.write("adding stream: %s %s %s.%s.%s.%s\n" % (
-                        stream[0], stream[1], stream[2], stream[3], stream[4], stream[5]))
+                    sys.stderr.write(
+                        "adding stream: %s %s %s.%s.%s.%s\n" %
+                        (stream[0], stream[1], stream[2], stream[3], stream[4], stream[5]))
 
     input = seiscomp.io.RecordInput(
         rs, seiscomp.core.Array.INT, seiscomp.core.Record.SAVE_RAW)
@@ -777,22 +808,23 @@ else:
             ), rec.stationCode(), rec.locationCode(), rec.channelCode())
             file = dir + file
 
-            if test == False:
+            if not test:
                 try:
                     f = filePool[file]
-                except:
+                except BaseException:
                     outdir = '/'.join((archiveDirectory +
                                        file).split('/')[:-1])
-                    if create_dir(outdir) == False:
+                    if not create_dir(outdir):
                         sys.stderr.write(
                             "Could not create directory '%s'\n" % outdir)
                         sys.exit(-1)
 
                     try:
                         f = open(archiveDirectory + file, 'ab')
-                    except:
-                        sys.stderr.write("File '%s' could not be opened for writing\n" % (
-                            outputDirectory + file))
+                    except BaseException:
+                        sys.stderr.write(
+                            "File '%s' could not be opened for writing\n" %
+                            (archiveDirectory + file))
                         sys.exit(-1)
 
                     # Remove old handles
