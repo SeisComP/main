@@ -1403,6 +1403,7 @@ void App::emitDetection(const Processing::Detector *proc, const Record *rec, con
 		if ( !_config.sendDetections ) return;
 	}
 
+	bool isDetection = !_config.pickerType.empty() && _config.sendDetections;
 	Core::Time now = Core::Time::GMT();
 	DataModel::PickPtr pick;
 	if ( hasCustomPublicIDPattern() )
@@ -1429,7 +1430,7 @@ void App::emitDetection(const Processing::Detector *proc, const Record *rec, con
 	pick->setFilterID(filter);
 
 	pick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
-	if ( !_config.pickerType.empty() && _config.sendDetections ) {
+	if ( isDetection ) {
 		// set the status to rejected if sendDections has been activated and the
 		// repicker is active
 		pick->setEvaluationStatus(DataModel::EvaluationStatus(DataModel::REJECTED));
@@ -1467,7 +1468,7 @@ void App::emitDetection(const Processing::Detector *proc, const Record *rec, con
 	if ( _ep )
 		_ep->add(pick.get());
 
-	if ( !_config.secondaryPickerType.empty() )
+	if ( !_config.secondaryPickerType.empty() && !isDetection )
 		addSecondaryPicker(time, rec, pick->publicID());
 
 	if ( _config.calculateAmplitudes ) {
