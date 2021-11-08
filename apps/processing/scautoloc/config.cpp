@@ -90,6 +90,8 @@ StationConfig::get(const string &net, const string &sta) const
 
 Autoloc3::Config::Config()
 {
+	scconfig = nullptr;
+
 	maxAge = 6*3600;
 	goodRMS = 1.5;
 	maxRMS  = 3.5;

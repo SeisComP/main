@@ -83,8 +83,11 @@ Autoloc3::~Autoloc3()
 
 bool Autoloc3::init()
 {
-        if ( ! _relocator.init())
+	_relocator.setSeiscompConfig(_config.scconfig);
+        if ( ! _relocator.init()) {
+		SEISCOMP_ERROR("Autoloc::init(): Failed to initialize relocator");
                 return false;
+	}
 
 	_relocator.setMinimumDepth(_config.minimumDepth);
 
@@ -95,6 +98,7 @@ bool Autoloc3::init()
 		    return false;
 	}
 
+	_nucleator.setSeiscompConfig(_config.scconfig);
         if ( ! _nucleator.init())
                 return false;
 
@@ -1921,8 +1925,7 @@ bool Autoloc3::_store(Origin *origin)
 	return true;
 }
 
-// TODO:
-// Einfach an _associate einen Arrival uebergeben, denn der hat ja alles schon an Bord.
+
 bool Autoloc3::_associate(Origin *origin, const Pick *pick, const string &phase)
 {
 	// first crude check
