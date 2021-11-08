@@ -67,6 +67,10 @@
 					Configures the feature extraction type to use. Currently
 					available: &quot;DFX&quot;. Configure related parameters
 					in global bindings.
+
+					When configured, the usability of the features for locating
+					depends on the used locator, e.g. LOCSAT. Read the
+					locator's documentation and configuration parameters.
 				</description>
 			</parameter>
 			<parameter name="useAllStreams" type="boolean" default="true">
