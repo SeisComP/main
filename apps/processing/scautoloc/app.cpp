@@ -21,6 +21,7 @@
 #include <seiscomp/datamodel/journaling_package.h>
 #include <seiscomp/datamodel/utils.h>
 #include <seiscomp/utils/files.h>
+#include <seiscomp/config/config.h>
 #include <seiscomp/core/datamessage.h>
 #include <seiscomp/io/archive/xmlarchive.h>
 #include <algorithm>
@@ -553,6 +554,10 @@ bool App::init() {
 	_inputAmps = addInputObjectLog("amplitude");
 	_inputOrgs = addInputObjectLog("origin");
 	_outputOrgs = addOutputObjectLog("origin", primaryMessagingGroup());
+
+	// This is the SeisComP configuration, which we need to pass through
+	// all the way to the locator.
+	_config.scconfig = &configuration();
 
 	SEISCOMP_INFO("Starting Autoloc");
 	setConfig(_config);
