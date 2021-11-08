@@ -35,6 +35,8 @@ class OriginList(seiscomp.client.Application):
                                            "specify the lower bound of the time interval. Time format: '1970-01-01 00:00:00'")
         self.commandline().addStringOption("Origins", "end",
                                            "specify the upper bound of the time interval. Time format: '1970-01-01 00:00:00'")
+        self.commandline().addStringOption("Origins", "author",
+                                           "specify the author")
         return True
 
     def init(self):
@@ -59,6 +61,12 @@ class OriginList(seiscomp.client.Application):
         except:
             self._endTime = seiscomp.core.Time.GMT()
 
+        try:
+            self.author = self.commandline().optionString("author")
+            sys.stderr.write("%s author used for output\n" % (self.author))
+        except:
+            self.author = False
+
 #   sys.stderr.write("Setting end to %s\n" % self._endTime.toString("%F %T"))
 
         return True
@@ -70,7 +78,12 @@ class OriginList(seiscomp.client.Application):
              self.database().timeToString(self._startTime),
              self.database().convertColumnName("time_value"),
              self.database().timeToString(self._endTime))
-
+        
+        if self.author:
+            q += " and Origin.%s = '%s' " %\
+                 (self.database().convertColumnName("creationInfo_author"),
+                  self.query().toString(self.author))
+        
         for obj in self.query().getObjectIterator(q, seiscomp.datamodel.Origin.TypeInfo()):
             org = seiscomp.datamodel.Origin.Cast(obj)
             if org:
