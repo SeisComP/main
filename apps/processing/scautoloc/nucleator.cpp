@@ -63,10 +63,20 @@ GridSearch::GridSearch()
 	_abort = false;
 }
 
+
+void GridSearch::setSeiscompConfig(const Seiscomp::Config::Config *scconfig) {
+	_scconfig = scconfig;
+}
+
+
 bool GridSearch::init()
 {
-	if ( ! _relocator.init())
+	_relocator.setSeiscompConfig(_scconfig);
+	if ( ! _relocator.init()) {
+		SEISCOMP_ERROR("GridSearch::init(): Failed to initialize relocator");
 		return false;
+	}
+
 	return true;
 }
 

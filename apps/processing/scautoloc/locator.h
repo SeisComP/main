@@ -19,6 +19,7 @@
 #include <string>
 #include <map>
 
+#include <seiscomp/config/config.h>
 #include <seiscomp/seismology/locator/locsat.h>
 #include "datamodel.h"
 
@@ -43,7 +44,16 @@ class Locator {
 		Locator();
 		~Locator();
 
+		// Configuration
+		void setProfile(const std::string &name) {
+			_sc3locator->setProfile(name);
+		}
+
+		void setSeiscompConfig(const Seiscomp::Config::Config*);
+
+		// Initialization needed *after* (re)configuration
 		bool init();
+
 		void setStation(const Station *station);
 		void setMinimumDepth(double);
 
@@ -53,10 +63,6 @@ class Locator {
 
 		void useFixedDepth(bool use=true) {
 			_sc3locator->useFixedDepth(use);
-		}
-
-		void setProfile(const std::string &name) {
-			_sc3locator->setProfile(name);
 		}
 
 	public:
@@ -69,6 +75,7 @@ class Locator {
 
 	private:
 		Seiscomp::Seismology::LocatorInterfacePtr _sc3locator;
+		const Seiscomp::Config::Config *_scconfig;
 
 		MySensorLocationDelegatePtr sensorLocationDelegate;
 

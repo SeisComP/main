@@ -234,6 +234,8 @@ class Autoloc3 {
 			double xxlMaxStaDist;          // default 10 degrees
 			double xxlMaxDepth;            // default 100 km
 
+			const Seiscomp::Config::Config* scconfig;
+
 		public:
 			void dump() const;
 		};
