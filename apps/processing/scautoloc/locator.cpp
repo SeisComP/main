@@ -63,7 +63,7 @@ Locator::Locator()
 {
 }
 
-bool Locator::init()
+bool Locator::init(const Seiscomp::Config::Config &config)
 {
 	const std::string locator = "LOCSAT";
 	_sc3locator =
@@ -71,6 +71,9 @@ bool Locator::init()
 	if (!_sc3locator) {
 		SEISCOMP_ERROR_S("Could not create "+locator+" instance");
 		exit(-1);
+	}
+	if ( !_sc3locator->init(config) ) {
+		return false;
 	}
 	_sc3locator->useFixedDepth(false);
 	_locatorCallCounter = 0;

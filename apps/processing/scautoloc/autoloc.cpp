@@ -83,9 +83,9 @@ Autoloc3::~Autoloc3()
 }
 
 
-bool Autoloc3::init()
+bool Autoloc3::init(const Seiscomp::Config::Config &config)
 {
-        if ( ! _relocator.init())
+        if ( ! _relocator.init(config))
                 return false;
 
 	_relocator.setMinimumDepth(_config.minimumDepth);
@@ -97,7 +97,7 @@ bool Autoloc3::init()
 		    return false;
 	}
 
-        if ( ! _nucleator.init())
+        if ( ! _nucleator.init(config))
                 return false;
 
 	SEISCOMP_DEBUG("Setting configured locator profile: %s", _config.locatorProfile.c_str());

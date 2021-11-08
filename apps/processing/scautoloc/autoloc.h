@@ -248,7 +248,7 @@ class Autoloc3 {
 		bool setStation(Station *);
 		void setLocatorProfile(const std::string &);
 
-		bool init();
+		bool init(const Seiscomp::Config::Config &config);
 
 	public:
 		// Feed a Pick and try to get something out of it.

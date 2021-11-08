@@ -63,9 +63,9 @@ GridSearch::GridSearch()
 	_abort = false;
 }
 
-bool GridSearch::init()
+bool GridSearch::init(const Seiscomp::Config::Config &config)
 {
-	if ( ! _relocator.init())
+	if ( ! _relocator.init(config))
 		return false;
 	return true;
 }

@@ -502,7 +502,7 @@ bool App::init() {
 		}
 	}
 	
-	return Autoloc3::init();
+	return Autoloc3::init(configuration());
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

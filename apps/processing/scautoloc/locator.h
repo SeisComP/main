@@ -43,7 +43,7 @@ class Locator {
 		Locator();
 		~Locator();
 
-		bool init();
+		bool init(const Seiscomp::Config::Config &config);
 		void setStation(const Station *station);
 		void setMinimumDepth(double);
 
