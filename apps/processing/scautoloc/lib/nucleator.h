@@ -14,8 +14,8 @@
 
 
 
-#ifndef _SEISCOMP_AUTOLOC_NUCLEATOR_
-#define _SEISCOMP_AUTOLOC_NUCLEATOR_
+#ifndef SEISCOMP_LIBAUTOLOC_NUCLEATOR_H
+#define SEISCOMP_LIBAUTOLOC_NUCLEATOR_H
 
 #include <iostream>
 #include <fstream>
@@ -27,22 +27,21 @@
 
 #include "datamodel.h"
 #include "locator.h"
-//#include "autoloc.h"
 
-namespace Autoloc {
+namespace Seiscomp {
 
 class Nucleator
 {
 	public:
 		virtual bool init() = 0;
-		virtual void setStation(const Station *station);
+		virtual void setStation(const Autoloc::DataModel::Station *station);
 	public:
-		virtual bool feed(const Pick *pick) = 0;
-		const OriginVector &newOrigins() {
+		virtual bool feed(const Autoloc::DataModel::Pick *pick) = 0;
+		const Autoloc::DataModel::OriginVector &newOrigins() {
 			return _newOrigins;
 		}
 
-		virtual int  cleanup(const Time& minTime) = 0;
+		virtual int  cleanup(const Autoloc::DataModel::Time& minTime) = 0;
 		virtual void reset() = 0;
 		virtual void shutdown() = 0;
 
@@ -51,13 +50,13 @@ class Nucleator
 		virtual void setup() = 0;
 
 	protected:
-		StationMap _stations;
+		Autoloc::DataModel::StationMap _stations;
 //		double _config_maxDistanceXXL;
 
 		std::set<std::string> _configuredStations;
 
 	public:
-		OriginVector _newOrigins;
+		Autoloc::DataModel::OriginVector _newOrigins;
 };
 
 
@@ -105,7 +104,7 @@ class GridSearch : public Nucleator
 		};
 
 	public:
-		void setStation(const Station *station);
+		void setStation(const Autoloc::DataModel::Station *station);
 		const Config &config() const { return _config; }
 		void setConfig(const Config &config) { _config = config; }
 		bool setGridFile(const std::string &gridfile);
@@ -115,9 +114,9 @@ class GridSearch : public Nucleator
 	public:
 		// The Nucleator reads Pick's and Amplitude's. Only picks
 		// with associated amplitude can be fed into the Nucleator.
-		bool feed(const Pick *pick);
+		bool feed(const Autoloc::DataModel::Pick *pick);
 	
-		int cleanup(const Time& minTime);
+		int cleanup(const Autoloc::DataModel::Time& minTime);
 	
 		void reset()
 		{
@@ -132,14 +131,14 @@ class GridSearch : public Nucleator
 		virtual void setup();
 
 		// setup a single station - ideally "on the fly"
-		bool _setupStation(const Station *station);
+		bool _setupStation(const Autoloc::DataModel::Station *station);
 
 	private:
 		bool _readGrid(const std::string &gridfile);
 
 	private:
 		Grid    _grid;
-		Locator _relocator;
+		Autoloc::Locator _relocator;
 
 		bool _abort;
 
@@ -152,67 +151,75 @@ class GridSearch : public Nucleator
 // in StationWrapper, together with the corresponding
 // StationPtr.
 DEFINE_SMARTPOINTER(StationWrapper);
-class StationWrapper  : public Seiscomp::Core::BaseObject {
-public:
-	StationWrapper(const Station *station, const std::string &phase, float distance, float azimuth, float ttime, float hslow)
-		:  station(station), distance(distance), azimuth(azimuth), ttime(ttime), hslow(hslow), phase(phase)  {}
-	StationWrapper(const StationWrapper &other) {
-		station     = other.station;
-		phase       = other.phase;
-		distance    = other.distance;
-		azimuth     = other.azimuth;
-		ttime       = other.ttime;
-		hslow       = other.hslow;
+class StationWrapper  :
+	public Seiscomp::Core::BaseObject
+{
+	public:
+		StationWrapper(const Autoloc::DataModel::Station *station, const std::string &phase, float distance, float azimuth, float ttime, float hslow)
+			:  station(station), distance(distance), azimuth(azimuth), ttime(ttime), hslow(hslow), phase(phase)  {}
+		StationWrapper(const StationWrapper &other) {
+			station     = other.station;
+			phase       = other.phase;
+			distance    = other.distance;
+			azimuth     = other.azimuth;
+			ttime       = other.ttime;
+			hslow       = other.hslow;
 //			vslow       = other.vslow;
 //			backazimuth = other.backazimuth;
-	}
-	// Since there will be of the order
-	// 10^5 ... 10^6 StationWrapper's,
-	// we need to use floats
-	const Station *station;
-	float distance, azimuth; //, backazimuth;
-	float ttime, hslow; //, vslow;
-	// to further save space, make this a
-	// pointer to a static phase list entry:
-	std::string phase;
+		}
+		// Since there will be of the order
+		// 10^5 ... 10^6 StationWrapper's,
+		// we need to use floats
+		const Autoloc::DataModel::Station *station;
+		float distance, azimuth; //, backazimuth;
+		float ttime, hslow; //, vslow;
+		// to further save space, make this a
+		// pointer to a static phase list entry:
+		std::string phase;
 };
+
 
 // A Pick projected in back time, corresponding
 // to the grid point location
 //DEFINE_SMARTPOINTER(ProjectedPick);
 //class ProjectedPick : public Seiscomp::Core::BaseObject {
+
 class ProjectedPick {
-public:
-	ProjectedPick(const Time &t);
-	ProjectedPick(PickCPtr p, StationWrapperCPtr w);
-	ProjectedPick(const ProjectedPick&);
-	~ProjectedPick();
+	public:
+		ProjectedPick(const Autoloc::DataModel::Time &t);
+		ProjectedPick(Autoloc::DataModel::PickCPtr p, StationWrapperCPtr w);
+		ProjectedPick(const ProjectedPick&);
+		~ProjectedPick();
 
-	static int count();
+		static int count();
 
-	bool operator<(const ProjectedPick &p) const {
-		return (this->projectedTime() < p.projectedTime()); }
-	bool operator>(const ProjectedPick &p) const {
-		return (this->projectedTime() > p.projectedTime()); }
+		bool operator<(const ProjectedPick &p) const {
+			return (this->projectedTime() < p.projectedTime());
+		}
+
+		bool operator>(const ProjectedPick &p) const {
+			return (this->projectedTime() > p.projectedTime());
+		}
 
 
-	Time projectedTime() const { return _projectedTime; }
+		Autoloc::DataModel::Time projectedTime() const {
+			return _projectedTime;
+		}
 
-	Time _projectedTime;
-	PickCPtr p;
-	StationWrapperCPtr wrapper;
+		Autoloc::DataModel::Time _projectedTime;
+		Autoloc::DataModel::PickCPtr p;
+		StationWrapperCPtr wrapper;
 };
 
-class GridPoint : public Hypocenter
-{
-	public:
 
+class GridPoint : public Autoloc::DataModel::Hypocenter
+{
 	public:
 		// normal grid point
 		GridPoint(double latitude, double longitude, double depth);
 
 		// grid point based on an existing origin (to get the aftershocks)
-		GridPoint(const Origin &);
+		GridPoint(const Autoloc::DataModel::Origin &);
 		~GridPoint() {
 			_wrappers.clear();
 			_picks.clear();
@@ -220,15 +227,15 @@ class GridPoint : public Hypocenter
 
 	public:
 		// feed a new pick and perhaps get a new origin
-		const Origin* feed(const Pick*);
+		const Autoloc::DataModel::Origin* feed(const Autoloc::DataModel::Pick*);
 
 		// remove all picks older than tmin
-		int cleanup(const Time& minTime);
+		int cleanup(const Autoloc::DataModel::Time& minTime);
 
 	public:
 //		void setStations(const StationMap *stations);
 
-		bool setupStation(const Station *station);
+		bool setupStation(const Autoloc::DataModel::Station *station);
 
 	public: // private:
 		// config
@@ -242,12 +249,12 @@ class GridPoint : public Hypocenter
 
 	private:
 		std::map<std::string, StationWrapperCPtr> _wrappers;
-		std::multiset<ProjectedPick>          _picks;
-		OriginPtr _origin;
+		std::multiset<ProjectedPick> _picks;
+		Autoloc::DataModel::OriginPtr _origin;
 };
 
-double originScore(const Origin *origin, double maxRMS=3.5, double radius=0.);
+//double originScore(const Autoloc::DataModel::Origin *origin, double maxRMS=3.5, double radius=0.);
 
-}
+} // namespace Seiscomp
 
 #endif

@@ -26,10 +26,10 @@
 #include <algorithm>
 
 #include "app.h"
-#include "datamodel.h"
-#include "sc3adapters.h"
-#include "util.h"
-
+#include "lib/datamodel.h"
+#include "lib/sc3adapters.h"
+#include "lib/util.h"
+#include "lib/stationlocationfile.h"
 
 using namespace std;
 using namespace Seiscomp::Client;
@@ -37,8 +37,6 @@ using namespace Seiscomp::Math;
 
 
 namespace Seiscomp {
-
-namespace Applications {
 
 namespace Autoloc {
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -403,10 +401,10 @@ bool App::initConfiguration() {
 		_config.pickLogFile = "";
 	}
 
-	try { _amplTypeSNR = configGetString("autoloc.amplTypeSNR"); }
+	try { _config.amplTypeSNR = configGetString("autoloc.amplTypeSNR"); }
 	catch (...) {}
 
-	try { _amplTypeAbs = configGetString("autoloc.amplTypeAbs"); }
+	try { _config.amplTypeAbs = configGetString("autoloc.amplTypeAbs"); }
 	catch (...) {}
 
 	try { _stationLocationFile = configGetString("autoloc.stationLocations"); }
@@ -438,13 +436,13 @@ bool App::initConfiguration() {
 	try { ntp = configGetString("autoloc.networkType"); }
 	catch ( ... ) {}
 	if      ( ntp == "global" ) {
-		_config.networkType = ::Autoloc::GlobalNetwork;
+		_config.networkType = Autoloc::GlobalNetwork;
 	}
 	else if ( ntp == "regional" ) {
-		_config.networkType = ::Autoloc::RegionalNetwork;
+		_config.networkType = Autoloc::RegionalNetwork;
 	}
 	else if ( ntp == "local" ) {
-		_config.networkType = ::Autoloc::LocalNetwork;
+		_config.networkType = Autoloc::LocalNetwork;
 	}
 	else {
 		SEISCOMP_ERROR("Illegal value %s for autoloc.networkType", ntp.c_str());
@@ -501,6 +499,8 @@ bool App::init() {
 			enableTimer(_wakeUpTimout);
 		}
 	}
+
+	_config.agencyID = agencyID();
 	
 	return Autoloc3::init();
 }
@@ -521,7 +521,7 @@ bool App::initInventory() {
 	}
 	else {
 		SEISCOMP_DEBUG_S("Initializing station inventory from file '" + _stationLocationFile + "'");
-		inventory = ::Autoloc::Utils::inventoryFromStationLocationFile(_stationLocationFile);
+		inventory = Seiscomp::Autoloc::Util::inventoryFromStationLocationFile(_stationLocationFile);
 	}
 
 	return true;
@@ -532,7 +532,8 @@ bool App::initInventory() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Time &time) {
+bool App::initOneStation(const Seiscomp::DataModel::WaveformStreamID &wfid,
+			 const Seiscomp::Core::Time &time) {
 	bool found = false;
 	static std::set<std::string> configuredStreams;
 	std::string key = wfid.networkCode() + "." + wfid.stationCode();
@@ -541,7 +542,7 @@ bool App::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Ti
 		return false;
 
 	for ( size_t n = 0; n < inventory->networkCount() && !found; ++n ) {
-		DataModel::Network *network = inventory->network(n);
+		Seiscomp::DataModel::Network *network = inventory->network(n);
 
 		if ( network->code() != wfid.networkCode() )
 			continue;
@@ -559,7 +560,7 @@ bool App::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Ti
 		catch ( ... ) { }
 
 		for ( size_t s = 0; s < network->stationCount(); ++s ) {
-			DataModel::Station *station = network->station(s);
+			Seiscomp::DataModel::Station *station = network->station(s);
 
 			if (station->code() != wfid.stationCode())
 				continue;
@@ -589,8 +590,8 @@ bool App::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Ti
 			double elev = 0;
 			try { elev = station->elevation(); }
 			catch ( ... ) {}
-			::Autoloc::Station *sta =
-				new ::Autoloc::Station(
+			Autoloc::DataModel::Station *sta =
+				new Autoloc::DataModel::Station(
 					station->code(),
 					network->code(),
 					station->latitude(),
@@ -626,23 +627,24 @@ void App::readHistoricEvents() {
 
 	SEISCOMP_DEBUG("readHistoricEvents: reading %d seconds of events", _keepEventsTimeSpan);
 
-	typedef std::list<DataModel::OriginPtr> OriginList;
+	typedef std::list<Seiscomp::DataModel::OriginPtr> OriginList;
 	typedef std::set<std::string> PickIds;
 
 	// Fetch all historic events out of the database. The endtime is
 	// probably in the future but because of timing differences between
 	// different computers: safety first!
-	Core::Time now = Core::Time::GMT();
-	DataModel::DatabaseIterator it =
-		query()->getPreferredOrigins(now - Core::TimeSpan(_keepEventsTimeSpan),
-		                             now + Core::TimeSpan(_keepEventsTimeSpan), "");
+	Seiscomp::Core::Time now = Seiscomp::Core::Time::GMT();
+	Seiscomp::DataModel::DatabaseIterator it =
+		query()->getPreferredOrigins(now - Seiscomp::Core::TimeSpan(_keepEventsTimeSpan),
+		                             now + Seiscomp::Core::TimeSpan(_keepEventsTimeSpan), "");
 
 	OriginList preferredOrigins;
 	PickIds pickIds;
 
 	// Store all preferred origins
 	for ( ; it.get() != NULL; ++it ) {
-		DataModel::OriginPtr o = DataModel::Origin::Cast(it.get());
+		Seiscomp::DataModel::OriginPtr o =
+			Seiscomp::DataModel::Origin::Cast(it.get());
 		if ( o ) preferredOrigins.push_back(o);
 	}
 	it.close();
@@ -650,7 +652,7 @@ void App::readHistoricEvents() {
 	// Store all pickIDs of all origins and remove duplicates
 	for ( OriginList::iterator it = preferredOrigins.begin();
 	      it != preferredOrigins.end(); ++it ) {
-		DataModel::OriginPtr origin = *it;
+		Seiscomp::DataModel::OriginPtr origin = *it;
 		if ( origin->arrivalCount() == 0 ) {
 			query()->loadArrivals(it->get());
 			for ( size_t i = 0; i < origin->arrivalCount(); ++i )
@@ -667,9 +669,11 @@ void App::readHistoricEvents() {
 	for ( PickIds::iterator it = pickIds.begin();
 	      it != pickIds.end(); ++it ) {
 
-		DataModel::ObjectPtr obj = query()->getObject(DataModel::Pick::TypeInfo(), *it);
+		Seiscomp::DataModel::ObjectPtr obj =
+			query()->getObject(DataModel::Pick::TypeInfo(), *it);
 		if ( !obj ) continue;
-		DataModel::PickPtr pick = DataModel::Pick::Cast(obj);
+		Seiscomp::DataModel::PickPtr pick =
+			Seiscomp::DataModel::Pick::Cast(obj);
 		if ( !pick ) continue;
 
 		// Feed it!
@@ -684,8 +688,9 @@ void App::readHistoricEvents() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::runFromXMLFile(const char *fname)
 {
-	DataModel::EventParametersPtr ep = new DataModel::EventParameters();
-	IO::XMLArchive ar;
+	Seiscomp::DataModel::EventParametersPtr ep =
+		new Seiscomp::DataModel::EventParameters();
+	Seiscomp::IO::XMLArchive ar;
 
 	if ( ! ar.open(fname)) {
 		SEISCOMP_ERROR("unable to open XML playback file '%s'", fname);
@@ -698,33 +703,34 @@ bool App::runFromXMLFile(const char *fname)
 	SEISCOMP_INFO("  number of amplitudes: %ld", (long int)ep->amplitudeCount());
 	SEISCOMP_INFO("  number of origins:    %ld", (long int)ep->originCount());
 
-	typedef std::pair<Core::Time,DataModel::PublicObjectPtr> TimeObject;
+	typedef std::pair<Seiscomp::Core::Time, Seiscomp::DataModel::PublicObjectPtr> TimeObject;
 	typedef std::vector<TimeObject> TimeObjectVector;
 
 	// retrieval of relevant objects from event parameters
 	// and subsequent DSU sort
 	TimeObjectVector objs;
 	while (ep->pickCount() > 0) {
-		DataModel::PickPtr pick = ep->pick(0);
+		Seiscomp::DataModel::PickPtr pick = ep->pick(0);
 		ep->removePick(0);
-		DataModel::PublicObjectPtr o(pick);
-		Core::Time t = pick->creationInfo().creationTime();
+		Seiscomp::DataModel::PublicObjectPtr o(pick);
+		Seiscomp::Core::Time t = pick->creationInfo().creationTime();
 		objs.push_back(TimeObject(t,o));
 	}
 	while (ep->amplitudeCount() > 0) {
-		DataModel::AmplitudePtr amplitude = ep->amplitude(0);
+		Seiscomp::DataModel::AmplitudePtr amplitude = ep->amplitude(0);
 		ep->removeAmplitude(0);
-		DataModel::PublicObjectPtr o(amplitude);
-		Core::Time t = amplitude->creationInfo().creationTime();
+		Seiscomp::DataModel::PublicObjectPtr o(amplitude);
+		Seiscomp::Core::Time t = amplitude->creationInfo().creationTime();
 		objs.push_back(TimeObject(t,o));
 	}
 	while (ep->originCount() > 0) {
-		DataModel::OriginPtr origin = ep->origin(0);
+		Seiscomp::DataModel::OriginPtr origin = ep->origin(0);
 		ep->removeOrigin(0);
-		DataModel::PublicObjectPtr o(origin);
-		Core::Time t = origin->creationInfo().creationTime();
+		Seiscomp::DataModel::PublicObjectPtr o(origin);
+		Seiscomp::Core::Time t = origin->creationInfo().creationTime();
 		objs.push_back(TimeObject(t,o));
 	}
+
 	std::sort(objs.begin(),objs.end());
 	for (TimeObjectVector::iterator
 	     it = objs.begin(); it != objs.end(); ++it) {
@@ -749,7 +755,7 @@ bool App::runFromXMLFile(const char *fname)
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::runFromEPFile(const char *fname) {
-	IO::XMLArchive ar;
+	Seiscomp::IO::XMLArchive ar;
 
 	if ( !ar.open(fname)) {
 		SEISCOMP_ERROR("unable to open XML file: %s", fname);
@@ -769,7 +775,7 @@ bool App::runFromEPFile(const char *fname) {
 	SEISCOMP_INFO("  number of amplitudes: %ld", (long int)_ep->amplitudeCount());
 	SEISCOMP_INFO("  number of origins:    %ld", (long int)_ep->originCount());
 
-	typedef std::pair<Core::Time,DataModel::PublicObjectPtr> TimeObject;
+	typedef std::pair<Seiscomp::Core::Time, Seiscomp::DataModel::PublicObjectPtr> TimeObject;
 	typedef std::vector<TimeObject> TimeObjectVector;
 
 	// retrieval of relevant objects from event parameters
@@ -777,9 +783,10 @@ bool App::runFromEPFile(const char *fname) {
 	TimeObjectVector objs;
 
 	for ( size_t i = 0; i < _ep->pickCount(); ++i ) {
-		DataModel::PickPtr pick = _ep->pick(i);
+		Seiscomp::DataModel::PickPtr pick = _ep->pick(i);
 		try {
-			Core::Time t = pick->creationInfo().creationTime();
+			Seiscomp::Core::Time t =
+				pick->creationInfo().creationTime();
 			objs.push_back(TimeObject(t, pick));
 		}
 		catch ( ... ) {
@@ -789,9 +796,10 @@ bool App::runFromEPFile(const char *fname) {
 	}
 
 	for ( size_t i = 0; i < _ep->amplitudeCount(); ++i ) {
-		DataModel::AmplitudePtr amplitude = _ep->amplitude(i);
+		Seiscomp::DataModel::AmplitudePtr amplitude = _ep->amplitude(i);
 		try {
-			Core::Time t = amplitude->creationInfo().creationTime();
+			Seiscomp::Core::Time t =
+				amplitude->creationInfo().creationTime();
 			objs.push_back(TimeObject(t, amplitude));
 		}
 		catch ( ... ) {
@@ -801,9 +809,9 @@ bool App::runFromEPFile(const char *fname) {
 	}
 
 	for ( size_t i = 0; i < _ep->originCount(); ++i ) {
-		DataModel::OriginPtr origin = _ep->origin(i);
+		Seiscomp::DataModel::OriginPtr origin = _ep->origin(i);
 		try {
-			Core::Time t = origin->creationInfo().creationTime();
+			Seiscomp::Core::Time t = origin->creationInfo().creationTime();
 			objs.push_back(TimeObject(t, origin));
 		}
 		catch ( ... ) {
@@ -819,7 +827,7 @@ bool App::runFromEPFile(const char *fname) {
 	}
 
 	while ( !_objects.empty() && !isExitRequested() ) {
-		DataModel::PublicObjectPtr o = _objects.front();
+		Seiscomp::DataModel::PublicObjectPtr o = _objects.front();
 
 		_objects.pop();
 		addObject("", o.get());
@@ -937,15 +945,15 @@ void App::handleTimeout() {
 	while ( ! _objects.empty() && !isExitRequested() ) {
 
 		Core::Time t;
-		DataModel::PublicObjectPtr o = _objects.front();
+		Seiscomp::DataModel::PublicObjectPtr o = _objects.front();
 
 		// retrieve the creationTime...
-		if (DataModel::Pick::Cast(o.get()))
-			t = DataModel::Pick::Cast(o.get())->creationInfo().creationTime();
-		else if (DataModel::Amplitude::Cast(o.get()))
-			t = DataModel::Amplitude::Cast(o.get())->creationInfo().creationTime();
-		else if (DataModel::Origin::Cast(o.get()))
-			t = DataModel::Origin::Cast(o.get())->creationInfo().creationTime();
+		if (Seiscomp::DataModel::Pick::Cast(o.get()))
+			t = Seiscomp::DataModel::Pick::Cast(o.get())->creationInfo().creationTime();
+		else if (Seiscomp::DataModel::Amplitude::Cast(o.get()))
+			t = Seiscomp::DataModel::Amplitude::Cast(o.get())->creationInfo().creationTime();
+		else if (Seiscomp::DataModel::Origin::Cast(o.get()))
+			t = Seiscomp::DataModel::Origin::Cast(o.get())->creationInfo().creationTime();
 		else continue;
 
 		// at the first object:
@@ -954,9 +962,9 @@ void App::handleTimeout() {
 
 		if (_playbackSpeed > 0) {
 			double dt = t - objectsStartTime;
-			Core::TimeSpan dp = dt/_playbackSpeed;
+			Seiscomp::Core::TimeSpan dp = dt/_playbackSpeed;
 			t = playbackStartTime + dp;
-			if (Core::Time::GMT() < t)
+			if (Seiscomp::Core::Time::GMT() < t)
 				break; // until next handleTimeout() call
 		} // otherwise no speed limit :)
 
@@ -979,65 +987,71 @@ void App::handleAutoShutdown() {
 //	SEISCOMP_DEBUG("Autoshutdown: flushing pending results");
 // XXX FIXME: The following causes the shutdown to hang.
 //	_flush();
-	Client::Application::handleAutoShutdown();
+	Seiscomp::Client::Application::handleAutoShutdown();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 
-static bool manual(const DataModel::Origin *origin) {
+static bool manual(const Seiscomp::DataModel::Origin *origin) {
 	try {
 		switch (origin->evaluationMode()) {
-		case DataModel::MANUAL:
+		case Seiscomp::DataModel::MANUAL:
 			return true;
 		default:
 			break;
 		}
 	}
-	catch ( Core::ValueException & ) {}
+	catch ( Seiscomp::Core::ValueException & ) {}
 	return false;
 }
 
 /*
-static bool preliminary(const DataModel::Origin *origin) {
+static bool preliminary(const Seiscomp::DataModel::Origin *origin) {
 	try {
 		switch (origin->evaluationStatus()) {
-		case DataModel::PRELIMINARY:
+		case Seiscomp::DataModel::PRELIMINARY:
 			return true;
 		default:
 			break;
 		}
 	}
-	catch ( Core::ValueException & ) {}
+	catch ( Seiscomp::Core::ValueException & ) {}
 	return false;
 }
 */
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::addObject(const std::string& parentID, DataModel::Object* o) {
-	DataModel::PublicObject *po = DataModel::PublicObject::Cast(o);
+void App::addObject(
+	const std::string& parentID, Seiscomp::DataModel::Object* o) {
+
+	Seiscomp::DataModel::PublicObject *po =
+	       	Seiscomp::DataModel::PublicObject::Cast(o);
 	if ( po == NULL )
 		return;
 	// SEISCOMP_DEBUG("adding  %-12s %s", po->className(), po->publicID().c_str());
 
-	DataModel::Pick *pick = DataModel::Pick::Cast(o);
+	Seiscomp::DataModel::Pick *pick =
+		Seiscomp::DataModel::Pick::Cast(o);
 	if ( pick ) {
-		logObject(_inputPicks, Core::Time::GMT());
+		logObject(_inputPicks, Seiscomp::Core::Time::GMT());
 		feed(pick);
 		return;
 	}
 
-	DataModel::Amplitude *amplitude = DataModel::Amplitude::Cast(o);
+	Seiscomp::DataModel::Amplitude *amplitude =
+		Seiscomp::DataModel::Amplitude::Cast(o);
 	if ( amplitude ) {
-		logObject(_inputAmps, Core::Time::GMT());
+		logObject(_inputAmps, Seiscomp::Core::Time::GMT());
 		feed(amplitude);
 		return;
 	}
 
-	DataModel::Origin *origin = DataModel::Origin::Cast(o);
+	Seiscomp::DataModel::Origin *origin =
+		Seiscomp::DataModel::Origin::Cast(o);
 	if ( origin ) {
-		logObject(_inputOrgs, Core::Time::GMT());
+		logObject(_inputOrgs, Seiscomp::Core::Time::GMT());
 		feed(origin);
 		return;
 	}
@@ -1048,7 +1062,7 @@ void App::addObject(const std::string& parentID, DataModel::Object* o) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::removeObject(const std::string& parentID, DataModel::Object* o) {
+void App::removeObject(const std::string& parentID, Seiscomp::DataModel::Object* o) {
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1056,7 +1070,7 @@ void App::removeObject(const std::string& parentID, DataModel::Object* o) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::updateObject(const std::string& parentID, DataModel::Object* o) {
+void App::updateObject(const std::string& parentID, Seiscomp::DataModel::Object* o) {
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1064,13 +1078,13 @@ void App::updateObject(const std::string& parentID, DataModel::Object* o) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::feed(DataModel::Pick *sc3pick) {
+bool App::feed(Seiscomp::DataModel::Pick *scpick) {
 
-	const std::string &pickID = sc3pick->publicID();
+	const std::string &pickID = scpick->publicID();
 
 	if (_inputFileXML.size() || _inputEPFile.size()) {
 		try {
-			const Core::Time &creationTime = sc3pick->creationInfo().creationTime();
+			const Seiscomp::Core::Time &creationTime = scpick->creationInfo().creationTime();
 			sync(creationTime);
 		}
 		catch(...) {
@@ -1078,17 +1092,17 @@ bool App::feed(DataModel::Pick *sc3pick) {
 		}
 	}
 
-	if (objectAgencyID(sc3pick) != agencyID()) {
-		if ( isAgencyIDBlocked(objectAgencyID(sc3pick)) ) {
-			SEISCOMP_INFO_S("Blocked pick from agency '" + objectAgencyID(sc3pick) + "'");
+	if (objectAgencyID(scpick) != _config.agencyID) {
+		if ( isAgencyIDBlocked(objectAgencyID(scpick)) ) {
+			SEISCOMP_INFO_S("Blocked pick from agency '" + objectAgencyID(scpick) + "'");
 			return false;
 		}
 
-		SEISCOMP_INFO("pick '%s' from agency '%s'", pickID.c_str(), objectAgencyID(sc3pick).c_str());
+		SEISCOMP_INFO("pick '%s' from agency '%s'", pickID.c_str(), objectAgencyID(scpick).c_str());
 
 	}
 
-	const std::string &author = objectAuthor(sc3pick);
+	const std::string &author = objectAuthor(scpick);
 	const int priority = _authorPriority(author);
 	SEISCOMP_INFO("pick '%s' from author '%s' has priority %d", pickID.c_str(), author.c_str(), priority);
 	if (priority == 0) {
@@ -1097,24 +1111,20 @@ bool App::feed(DataModel::Pick *sc3pick) {
 	}
 
 	try {
-		if (sc3pick->evaluationMode() == DataModel::MANUAL) {
+		if (scpick->evaluationMode() == Seiscomp::DataModel::MANUAL) {
 		}
 	}
 	catch ( ... ) {
-		SEISCOMP_WARNING_S("got pick without status " + sc3pick->publicID());
-		sc3pick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
+		SEISCOMP_WARNING_S("pick has no evaluation mode: " + pickID);
+		scpick->setEvaluationMode(Seiscomp::DataModel::EvaluationMode(Seiscomp::DataModel::AUTOMATIC));
 	}
 
 	// configure station if needed
-	initOneStation(sc3pick->waveformID(), sc3pick->time().value());
-
-	::Autoloc::PickPtr pick = convertFromSC3(sc3pick);
-	if ( ! pick )
-		return false;
+	initOneStation(scpick->waveformID(), scpick->time().value());
 
 	timeStamp();
 
-	if ( ! ::Autoloc::Autoloc3::feed(pick.get()))
+	if ( ! Autoloc3::feed(scpick))
 		return false;
 
 	if ( _config.offline )
@@ -1127,13 +1137,13 @@ bool App::feed(DataModel::Pick *sc3pick) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::feed(DataModel::Amplitude *sc3ampl) {
+bool App::feed(Seiscomp::DataModel::Amplitude *scampl) {
 
-	const std::string &amplID = sc3ampl->publicID();
+	const std::string &amplID = scampl->publicID();
 
 	if (_inputFileXML.size() || _inputEPFile.size()) {
 		try {
-			const Core::Time &creationTime = sc3ampl->creationInfo().creationTime();
+			const Seiscomp::Core::Time &creationTime = scampl->creationInfo().creationTime();
 			sync(creationTime);
 		}
 		catch(...) {
@@ -1141,69 +1151,45 @@ bool App::feed(DataModel::Amplitude *sc3ampl) {
 		}
 	}
 
-	if (objectAgencyID(sc3ampl) != agencyID()) {
-		if ( isAgencyIDBlocked(objectAgencyID(sc3ampl)) ) {
-			SEISCOMP_INFO_S("Blocked amplitude from agency '" + objectAgencyID(sc3ampl) + "'");
+	if (objectAgencyID(scampl) != _config.agencyID) {
+		if ( isAgencyIDBlocked(objectAgencyID(scampl)) ) {
+			SEISCOMP_INFO_S("Blocked amplitude from agency '" + objectAgencyID(scampl) + "'");
 			return false;
 		}
-		SEISCOMP_INFO("ampl '%s' from agency '%s'", amplID.c_str(), objectAgencyID(sc3ampl).c_str());
+		SEISCOMP_INFO("ampl '%s' from agency '%s'", amplID.c_str(), objectAgencyID(scampl).c_str());
 	}
 
-	const std::string &atype  = sc3ampl->type();
-	const std::string &pickID = sc3ampl->pickID();
-
-	if ( atype != _amplTypeAbs && atype != _amplTypeSNR )
-		return false;
-
-	::Autoloc::Pick *pick = (::Autoloc::Pick *) Autoloc3::pick(pickID);
-	if ( ! pick ) {
-		SEISCOMP_WARNING_S("Pick " + pickID + " not found for " + atype + " amplitude");
-		return false;
-	}
-
-	try {
-		// note that for testing it is allowed to use the same amplitude as
-		// _amplTypeSNR and _amplTypeAbs  -> no 'else if' here
-		if ( atype == _amplTypeSNR )
-			pick->snr = sc3ampl->amplitude().value();
-		if ( atype == _amplTypeAbs ) {
-			pick->amp = sc3ampl->amplitude().value();
-			pick->per = (_amplTypeAbs == "mb") ? sc3ampl->period().value() : 1;
-		}
-	}
-	catch ( ... ) {
-		return false;
-	}
-
-	::Autoloc::Autoloc3::feed(pick);
+	Autoloc3::feed(scampl);
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::feed(DataModel::Origin *sc3origin) {
 
-	if ( ! sc3origin ) {
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool App::feed(Seiscomp::DataModel::Origin *scorigin) {
+
+	if ( ! scorigin ) {
 		SEISCOMP_ERROR("This should never happen: origin=NULL");
 		return false;
 	}
 
-	SEISCOMP_INFO_S("got origin " + sc3origin->publicID() +
-			"   agency: " + objectAgencyID(sc3origin));
+	SEISCOMP_INFO_S("got origin " + scorigin->publicID() +
+			"   agency: " + objectAgencyID(scorigin));
 
-	const bool ownOrigin = objectAgencyID(sc3origin) == agencyID();
+	const bool ownOrigin = objectAgencyID(scorigin) == _config.agencyID;
 
 	if ( ownOrigin ) {
-		if ( manual(sc3origin) ) {
+		if ( manual(scorigin) ) {
 			if ( ! _config.useManualOrigins ) {
-				SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(sc3origin) + " because autoloc.useManualOrigins = false");
+				SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(scorigin) + " because autoloc.useManualOrigins = false");
 				return false;
 			}
 		}
 		else {
 			// own origin which is not manual -> ignore
-			SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(sc3origin) + " because not a manual origin");
+			SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(scorigin) + " because not a manual origin");
 			return false;
 		}
 	}
@@ -1211,12 +1197,12 @@ bool App::feed(DataModel::Origin *sc3origin) {
 		// imported origin
 
 		if ( ! _config.useImportedOrigins ) {
-			SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(sc3origin) + " because autoloc.useImportedOrigins = false");
+			SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(scorigin) + " because autoloc.useImportedOrigins = false");
 			return false;
 		}
 
-		if ( isAgencyIDBlocked(objectAgencyID(sc3origin)) ) {
-			SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(sc3origin) + " due to blocked agency ID");
+		if ( isAgencyIDBlocked(objectAgencyID(scorigin)) ) {
+			SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(scorigin) + " due to blocked agency ID");
 			return false;
 		}
 	}
@@ -1225,25 +1211,7 @@ bool App::feed(DataModel::Origin *sc3origin) {
 	//  * imported from a trusted external source or
 	//  * an internal, manual origin
 
-	// TODO: Vorher konsistente Picks/Arrivals sicher stellen.
-
-	::Autoloc::Origin *origin = convertFromSC3(sc3origin);
-	if ( ! origin ) {
-		SEISCOMP_ERROR_S("Failed to convert origin " + objectAgencyID(sc3origin));
-		return false;
-	}
-
-	// mark and log imported origin
-	if ( objectAgencyID(sc3origin) == agencyID() ) {
-		SEISCOMP_INFO_S("Using origin from agency " + objectAgencyID(sc3origin));
-		origin->imported = false;
-	}
-	else {
-		SEISCOMP_INFO_S("Using origin from agency " + objectAgencyID(sc3origin));
-		origin->imported = true;
-	}
-
-	::Autoloc::Autoloc3::feed(origin);
+	Autoloc3::feed(scorigin);
 
 	if ( _config.offline )
 		_flush();
@@ -1255,25 +1223,26 @@ bool App::feed(DataModel::Origin *sc3origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::_report(const ::Autoloc::Origin *origin) {
+bool App::_report(const Autoloc::DataModel::Origin *origin) {
 
 	// Log object flow
 	logObject(_outputOrgs, now());
 
 	if ( _config.offline || _config.test ) {
-		std::string reportStr = ::Autoloc::printDetailed(origin);
+		std::string reportStr = Autoloc::printDetailed(origin);
 		SEISCOMP_INFO("Reporting origin %ld\n%s", origin->id, reportStr.c_str());
 		SEISCOMP_INFO ("Origin %ld not sent (test/offline mode)", origin->id);
 
 		if ( _ep ) {
-			DataModel::OriginPtr sc3origin = ::Autoloc::convertToSC3(origin, _config.reportAllPhases);
-			DataModel::CreationInfo ci;
-			ci.setAgencyID(agencyID());
+			Seiscomp::DataModel::OriginPtr scorigin =
+				Autoloc::exportToSC(origin, _config.reportAllPhases);
+			Seiscomp::DataModel::CreationInfo ci;
+			ci.setAgencyID(_config.agencyID);
 			ci.setAuthor(author());
 			ci.setCreationTime(now());
-			sc3origin->setCreationInfo(ci);
+			scorigin->setCreationInfo(ci);
 
-			_ep->add(sc3origin.get());
+			_ep->add(scorigin.get());
 
 			std::cerr << reportStr << std::endl;
 		}
@@ -1283,20 +1252,21 @@ bool App::_report(const ::Autoloc::Origin *origin) {
 		return true;
 	}
 
-	DataModel::OriginPtr sc3origin = ::Autoloc::convertToSC3(origin, _config.reportAllPhases);
-	DataModel::CreationInfo ci;
-	ci.setAgencyID(agencyID());
+	Seiscomp::DataModel::OriginPtr scorigin = Autoloc::exportToSC(origin, _config.reportAllPhases);
+	Seiscomp::DataModel::CreationInfo ci;
+	ci.setAgencyID(_config.agencyID);
 	ci.setAuthor(author());
 	ci.setCreationTime(now());
-	sc3origin->setCreationInfo(ci);
+	scorigin->setCreationInfo(ci);
 
-	DataModel::EventParameters ep;
-	bool wasEnabled = DataModel::Notifier::IsEnabled();
-	DataModel::Notifier::Enable();
-	ep.add(sc3origin.get());
-	DataModel::Notifier::SetEnabled(wasEnabled);
+	Seiscomp::DataModel::EventParameters ep;
+	bool wasEnabled = Seiscomp::DataModel::Notifier::IsEnabled();
+	Seiscomp::DataModel::Notifier::Enable();
+	ep.add(scorigin.get());
+	Seiscomp::DataModel::Notifier::SetEnabled(wasEnabled);
 
-	DataModel::NotifierMessagePtr nmsg = DataModel::Notifier::GetMessage(true);
+	Seiscomp::DataModel::NotifierMessagePtr nmsg =
+		Seiscomp::DataModel::Notifier::GetMessage(true);
 	connection()->send(nmsg.get());
 
 	if ( origin->preliminary ) {
@@ -1305,25 +1275,29 @@ bool App::_report(const ::Autoloc::Origin *origin) {
 		// create and send journal entry
 		string str = "";
 		try {
-			str = sc3origin->evaluationStatus().toString();
+			str = scorigin->evaluationStatus().toString();
 		}
-		catch ( Core::ValueException & ) {}
+		catch ( Seiscomp::Core::ValueException & ) {}
 
 		if ( !str.empty() ) {
-			DataModel::JournalEntryPtr journalEntry = new DataModel::JournalEntry;
+			Seiscomp::DataModel::JournalEntryPtr journalEntry =
+				new Seiscomp::DataModel::JournalEntry;
 			journalEntry->setAction("OrgEvalStatOK");
-			journalEntry->setObjectID(sc3origin->publicID());
+			journalEntry->setObjectID(scorigin->publicID());
 			journalEntry->setSender(SCCoreApp->author().c_str());
 			journalEntry->setParameters(str);
 			journalEntry->setCreated(Core::Time::GMT());
 
-			DataModel::NotifierMessagePtr jm = new DataModel::NotifierMessage;
-			jm->attach(new DataModel::Notifier(DataModel::Journaling::ClassName(),
-			           DataModel::OP_ADD, journalEntry.get()));
+			Seiscomp::DataModel::NotifierMessagePtr jm =
+				new Seiscomp::DataModel::NotifierMessage;
+			jm->attach(new Seiscomp::DataModel::Notifier(
+				Seiscomp::DataModel::Journaling::ClassName(),
+			        Seiscomp::DataModel::OP_ADD,
+				journalEntry.get()));
 
 			if ( connection()->send(jm.get()) ) {
 				SEISCOMP_DEBUG("Sent origin journal entry for origin %s to the message group: %s",
-				               sc3origin->publicID().c_str(), primaryMessagingGroup().c_str());
+				               scorigin->publicID().c_str(), primaryMessagingGroup().c_str());
 			}
 			else {
 				SEISCOMP_ERROR("Sending origin journal entry failed with error: %s",
@@ -1336,7 +1310,7 @@ bool App::_report(const ::Autoloc::Origin *origin) {
 		SEISCOMP_INFO("Sent origin %ld", origin->id);
 	}
 
-	SEISCOMP_INFO_S(::Autoloc::printOrigin(origin, false));
+	SEISCOMP_INFO_S(Autoloc::printOrigin(origin, false));
 
 	return true;
 }
@@ -1346,8 +1320,6 @@ bool App::_report(const ::Autoloc::Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-}
+}  // namespace Autoloc
 
-}
-
-}
+}  // namespace Seiscomp

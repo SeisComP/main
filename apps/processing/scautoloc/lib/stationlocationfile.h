@@ -11,25 +11,28 @@
  * https://www.gnu.org/licenses/agpl-3.0.html.                             *
  ***************************************************************************/
 
+#ifndef SEISCOMP_LIBAUTOLOC_UTIL_H_INCLUDED
+#define SEISCOMP_LIBAUTOLOC_UTIL_H_INCLUDED
+
+#include <seiscomp/datamodel/inventory.h>
+#include <string>
 
 
-#define SEISCOMP_COMPONENT Autoloc
-#include <seiscomp/logging/log.h>
+namespace Seiscomp {
 
-#include "app.h"
+namespace Autoloc {
 
+namespace Util {
 
-int main(int argc, char **argv) {
-	int retCode = EXIT_SUCCESS;
+// Read an inventory from a text file consisting of lines of
+// network code, station code, latitude, longitude, elevation
 
-	// Create an own block to make sure the application object
-	// is destroyed when printing the overall objectcount
-	{
-		Seiscomp::Autoloc::App app(argc, argv);
-		retCode = app.exec();
-	}
+Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::string &filename);
 
-	SEISCOMP_DEBUG("EXIT(%d), remaining objects: %d", retCode, Seiscomp::Core::BaseObject::ObjectCount());
+} // namespace Util
 
-	return retCode;
-}
+} // namespace Autoloc
+
+} // namespace Seiscomp
+
+#endif

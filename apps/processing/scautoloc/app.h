@@ -14,37 +14,40 @@
 
 
 
-#ifndef SEISCOMP_APPLICATIONS_LOCATOR__
-#define SEISCOMP_APPLICATIONS_LOCATOR__
+#ifndef SEISCOMP_APPLICATIONS_AUTOLOC_APP_H
+#define SEISCOMP_APPLICATIONS_AUTOLOC_APP_H
 
 #include <queue>
 #include <seiscomp/datamodel/pick.h>
 #include <seiscomp/datamodel/amplitude.h>
 #include <seiscomp/datamodel/origin.h>
 #include <seiscomp/datamodel/eventparameters.h>
-#include <seiscomp/datamodel/waveformstreamid.h>
+#include <seiscomp/datamodel/inventory.h>
 #include <seiscomp/client/application.h>
-#include "autoloc.h"
+
+#include "lib/autoloc.h"
 
 
 namespace Seiscomp {
 
-namespace Applications {
-
 namespace Autoloc {
 
 
-class App : public Client::Application,
-            protected ::Autoloc::Autoloc3 {
+class App :
+	public Client::Application,
+	// Derived from Autoloc3 mainly because we re-implement here
+	// the _report() method to allow both XML and messaging output.
+        protected Autoloc3
+{
 	public:
 		App(int argc, char **argv);
 		~App();
 
 
 	public:
-		bool feed(DataModel::Pick*);
-		bool feed(DataModel::Amplitude*);
-		bool feed(DataModel::Origin*);
+		bool feed(Seiscomp::DataModel::Pick*);
+		bool feed(Seiscomp::DataModel::Amplitude*);
+		bool feed(Seiscomp::DataModel::Origin*);
 
 
 	protected:
@@ -53,7 +56,9 @@ class App : public Client::Application,
 		bool initConfiguration();
 		bool initInventory();
 		// initialize one station at runtime
-		bool initOneStation(const DataModel::WaveformStreamID&, const Core::Time&);
+		bool initOneStation(
+			const Seiscomp::DataModel::WaveformStreamID&,
+			const Seiscomp::Core::Time&);
 
 		void readHistoricEvents();
 
@@ -61,60 +66,66 @@ class App : public Client::Application,
 		bool run();
 		void done();
 
-		void handleMessage(Core::Message* msg);
+		void handleMessage(Seiscomp::Core::Message* msg);
 		void handleTimeout();
 		void handleAutoShutdown();
 
-		void addObject(const std::string& parentID, DataModel::Object *o);
-		void removeObject(const std::string& parentID, DataModel::Object *o);
-		void updateObject(const std::string& parentID, DataModel::Object *o);
+		void addObject(
+			const std::string& parentID,
+			Seiscomp::DataModel::Object*);
+		void removeObject(
+			const std::string& parentID,
+			Seiscomp::DataModel::Object*);
+		void updateObject(
+			const std::string& parentID,
+			Seiscomp::DataModel::Object*);
 
-		virtual bool _report(const ::Autoloc::Origin *origin);
+		// re-implemented to support XML and messaging output
+		virtual bool _report(const Autoloc::DataModel::Origin *origin);
+
 //		bool runFromPickFile();
 		bool runFromXMLFile(const char *fname);
 		bool runFromEPFile(const char *fname);
 
-		void sync(const Core::Time &time);
+		void sync(const Seiscomp::Core::Time &time);
 		const Core::Time now() const;
 		void timeStamp() const;
 
 	protected:
-//		DataModel::Origin *convertToSC3  (const ::Autoloc::Origin* origin, bool allPhases=true);
-		::Autoloc::Origin *convertFromSC3(const DataModel::Origin* sc3origin);
-		::Autoloc::Pick   *convertFromSC3(const DataModel::Pick*   sc3pick);
+		Autoloc::DataModel::Origin *convertFromSC3(
+			const Seiscomp::DataModel::Origin*);
+		Autoloc::DataModel::Pick   *convertFromSC3(
+			const Seiscomp::DataModel::Pick*);
 
 	private:
 		std::string _inputFileXML; // for XML playback
 		std::string _inputEPFile; // for offline processing
 		std::string _stationLocationFile;
 		std::string _gridConfigFile;
-		std::string _amplTypeAbs, _amplTypeSNR;
 
-		std::queue<DataModel::PublicObjectPtr> _objects; // for XML playback
+		std::queue<Seiscomp::DataModel::PublicObjectPtr> _objects; // for XML playback
 		double _playbackSpeed;
 		Core::Time playbackStartTime;
 		Core::Time objectsStartTime;
 		Core::Time syncTime;
 		unsigned int objectCount;
 
-		DataModel::EventParametersPtr _ep;
-		DataModel::InventoryPtr inventory;
+		Seiscomp::DataModel::EventParametersPtr _ep;
+		Seiscomp::DataModel::InventoryPtr inventory;
 
-		::Autoloc::Autoloc3::Config _config;
+		Config _config;
 		int _keepEventsTimeSpan;
 		int _wakeUpTimout;
 
-		ObjectLog   *_inputPicks;
-		ObjectLog   *_inputAmps;
-		ObjectLog   *_inputOrgs;
-		ObjectLog   *_outputOrgs;
+		ObjectLog *_inputPicks;
+		ObjectLog *_inputAmps;
+		ObjectLog *_inputOrgs;
+		ObjectLog *_outputOrgs;
 };
 
 
-}
+}  // namespace Autoloc
 
-}
-
-}
+}  // namespace Seiscomp
 
 #endif

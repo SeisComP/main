@@ -33,112 +33,180 @@ using namespace std;
 #include "nucleator.h"
 
 
-namespace Autoloc {
+namespace Seiscomp {
 
-static std::string station_key (const Station *station)
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+static std::string station_key (const Autoloc::DataModel::Station *station)
 {
 	return station->net + "." + station->code;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-typedef std::set<PickCPtr> PickSet;
 
-void Nucleator::setStation(const Station *station)
+
+
+typedef std::set<Autoloc::DataModel::PickCPtr> PickSet;
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Nucleator::setStation(const Autoloc::DataModel::Station *station)
 {
 	std::string key = station->net + "." + station->code;
 	if (_stations.find(key) != _stations.end())
 		return; // nothing to insert
-	_stations.insert(StationMap::value_type(key, station));
+	_stations.insert(Autoloc::DataModel::StationMap::value_type(key, station));
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-void GridSearch::setStation(const Station *station)
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void GridSearch::setStation(const Autoloc::DataModel::Station *station)
 {
 	Nucleator::setStation(station);
 	_relocator.setStation(station);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 GridSearch::GridSearch()
 {
 //	_stations = 0;
 	_abort = false;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool GridSearch::init()
 {
 	if ( ! _relocator.init())
 		return false;
 	return true;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool GridSearch::setGridFile(const std::string &gridfile)
 {
 	return _readGrid(gridfile);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void GridSearch::setLocatorProfile(const std::string &profile) {
 	_relocator.setProfile(profile);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-int GridSearch::cleanup(const Time& minTime)
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+int GridSearch::cleanup(const Autoloc::DataModel::Time& minTime)
 {
 	int count = 0;
-
-	for (Grid::iterator it=_grid.begin(); it!=_grid.end(); ++it) {
-
-		GridPoint *gridpoint = it->get();
+	for (GridPointPtr gridpoint : _grid)
 		count += gridpoint->cleanup(minTime);
-	}
 
 	return count;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
 
 static int _projectedPickCount=0;
 
-ProjectedPick::ProjectedPick(const Time &t)
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ProjectedPick::ProjectedPick(const Autoloc::DataModel::Time &t)
 	: _projectedTime(t)
 {
 	_projectedPickCount++;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-ProjectedPick::ProjectedPick(PickCPtr p, StationWrapperCPtr w)
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ProjectedPick::ProjectedPick(Autoloc::DataModel::PickCPtr p, StationWrapperCPtr w)
 	: _projectedTime(p->time - w->ttime), p(p), wrapper(w)
 {
 	_projectedPickCount++;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 ProjectedPick::ProjectedPick(const ProjectedPick &other)
 	: _projectedTime(other._projectedTime), p(other.p), wrapper(other.wrapper)
 {
 	_projectedPickCount++;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 ProjectedPick::~ProjectedPick()
 {
 	_projectedPickCount--;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int ProjectedPick::count()
 {
 	return _projectedPickCount;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 GridPoint::GridPoint(double latitude, double longitude, double depth)
-	: Hypocenter(latitude,longitude,depth), _radius(4), _dt(50), maxStaDist(180), _nmin(6), _nminPrelim(4), _origin(new Origin(latitude,longitude,depth,0))
+	: Autoloc::DataModel::Hypocenter(latitude,longitude,depth), _radius(4), _dt(50), maxStaDist(180), _nmin(6), _nminPrelim(4), _origin(new Autoloc::DataModel::Origin(latitude,longitude,depth,0))
 {
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-GridPoint::GridPoint(const Origin &origin)
-	: Hypocenter(origin.lat,origin.lon,origin.dep), _radius(4), _dt(50), maxStaDist(180), _nmin(6), _nminPrelim(4), _origin(new Origin(origin))
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+GridPoint::GridPoint(const Autoloc::DataModel::Origin &origin)
+	: Autoloc::DataModel::Hypocenter(origin.lat,origin.lon,origin.dep), _radius(4), _dt(50), maxStaDist(180), _nmin(6), _nminPrelim(4), _origin(new Autoloc::DataModel::Origin(origin))
 {
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-const Origin*
-GridPoint::feed(const Pick* pick)
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+const Autoloc::DataModel::Origin*
+GridPoint::feed(const Autoloc::DataModel::Pick* pick)
 {
 	// find the station corresponding to the pick
 	const std::string key = station_key(pick->station());
@@ -232,7 +300,7 @@ GridPoint::feed(const Pick* pick)
 
 	std::vector<ProjectedPick> group;
 	int cntmax = 0;
-	Time otime;
+	Autoloc::DataModel::Time otime;
 	for (int i=0; i<npick; i++) {
 		if ( ! _flg[i])
 			continue;
@@ -251,14 +319,14 @@ GridPoint::feed(const Pick* pick)
 		ptime[i] = pps[i].projectedTime();
 	}
 
-//	Origin* origin = new Origin(lat, lon, dep, otime);
+//	Autoloc::DataModel::Origin* origin = new Autoloc::DataModel::Origin(lat, lon, dep, otime);
 	_origin->arrivals.clear();
 	// add Picks/Arrivals to that newly created Origin
 	set<string> stations;
 	for (unsigned int i=0; i<group.size(); i++) {
 		const ProjectedPick &pp = group[i];
 
-		PickCPtr pick = pp.p;
+		Autoloc::DataModel::PickCPtr pick = pp.p;
 		const std::string key = station_key(pick->station());
 		// avoid duplicate stations XXX ugly without amplitudes
 		if( stations.count(key))
@@ -267,11 +335,11 @@ GridPoint::feed(const Pick* pick)
 
 		StationWrapperCPtr sw( _wrappers[key]);
 
-		Arrival arr(pick.get());
+		Autoloc::DataModel::Arrival arr(pick.get());
 		arr.residual = pp.projectedTime() - otime;
 		arr.distance = sw->distance;
 		arr.azimuth  = sw->azimuth;
-		arr.excluded = Arrival::NotExcluded;
+		arr.excluded = Autoloc::DataModel::Arrival::NotExcluded;
 		arr.phase = (pick->time - otime < 960.) ? "P" : "PKP";
 //		arr.weight   = 1;
 		_origin->arrivals.push_back(arr);
@@ -282,8 +350,13 @@ GridPoint::feed(const Pick* pick)
 
 	return _origin.get();
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-int GridPoint::cleanup(const Time& minTime)
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+int GridPoint::cleanup(const Autoloc::DataModel::Time& minTime)
 {
 	int count = 0;
 
@@ -296,12 +369,17 @@ int GridPoint::cleanup(const Time& minTime)
 
 	return count;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-bool GridPoint::setupStation(const Station *station)
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool GridPoint::setupStation(const Autoloc::DataModel::Station *station)
 {
 	double delta=0, az=0, baz=0;
-	delazi(this, station, delta, az, baz);
+	Autoloc::delazi(this, station, delta, az, baz);
 
 	// Don't setup the grid point for a station if it is out of
 	// range for that station - this reduces the memory used by
@@ -310,7 +388,7 @@ bool GridPoint::setupStation(const Station *station)
 		return false;
 
 	TravelTime tt;
-	if ( ! travelTimeP(lat, lon, dep, station->lat, station->lon, 0, delta, tt))
+	if ( ! Autoloc::travelTimeP(lat, lon, dep, station->lat, station->lon, 0, delta, tt))
 		return false;
 
 	StationWrapperCPtr sw = new StationWrapper(station, tt.phase, delta, az, tt.time, tt.dtdd);
@@ -319,191 +397,56 @@ bool GridPoint::setupStation(const Station *station)
 
 	return true;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-static double avgfn2(double x)
-{
-	const double w = 0.2; // plateau width
-
-	if (x < -1 || x > 1)
-		return 0;
-	if (x > -w && x < w)
-		return 1;
-
-	x = (x + (x>0 ? -w : w))/(1-w);
-//	x = cos(x*M_PI*0.5);
-	x = 0.5*(cos(x*M_PI)+1);
-	return x*x;
-}
 
 
-static double depthFactor(double depth)
-{
-	// straight line, easy (but also risky!) to be made configurable
-	return 1+0.0005*(200-depth);
-}
-
-static PickSet originPickSet(const Origin *origin)
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+static PickSet originPickSet(const Autoloc::DataModel::Origin *origin)
 {
 	PickSet picks;
 
 	int arrivalCount = origin->arrivals.size();
 	for(int i=0; i<arrivalCount; i++) {
-		Arrival &arr = ((Origin*)origin)->arrivals[i];
+		Autoloc::DataModel::Arrival &arr = ((Autoloc::DataModel::Origin*)origin)->arrivals[i];
 		if (arr.excluded) continue;
 		picks.insert(arr.pick);
 	}
+
 	return picks;
 }
-
-double originScore(const Origin *origin, double maxRMS, double networkSizeKm)
-{
-//	networkSizeKm = 200.;
-	((Origin*)origin)->arrivals.sort();
-
-	double score = 0, amplScoreMax=0;
-	int arrivalCount = origin->arrivals.size();
-	//int n = origin->definingPhaseCount();
-	for(int i=0; i<arrivalCount; i++) {
-		double phaseScore = 1; // 1 for P / 0.3 for PKP
-		Arrival &arr = ((Origin*)origin)->arrivals[i];
-		PickCPtr pick = arr.pick;
-		if ( ! pick->station())
-			continue;
-
-		arr.score = 0;
-		arr.ascore = arr.dscore = arr.tscore = 0;
-
-		// higher score for picks with higher SNR
-		double snr = pick->snr > 3 ? pick->snr : 3;
-		if ( snr > 1.E07 )
-			continue;
-		if ( snr > 100 )
-			snr = 100;
-
-		// FIXME: This is HIGHLY experimental:
-		// For a manual pick without SNR, as produced by
-		// scolv, we assume a default value.
-		if (manual(pick.get()) && pick->snr <= 0)
-			snr = 10; // make this configureable
-
-		double normamp = pick->normamp;
-		if (manual(pick.get()) && normamp <= 0)
-			normamp = 1; // make this configureable
-
-		double snrScore = log10(snr);
-
-		double d = arr.distance;
-		// FIXME: This is HIGHLY experimental:
-		// For a small, dense network the distance score must decay quickly with distance
-		// whereas for teleseismic usages it must be a much broader function
-		double r = networkSizeKm <= 0 ? pick->station()->maxNucDist : (0.5*networkSizeKm/111.195);
-		double distScore = 1.5*exp(-d*d/(r*r));
-
-		// Any amplitude > 1 percent of the XXL threshold
-		// will have an increased amplitude score
-		double q = 0.8;
-		if (normamp <= 0) {
-			SEISCOMP_WARNING("THIS SHOULD NEVER HAPPEN: pick %s with  normamp %g  amp %g (not critical)",
-				       pick->id.c_str(), normamp, pick->amp);
-			continue;
-		}
-
-		double amplScore = 1+q*(1+0.5*log10(normamp));
-		// The score must *not* be reduced based on low amplitude
-		if (amplScore < 1) amplScore = 1;
-
-		// Amplitudes usually decrease with distance.
-		// This hack takes this fact into account for computing the score.
-		// A sudden big amplitude at large distance cannot increase the score too badly
-		if(amplScoreMax==0)
-			amplScoreMax = amplScore;
-		else {
-			if (i>2 && amplScore > amplScoreMax+0.4)
-				amplScore = amplScoreMax+0.4;
-			if (amplScore > amplScoreMax)
-				amplScoreMax = amplScore;
-		}
-
-		amplScore *= snrScore;
-//		weight += amplScore;
-
-		// "scaled" residual
-		// This accounts for the fact that at the beginning, origins
-		// are more susceptible to outliers, so we allow a somewhat
-		// higher residual. XXX Note that this may increase the score
-		// for origins with less arrivals, which might be harmful.
-
-		double timeScore = avgfn2(arr.residual/(2*maxRMS));
-
-		arr.dscore = distScore;
-		arr.ascore = amplScore;
-		arr.tscore = timeScore;
-
-		if (arr.excluded) {
-			if (arr.excluded != Arrival::UnusedPhase)
-				continue;
-			if (arr.phase.substr(0,3) != "PKP")
-				continue;
-			phaseScore = 0.3;
-		}
-
-//		arr.score = phaseScore*weight*timeScore;
-		arr.score = phaseScore*timeScore*distScore*amplScore;
-		score += arr.score;
-
-		// higher score for picks not excluded from location
-//		score += arr.excluded ? 0 : 0.3;
-	}
-
-	// the closer the better
-//	score -= 0.1*(origin->medianStationDistance() - 30);
-
-	// slight preference to shallower origins
-	score *= depthFactor(origin->dep);
-
-/*
-	double rms = origin->rms();
-
-	// This is a function that penalizes rms > q*maxRMS
-	// At rms == maxRMS this function is 1.
-	double  q = 0.33, rmspenalty = 0;
-	if (rms > maxRMS) {
-		double x = ((rms-maxRMS*q)/(maxRMS-maxRMS*q));
-		rmspenalty = x*x;
-	}
-*/
-
-	return score;
-}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 
 
-static Origin* bestOrigin(OriginVector &origins)
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+static Autoloc::DataModel::Origin* bestOrigin(Autoloc::DataModel::OriginVector &origins)
 {
 	double maxScore = 0;
-	Origin* best = 0;
+	Autoloc::DataModel::Origin* best = 0;
 
-	for (OriginVector::iterator
-	     it = origins.begin(); it != origins.end(); ++it) {
-
-		Origin* origin = (*it).get();
-		double score = originScore(origin);
+	for (Autoloc::DataModel::OriginPtr origin : origins) {
+		double score = Autoloc::originScore(origin.get());
 		if (score > maxScore) {
 			maxScore = score;
-			best = origin;
+			best = origin.get();
 		}
 	}
 
 	return best;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 
 
-bool GridSearch::feed(const Pick *pick)
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool GridSearch::feed(const Autoloc::DataModel::Pick *pick)
 {
+	using namespace Seiscomp::Autoloc::DataModel;
+
 	_newOrigins.clear();
 
 	if (_stations.size() == 0) {
@@ -548,15 +491,12 @@ bool GridSearch::feed(const Pick *pick)
 		track = true;
 
 	double maxScore = 0;
-	for (Grid::iterator it=_grid.begin(); it!=_grid.end(); ++it) {
-
-		GridPoint *gp = it->get();
-
+	for (GridPointPtr gp : _grid) {
 		if (stationSetupNeeded)
 			gp->setupStation(pick->station());
 
-		const Origin *origin = gp->feed(pick);
-		if ( ! origin)
+		const Origin *result = gp->feed(pick);
+		if ( ! result)
 			continue;
 
 		// look at the origin, check whether
@@ -564,26 +504,26 @@ bool GridSearch::feed(const Pick *pick)
 		//  * we have already seen a similar but better origin 
 
 		// test minimum number of picks
-		if (origin->arrivals.size() < 6) // TODO: make this limit configurable
+		if (result->arrivals.size() < 6) // TODO: make this limit configurable
 			continue;
 		// is the new pick part of the returned origin?
-		if (origin->findArrival(pick) == -1)
+		if (result->findArrival(pick) == -1)
 			// this is actually an unexpected condition!
 			continue;
 
 		if(track)
-		SEISCOMP_ERROR_S("GGG "+printOneliner(origin));
+			SEISCOMP_ERROR_S("GGG "+Autoloc::printOneliner(result));
 
-		const PickSet pickSet = originPickSet(origin);
+		const PickSet pickSet = originPickSet(result);
 		// test if we already have an origin with this particular pick set
 		if (pickSetOriginMap.find(pickSet) != pickSetOriginMap.end()) {
-			double score1 = originScore(pickSetOriginMap[pickSet].get());
-			double score2 = originScore(origin);
+			double score1 = Autoloc::originScore(pickSetOriginMap[pickSet].get());
+			double score2 = Autoloc::originScore(result);
 			if (score2<=score1)
 				continue;
 		}
 
-		double score = originScore(origin);
+		double score = Autoloc::originScore(result);
 		if (score < 0.6*maxScore)
 			continue;
 
@@ -603,7 +543,7 @@ bool GridSearch::feed(const Pick *pick)
 			continue;
 */
 
-		OriginPtr newOrigin = new Origin(*origin);
+		OriginPtr newOrigin = new Origin(*result);
 
 		pickSetOriginMap[pickSet] = newOrigin;
 	}
@@ -613,7 +553,7 @@ bool GridSearch::feed(const Pick *pick)
 	     it = pickSetOriginMap.begin(); it != pickSetOriginMap.end(); ++it) {
 
 		Origin *origin = (*it).second.get();
-		if (originScore(origin) < 0.6*maxScore)
+		if (Autoloc::originScore(origin) < 0.6*maxScore)
 			continue;
 
 // XXX XXX XXX XXX XXX
@@ -621,7 +561,6 @@ bool GridSearch::feed(const Pick *pick)
 // XXX XXX XXX XXX XXX
 
 		_relocator.useFixedDepth(true); // XXX vorher true
-//SEISCOMP_DEBUG("RELOCATE nucleator.cpp 724");
 		OriginPtr relo = _relocator.relocate(origin);
 		if ( ! relo)
 			continue;
@@ -639,10 +578,8 @@ bool GridSearch::feed(const Pick *pick)
 	}
 
 	if (track) {
-		for (OriginVector::iterator
-			it=tempOrigins.begin(); it!=tempOrigins.end(); ++it) {
-			const Origin *org = it->get();
-			SEISCOMP_ERROR_S("XXX "+printOneliner(org));
+		for (OriginPtr org : tempOrigins) {
+			SEISCOMP_ERROR_S("XXX "+Autoloc::printOneliner(org.get()));
 			for (ArrivalVector::const_iterator
 				it=org->arrivals.begin(); it!=org->arrivals.end(); ++it) {
 					SEISCOMP_ERROR_S("XXX   "+it->pick->id);
@@ -659,7 +596,6 @@ bool GridSearch::feed(const Pick *pick)
 	OriginPtr best = bestOrigin(tempOrigins);
 	if (best) {
 		_relocator.useFixedDepth(false);
-//SEISCOMP_DEBUG("RELOCATE nucleator.cpp 762");
 		OriginPtr relo = _relocator.relocate(best.get());
 		if (relo)
 			_newOrigins.push_back(relo);
@@ -667,8 +603,12 @@ bool GridSearch::feed(const Pick *pick)
 
 	return _newOrigins.size() > 0;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool GridSearch::_readGrid(const std::string &gridfile)
 {
 	ifstream ifile(gridfile.c_str());
@@ -707,14 +647,20 @@ bool GridSearch::_readGrid(const std::string &gridfile)
 	SEISCOMP_DEBUG("read %d grid lines",int(_grid.size()));
 	return true;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void GridSearch::setup()
 {
 //	_relocator.setStations(_stations);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-}
+
+}  // namespace Seiscomp
 
 
 

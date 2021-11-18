@@ -12,24 +12,42 @@
  ***************************************************************************/
 
 
-
-#define SEISCOMP_COMPONENT Autoloc
-#include <seiscomp/logging/log.h>
-
-#include "app.h"
+#ifndef SEISCOMP_AUTOLOC_STATIONCONFIG_H
+#define SEISCOMP_AUTOLOC_STATIONCONFIG_H
 
 
-int main(int argc, char **argv) {
-	int retCode = EXIT_SUCCESS;
+#include <string>
+#include <map>
 
-	// Create an own block to make sure the application object
-	// is destroyed when printing the overall objectcount
-	{
-		Seiscomp::Autoloc::App app(argc, argv);
-		retCode = app.exec();
-	}
+namespace Seiscomp {
 
-	SEISCOMP_DEBUG("EXIT(%d), remaining objects: %d", retCode, Seiscomp::Core::BaseObject::ObjectCount());
+namespace Autoloc {
 
-	return retCode;
-}
+
+class StationConfig {
+	public:
+		class Entry {
+			public:
+				float maxNucDist, maxLocDist;
+				int usage;
+
+			Entry() {
+				maxNucDist = maxLocDist = 0;
+				usage = 0;
+			}
+		};
+
+		StationConfig();
+		bool read(const std::string &filename);
+
+		const Entry& get(const std::string &net, const std::string &sta) const;
+
+	private:
+		std::map<std::string, Entry> _entry;
+};
+
+}  // namespace Autoloc
+
+}  // namespace Seiscomp
+
+#endif

@@ -22,6 +22,8 @@
 #include <seiscomp/seismology/locator/locsat.h>
 #include "datamodel.h"
 
+namespace Seiscomp {
+
 namespace Autoloc {
 
 DEFINE_SMARTPOINTER(MySensorLocationDelegate);
@@ -32,11 +34,13 @@ class MySensorLocationDelegate : public Seiscomp::Seismology::SensorLocationDele
 		~MySensorLocationDelegate();
 	public:
 		virtual Seiscomp::DataModel::SensorLocation* getSensorLocation(Seiscomp::DataModel::Pick *pick) const;
-		void setStation(const Station *station);
+		void setStation(const Autoloc::DataModel::Station *station);
 	private:
 		typedef std::map<std::string, Seiscomp::DataModel::SensorLocationPtr> SensorLocationList;
 		SensorLocationList _sensorLocations;
 };
+
+
 
 class Locator {
 	public:
@@ -44,43 +48,42 @@ class Locator {
 		~Locator();
 
 		bool init();
-		void setStation(const Station *station);
+		void setStation(const Autoloc::DataModel::Station *station);
 		void setMinimumDepth(double);
 
 		void setFixedDepth(double depth, bool use=true) {
-			_sc3locator->setFixedDepth(depth, use);
+			_sclocator->setFixedDepth(depth, use);
 		}
 
 		void useFixedDepth(bool use=true) {
-			_sc3locator->useFixedDepth(use);
+			_sclocator->useFixedDepth(use);
 		}
 
 		void setProfile(const std::string &name) {
-			_sc3locator->setProfile(name);
+			_sclocator->setProfile(name);
 		}
 
 	public:
-		Origin *relocate(const Origin *origin);
+		Autoloc::DataModel::Origin *relocate(const Autoloc::DataModel::Origin *origin);
 
 
 	private:
-		// this is the SC3-level relocate
-		Origin *_sc3relocate(const Origin *origin);
+		// this is the SeisComP-level relocate
+		Autoloc::DataModel::Origin *_screlocate(const Autoloc::DataModel::Origin *origin);
 
 	private:
-		Seiscomp::Seismology::LocatorInterfacePtr _sc3locator;
+		Seiscomp::Seismology::LocatorInterfacePtr _sclocator;
 
 		MySensorLocationDelegatePtr sensorLocationDelegate;
 
 		double _minDepth;
 
+		// for debugging count locator calls
 		size_t _locatorCallCounter;
 };
 
-
-
-bool determineAzimuthalGaps(const Origin*, double *primary, double *secondary);
-
 }  // namespace Autoloc
+
+}  // namespace Seiscomp
 
 #endif

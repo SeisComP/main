@@ -21,61 +21,52 @@
 #include <seiscomp/datamodel/inventory.h>
 #include <seiscomp/seismology/ttt.h>
 
-#include "datamodel.h"
+#include "lib/datamodel.h"
+
+namespace Seiscomp {
 
 namespace Autoloc {
 
-double distance(const Station* s1, const Station* s2);
-std::string printDetailed(const Origin*);
-std::string printOneliner(const Origin*);
-bool automatic(const Pick*);
-bool ignored(const Pick*);
-bool manual(const Pick*);
-char statusFlag(const Pick*);
-bool hasAmplitude(const Pick*);
+double distance(const Autoloc::DataModel::Station* s1, const Autoloc::DataModel::Station* s2);
+void delazi(double lat1, double lon1, double lat2, double lon2, double &delta, double &az1, double &az2);
+void delazi(const Autoloc::DataModel::Hypocenter*, const Autoloc::DataModel::Station*, double &delta, double &az1, double &az2);
+
+double originScore(const Autoloc::DataModel::Origin *origin, double maxRMS=3.5, double radius=0.);
+bool determineAzimuthalGaps(const Autoloc::DataModel::Origin*, double *primary, double *secondary);
+
+std::string printDetailed(const Autoloc::DataModel::Origin*);
+std::string printOneliner(const Autoloc::DataModel::Origin*);
+std::string printOrigin(const Autoloc::DataModel::Origin *origin, bool=false);
 
 
-double meandev(const Origin* origin);
+double meandev(const Autoloc::DataModel::Origin* origin);
 
 double avgfn(double x);
-
-std::string printOrigin(const Origin *origin, bool=false);
-int numberOfDefiningPhases(const Origin &origin);
 
 typedef Seiscomp::TravelTime TravelTime;
 bool travelTimeP (double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta, TravelTime&);
 
 // 1st arrival P incl. Pdiff up to 130 deg, no PKP
-bool travelTimeP1(double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta, TravelTime&);
+//bool travelTimeP1(double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta, TravelTime&);
 
 // 1st arrival PK* incl. PKP*, PKiKP
-bool travelTimePK(double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta, TravelTime&);
+//bool travelTimePK(double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta, TravelTime&);
 
 
 TravelTime travelTimePP(double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta);
 
-std::string time2str(const Time &t);
+std::string time2str(const Autoloc::DataModel::Time &t);
+Seiscomp::Core::Time sctime(const Autoloc::DataModel::Time &time);
 
-namespace Utils {
+Autoloc::DataModel::PickVector readPickFile();
+Autoloc::DataModel::Pick* readPickLine();
 
-StationMap *readStationLocations(const std::string &fname);
-Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::string &_stationLocationFile);
+// FIXME: mixed bag!
+Autoloc::DataModel::Pick::Status status(const Seiscomp::DataModel::Pick *pick);
 
-//bool readStationConfig(StationMap *stations, const std::string &fname);
-PickVector readPickFile();
-Pick*      readPickLine();
-Pick::Status status(const Seiscomp::DataModel::Pick *pick);
-
-}
-
-}
+} // namespace Autoloc
 
 
-
-
-
-
-namespace Seiscomp {
 namespace Math {
 namespace Statistics {
 
@@ -83,5 +74,5 @@ double rms(const std::vector<double> &v, double offset = 0);
 
 } // namespace Statistics
 } // namespace Math
-} // namespace Seiscomp
 
+} // namespace Seiscomp

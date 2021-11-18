@@ -17,19 +17,17 @@
 #define SEISCOMP_COMPONENT Autoloc
 #include <seiscomp/logging/log.h>
 
-#include <math.h>
 #include <seiscomp/seismology/ttt.h>
 
 #include "util.h"
-#include "sc3adapters.h"
-#include "associator.h"
+#include "lib/associator.h"
 
-using namespace std;
+namespace Seiscomp {
 
-namespace Autoloc {
+#define minimumAffinity 0.1
 
-#define AFFMIN 0.1
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Associator::Associator()
 {
 	_origins = 0;
@@ -40,48 +38,81 @@ Associator::Associator()
 	_phases.push_back( Phase("PcP",   25,  55) );
 	_phases.push_back( Phase("ScP",   25,  55) );
 	_phases.push_back( Phase("PP",    60, 160) );
-// FIXME: For these, there are no tables in LocSAT!
+
+	// For the following phases there are no tables in LocSAT!
 	_phases.push_back( Phase("SKP",  120, 150) );
 	_phases.push_back( Phase("PKKP",  80, 130) );
 	_phases.push_back( Phase("PKiKP", 30, 120) );
 	_phases.push_back( Phase("SKKP", 110, 152) );
-// TODO: make the phase set configurable
-}
 
+	// TODO
+	// - make the phase set configurable
+	// - wider view also involving LocSAT tables
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Associator::~Associator()
 {
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void
-Associator::setStations(const StationMap *stations)
+Associator::setStations(const Autoloc::DataModel::StationMap *stations)
 {
 	_stations = stations;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void
-Associator::setOrigins(const OriginVector *origins)
+Associator::setOrigins(const Autoloc::DataModel::OriginVector *origins)
 {
 	_origins = origins;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void
 Associator::reset()
 {
 	_associations.clear();
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void
 Associator::shutdown()
 {
 	reset();
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool
-Associator::feed(const Pick* pick)
+Associator::feed(const Autoloc::DataModel::Pick* pick)
 {
+	using namespace Autoloc::DataModel;
+
 	_associations.clear();
 
 	if ( ! _origins)
@@ -91,14 +122,11 @@ Associator::feed(const Pick* pick)
 
 	int count = 0;
 
-	for(OriginVector::const_iterator
-	    it=_origins->begin(); it != _origins->end(); ++it) {
-
-		const Origin  *origin = (*it).get();
+	for (const OriginPtr &origin : *_origins) {
 		const Station *station = pick->station();
 
 		double delta, az, baz;
-		delazi(origin, station, delta, az, baz);
+		Autoloc::delazi(origin.get(), station, delta, az, baz);
 
 		Seiscomp::TravelTimeList
 			*ttlist = ttt.compute(origin->lat, origin->lon, origin->dep,
@@ -108,13 +136,10 @@ Associator::feed(const Pick* pick)
 		// score. => Anything can be associated with it.
 		double origin_score = origin->imported ? 1000 : origin->score;
 
-		for(vector<Phase>::iterator
-		    it = _phases.begin(); it != _phases.end(); ++it) {
-
-			const Phase &phase = *it;
+		for (const Phase &phase: _phases) {
 
 			// TODO: make this configurable
-//			if (origin->definingPhaseCount() < (phase.code=="P" ? 8 : 30))
+			// if (origin->definingPhaseCount() < (phase.code=="P" ? 8 : 30))
 			if (origin_score < (phase.code=="P" ? 20 : 50))
 				continue;
 
@@ -124,10 +149,7 @@ Associator::feed(const Pick* pick)
 			double ttime = -1, x = 1;
 
 			if (phase.code == "P") {
-				for (Seiscomp::TravelTimeList::iterator
-				     it = ttlist->begin(); it != ttlist->end(); ++it) {
-
-					const Seiscomp::TravelTime &tt = *it;
+				for (const Seiscomp::TravelTime &tt : *ttlist) {
 					if (delta < 114) {
 						// for  distances < 114, allways take 1st arrival
 						ttime = tt.time;
@@ -145,10 +167,7 @@ Associator::feed(const Pick* pick)
 				x = 1 + 0.6*exp(-0.003*delta*delta) + 0.5*exp(-0.03*(15-delta)*(15-delta));
 			}
 			else {
-				for (Seiscomp::TravelTimeList::iterator
-				     it = ttlist->begin(); it != ttlist->end(); ++it) {
-
-					const Seiscomp::TravelTime &tt = *it;
+				for (const Seiscomp::TravelTime &tt : *ttlist) {
 					if (tt.phase.substr(0, phase.code.size()) == phase.code) {
 						ttime = tt.time;
 						break;
@@ -163,23 +182,29 @@ Associator::feed(const Pick* pick)
 			double affinity = 0;
 			double residual = double(pick->time - (origin->time + ttime));
 			if ( origin->imported ) {
-				// This is a clear-cut decision: If the pick is within the interval, associate it with affinity 1, otherwise skip
-				if (residual < -20 || residual > 30) // TODO: Make this configurable
+				// This is a clear-cut decision:
+				// If the pick is within the interval
+				//   -> associate it with affinity one
+				// otherwise
+				//   -> skip this pick
+				//
+				// TODO: This range may be too large. Make it configurable.
+				if (residual < -20 || residual > 30)
 					continue;
 				affinity = 1;
 			}
 			else {
 				residual = residual/x;
-				residual /= 10;       // normalize residual
+				residual /= 10; // normalize
 
-				affinity = avgfn(residual); // test if exp(-residual**2) if better
-				if (affinity < AFFMIN)
+				affinity = Autoloc::avgfn(residual); // test if exp(-residual**2) if better
+				if (affinity < minimumAffinity)
 					continue;
 			}
-			string phcode = phase.code;
+			std::string phcode = phase.code;
 			if (phcode=="P" && ttime > 960)
 				phcode = "PKP";
-			Association asso(origin, pick, phcode, residual, affinity);
+			Association asso(origin.get(), pick, phcode, residual, affinity);
 			asso.distance = delta;
 			asso.azimuth = az;
 			_associations.push_back(asso);
@@ -193,23 +218,38 @@ Associator::feed(const Pick* pick)
 
 	return (_associations.size() > 0);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 const AssociationVector &
 Associator::associations() const
 {
 	return _associations;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Association*
-Associator::associate(Origin *origin, const Pick *pick, const string &phase)
+Associator::associate(Autoloc::DataModel::Origin *origin, const Autoloc::DataModel::Pick *pick, const std::string &phase)
 {
 	return NULL;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-Associator::Phase::Phase(const string &code, double dmin, double dmax)
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Associator::Phase::Phase(const std::string &code, double dmin, double dmax)
 	: code(code), dmin(dmin), dmax(dmax) {}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-}  // namespace Autoloc
+}  // namespace Seiscomp

@@ -25,62 +25,86 @@
 #include <seiscomp/math/mean.h>
 #include "datamodel.h"
 #include "util.h"
-#include "sc3adapters.h"
+
+namespace Seiscomp {
 
 namespace Autoloc {
 
+namespace DataModel {
+
+
+// counter used for debugging
 static int _pickCount=0;
 
-Pick::Pick()
-{
-	amp = snr = per = normamp = 0;
-	xxl = false;
-	status = Automatic;
-	_pickCount++;
-	id = "";
-//	orid1 = orid2 = 0;
-	_station = NULL;
-	_origin = NULL;
-}
 
-Pick::Pick(const Pick &other)
-	: id(other.id), net(other.net), sta(other.sta), loc(other.loc), cha(other.cha), time(other.time), amp(other.amp), per(other.per), snr(other.snr), normamp(other.normamp), status(other.status), xxl(other.xxl)
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Pick::Pick(const Seiscomp::DataModel::Pick *scpick)
 {
-	setStation(other.station());
-}
+	id  = scpick->publicID();
+	net = scpick->waveformID().networkCode();
+	sta = scpick->waveformID().stationCode();
+	loc = scpick->waveformID().locationCode();
+	cha = scpick->waveformID().channelCode();
+	time = Autoloc::DataModel::Time(scpick->time().value());
+	status = Autoloc::status(scpick);
 
-Pick::Pick(const std::string &id, const std::string &net, const std::string &sta, const Time &time)
-	: id(id), net(net), sta(sta), time(time)
-{
+	if (loc=="")
+		loc = "__";
+	this->scpick = scpick;
+
 	amp = snr = per = 0;
 	xxl = false;
 	_station = NULL;
 	_origin = NULL;
-	status = Automatic;
+
 	_pickCount++;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Pick::~Pick()
 {
 	_pickCount--;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int Pick::count()
 {
 	return _pickCount;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Pick::setStation(const Station *sta) const
 {
 	_station = (Station*)sta;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Pick::setOrigin(const Origin *org) const
 {
 	_origin = (Origin*)org;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Arrival::Arrival(const Pick *pick, const std::string &phase, double residual)
 	: origin(NULL), pick(pick), phase(phase), residual(residual)
 {
@@ -88,21 +112,36 @@ Arrival::Arrival(const Pick *pick, const std::string &phase, double residual)
 	score = 0;
 	ascore = dscore = tscore = 0;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Arrival::Arrival(const Arrival &other)
 {
 	*this = other;
 	this->pick = other.pick;
 	this->origin = other.origin;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Arrival::Arrival(const Origin *origin, const Pick *pick, const std::string &phase, double residual, double affinity)
 	: origin(origin), pick(pick), phase(phase), residual(residual), affinity(affinity)
 {
 	score = 0;
 	ascore = dscore = tscore = 0;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool operator<(const Arrival& a, const Arrival& b) {
 
 	if (a.distance < b.distance)
@@ -117,17 +156,25 @@ bool operator<(const Arrival& a, const Arrival& b) {
 
 	return false;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool ArrivalVector::sort()
 {
 	std::sort(begin(),end());
 	return false;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 // static unsigned long _i = 1;
 
 static int _originCount = 0;
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Origin::Origin(double lat, double lon, double dep, const Time &time)
 	: Hypocenter(lat,lon,dep), time(time), timeerr(0)
 {
@@ -141,7 +188,12 @@ Origin::Origin(double lat, double lon, double dep, const Time &time)
 	timestamp = 0.;
 	score = 0;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Origin::Origin(const Origin &other)
 	: Hypocenter(other.lat,other.lon,other.dep), time(other.time)
 {
@@ -149,18 +201,33 @@ Origin::Origin(const Origin &other)
 	id = other.id;
 	_originCount++;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Origin::~Origin()
 {
 	arrivals.clear();
 	_originCount--;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int Origin::count()
 {
 	return _originCount;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int Origin::findArrival(const Pick *pick) const
 {
 	int arrivalCount = arrivals.size();
@@ -171,7 +238,12 @@ int Origin::findArrival(const Pick *pick) const
 
 	return -1;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Origin::updateFrom(const Origin *other)
 {
 	unsigned long _id = id;
@@ -179,8 +251,12 @@ void Origin::updateFrom(const Origin *other)
 	arrivals = other->arrivals;
 	id = _id;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Origin::add(const Arrival &arr)
 {
 	if ( findArrival(arr.pick.get()) != -1 ) {
@@ -192,7 +268,12 @@ bool Origin::add(const Arrival &arr)
 	arrivals.push_back(arr);
 	return true;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int Origin::phaseCount(double dmin, double dmax) const
 {
 	int count = 0;
@@ -217,7 +298,12 @@ int Origin::phaseCount(double dmin, double dmax) const
 
 	return count;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int Origin::definingPhaseCount(double dmin, double dmax) const
 {
 	int count = 0;
@@ -242,8 +328,12 @@ int Origin::definingPhaseCount(double dmin, double dmax) const
 
 	return count;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int Origin::associatedStationCount() const {
 	std::set<std::string> stations;
 
@@ -258,8 +348,12 @@ int Origin::associatedStationCount() const {
 
 	return stations.size();
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int Origin::definingStationCount() const {
 	std::set<std::string> stations;
 
@@ -276,8 +370,12 @@ int Origin::definingStationCount() const {
 
 	return stations.size();
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 double Origin::rms() const
 {
 	// This essentially implies that for an imported origin RMS has
@@ -293,7 +391,12 @@ double Origin::rms() const
 
 	return Seiscomp::Math::Statistics::rms(res);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 double Origin::medianStationDistance() const
 {
 	int arrivalCount = arrivals.size();
@@ -309,7 +412,12 @@ double Origin::medianStationDistance() const
 
 	return Seiscomp::Math::Statistics::median(distance);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Origin::geoProperties(double &min, double &max, double &gap) const
 {
 	min = 180.;
@@ -349,12 +457,22 @@ void Origin::geoProperties(double &min, double &max, double &gap) const
 			gap = azGap;
 	}
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int OriginVector::mergeEquivalentOrigins(const Origin *start)
 {
 	return 0;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool OriginVector::find(const Origin *origin) const
 {
 	for (const_iterator it=begin(); it!=end(); ++it) {
@@ -363,7 +481,12 @@ bool OriginVector::find(const Origin *origin) const
 	}
 	return false;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Origin* OriginVector::find(const OriginID &id)
 {
 	for (iterator it=begin(); it!=end(); ++it) {
@@ -372,8 +495,12 @@ Origin* OriginVector::find(const OriginID &id)
 	}
 	return NULL;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 static int countCommonPicks(const Origin *origin1, const Origin *origin2)
 {
 	int commonPickCount = 0;
@@ -388,8 +515,12 @@ static int countCommonPicks(const Origin *origin1, const Origin *origin2)
 
 	return commonPickCount;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 const Origin *OriginVector::bestEquivalentOrigin(const Origin *origin) const
 {
 	const Origin *best = 0;
@@ -415,5 +546,61 @@ const Origin *OriginVector::bestEquivalentOrigin(const Origin *origin) const
 
 	return best;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool automatic(const Pick *pick)
+{
+	return pick->status == Pick::Automatic;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool ignored(const Pick *pick)
+{
+	return pick->status == Pick::IgnoredAutomatic;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool manual(const Pick *pick)
+{
+        return pick->status == Pick::Manual;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+char statusFlag(const Pick *pick)
+{
+        return automatic(pick) ? 'A' : 'M';
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool hasAmplitude(const Pick *pick)
+{
+        if (pick->amp <= 0)
+                return false;
+        return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+}  // namespace DataModel
 }  // namespace Autoloc
+}  // namespace Seiscomp
