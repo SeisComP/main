@@ -14,6 +14,7 @@
 
 
 #define SEISCOMP_COMPONENT Autoloc
+#include <seiscomp/autoloc/nucleator.h>
 #include <seiscomp/logging/log.h>
 #include <seiscomp/core/strings.h>
 
@@ -25,12 +26,10 @@
 #include <set>
 #include <list>
 #include <math.h>
-using namespace std;
 
-#include "util.h"
-#include "sc3adapters.h"
-#include "locator.h"
-#include "nucleator.h"
+#include <seiscomp/autoloc/util.h>
+#include <seiscomp/autoloc/sc3adapters.h>
+#include <seiscomp/autoloc/locator.h>
 
 
 namespace Seiscomp {
@@ -322,7 +321,7 @@ GridPoint::feed(const Autoloc::DataModel::Pick* pick)
 //	Autoloc::DataModel::Origin* origin = new Autoloc::DataModel::Origin(lat, lon, dep, otime);
 	_origin->arrivals.clear();
 	// add Picks/Arrivals to that newly created Origin
-	set<string> stations;
+	std::set<std::string> stations;
 	for (unsigned int i=0; i<group.size(); i++) {
 		const ProjectedPick &pp = group[i];
 
@@ -611,7 +610,7 @@ bool GridSearch::feed(const Autoloc::DataModel::Pick *pick)
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool GridSearch::_readGrid(const std::string &gridfile)
 {
-	ifstream ifile(gridfile.c_str());
+	std::ifstream ifile(gridfile.c_str());
 
 	if ( ifile.good() )
 		SEISCOMP_DEBUG_S("Reading gridfile " + gridfile);

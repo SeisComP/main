@@ -26,10 +26,10 @@
 #include <algorithm>
 
 #include "app.h"
-#include "lib/datamodel.h"
-#include "lib/sc3adapters.h"
-#include "lib/util.h"
-#include "lib/stationlocationfile.h"
+#include <seiscomp/autoloc/datamodel.h>
+#include <seiscomp/autoloc/sc3adapters.h>
+#include <seiscomp/autoloc/util.h>
+#include <seiscomp/autoloc/stationlocationfile.h>
 
 using namespace std;
 using namespace Seiscomp::Client;

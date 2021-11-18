@@ -12,15 +12,14 @@
  ***************************************************************************/
 
 
-
-
 #define SEISCOMP_COMPONENT Autoloc
-#include <seiscomp/logging/log.h>
 
+#include <seiscomp/autoloc/associator.h>
+#include <seiscomp/autoloc/util.h>
+
+#include <seiscomp/logging/log.h>
 #include <seiscomp/seismology/ttt.h>
 
-#include "util.h"
-#include "lib/associator.h"
 
 namespace Seiscomp {
 

@@ -12,14 +12,11 @@
  ***************************************************************************/
 
 
-
-
 #define SEISCOMP_COMPONENT Autoloc
+
+#include <seiscomp/autoloc/autoloc.h>
 #include <seiscomp/logging/log.h>
 
-#include "autoloc.h"
-
-using namespace std;
 
 namespace Seiscomp {
 

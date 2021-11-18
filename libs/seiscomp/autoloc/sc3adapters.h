@@ -11,25 +11,24 @@
  * https://www.gnu.org/licenses/agpl-3.0.html.                             *
  ***************************************************************************/
 
-#ifndef SEISCOMP_LIBAUTOLOC_UTIL_H_INCLUDED
-#define SEISCOMP_LIBAUTOLOC_UTIL_H_INCLUDED
 
-#include <seiscomp/datamodel/inventory.h>
-#include <string>
+#ifndef SEISCOMP_AUTOLOC_SCADAPTERS_H_INCLUDED
+#define SEISCOMP_AUTOLOC_SCADAPTERS_H_INCLUDED
+
+// Seiscomp::DataModel
+#include <seiscomp/datamodel/origin.h>
+#include <seiscomp/datamodel/pick.h>
+
+// Seiscomp::Autoloc::DataModel
+#include <seiscomp/autoloc/datamodel.h>
 
 
 namespace Seiscomp {
 
 namespace Autoloc {
 
-namespace Util {
-
-// Read an inventory from a text file consisting of lines of
-// network code, station code, latitude, longitude, elevation
-
-Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::string &filename);
-
-} // namespace Util
+// export an Autoloc::DataModel::Origin to a Seiscomp::DataModel::Origin
+Seiscomp::DataModel::Origin *exportToSC(const Autoloc::DataModel::Origin*, bool allPhases=true);
 
 } // namespace Autoloc
 

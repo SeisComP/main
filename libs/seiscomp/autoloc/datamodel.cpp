@@ -12,9 +12,10 @@
  ***************************************************************************/
 
 
-
-
 #define SEISCOMP_COMPONENT Autoloc
+#include <seiscomp/autoloc/datamodel.h>
+
+#include <seiscomp/autoloc/util.h>
 #include <seiscomp/logging/log.h>
 
 #include <assert.h>
@@ -23,8 +24,7 @@
 #include <algorithm>
 #include <set>
 #include <seiscomp/math/mean.h>
-#include "datamodel.h"
-#include "util.h"
+
 
 namespace Seiscomp {
 

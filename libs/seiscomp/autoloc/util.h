@@ -12,7 +12,8 @@
  ***************************************************************************/
 
 
-
+#ifndef SEISCOMP_AUTOLOC_UTIL_H_INCLUDED
+#define SEISCOMP_AUTOLOC_UTIL_H_INCLUDED
 
 #include <string>
 #include <vector>
@@ -21,7 +22,8 @@
 #include <seiscomp/datamodel/inventory.h>
 #include <seiscomp/seismology/ttt.h>
 
-#include "lib/datamodel.h"
+#include <seiscomp/autoloc/datamodel.h>
+
 
 namespace Seiscomp {
 
@@ -76,3 +78,5 @@ double rms(const std::vector<double> &v, double offset = 0);
 } // namespace Math
 
 } // namespace Seiscomp
+
+#endif

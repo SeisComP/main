@@ -12,10 +12,10 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_AUTOLOC_ASSOCIATOR_H
-#define SEISCOMP_AUTOLOC_ASSOCIATOR_H
+#ifndef SEISCOMP_AUTOLOC_ASSOCIATOR_H_INCLUDED
+#define SEISCOMP_AUTOLOC_ASSOCIATOR_H_INCLUDED
 
-#include "datamodel.h"
+#include <seiscomp/autoloc/datamodel.h>
 
 namespace Seiscomp {
 

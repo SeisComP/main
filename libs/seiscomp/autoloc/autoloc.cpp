@@ -17,16 +17,17 @@
 //#define EXTRA_DEBUGGING
 //#define LOG_RELOCATOR_CALLS
 
+#include <seiscomp/autoloc/autoloc.h>
+#include <seiscomp/autoloc/util.h>
+#include <seiscomp/autoloc/sc3adapters.h>
+#include <seiscomp/autoloc/nucleator.h>
+
 #include <seiscomp/logging/log.h>
 #include <seiscomp/seismology/ttt.h>
 #include <seiscomp/datamodel/utils.h>
 
-#include "util.h"
-#include "sc3adapters.h"
-#include "nucleator.h"
-#include "autoloc.h"
 
-using namespace std;
+//using namespace std;
 
 namespace Seiscomp {
 
@@ -191,11 +192,11 @@ void Autoloc3::_flush()
 	using namespace Autoloc::DataModel;
 
 	Time t = now();
-	vector<OriginID> ids;
+	std::vector<OriginID> ids;
 
 	int dnmax = _config.publicationIntervalPickCount;
 
-	for (map<int, OriginPtr>::iterator
+	for (std::map<int, OriginPtr>::iterator
 	     it = _outgoing.begin(); it != _outgoing.end(); ++it) {
 
 		const Origin *origin = (*it).second.get();
@@ -209,7 +210,7 @@ void Autoloc3::_flush()
 			ids.push_back(origin->id);
 	}
 
-	for(vector<OriginID>::iterator
+	for(std::vector<OriginID>::iterator
 	    it = ids.begin(); it != ids.end(); ++it) {
 
 		OriginID id = *it;
@@ -313,7 +314,7 @@ bool Autoloc3::_addStationInfo(const Autoloc::DataModel::Pick *pick)
 	if (pick->station())
 		return true; // nothing to do
 
-	const string net_sta = pick->net + "." + pick->sta;
+	const std::string net_sta = pick->net + "." + pick->sta;
 	Autoloc::DataModel::StationMap::const_iterator it = _stations.find(net_sta);
 	if (it == _stations.end()) {
 
@@ -333,7 +334,7 @@ bool Autoloc3::_addStationInfo(const Autoloc::DataModel::Pick *pick)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-const Autoloc::DataModel::Pick* Autoloc3::pickFromPool(const string &id) const
+const Autoloc::DataModel::Pick* Autoloc3::pickFromPool(const std::string &id) const
 {
 	PickMap::const_iterator it = _pick.find(id);
 	if (it != _pick.end())
@@ -734,7 +735,7 @@ Autoloc::DataModel::Origin *Autoloc3::_findMatchingOrigin(const Autoloc::DataMod
 			const Pick *pick = existing->arrivals[i1].pick.get();
 
 			if (pick->station() == NULL) {
-				const string net_sta = pick->net + "." + pick->sta;
+				const std::string net_sta = pick->net + "." + pick->sta;
 				SEISCOMP_WARNING("Pick %3d   %s    %s  without station info",i1,
 						 net_sta.c_str(),pick->id.c_str());
 				continue;
@@ -947,13 +948,13 @@ bool Autoloc3::_log(const Autoloc::DataModel::Pick *pick)
 	}
 
 	char line[200];
-	string loc = pick->loc == "" ? "__" : pick->loc;
+	std::string loc = pick->loc == "" ? "__" : pick->loc;
 	sprintf(line, "%s %-2s %-6s %-3s %-2s %6.1f %10.3f %4.1f %c %s",
 	      time2str(pick->time).c_str(),
 	      pick->net.c_str(), pick->sta.c_str(), pick->cha.c_str(), loc.c_str(),
 	      pick->snr, pick->amp, pick->per, statusFlag(pick),
 	      pick->id.c_str());
-	_pickLogFile << line << endl;
+	_pickLogFile << line << std::endl;
 
 	SEISCOMP_INFO("%s", line);
 
@@ -1241,7 +1242,7 @@ Autoloc::DataModel::OriginPtr Autoloc3::_xxlPreliminaryOrigin(const Autoloc::Dat
 
 	OriginPtr newOrigin = 0;
 
-	vector<const Pick*> xxlpicks;
+	std::vector<const Pick*> xxlpicks;
 	const Pick *earliest = newPick;
 	xxlpicks.push_back(newPick);
 	for (PickMap::const_iterator
@@ -1272,7 +1273,7 @@ Autoloc::DataModel::OriginPtr Autoloc3::_xxlPreliminaryOrigin(const Autoloc::Dat
 
 		// make sure we don't have two picks of the same station
 		bool duplicate_station = false;
-		for (vector<const Pick*>::const_iterator
+		for (std::vector<const Pick*>::const_iterator
 			it = xxlpicks.begin(); it != xxlpicks.end(); ++it) {
 			if ((*it)->station() == oldPick->station()) {
 				duplicate_station = true;
@@ -1298,7 +1299,7 @@ Autoloc::DataModel::OriginPtr Autoloc3::_xxlPreliminaryOrigin(const Autoloc::Dat
 	double dep;
 
 	// loop over several trial depths, which are multiples of the default depth
-	vector<double> trialDepths;
+	std::vector<double> trialDepths;
 	for (int i=0; dep <= _config.xxlMaxDepth; i++) {
 		dep = _config.defaultDepth*(1+i);
 		trialDepths.push_back(dep);
@@ -1312,7 +1313,7 @@ Autoloc::DataModel::OriginPtr Autoloc3::_xxlPreliminaryOrigin(const Autoloc::Dat
 		dep = trialDepths[i];
 		OriginPtr origin = new Origin(lat, lon, dep, tim);
 
-		for(vector<const Pick*>::iterator it=xxlpicks.begin(); it!=xxlpicks.end(); ++it) {
+		for(std::vector<const Pick*>::iterator it=xxlpicks.begin(); it!=xxlpicks.end(); ++it) {
 			const Pick *pick = *it;
 			double delta, az, baz;
 			Arrival arr(pick);
@@ -1471,7 +1472,7 @@ Autoloc::DataModel::OriginPtr Autoloc3::_tryAssociate(const Autoloc::DataModel::
 			SEISCOMP_DEBUG_S(" *** " + pick->id);
 			SEISCOMP_DEBUG_S(" *** " + printOneliner(associatedOrigin.get())+"  ph="+asso.phase);
 			bool success = _associate(associatedOrigin.get(), pick, asso.phase);
-			string oneliner = printOneliner(associatedOrigin.get())+"  ph="+asso.phase;
+			std::string oneliner = printOneliner(associatedOrigin.get())+"  ph="+asso.phase;
 
 			if (success) {
 				SEISCOMP_DEBUG_S(" +++ " + oneliner);
@@ -2225,7 +2226,7 @@ bool Autoloc3::_excludeDistantStations(Autoloc::DataModel::Origin *origin)
 	using namespace Autoloc::DataModel;
 
 	double q = 4;
-	vector<double> distance;
+	std::vector<double> distance;
 
 	int arrivalCount = origin->arrivals.size();
 	for (int i=0; i<arrivalCount; i++) {
@@ -2463,7 +2464,8 @@ bool Autoloc3::_store(Autoloc::DataModel::Origin *origin)
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 // TODO:
 // Einfach an _associate einen Arrival uebergeben, denn der hat ja alles schon an Bord.
-bool Autoloc3::_associate(Autoloc::DataModel::Origin *origin, const Autoloc::DataModel::Pick *pick, const string &phase)
+bool Autoloc3::_associate(Autoloc::DataModel::Origin *origin, const
+			  Autoloc::DataModel::Pick *pick, const std::string &phase)
 {
 	using namespace Autoloc::DataModel;
 
@@ -2686,7 +2688,7 @@ bool Autoloc3::_addMorePicks(Autoloc::DataModel::Origin *origin, bool keepDepth)
 {
 	using namespace Autoloc::DataModel;
 
-	set<string> have;
+	std::set<std::string> have;
 	int arrivalCount = origin->arrivals.size();
 	for (int i=0; i<arrivalCount; i++) {
 
@@ -2697,7 +2699,7 @@ bool Autoloc3::_addMorePicks(Autoloc::DataModel::Origin *origin, bool keepDepth)
 		const Pick *pick = arr.pick.get();
 		if ( ! pick->station() )
 			continue;
-		string x = pick->station()->net + "." + pick->station()->code + ":" + arr.phase;
+		std::string x = pick->station()->net + "." + pick->station()->code + ":" + arr.phase;
 		have.insert(x);
 	}
 
@@ -2718,7 +2720,7 @@ bool Autoloc3::_addMorePicks(Autoloc::DataModel::Origin *origin, bool keepDepth)
 			continue;
 
 		// check if for that station we already have a P/PKP pick
-		string x = pick->station()->net + "." + pick->station()->code + ":";
+		std::string x = pick->station()->net + "." + pick->station()->code + ":";
 		if (have.count(x+"P") || have.count(x+"PKP"))
 			continue;
 
@@ -3148,11 +3150,11 @@ int Autoloc3::_removeWorstOutliers(Autoloc::DataModel::Origin *origin)
 	using namespace Autoloc::DataModel;
 
 #ifdef EXTRA_DEBUGGING
-	string info_before = printDetailed(origin);
+	std::string info_before = printDetailed(origin);
 	SEISCOMP_DEBUG("_removeWorstOutliers begin");
 #endif
 	int count = 0;
-	vector<string> removed;
+	std::vector<std::string> removed;
 
 	for (ArrivalVector::iterator
 	     it = origin->arrivals.begin(); it != origin->arrivals.end();) {
@@ -3174,10 +3176,10 @@ int Autoloc3::_removeWorstOutliers(Autoloc::DataModel::Origin *origin)
 		return 0;
 
 #ifdef EXTRA_DEBUGGING
-	string info_after = printDetailed(origin);
+	std::string info_after = printDetailed(origin);
 	// logging only
 	int n = removed.size();
-	string tmp=removed[0];
+	std::string tmp=removed[0];
 	for(int i=1; i<n; i++)
 		tmp += ", "+removed[i];
 	SEISCOMP_DEBUG("removed outlying arrivals from origin %ld: %s", origin->id, tmp.c_str());
@@ -3376,7 +3378,7 @@ bool Autoloc3::setStation(Autoloc::DataModel::Station *station) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::setLocatorProfile(const string &profile) {
+void Autoloc3::setLocatorProfile(const std::string &profile) {
 	_nucleator.setLocatorProfile(profile);
 	_relocator.setProfile(profile);
 }
@@ -3395,7 +3397,7 @@ void Autoloc3::setConfig(const Config &config) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::setGridFile(const string &gridfile)
+bool Autoloc3::setGridFile(const std::string &gridfile)
 {
 	if ( ! _nucleator.setGridFile(gridfile))
 		return false;
@@ -3408,7 +3410,7 @@ bool Autoloc3::setGridFile(const string &gridfile)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::setPickLogFilePrefix(const string &fname)
+void Autoloc3::setPickLogFilePrefix(const std::string &fname)
 {
 	_pickLogFilePrefix = fname;
 }
@@ -3418,7 +3420,7 @@ void Autoloc3::setPickLogFilePrefix(const string &fname)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::setPickLogFileName(const string &fname)
+void Autoloc3::setPickLogFileName(const std::string &fname)
 {
 	using namespace Autoloc::DataModel;
 
@@ -3434,7 +3436,7 @@ void Autoloc3::setPickLogFileName(const string &fname)
 	if (fname == "")
 		return;
 
-	_pickLogFile.open(fname.c_str(), ios_base::app);
+	_pickLogFile.open(fname.c_str(), std::ios_base::app);
 	if ( ! _pickLogFile.is_open() ) {
 		SEISCOMP_ERROR_S("Failed to open pick log file " + fname);
 		return;
@@ -3525,8 +3527,8 @@ void Autoloc3::cleanup(Autoloc::DataModel::Time minTime)
 	_origins = _originsTmp;
 
 
-	vector<OriginID> ids;
-	for (map<int, OriginPtr>::iterator
+	std::vector<OriginID> ids;
+	for (std::map<int, OriginPtr>::iterator
 	     it = _lastSent.begin(); it != _lastSent.end(); ++it) {
 
 		const Origin *origin = (*it).second.get();
@@ -3534,7 +3536,7 @@ void Autoloc3::cleanup(Autoloc::DataModel::Time minTime)
 			ids.push_back(origin->id);
 	}
 
-	for(vector<OriginID>::iterator
+	for(std::vector<OriginID>::iterator
 	    it = ids.begin(); it != ids.end(); ++it) {
 
 		OriginID id = *it;

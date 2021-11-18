@@ -12,10 +12,8 @@
  ***************************************************************************/
 
 
-
-
-#ifndef SEISCOMP_LIBAUTOLOC_NUCLEATOR_H
-#define SEISCOMP_LIBAUTOLOC_NUCLEATOR_H
+#ifndef SEISCOMP_AUTOLOC_NUCLEATOR_H_INCLUDED
+#define SEISCOMP_AUTOLOC_NUCLEATOR_H_INCLUDED
 
 #include <iostream>
 #include <fstream>
@@ -25,8 +23,9 @@
 #include <set>
 #include <map>
 
-#include "datamodel.h"
-#include "locator.h"
+#include <seiscomp/autoloc/datamodel.h>
+#include <seiscomp/autoloc/locator.h>
+
 
 namespace Seiscomp {
 

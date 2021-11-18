@@ -16,7 +16,7 @@
 
 #define SEISCOMP_COMPONENT Autoloc
 
-#include "stationconfig.h"
+#include <seiscomp/autoloc/stationconfig.h>
 
 #include <iostream>
 #include <fstream>

@@ -12,9 +12,11 @@
  ***************************************************************************/
 
 
-
-
 # define SEISCOMP_COMPONENT Autoloc
+
+#include <seiscomp/autoloc/util.h>
+#include <seiscomp/autoloc/datamodel.h>
+
 #include <seiscomp/logging/log.h>
 #include <seiscomp/core/datetime.h>
 #include <seiscomp/math/geo.h>
@@ -29,9 +31,6 @@
 #include <sstream>
 #include <string>
 #include <map>
-
-#include "util.h"
-#include "datamodel.h"
 
 
 namespace Seiscomp {

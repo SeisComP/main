@@ -13,18 +13,19 @@
 
 
 #define SEISCOMP_COMPONENT Autoloc
+
+#include <seiscomp/autoloc/locator.h>
 #include <seiscomp/logging/log.h>
 
 #include <string>
 #include <vector>
-#include <map>
 
 #include <seiscomp/datamodel/pick.h>
 #include <seiscomp/datamodel/origin.h>
 #include <seiscomp/datamodel/sensorlocation.h>
-#include "util.h"
-#include "sc3adapters.h"
-#include "locator.h"
+#include <seiscomp/autoloc/util.h>
+#include <seiscomp/autoloc/sc3adapters.h>
+
 
 using namespace std;
 
@@ -43,7 +44,7 @@ MySensorLocationDelegate::~MySensorLocationDelegate() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MySensorLocationDelegate::setStation(const Autoloc::DataModel::Station *station) {
-	string key = station->net + "." + station->code;
+	std::string key = station->net + "." + station->code;
 
 	Seiscomp::DataModel::SensorLocationPtr
 		sloc = Seiscomp::DataModel::SensorLocation::Create();
@@ -51,7 +52,7 @@ void MySensorLocationDelegate::setStation(const Autoloc::DataModel::Station *sta
 	sloc->setLatitude(  station->lat  );
 	sloc->setLongitude( station->lon  );
 	sloc->setElevation( station->alt  );
-	_sensorLocations.insert(pair<string, Seiscomp::DataModel::SensorLocationPtr>(key, sloc));
+	_sensorLocations.insert(std::pair<std::string, Seiscomp::DataModel::SensorLocationPtr>(key, sloc));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -240,7 +241,7 @@ Autoloc::DataModel::Origin* Locator::_screlocate(const Autoloc::DataModel::Origi
 
 	// Store SC Picks/Stations here so that they can be found
 	// by LocSAT via SC PublicObject lookup
-	vector<Seiscomp::DataModel::PublicObjectPtr> scobjects;
+	std::vector<Seiscomp::DataModel::PublicObjectPtr> scobjects;
 
 	int arrivalCount = origin->arrivals.size();
 // XXX	for (int i=0; i<arrivalCount; i++) {
@@ -357,7 +358,7 @@ Autoloc::DataModel::Origin* Locator::_screlocate(const Autoloc::DataModel::Origi
 	// relo and screlo. This is given but still somewhat error-prone.
 	for (int i=0; i<arrivalCount; i++) {
 		Autoloc::DataModel::Arrival &arr = relo->arrivals[i];
-		const string &pickID = screlo->arrival(i)->pickID();
+		const std::string &pickID = screlo->arrival(i)->pickID();
 
 		if (arr.pick->id != pickID) {
 			// If this should ever happen, let it bang loudly!

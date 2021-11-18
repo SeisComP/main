@@ -17,7 +17,7 @@
 # define SEISCOMP_COMPONENT Autoloc
 #include <seiscomp/logging/log.h>
 
-#include "lib/stationlocationfile.h"
+#include <seiscomp/autoloc/stationlocationfile.h>
 
 #include <vector>
 #include <map>

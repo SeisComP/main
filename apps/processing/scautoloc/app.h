@@ -25,7 +25,7 @@
 #include <seiscomp/datamodel/inventory.h>
 #include <seiscomp/client/application.h>
 
-#include "lib/autoloc.h"
+#include <seiscomp/autoloc/autoloc.h>
 
 
 namespace Seiscomp {

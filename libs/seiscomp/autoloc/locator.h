@@ -12,15 +12,15 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_AUTOLOC_LOCATOR
-#define SEISCOMP_AUTOLOC_LOCATOR
-
+#ifndef SEISCOMP_AUTOLOC_LOCATOR_H_INCLUDED
+#define SEISCOMP_AUTOLOC_LOCATOR_H_INCLUDED
 
 #include <string>
 #include <map>
 
 #include <seiscomp/seismology/locator/locsat.h>
-#include "datamodel.h"
+#include <seiscomp/autoloc/datamodel.h>
+
 
 namespace Seiscomp {
 

@@ -12,9 +12,8 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_LIBAUTOLOC_AUTOLOC_H
-#define SEISCOMP_LIBAUTOLOC_AUTOLOC_H
-
+#ifndef SEISCOMP_LIBAUTOLOC_AUTOLOC_H_INCLUDED
+#define SEISCOMP_LIBAUTOLOC_AUTOLOC_H_INCLUDED
 
 #include <string>
 #include <map>
@@ -25,11 +24,11 @@
 #include <seiscomp/datamodel/origin.h>
 #include <seiscomp/seismology/locator/locsat.h>
 
-#include "datamodel.h"
-#include "nucleator.h"
-#include "associator.h"
-#include "locator.h"
-#include "stationconfig.h"
+#include <seiscomp/autoloc/datamodel.h>
+#include <seiscomp/autoloc/nucleator.h>
+#include <seiscomp/autoloc/associator.h>
+#include <seiscomp/autoloc/locator.h>
+#include <seiscomp/autoloc/stationconfig.h>
 
 namespace Seiscomp {
 

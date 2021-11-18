@@ -38,4 +38,4 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../common/libs)
 
 SET(INIT_TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/../common/apps/templates/initd.py)
 
-SUBDIRS(apps plugins)
+SUBDIRS(apps libs plugins)

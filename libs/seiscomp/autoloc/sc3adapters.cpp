@@ -12,8 +12,6 @@
  ***************************************************************************/
 
 
-
-
 #define SEISCOMP_COMPONENT Autoloc
 #include <seiscomp/logging/log.h>
 
@@ -31,10 +29,9 @@
 #include <string>
 #include <vector>
 
-#include "sc3adapters.h"
-//#include "app.h"
-#include "util.h"
-#include "datamodel.h"
+#include <seiscomp/autoloc/sc3adapters.h>
+#include <seiscomp/autoloc/util.h>
+#include <seiscomp/autoloc/datamodel.h>
 
 namespace Seiscomp {
 
