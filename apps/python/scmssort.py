@@ -217,9 +217,7 @@ if filenames:
         if opt.verbose:
             print("reading file '%s'" % filename, file=sys.stderr)
 
-        recordInput = recordInput(filename)
-
-        for rec in recordInput:
+        for rec in recordInput(filename):
             if not rec:
                 continue
             if not _in_time_window(rec, tmin, tmax):
@@ -293,7 +291,7 @@ if filenames:
         if outStart and outEnd:
             print(" + Time window: %s~%s" % (seiscomp.core.Time(outStart), seiscomp.core.Time(outEnd)),
                   file=sys.stderr)
-            print(" + %d networks, %d stations, %d location codes, %d channel codes, %d streams, %d records" 
+            print(" + %d networks, %d stations, %d location codes, %d channel codes, %d streams, %d records"
                   % (len(networks), len(stations), len(locations), len(channels),
                      len(outStreams), outRecords), file=sys.stderr)
         else:
