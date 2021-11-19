@@ -61,8 +61,6 @@ App::App(int argc, char **argv)
 	addMessagingSubscription("AMPLITUDE");
 	addMessagingSubscription("LOCATION");
 
-	_config = Autoloc3::config();
-
 	_keepEventsTimeSpan = 86400; // one day
 	_wakeUpTimout = 5; // wake up every 5 seconds to check pending operations
 
@@ -96,46 +94,46 @@ void App::createCommandLineDescription() {
 
 	commandline().addGroup("Settings");
 	commandline().addOption("Settings", "station-locations", "The station-locations.conf file to use when in offline mode. If no file is given the database is used.", &_stationLocationFile, false);
-	commandline().addOption("Settings", "station-config", "The station configuration file", &_config.staConfFile, false);
+	commandline().addOption("Settings", "station-config", "The station configuration file", &config.staConfFile, false);
 	commandline().addOption("Settings", "grid", "The grid configuration file", &_gridConfigFile, false);
 	commandline().addOption("Settings", "pick-log", "The pick log file. Providing a "
 	                        "file name enables logging picks even when disabled by configuration.",
-	                        &_config.pickLogFile, false);
+	                        &config.pickLogFile, false);
 
-	commandline().addOption("Settings", "default-depth", "Default depth for locating", &_config.defaultDepth);
-	commandline().addOption("Settings", "default-depth-stickiness", "", &_config.defaultDepthStickiness);
-	commandline().addOption("Settings", "max-sgap", "Maximum secondary azimuthal gap", &_config.maxAziGapSecondary);
+	commandline().addOption("Settings", "default-depth", "Default depth for locating", &config.defaultDepth);
+	commandline().addOption("Settings", "default-depth-stickiness", "", &config.defaultDepthStickiness);
+	commandline().addOption("Settings", "max-sgap", "Maximum secondary azimuthal gap", &config.maxAziGapSecondary);
 	commandline().addOption("Settings", "max-rms", "Maximum RMS residual"
-	                        "to be considered", &_config.maxRMS);
+	                        "to be considered", &config.maxRMS);
 	commandline().addOption("Settings", "max-residual", "Maximum travel-time residual"
-	                        "per station to be considered", &_config.maxResidualUse);
-	commandline().addOption("Settings", "max-station-distance", "Maximum distance of stations to be used", &_config.maxStaDist);
-	commandline().addOption("Settings", "max-nucleation-distance-default", "Default maximum distance of stations to be used for nucleating new origins", &_config.defaultMaxNucDist);
-	commandline().addOption("Settings", "min-pick-affinity", "", &_config.minPickAffinity);
+	                        "per station to be considered", &config.maxResidualUse);
+	commandline().addOption("Settings", "max-station-distance", "Maximum distance of stations to be used", &config.maxStaDist);
+	commandline().addOption("Settings", "max-nucleation-distance-default", "Default maximum distance of stations to be used for nucleating new origins", &config.defaultMaxNucDist);
+	commandline().addOption("Settings", "min-pick-affinity", "", &config.minPickAffinity);
 
-	commandline().addOption("Settings", "min-phase-count", "Minimum number of picks for an origin to be reported", &_config.minPhaseCount);
-	commandline().addOption("Settings", "min-score", "Minimum score for an origin to be reported", &_config.minScore);
-	commandline().addOption("Settings", "min-pick-snr", "Minimum SNR for a pick to be processed", &_config.minPickSNR);
+	commandline().addOption("Settings", "min-phase-count", "Minimum number of picks for an origin to be reported", &config.minPhaseCount);
+	commandline().addOption("Settings", "min-score", "Minimum score for an origin to be reported", &config.minScore);
+	commandline().addOption("Settings", "min-pick-snr", "Minimum SNR for a pick to be processed", &config.minPickSNR);
 
-	commandline().addOption("Settings", "xxl-enable", "", &_config.xxlEnabled);
-	commandline().addOption("Settings", "xxl-min-phase-count", "Minimum number of picks for an XXL origin to be reported", &_config.xxlMinPhaseCount);
-	commandline().addOption("Settings", "xxl-min-amplitude", "Flag pick as XXL if BOTH snr and amplitude exceed a threshold", &_config.xxlMinAmplitude);
-	commandline().addOption("Settings", "xxl-min-snr", "Flag pick as XXL if BOTH snr and amplitude exceed a threshold", &_config.xxlMinSNR);
-	commandline().addOption("Settings", "xxl-max-distance", "", &_config.xxlMaxStaDist);
-	commandline().addOption("Settings", "xxl-max-depth", "", &_config.xxlMaxDepth);
-	commandline().addOption("Settings", "xxl-dead-time", "", &_config.xxlDeadTime);
+	commandline().addOption("Settings", "xxl-enable", "", &config.xxlEnabled);
+	commandline().addOption("Settings", "xxl-min-phase-count", "Minimum number of picks for an XXL origin to be reported", &config.xxlMinPhaseCount);
+	commandline().addOption("Settings", "xxl-min-amplitude", "Flag pick as XXL if BOTH snr and amplitude exceed a threshold", &config.xxlMinAmplitude);
+	commandline().addOption("Settings", "xxl-min-snr", "Flag pick as XXL if BOTH snr and amplitude exceed a threshold", &config.xxlMinSNR);
+	commandline().addOption("Settings", "xxl-max-distance", "", &config.xxlMaxStaDist);
+	commandline().addOption("Settings", "xxl-max-depth", "", &config.xxlMaxDepth);
+	commandline().addOption("Settings", "xxl-dead-time", "", &config.xxlDeadTime);
 
-	commandline().addOption("Settings", "min-sta-count-ignore-pkp", "Minimum station count for which we ignore PKP phases", &_config.minStaCountIgnorePKP);
-	commandline().addOption("Settings", "min-score-bypass-nucleator", "Minimum score at which the nucleator is bypassed", &_config.minScoreBypassNucleator);
+	commandline().addOption("Settings", "min-sta-count-ignore-pkp", "Minimum station count for which we ignore PKP phases", &config.minStaCountIgnorePKP);
+	commandline().addOption("Settings", "min-score-bypass-nucleator", "Minimum score at which the nucleator is bypassed", &config.minScoreBypassNucleator);
 
 	commandline().addOption("Settings", "keep-events-timespan", "The timespan to keep historical events", &_keepEventsTimeSpan);
 
-	commandline().addOption("Settings", "cleanup-interval", "The object cleanup interval in seconds", &_config.cleanupInterval);
-	commandline().addOption("Settings", "max-age", "During cleanup all objects older than maxAge (in seconds) are removed (maxAge == 0 => disable cleanup)", &_config.maxAge);
+	commandline().addOption("Settings", "cleanup-interval", "The object cleanup interval in seconds", &config.cleanupInterval);
+	commandline().addOption("Settings", "max-age", "During cleanup all objects older than maxAge (in seconds) are removed (maxAge == 0 => disable cleanup)", &config.maxAge);
 
 	commandline().addOption("Settings", "wakeup-interval", "The interval in seconds to check pending operations", &_wakeUpTimout);
 	commandline().addOption("Settings", "speed", "Set this to greater 1 to increase XML playback speed", &_playbackSpeed);
-	commandline().addOption("Settings", "dynamic-pick-threshold-interval", "The interval in seconds in which to check for extraordinarily high pick activity, resulting in a dynamically increased pick threshold", &_config.dynamicPickThresholdInterval);
+	commandline().addOption("Settings", "dynamic-pick-threshold-interval", "The interval in seconds in which to check for extraordinarily high pick activity, resulting in a dynamically increased pick threshold", &config.dynamicPickThresholdInterval);
 
 	commandline().addOption("Settings", "use-manual-picks", "allow use of manual picks for nucleation and location");
 	commandline().addOption("Settings", "use-manual-origins", "allow use of manual origins from our own agency");
@@ -150,31 +148,33 @@ void App::createCommandLineDescription() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::validateParameters() {
 	if ( commandline().hasOption("offline") ) {
-		_config.offline = true;
-		_config.playback = true;
-		_config.test = true;
+		config.offline = true;
+		config.playback = true;
+		config.test = true;
 	}
 	else
-		_config.offline = false;
+		config.offline = false;
 
 	if ( !_inputEPFile.empty() ) {
-		_config.playback = true;
-		_config.offline = true;
+		config.playback = true;
+		config.offline = true;
 	}
 
 
-	if ( _config.offline ) {
+	if ( config.offline ) {
 		setMessagingEnabled(false);
 		if ( !_stationLocationFile.empty() )
 			setDatabaseEnabled(false, false);
 	}
 
-	// Load inventory from database only if no station location file was specified.
-	if ( !_stationLocationFile.empty() ) {
+	// If a station location file was specified.
+	if ( _stationLocationFile.size() ) {
+		// inventory will be read from station location file
 		setLoadStationsEnabled(false);
 		setDatabaseEnabled(false, false);
 	}
 	else {
+		// inventory will be loaded from database
 		setLoadStationsEnabled(true);
 
 		if ( !isInventoryDatabaseEnabled() )
@@ -185,30 +185,30 @@ bool App::validateParameters() {
 
 	// Maybe we do want to allow sending of origins in offline mode?
 	if ( commandline().hasOption("test") )
-		_config.test = true;
+		config.test = true;
 
 	if ( commandline().hasOption("playback") )
-		_config.playback = true;
+		config.playback = true;
 
 	if ( commandline().hasOption("use-manual-picks") )
-		_config.useManualPicks = true;
+		config.useManualPicks = true;
 
 	if ( commandline().hasOption("use-manual-origins") )
-		_config.useManualOrigins = true;
+		config.useManualOrigins = true;
 
 	if ( commandline().hasOption("use-imported-origins") )
-		_config.useImportedOrigins = true;
+		config.useImportedOrigins = true;
 
 	if ( commandline().hasOption("try-default-depth") )
-		_config.tryDefaultDepth = true;
+		config.tryDefaultDepth = true;
 
 	if ( commandline().hasOption("adopt-manual-depth") )
-		_config.adoptManualDepth = true;
+		config.adoptManualDepth = true;
 
-	_config.maxResidualKeep = 3*_config.maxResidualUse;
+	config.maxResidualKeep = 3*config.maxResidualUse;
 
-	if ( !_config.pickLogFile.empty() ) {
-		_config.pickLogEnable = true;
+	if ( !config.pickLogFile.empty() ) {
+		config.pickLogEnable = true;
 	}
 
 	return Client::Application::validateParameters();
@@ -224,17 +224,17 @@ bool App::initConfiguration() {
 
 	// support deprecated configuration, deprecated since 2020-11-16
 	try {
-		_config.maxAge = configGetDouble("autoloc.maxAge");
+		config.maxAge = configGetDouble("autoloc.maxAge");
 		SEISCOMP_ERROR("Configuration parameter autoloc.maxAge is deprecated."
 		               " Use buffer.pickKeep instead!");
 	}
 	catch (...) {}
 	// override deprecated configuration if value is set
-	try { _config.maxAge = configGetDouble("buffer.pickKeep"); }
+	try { config.maxAge = configGetDouble("buffer.pickKeep"); }
 	catch (...) {}
 
 	try {
-		_config.authors = configGetStrings("autoloc.authors");
+		config.authors = configGetStrings("autoloc.authors");
 	}
 	catch (...) {}
 
@@ -252,159 +252,159 @@ bool App::initConfiguration() {
 
 
 	// support deprecated configuration, deprecated since 2020-11-16
-	try { _config.cleanupInterval = configGetDouble("autoloc.cleanupInterval");
+	try { config.cleanupInterval = configGetDouble("autoloc.cleanupInterval");
 		SEISCOMP_ERROR("Configuration parameter autoloc.cleanupInterval is deprecated."
 		               " Use buffer.cleanupIntervalinstead!");}
 	catch (...) {}
-	try { _config.cleanupInterval = configGetDouble("buffer.cleanupInterval"); }
+	try { config.cleanupInterval = configGetDouble("buffer.cleanupInterval"); }
 	catch (...) {}
 
-	try { _config.defaultDepth = configGetDouble("locator.defaultDepth"); }
+	try { config.defaultDepth = configGetDouble("locator.defaultDepth"); }
 	catch (...) {}
 
-	try { _config.defaultDepthStickiness = configGetDouble("autoloc.defaultDepthStickiness"); }
+	try { config.defaultDepthStickiness = configGetDouble("autoloc.defaultDepthStickiness"); }
 	catch (...) {}
 
-	try { _config.tryDefaultDepth = configGetBool("autoloc.tryDefaultDepth"); }
+	try { config.tryDefaultDepth = configGetBool("autoloc.tryDefaultDepth"); }
 	catch (...) {}
 
-	try { _config.adoptManualDepth = configGetBool("autoloc.adoptManualDepth"); }
+	try { config.adoptManualDepth = configGetBool("autoloc.adoptManualDepth"); }
 	catch (...) {}
 
-	try { _config.minimumDepth = configGetDouble("locator.minimumDepth"); }
+	try { config.minimumDepth = configGetDouble("locator.minimumDepth"); }
 	catch (...) {}
 
-	try { _config.maxAziGapSecondary = configGetDouble("autoloc.maxSGAP"); }
+	try { config.maxAziGapSecondary = configGetDouble("autoloc.maxSGAP"); }
 	catch (...) {}
 
-	try { _config.maxRMS = configGetDouble("autoloc.maxRMS"); }
+	try { config.maxRMS = configGetDouble("autoloc.maxRMS"); }
 	catch (...) {}
 
-	try { _config.maxDepth = configGetDouble("autoloc.maxDepth"); }
+	try { config.maxDepth = configGetDouble("autoloc.maxDepth"); }
 	catch (...) {}
 
-	try { _config.maxResidualUse = configGetDouble("autoloc.maxResidual"); }
+	try { config.maxResidualUse = configGetDouble("autoloc.maxResidual"); }
 	catch (...) {}
 
-	try { _config.maxStaDist = configGetDouble("autoloc.maxStationDistance"); }
+	try { config.maxStaDist = configGetDouble("autoloc.maxStationDistance"); }
 	catch (...) {}
 
-	try { _config.defaultMaxNucDist = configGetDouble("autoloc.defaultMaxNucleationDistance"); }
+	try { config.defaultMaxNucDist = configGetDouble("autoloc.defaultMaxNucleationDistance"); }
 	catch (...) {}
 
-	try { _config.xxlEnabled = configGetBool("autoloc.xxl.enable"); }
+	try { config.xxlEnabled = configGetBool("autoloc.xxl.enable"); }
 	catch (...) {}
 
-	try { _config.xxlMinAmplitude = configGetDouble("autoloc.xxl.minAmplitude"); }
+	try { config.xxlMinAmplitude = configGetDouble("autoloc.xxl.minAmplitude"); }
 	catch (...) {
 		try {
 			// deprecated since 2013-06-26
-			_config.xxlMinAmplitude = configGetDouble("autoloc.thresholdXXL");
+			config.xxlMinAmplitude = configGetDouble("autoloc.thresholdXXL");
 			SEISCOMP_ERROR("Config parameter autoloc.thresholdXXL is deprecated.  Use autoloc.xxl.minAmplitude instead!");
 		}
 		catch (...) {}
 	}
 
-	try { _config.xxlMaxStaDist = configGetDouble("autoloc.xxl.maxStationDistance"); }
+	try { config.xxlMaxStaDist = configGetDouble("autoloc.xxl.maxStationDistance"); }
 	catch (...) {
 		try {
 			// deprecated since 2013-06-26
-			_config.xxlMaxStaDist = configGetDouble("autoloc.maxStationDistanceXXL");
+			config.xxlMaxStaDist = configGetDouble("autoloc.maxStationDistanceXXL");
 			SEISCOMP_ERROR("Configuration parameter autoloc.maxStationDistanceXXL"
 			               " is deprecated. Use autoloc.xxl.maxStationDistance instead!");
 		}
 		catch (...) {}
 	}
 
-	try { _config.xxlMinPhaseCount = configGetInt("autoloc.xxl.minPhaseCount"); }
+	try { config.xxlMinPhaseCount = configGetInt("autoloc.xxl.minPhaseCount"); }
 	catch (...) {
 		try {
 			// deprecated since 2013-06-26
-			_config.xxlMinPhaseCount = configGetInt("autoloc.minPhaseCountXXL");
+			config.xxlMinPhaseCount = configGetInt("autoloc.minPhaseCountXXL");
 			SEISCOMP_ERROR("Configuration parameter autoloc.minPhaseCountXXL is"
 			               " deprecated. Use autoloc.xxl.minPhaseCount instead!");
 		}
 		catch (...) {}
 	}
 
-	try { _config.xxlMinSNR = configGetDouble("autoloc.xxl.minSNR"); }
+	try { config.xxlMinSNR = configGetDouble("autoloc.xxl.minSNR"); }
 	catch (...) {}
 
-	try { _config.xxlMaxDepth = configGetDouble("autoloc.xxl.maxDepth"); }
+	try { config.xxlMaxDepth = configGetDouble("autoloc.xxl.maxDepth"); }
 	catch (...) {}
 
-	try { _config.xxlDeadTime = configGetDouble("autoloc.xxl.deadTime"); }
+	try { config.xxlDeadTime = configGetDouble("autoloc.xxl.deadTime"); }
 	catch (...) {}
 
-	try { _config.minPickSNR = configGetDouble("autoloc.minPickSNR"); }
+	try { config.minPickSNR = configGetDouble("autoloc.minPickSNR"); }
 	catch (...) {}
 
-	try { _config.minPickAffinity = configGetDouble("autoloc.minPickAffinity"); }
+	try { config.minPickAffinity = configGetDouble("autoloc.minPickAffinity"); }
 	catch (...) {}
 
-	try { _config.minPhaseCount = configGetInt("autoloc.minPhaseCount"); }
+	try { config.minPhaseCount = configGetInt("autoloc.minPhaseCount"); }
 	catch (...) {}
 
-	try { _config.minScore = configGetDouble("autoloc.minScore"); }
+	try { config.minScore = configGetDouble("autoloc.minScore"); }
 	catch (...) {}
 
-	try { _config.minScoreBypassNucleator = configGetDouble("autoloc.minScoreBypassNucleator"); }
+	try { config.minScoreBypassNucleator = configGetDouble("autoloc.minScoreBypassNucleator"); }
 	catch (...) {}
 
-	try { _config.minStaCountIgnorePKP = configGetInt("autoloc.minStaCountIgnorePKP"); }
+	try { config.minStaCountIgnorePKP = configGetInt("autoloc.minStaCountIgnorePKP"); }
 	catch (...) {}
 
-	try { _config.reportAllPhases = configGetBool("autoloc.reportAllPhases"); }
+	try { config.reportAllPhases = configGetBool("autoloc.reportAllPhases"); }
 	catch (...) {}
 
-	try { _config.useManualPicks = configGetBool("autoloc.useManualPicks"); }
+	try { config.useManualPicks = configGetBool("autoloc.useManualPicks"); }
 	catch (...) {
-		_config.useManualPicks = false;
+		config.useManualPicks = false;
 	}
 
-	try { _config.useManualOrigins = configGetBool("autoloc.useManualOrigins"); }
+	try { config.useManualOrigins = configGetBool("autoloc.useManualOrigins"); }
 	catch (...) {}
 
-	try { _config.useImportedOrigins = configGetBool("autoloc.useImportedOrigins"); }
+	try { config.useImportedOrigins = configGetBool("autoloc.useImportedOrigins"); }
 	catch (...) {}
 
 	try { _wakeUpTimout = configGetInt("autoloc.wakeupInterval"); }
 	catch (...) {}
 
-	try { _config.maxRadiusFactor = configGetDouble("autoloc.gridsearch._maxRadiusFactor"); }
+	try { config.maxRadiusFactor = configGetDouble("autoloc.gridsearch._maxRadiusFactor"); }
 	catch (...) {}
 
-	try { _config.publicationIntervalTimeSlope = configGetDouble("autoloc.publicationIntervalTimeSlope"); }
+	try { config.publicationIntervalTimeSlope = configGetDouble("autoloc.publicationIntervalTimeSlope"); }
 	catch ( ... ) {}
 
-	try { _config.publicationIntervalTimeIntercept = configGetDouble("autoloc.publicationIntervalTimeIntercept"); }
+	try { config.publicationIntervalTimeIntercept = configGetDouble("autoloc.publicationIntervalTimeIntercept"); }
 	catch ( ... ) {}
 
-	try { _config.publicationIntervalPickCount = configGetInt("autoloc.publicationIntervalPickCount"); }
+	try { config.publicationIntervalPickCount = configGetInt("autoloc.publicationIntervalPickCount"); }
 	catch ( ... ) {}
 
-	try { _config.dynamicPickThresholdInterval = configGetDouble("autoloc.dynamicPickThresholdInterval"); }
+	try { config.dynamicPickThresholdInterval = configGetDouble("autoloc.dynamicPickThresholdInterval"); }
 	catch ( ... ) {}
 
 	try { _gridConfigFile = Environment::Instance()->absolutePath(configGetString("autoloc.grid")); }
 	catch (...) { _gridConfigFile = Environment::Instance()->shareDir() + "/scautoloc/grid.conf"; }
 
-	try { _config.staConfFile = Environment::Instance()->absolutePath(configGetString("autoloc.stationConfig")); }
-	catch (...) { _config.staConfFile = Environment::Instance()->shareDir() + "/scautoloc/station.conf"; }
+	try { config.staConfFile = Environment::Instance()->absolutePath(configGetString("autoloc.stationConfig")); }
+	catch (...) { config.staConfFile = Environment::Instance()->shareDir() + "/scautoloc/station.conf"; }
 
-	try { _config.pickLogFile = configGetString("autoloc.pickLog"); }
-	catch (...) { _config.pickLogFile = ""; }
+	try { config.pickLogFile = configGetString("autoloc.pickLog"); }
+	catch (...) { config.pickLogFile = ""; }
 
-	try { _config.pickLogEnable = configGetBool("autoloc.pickLogEnable"); }
-	catch (...) { _config.pickLogEnable = false; }
-	if ( !_config.pickLogEnable ) {
-		_config.pickLogFile = "";
+	try { config.pickLogEnable = configGetBool("autoloc.pickLogEnable"); }
+	catch (...) { config.pickLogEnable = false; }
+	if ( !config.pickLogEnable ) {
+		config.pickLogFile = "";
 	}
 
-	try { _config.amplTypeSNR = configGetString("autoloc.amplTypeSNR"); }
+	try { config.amplTypeSNR = configGetString("autoloc.amplTypeSNR"); }
 	catch (...) {}
 
-	try { _config.amplTypeAbs = configGetString("autoloc.amplTypeAbs"); }
+	try { config.amplTypeAbs = configGetString("autoloc.amplTypeAbs"); }
 	catch (...) {}
 
 	try { _stationLocationFile = configGetString("autoloc.stationLocations"); }
@@ -412,23 +412,23 @@ bool App::initConfiguration() {
 
 	// support deprecated configuration, deprecated since 2020-11-13
 	try {
-		_config.locatorProfile = configGetString("autoloc.locator.profile");
+		config.locatorProfile = configGetString("autoloc.locator.profile");
 		SEISCOMP_ERROR("Configuration parameter autoloc.locator.profile is deprecated."
 		                 " Use locator.profile instead!");
 	}
 	catch (...) {}
 
 	// override deprecated configuration if value is set
-	try { _config.locatorProfile = configGetString("locator.profile"); }
+	try { config.locatorProfile = configGetString("locator.profile"); }
 	catch (...) {}
 
-	try { _config.playback = configGetBool("autoloc.playback"); }
+	try { config.playback = configGetBool("autoloc.playback"); }
 	catch ( ... ) {}
 
-	try { _config.test = configGetBool("autoloc.test"); }
+	try { config.test = configGetBool("autoloc.test"); }
 	catch ( ... ) {}
 
-	_config.pickLogFile = Environment::Instance()->absolutePath(_config.pickLogFile);
+	config.pickLogFile = Environment::Instance()->absolutePath(config.pickLogFile);
 	_stationLocationFile = Environment::Instance()->absolutePath(_stationLocationFile);
 
 	// network type
@@ -436,13 +436,13 @@ bool App::initConfiguration() {
 	try { ntp = configGetString("autoloc.networkType"); }
 	catch ( ... ) {}
 	if      ( ntp == "global" ) {
-		_config.networkType = Autoloc::GlobalNetwork;
+		config.networkType = Autoloc::GlobalNetwork;
 	}
 	else if ( ntp == "regional" ) {
-		_config.networkType = Autoloc::RegionalNetwork;
+		config.networkType = Autoloc::RegionalNetwork;
 	}
 	else if ( ntp == "local" ) {
-		_config.networkType = Autoloc::LocalNetwork;
+		config.networkType = Autoloc::LocalNetwork;
 	}
 	else {
 		SEISCOMP_ERROR("Illegal value %s for autoloc.networkType", ntp.c_str());
@@ -467,7 +467,7 @@ bool App::init() {
 	_outputOrgs = addOutputObjectLog("origin", primaryMessagingGroup());
 
 	SEISCOMP_INFO("Starting Autoloc");
-	setConfig(_config);
+	setConfig(config);
 	dumpConfig();
 	if ( ! setGridFile(_gridConfigFile) )
 		return false;
@@ -475,15 +475,15 @@ bool App::init() {
 	if ( ! initInventory() )
 		return false;
 
-	if ( !_config.pickLogFile.empty() ) {
-		setPickLogFilePrefix(_config.pickLogFile);
+	if ( ! config.pickLogFile.empty() ) {
+		setPickLogFilePrefix(config.pickLogFile);
 	}
 	else {
 		SEISCOMP_DEBUG("Do not set a pick log file: Disabled by configuration "
 		               "of autolog.pickLogEnable");
 	}
 
-	if ( _config.playback ) {
+	if ( config.playback ) {
 		if ( _inputEPFile.empty() ) {
 			// XML playback, set timer to 1 sec
 			SEISCOMP_DEBUG("Playback mode - enable timer of 1 sec");
@@ -500,7 +500,7 @@ bool App::init() {
 		}
 	}
 
-	_config.agencyID = agencyID();
+	config.agencyID = agencyID();
 	
 	return Autoloc3::init();
 }
@@ -514,106 +514,20 @@ bool App::initInventory() {
 	if ( _stationLocationFile.empty() ) {
 		SEISCOMP_DEBUG("Initializing station inventory from DB");
 		inventory = Inventory::Instance()->inventory();
-		if ( ! inventory ) {
-			SEISCOMP_ERROR("no inventory!");
-			return false;
-		}
 	}
 	else {
-		SEISCOMP_DEBUG_S("Initializing station inventory from file '" + _stationLocationFile + "'");
+		SEISCOMP_DEBUG_S("Initializing station inventory from file '" +
+				 _stationLocationFile + "'");
 		inventory = Seiscomp::Autoloc::Util::inventoryFromStationLocationFile(_stationLocationFile);
 	}
 
-	return true;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::initOneStation(const Seiscomp::DataModel::WaveformStreamID &wfid,
-			 const Seiscomp::Core::Time &time) {
-	bool found = false;
-	static std::set<std::string> configuredStreams;
-	std::string key = wfid.networkCode() + "." + wfid.stationCode();
-
-	if ( configuredStreams.find(key) != configuredStreams.end() )
-		return false;
-
-	for ( size_t n = 0; n < inventory->networkCount() && !found; ++n ) {
-		Seiscomp::DataModel::Network *network = inventory->network(n);
-
-		if ( network->code() != wfid.networkCode() )
-			continue;
-
-		try {
-			if ( time < network->start() )
-				continue;
-		}
-		catch ( ... ) { }
-
-		try {
-			if ( time > network->end() )
-				continue;
-		}
-		catch ( ... ) { }
-
-		for ( size_t s = 0; s < network->stationCount(); ++s ) {
-			Seiscomp::DataModel::Station *station = network->station(s);
-
-			if (station->code() != wfid.stationCode())
-				continue;
-
-			std::string epochStart="unset", epochEnd="unset";
-
-			try {
-				if (time < station->start())
-					continue;
-				epochStart = station->start().toString("%FT%TZ");
-			}
-			catch ( ... ) { } 
-
-			try {
-				if (time > station->end())
-					continue;
-				epochEnd = station->end().toString("%FT%TZ");
-			}
-			catch ( ... ) { } 
-
-			SEISCOMP_DEBUG("Station %s %s epoch %s ... %s",
-			               network->code().c_str(),
-			               station->code().c_str(),
-			               epochStart.c_str(),
-			               epochEnd.c_str());
-
-			double elev = 0;
-			try { elev = station->elevation(); }
-			catch ( ... ) {}
-			Autoloc::DataModel::Station *sta =
-				new Autoloc::DataModel::Station(
-					station->code(),
-					network->code(),
-					station->latitude(),
-					station->longitude(),
-					elev);
-
-			sta->used = true;
-			sta->maxNucDist = _config.defaultMaxNucDist;
-
-			setStation(sta);
-			found = true;
-
-			break;
-		}
-	}
-
-	if ( !found ) {
-		SEISCOMP_WARNING("%s not found in station inventory", key.c_str());
+	if ( ! inventory ) {
+		SEISCOMP_ERROR("No station inventory!");
 		return false;
 	}
 
-	configuredStreams.insert(key);
+	Autoloc3::setInventory(inventory.get());
+
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -762,18 +676,18 @@ bool App::runFromEPFile(const char *fname) {
 		return false;
 	}
 
-	ar >> _ep;
+	ar >> ep;
 	ar.close();
 
-	if ( !_ep ) {
+	if ( ! ep ) {
 		SEISCOMP_ERROR("No event parameters found: %s", fname);
 		return false;
 	}
 
 	SEISCOMP_INFO("finished reading event parameters from XML");
-	SEISCOMP_INFO("  number of picks:      %ld", (long int)_ep->pickCount());
-	SEISCOMP_INFO("  number of amplitudes: %ld", (long int)_ep->amplitudeCount());
-	SEISCOMP_INFO("  number of origins:    %ld", (long int)_ep->originCount());
+	SEISCOMP_INFO("  number of picks:      %ld", (long int)ep->pickCount());
+	SEISCOMP_INFO("  number of amplitudes: %ld", (long int)ep->amplitudeCount());
+	SEISCOMP_INFO("  number of origins:    %ld", (long int)ep->originCount());
 
 	typedef std::pair<Seiscomp::Core::Time, Seiscomp::DataModel::PublicObjectPtr> TimeObject;
 	typedef std::vector<TimeObject> TimeObjectVector;
@@ -782,8 +696,8 @@ bool App::runFromEPFile(const char *fname) {
 	// and subsequent DSU sort
 	TimeObjectVector objs;
 
-	for ( size_t i = 0; i < _ep->pickCount(); ++i ) {
-		Seiscomp::DataModel::PickPtr pick = _ep->pick(i);
+	for ( size_t i = 0; i < ep->pickCount(); ++i ) {
+		Seiscomp::DataModel::PickPtr pick = ep->pick(i);
 		try {
 			Seiscomp::Core::Time t =
 				pick->creationInfo().creationTime();
@@ -795,8 +709,8 @@ bool App::runFromEPFile(const char *fname) {
 		}
 	}
 
-	for ( size_t i = 0; i < _ep->amplitudeCount(); ++i ) {
-		Seiscomp::DataModel::AmplitudePtr amplitude = _ep->amplitude(i);
+	for ( size_t i = 0; i < ep->amplitudeCount(); ++i ) {
+		Seiscomp::DataModel::AmplitudePtr amplitude = ep->amplitude(i);
 		try {
 			Seiscomp::Core::Time t =
 				amplitude->creationInfo().creationTime();
@@ -808,8 +722,8 @@ bool App::runFromEPFile(const char *fname) {
 		}
 	}
 
-	for ( size_t i = 0; i < _ep->originCount(); ++i ) {
-		Seiscomp::DataModel::OriginPtr origin = _ep->origin(i);
+	for ( size_t i = 0; i < ep->originCount(); ++i ) {
+		Seiscomp::DataModel::OriginPtr origin = ep->origin(i);
 		try {
 			Seiscomp::Core::Time t = origin->creationInfo().creationTime();
 			objs.push_back(TimeObject(t, origin));
@@ -838,7 +752,7 @@ bool App::runFromEPFile(const char *fname) {
 
 	ar.create("-");
 	ar.setFormattedOutput(true);
-	ar << _ep;
+	ar << ep;
 	ar.close();
 
 	return true;
@@ -889,16 +803,11 @@ bool App::run() {
 		return Application::run();
 
 	// XML playback: first fill object queue, then run()
-	if ( _config.playback && _inputFileXML.size() > 0) {
+	if ( config.playback && _inputFileXML.size() > 0) {
 		runFromXMLFile(_inputFileXML.c_str());
 		return Application::run();
 	}
 
-/*
-	// OBSOLETE not that the XML playback is available
-	else if ( ! _exitRequested )
-		runFromPickFile(); // pick file read from stdin
-*/
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -911,7 +820,6 @@ void App::done() {
 	_exitRequested = true;
 // FIXME	_flush();
 	shutdown();
-//	setStations(NULL);
 	Application::done();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -934,7 +842,7 @@ void App::handleMessage(Core::Message* msg) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::handleTimeout() {
 
-	if ( !_config.playback || _inputFileXML.empty() ) {
+	if ( ! config.playback || _inputFileXML.empty() ) {
 		_flush();
 		return;
 	}
@@ -1092,7 +1000,7 @@ bool App::feed(Seiscomp::DataModel::Pick *scpick) {
 		}
 	}
 
-	if (objectAgencyID(scpick) != _config.agencyID) {
+	if (objectAgencyID(scpick) != config.agencyID) {
 		if ( isAgencyIDBlocked(objectAgencyID(scpick)) ) {
 			SEISCOMP_INFO_S("Blocked pick from agency '" + objectAgencyID(scpick) + "'");
 			return false;
@@ -1120,14 +1028,14 @@ bool App::feed(Seiscomp::DataModel::Pick *scpick) {
 	}
 
 	// configure station if needed
-	initOneStation(scpick->waveformID(), scpick->time().value());
+//	initOneStation(scpick->waveformID(), scpick->time().value());
 
 	timeStamp();
 
 	if ( ! Autoloc3::feed(scpick))
 		return false;
 
-	if ( _config.offline )
+	if ( config.offline )
 		_flush();
 
 	return true;
@@ -1151,7 +1059,7 @@ bool App::feed(Seiscomp::DataModel::Amplitude *scampl) {
 		}
 	}
 
-	if (objectAgencyID(scampl) != _config.agencyID) {
+	if (objectAgencyID(scampl) != config.agencyID) {
 		if ( isAgencyIDBlocked(objectAgencyID(scampl)) ) {
 			SEISCOMP_INFO_S("Blocked amplitude from agency '" + objectAgencyID(scampl) + "'");
 			return false;
@@ -1178,11 +1086,11 @@ bool App::feed(Seiscomp::DataModel::Origin *scorigin) {
 	SEISCOMP_INFO_S("got origin " + scorigin->publicID() +
 			"   agency: " + objectAgencyID(scorigin));
 
-	const bool ownOrigin = objectAgencyID(scorigin) == _config.agencyID;
+	const bool ownOrigin = objectAgencyID(scorigin) == config.agencyID;
 
 	if ( ownOrigin ) {
 		if ( manual(scorigin) ) {
-			if ( ! _config.useManualOrigins ) {
+			if ( ! config.useManualOrigins ) {
 				SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(scorigin) + " because autoloc.useManualOrigins = false");
 				return false;
 			}
@@ -1196,7 +1104,7 @@ bool App::feed(Seiscomp::DataModel::Origin *scorigin) {
 	else {
 		// imported origin
 
-		if ( ! _config.useImportedOrigins ) {
+		if ( ! config.useImportedOrigins ) {
 			SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(scorigin) + " because autoloc.useImportedOrigins = false");
 			return false;
 		}
@@ -1213,7 +1121,7 @@ bool App::feed(Seiscomp::DataModel::Origin *scorigin) {
 
 	Autoloc3::feed(scorigin);
 
-	if ( _config.offline )
+	if ( config.offline )
 		_flush();
 
 	return true;
@@ -1223,54 +1131,40 @@ bool App::feed(Seiscomp::DataModel::Origin *scorigin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::_report(const Autoloc::DataModel::Origin *origin) {
+bool App::_report(Seiscomp::DataModel::Origin *scorigin) {
+
+	using namespace Seiscomp::DataModel;
 
 	// Log object flow
 	logObject(_outputOrgs, now());
 
-	if ( _config.offline || _config.test ) {
-		std::string reportStr = Autoloc::printDetailed(origin);
-		SEISCOMP_INFO("Reporting origin %ld\n%s", origin->id, reportStr.c_str());
-		SEISCOMP_INFO ("Origin %ld not sent (test/offline mode)", origin->id);
-
-		if ( _ep ) {
-			Seiscomp::DataModel::OriginPtr scorigin =
-				Autoloc::exportToSC(origin, _config.reportAllPhases);
-			Seiscomp::DataModel::CreationInfo ci;
-			ci.setAgencyID(_config.agencyID);
-			ci.setAuthor(author());
-			ci.setCreationTime(now());
-			scorigin->setCreationInfo(ci);
-
-			_ep->add(scorigin.get());
-
-			std::cerr << reportStr << std::endl;
-		}
-		else
-			std::cout << reportStr << std::endl;
-
-		return true;
-	}
-
-	Seiscomp::DataModel::OriginPtr scorigin = Autoloc::exportToSC(origin, _config.reportAllPhases);
-	Seiscomp::DataModel::CreationInfo ci;
-	ci.setAgencyID(_config.agencyID);
+	CreationInfo ci;
+	ci.setAgencyID(config.agencyID);
 	ci.setAuthor(author());
 	ci.setCreationTime(now());
 	scorigin->setCreationInfo(ci);
 
-	Seiscomp::DataModel::EventParameters ep;
-	bool wasEnabled = Seiscomp::DataModel::Notifier::IsEnabled();
-	Seiscomp::DataModel::Notifier::Enable();
-	ep.add(scorigin.get());
-	Seiscomp::DataModel::Notifier::SetEnabled(wasEnabled);
+	if (config.offline || config.test) {
+		SEISCOMP_INFO ("Origin %s not sent (test/offline mode)", scorigin->publicID().c_str());
 
-	Seiscomp::DataModel::NotifierMessagePtr nmsg =
-		Seiscomp::DataModel::Notifier::GetMessage(true);
+		if (ep)
+			ep->add(scorigin);
+
+		return true;
+	}
+
+	EventParameters ep;
+	bool wasEnabled = Notifier::IsEnabled();
+	Notifier::Enable();
+	ep.add(scorigin);
+	Notifier::SetEnabled(wasEnabled);
+	NotifierMessagePtr nmsg =
+		Notifier::GetMessage(true);
 	connection()->send(nmsg.get());
+	SEISCOMP_INFO ("Origin %s sent", scorigin->publicID().c_str());
 
-	if ( origin->preliminary ) {
-		SEISCOMP_INFO("Sent preliminary origin %ld (heads up)", origin->id);
+	if (scorigin->evaluationStatus() == PRELIMINARY) {
+		SEISCOMP_INFO("Sent preliminary origin %s (heads up)", scorigin->publicID().c_str());
 
 		// create and send journal entry
 		string str = "";
@@ -1280,19 +1174,18 @@ bool App::_report(const Autoloc::DataModel::Origin *origin) {
 		catch ( Seiscomp::Core::ValueException & ) {}
 
 		if ( !str.empty() ) {
-			Seiscomp::DataModel::JournalEntryPtr journalEntry =
-				new Seiscomp::DataModel::JournalEntry;
+			JournalEntryPtr journalEntry =
+				new JournalEntry;
 			journalEntry->setAction("OrgEvalStatOK");
 			journalEntry->setObjectID(scorigin->publicID());
 			journalEntry->setSender(SCCoreApp->author().c_str());
 			journalEntry->setParameters(str);
 			journalEntry->setCreated(Core::Time::GMT());
 
-			Seiscomp::DataModel::NotifierMessagePtr jm =
-				new Seiscomp::DataModel::NotifierMessage;
-			jm->attach(new Seiscomp::DataModel::Notifier(
-				Seiscomp::DataModel::Journaling::ClassName(),
-			        Seiscomp::DataModel::OP_ADD,
+			NotifierMessagePtr jm = new NotifierMessage;
+			jm->attach(new Notifier(
+				Journaling::ClassName(),
+			        OP_ADD,
 				journalEntry.get()));
 
 			if ( connection()->send(jm.get()) ) {
@@ -1300,17 +1193,17 @@ bool App::_report(const Autoloc::DataModel::Origin *origin) {
 				               scorigin->publicID().c_str(), primaryMessagingGroup().c_str());
 			}
 			else {
-				SEISCOMP_ERROR("Sending origin journal entry failed with error: %s",
+				SEISCOMP_ERROR("Sending of origin journal entry failed with error: %s",
 				               connection()->lastError().toString());
 			}
 		}
 
 	}
 	else {
-		SEISCOMP_INFO("Sent origin %ld", origin->id);
+		SEISCOMP_INFO_S("Sent origin " + scorigin->publicID());
 	}
 
-	SEISCOMP_INFO_S(Autoloc::printOrigin(origin, false));
+//	SEISCOMP_INFO_S(Autoloc::printOrigin(origin, false));
 
 	return true;
 }

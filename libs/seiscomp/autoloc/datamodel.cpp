@@ -33,6 +33,32 @@ namespace Autoloc {
 namespace DataModel {
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Station::Station(const Seiscomp::DataModel::Station *scstation) {
+
+	const Seiscomp::DataModel::Network *scnetwork =
+		Seiscomp::DataModel::Network::Cast(scstation->parent());
+	assert(scnetwork != NULL);
+	net  = scnetwork->code();
+	code = scstation->code();
+	lat = scstation->latitude();
+	lon = scstation->longitude();
+
+	try {
+		alt = scstation->elevation();
+	}
+	catch ( ... ) {
+		alt = 0.;
+	}
+
+	enabled = true;
+	maxNucDist = maxLocDist = 180.;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
 // counter used for debugging
 static int _pickCount=0;
 

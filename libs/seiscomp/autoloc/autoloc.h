@@ -22,6 +22,7 @@
 #include <seiscomp/datamodel/pick.h>
 #include <seiscomp/datamodel/amplitude.h>
 #include <seiscomp/datamodel/origin.h>
+#include <seiscomp/datamodel/inventory.h>
 #include <seiscomp/seismology/locator/locsat.h>
 
 #include <seiscomp/autoloc/datamodel.h>
@@ -237,17 +238,29 @@ class Autoloc3 {
 		virtual ~Autoloc3();
 
 	public:
-		// initialization stuff
+		// Startup initialization.
+		// All of these need to be called before init();
 		void setConfig(const Config &config);
 		const Config &config() const { return _config; }
+
+		void setInventory(const Seiscomp::DataModel::Inventory*);
 
 		bool setGridFile(const std::string &);
 		void setPickLogFilePrefix(const std::string &);
 		void setPickLogFileName(const std::string &);
-		bool setStation(Autoloc::DataModel::Station *);
 		void setLocatorProfile(const std::string &);
 
 		bool init();
+
+	private:
+		// Runtime initialization.
+
+		// Initialize one station at runtime
+		bool initOneStation(
+			const Seiscomp::DataModel::WaveformStreamID &wfid,
+                        const Seiscomp::Core::Time &time);
+		bool setStation(Autoloc::DataModel::Station *);
+
 
 	public:
 		bool feed(Seiscomp::DataModel::Pick*);
@@ -307,7 +320,10 @@ class Autoloc3 {
 		// This must be reimplemented in a subclass to properly
 		// print/send/etc. the origin
 		// !!!!!!!!!!!!!!!!!!!!!!!
-		virtual bool _report(const Autoloc::DataModel::Origin*);
+		virtual bool _report(Seiscomp::DataModel::Origin*);
+
+		// interface Autoloc::DataModel -> Seiscomp::DataModel
+		bool _report(const Autoloc::DataModel::Origin*);
 
 	public: // FIXME
 		// flush any pending (Origin) messages by calling _report()
@@ -566,6 +582,7 @@ class Autoloc3 {
 
 	protected: // FIXME: make private
 		Config _config;
+		Seiscomp::DataModel::InventoryCPtr inventory;
 };
 
 

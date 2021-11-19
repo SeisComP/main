@@ -32,24 +32,29 @@ namespace DataModel {
 typedef unsigned long OriginID;
 typedef double Time;
 
+
 DEFINE_SMARTPOINTER(Station);
 
 class Station : public Seiscomp::Core::BaseObject {
 
 	public:
 
-		Station(const std::string &code, const std::string &net, double lat, double lon, double alt)
-			: code(code), net(net), lat(lat), lon(lon), alt(alt)
-		{
-			used = true;
-			maxNucDist = maxLocDist = 180;
-		}
+		Station(const Seiscomp::DataModel::Station*);
 
 		std::string code, net;
 		double lat, lon, alt;
-		double maxNucDist, maxLocDist;
-		bool used;
+
+		// Max. nucleation distance
+		double maxNucDist;
+
+		// Max. location distance. Stations farther away from
+		// epicenter may be associated but not used in location.
+		double maxLocDist;
+
+		// Is this station enabled at all?
+		bool enabled;
 };
+
 
 typedef std::map<std::string, StationCPtr> StationMap;
 

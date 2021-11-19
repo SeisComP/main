@@ -43,23 +43,15 @@ class App :
 		App(int argc, char **argv);
 		~App();
 
-
-	public:
+	private:
 		bool feed(Seiscomp::DataModel::Pick*);
 		bool feed(Seiscomp::DataModel::Amplitude*);
 		bool feed(Seiscomp::DataModel::Origin*);
 
-
-	protected:
 		void createCommandLineDescription();
 		bool validateParameters();
 		bool initConfiguration();
 		bool initInventory();
-		// initialize one station at runtime
-		bool initOneStation(
-			const Seiscomp::DataModel::WaveformStreamID&,
-			const Seiscomp::Core::Time&);
-
 		void readHistoricEvents();
 
 		bool init();
@@ -81,9 +73,8 @@ class App :
 			Seiscomp::DataModel::Object*);
 
 		// re-implemented to support XML and messaging output
-		virtual bool _report(const Autoloc::DataModel::Origin *origin);
+		virtual bool _report(Seiscomp::DataModel::Origin*);
 
-//		bool runFromPickFile();
 		bool runFromXMLFile(const char *fname);
 		bool runFromEPFile(const char *fname);
 
@@ -91,29 +82,25 @@ class App :
 		const Core::Time now() const;
 		void timeStamp() const;
 
-	protected:
-		Autoloc::DataModel::Origin *convertFromSC3(
-			const Seiscomp::DataModel::Origin*);
-		Autoloc::DataModel::Pick   *convertFromSC3(
-			const Seiscomp::DataModel::Pick*);
-
 	private:
 		std::string _inputFileXML; // for XML playback
 		std::string _inputEPFile; // for offline processing
 		std::string _stationLocationFile;
 		std::string _gridConfigFile;
 
-		std::queue<Seiscomp::DataModel::PublicObjectPtr> _objects; // for XML playback
+		// object queue used for XML playback
+		std::queue<Seiscomp::DataModel::PublicObjectPtr> _objects;
+
 		double _playbackSpeed;
 		Core::Time playbackStartTime;
 		Core::Time objectsStartTime;
 		Core::Time syncTime;
 		unsigned int objectCount;
 
-		Seiscomp::DataModel::EventParametersPtr _ep;
+		Seiscomp::DataModel::EventParametersPtr ep;
 		Seiscomp::DataModel::InventoryPtr inventory;
 
-		Config _config;
+		Config config;
 		int _keepEventsTimeSpan;
 		int _wakeUpTimout;
 

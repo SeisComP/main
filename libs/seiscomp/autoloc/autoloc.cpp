@@ -25,7 +25,8 @@
 #include <seiscomp/logging/log.h>
 #include <seiscomp/seismology/ttt.h>
 #include <seiscomp/datamodel/utils.h>
-
+#include <seiscomp/datamodel/network.h>
+#include <seiscomp/datamodel/station.h>
 
 //using namespace std;
 
@@ -110,6 +111,11 @@ Autoloc3::~Autoloc3()
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Autoloc3::init()
 {
+	if ( ! inventory) {
+		SEISCOMP_ERROR("Missing inventory");
+                return false;
+	}
+
         if ( ! _relocator.init())
                 return false;
 
@@ -147,12 +153,47 @@ void Autoloc3::dumpState() const
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_report(const Autoloc::DataModel::Origin *origin)
+bool Autoloc3::_report(Seiscomp::DataModel::Origin *scorigin)
 {
 	// This is a dummy. Replace it by something suitable.
-	SEISCOMP_INFO_S(" OUT " + printOneliner(origin));
+//	SEISCOMP_INFO_S(" OUT " + printOneliner(origin));
 
 	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Autoloc3::_report(const Autoloc::DataModel::Origin *origin)
+{
+	Seiscomp::DataModel::OriginPtr scorigin =
+		Autoloc::exportToSC(origin, _config.reportAllPhases);
+	if (origin->preliminary)
+		scorigin->setEvaluationStatus(
+			Seiscomp::DataModel::EvaluationStatus(
+				Seiscomp::DataModel::PRELIMINARY));
+	Seiscomp::DataModel::CreationInfo ci;
+	ci.setAgencyID(_config.agencyID);
+	// TODO:
+	// ci.setAuthor(author());
+	// ci.setCreationTime(now());
+	scorigin->setCreationInfo(ci);
+
+	if ( _config.offline || _config.test ) {
+		std::string reportStr = Autoloc::printDetailed(origin);
+		SEISCOMP_INFO("Reporting origin %ld\n%s", origin->id, reportStr.c_str());
+		SEISCOMP_INFO ("Origin %ld not sent (test/offline mode)", origin->id);
+
+
+		_report(scorigin.get());
+		std::cerr << reportStr << std::endl;
+
+		return true;
+	}
+
+	return _report(scorigin.get());
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -204,7 +245,7 @@ void Autoloc3::_flush()
 		int dn = dnmax;
 
 		if (_lastSent.find(origin->id) != _lastSent.end())
-//			dn = origin->definingPhaseCount() - _lastSent[origin->id]->definingPhaseCount();
+			// dn = origin->definingPhaseCount() - _lastSent[origin->id]->definingPhaseCount();
 			dn = origin->phaseCount() - _lastSent[origin->id]->phaseCount();
 		if (dt >= 0 || dn >= dnmax)
 			ids.push_back(origin->id);
@@ -369,7 +410,7 @@ bool Autoloc3::_store(const Autoloc::DataModel::Pick *pick)
 	if ( ! pick->station())
 		return false;
 
-	if ( automatic(pick) && ! pick->station()->used)
+	if ( automatic(pick) && ! pick->station()->enabled)
 		// This means that this pick is completely ignored!
 		// Nevertheless, we might want to loosely associate it to an
 		// origin, i.e. associate it without using it for location
@@ -404,6 +445,9 @@ bool Autoloc3::feed(Seiscomp::DataModel::Pick *scpick) {
 	Autoloc::DataModel::Pick* pick = new Autoloc::DataModel::Pick(scpick);
 	if ( ! pick )
 		return false;
+
+	// configure station if needed
+	initOneStation(scpick->waveformID(), scpick->time().value());
 
 	// timeStamp();
 
@@ -3350,8 +3394,93 @@ bool Autoloc3::_trimResiduals(Autoloc::DataModel::Origin *origin)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::setStation(Autoloc::DataModel::Station *station) {
+bool Autoloc3::initOneStation(
+	const Seiscomp::DataModel::WaveformStreamID &wfid,
+	const Seiscomp::Core::Time &time)
+{
+	bool found = false;
+	static std::set<std::string> configuredStreams;
 
+	std::string key = wfid.networkCode() + "." + wfid.stationCode();
+	if ( configuredStreams.find(key) != configuredStreams.end() )
+		return false;
+
+	for (size_t n=0; n < inventory->networkCount() && !found; ++n) {
+		Seiscomp::DataModel::Network *network = inventory->network(n);
+		if ( network->code() != wfid.networkCode() )
+			continue;
+		try {
+			if ( time < network->start() )
+				continue;
+		}
+		catch ( ... ) {
+			// no network start time -> can be ignored
+		}
+
+		try {
+			if ( time > network->end() )
+				continue;
+		}
+		catch ( ... ) {
+			// no network end time -> can be ignored
+		}
+
+		for (size_t s=0; s < network->stationCount(); ++s) {
+			Seiscomp::DataModel::Station *station =
+				network->station(s);
+
+			if (station->code() != wfid.stationCode())
+				continue;
+
+			std::string epochStart="unset", epochEnd="unset";
+
+			try {
+				if (time < station->start())
+					continue;
+				epochStart = station->start().toString("%FT%TZ");
+			}
+			catch ( ... ) { }
+
+			try {
+				if (time > station->end())
+					continue;
+				epochEnd = station->end().toString("%FT%TZ");
+			}
+			catch ( ... ) { }
+
+			SEISCOMP_DEBUG("Station %s %s epoch %s ... %s",
+				       network->code().c_str(),
+				       station->code().c_str(),
+				       epochStart.c_str(),
+				       epochEnd.c_str());
+
+			Autoloc::DataModel::Station *sta =
+				new Autoloc::DataModel::Station(station);
+			sta->enabled = true;
+			sta->maxNucDist = _config.defaultMaxNucDist;
+			setStation(sta);
+			found = true;
+			break;
+		}
+	}
+
+	if ( ! found ) {
+		SEISCOMP_WARNING("%s not found in station inventory", key.c_str());
+		return false;
+	}
+
+	configuredStreams.insert(key);
+
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Autoloc3::setStation(Autoloc::DataModel::Station *station)
+{
 	std::string key = station->net + "." + station->code;
 	// if the station was configured already, there is nothing to do
 	if (_stations.find(key) != _stations.end())
@@ -3361,8 +3490,9 @@ bool Autoloc3::setStation(Autoloc::DataModel::Station *station) {
 		= _stationConfig.get(station->net, station->code);
 	station->maxNucDist = e.maxNucDist;
 	station->maxLocDist = 180;
-	station->used = e.usage > 0;
-        _stations.insert(Autoloc::DataModel::StationMap::value_type(key, station));
+	station->enabled = e.usage > 0;
+
+	_stations[key] = station;
 
 	// propagate to _nucleator and _relocator
 	_relocator.setStation(station);
@@ -3390,6 +3520,15 @@ void Autoloc3::setLocatorProfile(const std::string &profile) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Autoloc3::setConfig(const Config &config) {
 	_config = config;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Autoloc3::setInventory(const Seiscomp::DataModel::Inventory *inv) {
+	inventory = inv;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
