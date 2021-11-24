@@ -20,6 +20,7 @@
 
 #include <seiscomp/seismology/locator/locsat.h>
 #include <seiscomp/autoloc/datamodel.h>
+#include <seiscomp/config/config.h>
 
 
 namespace Seiscomp {
@@ -47,32 +48,32 @@ class Locator {
 		Locator();
 		~Locator();
 
+		// Set the SeisComP config
+                void setConfig(const Seiscomp::Config::Config*);
+
 		bool init();
 		void setStation(const Autoloc::DataModel::Station *station);
 		void setMinimumDepth(double);
 
-		void setFixedDepth(double depth, bool use=true) {
-			_sclocator->setFixedDepth(depth, use);
-		}
+		void setFixedDepth(double depth, bool use=true);
 
-		void useFixedDepth(bool use=true) {
-			_sclocator->useFixedDepth(use);
-		}
+		void useFixedDepth(bool use=true);
 
-		void setProfile(const std::string &name) {
-			_sclocator->setProfile(name);
-		}
+		void setProfile(const std::string &name);
 
 	public:
-		Autoloc::DataModel::Origin *relocate(const Autoloc::DataModel::Origin *origin);
+		Autoloc::DataModel::Origin *relocate(
+			const Autoloc::DataModel::Origin *origin);
 
 
 	private:
 		// this is the SeisComP-level relocate
-		Autoloc::DataModel::Origin *_screlocate(const Autoloc::DataModel::Origin *origin);
+		Autoloc::DataModel::Origin *_screlocate(
+			const Autoloc::DataModel::Origin *origin);
 
 	private:
-		Seiscomp::Seismology::LocatorInterfacePtr _sclocator;
+		Seiscomp::Seismology::LocatorInterfacePtr sclocator;
+		const Seiscomp::Config::Config *scconfig;
 
 		MySensorLocationDelegatePtr sensorLocationDelegate;
 

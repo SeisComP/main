@@ -18,32 +18,47 @@
 
 #include <string>
 #include <map>
+#include <seiscomp/core/datetime.h>
 
 namespace Seiscomp {
 
 namespace Autoloc {
 
-
 class StationConfig {
 	public:
-		class Entry {
-			public:
-				float maxNucDist, maxLocDist;
-				int usage;
+		float maxNucDist, maxLocDist;
+		int usage;
 
-			Entry() {
-				maxNucDist = maxLocDist = 0;
-				usage = 0;
-			}
-		};
+	StationConfig() {
+		maxNucDist = maxLocDist = 0;
+		usage = 0;
+	}
+};
 
-		StationConfig();
-		bool read(const std::string &filename);
 
-		const Entry& get(const std::string &net, const std::string &sta) const;
+class StationConfigFile {
+	public:
+		StationConfigFile();
+		void setFilename(const std::string &filename);
+
+		// Has the file modification time changed since last read()?
+		bool hasChanged() const;
+
+		// Read the file. If successful return true, otherwise false.
+		bool read();
+
+		// Get the config entry for net,sta
+		const StationConfig& get(
+			const std::string &net,
+			const std::string &sta) const;
 
 	private:
-		std::map<std::string, Entry> _entry;
+		time_t mtime() const;
+
+	private:
+		time_t _mtime;
+		std::string filename;
+		std::map<std::string, StationConfig> _entry;
 };
 
 }  // namespace Autoloc

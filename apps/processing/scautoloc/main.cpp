@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 	// Create an own block to make sure the application object
 	// is destroyed when printing the overall objectcount
 	{
-		Seiscomp::Autoloc::App app(argc, argv);
+		Seiscomp::Applications::AutolocApp app(argc, argv);
 		retCode = app.exec();
 	}
 

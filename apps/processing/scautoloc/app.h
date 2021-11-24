@@ -30,57 +30,63 @@
 
 namespace Seiscomp {
 
-namespace Autoloc {
+namespace Applications {
 
 
-class App :
+class AutolocApp :
 	public Client::Application,
 	// Derived from Autoloc3 mainly because we re-implement here
 	// the _report() method to allow both XML and messaging output.
-        protected Autoloc3
+        protected Autoloc::Autoloc3
 {
 	public:
-		App(int argc, char **argv);
-		~App();
+		AutolocApp(int argc, char **argv);
+		~AutolocApp();
 
 	private:
-		bool feed(Seiscomp::DataModel::Pick*);
-		bool feed(Seiscomp::DataModel::Amplitude*);
-		bool feed(Seiscomp::DataModel::Origin*);
-
+		// startup
 		void createCommandLineDescription();
 		bool validateParameters();
 		bool initConfiguration();
 		bool initInventory();
-		void readHistoricEvents();
 
-		bool init();
-		bool run();
-		void done();
+		// Read past events from database.
+		void readPastEvents();
 
-		void handleMessage(Seiscomp::Core::Message* msg);
-		void handleTimeout();
-		void handleAutoShutdown();
-
-		void addObject(
-			const std::string& parentID,
-			Seiscomp::DataModel::Object*);
-		void removeObject(
-			const std::string& parentID,
-			Seiscomp::DataModel::Object*);
-		void updateObject(
-			const std::string& parentID,
-			Seiscomp::DataModel::Object*);
-
-		// re-implemented to support XML and messaging output
-		virtual bool _report(Seiscomp::DataModel::Origin*);
-
+		bool fillObjectQueue(const DataModel::EventParameters*);
 		bool runFromXMLFile(const char *fname);
 		bool runFromEPFile(const char *fname);
 
-		void sync(const Seiscomp::Core::Time &time);
-		const Core::Time now() const;
-		void timeStamp() const;
+		bool init();
+		bool run();
+
+	private:
+		// processing
+		bool feed(DataModel::Pick*);
+		bool feed(DataModel::Amplitude*);
+		bool feed(DataModel::Origin*);
+
+		// This is the main SC object source
+		void addObject(
+			const std::string& parentID,
+			DataModel::Object*);
+		// // These may need to be implemented in future:
+		// void updateObject(
+		// 	const std::string& parentID,
+		// 	DataModel::Object*);
+		// void removeObject(
+		// 	const std::string& parentID,
+		// 	DataModel::Object*);
+
+		// re-implemented to support XML and messaging output
+		virtual bool _report(DataModel::Origin*);
+
+		void handleTimeout();
+
+	private:
+		// shutdown
+		void done();
+		void handleAutoShutdown();
 
 	private:
 		std::string _inputFileXML; // for XML playback
@@ -89,7 +95,7 @@ class App :
 		std::string _gridConfigFile;
 
 		// object queue used for XML playback
-		std::queue<Seiscomp::DataModel::PublicObjectPtr> _objects;
+		std::queue<DataModel::PublicObjectPtr> _objects;
 
 		double _playbackSpeed;
 		Core::Time playbackStartTime;
@@ -97,10 +103,10 @@ class App :
 		Core::Time syncTime;
 		unsigned int objectCount;
 
-		Seiscomp::DataModel::EventParametersPtr ep;
-		Seiscomp::DataModel::InventoryPtr inventory;
+		DataModel::EventParametersPtr ep;
+		DataModel::InventoryPtr inventory;
 
-		Config config;
+		Autoloc::Config _config;
 		int _keepEventsTimeSpan;
 		int _wakeUpTimout;
 
@@ -111,7 +117,7 @@ class App :
 };
 
 
-}  // namespace Autoloc
+}  // namespace Applications
 
 }  // namespace Seiscomp
 

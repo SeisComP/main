@@ -23,6 +23,7 @@
 #include <seiscomp/datamodel/amplitude.h>
 #include <seiscomp/datamodel/origin.h>
 #include <seiscomp/datamodel/inventory.h>
+#include <seiscomp/config/config.h>
 #include <seiscomp/seismology/locator/locsat.h>
 
 #include <seiscomp/autoloc/datamodel.h>
@@ -189,11 +190,6 @@ class Config {
 		// picks are
 		bool useManualPicks;
 
-		// The pick log file
-		bool        pickLogEnable{false};
-		std::string pickLogFile{""};
-		int         pickLogDate;
-
 		// locator profile, e.g. "iasp91", "tab" etc.
 		std::string locatorProfile{"iasp91"};
 
@@ -235,14 +231,20 @@ class Config {
 class Autoloc3 {
 	public:
 		Autoloc3();
-		virtual ~Autoloc3();
+		virtual ~Autoloc3() = default;
 
 	public:
-		// Startup initialization.
+		// Startup configuration and initialization
 		// All of these need to be called before init();
-		void setConfig(const Config &config);
-		const Config &config() const { return _config; }
 
+		// Set the Autoloc-specific config
+		void setConfig(const Autoloc::Config &config);
+		const Autoloc::Config &config() const { return _config; }
+
+		// Set the SeisComP config
+		void setConfig(const Seiscomp::Config::Config*);
+
+		// Set the SeisComP inventory
 		void setInventory(const Seiscomp::DataModel::Inventory*);
 
 		bool setGridFile(const std::string &);
@@ -251,6 +253,34 @@ class Autoloc3 {
 		void setLocatorProfile(const std::string &);
 
 		bool init();
+
+		// shutdown
+		void shutdown();
+
+	public:
+		// Current time. In offline mode time of the last pick.
+		Seiscomp::Core::Time now();
+
+		// Synchronize the internal timing.
+		//
+		// This is necessary in playback mode were instead of
+		// using the hardware clock we either use the pick time
+		// or pick creation time.
+		void sync(const Seiscomp::Core::Time &time);
+
+		// public object input interface
+
+		// Feed a Pick and try to get something out of it.
+		//
+		// The Pick may be associated to an existing Origin or
+		// trigger the creation of a new Origin. If "something"
+		// resulted, return true, otherwise false.
+		bool feed(Seiscomp::DataModel::Pick*);
+
+		bool feed(Seiscomp::DataModel::Amplitude*);
+
+		// Feed an external or manual Origin
+		bool feed(Seiscomp::DataModel::Origin*);
 
 	private:
 		// Runtime initialization.
@@ -261,18 +291,7 @@ class Autoloc3 {
                         const Seiscomp::Core::Time &time);
 		bool setStation(Autoloc::DataModel::Station *);
 
-
-	public:
-		bool feed(Seiscomp::DataModel::Pick*);
-                bool feed(Seiscomp::DataModel::Amplitude*);
-                bool feed(Seiscomp::DataModel::Origin*);
-
-	public:
-		// Feed a Pick and try to get something out of it.
-		//
-		// The Pick may be associated to an existing Origin or
-		// trigger the creation of a new Origin. If "something"
-		// resulted, return true, otherwise false.
+		// private object interface
 		bool feed(const Autoloc::DataModel::Pick*);
 
 		// Feed a PickGroup and try to get something out of it.
@@ -281,39 +300,38 @@ class Autoloc3 {
 		// TODO: NOT IMPLEMENTED YET
 		bool feed(const Autoloc::DataModel::PickGroup&);
 
-		// Feed an external or manual Origin
 		bool feed(Autoloc::DataModel::Origin*);
 
+	protected:
 		// Report all new origins and thereafter empty _newOrigins.
 		// This calls _report(Origin*) for each new Origin
+		// TODO: review needed
 		bool report();
 
-		void dumpState() const;
 		void dumpConfig() const { _config.dump(); }
 
-	public:
+		// generate a time stamp in the log
+                void timeStamp() const;
+
+	private:
+		// Dump some (debug) information about the internal state.
+		void dumpState() const;
+
 		// Trigger removal of old objects.
+		//
+		// Objects older than minTime are removed but this is not a
+		// hard limit. For instance, unassociated picks can safely be
+		// removed but origins with associated picks should be kept
+		// for a somewhat longer time.
 		void cleanup(Autoloc::DataModel::Time minTime=0);
 
 		void reset();
-		void shutdown();
 
-	private:
 		// Get a Pick from Autoloc's internal pick pool by its
 		// publicID. If the pick is not found, return NULL.
 		const Autoloc::DataModel::Pick* pickFromPool(
 			const std::string &id) const;
-
-	public:
-		// Current time. In offline mode time of the last pick.
-		Autoloc::DataModel::Time now();
-
-		// Synchronize the internal timing.
-		//
-		// This is necessary in playback mode were instead of
-		// using the hardware clock we either use the pick time
-		// or pick creation time.
-		bool sync(const Autoloc::DataModel::Time &t);
+		bool pickInPool(const std::string &id) const;
 
 	protected:
 		// !!!!!!!!!!!!!!!!!!!!!!!
@@ -342,8 +360,6 @@ class Autoloc3 {
 		// import from Seiscomp::DataModel
 		Autoloc::DataModel::Origin *importFromSC(
 			const Seiscomp::DataModel::Origin*);
-//		Autoloc::DataModel::Pick* importFromSC(
-//			const Seiscomp::DataModel::Pick*);
 
 		// Compute the score.
 		double _score(const Autoloc::DataModel::Origin*) const;
@@ -399,12 +415,6 @@ class Autoloc3 {
 		// Returns true on success.
 //		bool _improve(Origin *);
 
-		// true, if this pick was marked as bad and must not be used
-		void _setBlacklisted(const Autoloc::DataModel::Pick*, bool=true);
-
-		// true, if this pick was marked as bad and must not be used
-		bool _blacklisted(const Autoloc::DataModel::Pick*) const;
-	
 		// true if pick comes with valid station info
 		bool _addStationInfo(const Autoloc::DataModel::Pick*);
 
@@ -428,10 +438,10 @@ class Autoloc3 {
 		// check whether the origin meets the publication criteria
 		bool _publishable(const Autoloc::DataModel::Origin*) const;
 
-		// store a pick in internal buffer
+		// store a pick in pick pool
 		bool _store(const Autoloc::DataModel::Pick*);
 
-		// store an origin in internal buffer
+		// store an origin in origin pool
 		bool _store(Autoloc::DataModel::Origin*);
 
 		// try to find and add more matching picks to origin
@@ -537,7 +547,7 @@ class Autoloc3 {
 		Autoloc::DataModel::OriginID _newOriginID();
 
 		// try to find an "equivalent" origin
-		Autoloc::DataModel::Origin *_findEquivalentOrigin(
+		Autoloc::DataModel::Origin *_xxlFindEquivalentOrigin(
 			const Autoloc::DataModel::Origin*);
 
 		// for a newly fed origin, find an equivalent internal origin
@@ -549,7 +559,6 @@ class Autoloc3 {
 		GridSearch _nucleator;
 		Locator    _relocator;
 
-	private:
 		// origins that were created/modified during the last
 		// feed() call
 		Autoloc::DataModel::OriginVector _newOrigins;
@@ -559,30 +568,24 @@ class Autoloc3 {
 		std::map<int, Autoloc::DataModel::OriginPtr> _lastSent;
 		std::map<int, Autoloc::DataModel::OriginPtr> _outgoing;
 
-		Autoloc::DataModel::Time _playbackTime;
+		Autoloc::DataModel::Time _now;
 		Autoloc::DataModel::Time _nextCleanup;
 
-	protected:
-		typedef std::map<std::string, Autoloc::DataModel::PickCPtr> PickMap;
-		PickMap _pick;
-		bool          _pickLogEnable{false};
-		std::string   _pickLogFilePrefix;
-		std::string   _pickLogFileName;
-		std::ofstream _pickLogFile;
+		typedef std::map<std::string, Autoloc::DataModel::PickCPtr> PickPool;
+		PickPool pickPool;
 
-	private:
 		Autoloc::DataModel::StationMap _stations;
-
 		// a list of NET.STA strings for missing stations
+		// FIXME: review!
 		std::set<std::string> _missingStations;
-		std::set<Autoloc::DataModel::PickCPtr> _blacklist;
 
 		Autoloc::DataModel::OriginVector _origins;
-		Autoloc::StationConfig _stationConfig;
+		Autoloc::StationConfigFile _stationConfigFile;
 
-	protected: // FIXME: make private
 		Config _config;
-		Seiscomp::DataModel::InventoryCPtr inventory;
+
+		const Seiscomp::Config::Config *scconfig;
+		const Seiscomp::DataModel::Inventory *scinventory;
 };
 
 

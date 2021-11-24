@@ -61,6 +61,26 @@ void Nucleator::setStation(const Autoloc::DataModel::Station *station)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+GridSearch::GridSearch() {
+	scconfig = NULL;
+//	_stations = 0;
+	_abort = false;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void GridSearch::setConfig(const Seiscomp::Config::Config *conf) {
+	scconfig = conf;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void GridSearch::setStation(const Autoloc::DataModel::Station *station)
 {
 	Nucleator::setStation(station);
@@ -72,19 +92,10 @@ void GridSearch::setStation(const Autoloc::DataModel::Station *station)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-GridSearch::GridSearch()
-{
-//	_stations = 0;
-	_abort = false;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool GridSearch::init()
 {
+	_relocator.setConfig(scconfig);
+
 	if ( ! _relocator.init())
 		return false;
 	return true;

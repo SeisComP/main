@@ -80,7 +80,17 @@ MySensorLocationDelegate::getSensorLocation(Seiscomp::DataModel::Pick *pick) con
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Locator::Locator()
 {
+	scconfig = NULL;
 	_locatorCallCounter = 0;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Locator::setConfig(const Seiscomp::Config::Config *conf) {
+	scconfig = conf;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -91,18 +101,20 @@ Locator::Locator()
 bool Locator::init()
 {
 	const std::string locator = "LOCSAT";
-	_sclocator =
-		Seiscomp::Seismology::LocatorInterface::Create(locator.c_str());
-	if (!_sclocator) {
+	sclocator = Seiscomp::Seismology::LocatorInterface::Create(locator.c_str());
+	if ( ! sclocator) {
 		SEISCOMP_ERROR_S("Could not create "+locator+" instance");
 		exit(-1);
 	}
-	_sclocator->useFixedDepth(false);
+	if ( ! sclocator->init(*scconfig) ) {
+		return false;
+	}
+	sclocator->useFixedDepth(false);
 	_minDepth = 5;
 	setFixedDepth(_minDepth, false);
 
 	sensorLocationDelegate = new MySensorLocationDelegate;
-	_sclocator->setSensorLocationDelegate(sensorLocationDelegate.get());
+	sclocator->setSensorLocationDelegate(sensorLocationDelegate.get());
 
 	return true;
 }
@@ -158,6 +170,33 @@ static bool hasFixedDepth(const Autoloc::DataModel::Origin *origin)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Locator::setFixedDepth(double depth, bool use) {
+	sclocator->setFixedDepth(depth, use);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Locator::useFixedDepth(bool use) {
+	sclocator->useFixedDepth(use);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Locator::setProfile(const std::string &name) {
+	sclocator->setProfile(name);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Autoloc::DataModel::Origin *Locator::relocate(const Autoloc::DataModel::Origin *origin)
 {
 	using namespace Autoloc::DataModel;
@@ -183,7 +222,7 @@ Autoloc::DataModel::Origin *Locator::relocate(const Autoloc::DataModel::Origin *
 
 	if (relo->dep <= _minDepth &&
 	    relo->depthType != Origin::DepthManuallyFixed &&
-	    ! _sclocator->usingFixedDepth()) {
+	    ! sclocator->usingFixedDepth()) {
 
 			// relocate again, this time fixing the depth to _minDepth
 			// NOTE: This reconfigures the locator temporarily!
@@ -280,10 +319,10 @@ Autoloc::DataModel::Origin* Locator::_screlocate(const Autoloc::DataModel::Origi
 		// Sometimes LocSAT appears to require a second
 		// invocation to produce a decent result. Reason TBD
 		Seiscomp::DataModel::OriginPtr temp;
-		temp = _sclocator->relocate(scorigin.get());
+		temp = sclocator->relocate(scorigin.get());
 		if ( ! temp) // FIXME
 			return NULL;
-		screlo = _sclocator->relocate(temp.get());
+		screlo = sclocator->relocate(temp.get());
 		if ( ! screlo) // FIXME
 			return NULL;
 	}

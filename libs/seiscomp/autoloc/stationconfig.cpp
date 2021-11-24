@@ -21,6 +21,9 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <seiscomp/logging/log.h>
 
@@ -31,10 +34,10 @@ namespace Autoloc {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-StationConfig::StationConfig()
+StationConfigFile::StationConfigFile()
 {
 	std::string defaultkey = "* *";
-	_entry[defaultkey] = Entry();
+	_entry[defaultkey] = StationConfig();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -42,19 +45,28 @@ StationConfig::StationConfig()
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool StationConfig::read(const std::string &fname)
+void StationConfigFile::setFilename(const std::string &filename) {
+	this->filename = filename;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool StationConfigFile::read()
 {
 	std::string line;
 	std::string defaultkey = "* *";
-	_entry[defaultkey] = Entry();
+	_entry[defaultkey] = StationConfig();
 
-	std::ifstream ifile(fname.c_str());
+	std::ifstream ifile(filename.c_str());
 	if ( ! ifile.good()) {
-		SEISCOMP_ERROR_S("Failed to open station config file "+fname);
+		SEISCOMP_ERROR_S("Failed to open station config file "+filename);
 		return false;
 	}
 
-	Entry entry;
+	StationConfig entry;
 	while( ! ifile.eof()) {
 		std::getline(ifile, line);
 		line.erase(0, line.find_first_not_of(" \n\r\t"));
@@ -69,6 +81,8 @@ bool StationConfig::read(const std::string &fname)
 		_entry[key] = entry;
 	}
 
+	_mtime = mtime();
+
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -77,8 +91,35 @@ bool StationConfig::read(const std::string &fname)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-const StationConfig::Entry&
-StationConfig::get(const std::string &net, const std::string &sta) const
+time_t StationConfigFile::mtime() const
+{
+	struct stat buf;
+
+	if (stat(filename.c_str(), &buf) != 0) {
+		// error!
+		return 0; // FIXME
+	}
+
+	return buf.st_mtime;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool StationConfigFile::hasChanged() const
+{
+	return mtime() != _mtime;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+const StationConfig&
+StationConfigFile::get(const std::string &net, const std::string &sta) const
 {
 	std::vector<std::string> patterns;
 	patterns.push_back(net + " " + sta);
@@ -90,11 +131,11 @@ StationConfig::get(const std::string &net, const std::string &sta) const
 	     it = patterns.begin(); it != patterns.end(); ++it) {
 
 		const std::string &pattern = *it;
-		std::map<std::string, Entry>::const_iterator mit = _entry.find(pattern);
+		std::map<std::string, StationConfig>::const_iterator mit = _entry.find(pattern);
 		if (mit == _entry.end())
 			continue;
 
-		const Entry &e = (*mit).second;
+		const StationConfig &e = (*mit).second;
 		SEISCOMP_DEBUG("Station %s %s  pattern %-8s config: usage=%d maxnucdist=%g",
 		               net.c_str(), sta.c_str(), pattern.c_str(), e.usage, e.maxNucDist);
 

@@ -74,8 +74,7 @@ class Pick : public Seiscomp::Core::BaseObject {
 	public:
 
 		Pick(const Seiscomp::DataModel::Pick*);
-		Pick(const Pick &other);
-//		Pick(const std::string &id, const std::string &net, const std::string &sta, const Time &time);
+//		Pick(const Pick &other);
 		~Pick();
 
 		static int count();
@@ -113,6 +112,8 @@ class Pick : public Seiscomp::Core::BaseObject {
 
 		Status status;
 		bool xxl;		// Does it look like a pick of a very big event?
+
+		mutable bool blacklisted;
 
 		// Attached SC objects. The pick must never be null.
 		Seiscomp::DataModel::PickCPtr      scpick;

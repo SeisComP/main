@@ -80,6 +80,7 @@ Pick::Pick(const Seiscomp::DataModel::Pick *scpick)
 
 	amp = snr = per = 0;
 	xxl = false;
+	blacklisted = false;
 	_station = NULL;
 	_origin = NULL;
 

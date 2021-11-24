@@ -269,8 +269,8 @@ std::string printOrigin(const Autoloc::DataModel::Origin *origin, bool oneliner)
 				<< excludedFlag << " "
 				<< std::left << std::setw(6) << arr.phase << " "
 				<< (arr.pick->xxl ? "XXL":"   ");
-			out.precision(1);
-			out	<< "  " << std::right << std::fixed << std::setw(5) << arr.pick->snr;;
+//			out.precision(1);
+//			out	<< "  " << std::right << std::fixed << std::setw(8) << arr.pick->snr;;
 			out.precision(2);
 			out	<< " " << arr.score << " -";
 			out	<< " " << arr.tscore;
@@ -377,11 +377,15 @@ double originScore(const Autoloc::DataModel::Origin *origin, double maxRMS, doub
 		if ( snr > 100 )
 			snr = 100;
 
-		// FIXME: This is HIGHLY experimental:
-		// For a manual pick without SNR, as produced by
-		// scolv, we assume a default value.
-		if (manual(pick.get()) && pick->snr <= 0)
-			snr = 10; // make this configureable
+		// For a manual pick without an SNR, as produced by
+		// scolv, we fix this at a reasonable default value.
+		// An onset with SNR of 10 is generally considered a
+		// pronounced onset so setting the missing SNR of a confirmed
+		// manual pick allows to increase the origin score due to this
+		// pick.
+		if (manual(pick.get()) && ! pick->scamplSNR)
+			snr = 10; // make this configurable
+		// TODO: set this as early as possible
 
 		double normamp = pick->normamp;
 		if (manual(pick.get()) && normamp <= 0)

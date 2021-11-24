@@ -23,6 +23,7 @@
 #include <set>
 #include <map>
 
+#include <seiscomp/config/config.h>
 #include <seiscomp/autoloc/datamodel.h>
 #include <seiscomp/autoloc/locator.h>
 
@@ -103,6 +104,9 @@ class GridSearch : public Nucleator
 		};
 
 	public:
+		// Set the SeisComP config
+		void setConfig(const Seiscomp::Config::Config*);
+		
 		void setStation(const Autoloc::DataModel::Station *station);
 		const Config &config() const { return _config; }
 		void setConfig(const Config &config) { _config = config; }
@@ -143,6 +147,9 @@ class GridSearch : public Nucleator
 
 	public: // FIXME
 		Config  _config;
+
+	private:
+		const Seiscomp::Config::Config *scconfig;
 };
 
 // From a GridPoint point of view, a station has a

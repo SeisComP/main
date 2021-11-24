@@ -72,7 +72,8 @@ Config::Config()
 	publicationIntervalPickCount = 20;
 
 	xxlEnabled = false;
-	xxlMinAmplitude = 10000.;
+	xxlMinSNR = 20.;
+	xxlMinAmplitude = 5000.;
 	xxlMinPhaseCount = 4;
 	xxlMaxStaDist = 15;
 	xxlMaxDepth = 100;
@@ -108,7 +109,7 @@ void Config::dump() const
 	SEISCOMP_INFO("  publicationIntervalTimeIntercept %.1f",   publicationIntervalTimeIntercept);
 	SEISCOMP_INFO("  publicationIntervalPickCount     %d",     publicationIntervalPickCount);
 	SEISCOMP_INFO("  reportAllPhases                  %s",     reportAllPhases ? "true":"false");
-	SEISCOMP_INFO("  pickLogFile                      %s",     pickLogFile.size() ? pickLogFile.c_str() : "pick logging is disabled");
+//	SEISCOMP_INFO("  pickLogFile                      %s",     pickLogFile.size() ? pickLogFile.c_str() : "pick logging is disabled");
 	SEISCOMP_INFO("  dynamicPickThresholdInterval     %g",     dynamicPickThresholdInterval);
 	SEISCOMP_INFO("  offline                          %s",     offline ? "true":"false");
 	SEISCOMP_INFO("  test                             %s",     test ? "true":"false");
@@ -126,6 +127,7 @@ void Config::dump() const
 	SEISCOMP_INFO("  XXL feature is enabled");
 	SEISCOMP_INFO("  xxl.minPhaseCount                 %d",     xxlMinPhaseCount);
 	SEISCOMP_INFO("  xxl.minAmplitude                  %g",     xxlMinAmplitude);
+	SEISCOMP_INFO("  xxl.minSNR                        %g",     xxlMinSNR);
 	SEISCOMP_INFO("  xxl.maxStationDistance           %.1f deg", xxlMaxStaDist);
 	SEISCOMP_INFO("  xxl.maxDepth                      %g km",  xxlMaxDepth);
 	SEISCOMP_INFO("  xxl.deadTime                      %g s",  xxlDeadTime);
