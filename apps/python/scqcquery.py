@@ -13,8 +13,14 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
-import sys, re
-import seiscomp.core, seiscomp.client, seiscomp.io, seiscomp.datamodel
+from __future__ import absolute_import, division, print_function
+
+import sys
+import re
+import seiscomp.core
+import seiscomp.client
+import seiscomp.io
+import seiscomp.datamodel
 
 
 class WfqQuery(seiscomp.client.Application):

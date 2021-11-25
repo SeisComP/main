@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<module name="scquery_qc" category="Utilities">
+		<description>
+			Queries waveform quality control (QC) parameters from database.
+		</description>
+		<command-line>
+			<group name="Generic">
+				<optionReference>generic#help</optionReference>
+				<optionReference>generic#version</optionReference>
+			</group>
+
+			<group name="Verbosity">
+				<optionReference>verbosity#verbosity</optionReference>
+				<optionReference>verbosity#v</optionReference>
+				<optionReference>verbosity#quiet</optionReference>
+				<optionReference>verbosity#component</optionReference>
+				<optionReference>verbosity#syslog</optionReference>
+				<optionReference>verbosity#lockfile</optionReference>
+				<optionReference>verbosity#console</optionReference>
+				<optionReference>verbosity#debug</optionReference>
+				<optionReference>verbosity#log-file</optionReference>
+			</group>
+
+			<group name="Database">
+				<optionReference>database#db-driver-list</optionReference>
+				<optionReference>database#database</optionReference>
+				<optionReference>database#inventory-db</optionReference>
+			</group>
+
+			<group name="Output">
+				<option flag="o" long-flag="output" argument="filename">
+					<description>
+					name of output XML file. Objects are sent to stderr if none
+					is given.
+					</description>
+				</option>
+				<option flag="f" long-flag="formatted">
+					<description>
+					write formatted XML
+					</description>
+				</option>
+			</group>
+
+			<group name="Query">
+				<option long-flag="streams-from-inventory">
+					<description>
+					read streams from inventory. Superseeded by '--streamID'.
+					</description>
+				</option>
+				<option flag="i" long-flag="streamID" argument="string">
+					<description>
+						waveform stream ID to search for QC parameters: net.sta.loc.cha -
+						[networkCode].[stationCode].[sensorLocationCode].[channelCode].
+						Provide a single ID or a comma-separated list. Overrides
+						'--streams-from-inventory'
+					</description>
+				</option>
+				<option flag="p" long-flag="parameter" argument="string">
+					<description>
+						QC parameter to output: (e.g. delay,rms,'gaps count' ...).
+						Use quotes if QC parameter has more than 1 word.
+						Provide a single parameter or a comma-separated list.
+						Defaults are used if parameter is undefined.
+					</description>
+				</option>
+				<option flag="b" long-flag="begin" argument="time">
+					<description>
+						start time of query. Format: 'YYYY-MM-DD hh:mm:ss'
+					</description>
+				</option>
+				<option flag="e" long-flag="end" argument="time">
+					<description>
+						end time of query. Format: 'YYYY-MM-DD hh:mm:ss'.
+						Current time is considered if the parameter is undefined.
+					</description>
+				</option>
+			</group>
+		</command-line>
+	</module>
+</seiscomp>
