@@ -1,1 +1,1 @@
-SUBDIRS(seiscomp)
+SUBDIRS(seiscomp swig)
