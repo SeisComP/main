@@ -185,6 +185,18 @@
 					</description>
 				</parameter>
 
+				<parameter name="magPriorityOverStationCount" type="boolean" default="false">
+					<description>
+						If false then the station count rules out the magnitude priority
+						which is only taken into account if two magnitudes have the
+						same station count.
+
+						If true then the priority rules out the station count
+						which is only taken into account if two magnitudes have the
+						same priority.
+					</description>
+				</parameter>
+
 				<parameter name="priorities" type="list:string" default="AGENCY, STATUS, PHASES_AUTOMATIC, TIME_AUTOMATIC">
 					<description>
 						The general priority list to decide if an Origin becomes preferred.

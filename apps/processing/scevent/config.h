@@ -68,6 +68,7 @@ struct Config {
 	size_t          mbOverMwCount;
 	double          mbOverMwValue;
 	size_t          minMwCount;
+	bool            magPriorityOverStationCount{false};
 
 	bool            enableFallbackPreferredMagnitude;
 	bool            updatePreferredSolutionAfterMerge;

@@ -282,9 +282,9 @@ bool EventTool::initConfiguration() {
 	try { _config.maxDist = configGetDouble("eventAssociation.maximumDistance"); } catch (...) {}
 
 	try { _config.minMwCount = configGetInt("eventAssociation.minMwCount"); } catch (...) {}
-
 	try { _config.mbOverMwCount = configGetInt("eventAssociation.mbOverMwCount"); } catch (...) {}
 	try { _config.mbOverMwValue = configGetDouble("eventAssociation.mbOverMwValue"); } catch (...) {}
+	try { _config.magPriorityOverStationCount = configGetBool("eventAssociation.magPriorityOverStationCount"); } catch (...) {}
 
 	try { _config.eventIDPrefix = configGetString("eventIDPrefix"); } catch (...) {}
 	try { _config.eventIDPattern = configGetString("eventIDPattern"); } catch (...) {}
@@ -2478,22 +2478,57 @@ Magnitude *EventTool::preferredMagnitude(Origin *origin) {
 			if ( isAgencyIDBlocked(objectAgencyID(mag)) ) continue;
 
 			int priority = goodness(mag, mbcount, mbval, _config);
-			if ( priority <= 0 )
+			if ( priority <= 0 ) {
 				continue;
+			}
 
-			if ( isMw(mag) ) {
-				if ( (stationCount(mag) > goodCount)
-				  || ((stationCount(mag) == goodCount) && (priority > goodPriority)) ) {
-					goodPriority = priority;
-					goodCount = stationCount(mag);
-					goodMag = mag;
+			if ( _config.magPriorityOverStationCount ) {
+				// Priority rules out the station count. A network
+				// magnitude with lower station count can become preferred if
+				// its priority is higher.
+				// Station count is only taken into account if the priority is
+				// equal.
+				if ( isMw(mag) ) {
+					if ( (priority > goodPriority)
+					  || ((priority == goodPriority) && (stationCount(mag) > goodCount)) ) {
+						goodPriority = priority;
+						goodCount = stationCount(mag);
+						goodMag = mag;
+					}
+				}
+				else {
+					// No Mw
+					if ( (priority > fallbackPriority)
+					  || ((priority == fallbackPriority) && (stationCount(mag) > fallbackCount)) ) {
+						fallbackPriority = priority;
+						fallbackCount = stationCount(mag);
+						fallbackMag = mag;
+					}
 				}
 			}
-			else if ( (stationCount(mag) > fallbackCount)
-			       || ((stationCount(mag) == fallbackCount) && (priority > fallbackPriority)) ) {
-				fallbackPriority = priority;
-				fallbackCount = stationCount(mag);
-				fallbackMag = mag;
+			else {
+				// Station count rules out priority. A network
+				// magnitude with lower priority can become preferred if
+				// its station count is higher.
+				// Priority is only taken into account when the station count
+				// is equal.
+				if ( isMw(mag) ) {
+					if ( (stationCount(mag) > goodCount)
+					  || ((stationCount(mag) == goodCount) && (priority > goodPriority)) ) {
+						goodPriority = priority;
+						goodCount = stationCount(mag);
+						goodMag = mag;
+					}
+				}
+				else {
+					// No Mw
+					if ( (stationCount(mag) > fallbackCount)
+					  || ((stationCount(mag) == fallbackCount) && (priority > fallbackPriority)) ) {
+						fallbackPriority = priority;
+						fallbackCount = stationCount(mag);
+						fallbackMag = mag;
+					}
+				}
 			}
 		}
 		catch ( ValueException& ) {
