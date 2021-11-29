@@ -585,13 +585,20 @@ int goodness(const Magnitude *netmag, int mbcount,
 		return 0;
 
 	// Special Mw(mB) criterion
-	
+
 	if ( isMw(netmag) ) {
-		if ( mcount < config.minMwCount ) return 0;
+		if ( mcount < config.minMwCount ) {
+			return 0;
+		}
 
 		if ( mcount < config.mbOverMwCount ) {
-			if ( (mval+mbval)/2 < config.mbOverMwValue) return 0;
-			if ( (int)mcount<mbcount/2 ) return 0;
+			if ( (mval + mbval) / 2 < config.mbOverMwValue ) {
+				return 0;
+			}
+
+			if ( static_cast<int>(mcount) < mbcount / 2 ) {
+				return 0;
+			}
 		}
 	}
 
