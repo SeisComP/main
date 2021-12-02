@@ -111,7 +111,7 @@ class MagTool {
 
 		bool feed(DataModel::Origin*);
 		bool feed(DataModel::Pick*);
-		bool feed(DataModel::Amplitude*, bool update);
+		bool feed(DataModel::Amplitude*, bool update, bool remove);
 
 		void remove(DataModel::PublicObject *po);
 
