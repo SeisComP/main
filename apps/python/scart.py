@@ -146,7 +146,7 @@ class Archive:
                     files = glob.glob(dir + "*.%03d" % start_day)
 
                 if not files:
-                    t = time.gmtime(begin.seconds())
+                    t = time.gmtime(begin.seconds() - 86400)
                     sys.stderr.write(
                         "info: skipping streams '%s.%s.*.%s on %s '"
                         "- no data found for this day in archive %s\n" %
