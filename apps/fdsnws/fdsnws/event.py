@@ -758,8 +758,8 @@ class FDSNEvent(BaseResource):
                 bBox = ro.geo.bCircle.calculateBBox()
 
         # SELECT --------------------------------
-        q = "SELECT DISTINCT pe.%s AS publicID, e.*, %s AS colOrderBy" % (
-            colPID, colOrderBy)
+        q = "SELECT DISTINCT pe.%s AS %s, e.*, %s AS colOrderBy" % (
+            colPID, colPID, colOrderBy)
         if reqDist:  # Great circle distance calculated by Haversine formula
             c = ro.geo.bCircle
             q += ", DEGREES(ACOS(" \
