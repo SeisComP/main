@@ -259,26 +259,6 @@
     <string>Ctrl+Shift+Z</string>
    </property>
   </action>
-  <action name="actionPreviousEvent" >
-   <property name="enabled" >
-    <bool>true</bool>
-   </property>
-   <property name="icon" >
-    <iconset/>
-   </property>
-   <property name="text" >
-    <string>Previous event</string>
-   </property>
-   <property name="iconText" >
-    <string>Previous event</string>
-   </property>
-   <property name="toolTip" >
-    <string>Load previous event of the event list</string>
-   </property>
-   <property name="shortcut" >
-    <string>Ctrl+PgUp</string>
-   </property>
-  </action>
   <action name="actionNextEvent" >
    <property name="enabled" >
     <bool>true</bool>
@@ -293,7 +273,27 @@
     <string>Next event</string>
    </property>
    <property name="toolTip" >
-    <string>Go to next event of the event list</string>
+    <string>Load next event from the event list</string>
+   </property>
+   <property name="shortcut" >
+    <string>Ctrl+PgUp</string>
+   </property>
+  </action>
+  <action name="actionPreviousEvent" >
+   <property name="enabled" >
+    <bool>true</bool>
+   </property>
+   <property name="icon" >
+    <iconset/>
+   </property>
+   <property name="text" >
+    <string>Previous event</string>
+   </property>
+   <property name="iconText" >
+    <string>Previous event</string>
+   </property>
+   <property name="toolTip" >
+    <string>Load previous event from the event list</string>
    </property>
    <property name="shortcut" >
     <string>Ctrl+PgDown</string>
