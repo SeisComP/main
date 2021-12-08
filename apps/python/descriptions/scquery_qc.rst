@@ -18,6 +18,25 @@ The database query is done from
   considered if the end is not give.
 
 
+Workflow
+--------
+
+For minimizing the impact of stored waveform QC parameters on the size of the
+database you may:
+
+#. Compute the QC parameters in real time using scqc and save them in the
+   |scname| database.
+#. Regularly read the QC parameters from the database and clean up the database,
+   e.g. in a cron job:
+
+   #. use scquery_qc for some time span to read the QC parameters from the database.
+      Save them in XML files.
+   #. clean the database from the QC parameters saved in XML files using
+      :ref:`scdispatch`, e.g. ::
+
+         scdispatch -H [host] -O remove -i [XML file]
+
+
 Examples
 --------
 
