@@ -13,7 +13,7 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
-import sys, os, time, re
+import sys, os, re
 import seiscomp.core, seiscomp.client, seiscomp.logging, seiscomp.system
 
 
@@ -308,7 +308,7 @@ class Monitor(seiscomp.client.Application):
 
         # If a client disconnected, remove it from the list
         elif msg.type == seiscomp.client.Packet.Disconnected:
-            if self._clients.has_key(msg.subject):
+            if msg.subject in self._clients:
                 del self._clients[msg.subject]
 
     def handleDisconnect(self):
