@@ -107,7 +107,7 @@ class SH2Proc(seiscomp.client.Application):
                 cfg = mod.configStation(i)
                 net = cfg.networkCode()
                 sta = cfg.stationCode()
-                if self.streams.has_key(sta):
+                if sta in self.streams:
                     seiscomp.logging.warning(
                             'ambiguous stream id found for station %s.%s' % (net, sta))
                     continue
@@ -310,12 +310,12 @@ class SH2Proc(seiscomp.client.Application):
                             'Line %i: end of phase, stream code incomplete' % iLine)
                     continue
 
-                if not self.streams.has_key(staCode):
+                if not staCode in self.streams:
                     seiscomp.logging.warning(
                             'Line %i: end of phase, station code %s not found in inventory' % (iLine, staCode))
                     continue
 
-                if not self.streams[staCode].has_key(compCode):
+                if not compCode in self.streams[staCode]:
                     seiscomp.logging.warning(
                             'Line %i: end of phase, component %s of station %s not found in inventory' % (iLine, compCode, staCode))
                     continue
