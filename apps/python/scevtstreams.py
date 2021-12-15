@@ -40,8 +40,13 @@ class EventStreams(client.Application):
         self.allStreams = True
         self.allComponents = True
 
+        # filter
+        self.network = None
+        self.station = None
+
         self.streams = []
 
+        # output format
         self.caps = False
         self.fdsnws = False
 
@@ -91,6 +96,9 @@ class EventStreams(client.Application):
             "if all components are used, use inventory to resolve stream "
             "components instead of using '?' (important when Arclink should be "
             "used)")
+        self.commandline().addStringOption(
+            "Dump", "net-sta", "Filter streams by network code or network and "
+            "station code. Format: NET or NET.STA")
         self.commandline().addOption(
             "Dump", "caps",
             "dump in capstool format (Common Acquisition Protocol Server by "
@@ -154,6 +162,25 @@ class EventStreams(client.Application):
         self.allStreams = self.commandline().hasOption("all-streams")
         self.allStations = self.commandline().hasOption("all-stations")
         self.allNetworks = self.commandline().hasOption("all-networks")
+
+        try:
+            networkStation = self.commandline().optionString("net-sta")
+        except RuntimeError:
+            networkStation = None
+
+        if networkStation:
+            try:
+                self.network = networkStation.split('.')[0]
+            except IndexError:
+                print("Error in network code '{}': Use '--net-sta' with "
+                      "format NET or NET.STA".format(networkStation), file=sys.stderr)
+                return False
+
+            try:
+                self.station = networkStation.split('.')[1]
+            except IndexError:
+                pass
+
         self.caps = self.commandline().hasOption("caps")
         self.fdsnws = self.commandline().hasOption("fdsnws")
 
@@ -183,6 +210,21 @@ class EventStreams(client.Application):
             if not picks:
                 raise ValueError("Could not find picks for event {} in "
                                  "database".format(self.eventID))
+
+        # filter picks
+        pickFiltered = []
+        if self.network:
+            for pick in picks:
+                if pick.waveformID().networkCode() != self.network:
+                    continue
+                if self.station and self.station != pick.waveformID().stationCode():
+                    continue
+                pickFiltered.append(pick)
+
+            picks = pickFiltered
+
+        if not picks:
+            raise ValueError("All picks filtered out")
 
         # calculate minimum and maximum pick time
         minTime = None
