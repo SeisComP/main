@@ -43,7 +43,7 @@ class HCApp : public Gui::Application {
 	protected:
 		QString findHeadline(const DataModel::WaveformStreamID &streamID,
 		                     const Core::Time &refTime);
-		float findGain(const DataModel::WaveformStreamID &streamID,
+		double findGain(const DataModel::WaveformStreamID &streamID,
 		               const Core::Time &refTime);
 
 		bool initConfiguration();
@@ -76,16 +76,16 @@ class HCApp : public Gui::Application {
 		typedef QMap<std::string, HeliStream> HeliStreamMap;
 
 		std::vector<std::string> _streamCodes;
-		std::string              _streamID;
+		std::vector<std::string> _streamIDs;
 		HeliStreamMap            _helis;
 		Core::Time               _endTime;
 		std::string              _filterString;
 		std::string              _imagePostProcessingScript;
-		float                    _gain;
+		double                   _gain;
 		std::string              _scaling;
-		float                    _amplitudesRange;
-		float                    _amplitudesMin;
-		float                    _amplitudesMax;
+		double                   _amplitudesRange;
+		double                   _amplitudesMin;
+		double                   _amplitudesMax;
 		QVector<QColor>          _rowColors;
 		bool                     _fixCurrentTimeToLastRecord;
 		int                      _numberOfRows;

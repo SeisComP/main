@@ -193,7 +193,10 @@
 			<group name="Data">
 				<option long-flag="stream" argument="arg">
 					<description>
-						The record stream that should be displayed: stream=net.sta.loc.cha
+						The record stream that should be displayed. Can be used
+						multiple times for multiple streams.
+
+						Example: GR.MOX..BHZ (net.sta.loc.cha)
 					</description>
 				</option>
 				<option long-flag="filter" argument="arg">

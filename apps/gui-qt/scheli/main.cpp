@@ -63,8 +63,8 @@ HCApp::HCApp(int& argc, char** argv, int flags, Type type )
 	_gain = 1.0;
 	_scaling = "minmax";
 	_amplitudesRange = 0.0;
-	_amplitudesMin =  -0.00001f;
-	_amplitudesMax =  +0.00001f;
+	_amplitudesMin =  -0.00001;
+	_amplitudesMax =  +0.00001;
 	_fixCurrentTimeToLastRecord = false;
 	_numberOfRows = 48;
 	_timeSpanPerRow = 1800;
@@ -122,7 +122,7 @@ QString HCApp::findHeadline(const DataModel::WaveformStreamID &streamID,
 }
 
 
-float HCApp::findGain(const DataModel::WaveformStreamID &streamID, const Core::Time &refTime) {
+double HCApp::findGain(const DataModel::WaveformStreamID &streamID, const Core::Time &refTime) {
 	if ( commandline().hasOption("gain") ) {
 		SEISCOMP_DEBUG("Using supplied gain = %f", _gain);
 		return _gain;
@@ -186,7 +186,9 @@ bool HCApp::initConfiguration() {
 		for ( size_t i = 0; i < colors.size(); ++i ) {
 			QColor c;
 			if ( !Gui::fromString(c, colors[i]) ) {
-				std::cerr << "WARNING: '" << colors[i] << "': invalid color definition in 'colors': using defaults" << std::endl;
+				std::cerr << "WARNING: '" << colors[i]
+				          << "': invalid color definition in 'colors': using defaults"
+				          << std::endl;
 				_rowColors.clear();
 				break;
 			}
@@ -218,50 +220,73 @@ void HCApp::createCommandLineDescription() {
 	Gui::Application::createCommandLineDescription();
 
 	commandline().addGroup("Mode");
-	commandline().addOption("Mode", "end-time", "Set the end time of acquisition, default: 'gmt', format \"%F %T\"", (std::string*)NULL);
-	commandline().addOption("Mode", "offline", "Do not connect to a messaging server and do not use the database");
-	commandline().addOption("Mode", "no-messaging", "Do not connect to a messaging server but use the database");
+	commandline().addOption("Mode", "end-time", "Set the end time of acquisition, "
+	                        "default: 'gmt', format \"%F %T\"",
+	                        (std::string*)nullptr);
+	commandline().addOption("Mode", "offline", "Do not connect to a messaging "
+	                        "server and do not use the database");
+	commandline().addOption("Mode", "no-messaging", "Do not connect to a "
+	                        "messaging server but use the database");
 
 	commandline().addGroup("Data");
-	commandline().addOption("Data", "stream", "The record stream that should be displayed: stream=net.sta.loc.cha", &_streamID);
+	commandline().addOption("Data", "stream", "The record stream that should be "
+	                        "displayed. Use option multiple times for multiple "
+	                        "streams. Format: net.sta.loc.cha", &_streamIDs);
 	commandline().addOption("Data", "filter", "The filter to apply", &_filterString);
 	commandline().addOption("Data", "gain", "Gain applied to the data before plotting.", &_gain);
 	commandline().addOption("Data", "amp-scaling", "Method for scaling amplitudes per row. "
 	                        "Possible values:"
 	                        "\nminmax: Scale all rows to configured minimum and "
 	                        "maximum amplitudes."
-	                        "\nrow: Scale each row to the maximum within this row.", &_scaling);
-	commandline().addOption("Data", "amp-range-min", "Lower bound of amplitude range per row. Requires --amp-scaling minmax", &_amplitudesMin);
-	commandline().addOption("Data", "amp-range-max", "Upper bound of amplitude range per row. Requires --amp-scaling minmax", &_amplitudesMax);
-	commandline().addOption("Data", "amp-range", "Arround zero bound of amplitude range per row. Requires --amp-scaling minmax. Overrides min and max values.", &_amplitudesRange);
-	commandline().addOption("Data", "record-time", "Let the last row always contain the last record received", &_fixCurrentTimeToLastRecord);
+	                        "\nrow: Scale each row to the maximum within this row.",&_scaling);
+	commandline().addOption("Data", "amp-range-min", "Lower bound of amplitude "
+	                        "range per row. Requires --amp-scaling minmax",
+	                        &_amplitudesMin);
+	commandline().addOption("Data", "amp-range-max", "Upper bound of amplitude "
+	                        "range per row. Requires --amp-scaling minmax",
+	                        &_amplitudesMax);
+	commandline().addOption("Data", "amp-range", "Arround zero bound of amplitude "
+	                        "range per row. Requires --amp-scaling minmax. "
+	                        "Overrides min and max values.", &_amplitudesRange);
+	commandline().addOption("Data", "record-time", "Let the last row always "
+	                        "contain the last record received",
+	                        &_fixCurrentTimeToLastRecord);
 
 	commandline().addGroup("Output");
-	commandline().addOption("Output", "desc", "Enables/disables the display of a station description", &_stationDescription);
+	commandline().addOption("Output", "desc", "Enables/disables the display of a "
+	                        "station description", &_stationDescription);
 	commandline().addOption("Output", "rows", "Configures the number of rows to display", &_numberOfRows);
-	commandline().addOption("Output", "time-span", "Configures the time-span (in secs) per row", &_timeSpanPerRow);
-	commandline().addOption("Output", "aa", "Sets antialiasing for rendering the traces", &_antialiasing);
+	commandline().addOption("Output", "time-span", "Configures the time-span "
+	                        "(in secs) per row", &_timeSpanPerRow);
+	commandline().addOption("Output", "aa", "Sets antialiasing for rendering the "
+	                        "traces", &_antialiasing);
 	commandline().addOption("Output", "xres", "Output x resolution when generating images", &_xRes);
 	commandline().addOption("Output", "yres", "Output y resolution when generating images", &_yRes);
 	commandline().addOption("Output", "dpi", "Output dpi when generating postscript", &_dpi);
-	commandline().addOption("Output", "output,o", "Output filename (placeholders: %N,%S,%L,%C)", &_outputFilename);
-	commandline().addOption("Output", "interval", "Snapshot interval (<= 0 disabled timed snapshots)", &_snapshotTimeout);
+	commandline().addOption("Output", "output,o", "Output filename (placeholders: "
+	                        "%N,%S,%L,%C for network, station, sensorLocation, channel)",
+	                        &_outputFilename);
+	commandline().addOption("Output", "interval", "Snapshot interval (<= 0 disables "
+	                        "timed snapshots)", &_snapshotTimeout);
 }
 
 
 bool HCApp::validateParameters() {
 	if ( !Gui::Application::validateParameters() ) return false;
 
-	if ( !_streamID.empty() ) {
-		std::vector<std::string> tokens;
+	if ( !_streamIDs.empty() ) {
+		for ( const auto &stream : _streamIDs ) {
+			std::vector<std::string> tokens;
+			Core::split(tokens, stream.c_str(), ".", false);
+			if ( tokens.size() != 4 ) {
+				std::cerr << "ERROR: Malformed stream code found in '" << stream
+				          << "' format is: NET.STA.LOC.CHA"
+				          << std::endl;
+				return false;
+			}
 
-		Core::split(tokens, _streamID.c_str(), ".", false);
-		if ( tokens.size() != 4 ) {
-			std::cerr << "ERROR: Malformed streamcode found: format is: net.station.loc.channelcomponent" << std::endl;
-			return false;
+			_streamCodes.push_back(stream);
 		}
-
-		_streamCodes.push_back(_streamID);
 	}
 
 	if ( (type() == Tty) && _outputFilename.empty() ) {
@@ -273,7 +298,8 @@ bool HCApp::validateParameters() {
 		std::string dt = SCApp->commandline().option<std::string>("end-time");
 		_endTime = Seiscomp::Core::Time::FromString(dt.c_str(), "%F %T");
 		if ( !_endTime.valid() ) {
-			std::cerr << "ERROR: passed endtime is not valid, expect format \"YYYY-mm-dd HH:MM:SS\"" << std::endl
+			std::cerr << "ERROR: passed endtime is not valid, expect format "
+			             "\"YYYY-mm-dd HH:MM:SS\"" << std::endl
 			          << "       example: --end-time \"2010-01-01 12:00:00\"" << std::endl;
 			return false;
 		}
@@ -409,17 +435,20 @@ bool HCApp::run() {
 					        this, SLOT(acquisitionFinished()));
 				}
 
-				_streamThread->addStream(streamID.networkCode(), streamID.stationCode(), streamID.locationCode(), streamID.channelCode(),
+				_streamThread->addStream(streamID.networkCode(), streamID.stationCode(),
+				                         streamID.locationCode(), streamID.channelCode(),
 				                         endTime - heli->recordsTimeSpan() - Core::TimeSpan(_timeSpanPerRow), Core::Time());
 			}
 			else {
 				IO::RecordStreamPtr rs = IO::RecordStream::Open(recordStreamURL().c_str());
-				if ( rs == NULL ) {
-					std::cerr << "ERROR: Unable to open recordstream " << recordStreamURL() << std::endl;
+				if ( !rs ) {
+					std::cerr << "ERROR: Unable to open recordstream "
+					          << recordStreamURL() << std::endl;
 					return false;
 				}
 
-				rs->addStream(streamID.networkCode(), streamID.stationCode(), streamID.locationCode(), streamID.channelCode(),
+				rs->addStream(streamID.networkCode(), streamID.stationCode(),
+				              streamID.locationCode(), streamID.channelCode(),
 				              endTime - heli->recordsTimeSpan() - Core::TimeSpan(_timeSpanPerRow), endTime);
 
 				try {

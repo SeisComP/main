@@ -16,6 +16,7 @@
 #include <seiscomp/math/filter/butterworth.h>
 #include <seiscomp/gui/core/application.h>
 #include <seiscomp/gui/core/utils.h>
+#include <seiscomp/logging/log.h>
 
 #include <QPrinter>
 
@@ -151,9 +152,9 @@ void HeliCanvas::setAntialiasingEnabled(bool e) {
 
 bool HeliCanvas::setFilter(const std::string &filterStr) {
 	Filter *filter = Filter::Create(filterStr);
-	if ( filter == NULL ) return false;
+	if ( !filter ) return false;
 
-	if ( _filter == NULL && filter == NULL ) {
+	if ( !_filter and !filter) {
 		return false;
 	}
 
@@ -196,7 +197,7 @@ void HeliCanvas::setLineWidth(int lw) {
 
 
 void HeliCanvas::applyFilter() {
-	if ( _filteredRecords == NULL ) return;
+	if ( !_filteredRecords ) return;
 
 	_filteredRecords->clear();
 	for ( RecordSequence::iterator it = _records->begin(); it != _records->end(); ++it ) {
@@ -225,8 +226,12 @@ void HeliCanvas::applyFilter() {
 bool HeliCanvas::feed(Record *rec) {
 	RecordPtr tmp(rec);
 
-	if ( rec->data() == NULL ) return false;
-	if ( _records == NULL ) return false;
+	if ( !rec->data() ) {
+		return false;
+	}
+	if ( !_records ) {
+		return false;
+	}
 
 	FloatArrayPtr arr = (FloatArray*)rec->data()->copy(Array::FLOAT);
 	GenericRecordPtr crec = new GenericRecord(*rec);
@@ -375,12 +380,13 @@ int HeliCanvas::draw(QPainter &p, const QSize &size) {
 
 void HeliCanvas::save(QString streamID, QString headline, QString date,
                       QString filename, int xres, int yres, int dpi) {
+	SEISCOMP_DEBUG("Printing image file: '%s'", qPrintable(filename));
 	std::cerr << "Printing [" << qPrintable(filename) << "] ... " << std::flush;
 
 	QPainter *painter;
 	QFileInfo fi(filename);
-	QPrinter *printer = NULL;
-	QImage *pixmap = NULL;
+	QPrinter *printer = nullptr;
+	QImage *pixmap = nullptr;
 
 	if ( fi.suffix().toLower() == "ps" ) {
 		printer = new QPrinter(QPrinter::HighResolution);
@@ -600,7 +606,7 @@ void HeliCanvas::render(QPainter &p) {
 
 	// Render timescale
 	double pos = 0;
-	double scale = (double)recordWidth / (double)_rowTimeSpan;
+	double scale = double(recordWidth) / double(_rowTimeSpan);
 	double dx[2] = {_drx[0], _drx[1]};
 	
 	// Adapted from gui/libs/ruler
@@ -617,7 +623,7 @@ void HeliCanvas::render(QPainter &p) {
 
 		int tick = k==0 ? tickLong : tickShort;
 
-		int x = (int)((cpos-pos)*scale);
+		int x = int(((cpos-pos)*scale));
 		while ( x < recordWidth ) {
 			p.drawLine(_labelMargin+x, startY, _labelMargin+x, startY+tick);
 
@@ -678,7 +684,7 @@ void HeliCanvas::resize(const QFontMetrics &fm, const QSize &size) {
 
 	unsigned int imax = sizeof(spacings)/sizeof(Spacing);
 
-	double scale = (double)_size.width() / (double)_rowTimeSpan;
+	double scale = double(_size.width()) / double(_rowTimeSpan);
 
 	_drx[0] = spacings[imax-1].major;
 	_drx[1] = spacings[imax-1].minor;

@@ -57,7 +57,7 @@ Examples
 
    .. code-block:: sh
 
-      scheli capture --stream "CX.PB01..HHZ,CX.PB02..HHZ,CX.PB04..HHZ" --interval 10 -o "/tmp/heli_%N_%S_%L_%C.png" -H localhost -I slink://localhost
+      scheli capture --stream CX.PB01..HHZ --stream CX.PB02..HHZ --stream CX.PB04..HHZ --interval 10 -o "/tmp/heli_%N_%S_%L_%C.png" -H localhost -I slink://localhost
 
    The output file names will be generated based on network code (%N), station code (%S),
    location code (%L) and stream code (%C): ::
