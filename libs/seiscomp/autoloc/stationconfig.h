@@ -12,8 +12,8 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_AUTOLOC_STATIONCONFIG_H
-#define SEISCOMP_AUTOLOC_STATIONCONFIG_H
+#ifndef SEISCOMP_LIBAUTOLOC_STATIONCONFIG_H_INCLUDED
+#define SEISCOMP_LIBAUTOLOC_STATIONCONFIG_H_INCLUDED
 
 
 #include <string>
@@ -24,22 +24,25 @@ namespace Seiscomp {
 
 namespace Autoloc {
 
-class StationConfig {
+class StationConfigItem {
 	public:
 		float maxNucDist, maxLocDist;
 		int usage;
 
-	StationConfig() {
+	StationConfigItem() {
 		maxNucDist = maxLocDist = 0;
 		usage = 0;
 	}
 };
 
 
-class StationConfigFile {
+class StationConfig {
 	public:
-		StationConfigFile();
+		StationConfig();
+
 		void setFilename(const std::string &filename);
+		const std::string &filename() const;
+
 
 		// Has the file modification time changed since last read()?
 		bool hasChanged() const;
@@ -47,8 +50,8 @@ class StationConfigFile {
 		// Read the file. If successful return true, otherwise false.
 		bool read();
 
-		// Get the config entry for net,sta
-		const StationConfig& get(
+		// Get the config item for net,sta
+		const StationConfigItem& get(
 			const std::string &net,
 			const std::string &sta) const;
 
@@ -57,8 +60,8 @@ class StationConfigFile {
 
 	private:
 		time_t _mtime;
-		std::string filename;
-		std::map<std::string, StationConfig> _entry;
+		std::string _filename;
+		std::map<std::string, StationConfigItem> _item;
 };
 
 }  // namespace Autoloc

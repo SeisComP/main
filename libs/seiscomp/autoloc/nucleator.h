@@ -12,8 +12,8 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_AUTOLOC_NUCLEATOR_H_INCLUDED
-#define SEISCOMP_AUTOLOC_NUCLEATOR_H_INCLUDED
+#ifndef SEISCOMP_LIBAUTOLOC_NUCLEATOR_H_INCLUDED
+#define SEISCOMP_LIBAUTOLOC_NUCLEATOR_H_INCLUDED
 
 #include <iostream>
 #include <fstream>
@@ -36,12 +36,15 @@ class Nucleator
 		virtual bool init() = 0;
 		virtual void setStation(const Autoloc::DataModel::Station *station);
 	public:
+		// Feed a pick to the nucleator.
+		// The pick *must* already have a station associated.
 		virtual bool feed(const Autoloc::DataModel::Pick *pick) = 0;
+
 		const Autoloc::DataModel::OriginVector &newOrigins() {
 			return _newOrigins;
 		}
 
-		virtual int  cleanup(const Autoloc::DataModel::Time& minTime) = 0;
+		virtual int cleanup(const Autoloc::DataModel::Time& minTime) = 0;
 		virtual void reset() = 0;
 		virtual void shutdown() = 0;
 
@@ -65,6 +68,25 @@ DEFINE_SMARTPOINTER(GridPoint);
 typedef std::vector<GridPointPtr> Grid;
 
 
+class GridSearchConfig {
+	public:
+		GridSearchConfig();
+
+	public:
+		// minimum number of stations required for new origin
+		int nmin;
+		
+		// maximum distance of stations contributing to new origin
+		double dmax;
+
+		// configurable multiplier, 0 means it is ignored
+		// double maxRadiusFactor;
+	
+		// minimum cumulative amplitude of all picks
+		double amin;
+};
+
+
 class GridSearch : public Nucleator
 {
 	public:
@@ -72,51 +94,21 @@ class GridSearch : public Nucleator
 		virtual bool init();
 
 	public:
-		// Configuration parameters controlling the behaviour of the Nucleator
-		class Config {
-		public:
-			// minimum number of stations for new origin
-			int nmin;
-		
-			// maximum distance of stations contributing to new origin
-			double dmax;
-
-			// configurable multiplier, 0 means it is ignored
-			double maxRadiusFactor;
-	
-			// minimum cumulative amplitude of all picks
-			double amin;
-			int aminskip; // skip this many largest amplitudes
-		
-			std::string amplitudeType;
-		
-			int verbosity;
-		
-			Config() {
-				nmin = 5;
-				dmax = 180;
-				maxRadiusFactor = 1;
-				amin = 5*nmin;
-				aminskip = 1;
-				amplitudeType = "snr"; // XXX not yet used
-				verbosity = 0;
-			}
-		};
-
 	public:
 		// Set the SeisComP config
 		void setConfig(const Seiscomp::Config::Config*);
 		
 		void setStation(const Autoloc::DataModel::Station *station);
-		const Config &config() const { return _config; }
-		void setConfig(const Config &config) { _config = config; }
-		bool setGridFile(const std::string &gridfile);
+		const GridSearchConfig &config() const { return _config; }
+		void setConfig(const GridSearchConfig &config) { _config = config; }
+		bool setGridFilename(const std::string&);
+		const std::string& gridFilename() const;
 
-		void setLocatorProfile(const std::string &profile);
+		void setLocatorProfile(const std::string&);
 
 	public:
-		// The Nucleator reads Pick's and Amplitude's. Only picks
-		// with associated amplitude can be fed into the Nucleator.
+		// Feed a pick to the nucleator.
+		// The pick *must* already have a station associated.
 		bool feed(const Autoloc::DataModel::Pick *pick);
 	
 		int cleanup(const Autoloc::DataModel::Time& minTime);
@@ -125,6 +117,7 @@ class GridSearch : public Nucleator
 		{
 			_newOrigins.clear();
 		}
+
 		void shutdown()
 		{
 			_abort = true;
@@ -140,14 +133,14 @@ class GridSearch : public Nucleator
 		bool _readGrid(const std::string &gridfile);
 
 	private:
+		std::string _gridFilename;
 		Grid    _grid;
 		Autoloc::Locator _relocator;
 
 		bool _abort;
 
-	public: // FIXME
-		Config  _config;
-
+	public: // FIXME: make private
+		GridSearchConfig  _config;
 	private:
 		const Seiscomp::Config::Config *scconfig;
 };

@@ -5,6 +5,7 @@ SET(LIBAUTOLOC_SOURCES
 	datamodel.cpp
 	locator.cpp
 	nucleator.cpp
+	objectqueue.cpp
 	sc3adapters.cpp
 	stationconfig.cpp
 	stationlocationfile.cpp
@@ -17,6 +18,7 @@ SET(LIBAUTOLOC_HEADERS
 	datamodel.h
 	locator.h
 	nucleator.h
+	objectqueue.h
 	stationconfig.h
 	stationlocationfile.h
 #	util.h

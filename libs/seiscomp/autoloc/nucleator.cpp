@@ -61,6 +61,17 @@ void Nucleator::setStation(const Autoloc::DataModel::Station *station)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+GridSearchConfig::GridSearchConfig() {
+	nmin = 5;
+	dmax = 180;
+	amin = 5*nmin;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 GridSearch::GridSearch() {
 	scconfig = NULL;
 //	_stations = 0;
@@ -106,9 +117,20 @@ bool GridSearch::init()
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool GridSearch::setGridFile(const std::string &gridfile)
+bool GridSearch::setGridFilename(const std::string &filename)
 {
-	return _readGrid(gridfile);
+	_gridFilename = filename;
+	return _readGrid(filename);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+const std::string& GridSearch::gridFilename() const
+{
+	return _gridFilename;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -468,6 +490,8 @@ bool GridSearch::feed(const Autoloc::DataModel::Pick *pick)
 
 	// link pick to station through pointer
 
+/*
+NOT NEEDED - a pick must have a station associated to it by now
 	if (pick->station() == 0) {
 		StationMap::const_iterator it = _stations.find(net_sta);
 		if (it == _stations.end()) {
@@ -477,10 +501,9 @@ bool GridSearch::feed(const Autoloc::DataModel::Pick *pick)
 		SEISCOMP_ERROR("GridSearch::feed()  THIS SHOULD NEVER HAPPEN");
 		pick->setStation((*it).second.get());
 	}
+*/
 
-
-	// Has the station been configured already? If not, do it now.
-
+	// If not done already, set up the grid for this station now.
 	bool stationSetupNeeded = false;
 	if (_configuredStations.find(net_sta) == _configuredStations.end()) {
 		_configuredStations.insert(net_sta);
@@ -494,11 +517,6 @@ bool GridSearch::feed(const Autoloc::DataModel::Pick *pick)
 	//
 	// Feed the new pick into the individual grid points
 	// and save all "candidate" origins in originVector
-
-	// XXX
-	bool track = false;
-	if (pick->id == "20181211.023135.99-AIC-C1.MG02..BHZ")
-		track = true;
 
 	double maxScore = 0;
 	for (GridPointPtr gp : _grid) {
@@ -514,15 +532,13 @@ bool GridSearch::feed(const Autoloc::DataModel::Pick *pick)
 		//  * we have already seen a similar but better origin 
 
 		// test minimum number of picks
-		if (result->arrivals.size() < 6) // TODO: make this limit configurable
+		// TODO: make this limit configurable
+		if (result->arrivals.size() < 6)
 			continue;
 		// is the new pick part of the returned origin?
 		if (result->findArrival(pick) == -1)
 			// this is actually an unexpected condition!
 			continue;
-
-		if(track)
-			SEISCOMP_ERROR_S("GGG "+Autoloc::printOneliner(result));
 
 		const PickSet pickSet = originPickSet(result);
 		// test if we already have an origin with this particular pick set
@@ -548,8 +564,7 @@ bool GridSearch::feed(const Autoloc::DataModel::Pick *pick)
 
 		double delta, az, baz;
 		delazi(origin->lat, origin->lon, gp->lat, gp->lon, delta, az, baz);
-		if (_config.maxRadiusFactor > 0 &&
-		    delta > _config.maxRadiusFactor*gp->_radius) // XXX private
+		if (delta > gp->_radius) // XXX private
 			continue;
 */
 
@@ -587,16 +602,6 @@ bool GridSearch::feed(const Autoloc::DataModel::Pick *pick)
 		tempOrigins.push_back(relo);
 	}
 
-	if (track) {
-		for (OriginPtr org : tempOrigins) {
-			SEISCOMP_ERROR_S("XXX "+Autoloc::printOneliner(org.get()));
-			for (ArrivalVector::const_iterator
-				it=org->arrivals.begin(); it!=org->arrivals.end(); ++it) {
-					SEISCOMP_ERROR_S("XXX   "+it->pick->id);
-			}
-		}
-	}
-	
 
 	// Now for all "candidate" origins in tempOrigins try to find the
 	// "best" one. This is a bit problematic as we don't go back and retry

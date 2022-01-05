@@ -14,7 +14,7 @@
 
 #define SEISCOMP_COMPONENT Autoloc
 
-#include <seiscomp/autoloc/autoloc.h>
+#include <seiscomp/autoloc/config.h>
 #include <seiscomp/logging/log.h>
 
 
@@ -24,71 +24,15 @@ namespace Autoloc {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Config::Config()
-{
-	maxAge = 6*3600;
-	goodRMS = 1.5;
-	maxRMS  = 3.5;
-	dynamicPickThresholdInterval = 3600;
-	maxResidualUse = 7.0;
-	maxResidualKeep = 3*maxResidualUse;
-	maxAziGapSecondary = 360; // 360 means no SGAP restriction
-	maxStaDist = 180;
-	defaultMaxNucDist = 180;
-	minPhaseCount = 6;
-	minScore = 8;
-	defaultDepth = 10;
-	defaultDepthStickiness = 0.5;
-	tryDefaultDepth = true;
-	adoptManualDepth = false;
-	minimumDepth = 5;
-	maxDepth = 1000.0; // so effectively by default there is no maximum depth
-	minPickSNR = 3;
-	minPickAffinity = 0.05;
-	minStaCountIgnorePKP = 15;
-	minScoreBypassNucleator = 40;
-	maxAllowedFakeProbability = 0.2; // TODO make this configurable
-	distSlope = 1.0; // TODO: Make this configurable after testing
-	test = false;
-	offline = false;
-	playback = false;
-	useManualPicks = false;
-	cleanupInterval = 3600;
-	aggressivePKP = true;
-	useManualOrigins = false;
-	useImportedOrigins = false;
-	// If true, more exotic phases like PcP, SKKP etc. will be reported.
-	// By default, only P/PKP will be reported. Internally, of course, the
-	// other phases are also associated to avoid fakes. They also show up
-	// in the log files
-	// FIXME: Note that this is a temporary HACK
-	reportAllPhases = false;
-
-	maxRadiusFactor = 1;
-	networkType = Autoloc::GlobalNetwork;
-
-	publicationIntervalTimeSlope = 0.5;
-	publicationIntervalTimeIntercept = 0;
-	publicationIntervalPickCount = 20;
-
-	xxlEnabled = false;
-	xxlMinSNR = 20.;
-	xxlMinAmplitude = 5000.;
-	xxlMinPhaseCount = 4;
-	xxlMaxStaDist = 15;
-	xxlMaxDepth = 100;
-	xxlDeadTime = 120.;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Config::dump() const
 {
 	SEISCOMP_INFO("Configuration:");
 	SEISCOMP_INFO("  agencyID                    %8s",         agencyID.c_str());
+	SEISCOMP_INFO("  author                      %8s",         author.c_str());
+	SEISCOMP_INFO("  pickAuthors with priority");
+	for(size_t i=0; i<pickAuthors.size(); i++)
+		SEISCOMP_INFO("                  %2ld  %s",
+			      pickAuthors.size()-i, pickAuthors[i].c_str());
 	SEISCOMP_INFO("  amplTypeAbs                 %8s",         amplTypeAbs.c_str());
 	SEISCOMP_INFO("  amplTypeSNR                 %8s",         amplTypeSNR.c_str());
 	SEISCOMP_INFO("  defaultDepth                     %g",     defaultDepth);
@@ -109,7 +53,6 @@ void Config::dump() const
 	SEISCOMP_INFO("  publicationIntervalTimeIntercept %.1f",   publicationIntervalTimeIntercept);
 	SEISCOMP_INFO("  publicationIntervalPickCount     %d",     publicationIntervalPickCount);
 	SEISCOMP_INFO("  reportAllPhases                  %s",     reportAllPhases ? "true":"false");
-//	SEISCOMP_INFO("  pickLogFile                      %s",     pickLogFile.size() ? pickLogFile.c_str() : "pick logging is disabled");
 	SEISCOMP_INFO("  dynamicPickThresholdInterval     %g",     dynamicPickThresholdInterval);
 	SEISCOMP_INFO("  offline                          %s",     offline ? "true":"false");
 	SEISCOMP_INFO("  test                             %s",     test ? "true":"false");
@@ -131,7 +74,35 @@ void Config::dump() const
 	SEISCOMP_INFO("  xxl.maxStationDistance           %.1f deg", xxlMaxStaDist);
 	SEISCOMP_INFO("  xxl.maxDepth                      %g km",  xxlMaxDepth);
 	SEISCOMP_INFO("  xxl.deadTime                      %g s",  xxlDeadTime);
-//	SEISCOMP_INFO("maxRadiusFactor                  %g", 	 maxRadiusFactor);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Config::check() const
+{
+	Config defaultConfig;
+
+	std::vector<std::string> unconfigured;
+
+	if (author == defaultConfig.author)
+		unconfigured.push_back("author");
+	if (agencyID == defaultConfig.agencyID)
+		unconfigured.push_back("agencyID");
+	if (stationConfig.empty())
+		unconfigured.push_back("stationConfig");
+
+	if (unconfigured.empty())
+		return true;
+
+	SEISCOMP_WARNING("Autoloc::Config detected default settings for");
+	for (const std::string &s: unconfigured)
+		SEISCOMP_WARNING_S("  "+s);
+	SEISCOMP_WARNING("It is unlikely that these shall be left unconfigured");
+
+	return false;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

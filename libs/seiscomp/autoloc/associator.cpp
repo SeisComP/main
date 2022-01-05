@@ -18,7 +18,6 @@
 #include <seiscomp/autoloc/util.h>
 
 #include <seiscomp/logging/log.h>
-#include <seiscomp/seismology/ttt.h>
 
 
 namespace Seiscomp {
@@ -33,19 +32,19 @@ Associator::Associator()
 	_stations = 0;
 
 	// The order of the phases is crucial!
-	_phases.push_back( Phase("P",      0, 180) );
-	_phases.push_back( Phase("PcP",   25,  55) );
-	_phases.push_back( Phase("ScP",   25,  55) );
-	_phases.push_back( Phase("PP",    60, 160) );
+	_phaseRanges.push_back( PhaseRange("P",      0, 180) );
+	_phaseRanges.push_back( PhaseRange("PcP",   25,  55) );
+	_phaseRanges.push_back( PhaseRange("ScP",   25,  55) );
+	_phaseRanges.push_back( PhaseRange("PP",    60, 160) );
 
 	// For the following phases there are no tables in LocSAT!
-	_phases.push_back( Phase("SKP",  120, 150) );
-	_phases.push_back( Phase("PKKP",  80, 130) );
-	_phases.push_back( Phase("PKiKP", 30, 120) );
-	_phases.push_back( Phase("SKKP", 110, 152) );
+	_phaseRanges.push_back( PhaseRange("SKP",  120, 150) );
+	_phaseRanges.push_back( PhaseRange("PKKP",  80, 130) );
+	_phaseRanges.push_back( PhaseRange("PKiKP", 30, 120) );
+	_phaseRanges.push_back( PhaseRange("SKKP", 110, 152) );
 
 	// TODO
-	// - make the phase set configurable
+	// - make the phase ranges configurable
 	// - wider view also involving LocSAT tables
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -86,9 +85,19 @@ Associator::setOrigins(const Autoloc::DataModel::OriginVector *origins)
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void
+Associator::setPickPool(const Autoloc::DataModel::PickPool *p)
+{
+	pickPool = p;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void
 Associator::reset()
 {
-	_associations.clear();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -107,19 +116,103 @@ Associator::shutdown()
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Associator::findMatchingPicks(
+	const Autoloc::DataModel::Origin *origin,
+	AssociationVector &associations) const
+{
+	for (const auto &item: *pickPool) {
+		Autoloc::DataModel::PickCPtr pick = item.second;
+
+		if (pick->time < origin->time)
+			continue;
+		if (pick->time > origin->time + 1500.)
+			continue;
+
+		bool requiresAmplitude = automatic(pick.get());
+		if (requiresAmplitude && ! hasAmplitude(pick.get()))
+			continue;
+
+		const Autoloc::DataModel::Station *station = pick->station();
+		if ( ! station) {
+			SEISCOMP_ERROR("Station missing for pick %s", pick->id.c_str());
+			continue;
+		}
+
+		double delta, az, baz;
+		Autoloc::delazi(origin, station, delta, az, baz);
+
+		// Weight residuals at regional distances "a bit" lower
+		// This is quite hackish!
+		double x = 1 + 0.6*exp(-0.003*delta*delta) + 0.5*exp(-0.03*(15-delta)*(15-delta));
+
+		Seiscomp::TravelTimeList
+			*ttlist = ttt.compute(
+				origin->lat, origin->lon, origin->dep,
+				station->lat, station->lon, 0);
+
+		// For each pick in the pool we compute a travel time table.
+		// Then we try to match predicted and measured arrival times.
+		double ttime = -1;
+		for (const Seiscomp::TravelTime &tt : *ttlist) {
+			PhaseRange phaseRange;
+			// We skip this travel time unless we have a phase
+			// range definition for the phase
+			if ( ! findPhaseRange(tt.phase, phaseRange))
+				continue;
+
+			// We skip this phase if we are out of the interersting range.
+			// This may well be withing the defined phase range
+			// but e.g. PcP gets too close to P which we avoid.
+			if ( ! phaseRange.contains(delta, origin->dep))
+				continue;
+
+			// phase range definition found
+			ttime = tt.time;
+			double affinity = 0;
+			double residual = double(pick->time - (origin->time + ttime));
+
+			residual /= x;
+			residual /= 10; // normalize
+
+			// TODO: REVIEW:
+			affinity = Autoloc::avgfn(residual); // test if exp(-residual**2) if better
+			if (affinity < minimumAffinity)
+				continue;
+
+			Association asso(
+				origin, pick.get(),
+				phaseRange.code,
+				residual, affinity);
+			asso.distance = delta;
+			asso.azimuth = az;
+			associations.push_back(asso);
+			break;
+		}
+
+		delete ttlist;
+
+		if (ttime == -1)
+			continue;
+		
+	}
+
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool
-Associator::feed(const Autoloc::DataModel::Pick* pick)
+Associator::findMatchingOrigins(
+	const Autoloc::DataModel::Pick *pick,
+	AssociationVector &associations) const
 {
 	using namespace Autoloc::DataModel;
 
-	_associations.clear();
-
 	if ( ! _origins)
 		return false;
-
-	static Seiscomp::TravelTimeTable ttt;
-
-	int count = 0;
 
 	for (const OriginPtr &origin : *_origins) {
 		const Station *station = pick->station();
@@ -133,21 +226,22 @@ Associator::feed(const Autoloc::DataModel::Pick* pick)
 
 		// An imported origin is treated as if it had a very high
 		// score. => Anything can be associated with it.
-		double origin_score = origin->imported ? 1000 : origin->score;
+		double score = origin->imported ? 1000 : origin->score;
 
-		for (const Phase &phase: _phases) {
+		for (const PhaseRange &phaseRange: _phaseRanges) {
 
 			// TODO: make this configurable
 			// if (origin->definingPhaseCount() < (phase.code=="P" ? 8 : 30))
-			if (origin_score < (phase.code=="P" ? 20 : 50))
+			if (score < (phaseRange.code=="P" ? 20 : 50))
 				continue;
 
-			if (delta < phase.dmin || delta > phase.dmax)
+
+			if ( ! phaseRange.contains(delta, origin->dep))
 				continue;
 
 			double ttime = -1, x = 1;
 
-			if (phase.code == "P") {
+			if (phaseRange.code == "P") {
 				for (const Seiscomp::TravelTime &tt : *ttlist) {
 					if (delta < 114) {
 						// for  distances < 114, allways take 1st arrival
@@ -167,7 +261,7 @@ Associator::feed(const Autoloc::DataModel::Pick* pick)
 			}
 			else {
 				for (const Seiscomp::TravelTime &tt : *ttlist) {
-					if (tt.phase.substr(0, phase.code.size()) == phase.code) {
+					if (tt.phase.substr(0, phaseRange.code.size()) == phaseRange.code) {
 						ttime = tt.time;
 						break;
 					}
@@ -196,38 +290,38 @@ Associator::feed(const Autoloc::DataModel::Pick* pick)
 				residual = residual/x;
 				residual /= 10; // normalize
 
+				// TODO: REVIEW:
 				affinity = Autoloc::avgfn(residual); // test if exp(-residual**2) if better
 				if (affinity < minimumAffinity)
 					continue;
 			}
-			std::string phcode = phase.code;
+			std::string phcode = phaseRange.code;
 			if (phcode=="P" && ttime > 960)
 				phcode = "PKP";
 			Association asso(origin.get(), pick, phcode, residual, affinity);
 			asso.distance = delta;
 			asso.azimuth = az;
-			_associations.push_back(asso);
-			count++;
+			associations.push_back(asso);
 
-			break; // ensure no more than one association per origin
+			// Not more than one association per origin
+			// TODO: REVIEW!
+			break;
 		}
 
 		delete ttlist;
 	}
 
-	return (_associations.size() > 0);
+	return (associations.size() > 0);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 
 
-
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-const AssociationVector &
-Associator::associations() const
+bool
+Associator::feed(const Autoloc::DataModel::Pick* pick)
 {
-	return _associations;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -236,7 +330,10 @@ Associator::associations() const
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Association*
-Associator::associate(Autoloc::DataModel::Origin *origin, const Autoloc::DataModel::Pick *pick, const std::string &phase)
+Associator::associate(
+	      Autoloc::DataModel::Origin *origin,
+	const Autoloc::DataModel::Pick *pick,
+	const std::string &phase)
 {
 	return NULL;
 }
@@ -246,8 +343,64 @@ Associator::associate(Autoloc::DataModel::Origin *origin, const Autoloc::DataMod
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Associator::Phase::Phase(const std::string &code, double dmin, double dmax)
-	: code(code), dmin(dmin), dmax(dmax) {}
+bool Associator::findPhaseRange(const std::string &code, PhaseRange &_pr) const
+{
+	// exact match
+	for (const PhaseRange &pr: _phaseRanges) {
+		if (pr.code == code) {
+			_pr = pr;
+			return true;
+		}
+	}
+
+	using namespace std;
+
+	// no exact match -> try to find equivalent
+	for (const PhaseRange &pr: _phaseRanges) {
+		vector<string> basenames = {"P","S"};
+
+		for (const string &base: basenames) {
+			if ((pr.code == base     && code == base+"n") ||
+			    (pr.code == base+"n" && code == base)) {
+				_pr = pr;
+				return true;
+			}
+			if ((pr.code == base        && code == base+"diff") ||
+			    (pr.code == base+"diff" && code == base)) {
+				_pr = pr;
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+PhaseRange::PhaseRange(
+	const std::string &code,
+	double dmin, double dmax, double zmin, double zmax)
+	: code(code), dmin(dmin), dmax(dmax), zmin(zmin), zmax(zmax) {}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool
+PhaseRange::contains(double delta, double depth) const
+{
+	if (delta < dmin || delta > dmax)
+		return false;
+	if (depth < zmin || depth > zmax)
+		return false;
+
+	return true;
+}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 

@@ -29,8 +29,6 @@ namespace Seiscomp {
 
 namespace Autoloc {
 
-namespace Util {
-
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::string &filename)
@@ -63,8 +61,6 @@ Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::stri
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-
-} // namespace Util
 
 } // namespace Autoloc
 

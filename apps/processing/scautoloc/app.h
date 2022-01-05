@@ -26,6 +26,7 @@
 #include <seiscomp/client/application.h>
 
 #include <seiscomp/autoloc/autoloc.h>
+#include <seiscomp/autoloc/objectqueue.h>
 
 
 namespace Seiscomp {
@@ -33,7 +34,7 @@ namespace Seiscomp {
 namespace Applications {
 
 
-class AutolocApp :
+    class AutolocApp :
 	public Client::Application,
 	// Derived from Autoloc3 mainly because we re-implement here
 	// the _report() method to allow both XML and messaging output.
@@ -53,7 +54,6 @@ class AutolocApp :
 		// Read past events from database.
 		void readPastEvents();
 
-		bool fillObjectQueue(const DataModel::EventParameters*);
 		bool runFromXMLFile(const char *fname);
 		bool runFromEPFile(const char *fname);
 
@@ -95,7 +95,7 @@ class AutolocApp :
 		std::string _gridConfigFile;
 
 		// object queue used for XML playback
-		std::queue<DataModel::PublicObjectPtr> _objects;
+		Autoloc::PublicObjectQueue objectQueue;
 
 		double _playbackSpeed;
 		Core::Time playbackStartTime;

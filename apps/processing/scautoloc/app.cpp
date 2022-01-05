@@ -23,7 +23,6 @@
 #include <seiscomp/utils/files.h>
 #include <seiscomp/core/datamessage.h>
 #include <seiscomp/io/archive/xmlarchive.h>
-#include <algorithm>
 
 #include "app.h"
 #include <seiscomp/autoloc/datamodel.h>
@@ -87,7 +86,7 @@ void AutolocApp::createCommandLineDescription() {
 
 	commandline().addGroup("Settings");
 	commandline().addOption("Settings", "station-locations", "The station-locations.conf file to use when in offline mode. If no file is given the database is used.", &_stationLocationFile, false);
-	commandline().addOption("Settings", "station-config", "The station configuration file", &_config.staConfFile, false);
+	commandline().addOption("Settings", "station-config", "The station configuration file", &_config.stationConfig, false);
 	commandline().addOption("Settings", "grid", "The grid configuration file", &_gridConfigFile, false);
 //	commandline().addOption("Settings", "pick-log", "The pick log file. Providing a "
 //	                        "file name enables logging picks even when disabled by configuration.",
@@ -227,7 +226,7 @@ bool AutolocApp::initConfiguration() {
 	catch (...) {}
 
 	try {
-		_config.authors = configGetStrings("autoloc.authors");
+		_config.pickAuthors = configGetStrings("autoloc.pickAuthors");
 	}
 	catch (...) {}
 
@@ -364,9 +363,6 @@ bool AutolocApp::initConfiguration() {
 	try { _wakeUpTimout = configGetInt("autoloc.wakeupInterval"); }
 	catch (...) {}
 
-	try { _config.maxRadiusFactor = configGetDouble("autoloc.gridsearch._maxRadiusFactor"); }
-	catch (...) {}
-
 	try { _config.publicationIntervalTimeSlope = configGetDouble("autoloc.publicationIntervalTimeSlope"); }
 	catch ( ... ) {}
 
@@ -382,8 +378,8 @@ bool AutolocApp::initConfiguration() {
 	try { _gridConfigFile = Environment::Instance()->absolutePath(configGetString("autoloc.grid")); }
 	catch (...) { _gridConfigFile = Environment::Instance()->shareDir() + "/scautoloc/grid.conf"; }
 
-	try { _config.staConfFile = Environment::Instance()->absolutePath(configGetString("autoloc.stationConfig")); }
-	catch (...) { _config.staConfFile = Environment::Instance()->shareDir() + "/scautoloc/station.conf"; }
+	try { _config.stationConfig = Environment::Instance()->absolutePath(configGetString("autoloc.stationConfig")); }
+	catch (...) { _config.stationConfig = Environment::Instance()->shareDir() + "/scautoloc/station.conf"; }
 
 //	try { _config.pickLogFile = configGetString("autoloc.pickLog"); }
 //	catch (...) { _config.pickLogFile = ""; }
@@ -423,7 +419,7 @@ bool AutolocApp::initConfiguration() {
 
 //	_config.pickLogFile = Environment::Instance()->absolutePath(config.pickLogFile);
 	_stationLocationFile = Environment::Instance()->absolutePath(_stationLocationFile);
-
+/*
 	// network type
 	std::string ntp = "global";
 	try { ntp = configGetString("autoloc.networkType"); }
@@ -441,7 +437,7 @@ bool AutolocApp::initConfiguration() {
 		SEISCOMP_ERROR("Illegal value %s for autoloc.networkType", ntp.c_str());
 		return false;
 	}
-
+*/
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -461,9 +457,13 @@ bool AutolocApp::init() {
 
 	SEISCOMP_INFO("Starting Autoloc");
 	setConfig(&Client::Application::configuration());
+
+	_config.agencyID = agencyID();
+	_config.check(); // only prints warnings, no show stopper
 	setConfig(_config);
+
 	dumpConfig();
-	if ( ! setGridFile(_gridConfigFile) )
+	if ( ! setGridFilename(_gridConfigFile) )
 		return false;
 
 	if ( ! initInventory() )
@@ -493,8 +493,6 @@ bool AutolocApp::init() {
 			enableTimer(_wakeUpTimout);
 		}
 	}
-
-	_config.agencyID = agencyID();
 	
 	return Autoloc::Autoloc3::init();
 }
@@ -512,7 +510,7 @@ bool AutolocApp::initInventory() {
 	else {
 		SEISCOMP_DEBUG_S("Initializing station inventory from file '" +
 				 _stationLocationFile + "'");
-		inventory = Autoloc::Util::inventoryFromStationLocationFile(_stationLocationFile);
+		inventory = Autoloc::inventoryFromStationLocationFile(_stationLocationFile);
 	}
 
 	if ( ! inventory ) {
@@ -595,68 +593,6 @@ void AutolocApp::readPastEvents() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool AutolocApp::fillObjectQueue(const Seiscomp::DataModel::EventParameters*)
-{
-	using namespace Seiscomp::DataModel;
-	using namespace Seiscomp::Core;
-
-	typedef std::pair<Time, PublicObjectPtr> TimeObject;
-	typedef std::vector<TimeObject> TimeObjectVector;
-
-	// retrieval of relevant objects from event parameters
-	// and subsequent DSU sort
-	TimeObjectVector objs;
-
-	for ( size_t i = 0; i < ep->pickCount(); ++i ) {
-		PickPtr pick = ep->pick(i);
-		try {
-			Time t = pick->creationInfo().creationTime();
-			objs.push_back(TimeObject(t, pick));
-		}
-		catch ( ... ) {
-			SEISCOMP_WARNING("Pick %s: no creation time set",
-			pick->publicID().c_str());
-		}
-	}
-
-	for ( size_t i = 0; i < ep->amplitudeCount(); ++i ) {
-		AmplitudePtr amplitude = ep->amplitude(i);
-		try {
-			Time t = amplitude->creationInfo().creationTime();
-			objs.push_back(TimeObject(t, amplitude));
-		}
-		catch ( ... ) {
-			SEISCOMP_WARNING("Amplitude %s: no creation time set",
-					amplitude->publicID().c_str());
-		}
-	}
-
-	for ( size_t i = 0; i < ep->originCount(); ++i ) {
-		OriginPtr origin = ep->origin(i);
-		try {
-			Time t = origin->creationInfo().creationTime();
-			objs.push_back(TimeObject(t, origin));
-		}
-		catch ( ... ) {
-			SEISCOMP_WARNING("Origin %s: no creation time set",
-					 origin->publicID().c_str());
-		}
-	}
-
-	std::sort(objs.begin(), objs.end());
-	for (TimeObject &obj : objs)
-		_objects.push(obj.second);
-
-	if ( _objects.empty() )
-		return false;
-	return true;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool AutolocApp::runFromXMLFile(const char *fname)
 {
 	using namespace Seiscomp::DataModel;
@@ -678,7 +614,7 @@ bool AutolocApp::runFromXMLFile(const char *fname)
 	SEISCOMP_INFO("  number of amplitudes: %ld", (long int)ep->amplitudeCount());
 	SEISCOMP_INFO("  number of origins:    %ld", (long int)ep->originCount());
 
-	fillObjectQueue(ep.get());
+	objectQueue.fill(ep.get());
 
 	// clear ep
 	while (ep->pickCount() > 0)
@@ -727,19 +663,20 @@ bool AutolocApp::runFromEPFile(const char *fname) {
 	SEISCOMP_INFO("  number of amplitudes: %ld", (long int)ep->amplitudeCount());
 	SEISCOMP_INFO("  number of origins:    %ld", (long int)ep->originCount());
 
-	fillObjectQueue(ep.get());
+	objectQueue.fill(ep.get());
 
 	// process the objects and write the resulting ep to stdout
 
-	while ( !_objects.empty() && !isExitRequested() ) {
-		PublicObjectPtr o = _objects.front();
+	while ( !objectQueue.empty() && !isExitRequested() ) {
+		PublicObjectPtr o = objectQueue.front();
 
-		_objects.pop();
+		objectQueue.pop();
 		addObject("", o.get());
 		++objectCount;
 	}
 
-	_flush();
+	// _flush();
+	report();
 
 	ar.create("-");
 	ar.setFormattedOutput(true);
@@ -793,24 +730,26 @@ void AutolocApp::handleTimeout() {
 	using namespace Seiscomp::DataModel;
 
 	if ( ! _config.playback || _inputFileXML.empty() ) {
-		_flush();
+		//_flush();
+		report();
 		return;
 	}
 
 	// The following is relevant (and executed) only for XML playback.
 
-	while ( ! _objects.empty() && ! isExitRequested() ) {
+	while ( ! objectQueue.empty() && ! isExitRequested() ) {
 
 		Core::Time t;
-		PublicObjectPtr o = _objects.front();
+		PublicObjectPtr optr = objectQueue.front();
+		PublicObject* o = optr.get();
 
 		// retrieve the creationTime...
-		if (Pick::Cast(o.get()))
-			t = Pick::Cast(o.get())->creationInfo().creationTime();
-		else if (Amplitude::Cast(o.get()))
-			t = Amplitude::Cast(o.get())->creationInfo().creationTime();
-		else if (Origin::Cast(o.get()))
-			t = Origin::Cast(o.get())->creationInfo().creationTime();
+		if (Pick::Cast(o))
+			t = Pick::Cast(o)->creationInfo().creationTime();
+		else if (Amplitude::Cast(o))
+			t = Amplitude::Cast(o)->creationInfo().creationTime();
+		else if (Origin::Cast(o))
+			t = Origin::Cast(o)->creationInfo().creationTime();
 		else continue;
 
 		// at the first object:
@@ -825,13 +764,13 @@ void AutolocApp::handleTimeout() {
 				break; // until next handleTimeout() call
 		} // otherwise no speed limit :)
 
-		_objects.pop();
-		addObject("", o.get());
+		objectQueue.pop();
+		addObject("", o);
 		objectCount++;
 	}
 
 	// for an XML playback, we're done once the object queue is empty
-	if ( _objects.empty() )
+	if (objectQueue.empty())
 		quit();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -927,56 +866,30 @@ void AutolocApp::addObject(
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void logBlockedAgency(const Seiscomp::DataModel::Pick *scpick) {
 // TODO
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool AutolocApp::feed(Seiscomp::DataModel::Pick *scpick) {
 
-	using namespace Seiscomp::DataModel;
-
-	const std::string &pickID = scpick->publicID();
-
-	if (_inputFileXML.size() || _inputEPFile.size()) {
-		try {
-			const Core::Time &creationTime =
-				scpick->creationInfo().creationTime();
-			sync(creationTime);
-		}
-		catch(...) {
-			SEISCOMP_WARNING_S("Pick "+pickID+" without creation time!");
-		}
-	}
-
-	if (objectAgencyID(scpick) != _config.agencyID) {
-		if ( isAgencyIDBlocked(objectAgencyID(scpick)) ) {
-			SEISCOMP_INFO_S("Blocked pick from agency '" +
-					objectAgencyID(scpick) + "'");
-			return false;
-		}
-
-		SEISCOMP_INFO("pick '%s' from agency '%s'",
-			      pickID.c_str(), objectAgencyID(scpick).c_str());
-
-	}
-
-	const std::string &author = objectAuthor(scpick);
-	const int priority = _authorPriority(author);
-	SEISCOMP_INFO("pick '%s' from author '%s' has priority %d",
-		      pickID.c_str(), author.c_str(), priority);
-	if (priority == 0) {
-		SEISCOMP_INFO("pick '%s' not processed", pickID.c_str());
+	if ( isAgencyIDBlocked(objectAgencyID(scpick)) ) {
+		SEISCOMP_INFO_S("Blocked pick from agency '" +
+				objectAgencyID(scpick) + "'");
 		return false;
 	}
 
-	try {
-		scpick->evaluationMode();
-	}
-	catch ( ... ) {
-		SEISCOMP_WARNING_S("pick has no evaluation mode: " + pickID);
-		scpick->setEvaluationMode(EvaluationMode(AUTOMATIC));
-	}
+	SEISCOMP_INFO("pick '%s' from agency '%s'",
+		      scpick->publicID().c_str(),
+		      objectAgencyID(scpick).c_str());
+
 
 	timeStamp();
 
@@ -984,7 +897,8 @@ bool AutolocApp::feed(Seiscomp::DataModel::Pick *scpick) {
 		return false;
 
 	if ( _config.offline )
-		_flush();
+		// _flush();
+		report();
 
 	return true;
 }
@@ -1082,11 +996,13 @@ bool AutolocApp::feed(Seiscomp::DataModel::Origin *scorigin) {
 	Autoloc::Autoloc3::feed(scorigin);
 
 	if ( _config.offline )
-		_flush();
+		//_flush();
+		report();
 
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 
 
@@ -1118,8 +1034,7 @@ bool AutolocApp::_report(Seiscomp::DataModel::Origin *scorigin) {
 	Notifier::Enable();
 	ep.add(scorigin);
 	Notifier::SetEnabled(wasEnabled);
-	NotifierMessagePtr nmsg =
-		Notifier::GetMessage(true);
+	NotifierMessagePtr nmsg = Notifier::GetMessage(true);
 	connection()->send(nmsg.get());
 	SEISCOMP_INFO ("Origin %s sent", scorigin->publicID().c_str());
 
@@ -1162,8 +1077,6 @@ bool AutolocApp::_report(Seiscomp::DataModel::Origin *scorigin) {
 	else {
 		SEISCOMP_INFO_S("Sent origin " + scorigin->publicID());
 	}
-
-//	SEISCOMP_INFO_S(Autoloc::printOrigin(origin, false));
 
 	return true;
 }

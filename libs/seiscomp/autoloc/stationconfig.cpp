@@ -20,6 +20,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 #include <vector>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -32,12 +33,24 @@ namespace Seiscomp {
 
 namespace Autoloc {
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+// trim leading/trailing space from line
+static void ltrim(std::string &s)
+{
+	s.erase( s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {
+		return ! std::isspace(ch);
+	}));
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-StationConfigFile::StationConfigFile()
+StationConfig::StationConfig()
 {
 	std::string defaultkey = "* *";
-	_entry[defaultkey] = StationConfig();
+	_item[defaultkey] = StationConfigItem();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -45,8 +58,8 @@ StationConfigFile::StationConfigFile()
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void StationConfigFile::setFilename(const std::string &filename) {
-	this->filename = filename;
+void StationConfig::setFilename(const std::string &filename) {
+	_filename = filename;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -54,31 +67,44 @@ void StationConfigFile::setFilename(const std::string &filename) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool StationConfigFile::read()
+const std::string &StationConfig::filename() const {
+	return _filename;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool StationConfig::read()
 {
 	std::string line;
 	std::string defaultkey = "* *";
-	_entry[defaultkey] = StationConfig();
+	_item[defaultkey] = StationConfigItem();
 
-	std::ifstream ifile(filename.c_str());
+	std::ifstream ifile(_filename.c_str());
 	if ( ! ifile.good()) {
-		SEISCOMP_ERROR_S("Failed to open station config file "+filename);
+		SEISCOMP_ERROR_S("Failed to open station config file "+_filename);
 		return false;
 	}
 
-	StationConfig entry;
+	StationConfigItem item;
 	while( ! ifile.eof()) {
 		std::getline(ifile, line);
-		line.erase(0, line.find_first_not_of(" \n\r\t"));
+		ltrim(line);
+//		line.erase(0, line.find_first_not_of(" \n\r\t"));
+		if (line.empty())
+			continue;
 		if (line[0] == '#')
 			continue;
 		char net[10], sta[10];
-		int n = std::sscanf(line.c_str(), "%8s %8s %d %f", net, sta, &entry.usage, &entry.maxNucDist);
+		int n = std::sscanf(line.c_str(), "%8s %8s %d %f", net, sta,
+				    &item.usage, &item.maxNucDist);
 		if (n!=4) break;
 		std::string key = std::string(net)
 			+ std::string(" ")
 			+ std::string(sta);
-		_entry[key] = entry;
+		_item[key] = item;
 	}
 
 	_mtime = mtime();
@@ -91,11 +117,11 @@ bool StationConfigFile::read()
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-time_t StationConfigFile::mtime() const
+time_t StationConfig::mtime() const
 {
 	struct stat buf;
 
-	if (stat(filename.c_str(), &buf) != 0) {
+	if (stat(_filename.c_str(), &buf) != 0) {
 		// error!
 		return 0; // FIXME
 	}
@@ -108,7 +134,7 @@ time_t StationConfigFile::mtime() const
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool StationConfigFile::hasChanged() const
+bool StationConfig::hasChanged() const
 {
 	return mtime() != _mtime;
 }
@@ -118,8 +144,8 @@ bool StationConfigFile::hasChanged() const
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-const StationConfig&
-StationConfigFile::get(const std::string &net, const std::string &sta) const
+const StationConfigItem&
+StationConfig::get(const std::string &net, const std::string &sta) const
 {
 	std::vector<std::string> patterns;
 	patterns.push_back(net + " " + sta);
@@ -131,11 +157,12 @@ StationConfigFile::get(const std::string &net, const std::string &sta) const
 	     it = patterns.begin(); it != patterns.end(); ++it) {
 
 		const std::string &pattern = *it;
-		std::map<std::string, StationConfig>::const_iterator mit = _entry.find(pattern);
-		if (mit == _entry.end())
+		std::map<std::string, StationConfigItem>::const_iterator
+			mit = _item.find(pattern);
+		if (mit == _item.end())
 			continue;
 
-		const StationConfig &e = (*mit).second;
+		const StationConfigItem &e = (*mit).second;
 		SEISCOMP_DEBUG("Station %s %s  pattern %-8s config: usage=%d maxnucdist=%g",
 		               net.c_str(), sta.c_str(), pattern.c_str(), e.usage, e.maxNucDist);
 
@@ -144,7 +171,7 @@ StationConfigFile::get(const std::string &net, const std::string &sta) const
 
 // This should never be executed:
 //	string defaultkey = "* *";
-//	return _entry[defaultkey];
+//	return _item[defaultkey];
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

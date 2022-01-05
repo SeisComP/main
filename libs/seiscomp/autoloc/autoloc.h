@@ -26,6 +26,7 @@
 #include <seiscomp/config/config.h>
 #include <seiscomp/seismology/locator/locsat.h>
 
+#include <seiscomp/autoloc/config.h>
 #include <seiscomp/autoloc/datamodel.h>
 #include <seiscomp/autoloc/nucleator.h>
 #include <seiscomp/autoloc/associator.h>
@@ -36,199 +37,8 @@ namespace Seiscomp {
 
 namespace Autoloc {
 
-
-typedef std::vector<std::string> StringList;
-
-
-typedef enum { GlobalNetwork, RegionalNetwork, LocalNetwork } NetworkType;
-
-
-class Config {
-	public:
-		Config();
-
-		// The ID of our agency. E.g. "GFZ", "NEIC" etc.
-		// Used for the filtering of objects meant to be
-		// processed by us. If left blank then no filtering
-		// based on agency is performed.
-		std::string agencyID;
-
-		// Amplitude types for absolute amplitudes and SNR
-		// amplitudes. These are used to improve the
-		// processing. They can in principle be any type but
-		// by default they are "mb" and "snr", respectively.
-		// There is normally no need to change this.
-		std::string amplTypeAbs, amplTypeSNR;
-
-		// White list of allowed pick authors.
-		// Also defines priority in descending order.
-		StringList authors;
-
-		// During cleanup() all objects older than maxAge
-		// (in hours) are removed.
-		// If this parameter is <= 0, cleanup() is disabled.
-		double maxAge;
-
-		// Time span within which we search for picks which
-		// may indicate extraordinary activity.
-		double dynamicPickThresholdInterval;
-
-		// typically good RMS in our network
-		double goodRMS;
-
-		// maximum RMS of all used picks
-		double maxRMS;
-
-		// maximum residual of any pick to be used for location
-		double maxResidualUse;
-
-		// maximum residual of any pick to be kept associated
-		double maxResidualKeep;
-
-		// NOTE: maxRMS < maxResidualUse < maxResidualKeep
-		// typically:
-		//    maxResidualKeep = 3*maxResidualUse
-		//    maxResidualUse  = 2*maxRMS
-
-
-		// Use this depth if there is no depth resolution
-		double defaultDepth;           // default 10 km
-		double defaultDepthStickiness; // 0...1 default 0.5
-
-		// Try to relocate an origin using the configured
-		// default depth. If the resulting origin is "not much
-		// worse" than the free-depth origin, fix the depth at
-		// the default depth.
-		bool tryDefaultDepth;         // default true
-
-		bool adoptManualDepth;
-
-		// Minimum depth in case there is depth resolution
-		double minimumDepth;          // default 5 km
-
-		// maximum depth of origin, checked before sending, default is 1000
-		double maxDepth;
-
-		// Max. secondary azimuthal gap
-		double maxAziGapSecondary;
-
-		// Maximum distance of stations used in computing
-		// the azimuthal gap
-		double maxAziGapDist;
-
-		// Max. distance of stations to be used
-		double maxStaDist;
-
-		// Default max. distance of stations to be used in
-		// the nucleator
-		// May be overridden by individual values per station.
-		double defaultMaxNucDist;
-
-		// Minimum signal-to-noise ratio for a pick to
-		// be processed
-		double minPickSNR;              // default 3
-
-		// Unless we have a clear definition of "affinity",
-		// do not change this!
-		double minPickAffinity;         // default 0.05
-
-		// Minimum number of picks for a normal origin
-		// to be reported
-		int minPhaseCount;           // default  6
-
-		// Minimum score for an origin to be reported;
-		// this seems to be a more reliable criterion
-		// than number of phases.
-		double minScore;
-
-		// Minimum station count for which we ignore PKP phases
-		// XXX not yet used
-		int minStaCountIgnorePKP;  // default 20
-
-		// if a pick can be associated to an origin with at
-		// least this high a score, bypass the nucleator,
-		// which will improve speed
-		double minScoreBypassNucleator;
-
-		// Maximum allowes "probability" for an origin to be a
-		// fake event. Value between 0 and 1
-		double maxAllowedFakeProbability;
-
-		// EXPERIMENTAL!!!
-		double distSlope;
-
-		// EXPERIMENTAL!!!
-		double maxRadiusFactor;
-
-		// EXPERIMENTAL!!!
-		NetworkType networkType;
-
-		double cleanupInterval;
-
-		double publicationIntervalTimeSlope;
-		double publicationIntervalTimeIntercept;
-		int    publicationIntervalPickCount;
-		// XXX maybe score interval instead?
-
-		// If true, offline mode is selected. In offline mode,
-		// no database is accessed, and station locations are
-		// read from a plain text file.
-		bool offline;
-
-		// If true, test mode is selected. In test mode, no
-		// origins are sent. This is not the same as offline
-		// mode. Test mode is like normal online mode except
-		// no origins are sent (only logging output is
-		// produced).
-		bool test;
-
-		// If true, playback mode is selected. In playback mode,
-		// origins are sent immediately without delay.
-		bool playback;
-
-		// If true then manual picks are being used as automatics
-		// picks are
-		bool useManualPicks;
-
-		// locator profile, e.g. "iasp91", "tab" etc.
-		std::string locatorProfile{"iasp91"};
-
-		// The station configuration file
-		std::string staConfFile;
-
-		// misc. experimental options
-		bool aggressivePKP;
-		bool reportAllPhases;
-		bool useManualOrigins{false};
-		bool adoptManualOriginsFixedDepth;
-		bool useImportedOrigins;
-
-		// enable the XXL feature
-		bool xxlEnabled{false};
-
-		// minimum absolute amplitude to flag a pick as XXL
-		double xxlMinAmplitude;      // default  10000 nm/s
-
-		// minimum SNR to flag a pick as XXL
-		double xxlMinSNR;            // default  8
-
-		// ignore all picks within this time window
-		// length (in sec) following an XXL pick
-		double xxlDeadTime;		// default 60 s
-
-		// Minimum number of picks for an XXL origin
-		// to be reported
-		unsigned int xxlMinPhaseCount; // default 4 picks
-		double xxlMaxStaDist;          // default 10 degrees
-		double xxlMaxDepth;            // default 100 km
-
-	public:
-		void dump() const;
-};
-
-
-
 class Autoloc3 {
+
 	public:
 		Autoloc3();
 		virtual ~Autoloc3() = default;
@@ -237,24 +47,39 @@ class Autoloc3 {
 		// Startup configuration and initialization
 		// All of these need to be called before init();
 
-		// Set the Autoloc-specific config
+		// Set the *Autoloc-specific* config
+		// This is not read from a file but usually populated
+		// with values specified as command-line arguments
 		void setConfig(const Autoloc::Config &config);
 		const Autoloc::Config &config() const { return _config; }
+		void dumpConfig() const;
 
-		// Set the SeisComP config
+		// Set the *SeisComP* config
 		void setConfig(const Seiscomp::Config::Config*);
 
-		// Set the SeisComP inventory
+		// Set the *SeisComP* inventory
 		void setInventory(const Seiscomp::DataModel::Inventory*);
 
-		bool setGridFile(const std::string &);
+		bool setGridFilename(const std::string &);
+
 		void setPickLogFilePrefix(const std::string &);
 		void setPickLogFileName(const std::string &);
+
+		void setStationConfigFilename(const std::string &);
+		const std::string &stationConfigFilename() const;
+
+
+
+		// Set the locator profile, e.g. "iasp91".
+		//
+		// Now obsolete as the same can be achieved via
+		// setConfig(const Seiscomp::Config::Config*);
 		void setLocatorProfile(const std::string &);
 
+		// To be run *after* all the above configuration settings are
+		// finished.
 		bool init();
 
-		// shutdown
 		void shutdown();
 
 	public:
@@ -270,11 +95,10 @@ class Autoloc3 {
 
 		// public object input interface
 
-		// Feed a Pick and try to get something out of it.
+		// Feed a Pick and eventually process it.
 		//
-		// The Pick may be associated to an existing Origin or
-		// trigger the creation of a new Origin. If "something"
-		// resulted, return true, otherwise false.
+		// If this pick resulted in a new or updated result,
+		// return true, otherwise false.
 		bool feed(Seiscomp::DataModel::Pick*);
 
 		bool feed(Seiscomp::DataModel::Amplitude*);
@@ -282,14 +106,18 @@ class Autoloc3 {
 		// Feed an external or manual Origin
 		bool feed(Seiscomp::DataModel::Origin*);
 
+		// After the station config has changed we need to reconfigure
+		// all already configured stations.
+		bool reconfigureStations();
+
 	private:
 		// Runtime initialization.
 
-		// Initialize one station at runtime
-		bool initOneStation(
+		// Initialize one station at runtime.
+		// If successful, return true, otherwise return false.
+		bool setupStation(
 			const Seiscomp::DataModel::WaveformStreamID &wfid,
                         const Seiscomp::Core::Time &time);
-		bool setStation(Autoloc::DataModel::Station *);
 
 		// private object interface
 		bool feed(const Autoloc::DataModel::Pick*);
@@ -306,9 +134,7 @@ class Autoloc3 {
 		// Report all new origins and thereafter empty _newOrigins.
 		// This calls _report(Origin*) for each new Origin
 		// TODO: review needed
-		bool report();
-
-		void dumpConfig() const { _config.dump(); }
+		void report();
 
 		// generate a time stamp in the log
                 void timeStamp() const;
@@ -334,19 +160,16 @@ class Autoloc3 {
 		bool pickInPool(const std::string &id) const;
 
 	protected:
-		// !!!!!!!!!!!!!!!!!!!!!!!
+	public:
 		// This must be reimplemented in a subclass to properly
 		// print/send/etc. the origin
-		// !!!!!!!!!!!!!!!!!!!!!!!
 		virtual bool _report(Seiscomp::DataModel::Origin*);
 
+	private:
 		// interface Autoloc::DataModel -> Seiscomp::DataModel
 		bool _report(const Autoloc::DataModel::Origin*);
 
-	public: // FIXME
-		// flush any pending (Origin) messages by calling _report()
-		void _flush();
-
+	private:
 		// Compute author priority. First in list gets highest
 		// priority. Not in list gets priority 0. No priority list
 		// defined gives 1 for all authors.
@@ -438,8 +261,9 @@ class Autoloc3 {
 		// check whether the origin meets the publication criteria
 		bool _publishable(const Autoloc::DataModel::Origin*) const;
 
-		// store a pick in pick pool
-		bool _store(const Autoloc::DataModel::Pick*);
+		// store a pick in pick pool. Returns true if it is a new pick
+		// and false otherwise.
+		bool storeInPool(const Autoloc::DataModel::Pick*);
 
 		// store an origin in origin pool
 		bool _store(Autoloc::DataModel::Origin*);
@@ -554,14 +378,11 @@ class Autoloc3 {
 		Autoloc::DataModel::Origin *_findMatchingOrigin(
 			const Autoloc::DataModel::Origin*);
 
+
 	private:
 		Associator _associator;
 		GridSearch _nucleator;
 		Locator    _relocator;
-
-		// origins that were created/modified during the last
-		// feed() call
-		Autoloc::DataModel::OriginVector _newOrigins;
 
 		// origins waiting for a _flush()
 		std::map<int, Autoloc::DataModel::Time>      _nextDue;
@@ -571,8 +392,7 @@ class Autoloc3 {
 		Autoloc::DataModel::Time _now;
 		Autoloc::DataModel::Time _nextCleanup;
 
-		typedef std::map<std::string, Autoloc::DataModel::PickCPtr> PickPool;
-		PickPool pickPool;
+		Autoloc::DataModel::PickPool pickPool;
 
 		Autoloc::DataModel::StationMap _stations;
 		// a list of NET.STA strings for missing stations
@@ -580,7 +400,11 @@ class Autoloc3 {
 		std::set<std::string> _missingStations;
 
 		Autoloc::DataModel::OriginVector _origins;
-		Autoloc::StationConfigFile _stationConfigFile;
+		// origins that were created/modified during the last
+		// feed() call
+		Autoloc::DataModel::OriginVector _newOrigins;
+
+		Autoloc::StationConfig _stationConfig;
 
 		Config _config;
 
@@ -592,6 +416,5 @@ class Autoloc3 {
 }  // namespace Autoloc
 
 }  // namespace Seiscomp
-
 
 #endif

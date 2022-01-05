@@ -388,9 +388,11 @@ int Origin::definingStationCount() const {
 		it = arrivals.begin(); it != arrivals.end(); ++it) {
 		const Arrival &arr = *it;
 
-		if (arr.excluded) continue;
+		if (arr.excluded)
+			continue;
 
-		if ( !arr.pick ) continue;
+		if ( !arr.pick )
+			continue;
 
 		stations.insert(arr.pick->net + "." + arr.pick->sta);
 	}
@@ -601,7 +603,7 @@ bool ignored(const Pick *pick)
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool manual(const Pick *pick)
 {
-        return pick->status == Pick::Manual;
+	return pick->status == Pick::Manual;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -611,7 +613,7 @@ bool manual(const Pick *pick)
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 char statusFlag(const Pick *pick)
 {
-        return automatic(pick) ? 'A' : 'M';
+	return automatic(pick) ? 'A' : 'M';
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -621,9 +623,9 @@ char statusFlag(const Pick *pick)
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool hasAmplitude(const Pick *pick)
 {
-        if (pick->amp <= 0)
-                return false;
-        return true;
+	if (pick->amp <= 0)
+		return false;
+	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

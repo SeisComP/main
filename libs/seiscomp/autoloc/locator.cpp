@@ -106,9 +106,14 @@ bool Locator::init()
 		SEISCOMP_ERROR_S("Could not create "+locator+" instance");
 		exit(-1);
 	}
-	if ( ! sclocator->init(*scconfig) ) {
-		return false;
+
+	if (scconfig) {
+		if ( ! sclocator->init(*scconfig) ) {
+			SEISCOMP_ERROR_S("Could not initialize "+locator+" instance");
+			exit(-1);
+		}
 	}
+
 	sclocator->useFixedDepth(false);
 	_minDepth = 5;
 	setFixedDepth(_minDepth, false);

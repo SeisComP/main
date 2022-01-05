@@ -12,9 +12,10 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_AUTOLOC_ASSOCIATOR_H_INCLUDED
-#define SEISCOMP_AUTOLOC_ASSOCIATOR_H_INCLUDED
+#ifndef SEISCOMP_LIBAUTOLOC_ASSOCIATOR_H_INCLUDED
+#define SEISCOMP_LIBAUTOLOC_ASSOCIATOR_H_INCLUDED
 
+#include <seiscomp/seismology/ttt.h>
 #include <seiscomp/autoloc/datamodel.h>
 
 namespace Seiscomp {
@@ -41,16 +42,15 @@ class Association
 };
 */
 
-typedef std::vector<Association> AssociationVector;
+class PhaseRange;
 
+typedef std::vector<Association> AssociationVector;
+typedef std::vector<PhaseRange> PhaseRangeVector;
 
 // Simple pick-to-origin associator. Can only associate P phases.
 
 class Associator
 {
-	public:
-		class Phase;
-
 	public:
 		Associator();
 		~Associator();
@@ -58,6 +58,7 @@ class Associator
 	public:
 		void setStations(const Autoloc::DataModel::StationMap *stations);
 		void setOrigins(const Autoloc::DataModel::OriginVector *origins);
+		void setPickPool(const Autoloc::DataModel::PickPool*);
 
 	public:
 		// Feed a pick and try to associate it with known origins, under the
@@ -66,13 +67,31 @@ class Associator
 		// The associated origins are then retrieved using associations()
 		bool feed(const Autoloc::DataModel::Pick* pick);
 
-		// Retrieve associations made during the last call of feed()
-		const AssociationVector& associations() const;
-
+		// Associate a pick with an origin. The origin is updated.
 		Association* associate(
 			      Autoloc::DataModel::Origin *origin,
 			const Autoloc::DataModel::Pick *pick,
 			const std::string &phase);
+
+		// For an origin find all matching picks
+		// irrespective of association to another origin.
+		//
+		// The matches are appended as Associations to the
+		// AssociationVector. The origin itself is not modified.
+		bool findMatchingPicks(
+			const Autoloc::DataModel::Origin*,
+			AssociationVector &associations) const;
+
+		// For a pick find all matching origins.
+		//
+		// The matches are appended as Associations to the
+		// AssociationVector. The pick itself is not modified.
+		bool findMatchingOrigins(
+			const Autoloc::DataModel::Pick*,
+			AssociationVector &associations) const;
+
+	private:
+		bool findPhaseRange(const std::string &code, PhaseRange &) const;
 
 	public:
 		void reset();
@@ -81,20 +100,30 @@ class Associator
 	protected:
 		// these are not owned:
 		const Autoloc::DataModel::StationMap *_stations;
-		const Autoloc::DataModel::OriginVector  *_origins;
+		const Autoloc::DataModel::OriginVector *_origins;
+		const Autoloc::DataModel::PickPool *pickPool;
 
 	private:
-		AssociationVector _associations;
-		std::vector<Phase> _phases;
+		PhaseRangeVector _phaseRanges;
+		mutable Seiscomp::TravelTimeTable ttt;
 };
 
 
-class Associator::Phase
+class PhaseRange
 {
 	public:
-		Phase(const std::string&, double, double);
+		PhaseRange() = default;
+		PhaseRange(
+			const std::string &code,
+			double dmin,   double dmax,
+			double zmin=0, double zmax=800);
+
+		bool contains(double delta, double depth) const;
+
+	public:
 		std::string code;
 		double dmin, dmax;
+		double zmin, zmax;
 };
 
 

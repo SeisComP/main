@@ -72,6 +72,7 @@ Seiscomp::DataModel::Origin *exportToSC(
 	scorigin->setEvaluationMode(
 		Seiscomp::DataModel::EvaluationMode(
 			Seiscomp::DataModel::AUTOMATIC));
+
 	if ( origin->preliminary )
 		scorigin->setEvaluationStatus(
 			Seiscomp::DataModel::EvaluationStatus(
@@ -79,24 +80,24 @@ Seiscomp::DataModel::Origin *exportToSC(
 
 	switch ( origin->depthType ) {
 	case Autoloc::DataModel::Origin::DepthFree:
-			scorigin->setDepthType(
-				Seiscomp::DataModel::OriginDepthType(
-					Seiscomp::DataModel::FROM_LOCATION));
-			break;
+		scorigin->setDepthType(
+			Seiscomp::DataModel::OriginDepthType(
+				Seiscomp::DataModel::FROM_LOCATION));
+		break;
 
 	case Autoloc::DataModel::Origin::DepthMinimum:
-			break;
+		break;
 
 	case Autoloc::DataModel::Origin::DepthDefault:
-			break;
+		break;
 
 	case Autoloc::DataModel::Origin::DepthManuallyFixed:
-			scorigin->setDepthType(
-				Seiscomp::DataModel::OriginDepthType(
-					Seiscomp::DataModel::OPERATOR_ASSIGNED));
-			break;
+		scorigin->setDepthType(
+			Seiscomp::DataModel::OriginDepthType(
+				Seiscomp::DataModel::OPERATOR_ASSIGNED));
+		break;
 	default:
-			break;
+		break;
 	}
 
 	int arrivalCount = origin->arrivals.size();

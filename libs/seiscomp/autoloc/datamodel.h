@@ -300,13 +300,16 @@ class Origin : public Hypocenter {
 class OriginVector : public std::vector<OriginPtr> {
 
 	public:
+		// Return true if the origin instance is in the vector.
 		bool find(const Origin *) const;
+
+		// Return origin with the origin ID if found, NULL otherwise
 		Origin *find(const OriginID &id);
 
 		// Try to find the best Origin which possibly belongs to the same event
 		const Origin *bestEquivalentOrigin(const Origin *start) const;
 
-		// try to find Origins which possibly belong to the same event and try
+		// Try to find Origins which possibly belong to the same event and try
 		// to merge the picks
 		int mergeEquivalentOrigins(const Origin *start=0);
 };
@@ -322,6 +325,7 @@ class Event : public Seiscomp::Core::BaseObject {
 };
 
 
+typedef std::map<std::string, Autoloc::DataModel::PickCPtr> PickPool;
 typedef std::vector<PickPtr> PickVector;
 typedef std::vector<Pick*>   PickGroup;
 

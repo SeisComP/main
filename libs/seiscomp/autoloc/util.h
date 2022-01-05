@@ -12,8 +12,8 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_AUTOLOC_UTIL_H_INCLUDED
-#define SEISCOMP_AUTOLOC_UTIL_H_INCLUDED
+#ifndef SEISCOMP_LIBAUTOLOC_UTIL_H_INCLUDED
+#define SEISCOMP_LIBAUTOLOC_UTIL_H_INCLUDED
 
 #include <string>
 #include <vector>

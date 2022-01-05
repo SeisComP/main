@@ -252,7 +252,7 @@ std::string printOrigin(const Autoloc::DataModel::Origin *origin, bool oneliner)
 			std::string sta = pick->station()->code;
 
 			out.precision(1);
-			out     << std::left << std::setw(4) << (i+1)
+			out     << std::left << std::setw(6) << (i+1)
 				<< std::setw(6) << sta
 				<< std::setw(3) << net;
 			out.precision(2);
@@ -279,8 +279,9 @@ std::string printOrigin(const Autoloc::DataModel::Origin *origin, bool oneliner)
 			out	<< std::endl;
 		}
 
+		out << std::endl;
 		out.precision(1);
-		out << std::endl << "RMS   = " << origin->rms() << std::endl;
+		out << "RMS   = " << origin->rms() << std::endl;
 		out << "MD    = " << meandev(origin) << std::endl;
 		out << "PGAP  = " << origin->quality.aziGapPrimary << std::endl;
 		out << "SGAP  = " << origin->quality.aziGapSecondary << std::endl;
