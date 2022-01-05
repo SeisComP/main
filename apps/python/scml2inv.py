@@ -19,7 +19,7 @@ import seiscomp.io
 import seiscomp.datamodel
 
 
-usage = """sc32inv [options] input output=stdout
+usage = """scml2inv [options] input output=stdout
 
 Options:
   -h [ --help ]  Produce help message

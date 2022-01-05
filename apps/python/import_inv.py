@@ -32,7 +32,7 @@ class Importer(seiscomp.client.Application):
     def run(self):
         if len(self._args) == 0:
             sys.stderr.write(
-                "Usage: import_inv [{format}|help] input output\n")
+                "Usage: import_inv [{format}|help] <input> [output]\n")
             return False
 
         if self._args[0] == "help":
