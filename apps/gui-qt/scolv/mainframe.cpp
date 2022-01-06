@@ -1087,11 +1087,7 @@ void MainFrame::configureAcquisition() {
 		SCApp->configSetBool("picker.removeAutomaticPicksFromStationAfterManualReview", pc.removeAutomaticStationPicks);
 		SCApp->configSetBool("picker.removeAllAutomaticPicksAfterManualReview", pc.removeAutomaticPicks);
 
-		QStringList toks = pc.recordURL.split("://");
-		if ( toks.count() == 2 ) {
-			SCApp->configSetString("recordstream.service", toks[0].toStdString());
-			SCApp->configSetString("recordstream.source", toks[1].toStdString());
-		}
+		SCApp->configSetString("recordstream", pc.recordURL.toStdString());
 
 		std::vector<std::string> filters;
 		foreach ( const PickerView::Config::FilterEntry &entry, pc.filters ) {
