@@ -1,7 +1,8 @@
 *scevtls* lists all available event IDs within a given time range to stdout.
 
-Use :ref:`scorgls` for listing all origin IDs. In extension to scevtls and :ref:`scorgls`
-:ref:`scquery` can search for parameters based on complex custom queries.
+Use :ref:`scorgls` for listing all origin IDs. In extension to scevtls and
+:ref:`scorgls` :ref:`scquery` can search for parameters based on complex
+custom queries.
 
 
 Example

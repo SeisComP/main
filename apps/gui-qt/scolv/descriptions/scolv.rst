@@ -81,8 +81,8 @@ scolv can be operated in 2 modes:
 * **Offline without messaging** where all event and station
   inventory parameters are read from an XML files or from the database and
   *updated interactively*. New or updated parameters can be written to an XML file.
-  Open scolv with the option
-  :option:`--offline` and optionally provide the database or inventory and bindings
+  Execute scolv with the command-line option
+  ``--offline`` and optionally provide the database or inventory and bindings
   parameters in :term:`SCML` format to fetch event parameters as well as inventory
   and bindings configuration parameters. Examples: ::
 
@@ -938,8 +938,8 @@ Focal Mechanism list
 --------------------
 
 The Focal Mechanism tab shows all focal mechanisms and moment tensors associated
-to the selected event. You may fix the preferred mechanism or fix/unfix :term:`Mw`
-to become the preferred magnitude.
+to the selected event. You may fix the preferred mechanism or fix/unfix
+:term:`Mw <magnitude, moment (Mw)>` to become the preferred magnitude.
 
 Select a row or cell and
 press the right mouse button to copy the row or cell, respectively.
@@ -1445,6 +1445,8 @@ Furthermore the precision of various values can be configured:
    adjusted in *scheme* section of the :ref:`global configuration <global>`.
 
 
+.. _sec-scolv-hotkeys:
+
 Hotkeys
 =======
 
@@ -1491,7 +1493,7 @@ actions in scolv. The hotkeys are provided for:
 +------------------------+-------------------------------------------------------------+
 | Double click           | Center map at the clicked position                          |
 +------------------------+-------------------------------------------------------------+
-| **Picker**             |                                                             |
+| **Phase picker**       |                                                             |
 +------------------------+-------------------------------------------------------------+
 | 1 .. 9                 | Activate configured phase picking                           |
 +------------------------+-------------------------------------------------------------+
@@ -1604,7 +1606,7 @@ actions in scolv. The hotkeys are provided for:
 +------------------------+-------------------------------------------------------------+
 | Shift+Y                | Increase row height                                         |
 +------------------------+-------------------------------------------------------------+
-| **Magnitude waveforms**|                                                             |
+| **Amplitude picker**   |                                                             |
 +------------------------+-------------------------------------------------------------+
 | F5                     | Compute network magnitudes and return to Magnitudes tab     |
 +------------------------+-------------------------------------------------------------+

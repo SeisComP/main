@@ -15,7 +15,7 @@ which should contain the local datacenter where the information comes from.
 
 While importing the attribute :confval:`datacenterID` is read and written into
 the archive attribute of all networks and stations available in the dataless.
-The datacenterID can be overridden with the :option:`--dcid` command line option.
+The datacenterID can be overridden with the ``--dcid`` command-line option.
 
 .. note::
 

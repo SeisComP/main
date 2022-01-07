@@ -17,9 +17,9 @@ Module Setup
 
 .. _scquery_config:
 
-#. Create the query profiles in :file:`queries.cfg` in @CONFIGDIR@ or @SYSTEMCONFIGDIR@. The
-   file contains your database queries. Examples for MariaDB/MySQL and PostgreSQL
-   are found in the section :ref:`scquery_queries`.
+#. Create the query profiles in :file:`queries.cfg` in @SYSTEMCONFIGDIR@ or
+   @CONFIGDIR@. The file contains your database queries. Examples for
+   MariaDB/MySQL and PostgreSQL are found in the section :ref:`scquery_queries`.
 
 #. **Optional:** Add the database connection parameter to the configuration file
    :file:`scquery.cfg` or :file:`global.cfg` in @CONFIGDIR@ or to @SYSTEMCONFIGDIR@:
@@ -168,7 +168,7 @@ PostgreSQL
 ----------
 
 In contrast to queries for objects in :ref:`MariaDB/MySQL <scquery_mariadb>` the
-string "m_" must be added to the value and publicID database columns as shown
+string ``m_`` must be added to the value and publicID database columns as shown
 below for the query "eventFilter".
 
 .. code-block:: sh
