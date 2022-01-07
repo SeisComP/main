@@ -26,8 +26,8 @@ from one tab to another just drag and drop the trace to the new tab. An alternat
 to double click on the trace label to disable a trace.
 
 Normally, the raw data are displayed. Pressing :kbd:`f` the predefined bandpass filter
-of third order from 0.5 Hz to 8 Hz, :ref:`BW(3,0.5,8) <BW>` is applied to the traces.
-Also zoom functions for the time and amplitude axis are provided.
+of third order from 0.5 Hz to 8 Hz, :ref:`BW(3,0.5,8) <filter-bw>` is applied
+to the traces. Also zoom functions for the time and amplitude axis are provided.
 
 .. figure:: media/scrttv/artificial-origin.png
    :width: 16cm
@@ -121,7 +121,8 @@ Adjust the scrttv module configuration (:file:`scrttv.cfg`).
 #. Define the groups:
 
    * add a new group profile to :confval:`streams.group`.
-   * set the properties for this group profile. :term:`Colors <color>` and color gradients are
+   * set the properties for this group profile. :term:`Colors <color>` and color
+     gradients are
      defined by hexadecimal values or by :term:`color keyword names <color keyword name>`.
      When choosing gradients the colors of the traces within one group will be
      varied in alphabetic order of the streams.
@@ -163,7 +164,7 @@ configured in the scheme parameters in :file:`global.cfg` or :file:`scrttv.cfg`:
 Offline Mode
 ============
 
-To start scrttv without connection to the messaging use the option *--offline*
+To start scrttv without connection to the messaging use the option ``--offline``
 or simply provide the :term:`miniSEED` data file, e.g.: ::
 
    scrttv [your miniSEED file]

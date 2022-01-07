@@ -6,6 +6,7 @@ multiplexed miniSEED files into a local SDS structure.
 So it is possible to save event based waveform data in combination with
 scevtstreams into another archive.
 
+
 .. _scart-config:
 
 Configuration
@@ -18,6 +19,7 @@ For loading additional plugins, e.g. the *xyz* plugin create and configure :file
 .. code-block:: sh
 
    plugins = xyz
+
 
 Examples
 ========
@@ -43,7 +45,7 @@ Examples
 
 #. Collect data from an FDSNWS server using the :ref:`global_recordstream`
    interface and write to a miniSEED file. The data streams and the time spans are
-   defined in a list file using the option :option:`list`. The list can be generated e.g.
+   defined in a list file using the option ``list``. The list can be generated e.g.
    by :ref:`scevtstreams`.
 
    .. code-block:: sh

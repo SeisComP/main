@@ -18,6 +18,7 @@ is quite close to a sync operation with the exception that top level objects
 in the database. It can be used to synchronize event information from one system
 with another.
 
+
 Examples
 ========
 
@@ -72,7 +73,7 @@ Examples
 
    .. hint::
 
-      The option :option:`--no-event` is a wrapper for removing Event:EVENT from
+      The option ``--no-event`` is a wrapper for removing Event:EVENT from
       the routing table. With this option no event objects will be sent which may
       be useful if just the origins with magnitudes, amplitudes, arrivals, picks, etc.
       shall be integrated, e.g. after XML-based playbacks.

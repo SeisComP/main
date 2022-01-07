@@ -108,7 +108,7 @@ Additionally, scmag derives the following magnitudes from primary magnitudes:
 
    More details are given in the :ref:`section Summary magnitude<scmag-summaryM>`.
 
-:term:`Mw(avg)`
+Mw(avg)
    Estimation of the moment magnitude Mw based on a weighted average of other
    magnitudes, currently MLv, mb and Mw(mB), in future possibly other magnitudes as
    well, especially those suitable for very large events. The purpose of Mw(avg) is

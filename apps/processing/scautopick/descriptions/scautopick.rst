@@ -146,7 +146,7 @@ volume. scautopick will apply the same workflow as in online mode but the
 acquisition of data records has to change. If the input data (file) has been
 read, scautopick will exit and furthermore it must not ask for a particular
 time window, especially not for a real-time time window. To accomplish that
-the command line parameter :option:`--playback` has to be used. Example:
+the command-line parameter ```--playback``` has to be used. Example:
 
 .. code-block:: sh
 
@@ -156,7 +156,7 @@ This call will process all records in :file:`data.mseed` for which bindings
 exist and **send the results to the messaging**. If all data records are processed,
 scautopick will exit. The processing steps are similar to the online mode.
 
-Use the :option:`--ep` for offline processing **without messaging**. The results are
+Use the ```--ep``` for offline processing **without messaging**. The results are
 printed in :term:`SCML` format. Example:
 
 .. code-block:: sh
