@@ -353,7 +353,7 @@ bool Autoloc3::feed(const Pick *pick)
 		}
 	}
 
-	// A previous version of the new pick might have been updated in _store(); 
+	// A previous version of the new pick might have been updated in _store();
 	if ( ! _process( Autoloc3::pick(pick->id) ))
 		return false;
 
@@ -549,7 +549,7 @@ int Autoloc3::_authorPriority(const std::string &author) const
 		if (_config.authors[i] == author)
 			return n-i;
 	}
-		
+
 	return 0;
 }
 
@@ -567,10 +567,6 @@ double Autoloc3::_score(const Origin *origin) const
 
 bool Autoloc3::_log(const Pick *pick)
 {
-	if ( !_pickLogEnable ) {
-		return false;
-	}
-
 	if (_pickLogFilePrefix != "") {
 		Time now = Time(Seiscomp::Core::Time::GMT());
 		setPickLogFileName(_pickLogFilePrefix+"."+sc3time(now).toString("%F"));
@@ -753,7 +749,7 @@ Origin *Autoloc3::merge(const Origin *origin1, const Origin *origin2)
 		if ( arr.excluded == Arrival::TemporarilyExcluded)
 			arr.excluded =  _residualOK(arr, 1.3, 1.8) ? Arrival::NotExcluded : Arrival::LargeResidual;
 	}
-		
+
 	_trimResiduals(combined);
 
 	return combined;
@@ -783,7 +779,7 @@ bool Autoloc3::_followsBiggerPick(const Pick *newPick) const
 
 		SEISCOMP_INFO_S("process pick IGNORING " + newPick->id + " (following XXL pick" + pick->id + ")");
 		return true;
-	}	
+	}
 
 	return false;
 }
@@ -857,7 +853,7 @@ OriginPtr Autoloc3::_xxlPreliminaryOrigin(const Pick *newPick)
 
 		if ( ignored(oldPick))
 			continue;
-				
+
 		if ( newPick->station() == oldPick->station() )
 			continue;
 
@@ -910,7 +906,7 @@ OriginPtr Autoloc3::_xxlPreliminaryOrigin(const Pick *newPick)
 		if (_config.defaultDepthStickiness > 0.9)
 			break;
 	}
-	
+
 	for (unsigned int i=0; i<trialDepths.size(); i++) {
 		dep = trialDepths[i];
 		OriginPtr origin = new Origin(lat, lon, dep, tim);
@@ -1019,7 +1015,7 @@ OriginPtr Autoloc3::_tryAssociate(const Pick *pick)
 		SEISCOMP_INFO  ("     aff=%.2f res=%.2f", asso.affinity, asso.residual);
 	}
 
-	// 
+	//
 	// loop through the associations
 	//
 
@@ -1061,7 +1057,7 @@ OriginPtr Autoloc3::_tryAssociate(const Pick *pick)
 
 		// this is the main criteria
 		if (asso.affinity < _config.minPickAffinity)
-			continue; 
+			continue;
 
 		// do not relocate imported origins, only associate picks
 		if (associatedOrigin->imported)
@@ -1123,7 +1119,7 @@ OriginPtr Autoloc3::_tryNucleate(const Pick *pick)
 	//
 	// The following will only be executed if the nucleation of a new
 	// origin succeeded.
-	// 
+	//
 	// Examine the candidate origins suggested by the nucleator one-by-one
 	// The aim is to find an acceptable new origin.
 	//
@@ -1175,7 +1171,7 @@ OriginPtr Autoloc3::_tryNucleate(const Pick *pick)
 	// Try to find the best Origin which might belong to same event
 	// TODO avoid the ugly cast...
 	Origin *bestEquivalentOrigin = const_cast<Origin*>(_origins.bestEquivalentOrigin(newOrigin.get()));
-	
+
 	if ( bestEquivalentOrigin != NULL ) {
  		double rms = bestEquivalentOrigin->rms(), score = _score(bestEquivalentOrigin);
 
@@ -1247,7 +1243,6 @@ Origin *Autoloc3::_findEquivalent(const Origin *origin)
 bool Autoloc3::_process(const Pick *pick)
 {
 	// process a pick
-
 	if ( ! valid(pick) ) {
 		SEISCOMP_DEBUG("invalid pick %-35s", pick->id.c_str());
 		return false;
@@ -1271,7 +1266,6 @@ bool Autoloc3::_process(const Pick *pick)
 		const_cast<Pick*>(pick)->status = Pick::IgnoredAutomatic;
 		return false;
 	}
-
 
 	_log(pick);
 
@@ -1442,7 +1436,7 @@ bool Autoloc3::_setTheRightDepth(Origin *origin)
 		}
 
 		double radius = 5*(relo->dep >= _config.defaultDepth ? relo->dep : _config.defaultDepth)/111.2;
-		
+
 		// XXX This is a hack, but better than nothing:
 		// if there are at least 2 stations within 5 times the source depth, we assume sufficient depth resolution.
 		if (relo->definingPhaseCount(0, radius) >= 2) {
@@ -1544,7 +1538,7 @@ void Autoloc3::_ensureAcceptableRMS(Origin *origin, bool keepDepth)
 		return;
 
 	SEISCOMP_DEBUG("_ensureAcceptableRMS rms loop begin");
-	
+
 	while (origin->rms() > _config.maxRMS) {
 		SEISCOMP_DEBUG("_ensureAcceptableRMS rms loop %.2f > %.2f", origin->rms(), 0.9*_config.maxRMS);
 
@@ -1611,7 +1605,7 @@ bool Autoloc3::_rework(Origin *origin)
 			SEISCOMP_INFO("Adopting depth of %g km from manual origin", origin->dep);
 			adoptManualDepth = true;
 	}
-	else { 
+	else {
 		if ( _config.defaultDepthStickiness >= 0.9 ) {
 			enforceDefaultDepth = true;
 			SEISCOMP_INFO("Enforcing default depth due to stickiness");
@@ -2205,7 +2199,7 @@ bool Autoloc3::_addMorePicks(Origin *origin, bool keepDepth)
 			continue;
 		if (_tooLowSNR(pick))
 			continue;
-		if (_blacklisted(pick)) 
+		if (_blacklisted(pick))
 			continue;
 		if (pick->origin()) // associated to another origin?
 			continue;
@@ -2913,7 +2907,7 @@ void Autoloc3::cleanup(Time minTime)
 
 		if (origin->time < minTime)
 			continue;
-	
+
 		_originsTmp.push_back(origin);
 	}
 	_origins = _originsTmp;
