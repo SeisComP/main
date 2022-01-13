@@ -341,7 +341,7 @@ class Autoloc3 {
 		// Really big outliers, where the assiciation obviously
 		// went wrong and which are excluded from the location
 		// anyway, are removed.
-		// 
+		//
 		// Returns number of removed outliers.
 		int _removeWorstOutliers(Origin *);
 
@@ -360,7 +360,7 @@ class Autoloc3 {
 		//
 		// TODO:
 		// * see if there are distant stations which due to a
-		//   large number of near stations can be ignored 
+		//   large number of near stations can be ignored
 		//     -> useful to get rid of PKP
 		//
 		// TODO:
@@ -374,7 +374,7 @@ class Autoloc3 {
 
 		// true, if this pick was marked as bad and must not be used
 		bool _blacklisted(const Pick *) const;
-	
+
 		// true if pick comes with valid station info
 		bool _addStationInfo(const Pick *);
 
@@ -514,7 +514,6 @@ class Autoloc3 {
 	protected:
 		typedef std::map<std::string, PickCPtr> PickMap;
 		PickMap  _pick;
-		bool          _pickLogEnable{false};
 		std::string   _pickLogFilePrefix;
 		std::string   _pickLogFileName;
 		std::ofstream _pickLogFile;

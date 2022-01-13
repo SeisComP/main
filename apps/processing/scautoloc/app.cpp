@@ -480,28 +480,21 @@ bool App::init() {
 	if ( !_config.pickLogFile.empty() ) {
 		setPickLogFilePrefix(_config.pickLogFile);
 	}
-	else {
-		SEISCOMP_DEBUG("Do not set a pick log file: Disabled by configuration "
-		               "of autolog.pickLogEnable");
-	}
 
 	if ( _config.playback ) {
 		if ( _inputEPFile.empty() ) {
 			// XML playback, set timer to 1 sec
-			SEISCOMP_DEBUG("Playback mode - enable timer of 1 sec");
 			enableTimer(1);
 		}
 	}
 	else {
 		// Read historical preferred origins in case we missed something
 		readHistoricEvents();
-
 		if ( _wakeUpTimout > 0 ) {
-			SEISCOMP_DEBUG("Enable timer of %d secs", _wakeUpTimout);
 			enableTimer(_wakeUpTimout);
 		}
 	}
-	
+
 	return Autoloc3::init();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -571,14 +564,14 @@ bool App::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Ti
 					continue;
 				epochStart = station->start().toString("%FT%TZ");
 			}
-			catch ( ... ) { } 
+			catch ( ... ) { }
 
 			try {
 				if (time > station->end())
 					continue;
 				epochEnd = station->end().toString("%FT%TZ");
 			}
-			catch ( ... ) { } 
+			catch ( ... ) { }
 
 			SEISCOMP_DEBUG("Station %s %s epoch %s ... %s",
 			               network->code().c_str(),
