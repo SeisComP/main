@@ -225,13 +225,13 @@ class DBTool : public Seiscomp::Client::Application {
 				return NULL;
 			}
 		
-			if ( !Core::isEmpty(dbRequest->service()) && _dbType != dbRequest->service() )
+			if ( !Core::isEmpty(dbRequest->service()) && _settings.database.type != dbRequest->service() )
 				return NULL;
 		
-			if ( _dbType.empty() || _dbParameters.empty() )
+			if ( _settings.database.type.empty() || _settings.database.parameters.empty() )
 				return NULL;
 		
-			return new DatabaseProvideMessage(_dbType.c_str(), _dbParameters.c_str());
+			return new DatabaseProvideMessage(_settings.database.type.c_str(), _settings.database.parameters.c_str());
 		}
 
 

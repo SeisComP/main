@@ -793,11 +793,10 @@ bool SCARDAC::initConfiguration() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool SCARDAC::validateParameters() {
-	SEISCOMP_DEBUG("validating parameters");
 	if ( !Client::Application::validateParameters() ) return false;
 
 	// database connection configured, no need to fetch parameters
-	if ( !_db.empty() ) {
+	if ( !databaseURI().empty() ) {
 		setMessagingEnabled(false);
 		setDatabaseEnabled(true, false);
 	}
