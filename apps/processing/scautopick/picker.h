@@ -47,17 +47,19 @@ class App : public Processing::Application {
 
 
 	protected:
-		void createCommandLineDescription();
-		bool validateParameters();
-		bool initConfiguration();
+		void createCommandLineDescription() override;
+		bool validateParameters() override;
+		bool initConfiguration() override;
 
-		bool init();
-		bool run();
-		void done();
+		bool init() override;
+		bool run() override;
+		void done() override;
 
-		void addObject(const std::string& parentID, DataModel::Object* o);
-		void removeObject(const std::string& parentID, DataModel::Object* o);
-		void updateObject(const std::string& parentID, DataModel::Object* o);
+		void addObject(const std::string& parentID, DataModel::Object* o) override;
+		void removeObject(const std::string& parentID, DataModel::Object* o) override;
+		void updateObject(const std::string& parentID, DataModel::Object* o) override;
+
+		void handleNewStream(const Record *rec) override;
 
 
 	private:
@@ -88,7 +90,6 @@ class App : public Processing::Application {
 		                           const Record *rec,
 		                           const Seiscomp::DataModel::Pick *pick);
 
-		void handleNewStream(const Record *rec);
 		void processorFinished(const Record *rec, Processing::WaveformProcessor *wp);
 
 		void emitTrigger(const Processing::Detector *pickProc,
