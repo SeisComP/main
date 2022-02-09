@@ -70,6 +70,10 @@ void Converter::createCommandLineDescription() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Converter::validateParameters() {
+	if ( !Client::Application::validateParameters() ) {
+		return false;
+	}
+
 	Core::Time net_start;
 	if( commandline().hasOption("net-start") ) {
 		if ( !Core::fromString(net_start, _net_start_str) &&

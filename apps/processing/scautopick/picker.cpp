@@ -222,6 +222,10 @@ void App::createCommandLineDescription() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::validateParameters() {
+	if ( !StreamApplication::validateParameters() ) {
+		return false;
+	}
+
 	_config.init(commandline());
 	setMessagingEnabled(!_config.offline);
 	bool disableDB = commandline().hasOption("db-disable") ||

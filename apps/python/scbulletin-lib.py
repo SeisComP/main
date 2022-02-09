@@ -881,7 +881,7 @@ class BulletinApp(seiscomp.client.Application):
         return True
 
     def validateParameters(self):
-        if seiscomp.client.Application.validateParameters(self) == False:
+        if not seiscomp.client.Application.validateParameters(self):
             return False
 
         if not self.commandline().hasOption("event") and not self.commandline().hasOption("origin"):

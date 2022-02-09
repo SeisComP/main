@@ -110,6 +110,9 @@ class EventStreams(client.Application):
 
 
     def validateParameters(self):
+        if not client.Application.validateParameters(self):
+            return False
+
         if self.commandline().hasOption("resolve-wildcards"):
             self.setLoadStationsEnabled(True)
 

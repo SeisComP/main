@@ -127,6 +127,9 @@ class WfqQuery(seiscomp.client.Application):
               "-p rms,delay -i AU.AS18..SHZ,AU.AS19..SHZ\n", file=sys.stderr)
 
     def validateParameters(self):
+        if not seiscomp.client.Application.validateParameters(self):
+            return False
+
         try:
             self._streams = self.commandline().optionString("streamID").split(",")
         except RuntimeError:

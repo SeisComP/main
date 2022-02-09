@@ -263,6 +263,10 @@ void ImEx::done() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool ImEx::validateParameters() {
+	if ( !Application::validateParameters() ) {
+		return false;
+	}
+
 	if ( commandline().hasOption("print-default-routingtable") ) {
 		ImExImpl::RoutingTable routingTable = ImExImpl::CreateDefaultRoutingTable();
 		ImExImpl::RoutingTable::iterator it = routingTable.begin();

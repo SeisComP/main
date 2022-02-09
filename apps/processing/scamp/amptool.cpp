@@ -147,6 +147,10 @@ void AmpTool::createCommandLineDescription() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool AmpTool::validateParameters() {
+	if ( !Application::validateParameters() ) {
+		return false;
+	}
+
 	_testMode = commandline().hasOption("test");
 
 	if ( !_originID.empty() && _testMode )

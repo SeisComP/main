@@ -120,6 +120,10 @@ class EventDump : public Seiscomp::Client::Application {
 		}
 
 		bool validateParameters() {
+			if ( !Seiscomp::Client::Application::validateParameters() ) {
+				return false;
+			}
+
 			if ( !commandline().hasOption("listen") ) {
 				if ( !commandline().hasOption("event")
 				  && !commandline().hasOption("origin")

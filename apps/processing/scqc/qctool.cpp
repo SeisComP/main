@@ -114,6 +114,10 @@ void QcTool::createCommandLineDescription() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool QcTool::validateParameters() {
+	if ( !StreamApplication::validateParameters() ) {
+		return false;
+	}
+
 	if ( (_archiveMode = commandline().hasOption("archive")) ) {
 		
 		if (!(_autoTime = commandline().hasOption("auto-time"))) {

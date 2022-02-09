@@ -537,6 +537,10 @@ class DispatchTool : public Seiscomp::Client::Application {
 
 
 		bool validateParameters() {
+			if ( !Application::validateParameters() ) {
+				return false;
+			}
+
 			if ( commandline().hasOption("routingtable") ) {
 				vector<string> tableEntries;
 				Core::split(tableEntries, _routingTableStr.c_str(), ",", false);

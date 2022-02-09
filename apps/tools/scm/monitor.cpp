@@ -161,10 +161,15 @@ void Monitor::createCommandLineDescription() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Monitor::validateParameters() {
+	if ( !Application::validateParameters() ) {
+		return false;
+	}
+
 	if ( commandline().hasOption("print-tags") ) {
 		printClientInfoTags();
 		return false;
 	}
+
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

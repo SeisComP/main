@@ -125,6 +125,10 @@ class DBTool : public Seiscomp::Client::Application {
 
 
 		bool validateParameters() {
+			if ( !Application::validateParameters() ) {
+				return false;
+			}
+
 			_remove = commandline().hasOption("remove");
 
 			if ( _importBatchSize > 1000 ) {
