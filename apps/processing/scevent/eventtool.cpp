@@ -229,6 +229,10 @@ void EventTool::createCommandLineDescription() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool EventTool::validateParameters() {
+	if ( !Application::validateParameters() ) {
+		return false;
+	}
+
 	_testMode = commandline().hasOption("test");
 
 	_sendClearCache = commandline().hasOption("clear-cache");
