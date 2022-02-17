@@ -176,33 +176,50 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 
 	bool usePreconfigured = false;
 
+	int index = 0;
 	try {
 		std::vector<std::string> vstreams = SCApp->configGetStrings("streams.codes");
-		if ( vstreams.empty() ) usePreconfigured = true;
-		else if ( vstreams[0] == "default" ) usePreconfigured = true;
+		if ( vstreams.empty() ) {
+			usePreconfigured = true;
+		}
 
 		QStringList streams;
-		for ( size_t i = 0; i < vstreams.size(); ++i )
+		for ( size_t i = 0; i < vstreams.size(); ++i ) {
+			if ( vstreams[i] == "default" ) {
+				usePreconfigured = true;
+				continue;
+			}
 			streams << vstreams[i].c_str();
+		}
 
-		int index = 0;
 		foreach ( const QString& stream, streams ) {
 			QStringList tokens = stream.split(".");
 
 			if ( tokens.count() >= 1 ) {
-				if ( tokens.count() > 4 )
-					std::cout << "error in entry '" << stream.toStdString() << "': too many tokens, missing ',' ? -> ignoring" << std::endl;
-				else
+				if ( tokens.count() > 4 ) {
+					std::cout << "error in entry '" << stream.toStdString()
+					          << "': too many tokens, missing ',' ? -> ignoring"
+					          << std::endl;
+				}
+				else {
 					requestMap.append(DataModel::WaveformStreamID(tokens[0].toStdString(),
 					                                   tokens.count()>1?tokens[1].toStdString():"*",
 					                                   tokens.count()>2?tokens[2].toStdString():"*",
 					                                   tokens.count()>3?tokens[3].toStdString():"*",""));
 
-				QMap<QString, QMultiMap<QString, ChannelEntry> > & stationMap = streamMap[requestMap.last().networkCode().c_str()];
-				stationMap[requestMap.last().stationCode().c_str()].insert(requestMap.last().locationCode().c_str(), ChannelEntry(requestMap.last().channelCode().c_str(),index));
-			}
+					std::cout << "adding " << tokens[0].toStdString() << "."
+					          << (tokens.count()>1?tokens[1].toStdString():"*")
+					          << "."
+					          << (tokens.count()>2?tokens[2].toStdString():"*")
+					          << "."
+					          << (tokens.count()>3?tokens[3].toStdString():"*")
+					          << " from streams.codes configuration"
+					          << std::endl;
+				}
 
-			++index;
+				QMap<QString, QMultiMap<QString, ChannelEntry> > & stationMap = streamMap[requestMap.last().networkCode().c_str()];
+				stationMap[requestMap.last().stationCode().c_str()].insert(requestMap.last().locationCode().c_str(), ChannelEntry(requestMap.last().channelCode().c_str(), index++));
+			}
 		}
 	}
 	catch ( ... ) {
@@ -210,14 +227,13 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 	}
 
 	if ( usePreconfigured ) {
-		std::cout << "using configured streams of config module" << std::endl;
+		std::cout << "adding configured streams of config module" << std::endl;
 		//streamMap["*"]["*"].insert("*", ChannelEntry("*",0));
 
 		DataModel::ConfigModule* module = SCApp->configModule();
 
 		if ( module ) {
-			int index = 0;
-	
+
 			for ( size_t j = 0; j < module->configStationCount(); ++j ) {
 				DataModel::ConfigStation* station = module->configStation(j);
 
@@ -230,16 +246,18 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 						SEISCOMP_ERROR("Cannot find parameter set %s", setup->parameterSetID().c_str());
 						continue;
 					}
-	
+
 					std::string net, sta, loc, cha;
 					net = station->networkCode();
 					sta = station->stationCode();
 					for ( size_t n = 0; n < ps->parameterCount(); ++n) {
 						DataModel::Parameter* par = ps->parameter(n);
-						if ( par->name() == "detecLocid" )
+						if ( par->name() == "detecLocid" ) {
 							loc = par->value();
-						else if ( par->name() == "detecStream" )
+						}
+						else if ( par->name() == "detecStream" ) {
 							cha = par->value();
+						}
 					}
 
 					if ( !cha.empty() ) {
@@ -249,35 +267,32 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 							DataModel::SensorLocation *sloc =
 								Client::Inventory::Instance()->getSensorLocation(net, sta, loc, Core::Time::GMT());
 
-							if ( sloc != NULL ) {
+							if ( sloc ) {
 								DataModel::Stream *stream = DataModel::getVerticalComponent(sloc, cha.c_str(), Core::Time::GMT());
-								if ( stream != NULL )
+								if ( stream ) {
 									cha = stream->code();
-								else
+								}
+								else {
 									cha += 'Z';
+								}
 							}
-							else
+							else {
 								cha += 'Z';
+							}
 						}
-
-						std::cerr << " * " << net << "." << sta << "." << loc << "." << cha << std::endl;
 
 						requestMap.append(DataModel::WaveformStreamID(net, sta, loc, cha, ""));
 
 						QMap<QString, QMultiMap<QString, ChannelEntry> > & stationMap = streamMap[requestMap.last().networkCode().c_str()];
-						stationMap[requestMap.last().stationCode().c_str()].insert(requestMap.last().locationCode().c_str(), ChannelEntry(requestMap.last().channelCode().c_str(),index));
-
-						++index;
+						stationMap[requestMap.last().stationCode().c_str()].insert(requestMap.last().locationCode().c_str(), ChannelEntry(requestMap.last().channelCode().c_str(), index++));
 					}
 				}
 			}
 		}
 	}
 
-
-
 	Inventory* inv = Seiscomp::Client::Inventory::Instance()->inventory();
-	if ( inv == NULL ) {
+	if ( !inv ) {
 		QMessageBox::information(this, "Error", "Could not read inventory.\nProceeding without presetting columns.");
 		return streamIDs;
 	}
@@ -285,7 +300,9 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 	for ( size_t i = 0; i < inv->networkCount(); ++i ) {
 		Network* net = inv->network(i);
 		try {
-			if ( net->end() < Core::Time::GMT() ) continue;
+			if ( net->end() < Core::Time::GMT() ) {
+				continue;
+			}
 		}
 		catch ( ... ) {}
 
@@ -293,55 +310,78 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 			if ( wfsi.networkCode() == "*" ) {
 				DataModel::WaveformStreamID nwfsi(net->code(), wfsi.stationCode(),
 				                       wfsi.locationCode(), wfsi.channelCode(), "");
-				if ( requestMap.contains(nwfsi) ) continue;
+				if ( requestMap.contains(nwfsi) ) {
+					continue;
+				}
 				requestMap.append(nwfsi);
 			}
 		}
 
 		QMap<QString, QMultiMap<QString, ChannelEntry> >& staCodes = streamMap[net->code().c_str()];
-		if ( staCodes.isEmpty() ) staCodes = streamMap["*"];
+		if ( staCodes.isEmpty() ) {
+			staCodes = streamMap["*"];
+		}
 
-		if ( staCodes.isEmpty() ) continue;
+		if ( staCodes.isEmpty() ) {
+			continue;
+		}
 
 		for ( size_t j = 0; j < net->stationCount(); ++j ) {
 			Station* sta = net->station(j);
 			try {
-				if ( sta->end() < Core::Time::GMT() ) continue;
+				if ( sta->end() < Core::Time::GMT() ) {
+					continue;
+				}
 			}
 			catch ( ... ) {}
+
 
 
 			foreach ( const DataModel::WaveformStreamID& wfsi, requestMap ) {
 				if ( wfsi.stationCode() == "*" && wfsi.networkCode() == net->code() ) {
 					DataModel::WaveformStreamID nwfsi(wfsi.networkCode(), sta->code(),
 					                       wfsi.locationCode(), wfsi.channelCode(), "");
-					if ( requestMap.contains(nwfsi) ) continue;
+					if ( requestMap.contains(nwfsi) ) {
+						continue;
+					}
 					requestMap.append(nwfsi);
 				}
 			}
 
 			QMultiMap<QString, ChannelEntry>& locCodes = staCodes[sta->code().c_str()];
-			if ( locCodes.isEmpty() ) locCodes = staCodes["*"];
+			if ( locCodes.isEmpty() ) {
+				locCodes = staCodes["*"];
+			}
 
-			if ( locCodes.isEmpty() ) continue;
+			if ( locCodes.isEmpty() ) {
+				continue;
+			}
 
 			for ( size_t l = 0; l < sta->sensorLocationCount(); ++l ) {
 				SensorLocation *loc = sta->sensorLocation(l);
 
 				try {
-					if ( loc->end() < Core::Time::GMT() ) continue;
+					if ( loc->end() < Core::Time::GMT() ){
+						continue;
+					}
 				}
 				catch ( ... ) {}
 
 				QList<ChannelEntry> chaCodes = locCodes.values(loc->code().c_str());
-				if ( chaCodes.isEmpty() ) chaCodes = locCodes.values("*");
-				if ( chaCodes.isEmpty() ) continue;
+				if ( chaCodes.isEmpty() ) {
+					chaCodes = locCodes.values("*");
+				}
+				if ( chaCodes.isEmpty() ) {
+					continue;
+				}
 
 				for ( size_t s = 0; s < loc->streamCount(); ++s ) {
 					Stream* stream = loc->stream(s);
 
 					try {
-						if ( stream->end() < Core::Time::GMT() ) continue;
+						if ( stream->end() < Core::Time::GMT() ) {
+							continue;
+						}
 					}
 					catch ( ... ) {}
 
@@ -350,23 +390,28 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 					bool foundChaCode = false;
 
 					foreach ( const ChannelEntry& chaCode, chaCodes ) {
-						if ( chaCode.first == "*" || Core::wildcmp(chaCode.first.toStdString(), stream->code()) )
+						if ( chaCode.first == "*" || Core::wildcmp(chaCode.first.toStdString(), stream->code()) ) {
 							foundChaCode = true;
+						}
 					}
 
-					if ( !foundChaCode ) continue;
+					if ( !foundChaCode ) {
+						continue;
+					}
 
 					bool enabled = true;
-					if ( configStationMap.contains(QString((net->code()+"."+sta->code()).c_str())) )
+					if ( configStationMap.contains(QString((net->code()+"."+sta->code()).c_str())) ) {
 						enabled = configStationMap.value(QString((net->code()+"."+sta->code()).c_str()))->enabled();
+					}
 
+					std::cerr << "+ " << net->code() << "." << sta->code() << "." << loc->code() << "." << stream->code() << std::endl;
 					streamIDs.push_back(std::make_pair(net->code()+"."+sta->code()+"."+loc->code()+"."+stream->code(), enabled));
 				}
 			}
 		}
 	}
 
-	std::cout << "Adding " << streamIDs.size() << " streams" << std::endl;
+	std::cout << "Added " << streamIDs.size() << " streams" << std::endl;
 
 
 	return streamIDs;
@@ -464,7 +509,7 @@ bool MainFrame::sendStationState(QString streamID, bool enable) {
 	prepareNotifier(streamID, enable);
 
 	Core::MessagePtr msg = Notifier::GetMessage(true);
-	
+
 	if ( msg ) {
 		if (! SCApp->sendMessage("CONFIG", msg.get())) {
 			prepareNotifier(streamID, !enable);
@@ -472,7 +517,7 @@ bool MainFrame::sendStationState(QString streamID, bool enable) {
 		}
 		return true;
 	}
-	
+
 	return false;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
