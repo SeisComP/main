@@ -84,7 +84,7 @@
 				</group>
 				<parameter name="codes" type="list:string">
 					<description>
-						Defines a list of channels codes
+						The list of channel codes
 						to be displayed. List items may contain wildcards at any position
 						and are separated by comma.
 						The list is	intersected with all channels configured in inventory.

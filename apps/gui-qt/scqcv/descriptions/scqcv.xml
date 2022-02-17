@@ -19,8 +19,15 @@
 			<group name="streams">
 				<parameter name="codes" type="list:string">
 					<description>
-						List of channels to display. By default the global
-						binding configuration is used which can be overwritten with this parameter.
+					The list of channel codes to be displayed. List items may
+					contain wildcards and are separated by comma.
+					The list is	intersected with all channels configured in inventory.
+
+					Examples:
+
+					default : display all streams configured by global bindings
+
+					default, PF.BON.00.HH? : display default and all HH streams of PF.BON.00
 					</description>
 				</parameter>
 				<parameter name="cumulative" type="boolean" default="false">
