@@ -23,36 +23,45 @@ discarded. This minimum weight can be configured with
 Amplitude Types
 ===============
 
-Amplitudes of the following types are currently computed for their corresponding
+Amplitudes of many types are currently computed for their corresponding
 magnitudes.
+
+.. note::
+
+   In order to be used by scmag, the input amplitude names for the
+   various magnitude types must typically match exactly. Exceptions:
+
+   * :term:`MN <magnitude, Nuttli (MN)>` requires *AMN* amplitudes,
+   * :term:`MLr <magnitude, local GNS/GEONET (MLr)>` requires *MLv* amplitudes.
 
 
 Local distances
 ---------------
 
 :term:`Md <magnitude, duration (Md)>`
-   Duration magnitude as described in https://earthquake.usgs.gov/research/software/#HYPOINVERSE
+   Duration magnitude as described in HYPOINVERSE (:cite:t:`klein-2002`).
 
 :term:`Mjma <magnitude, JMA (M_JMA)>`
    Mjma is computed on displacement data using body waves of period < 30s.
 
 :term:`ML <magnitude, local (ML)>`
-   Local magnitude calculated on the vertical component using a correction term
-   to fit with the standard ML.
+   Local (Richter) magnitude calculated on the horizontal components using a
+   correction term to fit with the standard ML (:cite:t:`richter-1935`).
+
+:term:`MLc <magnitude, local custom (MLc)>`
+   Local custom magnitude calculated on the horizontal components according to
+   Hessian Earthquake Service and :cite:t:`stange-2006`
 
 :term:`MLh <magnitude, local horizontal (MLh)>`
-   Local magnitude calculated on the horizontal components to SED specifications.
+   Local magnitude calculated on the horizontal components according to SED
+   specifications.
 
 :term:`MLv <magnitude, local vertical (MLv)>`
    Local magnitude calculated on the vertical component using a correction term
    to fit with the standard ML.
 
-:term:`MLr <magnitude, local GNS/GEONET (MLr)>`
-   Local magnitude calculated from MLv amplitudes based on GNS/GEONET specifications
-   for New Zealand.
-
-:term:`AMN <magnitude, Nuttli (MN)>`
-   Nuttli magnitude for Canada and other Cratonic regions.
+AMN for :term:`MN <magnitude, Nuttli (MN)>`
+   Nuttli magnitude for Canada and other Cratonic regions (:cite:t:`nuttli-1973`).
 
 
 Teleseismic distances
@@ -65,20 +74,16 @@ Teleseismic distances
    Cumulative body wave magnitude
 
 :term:`mB <magnitude, broadband body-wave (mB)>`
-   Broad band body wave magnitude
+   Broad band body wave magnitude after :cite:t:`bormann-2008`
 
 :term:`Mwp <magnitude, broadband P-wave moment (Mwp)>`
-   The body wave magnitude of Tsuboi et al. (1995)
+   The body wave magnitude of :cite:t:`tsuboi-1995`
 
 :term:`Ms_20 <magnitude, surface wave (Ms_20)>`
    Surface-wave magnitude at 20 s period
 
 :term:`Ms(BB) <magnitude, broadband surface wave (Ms(BB))>`
    Broad band surface-wave magnitude
-
-Note that in order to be used by scmag, the input amplitude names for the
-various magnitude types must match exactly with the exception of the AMN amplitudes
-required by the :term:`MN (Nuttli) magnitude <magnitude, Nuttli (MN)>`.
 
 
 Acceleration Input Data

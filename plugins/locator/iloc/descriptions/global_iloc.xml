@@ -3,7 +3,7 @@
 	<plugin name="iLoc">
 		<extends>global</extends>
 		<description>
-			This plugin allows the use of the iLoc locator with SeisComP.
+			Locator in SeisComP implemented by the plugin lociloc.
 		</description>
 		<configuration>
 			<group name="iLoc">
