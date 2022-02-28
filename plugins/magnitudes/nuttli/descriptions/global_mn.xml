@@ -3,8 +3,7 @@
 	<plugin name="MN">
 		<extends>global</extends>
 		<description>
-		The MN plugin is designed to compute the Canadian Nuttli magnitude
-		according to the Geological Survey of Canada.
+			Nuttli magnitude for Canada and other Cratonic regions
 		</description>
 		<configuration>
 			<group name="amplitudes">
@@ -42,6 +41,9 @@
 		<configuration>
 			<group name="amplitudes">
 				<group name="MN">
+					<description>
+					Parameters for measuring AMN amplitudes.
+					</description>
 					<parameter name="rms" type="boolean" default="false">
 						<description>
 						Whether to use RMS ratio of signal and noise window for
@@ -113,6 +115,9 @@
 			</group>
 			<group name="magnitudes">
 				<group name="MN">
+					<description>
+					Parameters for computing MN magnitudes from AMN amplitudes.
+					</description>
 					<parameter name="minSNR" type="double" default="2">
 						<description>
 						The minimum SNR required for a magnitude to pass

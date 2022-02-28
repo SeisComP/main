@@ -36,17 +36,22 @@ Local distances
 ---------------
 
 :term:`Md <magnitude, duration (Md)>`
-   Duration magnitude as described in `HYPOINVERSE`_ .
+   Duration magnitude as described in HYPOINVERSE (:cite:t:`klein-2002`).
 
 :term:`Mjma <magnitude, JMA (M_JMA)>`
    Mjma is computed on displacement data using body waves of period < 30s.
 
 :term:`ML <magnitude, local (ML)>`
-   Local magnitude calculated on the vertical component using a correction term
-   to fit with the standard ML.
+   Local (Richter) magnitude calculated on the horizontal components using a
+   correction term to fit with the standard ML (:cite:t:`richter-1935`).
+
+:term:`MLc <magnitude, local custom (MLc)>`
+   Local custom magnitude calculated on the horizontal components according to
+   Hessian Earthquake Service and :cite:t:`stange-2006`
 
 :term:`MLh <magnitude, local horizontal (MLh)>`
-   Local magnitude calculated on the horizontal components to SED specifications.
+   Local magnitude calculated on the horizontal components according to SED
+   specifications.
 
 :term:`MLv <magnitude, local vertical (MLv)>`
    Local magnitude calculated on the vertical component using a correction term
@@ -54,10 +59,10 @@ Local distances
 
 :term:`MLr <magnitude, local GNS/GEONET (MLr)>`
    Local magnitude calculated from MLv amplitudes based on GNS/GEONET specifications
-   for New Zealand.
+   for New Zealand (:cite:t:`ristau-2016`).
 
 :term:`MN <magnitude, Nuttli (MN)>`
-   Nuttli magnitude for Canada and other Cratonic regions.
+   Nuttli magnitude for Canada and other Cratonic regions (:cite:t:`nuttli-1973`).
 
 
 Teleseismic distances
@@ -70,10 +75,10 @@ Teleseismic distances
    Cumulative body wave magnitude
 
 :term:`mB <magnitude, broadband body-wave (mB)>`
-   Broad band body wave magnitude after `Bormann and Saul`_ (2008)
+   Broad band body wave magnitude after :cite:t:`bormann-2008`
 
 :term:`Mwp <magnitude, broadband P-wave moment (Mwp)>`
-   The body wave magnitude of `Tsuboi`_ et al. (1995)
+   The body wave magnitude of :cite:t:`tsuboi-1995`
 
 :term:`Ms_20 <magnitude, surface wave (Ms_20)>`
    Surface-wave magnitude at 20 s period
@@ -89,11 +94,11 @@ Additionally, scmag derives the following magnitudes from primary magnitudes:
 
 :term:`Mw(mB) <magnitude, derived mB (Mw(mB))>`
    Estimation of the moment magnitude Mw based on mB using the Mw vs. mB
-   regression of `Bormann and Saul`_ (2008)
+   regression of :cite:t:`bormann-2008`
 
 :term:`Mw(Mwp) <magnitude, derived Mwp (Mw(Mwp))>`
    Estimation of the moment magnitude Mw based on Mwp using the Mw vs. Mwp
-   regression of `Whitmore`_ et al. (2002)
+   regression of :cite:t:`whitmore-2002`
 
 :term:`M <magnitude, summary (M)>`
    Summary magnitude, which consists of a weighted average of the individual
@@ -166,7 +171,8 @@ Summary magnitude
 
 scmag can compute a summary magnitude as a weighted sum from all available
 :ref:`network magnitudes <scmag-networkM>`.
-This magnitude is typically called **M** as configured in :confval:`summaryMagnitude.type`.
+This magnitude is typically called **M** as configured in
+:confval:`summaryMagnitude.type`.
 
 It is computed as a weighted average over the available magnitudes:
 
@@ -176,11 +182,13 @@ It is computed as a weighted average over the available magnitudes:
 
    w_{i} = a_i stationCount(M_{i}) + b_i
 
-The coefficients a and b can be configured per magnitude type by :confval:`summaryMagnitude.coefficients.a`
+The coefficients a and b can be configured per magnitude type by
+:confval:`summaryMagnitude.coefficients.a`
 and :confval:`summaryMagnitude.coefficients.b`, respectively.
-Furthermore each magnitude type can be specifically added to or excluded from the summary magnitude calculation
-as defined in :confval:`summaryMagnitude.whitelist` or :confval:`summaryMagnitude.blacklist`,
-respectively.
+Furthermore each magnitude type can be specifically added to or excluded from the
+summary magnitude calculation
+as defined in :confval:`summaryMagnitude.whitelist` or
+:confval:`summaryMagnitude.blacklist`, respectively.
 
 .. note::
 
@@ -192,15 +200,5 @@ Preferred Magnitude
 ===================
 
 The preferred magnitude of an :term:`event` is set automatically by :ref:`scevent`
-or interactively in :ref:`scolv`. It can be any network magnitude or the summary magnitude.
-
-
-References
-==========
-
-.. target-notes::
-
-.. _`HYPOINVERSE` :  https://earthquake.usgs.gov/research/software/#HYPOINVERSE
-.. _`Bormann and Saul` : https://pubs.geoscienceworld.org/ssa/srl/article/79/5/698/143470/The-New-IASPEI-Standard-Broadband-Magnitude-mB
-.. _`Tsuboi`: https://pubs.geoscienceworld.org/bssa/article-pdf/85/2/606/2708350/BSSA0850020606.pdf
-.. _`Whitmore` : https://tsunamisociety.org/STHVol20N4Y2002.pdf
+or interactively in :ref:`scolv`. It can be any network magnitude or the summary
+magnitude.
