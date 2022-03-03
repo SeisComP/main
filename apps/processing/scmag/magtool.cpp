@@ -928,7 +928,11 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 		}
 	}
 
-	ProcessorList::iterator it = _processors.find(mtype);
+	// Find the magnitude processor for this mag type
+	ProcessorList::iterator it;
+	for ( it = _processors.begin(); it != _processors.end(); it++ ) {
+		if ( it->second->type() == mtype ) break;
+	}
 	if ( it == _processors.end() ) return false;
 
 	if ( staCount ) {
