@@ -39,7 +39,7 @@ class DBConnection
 	// Public interface
 	// ------------------------------------------------------------------
 	public:
-		bool executeQuery(const DBQuery& query);
+		bool executeQuery(const DBQuery& query, bool withHeader);
 	
 		const std::string& table() const;
 
