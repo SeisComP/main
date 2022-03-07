@@ -111,17 +111,33 @@ class AppQuery : public Client::Application {
 
 		void createCommandLineDescription() {
 			commandline().addGroup("Commands");
-			commandline().addOption("Commands", "query,Q", "Execute the given query from the commandline.", &_query);
-			commandline().addOption("Commands", "print-header", "Print the query parameters and the query filter description as a header of the query output.");
-			commandline().addOption("Commands", "showqueries", "Show the stored queries in queries.cfg");
+			commandline().addOption("Commands", "query,Q",
+		                            "Execute the given query from the commandline.",
+		                            &_query);
+			commandline().addOption("Commands", "print-column-name",
+		                            "Print the name of each output column in a header");
+			commandline().addOption("Commands", "print-header",
+		                            "Print the query parameters and the query filter "
+		                            "description as a header of the query output.");
+			commandline().addOption("Commands", "showqueries",
+		                            "Show the stored queries in queries.cfg");
 		}
 
-		virtual void printUsage() {
-			std::cout << "Basic usage: scquery [options] <queryname> parameter0 parameter1 ...\n"
-			             "The predefined queries are stored in queries.cfg and can be listed via --showqueries\n"
+		void printUsage() const {
+			std::cout << "Usage:" << std::endl << "  scquery [options] [queryname] parameter0 parameter1 ..."
+		              << std::endl << std::endl
+			          << "Query the database using predefined queries stored in 'queries.cfg'"
 			          << std::endl;
 
 			Client::Application::printUsage();
+
+			std::cout << "Examples:" << std::endl;
+			std::cout << "List all configured queries" << std::endl
+			          << "  scquery --showqueries" << std::endl << std::endl;
+			std::cout << "Use the 'eventFilter' query, additionally pring the column names as header"
+			          << std::endl
+			          << "  scquery -d localhost --print-column-name eventFilter 50 52 10.5 12.5 2.5 5 2021-01-01 2022-01-01"
+			          << std::endl;
 		}
 
 		bool run() {
@@ -136,8 +152,12 @@ class AppQuery : public Client::Application {
 				return true;
 			}
 
+			if ( commandline().hasOption("print-column-name") ) {
+			    _columnName = true;
+			}
+
 			if ( commandline().hasOption("print-header") ) {
-				_header = true;
+			    _header = true;
 			}
 
 			std::vector<std::string> qParameter = commandline().unrecognizedOptions();
@@ -172,7 +192,7 @@ class AppQuery : public Client::Application {
 
 					DBConnection dbConnection(database());
 					//std::cerr << *q << std::endl;
-					if (!dbConnection.executeQuery(*q)) {
+					if ( !dbConnection.executeQuery(*q, _columnName ) ) {
 						std::cerr << "Could not execute query: " << q->query() << std::endl;
 					}
 					if ( _header ) {
@@ -190,7 +210,7 @@ class AppQuery : public Client::Application {
 			else if ( !_query.empty() ) {
 				DBQuery q("default", "default", _query);
 				DBConnection dbConnection(database());
-				if (!dbConnection.executeQuery(q)) {
+				if ( !dbConnection.executeQuery(q, _header) ) {
 					std::cerr << "Could not execute query: " << _query << std::endl;
 				}
 				if ( _header ) {
@@ -206,7 +226,8 @@ class AppQuery : public Client::Application {
 
 	private:
 		std::string _query;
-		bool        _header{false};
+		bool        _columnName{false};
+	    bool        _header{false};
 };
 
 

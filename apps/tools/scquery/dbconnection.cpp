@@ -47,7 +47,7 @@ DBConnection::~DBConnection() {}
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool DBConnection::executeQuery(const DBQuery& query)
+bool DBConnection::executeQuery(const DBQuery& query, bool withHeader)
 {
 	bool success = false;
 	if (!_db)
@@ -65,6 +65,9 @@ bool DBConnection::executeQuery(const DBQuery& query)
 
 	int rowFieldCount = _db->getRowFieldCount();
 	std::vector<size_t> maxRowStrLength(rowFieldCount, 0);
+	std::vector<std::string> rowHeader(rowFieldCount, "");
+	bool fetchHeader = withHeader;
+
 	while (_db->fetchRow())
 	{
 		std::vector<std::string> row(rowFieldCount, "");
@@ -81,12 +84,39 @@ bool DBConnection::executeQuery(const DBQuery& query)
 				row[column] = "NULL";
 				maxRowStrLength[column] = std::max(maxRowStrLength[column], strlen("NULL"));
 			}
+
+			if ( fetchHeader ) {
+				rowHeader[column] = _db->getRowFieldName(column);
+				maxRowStrLength[column] = std::max(maxRowStrLength[column], rowHeader[column].size());
+			}
 		}
 		_table.push_back(row);
+		fetchHeader = false;
 	}
 	_db->endQuery();
+
 	// Convert table to string
 	std::ostringstream os;
+
+	if ( withHeader ) {
+		for ( int i = 0; i < rowFieldCount; ++i ) {
+			os << std::setw(maxRowStrLength[i]) << std::left << rowHeader[i];
+			if ( i < rowFieldCount - 1 ) {
+				os << " | ";
+			}
+		}
+		os << std::endl;
+		for ( int i = 0; i < rowFieldCount; ++i ) {
+			for ( size_t c = 0; c < maxRowStrLength[i]; ++c ) {
+				os << "-";
+			}
+			if ( i < rowFieldCount - 1 ) {
+				os << "-+-";
+			}
+		}
+		os << std::endl;
+	}
+
 	for (size_t row = 0; row < _table.size(); ++row)
 	{
 		for (int column = 0; column < rowFieldCount; ++column)
