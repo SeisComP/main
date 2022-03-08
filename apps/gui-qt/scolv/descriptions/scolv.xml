@@ -218,6 +218,13 @@
 							fixed to this configured value and the origin is relocated again.
 						</description>
 					</parameter>
+					<parameter name="presetFromOrigin" type="boolean" default="false">
+						<description>
+							Whether to preset the locator settings when an origin
+							is being loaded. It tries to figure the locator type
+							from Origin.methodID and the profile from Origin.earthModelID.
+						</description>
+					</parameter>
 				</group>
 				<group name="commit">
 					<parameter name="forceEventAssociation" type="boolean" default="true">
