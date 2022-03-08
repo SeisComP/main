@@ -21,22 +21,22 @@ When running scdbstrip for the first time on a large database it can happen
 that it aborts in case of MYSQL with the following error message:
 
 
-   .. code-block:: sh
+.. code-block:: sh
 
-      [  3%] Delete origin references of old events...08:48:22 [error]
-      execute("delete Object from Object, OriginReference, old_events where
-      Object._oid=OriginReference._oid and
-      OriginReference._parent_oid=old_events._oid") = 1206 (The total number
-      of locks exceeds the lock table size)
+   [  3%] Delete origin references of old events...08:48:22 [error]
+   execute("delete Object from Object, OriginReference, old_events where
+   Object._oid=OriginReference._oid and
+   OriginReference._parent_oid=old_events._oid") = 1206 (The total number
+   of locks exceeds the lock table size)
 
-      Exception: ERROR: command 'delete Object from Object, OriginReference,
-      old_events where Object._oid=OriginReference._oid and
-      OriginReference._parent_oid=old_events._oid' failed
+   Exception: ERROR: command 'delete Object from Object, OriginReference,
+   old_events where Object._oid=OriginReference._oid and
+   OriginReference._parent_oid=old_events._oid' failed
 
 That means your MYSQL server cannot hold enough data required for deletion.
 There are two solutions to this:
 
-1. Increase the memory pool used by MYSQL by changing the configuration to:
+#. Increase the memory pool used by MYSQL by changing the configuration to:
 
    .. code-block:: sh
 
@@ -46,7 +46,7 @@ There are two solutions to this:
    be cleaned up.
 
 
-2. Run scdbstrip on smaller batches for the first time:
+#. Run scdbstrip on smaller batches for the first time:
 
    .. code-block:: sh
 
@@ -59,8 +59,8 @@ There are two solutions to this:
 Examples
 ========
 
-#. Keep the events of the last 30 days
+* Keep the events of the last 30 days
 
-   .. code-block:: sh
+  .. code-block:: sh
 
-      scdbstrip --days 30 -d mysql://sysop:sysop@localhost/seiscomp
+     scdbstrip --days 30 -d mysql://sysop:sysop@localhost/seiscomp
