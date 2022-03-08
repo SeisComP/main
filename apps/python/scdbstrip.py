@@ -345,6 +345,21 @@ class DBCleaner(seiscomp.client.Application):
                 sys.stderr.write(i)
             sys.exit(-1)
 
+
+    def printUsage(self):
+
+        print('''Usage:
+  scbstrip [options]
+
+Remove objects from the database in a given time span''')
+
+        seiscomp.client.Application.printUsage(self)
+
+        print('''Examples:
+Remove events older than the last 30 days
+  scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --days 30
+''')
+
     def validateParameters(self):
         if not seiscomp.client.Application.validateParameters(self):
             return False
