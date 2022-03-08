@@ -26,7 +26,7 @@
 
 class DBConnection
 {
-	
+
 	// ------------------------------------------------------------------
 	// X'struction
 	// ------------------------------------------------------------------
@@ -39,8 +39,8 @@ class DBConnection
 	// Public interface
 	// ------------------------------------------------------------------
 	public:
-		bool executeQuery(const DBQuery& query, bool withHeader);
-	
+		bool executeQuery(const DBQuery& query, bool withHeader, char delimiter);
+
 		const std::string& table() const;
 
 
