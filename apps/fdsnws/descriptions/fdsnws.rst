@@ -1,7 +1,9 @@
-fdsnws is a server that provides event and station information by `FDSN Web Services`_
+fdsnws is a server that provides event and station information by FDSN Web Services
+(:cite:t:`fdsn`)
 from a SeisComP database and waveforms from a :ref:`global_recordstream` source.
 Also it may be configured to serve data
-availability information as described in the `IRIS DMC FDSNWS availability Web Service Documentation`_.
+availability information as described in the IRIS DMC FDSNWS availability Web
+Service Documentation (:cite:t:`iris-dmc`).
 
 .. caution::
    If you expose the FDSN Web Service as a public service, make sure that
@@ -25,8 +27,7 @@ The following services are available:
 
 The available services can be reached from the fdsnws start page.  The services
 also provide an interactive URL builder constructing the request URL based on
-user inputs. The FDSN specifications can be found on
-`FDSN Web Services`_.
+user inputs. The FDSN specifications can be found on :cite:t:`fdsn`.
 
 **URL**
 
@@ -148,10 +149,10 @@ Example
 Feature notes
 ~~~~~~~~~~~~~
 
-* To enable FDSNXML or StationXML support the plugins ``fdsnxml`` resp.
-  ``staxml`` have to be loaded
+* To enable FDSNXML or StationXML support load the plugin ``fdsnxml``. The
+  plugin is loaded by default configuration.
 * ``updatedafter`` request parameter not implemented: The last modification time
-  in SeisComP is tracked on the object level. If a child of an object is updated
+  in |scname| is tracked on the object level. If a child of an object is updated
   the update time is not propagated to all parents. In order to check if a
   station was updated all children must be evaluated recursively. This operation
   would be much too expensive.
@@ -201,7 +202,7 @@ Example
 Feature Notes
 ~~~~~~~~~~~~~
 
-* SeisComP does not distinguish between catalogs and contributors, but
+* |scname| does not distinguish between catalogs and contributors, but
   supports agencyIDs. Hence, if specified, the value of the ``contributor``
   parameter is mapped to the agencyID. The file
   ``@DATADIR@/share/fdsn/contributors.xml`` has to be filled manually with all
@@ -209,7 +210,7 @@ Feature Notes
 * Origin and magnitude filter parameters are always applied to preferred origin
   resp. preferred magnitude
 * ``updatedafter`` request parameter not implemented: The last modification time
-  in SeisComP is tracked on the object level. If a child of an object is updated
+  in |scname| is tracked on the object level. If a child of an object is updated
   the update time is not propagated to all parents. In order to check if a
   station was updated all children must be evaluated recursively. This operation
   would be much too expensive.
@@ -236,12 +237,12 @@ Data Availability
 
 The data availability web service returns detailed time span information of
 what time series data is available at the DMC archive. The availability information
-can be created by :ref:`scardac` in the SeisComP database from where it is
+can be created by :ref:`scardac` in the |scname| database from where it is
 fetched by fdsnws.
 
 The availability service is no official standard yet. This implementation aims
-to be compatible with the `IRIS DMC IRISWS availability Web Service
-<https://service.iris.edu/irisws/availability/1/>`_ implementation.
+to be compatible with the IRIS DMC availability FDSN Web Service
+(:cite:t:`iris-dmc`) implementation.
 
 * request type: HTTP-GET, HTTP-POST
 * results may be filtered e.g. by channel code, time and quality
@@ -312,8 +313,8 @@ Feature Notes
 
 .. _sec-inv-filter:
 
-Filtering the inventory
-=======================
+Filtering Inventories
+=====================
 
 The channels served by the :ref:`sec-station` and :ref:`sec-dataSelect` services
 may be filtered by specified an INI file in the ``stationFilter`` and
@@ -377,15 +378,15 @@ channel is only added if no other include rule exists in the entire rule set.
 
 .. _sec-port:
 
-Changing the service port
+Changing the Service Port
 =========================
 
 The FDSN Web service specification defines that the Service SHOULD be available
-under port 80. Typically SeisComP runs under a user without root permissions
+under port 80. Typically |scname| runs under a user without root permissions
 and therefore is not allowed to bind to privileged ports (<1024).
 To serve on port 80 you may for instance
 
-* Run SeisComP with root privileged (not recommended)
+* Run |scname| with root privileged (not recommended)
 * Use a proxy Webserver, e.g. Apache with
   `mod-proxy <http://httpd.apache.org/docs/2.2/mod/mod_proxy.html>`_ module
 * Configure and use :ref:`sec-authbind`
@@ -416,7 +417,7 @@ as follows:
 
    sysop@host:~$ authbind --deep seiscomp exec fdsnws
 
-In order use ``authbind`` when starting ``fdsnws`` as SeisComP service the last
+In order use ``authbind`` when starting ``fdsnws`` as |scname| service the last
 line in the ``~/seiscomp/etc/init/fdsnws.py`` have to be commented in.
 
 
@@ -437,7 +438,8 @@ to port 80.
 Please refer to the documentation of your particular firewall solution on how to
 set up this rule permanently.
 
-Authentication extension
+
+Authentication Extension
 ========================
 
 The FDSNWS standard requires HTTP digest authentication as the
@@ -467,6 +469,7 @@ authorization mechanism in SeisComP3 (used by Arclink). It works as follows:
 * Authorization is based on user's e-mail address in the token and
   arclink-access bindings.
 
+
 Configuration
 -------------
 
@@ -477,29 +480,29 @@ where GPG stores its files. Let's use the directory
 
 * First create the direcory and your own signing key:
 
-.. code-block:: sh
+  .. code-block:: sh
 
-  sysop@host:~$ mkdir -m 700 ~/seiscomp/var/lib/gpg
-  sysop@host:~$ gpg --homedir ~/seiscomp/var/lib/gpg --gen-key
+     sysop@host:~$ mkdir -m 700 ~/seiscomp/var/lib/gpg
+     sysop@host:~$ gpg --homedir ~/seiscomp/var/lib/gpg --gen-key
 
 * Now import GPG keys of all authentication services you trust:
 
-.. code-block:: sh
+  .. code-block:: sh
 
-  sysop@host:~$ gpg --homedir ~/seiscomp/var/lib/gpg --import <keys.asc
+     sysop@host:~$ gpg --homedir ~/seiscomp/var/lib/gpg --import <keys.asc
 
 * Finally sign all imported keys with your own key (XXXXXXXX is the ID of
   an imported key):
 
-.. code-block:: sh
+  .. code-block:: sh
 
-  sysop@host:~$ gpg --homedir ~/seiscomp/var/lib/gpg --edit-key XXXXXXXX sign save
+     sysop@host:~$ gpg --homedir ~/seiscomp/var/lib/gpg --edit-key XXXXXXXX sign save
 
 * ...and set auth.enable, either using the "scconfig" tool or:
 
-.. code-block:: sh
+  .. code-block:: sh
 
-  sysop@host:~$ echo "auth.enable = true" >>~/seiscomp/etc/fdsnws.cfg
+     sysop@host:~$ echo "auth.enable = true" >> ~/seiscomp/etc/fdsnws.cfg
 
 
 Usage example
@@ -513,31 +516,31 @@ station AAI (assuming that we are authorized to get data of this station).
   Assuming that the token is saved in "token.asc", credentials of the
   temporary account can be requested using one of the following commands:
 
-.. code-block:: sh
+  .. code-block:: sh
 
-  sysop@host:~$ wget --post-file token.asc https://geofon.gfz-potsdam.de/fdsnws/dataselect/1/auth -O cred.txt
-  sysop@host:~$ curl --data-binary @token.asc https://geofon.gfz-potsdam.de/fdsnws/dataselect/1/auth -o cred.txt
+     sysop@host:~$ wget --post-file token.asc https://geofon.gfz-potsdam.de/fdsnws/dataselect/1/auth -O cred.txt
+     sysop@host:~$ curl --data-binary @token.asc https://geofon.gfz-potsdam.de/fdsnws/dataselect/1/auth -o cred.txt
 
 * The resulting file "cred.txt" contains username and password separated by
   a colon, so one can conveniently use a shell expansion:
 
-.. code-block:: sh
+  .. code-block:: sh
 
-  sysop@host:~$ wget "http://`cat cred.txt`@geofon.gfz-potsdam.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -O data.mseed
-  sysop@host:~$ curl --digest "http://`cat cred.txt`@geofon.gfz-potsdam.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -o data.mseed
+     sysop@host:~$ wget "http://`cat cred.txt`@geofon.gfz-potsdam.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -O data.mseed
+     sysop@host:~$ curl --digest "http://`cat cred.txt`@geofon.gfz-potsdam.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -o data.mseed
 
 * Using the :ref:`fdsnws_fetch <sec-fdsnws-related>` utility, the two steps above can be combined into
   one:
 
-.. code-block:: sh
+  .. code-block:: sh
 
-  sysop@host:~$ fdsnws_fetch -a token.asc -s 2015-12-15T16:00:00Z -e 2015-12-15T16:10:00Z -N IA -S AAI -o data.mseed
+     sysop@host:~$ fdsnws_fetch -a token.asc -s 2015-12-15T16:00:00Z -e 2015-12-15T16:10:00Z -N IA -S AAI -o data.mseed
 
 
 Logging
 =======
 
-In addition to normal SeisComP logs, fdsnws can create a simple HTTP access log
+In addition to normal |scname| logs, fdsnws can create a simple HTTP access log
 and/or a detailed request log. The locations of log files are specified by
 "accessLog" and "requestLog" in fdsnws.cfg.
 
@@ -637,29 +640,20 @@ requests per day.
 
 .. _sec-fdsnws-related:
 
-Related modules
+Related Modules
 ===============
 
-:term:`GEOFON` maintains `scripts for FDSNWS`_:
+:term:`GEOFON` maintains scripts for FDSNWS :cite:p:`fdsnws_scripts`:
 
-* The :program:`fdsnws_fetch` client is a convenient tool for requesting waveforms
-  from a FDSN web service hosted by :term:`EIDA`.
+* The :program:`fdsnws_fetch` client is a convenient tool for requesting
+  waveforms from a FDSN web service hosted by :term:`EIDA` nodes.
 * The :program:`fdsnws2sds` client is a tool for requesting waveforms
-  from a FDSN web service hosted by :term:`EIDA` and to store them into an :term:`SDS` archive.
+  from a FDSN web service hosted by :term:`EIDA` nodes and to store them into an
+  :term:`SDS` archive.
 
 
 Public FDSN Web Servers
 =======================
 
-IRIS maintains a `list of data centers`_ supporting `FDSN Web Services`_.
-
-
-References
-==========
-
-.. target-notes::
-
-.. _`FDSN Web Services` : http://www.fdsn.org/webservices/
-.. _`IRIS DMC FDSNWS availability Web Service Documentation` : https://service.iris.edu/fdsnws/availability/1/
-.. _`scripts for FDSNWS` : https://www.seiscomp3.org/doc/applications/fdsnws_scripts.html
-.. _`list of data centers` : https://www.fdsn.org/webservices/datacenters/
+IRIS maintains a list of data centers (:cite:t:`fdsn-datacenters`)
+supporting FDSN Web Services (:cite:t:`fdsn`).
