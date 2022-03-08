@@ -37,7 +37,7 @@
 			<group name="Commands">
 				<option flag="" long-flag="showqueries">
 					<description>
-					Show the stored queries in queries.cfg
+					Show the queries defined in queries.cfg
 					</description>
 				</option>
 				<option flag="" long-flag="print-column-name">
@@ -49,6 +49,17 @@
 					<description>
 					Print the query parameters and the query filter description
 					as a header of the query output
+					</description>
+				</option>
+				<option flag="" long-flag="delimiter">
+					<description>
+					Column delimiter. If found, this character will be escaped
+					in output values. Default: '|'
+					</description>
+				</option>
+				<option flag="Q" long-flag="query">
+					<description>
+					Execute the given query from the command line.
 					</description>
 				</option>
 			</group>
