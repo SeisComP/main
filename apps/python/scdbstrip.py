@@ -581,7 +581,7 @@ class DBCleaner(seiscomp.client.Application):
 
             tmp_fm = "\
       update tmp_fm set used=1 \
-      where " + self.database().convertColumnName("publicID") + " in (select distinct " + self.database().convertColumnName("focalMechanismID") + " from FocalMechanismReference) \
+      where " + self.cnvCol("publicID") + " in (select distinct " + self.cnvCol("focalMechanismID") + " from FocalMechanismReference) \
       "
 
             if self.runCommand(tmp_fm) == False:
@@ -628,9 +628,9 @@ class DBCleaner(seiscomp.client.Application):
 
             tmp_origin = "\
       create temporary table tmp_origin as \
-        select Origin._oid, %s, 0 as used \
-        from PublicObject, Origin \
-        where PublicObject._oid=Origin._oid and \
+        select Origin._oid, POrigin.%s, 0 as used \
+        from PublicObject as POrigin, Origin \
+        where POrigin._oid=Origin._oid and \
               Origin.%s %s '%s'\
       " % (self.cnvCol("publicID"), self.cnvCol("time_value"), op, timestamp.toString("%Y-%m-%d %H:%M:%S"))
 
@@ -641,8 +641,8 @@ class DBCleaner(seiscomp.client.Application):
 
             tmp_origin = "\
       update tmp_origin set used=1 \
-      where (" + self.database().convertColumnName("publicID") + " in (select distinct " + self.database().convertColumnName("originID") + " from OriginReference)) \
-      or (" + self.database().convertColumnName("publicID") + " in (select " + self.database().convertColumnName("derivedOriginID") + " from MomentTensor))"
+      where (" + self.cnvCol("publicID") + " in (select distinct " + self.cnvCol("originID") + " from OriginReference)) \
+      or (" + self.cnvCol("publicID") + " in (select " + self.cnvCol("derivedOriginID") + " from MomentTensor))"
 
             if self.runCommand(tmp_origin) == False:
                 return False
@@ -688,9 +688,9 @@ class DBCleaner(seiscomp.client.Application):
 
             tmp_pick = "\
       create temporary table tmp_pick as \
-        select Pick._oid, %s, 0 as used \
-        from PublicObject, Pick \
-        where PublicObject._oid=Pick._oid and \
+        select Pick._oid, PPick.%s, 0 as used \
+        from PublicObject as PPick, Pick \
+        where PPick._oid=Pick._oid and \
               Pick.%s %s '%s' \
       " % (self.cnvCol("publicID"), self.cnvCol("time_value"), op, timestamp.toString("%Y-%m-%d %H:%M:%S"))
 
@@ -722,11 +722,11 @@ class DBCleaner(seiscomp.client.Application):
 
             tmp_amp = "\
       create temporary table tmp_amp as \
-        select Amplitude._oid, " + self.cnvCol("publicID") + ", 0 as used \
-        from PublicObject, Amplitude \
-        where PublicObject._oid=Amplitude._oid and \
-              Amplitude." + self.cnvCol("timeWindow_reference") + " %s '%s' \
-      " % (op, timestamp.toString("%Y-%m-%d %H:%M:%S"))
+        select Amplitude._oid, PAmplitude.%s, 0 as used \
+        from PublicObject as PAmplitude, Amplitude \
+        where PAmplitude._oid=Amplitude._oid and \
+              Amplitude.%s %s '%s' \
+      " % (self.cnvCol("publicID"), self.cnvCol("timeWindow_reference"), op, timestamp.toString("%Y-%m-%d %H:%M:%S"))
 
             if self.runCommand(tmp_amp) == False:
                 return False
