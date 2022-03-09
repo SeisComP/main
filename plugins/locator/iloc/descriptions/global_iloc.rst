@@ -1,10 +1,12 @@
-iLoc is a locator developed by István Bondár integrated into |scname|
-by :cite:t:`gempa`. It is invoked by the wrapper plugin *lociloc* which is the
+iLoc is a locator developed by István Bondár which has been integrated into
+|scname| by :cite:t:`gempa`. It is invoked by the wrapper plugin *lociloc* - the
 interface between |scname| and iLoc.
+Read the sections :ref:`iloc-setup` and :ref:`iloc-application` for
+configuring and using iLoc in |scname|.
 
 
 Background
-==========
+----------
 
 iLoc is a locator tool for locating seismic, hydroacoustic and
 infrasound sources
@@ -29,8 +31,8 @@ Among the major advantages of using iLoc is that it can
 * Identify ground truth (GT5) candidate events.
 
 
-iLoc History
-============
+History
+-------
 
 * Originally developed for U.S. Air Force Research Laboratory, today the standard
   at the International Seismological Centre (ISC) replacing previous routines
@@ -40,11 +42,11 @@ iLoc History
 * EMSC standard as of 2022
 
 
-iLoc in a Nutshell
-==================
+iLoc in a nutshell
+------------------
 
 * Accounts for correlated travel-time prediction errors
-* Initial hypocenter guess from Neighbourhood Algorithm search
+* Initial hypocenter guess from Neighborhood Algorithm search
 * Linearised inversion using a priori estimate of the full data covariance matrix
   Attempts for free-depth solution only if there is depth resolution
 * Default depth is derived from historical seismicity
@@ -56,25 +58,24 @@ iLoc in a Nutshell
 * Local velocity model and local phase TT predictions for Pg/Sg/Lg, Pb/Sb, Pn/Sn.
 
 
-iLoc Algorithms
-===============
+Algorithms
+----------
 
 This section describes some of the principles. The full description of the applied
 algorithms can be found in the iLoc documentation provided along with the package
 on the :cite:t:`iloc-iris` website.
 
 
-
 Neighbourhood algorithm
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Linearized inversion algorithms are quite sensitive to the initial guess. In order
-to find an initial hypocentre guess for the linearized inversion the Neigbourhood
+to find an initial hypocenter guess for the linearized inversion the Neigbourhood
 Algorithm (:cite:t:`sambridge-1999`; :cite:t:`sambridge-2001`) is performed
 around the starting hypocentre if :confval:`iLoc.profile.$name.DoGridSearch` is active.
 
-During the NA search, we identify the phases with respect to each trial hypocentre
-and calculate the misfit of the trial hypocentre. The misfit is defined as the sum
+During the NA search, we identify the phases with respect to each trial hypocenter
+and calculate the misfit of the trial hypocenter. The misfit is defined as the sum
 of the :confval:`iLoc.profile.$name.NAlpNorm` residual and a penalty factor that
 penalizes against freakish local minima provided by just a few phases. In the first
 iteration :confval:`iLoc.profile.$name.NAinitialSample` hypocenter hypotheses are tested,
@@ -99,18 +100,24 @@ enabled (:confval:`iLoc.profile.$name.UseRSTT`, :confval:`iLoc.profile.$name.Use
 
 
 Depth resolution
-----------------
+~~~~~~~~~~~~~~~~
 
 Depth resolution can be provided by a local network, depth phases, core reflections
 and to a lesser extent near-regional secondary phases. iLoc attempts for a free-depth
 solution if the set of :term:arrivals meets at least one of the following conditions:
 
-* Number of pairs of defining P and depth phases :math:`\le` :confval:`iLoc.profile.$name.MinDepthPhases`
-* Number of pairs of defining P and core phases :math:`\le` :confval:`iLoc.profile.$name.MinCorePhases`
-* Number of pairs of defining P and S phases :math:`\le` :confval:`iLoc.profile.$name.MinSPpairs`
-  within a regional distance of :confval:`iLoc.profile.$name.MaxLocalDistDeg` degree
-* Number of defining P phases :math:`\le` :confval:`iLoc.profile.$name.MinLocalStations`
-  within a local distance of :confval:`iLoc.profile.$name.MinLocalStations` degree.
+* Number of pairs of defining P and depth phases
+  :math:`\le` :confval:`iLoc.profile.$name.MinDepthPhases`
+* Number of pairs of defining P and core phases
+  :math:`\le` :confval:`iLoc.profile.$name.MinCorePhases`
+* Number of pairs of defining P and S phases
+  :math:`\le` :confval:`iLoc.profile.$name.MinSPpairs`
+  within a regional distance of :confval:`iLoc.profile.$name.MaxLocalDistDeg`
+  degree
+* Number of defining P phases
+  :math:`\le` :confval:`iLoc.profile.$name.MinLocalStations`
+  within a local distance of :confval:`iLoc.profile.$name.MinLocalStations`
+  degree.
 
 If there is insufficient depth resolution provided by the data, or the depth uncertainty
 for a free-depth solution exceeds a threshold, the hypocentre depth is set to the depth
@@ -138,7 +145,7 @@ iLoc reports back how the depth was determined in the FixedDepthType parameter:
 
 
 Linearized inversion
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
 Once the Neighbourhood search get close to the global optimum, iloc switches
 to an iterative linearized least-squares inversion of travel-time, azimuth and
@@ -165,22 +172,27 @@ Some important parameters are:
 * :confval:`iLoc.profile.$name.MinNdefPhases`: Minimum number of observations
   required to attempt for a solution.
 
-If the number of defining arrival times exceed :confval:`iLoc.profile.$name.MinNdefPhases`,
-then slowness observations will not be used in the location.
+If the number of defining arrival times exceed
+:confval:`iLoc.profile.$name.MinNdefPhases`, then slowness observations will not
+be used in the location.
 
 
 Integration into |scname|
-=========================
+------------------------
 
-* Integration of iLoc into |scname| is provided by a library of routines.
-* |scname| modules call iLoc routines by passing the objects via the plugin *lociloc*
-  installed in :file:`@DATADIR@/plugins/lociloc.so`.
+* Integration of iLoc into |scname| is provided by an external library of
+  routines (:cite:t:`iloc-iris`).
+* |scname| modules call iLoc routines by passing the objects via the plugin
+  *lociloc* installed in :file:`@DATADIR@/plugins/lociloc.so`.
 * iLoc returns objects to |scname| for integration.
 * The iLoc implementation in |scname| retains all original iLoc functionalities.
 
+Read the section :ref:`iloc-setup` for the installation of the iLoc library and
+the configuration in |scname|.
 
-Velocity Models
-===============
+
+Velocity models
+---------------
 
 iLoc ships with the global models *iasp91* and *ak135* as well as with regional
 seismic travel-time tables, RSTT, which, if activated by configuration, replaces
@@ -190,7 +202,7 @@ the global models in areas where they are defined.
 .. _iloc-velocity_global:
 
 Global models
--------------
+~~~~~~~~~~~~~
 
 The global models *iasp91* and *ak135* and RSTT are available by default without
 further configuration.
@@ -199,13 +211,12 @@ further configuration.
 .. _iloc-velocity_rstt:
 
 RSTT
-----
+~~~~
 
 RSTT are available in :file:`@DATADIR@/iloc/RSTTmodels/pdu202009Du.geotess`.
 Custom RSTT can be integrated into iLoc and provided to |scname|.
 For adding custom RSTT to iLoc read the original iLoc documentation from the
 :cite:t:`iloc-iris` software repository.
-
 
 The usage of RSTT is controlled per iLoc profile by global configuration
 parameters
@@ -218,7 +229,7 @@ parameters
 .. _iloc-velocity_local:
 
 Local velocity models
-----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 Custom local velocity models can be provided by a file in
 :file:`@DATADIR@/iloc/localmodels`. Example file
@@ -238,8 +249,8 @@ Once added, the velocity can be configured in |scname| as set out in section
 :ref:`iloc-setup`.
 
 
-Elevation Correction
-====================
+Station elevation
+-----------------
 
 iLoc considers station elevation. It calculates the elevation correction,
 *elevationCorrection*, for a station as
@@ -260,21 +271,32 @@ where
 
    iLoc does not allow airquakes or source locations above datum (0 km). If the
    depth of an origin becomes negative, iLoc
-   fixes the depth to 0 km and the depth type of the origin will be "operator assigned".
+   fixes the depth to 0 km and the depth type of the origin will be "operator
+   assigned".
+
+
+.. _sec-iloc-references:
+
+Resources
+---------
+
+iLoc has taken advantage of many publications or has been cited therein.
+Read the section :ref:`sec-references` for a list.
 
 
 .. _iloc-setup:
 
-Setup
-=====
+Setup in |scname|
+=================
 
 #. Add the plugin *lociloc* to the global configuration, e.g. in
    :file:`@SYSTEMCONFIGDIR@/global.cfg`: ::
 
       plugins = ${plugins}, lociloc
 
-#. Download iLoc from the iLoc website, extract the travel-time tables and model files.
-   Then, install the required files and directories in :file:`@DATADIR@/iloc`, e.g.: ::
+#. Download iLoc from the iLoc website, extract the travel-time tables and model
+   files. Then, install the required files and directories in
+   :file:`@DATADIR@/iloc`, e.g.: ::
 
       mkdir $SEISCOMP_ROOT/share/iloc
       wget -O /tmp/iLocAuxDir.tgz "http://iloc.geochem.hu/data/iLocAuxDir.tgz"
@@ -283,22 +305,26 @@ Setup
 
    .. note ::
 
-      * Check https://seiscode.iris.washington.edu/projects/iloc for updates before
-        downloading
+      * Check the :cite:t:`iloc-iris` website for updates before downloading.
       * Instead of copying the :file:`auxdata` directory, you can also create a
-        symbolic link and maintain always the same iLoc versin in |scname| and
+        symbolic link and maintain always the same iLoc version in |scname| and
         externally.
 
-#. Add and configure iLoc profiles for the velocity models. The global models *iasp91*
-   and *ak135* are considered by default with default configuration parameters.
-   Create new profiles in oder to adjust their configuration parameters:
+#. Add and configure iLoc profiles for the velocity models. The global models
+   *iasp91* and *ak135* are considered by default with default configuration
+   parameters even without setting up *iasp91*/*ak135* profiles. You may,
+   however, create these profiles for their customization.
+
+   Create new profiles or consider existing ones for adjusting their
+   configuration:
 
    * :confval:`iLoc.profile.$name.globalModel`: The name of the
      :ref:`global model <iloc-velocity_global>`, e.g. *iasp91* or *ak135*.
    * Consider the :ref:`RSTT parameters <iloc-velocity_rstt>`.
    * :confval:`iLoc.profile.$name.LocalVmodel`: The name of the file containing
      the :ref:`local velocity model <iloc-velocity_local>`.
-   * :confval:`iLoc.profile.$name.DoNotRenamePhases`: Renaming seismic phases automatically
+   * :confval:`iLoc.profile.$name.DoNotRenamePhases`: Renaming seismic phases
+     automatically
      impacts the usability of the origins with other locators and locator profiles.
      Activate the parameter to avoid phase renaming.
    * Consider the remaining parameters.
@@ -312,11 +338,17 @@ Setup
    locator modules.
 
 
-Interactive Usage
-=================
+.. _iloc-application:
 
-Once the *lociloc* plugin is configured, the iLoc locator can be selected in
-:ref:`scolv`:
+Application in |scname|
+=======================
+
+Once the *lociloc* plugin is configured, the iLoc locator can be applied
+
+* Automatically e.g. in :ref:`screloc` or
+* Interactively in :ref:`scolv`.
+
+For using iLoc in :ref:`scolv` select it in the locator menu of the Location tab
 
 .. figure:: media/scolv-iloc-locator.png
    :align: center
@@ -330,7 +362,7 @@ along with a profile:
 
    Select iLoc profile
 
-The settings for iLoc can be adjusted by pressing the wrench button next to the
+The parameters for iLoc can be adjusted by pressing the wrench button next to the
 locator selection combo box
 
 .. figure:: media/scolv-iloc-change.png
@@ -347,12 +379,12 @@ which opens the iLoc settings dialog:
 
 .. warning ::
 
-   By default, automatic phase renaming by iLoc is active. The renaming may change
-   the phase names, e.g. from P to Pn.
+   By default, automatic phase renaming by iLoc is active. The renaming may
+   change the phase names, e.g. from P to Pn.
 
    Renaming seismic phases automatically will later impact the usability of
    the new origins with other locators and locator
-   profiles. Deactivate DoNotRenamePhases to avoid phase renaming.
+   profiles. Deactivate *DoNotRenamePhases* to avoid phase renaming.
 
    However,
    when deactivating, iLoc may not provide results if the initial phases do not
@@ -360,19 +392,10 @@ which opens the iLoc settings dialog:
    Example: For great source depth and small epicentral distance, the first arrival
    phase is p or Pn and not P but |scname| provides P.
 
-After relocating, the iLoc locator and the selected profile are shown in the scolv
-Location tab as Method and Earth model, respectively:
+After relocating, the iLoc locator and the selected profile are shown in the
+:ref:`scolv` Location tab as Method and Earth model, respectively:
 
 .. figure:: media/scolv-iloc-info.png
    :align: center
 
    Information in scolv Locator tab
-
-
-.. _sec-iloc-references:
-
-Resources
-=========
-
-iLoc has take advantage from many other science papers or has been cited therein.
-Read the section :ref:`sec-references` for a list.
