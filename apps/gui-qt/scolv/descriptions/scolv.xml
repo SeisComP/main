@@ -370,15 +370,28 @@
 						when in picking mode.
 					</description>
 				</parameter>
+				<parameter name="loadAllPicks" type="boolean" default="true">
+					<description>
+						Load all existing picks for the requested data time window.
+					</description>
+				</parameter>
 				<parameter name="ignoreUnconfiguredStations" type="boolean" default="false">
 					<description>
 						If enabled, the picker will not add stations that are not
 						configured with a detecStream in global bindings.
 					</description>
 				</parameter>
-				<parameter name="loadAllPicks" type="boolean" default="true">
+				<parameter name="limitStationAcquisition" type="boolean" default="false">
 					<description>
-						Load all existing picks for the requested data time window.
+						Limit the data acquisition to the number of nearest
+						stations given by &quot;picker.limitStationAcquisitionCount&quot;.
+					</description>
+				</parameter>
+				<parameter name="limitStationAcquisitionCount" type="int" default="10">
+					<description>
+						Limit the data acquisituion to the given number of
+						the nearest stations. Requires to activate
+						&quot;picker.limitStationAcquisition&quot;.
 					</description>
 				</parameter>
 				<parameter name="loadStrongMotion" type="boolean" default="false">
@@ -396,12 +409,13 @@
 				<parameter name="showAllComponents" type="boolean" default="false">
 					<description>
 						If enabled, all three components are shown in the picker
-						zoom trace.
+						zoom trace. The distance is limited to what is configured
+						in &quot;picker.allComponentsMaximumDistance&quot;.
 					</description>
 				</parameter>
 				<parameter name="allComponentsMaximumDistance" type="double" unit="deg" default="10">
 					<description>
-						Defines the distance limit for the showAllComponents flag.
+						The distance limit for the &quot;picker.showAllComponents&quot; flag.
 					</description>
 				</parameter>
 				<parameter name="usePerStreamTimeWindows" type="boolean" default="false">
