@@ -160,6 +160,23 @@ class EventStreams(client.Application):
         return True
 
 
+    def printUsage(self):
+
+        print('''Usage:
+  scevtstreams [options]
+
+Extract stream information and time windows from an event''')
+
+        client.Application.printUsage(self)
+
+        print('''Examples:
+Get the time windows for an event in the database:
+  scevtstreams -E gfz2012abcd -d mysql://sysop:sysop@localhost/seiscomp
+
+Create lists compatible with fdsnws:
+  scevtstreams -E gfz2012abcd -i event.xml -m 120,500 --fdsnws
+''')
+
     def run(self):
 
         resolveWildcards = self.commandline().hasOption("resolve-wildcards")

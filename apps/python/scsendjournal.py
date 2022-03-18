@@ -14,7 +14,9 @@
 ############################################################################
 
 import sys
-import seiscomp.core, seiscomp.client, seiscomp.datamodel
+import seiscomp.core
+import seiscomp.client
+import seiscomp.datamodel
 
 
 class SendJournal(seiscomp.client.Application):
@@ -34,6 +36,20 @@ class SendJournal(seiscomp.client.Application):
                 self.name() + " [opts] {objectID} {action} [parameters]\n")
             return False
         return True
+
+    def printUsage(self):
+
+        print('''Usage:
+  scsendjournal [options]
+
+Send journaling information to the messaging to manipulate event parameters''')
+
+        seiscomp.client.Application.printUsage(self)
+
+        print('''Examples:
+Set the type of the event with ID gempa2021abcd to 'earthquake'
+  scsendjournal -H localhost gempa2021abcd EvType "earthquake"
+''')
 
     def run(self):
         msg = seiscomp.datamodel.NotifierMessage()

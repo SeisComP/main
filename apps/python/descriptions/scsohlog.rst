@@ -2,6 +2,7 @@ scsohlog connects to the messaging and collects all information sent from connec
 clients. It creates an XML file and writes that to disc at a configurable interval.
 That output can be read by any consumer and converted to the desired output.
 
+
 Example
 =======
 

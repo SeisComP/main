@@ -16,15 +16,35 @@
 			The default operation mode is import. That means that a multiplexed
 			MiniSEED file or another record source such as ArcLink is used to import
 			records into a SDS structure.
-			</description>
-			<group name="">
-				<option flag="I">
+		</description>
+			<group name="Verbosity">
+				<option flag="v" long-flag="verbose">
 					<description>
-					Specify the recordstream URL when in import mode.
-					When using another recordstream than a file (like ArcLink) a stream
-					list file is required (default is file://- (stdin))
+					Verbose mode.
 					</description>
 				</option>
+				<option flag="h" long-flag="help">
+					<description>
+					Display a help message.
+					</description>
+				</option>
+			</group>
+			<group name="Mode">
+				<option flag="d" long-flag="dump">
+					<description>
+					Set export (dump) mode. Records are retrieved from an archive and
+					written to standard output.
+					</description>
+				</option>
+				<option flag="I">
+					<description>
+					Import mode: Specify the recordstream URL when in import mode.
+					When using another recordstream than a file (like ArcLink) a stream
+					list file is required. Default: file://- (stdin).
+					</description>
+				</option>
+			</group>
+			<group name="Output">
 				<option flag="t" argument="timewindow">
 					<description>
 					Specify the time window (as one properly quoted string) to dump
@@ -32,12 +52,6 @@
 					To dump one hour of waveform data between 2008/01/01 00:00:00 and
 					2008/01/01 01:00:00 use
 					&lt;-t &quot;2008-01-01 00:00:00~2008-01-01 01:00:00&quot;&gt;.
-					</description>
-				</option>
-				<option flag="d" long-flag="dump">
-					<description>
-					Set export (dump) mode. Records are retrieved from an archive and
-					written to standard output.
 					</description>
 				</option>
 				<option flag="l" long-flag="list" argument="file">
@@ -59,7 +73,7 @@
 				</option>
 				<option flag="E">
 					<description>
-					Sort records according to their end time (default is start time).
+					Sort records according to their end time. Default: start time.
 					</description>
 				</option>
 				<option flag="m" long-flag="modify">
@@ -79,34 +93,24 @@
 				</option>
 				<option flag="n" argument="networks">
 					<description>
-					Network list of networks to dump (comma separated) (default is *).
+					List of network codes to dump (comma separated). Default: *.
 					</description>
 				</option>
 				<option flag="c" argument="channels">
 					<description>
 					Specify the channel filter for the dumped streams as regular
-					expression (default is (B|S|M|H)(L|H)(Z|N|E)). To dump only the
+					expression. Default: (B|S|M|H)(L|H)(Z|N|E). To dump only
 					BHZ, BHN and BHE streams use BH(Z|N|E).
 					</description>
 				</option>
 				<option long-flag="files" argument="count">
 					<description>
-					Specify the number of file handles to cache (default is 100).
-					</description>
-				</option>
-				<option flag="v" long-flag="verbose">
-					<description>
-					Verbose mode.
+					Specify the number of file handles to cache. Default: 100.
 					</description>
 				</option>
 				<option long-flag="test">
 					<description>
 					Test mode, no record output. This switch is useful for debugging.
-					</description>
-				</option>
-				<option flag="h" long-flag="help">
-					<description>
-					Display a help message.
 					</description>
 				</option>
 			</group>

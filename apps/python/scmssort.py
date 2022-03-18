@@ -85,20 +85,20 @@ tmin = str2time("1970-01-01 00:00:00")
 tmax = str2time("2500-01-01 00:00:00")
 ifile = "-"
 
-description = "%prog - read unsorted (and possibly multiplexed) MiniSEED files " \
-              "and sort the individual records by time. This is useful e.g. " \
+description = "Read unsorted and possibly multiplexed MiniSEED files. " \
+              "Sort and filter the individual records by time. This is useful e.g. " \
               "for simulating data acquisition and blending data."
 
 epilog = """
 Examples:
+Read data from multiple files, extract streams by time, sort records by start
+time, remove duplicate records
+  cat f1.mseed f2.mseed f3.mseed |\\
+  scmssort -v -t '2007-03-28 15:48~2007-03-28 16:18' -u > sorted.mseed
 
-  Read data from multiple files, extract streams by time sort records by start time, remove duplicate records
-    cat f1.mseed f2.mseed f3.mseed |\\
-    scmssort -v -t '2007-03-28 15:48~2007-03-28 16:18' -u > sorted.mseed
-
-  Extract streams by time, stream code and sort records by end time
-    echo CX.PB01..BH? |\\
-    scmssort -v -E -t '2007-03-28 15:48~2007-03-28 16:18' -u -l - test.mseed > sorted.mseed
+Extract streams by time, stream code and sort records by end time
+  echo CX.PB01..BH? |\\
+  scmssort -v -E -t '2007-03-28 15:48~2007-03-28 16:18' -u -l - test.mseed > sorted.mseed
 """
 
 p = MyOptionParser(
@@ -107,7 +107,7 @@ p.add_option("-t", "--time-window", action="store",
              help="specify time window (as one -properly quoted- string). Times "
              "are of course UTC and separated by a tilde ~")
 p.add_option("-l", "--list", action="store",
-             help="File with streams to filter the records. "
+             help="File with stream list to filter the records. "
              "One stream per line. Instead of a file read the from stdin (-). "
              "Line format: NET.STA.LOC.CHA - wildcards and regular expressions "
              "are considered. Example: CX.*..BH?")

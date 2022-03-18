@@ -111,6 +111,23 @@ class Importer(seiscomp.client.Application):
 
         return True
 
+    def printUsage(self):
+
+        print('''Usage:
+  import_inv [FORMAT] input [output]
+  import_inv help [topic]
+
+Import inventory information from various sources.''')
+
+        seiscomp.client.Application.printUsage(self)
+
+        print('''Examples:
+List all supported inventory formats
+  import_inv help formats
+
+Convert from FDSN stationXML to SeisComp format
+  import_inv fdsnxml inventory_fdsnws.xml inventory_sc.xml
+''')
 
 if __name__ == "__main__":
     app = Importer(len(sys.argv), sys.argv)

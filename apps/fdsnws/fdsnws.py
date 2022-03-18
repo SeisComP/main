@@ -96,11 +96,11 @@ class UsernamePasswordChecker(object):
     credentialInterfaces = (credentials.IUsernamePassword,
                             credentials.IUsernameHashedPassword)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def __init__(self, userdb):
         self.__userdb = userdb
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     @staticmethod
     def __cbPasswordMatch(matched, username):
         if matched:
@@ -108,7 +108,7 @@ class UsernamePasswordChecker(object):
 
         return failure.Failure(error.UnauthorizedLogin())
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def requestAvatarId(self, cred):
         return defer.maybeDeferred(self.__userdb.checkPassword, cred) \
             .addCallback(self.__cbPasswordMatch, cred.username)
@@ -117,25 +117,25 @@ class UsernamePasswordChecker(object):
 ###############################################################################
 class UserDB(object):
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def __init__(self):
         self.__users = {}
         self.__blacklist = set()
         task.LoopingCall(self.__expireUsers).start(60, False)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def __expireUsers(self):
         for (name, (_, _, expires)) in list(self.__users.items()):
             if time.time() > expires:
                 seiscomp.logging.info("de-registering %s" % name)
                 del self.__users[name]
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def blacklistUser(self, name):
         seiscomp.logging.info("blacklisting %s" % name)
         self.__blacklist.add(name)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def addUser(self, name, attributes, expires, data):
         try:
             password = self.__users[name][0]
@@ -149,7 +149,7 @@ class UserDB(object):
         self.__users[name] = (password, attributes, expires)
         return password
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def checkPassword(self, cred):
         try:
             pw = self.__users[cred.username][0]
@@ -159,26 +159,27 @@ class UserDB(object):
 
         return cred.checkPassword(pw)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def getAttributes(self, name):
         return self.__users[name][1]
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def dump(self):
         seiscomp.logging.info("known users:")
 
         for name, user in list(self.__users.items()):
-            seiscomp.logging.info(" %s %s %d" % (py3ustr(name), user[1], user[2]))
+            seiscomp.logging.info(" %s %s %d" % (py3ustr(name),
+                                                 user[1], user[2]))
 
 
 ###############################################################################
 class Access(object):
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def __init__(self):
         self.__access = {}
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def initFromSC3Routing(self, routing):
         for i in range(routing.accessCount()):
             acc = routing.access(i)
@@ -198,13 +199,13 @@ class Access(object):
             self.__access.setdefault((net, sta, loc, cha), []) \
                 .append((user, start, end))
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     @staticmethod
     def __matchTime(t1, t2, accessStart, accessEnd):
         return (not accessStart or (t1 and t1 >= accessStart)) and \
             (not accessEnd or (t2 and t2 <= accessEnd))
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     @staticmethod
     def __matchEmail(emailAddress, accessUser):
         defaultPrefix = "mail:"
@@ -216,12 +217,12 @@ class Access(object):
             accessUser[:1] == '@' and emailAddress[:1] != '@' and
             emailAddress.upper().endswith(accessUser.upper()))
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     @staticmethod
     def __matchAttribute(attribute, accessUser):
         return attribute.upper() == accessUser.upper()
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def authorize(self, user, net, sta, loc, cha, t1, t2):
         if user['blacklisted']:
             return False
@@ -263,7 +264,7 @@ class Access(object):
 ###############################################################################
 class DataAvailabilityCache(object):
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def __init__(self, app, da, validUntil):
         self._da = da
         self._validUntil = validUntil
@@ -301,11 +302,11 @@ class DataAvailabilityCache(object):
 
         seiscomp.logging.info("loaded %i extents" % len(self._extents))
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def validUntil(self):
         return self._validUntil
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def extent(self, net, sta, loc, cha):
         wid = "%s.%s.%s.%s" % (net, sta, loc, cha)
         if wid in self._extents:
@@ -313,19 +314,19 @@ class DataAvailabilityCache(object):
 
         return None
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def extents(self):
         return self._extents
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def extentsSorted(self):
         return self._extentsSorted
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def extentsOID(self):
         return self._extentsOID
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def dataAvailability(self):
         return self._da
 
@@ -333,7 +334,7 @@ class DataAvailabilityCache(object):
 ###############################################################################
 class FDSNWS(seiscomp.client.Application):
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def __init__(self, argc, argv):
         seiscomp.client.Application.__init__(self, argc, argv)
         self.setMessagingEnabled(True)
@@ -402,7 +403,7 @@ class FDSNWS(seiscomp.client.Application):
         # Leave signal handling to us
         seiscomp.client.Application.HandleSignals(False, False)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def initConfiguration(self):
         if not seiscomp.client.Application.initConfiguration(self):
             return False
@@ -547,7 +548,7 @@ class FDSNWS(seiscomp.client.Application):
             pass
 
         if self._serveAvailability and not self._daEnabled:
-            print("can't serve availabilty without dataAvailability.enable " \
+            print("can't serve availabilty without dataAvailability.enable "
                   "set to true", file=sys.stderr)
             return False
         if not bool(re.match(r'^[a-zA-Z0-9_\ -]*$', self._daRepositoryName)):
@@ -605,8 +606,8 @@ class FDSNWS(seiscomp.client.Application):
                         overlapCount = lenBefore - len(diff)
                         if overlapCount > 0:
                             self._eventTypeWhitelist = diff
-                            print("warning: found %i overlapping event " \
-                                  "types in white and black list, black " \
+                            print("warning: found %i overlapping event "
+                                  "types in white and black list, black "
                                   "list takes precedence" % overlapCount,
                                   file=sys.stderr)
                 except Exception as e:
@@ -700,7 +701,21 @@ class FDSNWS(seiscomp.client.Application):
 
         return True
 
-    #--------------------------------------------------------------------------
+    def printUsage(self):
+
+        print('''Usage:
+  fdsnws [options]
+
+Provide FDSN Web Services''')
+
+        seiscomp.client.Application.printUsage(self)
+
+        print('''Examples:
+Execute on command line with debug output
+  fdsnws --debug
+''')
+
+    # -------------------------------------------------------------------------
     # Signal handling in Python and fork in wrapped C++ code is not a good
     # combination. Without digging too much into the problem, forking the
     # process with os.fork() helps
@@ -714,7 +729,7 @@ class FDSNWS(seiscomp.client.Application):
         sys.exit(0)
         return True
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def getDACache(self):
         if not self._daEnabled:
             return None
@@ -734,7 +749,7 @@ class FDSNWS(seiscomp.client.Application):
 
         return self._daCache
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     @staticmethod
     def _parseEventTypes(names):
         types = set()
@@ -748,19 +763,19 @@ class FDSNWS(seiscomp.client.Application):
                 if name in typeMap:
                     types.add(typeMap[name])
                 else:
-                    raise Exception("event type name '%s' not supported" \
+                    raise Exception("event type name '%s' not supported"
                                     % name)
 
         return types
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     @staticmethod
     def _formatEventTypes(types):
         return ",".join(["unknown" if i < 0 else
                          seiscomp.datamodel.EEventTypeNames.name(i)
                          for i in sorted(types)])
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _site(self):
         modeStr = None
         if self._evaluationMode is not None:
@@ -1120,7 +1135,7 @@ configuration read:
 
         return Site(root, self._corsOrigins)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _reloadTask(self):
         if not self.__reloadRequested:
             return
@@ -1152,7 +1167,7 @@ configuration read:
         self._userdb.dump()
         self.__reloadRequested = False
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _sighupHandler(self, signum, frame): #pylint: disable=W0613
         if self.__reloadRequested:
             seiscomp.logging.info("SIGHUP received, reload already in progress")
@@ -1160,7 +1175,7 @@ configuration read:
             seiscomp.logging.info("SIGHUP received, reload scheduled")
             self.__reloadRequested = True
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def run(self):
         retn = False
         try:
@@ -1193,7 +1208,7 @@ configuration read:
 
         return retn
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     @staticmethod
     def _cloneInventory(inv):
         wasEnabled = seiscomp.datamodel.PublicObject.IsRegistrationEnabled()
@@ -1223,7 +1238,7 @@ configuration read:
         seiscomp.datamodel.PublicObject.SetRegistrationEnabled(wasEnabled)
         return inv2
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _filterInventory(self, inv, fileName, serviceName=""):
         if not fileName:
             return True
@@ -1452,7 +1467,7 @@ configuration read:
 
         return True
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _getAuthSessionWrapper(self, realm, msg):
         p = portal.Portal(realm, [self._checker])
         f = guard.DigestCredentialFactory('MD5', msg)

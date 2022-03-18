@@ -71,6 +71,20 @@ class OriginList(seiscomp.client.Application):
 
         return True
 
+    def printUsage(self):
+
+        print('''Usage:
+  scorgls [options]
+
+List available origin IDs in a given time range to stdout''')
+
+        seiscomp.client.Application.printUsage(self)
+
+        print('''Examples:
+Print all origin IDs from year 2022 and thereafter
+  scorgls -d mysql://sysop:sysop@localhost/seiscomp --begin "2022-01-01 00:00:00"
+''')
+
     def run(self):
         q = "select PublicObject.%s, Origin.* from Origin, PublicObject where Origin._oid=PublicObject._oid and Origin.%s >= '%s' and Origin.%s < '%s'" %\
             (self.database().convertColumnName("publicID"),
@@ -78,12 +92,12 @@ class OriginList(seiscomp.client.Application):
              self.database().timeToString(self._startTime),
              self.database().convertColumnName("time_value"),
              self.database().timeToString(self._endTime))
-        
+
         if self.author:
             q += " and Origin.%s = '%s' " %\
                  (self.database().convertColumnName("creationInfo_author"),
                   self.query().toString(self.author))
-        
+
         for obj in self.query().getObjectIterator(q, seiscomp.datamodel.Origin.TypeInfo()):
             org = seiscomp.datamodel.Origin.Cast(obj)
             if org:

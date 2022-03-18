@@ -14,7 +14,10 @@
 ############################################################################
 
 import sys
-import seiscomp.core, seiscomp.datamodel, seiscomp.client, seiscomp.logging
+import seiscomp.core
+import seiscomp.datamodel
+import seiscomp.client
+import seiscomp.logging
 
 
 class SendOrigin(seiscomp.client.Application):
@@ -34,7 +37,7 @@ class SendOrigin(seiscomp.client.Application):
             tstr = self.commandline().optionString("time")
         except:
             sys.stderr.write(
-                "must specify origin using '--coord lat,lon,dep --time time'\n")
+                "Must specify origin using '--coord lat,lon,dep --time time'\n")
             return False
 
         self.origin = seiscomp.datamodel.Origin.Create()
@@ -58,10 +61,26 @@ class SendOrigin(seiscomp.client.Application):
     def createCommandLineDescription(self):
         try:
             self.commandline().addGroup("Parameters")
-            self.commandline().addStringOption("Parameters", "coord", "lat,lon,dep of origin")
-            self.commandline().addStringOption("Parameters", "time", "time of origin")
+            self.commandline().addStringOption("Parameters",
+                                               "coord",
+                                               "Latitude,longitude,depth of origin")
+            self.commandline().addStringOption("Parameters",
+                                               "time", "time of origin")
         except:
             seiscomp.logging.warning("caught unexpected error %s" % sys.exc_info())
+
+    def printUsage(self):
+        print('''Usage:
+  scsendorigin [options]
+
+Create an artificial origin and send to the messaging''')
+
+        seiscomp.client.Application.printUsage(self)
+
+        print('''Examples:
+Send an artificial origin with hypocenter parameters to the messaging
+  scsendorigin --time "2022-05-01 10:00:00" --coord 52,12,10
+''')
 
     def run(self):
         msg = seiscomp.datamodel.ArtificialOriginMessage(self.origin)
