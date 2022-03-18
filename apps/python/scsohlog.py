@@ -300,6 +300,18 @@ class Monitor(seiscomp.client.Application):
 
         return True
 
+    def printUsage(self):
+        print('''Usage:
+  scsohlog [options]
+
+Connect to the messaging collecting information sent from connected clients''')
+
+        seiscomp.client.Application.printUsage(self)
+
+        print('''Examples:
+Create an output XML file every 60 seconds and execute a custom script to process the XML file
+  scsohlog -o stat.xml -i 60 --script process-stat.sh
+''')
     def handleNetworkMessage(self, msg):
         # A state of health message
         if msg.type == seiscomp.client.Packet.Status:

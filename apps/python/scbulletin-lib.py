@@ -888,7 +888,25 @@ class BulletinApp(seiscomp.client.Application):
             self.setDatabaseEnabled(False, False)
 
         return True
+    
+    def printUsage(self):
 
+        print('''Usage:
+  scbulletin [options]
+
+Transform event or origin parameters to autoloc1 or to autoloc3 format.''')
+
+        seiscomp.client.Application.printUsage(self)
+
+        print('''Examples:
+Create bulletin from event in database
+  scbulletin -d mysql://sysop:sysop@localhost/seiscomp -E gempa2012abcd
+
+Convert XML file with event parameters to bulletin
+  scbulletin -i gempa2012abcd.xml
+''')
+        return True 
+    
     def run(self):
         evid = None
         orid = None

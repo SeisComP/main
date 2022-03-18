@@ -324,7 +324,7 @@ class ObjectAlert(seiscomp.client.Application):
             phaseHint =  pickObject.phaseHint().code()
         except:
             phaseHint = "unknown"
-            
+
         print(net, sta, pickID, phaseHint)
 
         if self._pickProc is not None:
@@ -423,9 +423,11 @@ class ObjectAlert(seiscomp.client.Application):
                     if not self._phaseHints or phaseHint in self._phaseHints:
                         self.notifyPick(obj)
                     else:
-                        seiscomp.logging.debug(" + phase hint %s does not match '%s'" % (phaseHint, self._phaseHints))
+                        seiscomp.logging.debug(" + phase hint %s does not match '%s'"
+                                               % (phaseHint, self._phaseHints))
                 else:
-                    seiscomp.logging.debug(" + agencyID %s does not match '%s'" % (agencyID, self._agencyIDs))
+                    seiscomp.logging.debug(" + agencyID %s does not match '%s'"
+                                           % (agencyID, self._agencyIDs))
 
             # amplitude
             obj = seiscomp.datamodel.Amplitude.Cast(object)
@@ -567,7 +569,7 @@ class ObjectAlert(seiscomp.client.Application):
             else:
                 dt = "%d seconds ago" % dt
 
-            if preliminary == True:
+            if preliminary:
                 message = "earthquake, XXL, preliminary, %s, %s" % (dt, dsc)
             else:
                 message = "earthquake, %s, %s, %s, depth %d kilometers" % (
@@ -615,6 +617,19 @@ class ObjectAlert(seiscomp.client.Application):
             for i in info:
                 sys.stderr.write(i)
 
+    def printUsage(self):
+
+        print('''Usage:
+  scalert [options]
+
+Execute custom scripts upon arrival of objects or updates''')
+
+        seiscomp.client.Application.printUsage(self)
+
+        print('''Examples:
+Execute scalert on command line with debug output
+  scalert --debug
+''')
 
 app = ObjectAlert(len(sys.argv), sys.argv)
 sys.exit(app())

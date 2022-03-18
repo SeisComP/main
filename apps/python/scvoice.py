@@ -203,6 +203,21 @@ class VoiceAlert(client.Application):
                 "agencyIDs: %s" % (" ".join(self._agencyIDs)))
 
         return True
+    
+    def printUsage(self):
+
+        print('''Usage:
+  scvoice [options]
+
+Alert the user acoustically in real time.
+''')
+
+        client.Application.printUsage(self)
+
+        print('''Examples:
+Execute scvoice on command line with debug output
+  scvoice --debug
+''')
 
     def run(self):
         try:

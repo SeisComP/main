@@ -15,7 +15,9 @@
 
 import sys
 import os
-import seiscomp.client, seiscomp.datamodel, seiscomp.io
+import seiscomp.client
+import seiscomp.datamodel
+import seiscomp.io
 
 
 class EventParameterLog(seiscomp.client.Application):
@@ -39,13 +41,27 @@ class EventParameterLog(seiscomp.client.Application):
         # EventParameter object
         self._eventParameters = seiscomp.datamodel.EventParameters()
 
+    def printUsage(self):
+
+        print('''Usage:
+  sceplog [options]
+
+Receive event parameters from messaging and write them to stdout in SCML''')
+
+        seiscomp.client.Application.printUsage(self)
+
+        print('''Examples:
+Execute sceplog with debug output
+  sceplog --debug
+''')
+
     def run(self):
-        if seiscomp.client.Application.run(self) == False:
+        if not seiscomp.client.Application.run(self):
             return False
 
         ar = seiscomp.io.XMLArchive()
         ar.setFormattedOutput(True)
-        if ar.create("-") == True:
+        if ar.create("-"):
             ar.writeObject(self._eventParameters)
             ar.close()
             # Hack to avoid the "close failed in file object destructor"

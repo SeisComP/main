@@ -112,19 +112,19 @@ class WfqQuery(seiscomp.client.Application):
         return True
 
     def printUsage(self):
+        
+        print('''Usage:  
+  scquery_qc [options]
+  
+Query a database for waveform quality control (QC) parameters.''')
+        print("Default QC parameters: {}".format(qcParamsDefault))
 
-        print("\nscquery_qc - query a database for waveform quality control parameters\n",
-              file=sys.stderr)
-        print("Usage: scquery_qc [options]", file=sys.stderr)
         seiscomp.client.Application.printUsage(self)
 
-        print("Default QC parameters: {}\n".format(qcParamsDefault),
-              file=sys.stderr)
-        print("Examples:", file=sys.stderr)
-        print("\n  Query rms and delay values for streams 'AU.AS18..SHZ' and "
-              "'AU.AS19..SHZ' from '2021-11-20 00:00:00' until current", file=sys.stderr)
-        print("    scquery_qc -d localhost -b '2021-11-20 00:00:00' "
-              "-p rms,delay -i AU.AS18..SHZ,AU.AS19..SHZ\n", file=sys.stderr)
+        print('''Examples:
+Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from '2021-11-20 00:00:00' until current
+  scquery_qc -d localhost -b '2021-11-20 00:00:00' -p rms,delay -i AU.AS18..SHZ,AU.AS19..SHZ
+''')
 
     def validateParameters(self):
         if not seiscomp.client.Application.validateParameters(self):

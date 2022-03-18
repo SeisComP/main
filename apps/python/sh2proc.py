@@ -78,7 +78,26 @@ class SH2Proc(seiscomp.client.Application):
 
         return True
 
-    ###########################################################################
+    ##########################################################################
+    def printUsage(self):
+
+        print('''Usage:
+  sh2proc [options]
+
+Convert Seismic Handler event data to SeisComP XML format''')
+
+        seiscomp.client.Application.printUsage(self)
+
+        print('''Examples:
+Convert the Seismic Handler file shm.evt to SCML. Receive the database
+connection to read inventory and configuration information from messaging
+  sh2proc shm.evt
+
+Read Seismic Handler data from stdin. Provide inventory and configuration in XML
+  cat shm.evt | sh2proc --inventory-db=inventory.xml --config-db=config.xml
+''')
+    
+    ##########################################################################
     def validateParameters(self):
         if not seiscomp.client.Application.validateParameters(self):
             return False

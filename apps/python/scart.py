@@ -503,55 +503,56 @@ def readStreamList(file):
     return streams
 
 
-usage_info = """
-scart - dump records of an SDS structure, sort them, modify the
-        time and replay them
+usage_info = '''
+Usage: 
+  scart [options] [archive]
 
-Usage: scart [options] [archive]
+Import miniSEED waveforms or dump records from an SDS structure, sort them,
+modify the time and replay them.
 
-Options:
-    --stdout         writes on stdout if import mode is used instead
-                     of creating a SDS archive
-    --with-filename  print all accessed files to stdout after import
-    -I               specify recordstream URL when in import mode
-                     when using another recordstream than file a
-                     stream list file is needed
-                     default: file://- (stdin)
-    -t t1~t2         specify time window (as one -properly quoted- string)
-                     times are of course UTC and separated by a tilde ~
-    -d, --dump       export (dump) mode
-    -l, --list       uses a stream list file instead of defined networks and
-                     channels (-n and -c are ignored). The list can be generated
-                     from events by scevtstreams.
-                     line format: starttime;endtime;streamID
-                                  2007-03-28 15:48;2007-03-28 16:18;GE.LAST.*.*
-                                  2007-03-28 15:48;2007-03-28 16:18;GE.PMBI..BH?
-    -s, --sort       sort records
-    -m, --modify     modify the record time for realtime playback when dumping
-        --speed      specify the speed to dump the records
-                     a value of 0 means no delay otherwise speed is a multiplier
-                     of the real time difference between the records
-    -n               network list (comma separated), default: *
-    -c               channel filter (regular expression),
-                     default: "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
-    -E               sort according to record end time; default is start time
-        --files      specify the file handles to cache; default: 100
-    -v, --verbose    verbose mode
-        --test       test mode, no record output
-    -h, --help       display this help message
+Verbosity:
+  -v, --verbose    Print verbose information.
+  -h, --help       Display this help message.
+
+Mode:
+  -d, --dump       Export (dump) mode. Read from SDS archive.
+  -I               Import mode: Specify a recordstream URL when in import mode.
+                   When using another recordstream than file a
+                   stream list file is needed.
+                   Default: file://- (stdin)
+
+Output:
+  --stdout         Writes on stdout if import mode is used instead
+                   of creating a SDS archive
+  --with-filename  Print all accessed files to stdout after import.
+  -t t1~t2         Specify time window (as one properly quoted string)
+                   times are of course UTC and separated by a tilde '~' .
+  -l, --list       Use a stream list file instead of defined networks and
+                   channels (-n and -c are ignored). The list can be generated
+                   from events by scevtstreams.
+                   line format: starttime;endtime;streamID
+                                2007-03-28 15:48;2007-03-28 16:18;GE.LAST.*.*
+                                2007-03-28 15:48;2007-03-28 16:18;GE.PMBI..BH?
+  -s, --sort       Sort records.
+  -m, --modify     Modify the record time for realtime playback when dumping.
+      --speed      Specify the speed to dump the records
+                   a value of 0 means no delay otherwise speed is a multiplier
+                   of the real time difference between the records
+  -n               Network code list (comma separated). Default: *
+  -c               Channel filter (regular expression).
+                   Default: "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
+  -E               Sort according to record end time; default is start time
+  --files          Specify the file handles to cache; default: 100
+  --test           Test mode, no record output.
 
 Examples:
-
-- Read from /archive and create a sorted miniSEED file
-
+Read from /archive, create a miniSEED file where records are sorted by end time
   scart -dsv -t '2007-03-28 15:48~2007-03-28 16:18' /archive > sorted.mseed
 
-- Read miniSEED data from file [your file] and create an SDS archive
-
+Import miniSEED data from file [your file] and create an SDS archive
   scart -I file://[your file] $SEISCOMP_ROOT/var/lib/archive
 
-"""
-
+'''
 
 def usage(exitcode=0):
     sys.stderr.write(usage_info)
