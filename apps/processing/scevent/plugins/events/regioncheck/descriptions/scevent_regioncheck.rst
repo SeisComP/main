@@ -1,18 +1,21 @@
-*evrc* (event region check) is a :term:`plugin` for :ref:`scevent`. It sets the
-event type according to the location of the preferred origin by comparing the
-coordinates with regions defined by :ref:`BNA polygons <sec-gui_layers>`.
+*evrc* (event region check) is a :term:`plugin` for :ref:`scevent` setting the
+event type by comparing the location of the preferred origin with
+:ref:`defined regions <sec-evrc-regions>`.
 
 .. note::
 
-   Events for which the mode of the preferred origin is "manual" are not considered.
+   Events for which the mode of the preferred origin is "manual" are by default
+   not considered.
 
+
+.. _sec-evrc-regions:
 
 Definition of regions
 ---------------------
 
-Regions are defined by :confval:`names <rc.regions>` of closed polygons provided as
-:ref:`BNA files <sec-gui_layers>` in @CONFIGDIR@/bna/ or @DATADIR@/bna/.
-Events are evaluated based on their location with respect to the regions.
+The regions are defined by closed polygons provided as
+:ref:`BNA files <sec-gui_layers>`. Configure :confval:`rc.regions` to consider
+a region defined by its name given in the header of the BNA polygon.
 
 There exist **positive and negative regions**:
 
@@ -72,14 +75,16 @@ If events ARE NOT within positive regions their type is set to "outside of netwo
 Event types
 -----------
 
-The event types are either set based the types configured in :confval:`rc.eventTypePositive` and :confval:`rc.eventTypeNegative`
-or based on the type provided by the header of BNA polygons if :confval:`rc.readEventTypeFromBNA` is active.
+The event types are either set based the types configured in
+:confval:`rc.eventTypePositive` and :confval:`rc.eventTypeNegative`
+or based on the type provided by the header of BNA polygons if
+:confval:`rc.readEventTypeFromBNA` is active.
 
 
 Type definition
 ~~~~~~~~~~~~~~~
 
-For defining the event type, any value defined in `QuakeML <https://geofon.gfz-potsdam.de/_uml/>`_.
+For defining the event type, any value defined in :cite:t:`uml`.
 The list of valid values can also be found in the Event tab of :ref:`scolv`: Type.
 
 Examples for valid event types:
@@ -90,7 +95,8 @@ Examples for valid event types:
 * not existing
 * ...
 
-Invalid values result in errors which are reported depending on the verbosity level of :ref:`scevent`.
+Invalid values result in errors which are reported depending on the verbosity
+level of :ref:`scevent`.
 
 
 .. _sec-evrc-bna:
@@ -98,9 +104,10 @@ Invalid values result in errors which are reported depending on the verbosity le
 Event type from BNA
 ~~~~~~~~~~~~~~~~~~~
 
-If :confval:`rc.readEventTypeFromBNA` is active, the event type is read from the header of
-the feature. Use a key-value pair in double quotes to specify the type where the key is "eventType"
-and the value is the event type. Key and value are separated by ":".
+If :confval:`rc.readEventTypeFromBNA` is active, the event type is read from the
+header of the feature. Use a key-value pair in double quotes to specify the type
+where the key is "eventType" and the value is the event type. Key and value are
+separated by ":".
 
 Example BNA file:
 
@@ -117,7 +124,8 @@ Example BNA file:
 where the name of the polygon / region is "coal" and the considered event type
 is "mining explosion". The name and the rank are mandatory fields.
 
-The depth of the event can be tested, too. For events within a region but with depth outside a depth range the type
+The depth of the event can be tested, too. For events within a region but with
+depth outside a depth range the type
 is not set. The limits of the depth range can be added to the header of the BNA files
 using the key words *minDepth* and *maxDepth*. The depth *d* of an event must be
 within the range
@@ -127,7 +135,8 @@ within the range
 
    minDepth \le d \le maxDepth
 
-The depth is only tested if minDepth or maxDepth or both are set and if :confval:`rc.readEventTypeFromBNA` is active.
+The depth is only tested if minDepth or maxDepth or both are set and if
+:confval:`rc.readEventTypeFromBNA` is active.
 
 Example BNA file:
 
@@ -140,13 +149,12 @@ Example BNA file:
 .. warning::
 
    * The names of polygons, e.g. coal, are case sensitive and must not contain commas.
-   * As soon as a bna directory exists in :file:`@CONFIGDIR@` (:file:`.seiscomp/bna`) all
-     polygons in :file:`@DATADIR@` (:file:`seiscomp/share/bna`) are ignored. It is recommended
-     to store BNA polygons only in :file:`seiscomp/share/bna`
+   * A hierarchy applies to the reading of BNA files. Read the section
+     :ref:`sec-gui_layers-vector` for the details.
 
 
-Set up the plugin
-=================
+Setting up the Plugin
+======================
 
 Load the *evrc* plugin: Add to the global configuration or to the
 global configuration of :ref:`scevent`  in the order of priority:
@@ -168,8 +176,9 @@ leading *!* define negative regions.
    :ref:`scevent` stops
    if the *evrc* plugin is loaded but :confval:`rc.regions` is not defined.
 
-Activate :confval:`rc.readEventTypeFromBNA` and add the eventType key-value pair to the
-header of the :ref:`BNA polygon <sec-evrc-bna>` if the event type shall be read from the BNA polygon.
+Activate :confval:`rc.readEventTypeFromBNA` and add the eventType key-value pair
+to the header of the :ref:`BNA polygon <sec-evrc-bna>` if the event type shall
+be read from the BNA polygon.
 
 
 **Examples:**
