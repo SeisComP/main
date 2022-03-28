@@ -108,64 +108,85 @@
 				</description>
 			</parameter>
 			<group name="display">
-				<parameter name="lonmin" type="double">
+				<description>
+				Adjust content or display custom information in the Summary tab.
+				</description>
+				<parameter name="lonmin" type="double" unit="deg" default="-180">
 					<description>
-						Minimum longitude of initial displayed map region.
+						Minimum longitude of initially displayed map region.
 					</description>
 				</parameter>
-				<parameter name="lonmax" type="double">
+				<parameter name="lonmax" type="double" unit="deg" default="180">
 					<description>
-						Maximum longitude of initial displayed map region.
+						Maximum longitude of initially displayed map region.
 					</description>
 				</parameter>
-				<parameter name="latmin" type="double">
+				<parameter name="latmin" type="double" unit="deg" default="-90">
 					<description>
-						Minimum latitude of initial displayed map region.
+						Minimum latitude of initially displayed map region.
 					</description>
 				</parameter>
-				<parameter name="latmax" type="double">
+				<parameter name="latmax" type="double" unit="deg" default="90">
 					<description>
-						Maximum latitude of initial displayed map region.
+						Maximum latitude of initially displayed map region.
 					</description>
 				</parameter>
 				<group name="event">
+					<description>
+						Event information
+					</description>
 					<group name="comment">
 						<parameter name="id" type="string">
 							<description>
+							ID of the event comment to be considered.
 							</description>
 						</parameter>
 						<parameter name="default" type="string">
 							<description>
+							Value to be shown in case no valid event comment is found.
 							</description>
 						</parameter>
 						<parameter name="label" type="string">
 							<description>
+							Label of the value to be shown.
 							</description>
 						</parameter>
 					</group>
 				</group>
 				<group name="origin">
+					<description>
+						Origin information
+					</description>
 					<group name="comment">
+						<description>
+						Display origin comments.
+						</description>
 						<parameter name="id" type="string">
 							<description>
+							ID of the origin comment to be considered.
 							</description>
 						</parameter>
 						<parameter name="default" type="string">
 							<description>
+							Value to be shown in case no valid origin comment is found.
 							</description>
 						</parameter>
 						<parameter name="label" type="string">
 							<description>
+							Label of the value to be shown.
 							</description>
 						</parameter>
 					</group>
 				</group>
 			</group>
 			<group name="poi">
+				<description>
+					Display information related to a point of interest (POI)
+					read from the cities XML file.
+				</description>
 				<parameter name="maxDist" type="double" unit="deg" default="20">
 					<description>
-						Maximum distance in degrees of a POI (point of interest read
-						from cities.xml) to be taken into account.
+						Maximum distance in degrees of a POI to be taken into account.
 					</description>
 				</parameter>
 				<parameter name="minPopulation" type="double">
@@ -182,5 +203,58 @@
 				</parameter>
 			</group>
 		</configuration>
+		<command-line>
+			<synopsis>
+			scesv [options]
+			</synopsis>
+
+			<group name="Generic">
+				<optionReference>generic#help</optionReference>
+				<optionReference>generic#version</optionReference>
+				<optionReference>generic#config-file</optionReference>
+				<optionReference>generic#plugins</optionReference>
+				<optionReference>generic#auto-shutdown</optionReference>
+				<optionReference>generic#shutdown-master-module</optionReference>
+				<optionReference>generic#shutdown-master-username</optionReference>
+			</group>
+
+			<group name="Verbosity">
+				<optionReference>verbosity#verbosity</optionReference>
+				<optionReference>verbosity#v</optionReference>
+				<optionReference>verbosity#quiet</optionReference>
+				<optionReference>verbosity#component</optionReference>
+				<optionReference>verbosity#syslog</optionReference>
+				<optionReference>verbosity#lockfile</optionReference>
+				<optionReference>verbosity#console</optionReference>
+				<optionReference>verbosity#debug</optionReference>
+				<optionReference>verbosity#log-file</optionReference>
+			</group>
+
+			<group name="Messaging">
+				<optionReference>messaging#user</optionReference>
+				<optionReference>messaging#host</optionReference>
+				<optionReference>messaging#timeout</optionReference>
+				<optionReference>messaging#primary-group</optionReference>
+				<optionReference>messaging#subscribe-group</optionReference>
+				<optionReference>messaging#content-type</optionReference>
+				<optionReference>messaging#start-stop-msg</optionReference>
+			</group>
+
+			<group name="Database">
+				<optionReference>database#db-driver-list</optionReference>
+				<optionReference>database#database</optionReference>
+				<optionReference>database#config-module</optionReference>
+				<optionReference>database#inventory-db</optionReference>
+			</group>
+
+			<group name="Cities">
+				<optionReference>cities#city-xml</optionReference>
+			</group>
+
+			<group name="User interface">
+				<optionReference>gui#full-screen</optionReference>
+				<optionReference>gui#non-interactive</optionReference>
+			</group>
+		</command-line>
 	</module>
 </seiscomp>
