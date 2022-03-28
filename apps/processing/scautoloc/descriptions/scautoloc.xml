@@ -90,14 +90,14 @@
 				<parameter name="maxStationDistance" type="double" default="180" unit="deg">
 					<description>
 					Maximum epicntral distance to stations for accepting picks.
-					</description> 
+					</description>
 				</parameter>
 				<parameter name="minStaCountIgnorePKP" type="integer" default="30">
 					<description>
 					If the station count for stations at &lt; 105 degrees distance
 					exceeds this number, no picks at &gt; 105 degrees will be
 					used in location. They will be loosely associated, though.
-					</description> 
+					</description>
 				</parameter>
 				<parameter name="amplTypeAbs" type="string" default="mb">
 					<description>
@@ -224,28 +224,31 @@
 						<description>
 						Minimum SNR for a pick to be flagged as XXL. NOTE that
 						BOTH minAmplitude and minSNR need to be exceeded!
-						</description> 
+						</description>
 					</parameter>
 					<parameter name="minPhaseCount" type="integer" default="4">
 						<description>
 						Minimum number of XXL picks for forming an origin.
 						Must be >= 4.
-						</description> 
+						</description>
 					</parameter>
 					<parameter name="maxStationDistance" type="double" default="10" unit="deg">
 						<description>
 						Maximum epicentral distance for accepting XXL picks.
-						</description> 
+						</description>
 					</parameter>
 					<parameter name="maxDepth" type="double" default="100" unit="km">
 						<description>
 						Maximum depth for creating origins based on XXL arrivals.
-						</description> 
+						</description>
 					</parameter>
 				</group>
 			</group>
 		</configuration>
 		<command-line>
+			<synopsis>
+			scautoloc [options]
+			</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>

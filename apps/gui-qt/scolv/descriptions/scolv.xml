@@ -666,12 +666,14 @@
 			</group>
 		</configuration>
 		<command-line>
+			<synopsis>
+			scolv [options]
+			</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
 				<optionReference>generic#config-file</optionReference>
 				<optionReference>generic#plugins</optionReference>
-				<optionReference>generic#daemon</optionReference>
 				<optionReference>generic#auto-shutdown</optionReference>
 				<optionReference>generic#shutdown-master-module</optionReference>
 				<optionReference>generic#shutdown-master-username</optionReference>
@@ -714,6 +716,30 @@
 				<optionReference>records#record-url</optionReference>
 				<optionReference>records#record-file</optionReference>
 				<optionReference>records#record-type</optionReference>
+			</group>
+
+			<group name="Cities">
+				<optionReference>cities#city-xml</optionReference>
+			</group>
+
+			<group name="User interface">
+				<optionReference>gui#full-screen</optionReference>
+				<optionReference>gui#non-interactive</optionReference>
+			</group>
+
+			<group name="Options">
+				<option flag="O" long-flag="origin" argument="arg">
+					<description>Preload origin with given origin ID</description>
+				</option>
+				<option flag="E" long-flag="event" argument="arg">
+					<description>Preload event with given event ID</description>
+				</option>
+				<option flag="" long-flag="offline" argument="">
+					<description>Switch to offline mode</description>
+				</option>
+				<option flag="" long-flag="load-event-db" argument="arg">
+					<description>Number of days to load from database</description>
+				</option>
 			</group>
 		</command-line>
 	</module>
