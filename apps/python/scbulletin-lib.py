@@ -14,8 +14,12 @@
 ############################################################################
 
 import sys
-import seiscomp.client, seiscomp.io, seiscomp.math
-import seiscomp.datamodel, seiscomp.logging, seiscomp.seismology
+import seiscomp.client
+import seiscomp.io
+import seiscomp.math
+import seiscomp.datamodel
+import seiscomp.logging
+import seiscomp.seismology
 
 
 def time2str(time):
@@ -848,6 +852,7 @@ class BulletinApp(seiscomp.client.Application):
         self.setLoadRegionsEnabled(True)
 
         self.format = "autoloc1"
+        self.inputFile = None
 
     def createCommandLineDescription(self):
         try:
@@ -874,7 +879,7 @@ class BulletinApp(seiscomp.client.Application):
                                                "input format to use (xml [default], zxml (zipped xml), binary)")
             self.commandline().addStringOption(
                 "Input", "input,i", "input file, default: stdin")
-        except:
+        except RuntimeError:
             seiscomp.logging.warning(
                 "caught unexpected error %s" % sys.exc_info())
 
@@ -883,6 +888,14 @@ class BulletinApp(seiscomp.client.Application):
     def validateParameters(self):
         if not seiscomp.client.Application.validateParameters(self):
             return False
+
+        try:
+            self.inputFile = self.commandline().optionString("input")
+        except RuntimeError:
+            self.inputFile = None
+
+        if self.inputFile:
+            self.setDatabaseEnabled(False, False)
 
         if not self.commandline().hasOption("event") and not self.commandline().hasOption("origin"):
             self.setDatabaseEnabled(False, False)
@@ -911,18 +924,20 @@ Convert XML file with event parameters to bulletin
         evid = None
         orid = None
         mw = None
+        inputFile = None
+        txt = None
 
         try:
             evid = self.commandline().optionString("event")
-        except:
+        except RuntimeError:
             pass
 
         try:
             orid = self.commandline().optionString("origin")
-        except:
+        except RuntimeError:
             pass
 
-        if evid != "" or orid != "":
+        if evid != "" or orid != "" or not self.inputFile:
             dbq = seiscomp.datamodel.DatabaseQuery(self.database())
         else:
             dbq = None
@@ -932,7 +947,7 @@ Convert XML file with event parameters to bulletin
 
         try:
             mw = self.commandline().optionString("weight")
-        except:
+        except RuntimeError:
             pass
 
         if mw != "" and mw is not None:
@@ -958,23 +973,34 @@ Convert XML file with event parameters to bulletin
         if self.commandline().hasOption("dist-in-km"):
             bulletin.distInKM = True
 
-        try:
-            if evid:
-                txt = bulletin.printEvent(evid)
-            elif orid:
-                txt = bulletin.printOrigin(orid)
-            else:
-                inputFormat = "xml"
-                inputFile = "-"
+        inputFile = self.inputFile
 
-                try:
-                    inputFile = self.commandline().optionString("input")
-                except:
-                    pass
+        if not self.inputFile:
+            try:
+                if evid:
+                    try:
+                        txt = bulletin.printEvent(evid)
+                    except ValueError:
+                        seiscomp.logging.error("Unknown event '%s'" % evid)
+                        # return False
+                elif orid:
+                    txt = bulletin.printOrigin(orid)
+                else:
+                    inputFile = "-"
+                    print("Expecting input in XML from stdin", file=sys.stderr)
 
+            except Exception as exc:
+                sys.stderr.write("ERROR: " + str(exc) + "\n")
+                # return False
+        else:
+            inputFile = self.inputFile
+
+        if inputFile:
+            inputFormat = "xml"
+            try:
                 try:
                     inputFormat = self.commandline().optionString("format")
-                except:
+                except RuntimeError:
                     pass
 
                 if inputFormat == "xml":
@@ -985,9 +1011,9 @@ Convert XML file with event parameters to bulletin
                 elif inputFormat == "binary":
                     ar = seiscomp.io.BinaryArchive()
                 else:
-                    raise TypeError("unknown input format '" + inputFormat + "'")
+                    raise TypeError("unknown input format: " + inputFormat)
 
-                if ar.open(inputFile) == False:
+                if not ar.open(inputFile):
                     raise IOError(inputFile + ": unable to open")
 
                 obj = ar.readObject()
@@ -1000,7 +1026,7 @@ Convert XML file with event parameters to bulletin
 
                 if ep.eventCount() <= 0:
                     if ep.originCount() <= 0:
-                        raise TypeError(inputFile + ": no origin and no event in eventparameters found")
+                        raise TypeError(inputFile + ": no origin and no event in event parameters found")
                     else:
                         if self.commandline().hasOption("first-only"):
                             org = ep.origin(0)
@@ -1016,17 +1042,24 @@ Convert XML file with event parameters to bulletin
                         if ev is None:
                             raise TypeError(inputFile + ": invalid event")
 
-                        txt = bulletin.printEvent(ev)
+                        try:
+                            txt = bulletin.printEvent(ev)
+                        except:
+                            seiscomp.logging.error("Unknown event '%s'" % evid)
+                            return False
                     else:
                         txt = ""
                         for i in range(ep.eventCount()):
                             ev = ep.event(i)
+                            if evid and evid != ev.publicID():
+                                print("{}: skipping invalid event with ID {}".format(inputFile, ev.publicID()))
+                                continue
                             txt += bulletin.printEvent(ev)
 
-        except Exception as exc:
-            sys.stderr.write("ERROR: " + str(exc) + "\n")
-            raise
-            return False
+            except Exception as exc:
+                sys.stderr.write("ERROR: " + str(exc) + "\n")
+                raise
+                return False
 
         if txt:
             sys.stdout.write("%s\n" % txt)
