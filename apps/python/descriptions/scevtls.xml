@@ -3,6 +3,9 @@
 	<module name="scevtls" category="Utilities">
 		<description>List event IDs from database.</description>
 		<command-line>
+			<synopsis>
+			scevtls [options]
+			</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
@@ -36,13 +39,24 @@
 					&quot;2012-01-01 00:00:00&quot;.
 					</description>
 				</option>
+				<option long-flag="modified-after" argument="time">
+					<description>
+					Print IDs or events modified after the specified time.
+					</description>
+				</option>
 				<option long-flag="end" argument="time">
 					<description>
 					Specify the upper bound of the time interval. Format is
 					&quot;2012-01-01 00:00:00&quot;.
 					</description>
 				</option>
-				<option long-flag="delimiter" flag="D" argument="string" default="\n">
+				<option long-flag="preferred-origin" flag="p" argument="">
+					<description>
+					Print the ID of the preferred origin along with the event
+					ID.
+					</description>
+				</option>
+				<option long-flag="delimiter" flag="D" argument="string">
 					<description>
 					Specify the delimiter of the resulting event ids.
 					</description>

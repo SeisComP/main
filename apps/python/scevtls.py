@@ -14,7 +14,10 @@
 ############################################################################
 
 import sys
-import seiscomp.core, seiscomp.client, seiscomp.datamodel, seiscomp.logging
+import seiscomp.core
+import seiscomp.client
+import seiscomp.datamodel
+import seiscomp.logging
 
 
 def _parseTime(timestring):
@@ -41,17 +44,25 @@ class EventList(seiscomp.client.Application):
         self._endTime = None
         self._delimiter = None
         self._modifiedAfterTime = None
+        self._preferredOrigin = False
 
     def createCommandLineDescription(self):
         self.commandline().addGroup("Events")
         self.commandline().addStringOption("Events", "begin",
-                                           "specify the lower bound of the time interval")
+                                           "Specify the lower bound of the "
+                                           "time interval.")
         self.commandline().addStringOption("Events", "modified-after",
-                                           "select events modified after the specified time")
+                                           "Select events modified after the "
+                                           "specified time.")
         self.commandline().addStringOption(
-            "Events", "end", "specify the upper bound of the time interval")
+            "Events", "end", "Specify the upper bound of the time interval.")
+        self.commandline().addOption(
+            "Events", "preferred-origin,p", "Print the ID of the preferred "
+            "origin along with the event ID.")
         self.commandline().addStringOption("Events", "delimiter,D",
-                                           "specify the delimiter of the resulting event ids (default: '\\n')")
+                                           "Specify the delimiter of the "
+                                           "resulting event IDs. "
+                                           "Default: '\\n')")
         return True
 
     def init(self):
@@ -60,7 +71,7 @@ class EventList(seiscomp.client.Application):
 
         try:
             start = self.commandline().optionString("begin")
-        except:
+        except RuntimeError:
             start = "1900-01-01T00:00:00Z"
         self._startTime = _parseTime(start)
         if self._startTime is None:
@@ -70,7 +81,7 @@ class EventList(seiscomp.client.Application):
 
         try:
             end = self.commandline().optionString("end")
-        except:
+        except RuntimeError:
             end = "2500-01-01T00:00:00Z"
         self._endTime = _parseTime(end)
         if self._endTime is None:
@@ -80,7 +91,7 @@ class EventList(seiscomp.client.Application):
 
         try:
             self._delimiter = self.commandline().optionString("delimiter")
-        except:
+        except RuntimeError:
             self._delimiter = "\n"
 
         try:
@@ -92,13 +103,17 @@ class EventList(seiscomp.client.Application):
             seiscomp.logging.debug(
                     "Setting 'modified-after' time to %s" %
                     self._modifiedAfterTime.toString("%FT%TZ"))
-        except:
+        except RuntimeError:
+            pass
+
+        try:
+            self._preferredOrigin = self.commandline().hasOption("preferred-origin")
+        except RuntimeError:
             pass
 
         return True
 
     def run(self):
-        first = True
         out = []
         for obj in self.query().getEvents(self._startTime, self._endTime):
             evt = seiscomp.datamodel.Event.Cast(obj)
@@ -112,7 +127,14 @@ class EventList(seiscomp.client.Application):
                 except ValueError:
                     continue
 
-            out.append(evt.publicID())
+            outputString = evt.publicID()
+            if self._preferredOrigin:
+                try:
+                    outputString += " " + evt.preferredOriginID()
+                except ValueError:
+                    outputString += " none"
+
+            out.append(outputString)
 
         sys.stdout.write("%s\n" % self._delimiter.join(out))
 
