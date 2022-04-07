@@ -37,7 +37,7 @@ from .http import BaseResource
 from .request import RequestOptions
 from . import utils
 
-VERSION = "1.1.3"
+VERSION = "1.1.4"
 
 ################################################################################
 
@@ -466,7 +466,7 @@ class FDSNStation(BaseResource):
 
         seiscomp.logging.debug(
             "%s: returned %iNet, %iSta, %iLoc, %iCha, %iDL, %iDec, %iSen, "
-            "%iRes, %iDAExt (total objects/chars: %i/%i)" % (
+            "%iRes, %iDAExt (total objects/bytes: %i/%i)" % (
                 ro.service, newInv.networkCount(), staCount, locCount,
                 chaCount, newInv.dataloggerCount(), decCount,
                 newInv.sensorCount(), resCount, extCount, objCount,
@@ -688,10 +688,11 @@ class FDSNStation(BaseResource):
             req.setHeader("Last-Modified",
                           http.datetimeToString(self._timeInventoryLoaded))
 
-        utils.writeTS(req, data)
+        dataBin = utils.py3bstr(data)
+        utils.writeTSBin(req, dataBin)
         seiscomp.logging.debug("%s: returned %i lines (total bytes: %i)" % (
-            ro.service, len(lines), len(data)))
-        utils.accessLog(req, ro, http.OK, len(data), None)
+            ro.service, len(lines), len(dataBin)))
+        utils.accessLog(req, ro, http.OK, len(dataBin), None)
         return True
 
     #---------------------------------------------------------------------------
