@@ -16,14 +16,13 @@
 from __future__ import print_function
 
 from getopt import getopt, GetoptError
+
 import bisect
 import glob
 import re
 import time
 import sys
 import os
-if sys.version_info < (2, 4):
-    from sets import Set as set
 
 import seiscomp.core
 import seiscomp.client
@@ -310,7 +309,6 @@ class StreamIterator:
                     self.current, self.net, self.sta, self.loc, self.cha)
                 self.file = workdir + file
                 self.index = 0
-                #print "Continue at " + self.file
 
     def __cmp__(self, other):
         if self.compareEndTime:
@@ -504,7 +502,7 @@ def readStreamList(file):
 
 
 usage_info = '''
-Usage: 
+Usage:
   scart [options] [archive]
 
 Import miniSEED waveforms or dump records from an SDS structure, sort them,
@@ -650,8 +648,13 @@ archive.filePoolSize = filePoolSize
 if verbose:
     seiscomp.logging.enableConsoleLogging(seiscomp.logging.getAll())
     if dump and not listFile:
+        if tmin >= tmax:
+            print("info: start time '{}' after end time '{}' - stopping"
+                  .format(time2str(tmin), time2str(tmax)), file=sys.stderr)
+            sys.exit(-1)
         sys.stderr.write("Time window: %s~%s\n" %
                          (time2str(tmin), time2str(tmax)))
+
     sys.stderr.write("Archive: %s\n" % archiveDirectory)
     if dump:
         if not sort and not modifyTime:
@@ -683,9 +686,16 @@ if dump:
     if listFile:
         streams = readStreamList(listFile)
         for stream in streams:
+            if stream[0] >= stream[1]:
+                print("info: ignoring {}.{}.{}.{} - start {} after end {}"
+                      .format(stream[2], stream[3], stream[4], stream[5],
+                              stream[0], stream[1]), file=sys.stderr)
+                continue
+
             if verbose:
-                sys.stderr.write("adding stream: %s.%s.%s.%s\n" % (
-                    stream[2], stream[3], stream[4], stream[5]))
+                print("adding stream: {}.{}.{}.{} {} - {}"
+                      .format(stream[2], stream[3], stream[4], stream[5],
+                              stream[0], stream[1]), file=sys.stderr)
             archiveIterator.append(
                 stream[0], stream[1], stream[2],
                 stream[3], stream[4], stream[5])
@@ -706,6 +716,7 @@ if dump:
     else:
         records = Copy(archiveIterator)
 
+    foundRecords = 0
     for rec in records:
         # skip corrupt records
         etime = seiscomp.core.Time(rec.endTime())
@@ -734,15 +745,20 @@ if dump:
 
         if verbose:
             etime = rec.endTime()
-            sys.stderr.write(
-                "%s %s %s %s\n" %
-                (rec.streamID(),
-                 seiscomp.core.Time.LocalTime().iso(),
-                 rec.startTime().iso(),
-                 etime.iso()))
+            print("{} time current: {} start: {} end: {}"
+                  .format(rec.streamID(), seiscomp.core.Time.LocalTime().iso(),
+                          rec.startTime().iso(), etime.iso()), file=sys.stderr)
 
         if not test:
             out.write(rec.raw().str())
+
+        foundRecords += 1
+
+    if verbose:
+        print("Found records: {}".format(foundRecords), file=sys.stderr)
+
+        if test:
+            print("Test mode: no records written", file=sys.stderr)
 
 else:
     env = seiscomp.system.Environment.Instance()
@@ -754,7 +770,7 @@ else:
         for p in plugins:
             registry.addPluginName(p)
         registry.loadPlugins()
-    except Exception as e:
+    except Exception:
         pass
 
     rs = seiscomp.io.RecordStream.Open(recordURL)
