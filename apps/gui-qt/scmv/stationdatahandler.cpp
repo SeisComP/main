@@ -72,7 +72,7 @@ void RecordHandler::handle(StationData* stationData, Record* record) {
 		stationData->gmFilter->setSamplingFrequency(record->samplingFrequency());
 		stationData->gmFilter->apply(dataSize, data);
 	}
-	catch (Core::GeneralException &e) {
+	catch ( std::exception &e ) {
 		SEISCOMP_WARNING("Could not filter record %s.%s.%s.%s (%fHz): %s",
 		                 record->networkCode().c_str(),
 		                 record->stationCode().c_str(),
