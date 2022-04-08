@@ -43,7 +43,7 @@ from . import utils
 
 DBMaxUInt = 18446744073709551615  # 2^64 - 1
 
-VERSION = "1.2.3"
+VERSION = "1.2.4"
 
 ################################################################################
 
@@ -566,7 +566,7 @@ class FDSNEvent(BaseResource):
         if not exp.write(sink, ep):
             return False
         seiscomp.logging.debug("%s: returned %i events and %i origins " \
-            "(total objects/chars: %i/%i)" % (
+            "(total objects/bytes: %i/%i)" % (
                 ro.service, ep.eventCount(), ep.originCount(), objCount, sink.written))
         utils.accessLog(req, ro, http.OK, sink.written, None)
         return True
@@ -656,9 +656,10 @@ class FDSNEvent(BaseResource):
                 eID, o.time().value().toString(df), o.latitude().value(),
                 o.longitude().value(), depth, author, contrib, eID, mType,
                 mVal, mAuthor, region, eType)
-            utils.writeTS(req, line)
+            lineBin = utils.py3bstr(line)
+            utils.writeTSBin(req, lineBin)
             lineCount += 1
-            byteCount += len(line)
+            byteCount += len(lineBin)
 
         # write response
         seiscomp.logging.debug("%s: returned %i events (total bytes: %i) " % (
