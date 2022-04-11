@@ -1,10 +1,24 @@
-The archive tool scart creates playback files (multiplexed miniSEED files) from
-:term:`SDS` structured data (e.g. created by slarchive) or from data passed from
-another record source such as :ref:`Arclink <rs-arclink>`. It can also playback
-records directly out of an SDS structure. Furthermore it can be used to import
-multiplexed miniSEED files into a local SDS structure.
-So it is possible to save event based waveform data in combination with
-scevtstreams into another archive.
+The archive tool scart reads and writes :term:`SDS` archives and files
+in miniSEED format.
+
+* Create miniSEED files (multiplexed), e.g. for playbacks, from :term:`SDS`
+  structured data (e.g. created by slarchive) or from data passed from
+  another record source such as :ref:`Arclink <rs-arclink>`.
+* Play back records directly out of an SDS structure.
+* Import multiplexed miniSEED files into a local SDS waveform archive.
+
+It is possible to save event based waveform data in combination with
+:ref:`scevtstreams`.
+
+.. warning::
+
+   * When creating :term:`SDS` archives, scart simply appends the new records to
+     existing ones. Multiple imports of the same data result in duplication.
+   * Out-of-order imports of waveforms into a SDS archive result in out-of-order
+     records which may not be processed. Clean your archive using :ref:`scmssort`.
+   * The new input data for an SDS archive must be sorted by time. Otherwise,
+     the SDS archive may not be correctly readable. Combine scart with
+     :ref:`scmssort` for multiplexing and removal of duplicates.
 
 
 .. _scart-config:
@@ -31,17 +45,20 @@ Examples
    .. code-block:: sh
 
       scart -dsvE -t '[start-time]~[end-time]' > file.mseed
-	  scart -dsvE -t '[start-time]~[end-time]' [SDS archive] > [file.mseed]
+      scart -dsvE -t '[start-time]~[end-time]' [SDS archive] > [file.mseed]
 
    .. note::
 
       Sorting data is computational expensive but required for waveform playbacks.
 
-#. Push miniSEED data from file :file:`file.mseed` into a local :term:`SDS` archive:
+#. Push miniSEED data from file :file:`file.mseed` into a local :term:`SDS`
+   archive. Additionally, you may check if the records of the created files are
+   correctly ordered:
 
    .. code-block:: sh
 
-      scart  -I file://[file.mseed] [SDS archive]
+      scart  -I [file.mseed] [SDS archive]
+      scart  -I [file.mseed] --with-filecheck [SDS archive]
 
 #. Collect data from an FDSNWS server using the :ref:`global_recordstream`
    interface and write to a miniSEED file. The data streams and the time spans are
@@ -51,7 +68,3 @@ Examples
    .. code-block:: sh
 
       scart  -I fdsnws://[server]:80 --list list.file --stdout > file.mseed
-
-.. note::
-
-   Repeated pushing of miniSEED data into an archive will duplicate the data.

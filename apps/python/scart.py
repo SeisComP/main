@@ -393,6 +393,52 @@ class Sorter:
 ####################################################################
 
 
+
+def checkFile(fileName):
+    """
+    Check the miniSEED records in a file, report unsorted records.
+
+    Parameters
+    ----------
+    fileName : miniSEED
+        Waveform file to check.
+
+    Returns
+    -------
+    false
+        If no error is found in file
+    error string
+        If file or records are corrupted
+
+    """
+    rs = seiscomp.io.FileRecordStream()
+    rs.setRecordType("mseed")
+
+    if not rs.setSource(fileName):
+        return "cannot read file"
+
+    ri = seiscomp.io.RecordInput(rs)
+    lastEnd = None
+    for rec in ri:
+        if rec is None:
+            continue
+
+        sF = rec.samplingFrequency()
+        if sF <= 0:
+            continue
+
+        if lastEnd and rec.startTime() < lastEnd:
+            overlap = float(rec.startTime() - lastEnd)
+
+            if abs(overlap) >= 1/sF:
+                errorMsg = "new record starts before end of last record: %s < %s" \
+                    % (rec.startTime(), lastEnd)
+                return errorMsg
+
+        lastEnd = rec.endTime()
+
+    return False
+
 def str2time(timestring):
     """
     Liberally accept many time string formats and convert them to a
@@ -509,8 +555,8 @@ Import miniSEED waveforms or dump records from an SDS structure, sort them,
 modify the time and replay them.
 
 Verbosity:
-  -v, --verbose    Print verbose information.
   -h, --help       Display this help message.
+  -v, --verbose    Print verbose information.
 
 Mode:
   -d, --dump       Export (dump) mode. Read from SDS archive.
@@ -520,35 +566,40 @@ Mode:
                    Default: file://- (stdin)
 
 Output:
-  --stdout         Writes on stdout if import mode is used instead
-                   of creating a SDS archive
-  --with-filename  Print all accessed files to stdout after import.
-  -t t1~t2         Specify time window (as one properly quoted string)
-                   times are of course UTC and separated by a tilde '~' .
-  -l, --list       Use a stream list file instead of defined networks and
-                   channels (-n and -c are ignored). The list can be generated
-                   from events by scevtstreams.
-                   line format: starttime;endtime;streamID
-                                2007-03-28 15:48;2007-03-28 16:18;GE.LAST.*.*
-                                2007-03-28 15:48;2007-03-28 16:18;GE.PMBI..BH?
-  -s, --sort       Sort records.
-  -m, --modify     Modify the record time for realtime playback when dumping.
-      --speed      Specify the speed to dump the records
-                   a value of 0 means no delay otherwise speed is a multiplier
-                   of the real time difference between the records
-  -n               Network code list (comma separated). Default: *
-  -c               Channel filter (regular expression).
-                   Default: "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
-  -E               Sort according to record end time; default is start time
-  --files          Specify the file handles to cache; default: 100
-  --test           Test mode, no record output.
+  -c                Channel filter (regular expression).
+                    Default: "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
+  -E                Sort according to record end time; default is start time
+  --files           Specify the file handles to cache; default: 100
+  -l, --list        Use a stream list file instead of defined networks and
+                    channels (-n and -c are ignored). The list can be generated
+                    from events by scevtstreams.
+                    Line format: starttime;endtime;streamID
+                        2007-03-28 15:48;2007-03-28 16:18;GE.LAST.*.*
+                        2007-03-28 15:48;2007-03-28 16:18;GE.PMBI..BH?
+  -m, --modify      Modify the record time for realtime playback when dumping.
+  -n                Network code list (comma separated). Default: * .
+  -s, --sort        Sort records.
+  --stdout          Writes on stdout if import mode is used instead
+                    of creating a SDS archive
+  -t t1~t2          Specify time window (as one properly quoted string)
+                    times are of course UTC and separated by a tilde '~' .
+  --with-filename   Print all accessed files to stdout after import.
+  --with-filecheck  Check all accessed files after import. Unsorted or
+                    unreadable files are reported to stderr.
+  --speed           Specify the speed to dump the records
+                    a value of 0 means no delay otherwise speed is a multiplier
+                    of the real time difference between the records.
+  --test            Test mode, no record output.
 
 Examples:
 Read from /archive, create a miniSEED file where records are sorted by end time
   scart -dsv -t '2007-03-28 15:48~2007-03-28 16:18' /archive > sorted.mseed
 
-Import miniSEED data from file [your file] and create an SDS archive
-  scart -I file://[your file] $SEISCOMP_ROOT/var/lib/archive
+Import miniSEED data from file [your file], create a SDS archive
+  scart -I [your file] $SEISCOMP_ROOT/var/lib/archive
+
+Import miniSEED data into a SDS archive, check all modified files for errors
+  scart -I [your file] --with-filecheck $SEISCOMP_ROOT/var/lib/archive
 
 '''
 
@@ -559,7 +610,7 @@ def usage(exitcode=0):
 
 try:
     opts, files = getopt(sys.argv[1:], "I:dsmEn:c:t:l:hv",
-                         ["stdout", "with-filename", "dump", "list=", "sort",
+                         ["stdout", "with-filename", "with-filecheck", "dump", "list=", "sort",
                           "modify", "speed=", "files=", "verbose", "test", "help"])
 except GetoptError as e:
     usage(exitcode=1)
@@ -572,6 +623,7 @@ modifyTime = False
 dump = False
 listFile = None
 withFilename = False  # Whether to output accessed files for import or not
+checkFiles = False  # Chech if output files are sorted by time
 test = False
 filePoolSize = 100
 # default = stdin
@@ -597,6 +649,8 @@ for flag, arg in opts:
         stdout = True
     elif flag in ["--with-filename"]:
         withFilename = True
+    elif flag in ["--with-filecheck"]:
+        checkFiles = True
     elif flag in ["-v", "--verbose"]:
         verbose = True
     elif flag in ["-d", "--dump"]:
@@ -848,12 +902,12 @@ else:
                     if len(filePool) < filePoolSize:
                         filePool[file] = f
 
-                if withFilename:
-                    accessedFiles.add(file)
+                if withFilename or checkFiles:
+                    accessedFiles.add(archiveDirectory + file)
                 f.write(rec.raw().str())
             else:
-                if withFilename:
-                    accessedFiles.add(file)
+                if withFilename or checkFiles:
+                    accessedFiles.add(archiveDirectory + file)
 
             if verbose:
                 sys.stderr.write("%s %s %s\n" %
@@ -861,6 +915,23 @@ else:
     except Exception as e:
         sys.stderr.write("Exception: %s\n" % str(e))
 
+    if checkFiles:
+        print("Testing accessed files (may take some time):", file=sys.stderr)
+        foundIssues = 0
+        checkedFiles = 0
+        for fileName in accessedFiles:
+            checkedFiles += 1
+            issueFound = checkFile(fileName)
+            if issueFound:
+                foundIssues += 1
+                print("{} has an issue".format(fileName), file=sys.stderr)
+                print("  + " + issueFound, file=sys.stderr)
+
+        print("Found issues in {}/{} files".format(foundIssues, checkedFiles),
+              file=sys.stderr)
+
     if withFilename:
-        for filename in accessedFiles:
-            print(filename)
+        if verbose:
+            print("List of accessed files:", file=sys.stderr)
+        for fileName in accessedFiles:
+            print(fileName, file=sys.stdout)
