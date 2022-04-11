@@ -559,6 +559,9 @@ Verbosity:
   -v, --verbose    Print verbose information.
 
 Mode:
+  --check          Check mode: Check all files in the given directory
+                   for erroneous miniSEED records. All sub-directories are included.
+                   If no directory is given, the default SDS archive is scanned.
   -d, --dump       Export (dump) mode. Read from SDS archive.
   -I               Import mode: Specify a recordstream URL when in import mode.
                    When using another recordstream than file a
@@ -577,19 +580,19 @@ Output:
                         2007-03-28 15:48;2007-03-28 16:18;GE.LAST.*.*
                         2007-03-28 15:48;2007-03-28 16:18;GE.PMBI..BH?
   -m, --modify      Modify the record time for realtime playback when dumping.
-  -n                Network code list (comma separated). Default: * .
+  -n                Network code list (comma separated). Default: *
   -s, --sort        Sort records.
-  --stdout          Writes on stdout if import mode is used instead
-                    of creating a SDS archive
-  -t t1~t2          Specify time window (as one properly quoted string)
-                    times are of course UTC and separated by a tilde '~' .
-  --with-filename   Print all accessed files to stdout after import.
-  --with-filecheck  Check all accessed files after import. Unsorted or
-                    unreadable files are reported to stderr.
   --speed           Specify the speed to dump the records
                     a value of 0 means no delay otherwise speed is a multiplier
                     of the real time difference between the records.
-  --test            Test mode, no record output.
+  --stdout          Writs to stdout if import mode is used instead
+                    of creating a SDS archive.
+  -t t1~t2          Specify time window (as one properly quoted string)
+                    times are of course UTC and separated by a tilde '~' .
+  --test            Test only, no record output.
+  --with-filecheck  Check all accessed files after import. Unsorted or
+                    unreadable files are reported to stderr.
+  --with-filename   Print all accessed files to stdout after import.
 
 Examples:
 Read from /archive, create a miniSEED file where records are sorted by end time
@@ -610,8 +613,9 @@ def usage(exitcode=0):
 
 try:
     opts, files = getopt(sys.argv[1:], "I:dsmEn:c:t:l:hv",
-                         ["stdout", "with-filename", "with-filecheck", "dump", "list=", "sort",
-                          "modify", "speed=", "files=", "verbose", "test", "help"])
+                         ["stdout", "with-filename", "with-filecheck", "dump",
+                          "list=", "sort", "modify", "speed=", "files=",
+                          "verbose", "test", "help", "check"])
 except GetoptError as e:
     usage(exitcode=1)
 
@@ -623,7 +627,8 @@ modifyTime = False
 dump = False
 listFile = None
 withFilename = False  # Whether to output accessed files for import or not
-checkFiles = False  # Chech if output files are sorted by time
+checkFiles = False  # Check if output files are sorted by time
+checkSDS = False # check the SDS archive for errors in files
 test = False
 filePoolSize = 100
 # default = stdin
@@ -645,6 +650,8 @@ for flag, arg in opts:
         endtime = True
     elif flag in ["-h", "--help"]:
         usage(exitcode=0)
+    elif flag in ["--check"]:
+        checkSDS = True
     elif flag in ["--stdout"]:
         stdout = True
     elif flag in ["--with-filename"]:
@@ -723,6 +730,10 @@ if verbose:
         sys.stderr.write("Mode: IMPORT\n")
 
 archiveIterator = ArchiveIterator(archive, endtime)
+
+if checkSDS:
+    dump = False
+    stdout = False
 
 if dump:
     stdout = True
@@ -813,6 +824,22 @@ if dump:
 
         if test:
             print("Test mode: no records written", file=sys.stderr)
+
+elif checkSDS:
+    foundIssues = 0
+    checkedFiles = 0
+    for path, subdirs, files in os.walk(archiveDirectory):
+        for name in files:
+            fileName = os.path.join(path, name)
+            checkedFiles += 1
+            issueFound = checkFile(fileName)
+            if issueFound:
+                foundIssues += 1
+                print("{} has an issue".format(fileName), file=sys.stderr)
+                print("  + " + issueFound, file=sys.stderr)
+
+    print("Found issues in {}/{} files".format(foundIssues, checkedFiles),
+          file=sys.stderr)
 
 else:
     env = seiscomp.system.Environment.Instance()

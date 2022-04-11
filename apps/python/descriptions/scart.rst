@@ -1,11 +1,14 @@
 The archive tool scart reads and writes :term:`SDS` archives and files
-in miniSEED format.
+in miniSEED format and checks miniSEED archives.
 
-* Create miniSEED files (multiplexed), e.g. for playbacks, from :term:`SDS`
-  structured data (e.g. created by slarchive) or from data passed from
-  another record source such as :ref:`Arclink <rs-arclink>`.
-* Play back records directly out of an SDS structure.
-* Import multiplexed miniSEED files into a local SDS waveform archive.
+* **Dump mode:** Create miniSEED files (multiplexed), e.g. for playbacks, from
+  :term:`SDS` structured data (e.g. created by slarchive) or from data passed
+  from another record source such as :ref:`Arclink <rs-arclink>`.
+* **Dump mode:** Play back records directly out of an SDS structure.
+* **Import mode:** Import multiplexed miniSEED files into a local SDS waveform
+  archive.
+* **Check mode:** Check an archive of miniSEED files for out-of-order records in
+  files.
 
 It is possible to save event based waveform data in combination with
 :ref:`scevtstreams`.
@@ -57,8 +60,8 @@ Examples
 
    .. code-block:: sh
 
-      scart  -I [file.mseed] [SDS archive]
-      scart  -I [file.mseed] --with-filecheck [SDS archive]
+      scart -I [file.mseed] [SDS archive]
+      scart -I [file.mseed] --with-filecheck [SDS archive]
 
 #. Collect data from an FDSNWS server using the :ref:`global_recordstream`
    interface and write to a miniSEED file. The data streams and the time spans are
@@ -67,4 +70,11 @@ Examples
 
    .. code-block:: sh
 
-      scart  -I fdsnws://[server]:80 --list list.file --stdout > file.mseed
+      scart -I fdsnws://[server]:80 --list list.file --stdout > file.mseed
+
+#. Check all files of an SDS archive or other directory structure for
+   miniSEED files with out-of-order records:
+
+   .. code-block:: sh
+
+      scart --check [SDS archive]

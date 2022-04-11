@@ -30,6 +30,14 @@
 				</option>
 			</group>
 			<group name="Mode">
+				<option flag="" long-flag="check">
+					<description>
+					Check mode. Check all files
+					in the given directory for erroneous miniSEED records.
+					All sub-directories are included.
+					If no directory is given, the default SDS archive is scanned.
+					</description>
+				</option>
 				<option flag="d" long-flag="dump">
 					<description>
 					Set export (dump) mode. Records are retrieved from an archive and
@@ -45,13 +53,21 @@
 				</option>
 			</group>
 			<group name="Output">
-				<option flag="t" argument="timewindow">
+				<option flag="c" argument="channels">
 					<description>
-					Specify the time window (as one properly quoted string) to dump
-					records for. Times are UTC and separated by a tilde &quot;~&quot;.
-					To dump one hour of waveform data between 2008/01/01 00:00:00 and
-					2008/01/01 01:00:00 use
-					&lt;-t &quot;2008-01-01 00:00:00~2008-01-01 01:00:00&quot;&gt;.
+					Specify the channel filter for the dumped streams as regular
+					expression. Default: (B|S|M|H)(L|H)(Z|N|E). To dump only
+					BHZ, BHN and BHE streams use BH(Z|N|E).
+					</description>
+				</option>
+				<option flag="E">
+					<description>
+					Sort records according to their end time. Default: start time.
+					</description>
+				</option>
+				<option long-flag="files" argument="count">
+					<description>
+					Specify the number of file handles to cache. Default: 100.
 					</description>
 				</option>
 				<option flag="l" long-flag="list" argument="file">
@@ -66,21 +82,21 @@
 					2019-07-17 02:00:00;2019-07-17 02:10:00;GR.CLL..BHZ
 					</description>
 				</option>
-				<option flag="s" long-flag="sort">
-					<description>
-					Sort records by [start-]time. To sort records by their endtime use -E.
-					</description>
-				</option>
-				<option flag="E">
-					<description>
-					Sort records according to their end time. Default: start time.
-					</description>
-				</option>
 				<option flag="m" long-flag="modify">
 					<description>
 					Modify the record time for real time playback when in export mode.
 					The first record time is NOW. The relative time of successive records
 					to the first one are kept.
+					</description>
+				</option>
+				<option flag="n" argument="networks">
+					<description>
+					List of network codes to dump (comma separated). Default: *.
+					</description>
+				</option>
+				<option flag="s" long-flag="sort">
+					<description>
+					Sort records by [start-]time. To sort records by their endtime use -E.
 					</description>
 				</option>
 				<option long-flag="speed">
@@ -91,26 +107,36 @@
 					a value of 1 (real time) is recommended.
 					</description>
 				</option>
-				<option flag="n" argument="networks">
+				<option long-flag="stdout">
 					<description>
-					List of network codes to dump (comma separated). Default: *.
-					</description>
-				</option>
-				<option flag="c" argument="channels">
-					<description>
-					Specify the channel filter for the dumped streams as regular
-					expression. Default: (B|S|M|H)(L|H)(Z|N|E). To dump only
-					BHZ, BHN and BHE streams use BH(Z|N|E).
-					</description>
-				</option>
-				<option long-flag="files" argument="count">
-					<description>
-					Specify the number of file handles to cache. Default: 100.
+					Write to stdout if import mode is used instead of creating a
+					SDS archive.
 					</description>
 				</option>
 				<option long-flag="test">
 					<description>
-					Test mode, no record output. This switch is useful for debugging.
+					Test only, no record output. This switch is useful
+					for debugging.
+					</description>
+				</option>
+				<option flag="t" argument="timewindow">
+					<description>
+					Specify the time window (as one properly quoted string) to dump
+					records for. Times are UTC and separated by a tilde &quot;~&quot;.
+					To dump one hour of waveform data between 2008/01/01 00:00:00 and
+					2008/01/01 01:00:00 use
+					&lt;-t &quot;2008-01-01 00:00:00~2008-01-01 01:00:00&quot;&gt;.
+					</description>
+				</option>
+				<option flag="" long-flag="with-filecheck">
+					<description>
+					Check all accessed files after import. Unsorted or
+					unreadable files are reported to stderr.
+					</description>
+				</option>
+				<option flag="" long-flag="with-filename">
+					<description>
+					Print all accessed files to stdout after import.
 					</description>
 				</option>
 			</group>
