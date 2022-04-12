@@ -427,11 +427,11 @@ def checkFile(fileName):
         if sF <= 0:
             continue
 
-        if lastEnd and rec.startTime() < lastEnd:
-            overlap = float(rec.startTime() - lastEnd)
+        if lastEnd and rec.endTime() <= lastEnd:
+            overlap = float(lastEnd - rec.endTime())
 
-            if abs(overlap) >= 1/sF:
-                errorMsg = "new record starts before end of last record: %s < %s" \
+            if overlap >= 1/sF:
+                errorMsg = "new record ends at or before end of last record: %s < %s" \
                     % (rec.startTime(), lastEnd)
                 return errorMsg
 
@@ -484,17 +484,90 @@ def isFile(url):
     return len(toks) < 2 or toks[0] == "file"
 
 
-def readStreamList(file):
+def readStreamList(listFile):
+    """
+    Read list of streams from file
+
+    Parameters
+    ----------
+    file : file
+        Input list file, one line per stream
+        format: NET.STA.LOC.CHA
+
+    Returns
+    -------
+    list
+        streams.
+
+    """
     streams = []
 
     try:
-        if file == "-":
+        if listFile == "-":
             f = sys.stdin
-            file = "stdin"
+            listFile = "stdin"
+        else:
+            f = open(listFile, 'r')
+    except Exception:
+        print("error: unable to open '{}'".format(listFile), file=sys.stderr)
+        return([])
+
+    lineNumber = -1
+    for line in f:
+        lineNumber = lineNumber + 1
+        line = line.strip()
+        # ignore comments
+        if len(line) > 0 and line[0] == '#':
+            continue
+
+        if len(line) == 0:
+            continue
+
+        toks = line.split('.')
+        if len(toks) != 4:
+            f.close()
+            print("error: %s in line %d has invalid line format, expecting "
+                  "NET.STA.LOC.CHA - 1 line per stream" %
+                  (listFile, lineNumber), file=sys.stderr)
+            return([])
+
+        streams.append((toks[0], toks[1], toks[2], toks[3]))
+
+    f.close()
+
+    if len(streams) == 0:
+        return([])
+
+    return(streams)
+
+
+def readStreamTimeList(listFile):
+    """
+    Read list of streams with time windows
+
+    Parameters
+    ----------
+    file : file
+        Input list file, one line per stream
+        format: 2007-03-28 15:48;2007-03-28 16:18;NET.STA.LOC.CHA
+
+    Returns
+    -------
+    list
+        streams.
+
+    """
+    streams = []
+
+    try:
+        if listFile == "-":
+            f = sys.stdin
+            listFile = "stdin"
         else:
             f = open(listFile, 'r')
     except BaseException:
-        sys.stderr.write("%s: error: unable to open\n" % listFile)
+        sys.stderr.write("error: unable to open '{}'".format(listFile),
+                         file=sys.stderr)
         return []
 
     lineNumber = -1
@@ -575,12 +648,15 @@ Output:
   --files           Specify the file handles to cache; default: 100
   -l, --list        Use a stream list file instead of defined networks and
                     channels (-n and -c are ignored). The list can be generated
-                    from events by scevtstreams.
+                    from events by scevtstreams. One line per stream
                     Line format: starttime;endtime;streamID
                         2007-03-28 15:48;2007-03-28 16:18;GE.LAST.*.*
                         2007-03-28 15:48;2007-03-28 16:18;GE.PMBI..BH?
   -m, --modify      Modify the record time for realtime playback when dumping.
   -n                Network code list (comma separated). Default: *
+  --nslc            Use a stream list file for filtering the data by the given
+                    streams. For dump mode only! One line per stream.
+                    Format: NET.STA.LOC.CHA
   -s, --sort        Sort records.
   --speed           Specify the speed to dump the records
                     a value of 0 means no delay otherwise speed is a multiplier
@@ -614,7 +690,7 @@ def usage(exitcode=0):
 try:
     opts, files = getopt(sys.argv[1:], "I:dsmEn:c:t:l:hv",
                          ["stdout", "with-filename", "with-filecheck", "dump",
-                          "list=", "sort", "modify", "speed=", "files=",
+                          "list=", "nslc=", "sort", "modify", "speed=", "files=",
                           "verbose", "test", "help", "check"])
 except GetoptError as e:
     usage(exitcode=1)
@@ -626,6 +702,7 @@ sort = False
 modifyTime = False
 dump = False
 listFile = None
+nslcFile = None
 withFilename = False  # Whether to output accessed files for import or not
 checkFiles = False  # Check if output files are sorted by time
 checkSDS = False # check the SDS archive for errors in files
@@ -664,6 +741,8 @@ for flag, arg in opts:
         dump = True
     elif flag in ["-l", "--list"]:
         listFile = arg
+    elif flag in ["--nslc"]:
+        nslcFile = arg
     elif flag in ["-s", "--sort"]:
         sort = True
     elif flag in ["-m", "--modify"]:
@@ -747,9 +826,14 @@ if stdout:
         # assuming this is Python 2, nothing to be done
         pass
 
+# list file witht times takes priority over nslc list
+if listFile:
+    nslcFile = None
+
 if dump:
     if listFile:
-        streams = readStreamList(listFile)
+        print("Stream file: '{}'".format(listFile), file=sys.stderr)
+        streams = readStreamTimeList(listFile)
         for stream in streams:
             if stream[0] >= stream[1]:
                 print("info: ignoring {}.{}.{}.{} - start {} after end {}"
@@ -758,12 +842,24 @@ if dump:
                 continue
 
             if verbose:
-                print("adding stream: {}.{}.{}.{} {} - {}"
+                print("Adding stream to list: {}.{}.{}.{} {} - {}"
                       .format(stream[2], stream[3], stream[4], stream[5],
                               stream[0], stream[1]), file=sys.stderr)
             archiveIterator.append(
                 stream[0], stream[1], stream[2],
                 stream[3], stream[4], stream[5])
+
+    elif nslcFile:
+        print("Stream file: '{}'".format(nslcFile), file=sys.stderr)
+        streams = readStreamList(nslcFile)
+        for stream in streams:
+            if verbose:
+                print("Adding stream to list: {}.{}.{}.{} {} - {}"
+                      .format(stream[0], stream[1], stream[2], stream[3], tmin, tmax,),
+                      file=sys.stderr)
+            archiveIterator.append(
+                tmin, tmax, stream[0], stream[1], stream[2], stream[3])
+
     else:
         if networks == "*":
             archiveIterator.append(tmin, tmax, "*", "*", "*", channels)
@@ -871,7 +967,7 @@ else:
                 "A stream list is needed to fetch data from another source than a file\n")
             sys.exit(-1)
 
-        streams = readStreamList(listFile)
+        streams = readStreamTimeList(listFile)
         for stream in streams:
             # Add stream to recordstream
             if not rs.addStream(

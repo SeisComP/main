@@ -74,12 +74,27 @@
 					<description>
 					Uses a stream list file instead of defined networks and channels
 					(-n and -c are ignored). The list can be generated from events
-					by scevetstreams. Line format: starttime;endtime;streamID.
+					by scevetstreams. One line per stream.
+					Line format: starttime;endtime;streamID.
 					The time format is the same as described in option '-t'.
 
 					Example:
 
-					2019-07-17 02:00:00;2019-07-17 02:10:00;GR.CLL..BHZ
+					2019-07-17 02:00:00;2019-07-17 02:10:00;GR.CLL..BH?
+					</description>
+				</option>
+				<option flag="" long-flag="nslc" argument="file">
+					<description>
+					Uses a stream list file instead of defined networks and
+					channels (-n and -c are ignored). In dump mode only. The
+					time window must be provided separately. Wild cards may be
+					used. The list can be generated from bindings by scdumpcfg
+					or from inventory by scinv. Use one line per stream. Line
+					format: NET.STA.LOC.CHA.
+
+					Example:
+
+					GR.CLL..BH?
 					</description>
 				</option>
 				<option flag="m" long-flag="modify">
@@ -119,7 +134,7 @@
 					for debugging.
 					</description>
 				</option>
-				<option flag="t" argument="timewindow">
+				<option flag="t" argument="timeWindow">
 					<description>
 					Specify the time window (as one properly quoted string) to dump
 					records for. Times are UTC and separated by a tilde &quot;~&quot;.

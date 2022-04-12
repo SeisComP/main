@@ -170,8 +170,8 @@ def readStreamList(file):
         if len(toks) != 4:
             f.close()
             print("error: %s in line %d has invalid line format, expected stream "
-                  "list: NET.STA.LOC.CHA - 1 line per stream" % (
-                listFile, lineNumber), file=sys.stderr)
+                  "list: NET.STA.LOC.CHA - 1 line per stream" %
+                  (listFile, lineNumber), file=sys.stderr)
             return([])
 
         streams.append(line)
