@@ -14,7 +14,9 @@
 ############################################################################
 
 import sys
-import seiscomp.client, seiscomp.datamodel
+import os
+import seiscomp.client
+import seiscomp.datamodel
 import seiscomp.config
 
 
@@ -61,12 +63,15 @@ class DumpCfg(seiscomp.client.Application):
     def createCommandLineDescription(self):
         self.commandline().addGroup("Dump")
         self.commandline().addStringOption("Dump", "param,P",
-                                           "Specify parameter name to filter for")
+                                           "Specify parameter name to filter for.")
         self.commandline().addOption("Dump", "bindings,B",
-                                     "Dump bindings instead of module configuration")
+                                     "Dump bindings instead of module configuration.")
         self.commandline().addOption("Dump", "allow-global,G",
-                                     "Print global bindings if no module binding is avaible")
-        self.commandline().addOption("Dump", "cfg", "Print output in .cfg format")
+                                     "Print global bindings if no module binding is avaible.")
+        self.commandline().addOption("Dump", "cfg",
+                                     "Print output in .cfg format.")
+        self.commandline().addOption("Dump", "nslc",
+                                     "Print the list of streams which have bindings of the given module.")
 
     def validateParameters(self):
         if not seiscomp.client.Application.validateParameters(self):
@@ -81,6 +86,7 @@ class DumpCfg(seiscomp.client.Application):
 
         self.allowGlobal = self.commandline().hasOption("allow-global")
         self.formatCfg = self.commandline().hasOption("cfg")
+        self.nslc = self.commandline().hasOption("nslc")
 
         if not self.dumpBindings:
             self.setMessagingEnabled(False)
@@ -100,8 +106,26 @@ class DumpCfg(seiscomp.client.Application):
     def initSubscriptions(self):
         return True
 
+    def printUsage(self):
+
+        print('''Usage:
+  {} [options]
+
+Dump bindings or module configurations used by a specific module or global for
+particular stations.'''.format(os.path.basename(__file__)), file=sys.stderr)
+
+        seiscomp.client.Application.printUsage(self)
+
+        print('''Examples:
+Dump global bindings configuration for all stations
+  {} global -d localhost -B > config.xml
+'''.format(os.path.basename(__file__)), file=sys.stderr)
+
+
     def run(self):
         cfg = self.configuration()
+        if self.nslc:
+            nslc = set()
 
         if not self.dumpBindings:
             symtab = cfg.symbolTable()
@@ -147,6 +171,7 @@ class DumpCfg(seiscomp.client.Application):
                 sta_enabled = cfg_sta.enabled()
                 cfg_setup = seiscomp.datamodel.findSetup(
                     cfg_sta, name, self.allowGlobal)
+
                 if not cfg_setup is None:
                     suffix = ""
                     if sta_enabled and cfg_setup.enabled():
@@ -167,10 +192,25 @@ class DumpCfg(seiscomp.client.Application):
                         cfg_setup.parameterSetID())
                     if params is None:
                         sys.stderr.write(
-                            "ERROR: %s: ParameterSet not found\n" % cfg_setup.parameterSetID())
+                            "ERROR: %s: ParameterSet not found\n" %
+                            cfg_setup.parameterSetID())
                         return False
 
                     params = readParams(params)
+                    if self.nslc:
+                        try:
+                            sensorLocation = params["detecLocid"]
+                        except:
+                            sensorLocation = ""
+                        try:
+                            detecStream = params["detecStream"]
+                        except:
+                            detecStream = ""
+
+                        stream = "%s.%s.%s.%s" % \
+                            (cfg_sta.networkCode(), cfg_sta.stationCode(),
+                             sensorLocation, detecStream)
+                        nslc.add(stream)
                     count = 0
                     for param_name in sorted(params.keys()):
                         if self.param and self.param != param_name:
@@ -178,8 +218,12 @@ class DumpCfg(seiscomp.client.Application):
                         out += "  %s: %s\n" % (param_name, params[param_name])
                         count = count + 1
 
-                    if count > 0:
+                    if not self.nslc and count > 0:
                         sys.stdout.write(out)
+
+        if self.nslc:
+            for stream in sorted(nslc):
+                print(stream, file=sys.stdout)
 
         return True
 

@@ -1,9 +1,15 @@
-scdumpcfg reads and prints the :ref:`module or bindings configuration <concepts_configuration>`
+scdumpcfg reads and prints the
+:ref:`module or bindings configuration <concepts_configuration>`
 for a specific module or for global. This command-line utility is useful for
 debugging of configuration parameters.
 
 Related to :program:`scdumpcfg` is :ref:`bindings2cfg` which dumps the bindings
 configuration to :term:`SCML`.
+
+Instead of printing parameters and values for stations, the option ``--nlsc``
+allows printing the stream codes considered by the bindings. The output may be
+used e.g. for filtering dumped streams in :ref:`scart`.
+
 
 Examples
 ========
@@ -35,3 +41,9 @@ Examples
    .. code-block:: sh
 
       scdumpcfg scautopick -d mysql://sysop:sysop@localhost/seiscomp --cfg
+
+#. Dump the stream codes defined by global binding as a list of NET.STA.LOC.CHA:
+
+   .. code-block:: sh
+
+      scdumpcfg -d localhost -BG --nslc
