@@ -13,6 +13,8 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
+from __future__ import print_function
+
 import sys
 import seiscomp.client
 import seiscomp.io
@@ -835,10 +837,9 @@ class Bulletin(object):
 
 
 def usage(exitcode=0):
-    usagetext = """
+    print("""
  scbulletin [ -E event-id | -O origin-os | --db-type database-type | --db-parameters database-connection]
-    """
-    sys.stderr.write("%s\n" % usagetext)
+    """, file=sys.stderr)
     sys.exit(exitcode)
 
 
@@ -990,7 +991,7 @@ Convert XML file with event parameters to bulletin
                     print("Expecting input in XML from stdin", file=sys.stderr)
 
             except Exception as exc:
-                sys.stderr.write("ERROR: " + str(exc) + "\n")
+                print("ERROR: {}".format(exc), file=sys.stderr)
                 # return False
         else:
             inputFile = self.inputFile
@@ -1057,12 +1058,12 @@ Convert XML file with event parameters to bulletin
                             txt += bulletin.printEvent(ev)
 
             except Exception as exc:
-                sys.stderr.write("ERROR: " + str(exc) + "\n")
+                print("ERROR: {}".format(exc), file=sys.stderr)
                 raise
                 return False
 
         if txt:
-            sys.stdout.write("%s\n" % txt)
+            print(txt)
 
         return True
 
