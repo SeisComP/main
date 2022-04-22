@@ -15,7 +15,7 @@
 
 from __future__ import print_function
 
-from getopt import getopt, GetoptError
+from getopt import gnu_getopt, GetoptError
 
 import bisect
 import glob
@@ -28,7 +28,6 @@ import seiscomp.core
 import seiscomp.client
 import seiscomp.config
 import seiscomp.io
-import seiscomp.logging
 import seiscomp.system
 
 
@@ -449,7 +448,13 @@ def str2time(timestring):
     for c in ["-", "/", ":", "T", "Z"]:
         timestring = timestring.replace(c, " ")
     timestring = timestring.split()
-    assert 3 <= len(timestring) <= 6
+    try:
+        assert 3 <= len(timestring) <= 6
+    except AssertionError:
+        print("error: Provide a valid time format, e.g.: 'YYYY-MM-DD hh:mm:ss'",
+              file=sys.stderr)
+        sys.exit(1)
+
     timestring.extend((6 - len(timestring)) * ["0"])
     timestring = " ".join(timestring)
     format = "%Y %m %d %H %M %S"
@@ -633,8 +638,9 @@ Verbosity:
 
 Mode:
   --check          Check mode: Check all files in the given directory
-                   for erroneous miniSEED records. All sub-directories are included.
-                   If no directory is given, the default SDS archive is scanned.
+                   for erroneous miniSEED records. All sub-directories are
+                   included. If no directory is given,
+                   $SEISCOMP_ROOT/var/lib/archive is scanned.
   -d, --dump       Export (dump) mode. Read from SDS archive.
   -I               Import mode: Specify a recordstream URL when in import mode.
                    When using another recordstream than file a
@@ -675,11 +681,13 @@ Read from /archive, create a miniSEED file where records are sorted by end time
   scart -dsv -t '2007-03-28 15:48~2007-03-28 16:18' /archive > sorted.mseed
 
 Import miniSEED data from file [your file], create a SDS archive
-  scart -I [your file] $SEISCOMP_ROOT/var/lib/archive
+  scart -I file.mseed $SEISCOMP_ROOT/var/lib/archive
 
 Import miniSEED data into a SDS archive, check all modified files for errors
-  scart -I [your file] --with-filecheck $SEISCOMP_ROOT/var/lib/archive
+  scart -I file.mseed --with-filecheck $SEISCOMP_ROOT/var/lib/archive
 
+Check an archive for files with out-of order records
+  scart --check /archive
 '''
 
 def usage(exitcode=0):
@@ -688,11 +696,12 @@ def usage(exitcode=0):
 
 
 try:
-    opts, files = getopt(sys.argv[1:], "I:dsmEn:c:t:l:hv",
-                         ["stdout", "with-filename", "with-filecheck", "dump",
-                          "list=", "nslc=", "sort", "modify", "speed=", "files=",
-                          "verbose", "test", "help", "check"])
-except GetoptError as e:
+    opts, files = gnu_getopt(
+        sys.argv[1:], "I:dsmEn:c:t:l:hv",
+        ["stdout", "with-filename", "with-filecheck", "dump", "list=",
+         "nslc=", "sort", "modify", "speed=", "files=", "verbose", "test",
+         "help", "check"])
+except GetoptError:
     usage(exitcode=1)
 
 
@@ -705,7 +714,7 @@ listFile = None
 nslcFile = None
 withFilename = False  # Whether to output accessed files for import or not
 checkFiles = False  # Check if output files are sorted by time
-checkSDS = False # check the SDS archive for errors in files
+checkSDS = False  # check the SDS archive for errors in files
 test = False
 filePoolSize = 100
 # default = stdin
@@ -722,7 +731,14 @@ archiveDirectory = "./"
 
 for flag, arg in opts:
     if flag == "-t":
-        tmin, tmax = list(map(str2time, arg.split("~")))
+        try:
+            tmin, tmax = list(map(str2time, arg.split("~")))
+        except ValueError as e:
+            print("error: {}".format(e), file=sys.stderr)
+            print("       Provide correct time interval: -t 'startTime~endtime'",
+                  file=sys.stderr)
+            sys.exit(1)
+
     elif flag == "-E":
         endtime = True
     elif flag in ["-h", "--help"]:
@@ -855,7 +871,7 @@ if dump:
         for stream in streams:
             if verbose:
                 print("Adding stream to list: {}.{}.{}.{} {} - {}"
-                      .format(stream[0], stream[1], stream[2], stream[3], tmin, tmax,),
+                      .format(stream[0], stream[1], stream[2], stream[3], tmin, tmax),
                       file=sys.stderr)
             archiveIterator.append(
                 tmin, tmax, stream[0], stream[1], stream[2], stream[3])
