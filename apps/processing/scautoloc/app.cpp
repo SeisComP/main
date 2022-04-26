@@ -857,7 +857,7 @@ const Seiscomp::Core::Time App::now() const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::timeStamp() const {
-	SEISCOMP_DEBUG_S("Timestamp: "+now().toString("%F %T"));
+	SEISCOMP_DEBUG_S("Timestamp: "+now().toString("%F %T.%f"));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1105,7 +1105,8 @@ bool App::feed(DataModel::Pick *sc3pick) {
 	if ( ! pick )
 		return false;
 
-	timeStamp();
+	if ( _config.offline )
+		timeStamp();
 
 	if ( ! ::Autoloc::Autoloc3::feed(pick.get()))
 		return false;
