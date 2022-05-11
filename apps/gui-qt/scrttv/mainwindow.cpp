@@ -181,7 +181,7 @@ class TraceDecorator : public Gui::RecordWidgetDecorator {
 
 		void drawLine(QPainter *painter, Gui::RecordWidget *widget, float y, bool fillAbove,
 		              const QBrush &brush) {
-			QPair<float,float> range = widget->amplitudeRange(0);
+			QPair<double,double> range = widget->amplitudeRange(0);
 			range.first *= *widget->recordScale(0);
 			range.second *= *widget->recordScale(0);
 			float amplRange = range.second-range.first;
@@ -230,7 +230,7 @@ class TraceDecorator : public Gui::RecordWidgetDecorator {
 				yofs += r.height();
 			}
 
-			QPair<float,float> amplRange = widget->amplitudeDataRange(0);
+			QPair<double,double> amplRange = widget->amplitudeDataRange(0);
 			QString amps = QString("min: %1").arg(amplRange.first, 0, 'f', 1);
 			if ( !_desc->unit.isEmpty() ) amps += _desc->unit;
 			amps += "\n";
