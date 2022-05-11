@@ -1474,8 +1474,9 @@ void MainWindow::openFile(const std::vector<std::string> &files) {
 		cout << "loading " << files[i] << "..." << flush;
 		Util::StopWatch t;
 	
-		for ( RecordIterator it = input.begin(); it != input.end(); ++it )
-			_traceViews.front()->feed(*it);
+		for ( Record *rec : input ) {
+			_traceViews.front()->feed(rec);
+		}
 	
 		cout << "(" << t.elapsed() << " sec)" << endl;
 	}

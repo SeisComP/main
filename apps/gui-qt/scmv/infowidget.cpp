@@ -425,8 +425,7 @@ void StationInfoWidget::uiInit() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void StationInfoWidget::startWaveformAcquisition() {
-	Math::Filtering::InPlaceFilter<float> *filter =
-		Math::Filtering::InPlaceFilter<float>::Create(_recordFilterStr);
+	auto filter = Gui::RecordWidget::Filter::Create(_recordFilterStr);
 	if ( !filter ) {
 		SEISCOMP_ERROR("StationInfoWidget: Could not create filter for: %s", _recordFilterStr.c_str());
 		return;
