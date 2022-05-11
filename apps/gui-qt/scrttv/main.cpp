@@ -106,6 +106,7 @@ class TraceViewApp : public Kicker<Seiscomp::Applications::TraceView::MainWindow
 			if ( _offline ) {
 				setMessagingEnabled(false);
 				setDatabaseEnabled(false, false);
+				setLoadConfigModuleEnabled(false);
 			}
 
 			// Disable database access if an inventory xml file is given
