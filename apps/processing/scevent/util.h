@@ -75,6 +75,7 @@ template <typename T>
 Core::Time created(T *obj);
 
 DataModel::EventDescription *eventRegionDescription(DataModel::Event *ev);
+DataModel::EventDescription *eventFERegionDescription(DataModel::Event *ev);
 
 int magnitudePriority(const std::string &magType, const Client::Config &config);
 int agencyPriority(const std::string &agencyID, const Client::Config &config);

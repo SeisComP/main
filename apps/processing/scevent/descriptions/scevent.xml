@@ -29,6 +29,13 @@
 					[w] is an optional width parameter.
 				</description>
 			</parameter>
+			<parameter name="populateFERegion" type="boolean" default="false">
+				<description>
+					If enabled then the EventDescription with type
+					'Flinn-Engdahl region' will be populated with the
+					Flinn-Engdahl region name.
+				</description>
+			</parameter>
 			<group name="processing">
 				<group name="blacklist">
 					<parameter name="eventIDs" type="list:string">

@@ -495,13 +495,17 @@ double rms(const DataModel::Origin *origin) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 DataModel::EventDescription *
 eventRegionDescription(DataModel::Event *ev) {
-	for ( size_t i = 0; i < ev->eventDescriptionCount(); ++i ) {
-		DataModel::EventDescription *ed = ev->eventDescription(i);
-		if ( ed->type() == REGION_NAME )
-			return ed;
-	}
+	return ev->eventDescription(EventDescriptionIndex(REGION_NAME));
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-	return nullptr;
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+DataModel::EventDescription *
+eventFERegionDescription(DataModel::Event *ev) {
+	return ev->eventDescription(EventDescriptionIndex(FLINN_ENGDAHL_REGION));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

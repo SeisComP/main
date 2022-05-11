@@ -186,7 +186,7 @@ MainFrame::MainFrame(){
 		_trayIcon->show();
 	}
 	else
-		_trayIcon = NULL;
+		_trayIcon = nullptr;
 
 	connect(_trayIcon, SIGNAL(messageClicked()), this, SLOT(trayIconMessageClicked()));
 	connect(_trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
@@ -195,8 +195,8 @@ MainFrame::MainFrame(){
 
 	Map::ImageTreePtr mapTree = new Map::ImageTree(SCApp->mapsDesc());
 
-	_eventSmallSummary = NULL;
-	_eventSmallSummaryCurrent = NULL;
+	_eventSmallSummary = nullptr;
+	_eventSmallSummaryCurrent = nullptr;
 
 	try { _expertMode = SCApp->configGetBool("mode.expert"); }
 	catch ( ... ) { _expertMode = true; }
@@ -631,7 +631,7 @@ MainFrame::MainFrame(){
 	_picker = new PickerView();
 	_picker->setDatabase(_query.get());
 	_picker->setDataSource(rsService.c_str(), rsSource.c_str());
-	_picker->setStatusBar(NULL);
+	_picker->setStatusBar(nullptr);
 	*/
 
 	//_originLocator->setPickerView(_picker);
@@ -651,8 +651,8 @@ MainFrame::MainFrame(){
 		layoutEventEdit->addWidget(_eventEdit);
 	}
 	else {
-		_tabEventEdit = NULL;
-		_eventEdit = NULL;
+		_tabEventEdit = nullptr;
+		_eventEdit = nullptr;
 	}
 
 	/*
@@ -972,7 +972,7 @@ void MainFrame::setEventID(const std::string &eventID) {
 		return;
 	}
 
-	_eventList->add(e.get(), NULL);
+	_eventList->add(e.get(), nullptr);
 	_eventList->selectEventID(e->publicID());
 }
 
@@ -1146,20 +1146,20 @@ void MainFrame::fileOpen() {
 
 	DataModel::EventParametersPtr ep;
 
-	_offlineData = NULL;
+	_offlineData = nullptr;
 
-	//_currentOrigin = NULL;
+	//_currentOrigin = nullptr;
 	_originLocator->clear();
-	_magnitudes->setOrigin(NULL, NULL);
-	_eventEdit->setEvent(NULL, NULL);
-	_eventSmallSummary->setEvent(NULL);
-	_eventSmallSummaryCurrent->setEvent(NULL);
+	_magnitudes->setOrigin(nullptr, nullptr);
+	_eventEdit->setEvent(nullptr, nullptr);
+	_eventSmallSummary->setEvent(nullptr);
+	_eventSmallSummaryCurrent->setEvent(nullptr);
 	_eventList->clear();
 
-	_currentOrigin = NULL;
+	_currentOrigin = nullptr;
 
 	ar >> ep;
-	if ( ep == NULL ) {
+	if ( !ep ) {
 		QMessageBox::critical(this, "Error", QString("Unable to find EventParameters structures in %1.").arg(filename));
 		return;
 	}
@@ -1167,7 +1167,7 @@ void MainFrame::fileOpen() {
 	_offlineData = ep;
 	if ( !_offlineData->registered() ) {
 		if ( !_offlineData->setPublicID(_offlineData->publicID()) ) {
-			_offlineData = NULL;
+			_offlineData = nullptr;
 			QMessageBox::critical(this, "Error", QString("Unable to register EventParameters globally."));
 			return;
 		}
@@ -1176,7 +1176,7 @@ void MainFrame::fileOpen() {
 	std::set<std::string> associatedOriginIDs;
 	for ( size_t i = 0; i < ep->eventCount(); ++i ) {
 		DataModel::Event *ev = ep->event(i);
-		_eventList->add(ev, NULL);
+		_eventList->add(ev, nullptr);
 
 		for ( size_t j = 0; j < ev->originReferenceCount(); ++j ) {
 			DataModel::OriginReference *ref = ev->originReference(j);
@@ -1187,7 +1187,7 @@ void MainFrame::fileOpen() {
 	for ( size_t i = 0; i < ep->originCount(); ++i ) {
 		DataModel::Origin *org = ep->origin(i);
 		if ( associatedOriginIDs.find(org->publicID()) == associatedOriginIDs.end() )
-			_eventList->add(NULL, org);
+			_eventList->add(nullptr, org);
 	}
 
 	_eventList->selectEvent(0);
@@ -1195,7 +1195,7 @@ void MainFrame::fileOpen() {
 
 
 void MainFrame::fileSave() {
-	if ( _offlineData == NULL ) {
+	if ( !_offlineData ) {
 		QMessageBox::information(this, "Error", "No data available.");
 		return;
 	}
@@ -1238,7 +1238,7 @@ void MainFrame::setOrigin(Seiscomp::DataModel::Origin *o,
 
 	/*
 	if ( _expertMode ) {
-		_eventEdit->setEvent(NULL, NULL);
+		_eventEdit->setEvent(nullptr, nullptr);
 	}
 	*/
 }
@@ -1260,7 +1260,7 @@ void MainFrame::committedNewOrigin(Seiscomp::DataModel::Origin *, Seiscomp::Data
 
 
 void MainFrame::setArtificialOrigin(Seiscomp::DataModel::Origin *org) {
-	populateOrigin(org, NULL, true);
+	populateOrigin(org, nullptr, true);
 }
 
 
@@ -1334,15 +1334,15 @@ void MainFrame::closeEvent(QCloseEvent *e) {
 
 void MainFrame::originReferenceRemoved(const std::string &eventID, Seiscomp::DataModel::OriginReference *ref) {
 	if ( _currentOrigin && _currentOrigin->publicID() == ref->originID() ) {
-		if ( _originLocator->setOrigin(_currentOrigin.get(), NULL) ) {
+		if ( _originLocator->setOrigin(_currentOrigin.get(), nullptr) ) {
 			_magnitudes->setPreferredMagnitudeID("");
 
 #ifdef WITH_SMALL_SUMMARY
-			_eventSmallSummary->setEvent(NULL);
-			_eventSmallSummaryCurrent->setEvent(NULL, _currentOrigin.get(), true);
+			_eventSmallSummary->setEvent(nullptr);
+			_eventSmallSummaryCurrent->setEvent(nullptr, _currentOrigin.get(), true);
 #endif
 			if ( _expertMode )
-				_eventEdit->setEvent(NULL, _currentOrigin.get());
+				_eventEdit->setEvent(nullptr, _currentOrigin.get());
 
 			_eventID.clear();
 		}
@@ -1462,10 +1462,10 @@ SEISCOMP_DEBUG("EventParametersPtr _createEventParametersForPublication(%s)",eve
 	// preferred origin
 	string originID = event->preferredOriginID();
 	Origin *origin = Origin::Find(originID);
-	if (origin == NULL) {
+	if ( !origin ) {
 		// not having a preferred origin is a fatal error
 		SEISCOMP_ERROR("_createEventParametersForPublication(%s): preferredOrigin not found",event->publicID().c_str());
-		return NULL;
+		return nullptr;
 	}
 
 	// Even though we normally have the arrivals loaded, this might not be
@@ -1485,13 +1485,13 @@ SEISCOMP_DEBUG("EventParametersPtr _createEventParametersForPublication(%s)",eve
 	// focal mechanism
 	string focalMechanismID = event->preferredFocalMechanismID();
 	FocalMechanism *focalMechanism = FocalMechanism::Find(focalMechanismID);
-	// not necessarily an error if NULL
+	// not necessarily an error if nullptr
 	if (focalMechanism) {
 		SEISCOMP_DEBUG("Focal mechanism <%s> found", focalMechanism->publicID().c_str());
 		FocalMechanismPtr preferredFocalMechanism = FocalMechanism::Cast(copy(focalMechanism));
 		ep->add(preferredFocalMechanism.get());
 
-		OriginPtr triggeringOrigin = NULL;
+		OriginPtr triggeringOrigin = nullptr;
 		if (preferredFocalMechanism->triggeringOriginID().size()) {
 			if (event->preferredOriginID() == preferredFocalMechanism->triggeringOriginID())
 				triggeringOrigin = preferredOrigin;
@@ -1511,7 +1511,7 @@ SEISCOMP_DEBUG("EventParametersPtr _createEventParametersForPublication(%s)",eve
 					}
 				}
 			}
-			// note that triggeringOrigin may still be NULL
+			// note that triggeringOrigin may still be nullptr
 			if (triggeringOrigin) {
 				clonedEvent->add(new OriginReference(triggeringOrigin->publicID()));
 				ep->add(triggeringOrigin.get());
@@ -1548,7 +1548,7 @@ SEISCOMP_DEBUG("EventParametersPtr _createEventParametersForPublication(%s)",eve
 void MainFrame::publishEvent() {
 #if defined(WITH_SMALL_SUMMARY)
 
-	const Event *event = NULL;
+	const Event *event = nullptr;
 	if ( _eventSmallSummary ) event = _eventSmallSummary->currentEvent();
 
 	if ( !event ) {
@@ -1569,13 +1569,13 @@ void MainFrame::publishEvent() {
 
 	epShort->add( orig );
 
-	Origin *magOrigin = NULL;
-	EventParameters *oldMagParent = NULL;
+	Origin *magOrigin = nullptr;
+	EventParameters *oldMagParent = nullptr;
 
 	Magnitude *mag = Magnitude::Find(event->preferredMagnitudeID());
-	if ( mag != NULL ) {
+	if ( mag != nullptr ) {
 		// Magnitude is cross-referenced, lets add its origin as well
-		if ( mag->origin() != orig && mag->origin() != NULL ) {
+		if ( mag->origin() != orig && mag->origin() != nullptr ) {
 			magOrigin = mag->origin();
 			oldMagParent = magOrigin->eventParameters();
 			magOrigin->detach();
@@ -1593,12 +1593,12 @@ void MainFrame::publishEvent() {
 		SEISCOMP_ERROR(" Can't open tmpFile (%s)!", tmpFileName.c_str());
 		PublicObject::SetRegistrationEnabled(wasEnabled);
 
-		if ( oldParent != NULL ) {
+		if ( oldParent != nullptr ) {
 			orig->detach();
 			oldParent->add(orig);
 		}
 
-		if ( oldMagParent != NULL ) {
+		if ( oldMagParent != nullptr ) {
 			magOrigin->detach();
 			oldMagParent->add(magOrigin);
 		}
@@ -1622,12 +1622,12 @@ void MainFrame::publishEvent() {
 	ar.close();
 	SEISCOMP_DEBUG("--> created tempFile:%s", tmpFileName.c_str());
 /*
-	if ( oldParent != NULL ) {
+	if ( oldParent != nullptr ) {
 		orig->detach();
 		oldParent->add(orig);
 	}
 
-	if ( oldMagParent != NULL ) {
+	if ( oldMagParent != nullptr ) {
 		magOrigin->detach();
 		oldMagParent->add(magOrigin);
 	}
@@ -1722,7 +1722,7 @@ void MainFrame::tabChanged(int tab) {
 	QWidget *lastTabWidget = _currentTabWidget;
 	_currentTabWidget = _ui.tabWidget->widget(tab);
 
-	MapWidget *source = NULL, *target = NULL;
+	MapWidget *source = nullptr, *target = nullptr;
 	if ( lastTabWidget == _ui.tabLocation )
 		source = _originLocator->map();
 	else if ( lastTabWidget == _ui.tabMagnitudes )
@@ -1750,7 +1750,7 @@ void MainFrame::messageAvailable(Seiscomp::Core::Message *msg, Seiscomp::Client:
 				}
 				else */if ( ep->originCount() > 0 ) {
 					Origin *origin = ep->origin(0);
-					if ( populateOrigin(origin, NULL, true) ) {
+					if ( populateOrigin(origin, nullptr, true) ) {
 						for ( size_t i = 0; i < ep->pickCount(); ++i )
 							_originLocator->addLocalPick(ep->pick(i));
 					}

@@ -30,6 +30,7 @@
 #include <seiscomp/datamodel/utils.h>
 
 #include <seiscomp/io/archive/xmlarchive.h>
+#include <seiscomp/seismology/regions.h>
 
 #include <seiscomp/core/genericmessage.h>
 #include <seiscomp/math/geo.h>
@@ -292,6 +293,8 @@ bool EventTool::initConfiguration() {
 
 	try { _config.eventIDPrefix = configGetString("eventIDPrefix"); } catch (...) {}
 	try { _config.eventIDPattern = configGetString("eventIDPattern"); } catch (...) {}
+
+	try { _config.populateFERegion = configGetBool("populateFERegion"); } catch ( ... ) {}
 
 	try { _config.updatePreferredSolutionAfterMerge = configGetBool("eventAssociation.updatePreferredAfterMerge"); } catch (...) {}
 	try { _config.enableFallbackPreferredMagnitude = configGetBool("eventAssociation.enableFallbackMagnitude"); } catch (...) {}
@@ -4076,7 +4079,7 @@ void EventTool::updateEvent(EventInformation *info, bool callProcessors) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventTool::updateRegionName(DataModel::Event *ev, DataModel::Origin *org) {
-	std::string reg = org?region(org):"";
+	std::string reg = org ? region(org) : "";
 	EventDescription *ed = eventRegionDescription(ev);
 	if ( ed ) {
 		if ( ed->text() != reg ) {
@@ -4095,6 +4098,36 @@ void EventTool::updateRegionName(DataModel::Event *ev, DataModel::Origin *org) {
 		              ev->publicID().c_str(), reg.c_str());
 		SEISCOMP_LOG(_infoChannel, "Event %s got new region name: %s",
 		             ev->publicID().c_str(), reg.c_str());
+	}
+
+	if ( _config.populateFERegion ) {
+		reg = "";
+		if ( org ) {
+			try {
+				reg = Regions::getFlinnEngdahlRegion(org->latitude(), org->longitude());
+			}
+			catch ( ... ) {	}
+		}
+
+		ed = eventFERegionDescription(ev);
+		if ( ed ) {
+			if ( ed->text() != reg ) {
+				SEISCOMP_INFO("%s: updating Flinn-Engdahl region name to '%s'",
+				              ev->publicID().c_str(), reg.c_str());
+				SEISCOMP_LOG(_infoChannel, "Event %s Flinn-Engdahl region name updated: %s",
+				             ev->publicID().c_str(), reg.c_str());
+				ed->setText(reg);
+				ed->update();
+			}
+		}
+		else {
+			EventDescriptionPtr ed = new EventDescription(reg, FLINN_ENGDAHL_REGION);
+			ev->add(ed.get());
+			SEISCOMP_INFO("%s: adding Flinn-Engdahl region name '%s'",
+			              ev->publicID().c_str(), reg.c_str());
+			SEISCOMP_LOG(_infoChannel, "Event %s got new Flinn-Engdahl region name: %s",
+			             ev->publicID().c_str(), reg.c_str());
+		}
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
