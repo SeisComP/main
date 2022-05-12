@@ -13,25 +13,31 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
+from __future__ import absolute_import, division, print_function
 
 import re
 import sys
 import traceback
-import seiscomp.core, seiscomp.client, seiscomp.logging, seiscomp.utils
+import seiscomp.core
+import seiscomp.client
+import seiscomp.logging
+import seiscomp.utils
 
 output = sys.stdout
 error = sys.stderr
 
 
 class RuntimeException(Exception):
-    def __init__(self, what): self.what = what
+    def __init__(self, what):
+        self.what = what
 
     def __str__(self):
         return str(self.what)
 
 
 class ExitRequestException(RuntimeException):
-    def __init__(self): pass
+    def __init__(self):
+        pass
 
     def __str__(self):
         return "exit requested"
@@ -66,7 +72,7 @@ class MySQLDB(QueryInterface):
 
     def getTables(self):
         tmp_tables = []
-        if self._database.beginQuery("show tables") == False:
+        if not self._database.beginQuery("show tables"):
             return tmp_tables
 
         while self._database.fetchRow():
@@ -164,7 +170,7 @@ class PostgresDB(QueryInterface):
 
     def getTables(self):
         tmp_tables = []
-        if self._database.beginQuery("SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema');") == False:
+        if not self._database.beginQuery("SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema');"):
             return tmp_tables
 
         while self._database.fetchRow():
@@ -269,9 +275,9 @@ class DBCleaner(seiscomp.client.Application):
         self.setDatabaseEnabled(True, True)
         self.setDaemonEnabled(False)
 
-        self._daysToKeep = 30
-        self._hoursToKeep = 0
-        self._minutesToKeep = 0
+        self._daysToKeep = None
+        self._hoursToKeep = None
+        self._minutesToKeep = None
         self._datetime = None
         self._invertMode = False
 
@@ -285,27 +291,36 @@ class DBCleaner(seiscomp.client.Application):
         try:
             try:
                 self.commandline().addGroup("Settings")
+                self.commandline().addStringOption("Settings", "datetime",
+                                                   "Specify the datetime (UTC)"
+                                                   " from which to keep all "
+                                                   "events. If given, days, "
+                                                   "minutes and hours are ignored. "
+                                                   "Format: '%Y-%m-%d %H:%M:%S'")
                 self.commandline().addIntOption("Settings", "days",
-                                                "Specify the number of days to keep. "
-                                                "Added to hours and minutes.")
+                                                "The number of days to keep. "
+                                                "Added to hours and minutes. "
+                                                "Default is 30 if no other "
+                                                "times are given.")
                 self.commandline().addIntOption("Settings", "hours",
-                                                "Specify the number of hours to keep. "
+                                                "The number of hours to keep. "
                                                 "Added to days and minutes.")
                 self.commandline().addIntOption("Settings", "minutes",
-                                                "Specify the number of minutes to keep. "
+                                                "The number of minutes to keep. "
                                                 "Added to days and hours.")
-                self.commandline().addStringOption("Settings", "datetime",
-                                                   "Specify the datetime (UTC) from which "
-                                                   "to keep all events in format [%Y-%m-%d %H:%M:%S]")
                 self.commandline().addOption("Settings", "invert,i",
-                                             "Delete all events after the specified time period")
+                                             "Delete all events after the "
+                                             "specified time period")
                 self.commandline().addStringOption("Settings", "keep-events",
-                                                   "Event-IDs to keep in the database")
+                                                   "Event-IDs to keep in the "
+                                                   "database")
 
                 self.commandline().addGroup("Mode")
-                self.commandline().addOption("Mode", "check", "Checks if unreachable objects exists")
+                self.commandline().addOption("Mode", "check", "Checks if "
+                                             "unreachable objects exists")
                 self.commandline().addOption("Mode", "clean-unused",
-                                             "Removes all unreachable objects when in checkmode (default: off)")
+                                             "Removes all unreachable objects "
+                                             "when in checkmode. Default: off")
 
             except:
                 seiscomp.logging.warning(
@@ -369,18 +384,22 @@ Remove events older than the last 30 days
                 self._daysToKeep = self.commandline().optionInt("days")
             except:
                 pass
+
             try:
                 self._hoursToKeep = self.commandline().optionInt("hours")
             except:
                 pass
+
             try:
                 self._minutesToKeep = self.commandline().optionInt("minutes")
             except:
                 pass
+
             try:
                 self._invertMode = self.commandline().hasOption("invert")
             except:
                 pass
+
             try:
                 eventIDs = self.commandline().optionString("keep-events")
                 self._keepEvents = [id.strip() for id in eventIDs.split(',')]
@@ -388,16 +407,30 @@ Remove events older than the last 30 days
                 pass
 
             try:
-                date = seiscomp.core.Time()
-                if date.fromString(self.commandline().optionString("datetime"), "%Y-%m-%d %H:%M:%S") == True:
-                    error.write("using datetime option: %s\n" %
-                                date.toString("%Y-%m-%d %H:%M:%S"))
-                    self._datetime = date
-                else:
-                    error.write("ERROR: datetime has wrong format\n")
-                    return False
+                dateTime = self.commandline().optionString("datetime")
             except:
-                pass
+                dateTime = None
+
+            if dateTime:
+                self._daysToKeep = None
+                self._hoursToKeep = None
+                self._minutesToKeep = None
+
+                date = seiscomp.core.Time()
+                try:
+                    if date.fromString(dateTime, "%Y-%m-%d %H:%M:%S"):
+                        error.write("Using datetime option: %s\n" %
+                                    date.toString("%Y-%m-%d %H:%M:%S"))
+                        self._datetime = date
+                    else:
+                        error.write("ERROR: datetime has wrong format\n")
+                        return False
+                except:
+                    pass
+
+            # fall back to default if no times are given
+            if dateTime is None and self._hoursToKeep is None and self._minutesToKeep is None:
+                self._daysToKeep = 30
 
             return True
         except:
@@ -438,8 +471,16 @@ Remove events older than the last 30 days
     def check(self):
         try:
             if self._datetime is None:
-                timeSpan = seiscomp.core.TimeSpan(
-                    self._daysToKeep*24*3600 + self._hoursToKeep*3600 + self._minutesToKeep*60)
+                timeSpan = seiscomp.core.TimeSpan(0)
+                if self._daysToKeep:
+                    timeSpan += seiscomp.core.TimeSpan(self._daysToKeep*24*3600)
+
+                if self._hoursToKeep:
+                    timeSpan += seiscomp.core.TimeSpan(self._hoursToKeep*3600)
+
+                if self._minutesToKeep:
+                    timeSpan += seiscomp.core.TimeSpan(self._minutesToKeep*60)
+
                 # All times are given in localtime
                 timestamp = seiscomp.core.Time.LocalTime() - timeSpan
             else:
@@ -478,7 +519,7 @@ Remove events older than the last 30 days
       " % timestamp.toString("%Y-%m-%d %H:%M:%S")
 
             self.beginMessage("Search objects")
-            if self.runCommand(tmp_object) == False:
+            if not self.runCommand(tmp_object):
                 return False
             self.endMessage(self.globalCount("tmp_object"))
 
@@ -494,7 +535,7 @@ Remove events older than the last 30 days
                             self.deleteUnusedRawObjects, "tmp_object")
 
             self.beginMessage("%d unused objects found" % unusedObjects)
-            if self.runCommand("drop table tmp_object") == False:
+            if not self.runCommand("drop table tmp_object"):
                 return False
             self.endMessage()
 
@@ -513,18 +554,26 @@ Remove events older than the last 30 days
     def clean(self):
         try:
             if self._datetime is None:
-                timeSpan = seiscomp.core.TimeSpan(
-                    self._daysToKeep*24*3600 + self._hoursToKeep*3600 + self._minutesToKeep*60)
+                timeSpan = seiscomp.core.TimeSpan(0)
+                if self._daysToKeep:
+                    timeSpan += seiscomp.core.TimeSpan(self._daysToKeep*24*3600)
+
+                if self._hoursToKeep:
+                    timeSpan += seiscomp.core.TimeSpan(self._hoursToKeep*3600)
+
+                if self._minutesToKeep:
+                    timeSpan += seiscomp.core.TimeSpan(self._minutesToKeep*60)
+
                 # All times are given in GMT (UTC)
                 timestamp = seiscomp.core.Time.GMT() - timeSpan
             else:
                 timestamp = self._datetime
 
             if not self._invertMode:
-                output.write("[INFO] Keep objects after %s\n" %
+                output.write("[INFO] Keep objects after %s UTC\n" %
                              timestamp.toString("%Y-%m-%d %H:%M:%S"))
             else:
-                output.write("[INFO] Keep objects before %s\n" %
+                output.write("[INFO] Keep objects before %s UTC\n" %
                              timestamp.toString("%Y-%m-%d %H:%M:%S"))
 
             if len(self._keepEvents) > 0:
@@ -553,7 +602,7 @@ Remove events older than the last 30 days
             self._steps = 32
 
             self.beginMessage("Find old events")
-            if self.runCommand(old_events) == False:
+            if not self.runCommand(old_events):
                 return False
             self.endMessage(self.globalCount("old_events"))
 
@@ -578,7 +627,7 @@ Remove events older than the last 30 days
                         "Event", "old_events")
 
             self.beginMessage("Cleaning up temporary results")
-            if self.runCommand("drop table old_events") == False:
+            if not self.runCommand("drop table old_events"):
                 return False
             self.endMessage()
 
@@ -591,7 +640,7 @@ Remove events older than the last 30 days
 
             self.beginMessage("Find unassociated focal mechanisms")
 
-            if self.runCommand(tmp_fm) == False:
+            if not self.runCommand(tmp_fm):
                 return False
 
             tmp_fm = "\
@@ -599,7 +648,7 @@ Remove events older than the last 30 days
       where " + self.cnvCol("publicID") + " in (select distinct " + self.cnvCol("focalMechanismID") + " from FocalMechanismReference) \
       "
 
-            if self.runCommand(tmp_fm) == False:
+            if not self.runCommand(tmp_fm):
                 return False
 
             self.endMessage(self.unusedCount("tmp_fm"))
@@ -637,7 +686,7 @@ Remove events older than the last 30 days
                         self.deleteUnusedObjects, "FocalMechanism", "tmp_fm")
 
             self.beginMessage("Cleaning up temporary results")
-            if self.runCommand("drop table tmp_fm") == False:
+            if not self.runCommand("drop table tmp_fm"):
                 return False
             self.endMessage()
 
@@ -651,7 +700,7 @@ Remove events older than the last 30 days
 
             self.beginMessage("Find unassociated origins")
 
-            if self.runCommand(tmp_origin) == False:
+            if not self.runCommand(tmp_origin):
                 return False
 
             tmp_origin = "\
@@ -659,7 +708,7 @@ Remove events older than the last 30 days
       where (" + self.cnvCol("publicID") + " in (select distinct " + self.cnvCol("originID") + " from OriginReference)) \
       or (" + self.cnvCol("publicID") + " in (select " + self.cnvCol("derivedOriginID") + " from MomentTensor))"
 
-            if self.runCommand(tmp_origin) == False:
+            if not self.runCommand(tmp_origin):
                 return False
 
             self.endMessage(self.unusedCount("tmp_origin"))
@@ -693,7 +742,7 @@ Remove events older than the last 30 days
                         self.deleteUnusedObjects, "Origin", "tmp_origin")
 
             self.beginMessage("Cleaning up temporary results")
-            if self.runCommand("drop table tmp_origin") == False:
+            if not self.runCommand("drop table tmp_origin"):
                 return False
             self.endMessage()
 
@@ -709,7 +758,7 @@ Remove events older than the last 30 days
               Pick.%s %s '%s' \
       " % (self.cnvCol("publicID"), self.cnvCol("time_value"), op, timestamp.toString("%Y-%m-%d %H:%M:%S"))
 
-            if self.runCommand(tmp_pick) == False:
+            if not self.runCommand(tmp_pick):
                 return False
 
             tmp_pick = "\
@@ -718,7 +767,7 @@ Remove events older than the last 30 days
         (select distinct " + self.cnvCol("pickID") + " from Arrival) \
       "
 
-            if self.runCommand(tmp_pick) == False:
+            if not self.runCommand(tmp_pick):
                 return False
 
             self.endMessage(self.unusedCount("tmp_pick"))
@@ -727,7 +776,7 @@ Remove events older than the last 30 days
                         self.deleteUnusedObjects, "Pick", "tmp_pick")
 
             self.beginMessage("Cleaning up temporary results")
-            if self.runCommand("drop table tmp_pick") == False:
+            if not self.runCommand("drop table tmp_pick"):
                 return False
             self.endMessage()
 
@@ -743,7 +792,7 @@ Remove events older than the last 30 days
               Amplitude.%s %s '%s' \
       " % (self.cnvCol("publicID"), self.cnvCol("timeWindow_reference"), op, timestamp.toString("%Y-%m-%d %H:%M:%S"))
 
-            if self.runCommand(tmp_amp) == False:
+            if not self.runCommand(tmp_amp):
                 return False
 
             tmp_amp = "\
@@ -752,7 +801,7 @@ Remove events older than the last 30 days
         (select distinct " + self.cnvCol("amplitudeID") + " from StationMagnitude) \
       "
 
-            if self.runCommand(tmp_amp) == False:
+            if not self.runCommand(tmp_amp):
                 return False
 
             self.endMessage(self.unusedCount("tmp_amp"))
@@ -761,15 +810,18 @@ Remove events older than the last 30 days
                         self.deleteUnusedObjects, "Amplitude", "tmp_amp")
 
             self.beginMessage("Cleaning up temporary results")
-            if self.runCommand("drop table tmp_amp") == False:
+            if not self.runCommand("drop table tmp_amp"):
                 return False
             self.endMessage()
 
             self.beginMessage("Delete waveform quality parameters")
-            if self.runCommand(self._query.deleteObjectQuery("Object", "WaveformQuality") +
-                               "WaveformQuality.%s %s '%s'" % (self.cnvCol("end"), op, timestamp.toString("%Y-%m-%d %H:%M:%S"))) == False:
-                                   return False
-            if self.runCommand("delete from WaveformQuality where WaveformQuality.%s %s '%s'" % (self.cnvCol("end"), op, timestamp.toString("%Y-%m-%d %H:%M:%S"))) == False:
+            if not self.runCommand(
+                    self._query.deleteObjectQuery("Object", "WaveformQuality")
+                    + "WaveformQuality.%s %s '%s'" %
+                    (self.cnvCol("end"), op,
+                     timestamp.toString("%Y-%m-%d %H:%M:%S"))):
+                return False
+            if not self.runCommand("delete from WaveformQuality where WaveformQuality.%s %s '%s'" % (self.cnvCol("end"), op, timestamp.toString("%Y-%m-%d %H:%M:%S"))):
                 return False
             self.endMessage()
 
@@ -808,9 +860,8 @@ Remove events older than the last 30 days
         if self.isExitRequested():
             raise ExitRequestException
 
-        if self.database().execute(q) == False:
+        if not self.database().execute(q):
             raise RuntimeException("ERROR: command '%s' failed\n" % q)
-            return False
 
         if self.isExitRequested():
             raise ExitRequestException
@@ -823,9 +874,8 @@ Remove events older than the last 30 days
 
         count = "-1"
 
-        if self.database().beginQuery(q) == False:
+        if not self.database().beginQuery(q):
             raise RuntimeException("ERROR: command '%s' failed\n" % q)
-            return [count]
 
         if self.database().fetchRow():
             count = self.database().getRowFieldString(0)
