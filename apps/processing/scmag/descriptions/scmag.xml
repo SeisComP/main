@@ -3,16 +3,58 @@
 	<module name="scmag" category="Processing">
 		<description>Calculates magnitudes of different types.</description>
 		<configuration>
+			<parameter name="magnitudes" type="list:string" default="MLv, mb, mB, Mwp">
+				<description>
+				The magnitude types to be calculated. Station magnitudes are
+				computed from their amplitudes, network magnitudes from their
+				station magnitudes.
+				</description>
+			</parameter>
+			<group name="magnitudes">
+				<description>
+				General parameters for computing magnitudes. Others are configured
+				by global binding parameters for specific magnitude types.
+				</description>
+				<parameter name="average" type="list:string" default="default">
+					<description>
+						The methods for computing the network magnitude
+						from station magnitudes. Exactly one method per
+						magnitude can be configured.
+						To define the averaging method per magnitude type append
+						the type after colon, e.g.:
+						&quot;magnitudes.average = default, MLv:median&quot;
+
+						default: Compute the mean if less than 4 contributed
+						station magnitudes exist. Otherwise apply a trimmed mean
+						of 25%.
+
+						Options are &quot;default&quot;, &quot;mean&quot;,
+						&quot;median&quot;, &quot;trimmedMean&quot; and
+						&quot;medianTrimmedMean&quot;.
+					</description>
+				</parameter>
+			</group>
 			<group name="connection">
-				<parameter name="sendInterval" type="int" default="1">
-					<description>Interval between 2 sending processes. The interval has influence how often information is updated.</description>
+				<parameter name="sendInterval" type="int" default="1" unit="s">
+					<description>
+					Interval between 2 sending processes. The interval controls
+					how often information is updated.
+					</description>
 				</parameter>
 				<parameter name="minimumArrivalWeight" type="double" default="0.5">
-					<description>The minimum weight of an arrival to be used for magnitude calculations.</description>
+					<description>
+					The minimum weight of an arrival for an associated amplitude
+					to be used for calculating a magnitude.
+					</description>
 				</parameter>
 			</group>
 			<group name="summaryMagnitude">
-				<description>The summary magnitude is building a weighted summary above all defined magnitude types. The single magnitude value is multiplied with the magnitude type specific weight. This is summed up for all magnitude types and the resulting sum is divided through the sum of all weights.</description>
+				<description>
+				The summary magnitude is the weighted average from all
+				defined network magnitude types: Single network magnitude values
+				are multiplied with their magnitude-type specific weight and
+				summed up. The resulting sum is divided by the sum of all weights.
+				</description>
 				<parameter name="enabled" type="boolean" default="true">
 					<description>Enables summary magnitude calculation.</description>
 				</parameter>
@@ -21,46 +63,48 @@
 				</parameter>
 				<parameter name="minStationCount" type="int" default="4">
 					<description>
-						This is the minimum station magnitude required for any magnitude to contribute to
-						the summary magnitude at all. If this is set to 4 then no magnitude with less than
-						4 station magnitudes is taken into consideration even if this results in no summary
-						magnitude at all. For this reason, the default here is 1 but in a purely automatic
-						system it should be higher, at least 4 is recommended.
+					This is the minimum station magnitude required for any
+					magnitude to contribute to the summary magnitude at all. If
+					this is set to 4, then no magnitude with less than 4 station
+					magnitudes is taken into consideration even if this results
+					in no summary magnitude at all. For this reason, the default
+					here is 1 but in a purely automatic	system it should be
+					higher, at least 4 is recommended.
 					</description>
 				</parameter>
 				<parameter name="blacklist" type="list:string" default="">
-					<description>Define the magnitude types to be excluded from the summary magnitude calculation.</description>
-				</parameter>
-				<parameter name="whitelist" type="list:string" default="">
-					<description>Define the magnitude types to be included in the summary magnitude calculation.</description>
-				</parameter>
-				<group name="coefficients">
-					<description>Define the coefficients to calculate the weight of a magnitude. weight = a*magStationCount+b</description>
-					<parameter name="a" type="list:string" default="0, Mw(mB):0.4, Mw(Mwp):0.4">
-						<description>Define the coefficients a. Unnamed values define the default value.</description>
-					</parameter>
-					<parameter name="b" type="list:string" default="1, MLv:2, Mw(mB):-1, Mw(Mwp):-1">
-						<description>Define the coefficients b. Unnamed values define the default value.</description>
-					</parameter>
-				</group>
-			</group>
-			<parameter name="magnitudes" type="list:string" default="MLv, mb, mB, Mwp">
-				<description>Definition of magnitude types to be calculated from amplitudes.</description>
-			</parameter>
-			<group name="magnitudes">
-				<parameter name="average" type="list:string" default="default">
 					<description>
-						Defines the average method to use when computing the network magnitude.
-						To define the average method per magnitude type append the type, eg:
-						&quot;magnitudes.average = default, MLv:median&quot;
-
-						The default behaviour is to compute the mean if less than 4 contributed
-						station magnitudes exist otherwise a trimmed mean of 25 percent is used.
-
-						Options are &quot;default&quot;, &quot;mean&quot;,
-						&quot;trimmedMean&quot; and &quot;medianTrimmedMean&quot;.
+					Define the magnitude types to be excluded from the summary
+					magnitude calculation.
 					</description>
 				</parameter>
+				<parameter name="whitelist" type="list:string" default="">
+					<description>
+					Define the magnitude types to be included in the summary
+					magnitude calculation.
+					</description>
+				</parameter>
+				<group name="coefficients">
+					<description>
+					The coefficients defining the weight of network magnitudes
+					for calculating the summary magnitude.
+					Weight = a * magnitudeStationCount + b.
+					</description>
+					<parameter name="a" type="list:string" default="0, Mw(mB):0.4, Mw(Mwp):0.4">
+						<description>
+						Define the coefficients a. To define the value per magnitude
+						type append the type after colon. A value without a
+						type defines the default value.
+						</description>
+					</parameter>
+					<parameter name="b" type="list:string" default="1, MLv:2, Mw(mB):-1, Mw(Mwp):-1">
+						<description>
+						Define the coefficients b. To define the value per magnitude
+						type append the type after colon. A value without a
+						type defines the default value.
+						</description>
+					</parameter>
+				</group>
 			</group>
 		</configuration>
 		<command-line>
@@ -77,7 +121,7 @@
 					<description>Time span in hours after which objects expire.</description>
 				</option>
 			</group>
-			
+
 			<group name="Verbosity">
 				<optionReference>verbosity#verbosity</optionReference>
 				<optionReference>verbosity#v</optionReference>
@@ -89,7 +133,7 @@
 				<optionReference>verbosity#debug</optionReference>
 				<optionReference>verbosity#log-file</optionReference>
 			</group>
-			
+
 			<group name="Messaging">
 				<optionReference>messaging#user</optionReference>
 				<optionReference>messaging#host</optionReference>
@@ -99,7 +143,7 @@
 				<optionReference>messaging#content-type</optionReference>
 				<optionReference>messaging#start-stop-msg</optionReference>
 			</group>
-			
+
 			<group name="Database">
 				<optionReference>database#db-driver-list</optionReference>
 				<optionReference>database#database</optionReference>
@@ -124,8 +168,8 @@
 				<option long-flag="reprocess">
 					<description>
 					Reprocess also station and network magnitudes with an evaluation
-					status set but do not change weights and just add new
-					contributions with weight 0.
+					status set but do not change original weights. New
+					contributions are added with weight 0.
 					</description>
 				</option>
 			</group>
@@ -148,7 +192,7 @@
 				</option>
 				<option long-flag="keep-weights">
 					<description>
-					Reuses the original weights in combination with --static.
+					Keep the original weights in combination with --static.
 					</description>
 				</option>
 			</group>
