@@ -13,6 +13,8 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
+from __future__ import division, print_function
+
 import sys
 import os
 import seiscomp.client
