@@ -151,11 +151,14 @@ class Bulletin(object):
                 txt += "    Preferred Origin ID    %s\n" % evt.preferredOriginID()
                 txt += "    Preferred Magnitude ID %s\n" % evt.preferredMagnitudeID()
             try:
-                type = evt.type()
-                txt += "    Type                   %s\n" % seiscomp.datamodel.EEventTypeNames.name(
-                    type)
+                evtType = evt.type()
+                txt += "    Type                   %s\n" % \
+                       seiscomp.datamodel.EEventTypeNames.name(evtType)
             except:
+                seiscomp.logging.warning("%s: ignoring unknown event type" %
+                                         evt.publicID())
                 pass
+
             txt += "    Description\n"
             for i in range(evt.eventDescriptionCount()):
                 evtd = evt.eventDescription(i)
@@ -592,7 +595,6 @@ class Bulletin(object):
 
         txt = ""
 
-        reg = seiscomp.seismology.Regions()
         if self.enhanced:
             depth = org.depth().value()
             sTime = org.time().value().toString("%Y/%m/%d  %H:%M:%S.%f00")[:24]
@@ -607,7 +609,7 @@ class Bulletin(object):
             "lat": lat2str(org.latitude().value(), self.enhanced),
             "lon": lon2str(org.longitude().value(), self.enhanced),
             "dep": depth,
-            "reg": reg.getRegionName(org.latitude().value(), org.longitude().value()),
+            "reg": seiscomp.seismology.Regions.getRegionName(org.latitude().value(), org.longitude().value()),
             # changed to properly report location method. (Marco Olivieri 21/06/2010)
             "method": org.methodID(),
             "model": org.earthModelID(),
@@ -797,8 +799,7 @@ class Bulletin(object):
                     seiscomp.datamodel.Origin.TypeInfo(), origin)
                 org = seiscomp.datamodel.Origin.Cast(org)
             if not org:
-                seiscomp.logging.error("origin '%s' not loaded" % origin)
-                return
+                raise KeyError("Unknown origin " + origin)
         else:
             raise TypeError("illegal type for origin")
 
@@ -828,19 +829,12 @@ class Bulletin(object):
                     evt = seiscomp.datamodel.Event.Cast(evt)
                     self._evt = evt
                 if evt is None:
-                    raise TypeError("unknown event '" + event + "'")
+                    raise KeyError("unknown event " + event)
                 return self.printOrigin(evt.preferredOriginID())
             else:
                 raise TypeError("illegal type for event")
         finally:
             self._evt = None
-
-
-def usage(exitcode=0):
-    print("""
- scbulletin [ -E event-id | -O origin-os | --db-type database-type | --db-parameters database-connection]
-    """, file=sys.stderr)
-    sys.exit(exitcode)
 
 
 class BulletinApp(seiscomp.client.Application):
@@ -902,7 +896,7 @@ class BulletinApp(seiscomp.client.Application):
             self.setDatabaseEnabled(False, False)
 
         return True
-    
+
     def printUsage(self):
 
         print('''Usage:
@@ -919,8 +913,8 @@ Create bulletin from event in database
 Convert XML file with event parameters to bulletin
   scbulletin -i gempa2012abcd.xml
 ''')
-        return True 
-    
+        return True
+
     def run(self):
         evid = None
         orid = None
@@ -1015,19 +1009,21 @@ Convert XML file with event parameters to bulletin
                     raise TypeError("unknown input format: " + inputFormat)
 
                 if not ar.open(inputFile):
-                    raise IOError(inputFile + ": unable to open")
+                    raise IOError("Unable to open input file " + inputFile)
 
                 obj = ar.readObject()
                 if obj is None:
-                    raise TypeError(inputFile + ": invalid format")
+                    raise IOError("Invalid format in " + inputFile)
 
                 ep = seiscomp.datamodel.EventParameters.Cast(obj)
                 if ep is None:
-                    raise TypeError(inputFile + ": no eventparameters found")
+                    raise TypeError("No event parameters found in "
+                                    + inputFile)
 
                 if ep.eventCount() <= 0:
                     if ep.originCount() <= 0:
-                        raise TypeError(inputFile + ": no origin and no event in event parameters found")
+                        raise TypeError("No origin and no event in event parameters found in "
+                                        + inputFile)
                     else:
                         if self.commandline().hasOption("first-only"):
                             org = ep.origin(0)
@@ -1041,29 +1037,28 @@ Convert XML file with event parameters to bulletin
                     if self.commandline().hasOption("first-only"):
                         ev = ep.event(0)
                         if ev is None:
-                            raise TypeError(inputFile + ": invalid event")
+                            raise TypeError("Invalid event in " + inputFile)
 
                         try:
                             txt = bulletin.printEvent(ev)
                         except:
-                            seiscomp.logging.error("Unknown event '%s'" % evid)
-                            return False
+                            raise TypeError("Unknown event")
                     else:
                         txt = ""
                         for i in range(ep.eventCount()):
                             ev = ep.event(i)
                             if evid and evid != ev.publicID():
-                                print("{}: skipping invalid event with ID {}".format(inputFile, ev.publicID()))
+                                seiscomp.logging.error("%s: Skipping event with ID %s" %
+                                                       (inputFile, ev.publicID()))
                                 continue
                             txt += bulletin.printEvent(ev)
 
             except Exception as exc:
-                print("ERROR: {}".format(exc), file=sys.stderr)
-                raise
+                seiscomp.logging.error("%s" % str(exc))
                 return False
 
         if txt:
-            print(txt)
+            print("{}".format(txt), file=sys.stdout)
 
         return True
 
