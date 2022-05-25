@@ -243,7 +243,7 @@ void setInfoWidgetContent(StationInfoWidget* infoWidget, StationData* stationDat
 
 void setInfoWidgetContent(OriginInfoWidget* infoWidget, const std::string &eventID,
                           const DataModel::Origin* origin,
-                          const std::string& preferredMagnitudeId) {
+                          const OPT(double) magnitudeValue) {
 	infoWidget->setPreferredOriginId(origin->publicID().c_str());
 
 	QString time = Gui::timeToString(origin->time().value(), "%F - %T");
@@ -259,12 +259,11 @@ void setInfoWidgetContent(OriginInfoWidget* infoWidget, const std::string &event
 	infoWidget->setDepth(depth);
 
 	QString magnitude;
-	for ( size_t i = 0; i < origin->magnitudeCount(); i++ ) {
-		DataModel::Magnitude* magnitudeRef = origin->magnitude(i);
-		if ( magnitudeRef->publicID() == preferredMagnitudeId ) {
-			magnitude = QString("%1").arg(magnitudeRef->magnitude(), 0, 'f', 2);
-			break;
-		}
+	if ( magnitudeValue ) {
+		magnitude = QString("%1").arg(*magnitudeValue, 0, 'f', 2);
+	}
+	else {
+		magnitude = QString("%1").arg("None");
 	}
 	infoWidget->setMagnitude(magnitude);
 
@@ -569,8 +568,7 @@ bool MvMainWindow::init() {
 	_triggerHandler.setPickLifeSpan(_configStationPickCacheLifeSpan);
 
 	if ( !readStationsFromDataBase() ) {
-		SEISCOMP_ERROR("Could not read stations from database");
-		return false;
+		SEISCOMP_INFO("Could not read stations from database");
 	}
 
 	try {
@@ -1094,7 +1092,10 @@ void MvMainWindow::changeView(int index) {
 bool MvMainWindow::readStationsFromDataBase() {
 	// Read configured streams
 	DataModel::ConfigModule *module = SCApp->configModule();
-	if ( !module ) return false;
+	if ( !module ) {
+		SEISCOMP_INFO("Cannot find global bindings for stations");
+		return false;
+	}
 
 	std::map<std::string, StationData> stations;
 
@@ -1819,8 +1820,13 @@ void MvMainWindow::updateInfoWidget(const DataModel::Event* event) {
 
 	std::string originId = event->preferredOriginID();
 	DataModel::Origin* origin = _eventDataRepository.findOrigin(originId);
+	DataModel::Magnitude *magnitude = _eventDataRepository.findMagnitude(event->preferredMagnitudeID());
+	OPT(double) magnitudeValue;
+	if ( magnitude ) {
+		magnitudeValue = magnitude->magnitude().value();
+	}
 
-	setInfoWidgetContent(infoWidget, eventId, origin, event->preferredMagnitudeID());
+	setInfoWidgetContent(infoWidget, eventId, origin, magnitudeValue);
 	infoWidget->updateContent();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2192,8 +2198,12 @@ void MvMainWindow::showInfoWidget() {
 
 		std::string preferredOriginId = eventData->object()->preferredOriginID();
 		DataModel::Origin *origin = _eventDataRepository.findOrigin(preferredOriginId);
-
-		setInfoWidgetContent(infoWidget, eventId, origin, eventData->object()->preferredMagnitudeID());
+		DataModel::Magnitude *magnitude = _eventDataRepository.findMagnitude(eventData->object()->preferredMagnitudeID());
+		OPT(double) magnitudeValue;
+		if ( magnitude ) {
+			magnitudeValue = magnitude->magnitude().value();
+		}
+		setInfoWidgetContent(infoWidget, eventId, origin, magnitudeValue);
 		::showInfoWidget(infoWidget);
 	}
 }

@@ -114,8 +114,11 @@ void InfoWidget::uiInit() {
 
 	_treeWidget = new QTreeWidget(this);
 	_treeWidget->setColumnCount(2);
-	_treeWidget->adjustSize ();
-	_treeWidget->header()->hide();
+	_treeWidget->adjustSize();
+	QTreeWidgetItem* header = new QTreeWidgetItem();
+	header->setText(0, tr("Parameter"));
+	header->setText(1, tr("Value"));
+	_treeWidget->setHeaderItem(header);
 
 	_splitter = new QSplitter(Qt::Vertical);
 	_splitter->addWidget(_treeWidget);
