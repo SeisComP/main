@@ -859,14 +859,6 @@ configuration read:
         if self._accessLogFile:
             self._accessLog = Log(self._accessLogFile)
 
-        # request logger if requested
-        self._requestLog = None
-        if self._requestLogFile:
-            # import here, so we don't depend on GeoIP if request log is not
-            # needed
-            from seiscomp.fdsnws.reqlog import RequestLog # pylint: disable=C0415
-            self._requestLog = RequestLog(self._requestLogFile, self._userSalt)
-
         # load inventory needed by DataSelect and Station service
         stationInv = dataSelectInv = None
         if self._serveDataSelect or self._serveStation:
@@ -1179,6 +1171,14 @@ configuration read:
     def run(self):
         retn = False
         try:
+            # request logger if requested
+            self._requestLog = None
+            if self._requestLogFile:
+                # import here, so we don't depend on GeoIP if request log is not
+                # needed
+                from seiscomp.fdsnws.reqlog import RequestLog # pylint: disable=C0415
+                self._requestLog = RequestLog(self._requestLogFile, self._userSalt)
+
             for user in self._authBlacklist:
                 self._userdb.blacklistUser(user)
 
