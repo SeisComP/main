@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
-	<module name="scquery_qc" category="Utilities">
+	<module name="scqueryqc" category="Utilities">
 		<description>
 			Queries waveform quality control (QC) parameters from database.
 		</description>

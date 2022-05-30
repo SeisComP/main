@@ -85,14 +85,16 @@ Examples
    :ref:`scxmldump`. It is also useful to clean the database and logs to remove
    objects from persistent storage to allow repeated reloading of a file.
 
-   .. note:: The following will clear all events from the database and any other
+   .. note::
+
+      The following will clear all events from the database and any other
       other object persistence. Modify the mysql command to suit your db setup.
 
-   .. code-block:: sh
+      .. code-block:: sh
 
-      mysql -u root --password='my$q1' -e "DROP DATABASE IF EXISTS seiscomp; \
-        CREATE DATABASE seiscomp CHARACTER SET utf8 COLLATE utf8_bin; \
-        GRANT ALL ON seiscomp.* TO 'sysop'@'localhost' IDENTIFIED BY 'sysop'; \
-        USE seiscomp;source seiscomp/trunk/share/db/mysql.sql;"
+         mysql -u root --password='my$q1' -e "DROP DATABASE IF EXISTS seiscomp; \
+           CREATE DATABASE seiscomp CHARACTER SET utf8 COLLATE utf8_bin; \
+           GRANT ALL ON seiscomp.* TO 'sysop'@'localhost' IDENTIFIED BY 'sysop'; \
+           USE seiscomp;source seiscomp/trunk/share/db/mysql.sql;"
 
-      seiscomp start
+         seiscomp start
