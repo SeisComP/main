@@ -94,7 +94,7 @@
 						slink: NET.STA.*.*
 
 						The channel list is intersected with all channels
-						configured in inventory.
+						configured in inventory unless --no-inventory is used.
 
 						Examples:
 

@@ -122,8 +122,8 @@ Adjust the scrttv module configuration (:file:`scrttv.cfg`).
 
    * add a new group profile to :confval:`streams.group`.
    * set the properties for this group profile. :term:`Colors <color>` and color
-     gradients are
-     defined by hexadecimal values or by :term:`color keyword names <color keyword name>`.
+     gradients are defined by hexadecimal values or by
+     :term:`color keyword name`.
      When choosing gradients the colors of the traces within one group will be
      varied in alphabetic order of the streams.
    * set a group title in :confval:`streams.group.$name.title`.
