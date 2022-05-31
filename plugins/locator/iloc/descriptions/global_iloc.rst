@@ -178,7 +178,7 @@ be used in the location.
 
 
 Integration into |scname|
-------------------------
+-------------------------
 
 * Integration of iLoc into |scname| is provided by an external library of
   routines (:cite:t:`iloc-iris`).
