@@ -28,6 +28,27 @@ class MvKicker : public Gui::Kicker<MvMainWindow> {
 		}
 
 	protected:
+		void printUsage() const {
+			std::cout << "Usage:" << std::endl
+			          << "  " << name() << " [options]"
+			          << std::endl << std::endl
+			          << "View stations and events on a map."
+			          << std::endl;
+
+			Seiscomp::Gui::Application::printUsage();
+
+			std::cout << "Examples:" << std::endl;
+			std::cout << "Execute scmv printing debug output on command line"
+			          << std::endl
+			          << "  scmv --debug"
+			          << std::endl << std::endl;
+
+			std::cout << "Execute scmv in full-screen mode"
+			          << std::endl
+			          << "  scmv -F"
+			          << std::endl << std::endl;
+		}
+
 		virtual void createCommandLineDescription() {
 			Gui::Kicker<MvMainWindow>::createCommandLineDescription();
 
@@ -72,7 +93,7 @@ int main(int argc, char* argv[]) {
 		retCode = app();
 		SEISCOMP_DEBUG("Number of remaining objects before destroying application: %d", Seiscomp::Core::BaseObject::ObjectCount());
 	}
-	
+
 	SEISCOMP_DEBUG("Number of remaining objects after destroying application: %d", Seiscomp::Core::BaseObject::ObjectCount());
 	return retCode;
 }

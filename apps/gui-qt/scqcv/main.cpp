@@ -21,21 +21,51 @@
 typedef Seiscomp::Gui::MainFrame MainWindow;
 typedef Seiscomp::Gui::Kicker<MainWindow> Kicker;
 
+class QCVApp : public Kicker {
+	public:
+		QCVApp(int& argc, char** argv, int flags = DEFAULT) :
+			Kicker(argc, argv, flags) {
+		}
+
+	protected:
+		void printUsage() const {
+			std::cout << "Usage:" << std::endl
+			          << "  " << name() << " [options]"
+			          << std::endl << std::endl
+			          << "View QC information per stream or station."
+			          << std::endl;
+
+			Seiscomp::Gui::Application::printUsage();
+
+			std::cout << "Examples:" << std::endl;
+			std::cout << "Execute scqcv printing debug output on command line"
+			          << std::endl
+			          << "  scqcv --debug"
+			          << std::endl << std::endl;
+
+			std::cout << "Execute scqcv in full-screen mode"
+			          << std::endl
+			          << "  scqcv -F"
+			          << std::endl << std::endl;
+		}
+};
 
 int main(int argc, char** argv) {
 	int retCode;
 
 	{
-		Kicker app(argc, argv, Seiscomp::Gui::Application::DEFAULT|Seiscomp::Gui::Application::LOAD_INVENTORY|Seiscomp::Gui::Application::LOAD_CONFIGMODULE);
+		QCVApp app(argc, argv, Seiscomp::Gui::Application::DEFAULT|Seiscomp::Gui::Application::LOAD_INVENTORY|Seiscomp::Gui::Application::LOAD_CONFIGMODULE);
 
 		app.setPrimaryMessagingGroup("GUI");
 		app.addMessagingSubscription("QC");
 
 		retCode = app();
 
-		SEISCOMP_DEBUG("Number of remaining objects before destroying application: %d", Seiscomp::Core::BaseObject::ObjectCount());
+		SEISCOMP_DEBUG("Number of remaining objects before destroying application: %d",
+		               Seiscomp::Core::BaseObject::ObjectCount());
 	}
 
-	SEISCOMP_DEBUG("Number of remaining objects after destroying application: %d", Seiscomp::Core::BaseObject::ObjectCount());
+	SEISCOMP_DEBUG("Number of remaining objects after destroying application: %d",
+	               Seiscomp::Core::BaseObject::ObjectCount());
 	return retCode;
 }

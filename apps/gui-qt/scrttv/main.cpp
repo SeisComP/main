@@ -36,6 +36,35 @@ class TraceViewApp : public Kicker<Seiscomp::Applications::TraceView::MainWindow
 		}
 
 	protected:
+
+		void printUsage() const {
+			std::cout << "Usage:" << std::endl
+			          << "  " << name() << " [options] [miniSEED file]"
+			          << std::endl << std::endl
+			          << "View waveforms from RecordStream or miniSEED file."
+			          << std::endl;
+
+			Seiscomp::Gui::Application::printUsage();
+
+			std::cout << "Examples:" << std::endl;
+			std::cout << "View waveforms with default settings printing debug information"
+			          << std::endl
+			          << "  scrttv --debug"
+			          << std::endl << std::endl;
+			std::cout << "View data from default recordstream 3 hours before midnight"
+			          << std::endl
+			          << "  scrttv --buffer-size 10800 --end-time '2022-06-01 00:00:00'"
+			          << std::endl << std::endl;
+			std::cout << "View data from a miniSEED file in offline mode without messaging"
+			          << std::endl
+			          << "  scrttv file.mseed"
+			          << std::endl << std::endl;
+			std::cout << "View all streams from station CX.PB01 without messaging and inventory"
+			          << std::endl
+			          << "  scrttv --offline --no-inventory --streams.codes=\"CX.PB01.*.*\""
+			          << std::endl;
+		}
+
 		void createCommandLineDescription() {
 			Kicker<Seiscomp::Applications::TraceView::MainWindow>::createCommandLineDescription();
 

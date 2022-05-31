@@ -32,6 +32,28 @@ class OLVApp : public Kicker<MainFrame> {
 		}
 
 	protected:
+
+		void printUsage() const {
+			std::cout << "Usage:" << std::endl
+			          << "  " << name() << " [options]"
+			          << std::endl << std::endl
+			          << "Review events and origins."
+			          << std::endl;
+
+			Seiscomp::Gui::Application::printUsage();
+
+			std::cout << "Examples:" << std::endl;
+			std::cout << "Execute scolv printing debug output on command line"
+			          << std::endl
+			          << "  scolv --debug"
+			          << std::endl << std::endl;
+
+			std::cout << "Execute scolv pre-loading an event given by its ID"
+			          << std::endl
+			          << "  scolv -E gempa2022abcd"
+			          << std::endl << std::endl;
+		}
+
 		bool initConfiguration() {
 			if ( !Kicker<MainFrame>::initConfiguration() )
 				return false;

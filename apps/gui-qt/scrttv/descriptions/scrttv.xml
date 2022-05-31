@@ -84,16 +84,25 @@
 				</group>
 				<parameter name="codes" type="list:string">
 					<description>
-						The list of channel codes
-						to be displayed. List items may contain wildcards at any position
-						and are separated by comma.
-						The list is	intersected with all channels configured in inventory.
+						The list of channel codes to be displayed. List items
+						may contain wildcards at any position and are separated
+						by comma. Wildcard support depends on RecordStream,
+						e.g.:
+
+						caps/sdsarchive: *.*.*.*
+
+						slink: NET.STA.*.*
+
+						The channel list is intersected with all channels
+						configured in inventory.
 
 						Examples:
 
-						default : display all streams configured by global bindings
+						default : Display all streams configured by global
+						bindings
 
-						default, PF.BON.00.HH? : display default and all HH streams of PF.BON.00
+						default, PF.BON.00.HH? : Display default and all HH
+						streams of PF.BON.00
 					</description>
 				</parameter>
 				<parameter name="blacklist" type="list:string">

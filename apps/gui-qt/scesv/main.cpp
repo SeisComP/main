@@ -35,6 +35,27 @@ class ESVApp : public Kicker {
 
 
 	protected:
+		void printUsage() const {
+			std::cout << "Usage:" << std::endl
+			          << "  " << name() << " [options]"
+			          << std::endl << std::endl
+			          << "View summary information for last or any loaded event."
+			          << std::endl;
+
+			Seiscomp::Gui::Application::printUsage();
+
+			std::cout << "Examples:" << std::endl;
+			std::cout << "Execute scesv printing debug output on command line"
+			          << std::endl
+			          << "  scesv --debug"
+			          << std::endl << std::endl;
+
+			std::cout << "Execute scesv in full-screen mode"
+			          << std::endl
+			          << "  scesv -F"
+			          << std::endl << std::endl;
+		}
+
 		void createCommandLineDescription() {
 			Kicker::createCommandLineDescription();
 
