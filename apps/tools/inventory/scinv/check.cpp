@@ -24,6 +24,8 @@ using namespace Seiscomp::DataModel;
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 namespace {
 
+constexpr double MaxElevation = 8900.0;
+constexpr double MinElevation = -12000.0;
 
 string id(const Network *obj) {
 	return obj->code();
@@ -124,17 +126,43 @@ Check::Check(Inventory *inv) : InventoryTask(inv) {}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Check::setMaxElevationDifference(double maxElevationDifference) {
+	_maxElevationDifference = maxElevationDifference;
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Check::setMaxDistance(double maxDistance) {
 	_maxDistance = maxDistance;
 	return true;
 }
-//
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Check::setMaxDepth(double maxDepth) {
+	_maxDepth = maxDepth;
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Check::check() {
-	if ( _inv == nullptr ) return false;
+	if ( !_inv ) {
+		return false;
+	}
 
 	EpochMap networkEpochs;
 
@@ -144,16 +172,27 @@ bool Check::check() {
 		checkOverlap(networkEpochs[net->code()], net);
 
 		EpochMap stationEpochs;
-
 		if ( net->stationCount() == 0 ) {
 			log(LogHandler::Warning,
 			    (string(net->className()) + " " + id(net) + "\n  "
 			     "has no station - may not be considered for data processing").c_str(),
-			     nullptr, nullptr);
+			    net, nullptr);
+		}
+		if ( net->code().empty() ) {
+			log(LogHandler::Warning,
+			    (string(net->className()) + "\n  "
+			     "found network without network code. ID: " + net->publicID()).c_str(),
+			    net, nullptr);
 		}
 
 		for ( size_t s = 0; s < net->stationCount(); ++s ) {
 			Station *sta = net->station(s);
+			if ( sta->code().empty() ) {
+				log(LogHandler::Warning,
+				    (string(net->className()) + " " + id(sta) + "\n  "
+				     "found station without station code. ID: " + sta->publicID()).c_str(),
+				    sta, nullptr);
+			}
 			checkEpoch(sta);
 			checkOverlap(stationEpochs[sta->code()], sta);
 			checkOutside(net, sta);
@@ -170,7 +209,7 @@ bool Check::check() {
 				log(LogHandler::Warning,
 				    (string(sta->className()) + " " + id(sta) + "\n  "
 				     "latitude is not set").c_str(),
-				     nullptr, nullptr);
+				    sta, nullptr);
 				lvalid = false;
 			}
 
@@ -181,32 +220,38 @@ bool Check::check() {
 				log(LogHandler::Warning,
 				    (string(sta->className()) + " " + id(sta) + "\n  "
 				     "longitude is not set").c_str(),
-				     nullptr, nullptr);
+				    sta, nullptr);
 				lvalid = false;
 			}
 
 			try {
-				sta->elevation();
+				if ( (sta->elevation() > MaxElevation)
+				    || (sta->elevation() < MinElevation) ) {
+					log(LogHandler::Error,
+					    (string(sta->className()) + " " + id(sta) + "\n  "
+					     "station elevation out of range").c_str(),
+					    sta, nullptr);
+				}
 			}
 			catch ( ... ) {
 				log(LogHandler::Warning,
 				    (string(sta->className()) + " " + id(sta) + "\n  "
 				     "elevation is not set").c_str(),
-				     nullptr, nullptr);
+				    sta, nullptr);
 			}
 
 			if ( lvalid && lat == 0.0 && lon == 0.0 ) {
 				log(LogHandler::Warning,
 				    (string(sta->className()) + " " + id(sta) + "\n  "
 				     "coordinates are 0.0/0.0").c_str(),
-				     nullptr, nullptr);
+				    sta, nullptr);
 			}
 
 			if ( sta->sensorLocationCount() == 0 ) {
 				log(LogHandler::Warning,
 				    (string(sta->className()) + " " + id(sta) + "\n  "
 				     "has no location - may not be considered for data processing").c_str(),
-				     nullptr, nullptr);
+				    sta, nullptr);
 			}
 
 			for ( size_t l = 0; l < sta->sensorLocationCount(); ++l ) {
@@ -226,7 +271,7 @@ bool Check::check() {
 					log(LogHandler::Warning,
 					    (string(loc->className()) + " " + id(loc) + "\n  "
 					     "latitude is not set").c_str(),
-					     nullptr, nullptr);
+					    loc, nullptr);
 					llvalid = false;
 				}
 
@@ -237,25 +282,32 @@ bool Check::check() {
 					log(LogHandler::Warning,
 					    (string(loc->className()) + " " + id(loc) + "\n  "
 					     "longitude is not set").c_str(),
-					     nullptr, nullptr);
+					    loc, nullptr);
 					llvalid = false;
 				}
 
 				try {
 					loc->elevation();
+					if ( (loc->elevation() > MaxElevation)
+					    || (loc->elevation() < MinElevation) ) {
+						log(LogHandler::Error,
+						    (string(loc->className()) + " " + id(loc) + "\n  "
+						     "sensor location elevation out of range").c_str(),
+						    loc, nullptr);
+					}
 				}
 				catch ( ... ) {
 					log(LogHandler::Warning,
 					    (string(loc->className()) + " " + id(loc) + "\n  "
 					     "elevation is not set").c_str(),
-					     nullptr, nullptr);
+					    loc, nullptr);
 				}
 
 				if ( llvalid && llat == 0.0 && llon == 0.0 ) {
 					log(LogHandler::Warning,
 					    (string(loc->className()) + " " + id(loc) + "\n  "
 					     "coordinates are 0.0/0.0").c_str(),
-					     nullptr, nullptr);
+					    loc, nullptr);
 				}
 
 				if ( lvalid && llvalid ) {
@@ -266,19 +318,33 @@ bool Check::check() {
 					if ( dist > _maxDistance ) {
 						log(LogHandler::Warning,
 						    (string(loc->className()) + " " + id(loc) + "\n  "
-						     "location is " + Core::toString(dist) + " km away from parent Station. "
-						     "maximum allowed distance is " + Core::toString(_maxDistance) + " km "
-						     "by configuration").c_str(),
-						    nullptr, nullptr);
+						     "location is " + Core::toString(dist) + " km away from parent station. "
+						     "Distances > " + Core::toString(_maxDistance) + " km "
+						     "are reported as per configuration").c_str(),
+						    loc, nullptr);
 					}
 				}
+
+				try {
+					double elevationDiff = sta->elevation() - loc->elevation();
+					if ( abs(elevationDiff) > _maxElevationDifference ) {
+						log(LogHandler::Warning,
+						    (string(loc->className()) + " " + id(loc) + "\n  "
+						     "sensor location is " + Core::toString(elevationDiff) +
+						     " m below parent station. Differences > "
+						     + Core::toString(_maxElevationDifference) + " m "
+						     "are reported as per configuration").c_str(),
+						    loc, nullptr);
+					}
+				}
+				catch ( ... ) {}
 
 				EpochMap channelEpochs;
 				if ( loc->streamCount() == 0 ) {
 					log(LogHandler::Warning,
 					    (string(loc->className()) + " " + id(loc) + "\n  "
 					     "has no stream - may not be considered for data processing").c_str(),
-					     nullptr, nullptr);
+					     loc, nullptr);
 				}
 
 				for ( size_t c = 0; c < loc->streamCount(); ++c ) {
@@ -290,19 +356,47 @@ bool Check::check() {
 						if ( cha->gain() == 0.0 ) {
 							log(LogHandler::Warning,
 							    (string(cha->className()) + " " + id(cha) + "\n  "
-							     "invalid gain of 0").c_str(), nullptr, nullptr);
+							     "invalid gain of 0").c_str(),
+							    cha, nullptr);
 						}
 					}
 					catch ( ... ) {
 						log(LogHandler::Warning,
 						    (string(cha->className()) + " " + id(cha) + "\n  "
-						     "no gain set").c_str(), nullptr, nullptr);
+						     "no gain set").c_str(),
+						    cha, nullptr);
 					}
 
 					if ( cha->gainUnit().empty() ) {
 						log(LogHandler::Warning,
 						    (string(cha->className()) + " " + id(cha) + "\n  "
-						     "no gain unit set").c_str(), nullptr, nullptr);
+						     "no gain unit set").c_str(),
+						    cha, nullptr);
+					}
+
+					try {
+						if ( cha->depth() < 0.0 ) {
+							log(LogHandler::Warning,
+							    (string(cha->className()) + " " + id(cha) + "\n  "
+							     "channel depth is " + Core::toString(cha->depth())
+							     + " m which seems unreasonable").c_str(),
+							    cha, nullptr);
+						}
+
+						if ( cha->depth() > _maxDepth ) {
+							log(LogHandler::Warning,
+							    (string(cha->className()) + " " + id(cha) + "\n  "
+							     "channel depth is " + Core::toString(cha->depth())
+							     + " m. Depths > " + Core::toString(_maxDepth)
+							     + " m are reported as per configuration").c_str(),
+							    cha, nullptr);
+						}
+					}
+					catch ( ... ) {
+						log(LogHandler::Warning,
+						    (string(cha->className()) + " " + id(cha) + "\n  "
+						     "no channel depth set").c_str(),
+						    cha, nullptr);
 					}
 
 					if ( !cha->sensor().empty() ) {
@@ -316,10 +410,12 @@ bool Check::check() {
 						}
 						*/
 					}
-					else
+					else {
 						log(LogHandler::Information,
 						    (string(cha->className()) + " " + id(cha) + "\n  "
-						     "no sensor and thus no response information available").c_str(), nullptr, nullptr);
+						     "no sensor and thus no response information available").c_str(),
+						    cha, nullptr);
+					}
 				}
 			}
 		}
@@ -356,7 +452,7 @@ void Check::checkEpoch(const T *obj) {
 			    (string(obj->className()) + " " + id(obj) + "\n  "
 			     "invalid epoch: start >= end: " +
 			     toString(Core::TimeWindow(obj->start(), obj->end()))).c_str(),
-			     nullptr, nullptr);
+			    obj, nullptr);
 		}
 	}
 	catch ( ... ) {}
@@ -379,7 +475,8 @@ void Check::checkOverlap(TimeWindows &epochs, const T *obj) {
 		log(LogHandler::Conflict,
 		    (string(obj->className()) + " " + id(obj) + "\n  "
 		     "overlapping epochs " +
-		     toString(epoch) + " and " + toString(*tw)).c_str(), obj, obj);
+		     toString(epoch) + " and " + toString(*tw)).c_str(),
+		    obj, obj);
 	}
 
 	epochs.push_back(epoch);
@@ -407,7 +504,7 @@ void Check::checkOutside(const T1 *parent, const T2 *obj) {
 		    (string(obj->className()) + " " + id(obj) + "\n  "
 		     "epoch " + toString(epoch) + " outside parent " +
 		     parent->className() + " epoch " + toString(pepoch)).c_str(),
-		     obj, obj);
+		    obj, obj);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

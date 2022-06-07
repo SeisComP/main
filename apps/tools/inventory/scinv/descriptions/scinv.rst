@@ -39,6 +39,8 @@ sync
 ----
 
 Synchronises an applications inventory with a given source given as file(s).
+It checks the consistency of the inventory using :ref:`scinv_check` before
+synchronization.
 The applications inventory is either read from the database or given with
 *--inventory-db*. As a result all information in the source is written to target
 and target does not contain any additional information. The source must hold all
@@ -67,7 +69,8 @@ where
 merge
 -----
 
-Merges two or more inventories into one inventory. This command
+Merges two or more inventories into one inventory checking the consistency
+of the inventory using :ref:`scinv_check`before synchronization. This command
 is useful to merge existing subtrees into a final inventory before
 synchronization.
 
@@ -75,9 +78,10 @@ synchronization.
 
    scinv merge net1.xml net2.xml -o inv.xml
 
-.. _note ::
+.. note ::
 
-    Merging inventory XML files is also supported by :ref:`scxmlmerge`.
+   Merging inventory XML files is also supported by :ref:`scxmlmerge` but
+   without the full :ref:`consistency checks <scinv_check>`.
 
 
 .. _scinv_apply:
@@ -184,19 +188,37 @@ consistency checks are applied such as:
 - Overlapping epochs on each level (network, station, ...),
 - Valid epochs (start < end),
 - Defined gain in a stream,
-- Set gainUnit,
+- Set gain unit,
 - Distance of the sensor location to the station location,
 - "Invalid" location 0/0.
 
-When inconsistencies are found, alerts are printed:
+When inconsistencies or other relevant information are found, alerts are printed:
 
-- **!**: Error, user should take an action,
+- **!**: Error, user must take an action,
 - **C**: Conflict, user should take an action,
 - **W**: Warning, user should check if an action is required,
 - **I**: Information,
 - **D**: Debug,
-- **R**: Unresolvable,
+- **R**: Unresolvable, user should check if an action is required,
 - **?**: Question.
+
+.. note ::
+
+   * Default test tolerances are adopted from typical values for global
+     networks. Consider adjusting :confval:`check.maxDistance`,
+     :confval:`check.maxElevationDifference` and :confval:`check.maxSensorDepth`
+     by configuration or command-line options.
+   * Errors must but conflicts and warnings should be resolved for maintaining a
+     correct inventory.
+   * :ref:`Merging <scinv_merge>` and :ref:`sychronization <scinv_sync>` stop
+     when finding errors.
+
+The following table lists checks of objects for deficiencies and the test
+results.
+
+* This test matrix may be incomplete. Consider adding more tests and results.
+* Please report inventory issues not caught by tests to the SeisComP
+  development team, e.g. on :cite:t:`seiscomp-github`.
 
 .. csv-table::
    :widths: 10, 30, 5, 65
@@ -205,8 +227,47 @@ When inconsistencies are found, alerts are printed:
 
    network       , start time after end time        , !,
                  , network without station          , W,
-   sensorLocation, coordinates far away from station, W, ``--distance`` overrides defaults threshold (10 km)
+                 , empty start time                 ,  , handled by SeisComP inventory reader: network is ignored
+                 , empty station                    , W,
+                 , empty code                       , W,
 
+   station       , start time after end time        , !,
+                 , empty or no start time           , W, station is ignored
+                 , start time after end time        , !,
+                 , empty code                       , W,
+                 , empty latitude                   , W,
+                 , empty longitude                  , W,
+                 , empty elevation                  , W,
+                 , elevation >   8900               , !,
+                 , elevation < -12000               , !,
+                 , has no sensor location           , W,
 
-In future further checks will be added to make this tool a real help for
-correct meta data creation.
+   sensorLocation, coordinates far away from station, W,``--distance`` overrides default threshold (10 km)
+                 , elevation far away from station  , W,``--max-elevation-difference`` overrides default threshold (500 m)
+                 , epoch outside network epochs     , C,
+                 , epoch outside station epochs     , C,
+                 , empty or no start time           , W, sensorLocation is ignored
+                 , empty latitude                   , W,
+                 , empty longitude                  , W,
+                 , elevation >   8900               , !,
+                 , elevation < -12000               , !,
+                 , empty or no elevation            , W,
+                 , has no channel/stream            , W,
+
+   stream        , empty or no start time           ,  , handled by SeisComP inventory reader: stream is ignored
+                 , empty azimuth                    , C,
+                 , epoch outside sensorLocation     , C,
+                 , epoch outside station            , C,
+                 , epoch outside network            , C,
+                 , start time after end time        , C,
+                 , missing gain value               , W, empty value is handled by SeisComP inventory reader
+                 , missing gain unit                , W, empty value is handled by SeisComP inventory reader
+                 , missing gain frequency           ,  , empty value is handled by SeisComP inventory reader
+                 , missing sampling rate            ,  , empty value is handled by SeisComP inventory reader
+                 , missing depth                    , W, empty value is handled by SeisComP inventory reader
+                 , missing azimuth                  ,  , empty value is handled by SeisComP inventory reader
+                 , missing dip                      ,  , empty value is handled by SeisComP inventory reader
+                 , empty sensor ID                  , I,
+                 , large depth                      , W,``--max-sensor-depth`` overrides default threshold (500 m)
+
+   sensor        , referenced sensor not available  , R,

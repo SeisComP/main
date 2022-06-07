@@ -91,7 +91,7 @@
 			<group name="Merge">
 				<option long-flag="strip">
 					<description>
-					Remove unreferenced objects (dataloggers, sensors, ...).
+					Remove unreferenced objects (data loggers, sensors, ...).
 					</description>
 				</option>
 			</group>
@@ -100,6 +100,19 @@
 					<description>
 					Maximum allowed distance between station and location coordinates
 					when using the check command.
+					</description>
+				</option>
+				<option long-flag="max-elevation-difference" unit="m" default="500">
+					<description>Maximum allowed difference in elevation
+					between station and sensorlocation in m. Larger differences
+					will be reported.
+					</description>
+				</option>
+				<option long-flag="max-sensor-depth" unit="m" default="500">
+					<description>
+					Maximum allowed depth of channel (sensor). This is the depth
+					of the sensor below the surface in m. Larger depths will be
+					reported.
 					</description>
 				</option>
 			</group>
@@ -150,10 +163,24 @@
 				</description>
 			</parameter>
 			<group name="check">
+				<description>
+				Quantities probed when using the check command.
+				</description>
 				<parameter name="maxDistance" type="double" unit="km" default="10">
 					<description>
-					Maximum allowed distance between station and location coordinates
-					when using the check command.
+					Maximum allowed distance between station and location coordinates.
+					</description>
+				</parameter>
+				<parameter name="maxElevationDifference" type="double" unit="m" default="500">
+					<description>
+					Maximum allowed differences between elevation of station and
+					sensor location.
+					</description>
+				</parameter>
+				<parameter name="maxSensorDepth" type="double" unit="m" default="500">
+					<description>
+					Maximum allowed depth of channel (sensor). This is the depth
+					of the sensor below the surface.
 					</description>
 				</parameter>
 			</group>
