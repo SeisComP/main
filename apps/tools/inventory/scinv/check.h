@@ -38,7 +38,9 @@ class Check : public InventoryTask {
 
 		bool check();
 
+		bool setMaxDepth(double maxDepth);
 		bool setMaxDistance(double maxDistance);
+		bool setMaxElevationDifference(double maxElevationDifference);
 
 
 	// ------------------------------------------------------------------
@@ -60,7 +62,9 @@ class Check : public InventoryTask {
 		Seiscomp::DataModel::ResponseFAP *findFAP(const std::string &) const;
 
 	public:
+		double    _maxElevationDifference{500};
 		double    _maxDistance{10};
+		double    _maxDepth{500};
 };
 
 

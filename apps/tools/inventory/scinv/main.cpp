@@ -472,10 +472,21 @@ class InventoryManager : public Client::Application,
 			                        "Remove unreferenced objects (dataloggers, "
 			                        "sensors, ...).");
 			commandline().addGroup("Check");
-			commandline().addOption("Check", "distance",
-			                        "Maximum allowed distance between station and location in km. "
-			                        "Larger distances will be reported.",
-			                        &_maxDistance);
+		    commandline().addOption("Check", "distance",
+		                            "Maximum allowed distance between station "
+		                            "and sensor location in km. "
+		                            "Larger distances will be reported.",
+		                            &_maxDistance);
+		    commandline().addOption("Check", "max-elevation-difference",
+		                            "Maximum allowed difference in elevation "
+		                            "between station and sensorlocation in m. "
+		                            "Larger diferences will be reported.",
+		                            &_maxElevationDifference);
+			commandline().addOption("Check", "max-sensor-depth",
+			                        "Maximum allowed depth of channel (sensor)."
+			                        " This is the depth of the sensor below the"
+			                        " surface in m. Larger depths will be reported.",
+			                        &_maxDepth);
 			commandline().addGroup("Sync");
 			commandline().addOption("Sync", "create-notifier",
 			                        "If an output file is given then all "
@@ -1123,6 +1134,18 @@ class InventoryManager : public Client::Application,
 			checker.setLogHandler(this);
 			cerr << "Checking inventory ... " << flush;
 
+			if ( !commandline().hasOption("maximum-sensor-depth") ) {
+				try { _maxDepth = configGetDouble("check.maxSensorDepth"); }
+				catch (...) {}
+			}
+			checker.setMaxDepth(_maxDepth);
+
+			if ( !commandline().hasOption("maximum-elevation-difference") ) {
+			    try { _maxElevationDifference = configGetDouble("check.maxElevationDifference"); }
+			    catch (...) {}
+			}
+			checker.setMaxElevationDifference(_maxElevationDifference);
+
 			if ( !commandline().hasOption("distance") ) {
 				try { _maxDistance = configGetDouble("check.maxDistance"); }
 				catch (...) {}
@@ -1767,10 +1790,21 @@ class InventoryManager : public Client::Application,
 			}
 			else if ( level == LogHandler::Error ) {
 				_logs << "! " << message << endl;
+
+				std::string file1 = _inventorySources[id1];
+				if ( !file1.empty() ) {
+					_logs << "  Defined in " << file1 << endl;
+				}
+
 				_continueOperation = false;
 			}
 			else if ( level == LogHandler::Warning ) {
 				_logs << "W " << message << endl;
+
+				std::string file1 = _inventorySources[id1];
+				if ( !file1.empty() ) {
+				    _logs << "  Defined in " << file1 << endl;
+				}
 			}
 			else if ( level == LogHandler::Information ) {
 				_logs << "I " << message << endl;
@@ -1804,7 +1838,9 @@ class InventoryManager : public Client::Application,
 		string    _keydir;
 		string    _output;
 		string    _level;
+		double    _maxDepth{500};
 		double    _maxDistance{10};
+		double    _maxElevationDifference{500};
 		bool      _continueOperation;
 		std::stringstream  _logs;
 		int       _conflicts;
