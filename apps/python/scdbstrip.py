@@ -280,6 +280,8 @@ class DBCleaner(seiscomp.client.Application):
         self._minutesToKeep = None
         self._datetime = None
         self._invertMode = False
+        self._stripEP = True
+        self._stripQC = True
 
         self._steps = 0
         self._currentStep = 0
@@ -290,43 +292,56 @@ class DBCleaner(seiscomp.client.Application):
     def createCommandLineDescription(self):
         try:
             try:
-                self.commandline().addGroup("Settings")
-                self.commandline().addStringOption("Settings", "datetime",
+                self.commandline().addGroup("Mode")
+                self.commandline().addOption("Mode", "check", "Checks if "
+                                             "unreachable objects exist.")
+                self.commandline().addOption("Mode", "clean-unused",
+                                             "Remove all unreachable objects "
+                                             "when in checkmode. Default: off.")
+
+                self.commandline().addGroup("Objects")
+
+                self.commandline().addOption("Objects", "ep-only,E",
+                                             "Strip only event parameters"
+                                             " but no waveform QC.")
+                self.commandline().addStringOption("Objects", "keep-events",
+                                                   "Event-IDs to keep in the "
+                                                   "database. Combining with"
+                                                   "'qc-only' is invalld.")
+                self.commandline().addOption("Objects", "qc-only,Q",
+                                             "Strip only waveform QC but no "
+                                             "event parameters. Combining with"
+                                             "'ep-only' is invalld.")
+
+                self.commandline().addGroup("Timespan")
+                self.commandline().addStringOption("Timespan", "datetime",
                                                    "Specify the datetime (UTC)"
                                                    " from which to keep all "
                                                    "events. If given, days, "
                                                    "minutes and hours are ignored. "
-                                                   "Format: '%Y-%m-%d %H:%M:%S'")
-                self.commandline().addIntOption("Settings", "days",
+                                                   "Format: '%Y-%m-%d %H:%M:%S'.")
+                self.commandline().addIntOption("Timespan", "days",
                                                 "The number of days to keep. "
                                                 "Added to hours and minutes. "
                                                 "Default is 30 if no other "
                                                 "times are given.")
-                self.commandline().addIntOption("Settings", "hours",
+                self.commandline().addIntOption("Timespan", "hours",
                                                 "The number of hours to keep. "
                                                 "Added to days and minutes.")
-                self.commandline().addIntOption("Settings", "minutes",
+                self.commandline().addIntOption("Timespan", "minutes",
                                                 "The number of minutes to keep. "
                                                 "Added to days and hours.")
-                self.commandline().addOption("Settings", "invert,i",
-                                             "Delete all events after the "
-                                             "specified time period")
-                self.commandline().addStringOption("Settings", "keep-events",
-                                                   "Event-IDs to keep in the "
-                                                   "database")
+                self.commandline().addOption("Timespan", "invert,i",
+                                             "Delete all parameters after the "
+                                             "specified time period. If not "
+                                             "given, parameter from before are"
+                                             " deleted.")
 
-                self.commandline().addGroup("Mode")
-                self.commandline().addOption("Mode", "check", "Checks if "
-                                             "unreachable objects exists")
-                self.commandline().addOption("Mode", "clean-unused",
-                                             "Removes all unreachable objects "
-                                             "when in checkmode. Default: off")
-
-            except:
+            except RuntimeError:
                 seiscomp.logging.warning(
                     "caught unexpected error %s" % sys.exc_info())
             return True
-        except:
+        except RuntimeError:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
@@ -336,25 +351,47 @@ class DBCleaner(seiscomp.client.Application):
         try:
             if not seiscomp.client.Application.initConfiguration(self):
                 return False
+            try:
+                self._invertMode = self.configGetBool(
+                    "database.cleanup.invertMode")
+            except RuntimeError:
+                pass
+
+            try:
+                if self.configGetBool("database.cleanup.eventParameters"):
+                    self._stripEP = True
+                else:
+                    self._stripEP = False
+            except RuntimeError:
+                pass
+
+            try:
+                if self.configGetBool("database.cleanup.qualityControl"):
+                    self._stripQC = True
+                else:
+                    self._stripQC = False
+            except RuntimeError:
+                pass
 
             try:
                 self._daysToKeep = self.configGetInt(
                     "database.cleanup.keep.days")
-            except:
+            except RuntimeError:
                 pass
             try:
                 self._hoursToKeep = self.configGetInt(
                     "database.cleanup.keep.hours")
-            except:
+            except RuntimeError:
                 pass
             try:
                 self._minutesToKeep = self.configGetInt(
                     "database.cleanup.keep.minutes")
-            except:
+            except RuntimeError:
                 pass
 
             return True
-        except:
+
+        except RuntimeError:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
@@ -366,12 +403,12 @@ class DBCleaner(seiscomp.client.Application):
         print('''Usage:
   scbstrip [options]
 
-Remove objects from the database in a given time span''')
+Remove event and waveform quality parameters from the database in a timespan.''')
 
         seiscomp.client.Application.printUsage(self)
 
         print('''Examples:
-Remove events older than the last 30 days
+Remove all event and waveform QC paramters older than 30 days
   scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --days 30
 ''')
 
@@ -382,33 +419,50 @@ Remove events older than the last 30 days
         try:
             try:
                 self._daysToKeep = self.commandline().optionInt("days")
-            except:
+            except RuntimeError:
                 pass
 
             try:
                 self._hoursToKeep = self.commandline().optionInt("hours")
-            except:
+            except RuntimeError:
                 pass
 
             try:
                 self._minutesToKeep = self.commandline().optionInt("minutes")
-            except:
+            except RuntimeError:
                 pass
 
-            try:
-                self._invertMode = self.commandline().hasOption("invert")
-            except:
-                pass
+            if self.commandline().hasOption("invert"):
+                self._invertMode = True
 
+            epOnly = False
+            if self.commandline().hasOption("ep-only"):
+                self._stripEP = True
+                self._stripQC = False
+                epOnly = True
+
+            if self.commandline().hasOption("qc-only"):
+                if epOnly:
+                    error.write("ERROR: Option '--qc-only' conflicts with "
+                                "'--ep-only'\n")
+                    return False
+                else:
+                    self._stripEP = False
+                    self._stripQC = True
+
+            if not self._stripEP and not self._stripQC:
+                error.write("[INFO] Event and QC parameters are disregarded by"
+                            " configuration\n")
+                return False
             try:
                 eventIDs = self.commandline().optionString("keep-events")
                 self._keepEvents = [id.strip() for id in eventIDs.split(',')]
-            except:
+            except RuntimeError:
                 pass
 
             try:
                 dateTime = self.commandline().optionString("datetime")
-            except:
+            except RuntimeError:
                 dateTime = None
 
             if dateTime:
@@ -425,7 +479,7 @@ Remove events older than the last 30 days
                     else:
                         error.write("ERROR: datetime has wrong format\n")
                         return False
-                except:
+                except ValueError:
                     pass
 
             # fall back to default if no times are given
@@ -433,7 +487,8 @@ Remove events older than the last 30 days
                 self._daysToKeep = 30
 
             return True
-        except:
+
+        except RuntimeError:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
@@ -458,7 +513,7 @@ Remove events older than the last 30 days
                 return self.check()
 
             return self.clean()
-        except:
+        except RuntimeError:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
@@ -466,7 +521,8 @@ Remove events older than the last 30 days
 
     def checkTable(self, table):
         self.runCommand(
-            "update tmp_object set used=1 where _oid in (select _oid from %s)" % table)
+            "update tmp_object set used=1 where _oid in (select _oid from %s)"
+            % table)
 
     def check(self):
         try:
@@ -511,8 +567,8 @@ Remove events older than the last 30 days
             if self.commandline().hasOption("clean-unused"):
                 self._steps = self._steps + 1
 
-            # Skip the first 5 objects id' that are reserved for metaobjects (Config,
-            # QualityControl, inventory, EventParameters, routing)
+            # Skip the first 5 objects id' that are reserved for metaobjects
+            #  (Config, QualityControl, inventory, EventParameters, routing)
             tmp_object = "\
       create temporary table tmp_object as \
         select _oid, 0 as used from Object where _oid > 5 and _timestamp < '%s'\
@@ -584,6 +640,25 @@ Remove events older than the last 30 days
             if self._invertMode:
                 op = '>='
 
+            self._steps = 32
+
+            # treat QC entries
+            if self._stripQC:
+                self.beginMessage("Deleting waveform quality parameters")
+                if not self.runCommand(
+                        self._query.deleteObjectQuery("Object", "WaveformQuality")
+                        + "WaveformQuality.%s %s '%s'" %
+                        (self.cnvCol("end"), op,
+                         timestamp.toString("%Y-%m-%d %H:%M:%S"))):
+                    return False
+                if not self.runCommand("delete from WaveformQuality where WaveformQuality.%s %s '%s'" % (self.cnvCol("end"), op, timestamp.toString("%Y-%m-%d %H:%M:%S"))):
+                    return False
+                self.endMessage()
+
+            if not self._stripEP:
+                return True
+
+            # treat event parameters
             old_events = "\
       create temporary table old_events as \
         select Event._oid, PEvent.%s \
@@ -599,8 +674,6 @@ Remove events older than the last 30 days
                     self.cnvCol("publicID") + \
                     " not in ('%s')" % "','".join(self._keepEvents)
 
-            self._steps = 32
-
             self.beginMessage("Find old events")
             if not self.runCommand(old_events):
                 return False
@@ -612,7 +685,8 @@ Remove events older than the last 30 days
 
             # Delete FocalMechanismReference of old events
             self.delete("Delete focal mechanism references of old events",
-                        self.deleteChilds, "FocalMechanismReference", "old_events")
+                        self.deleteChilds, "FocalMechanismReference",
+                        "old_events")
 
             # Delete EventDescription of old events
             self.delete("Delete event descriptions of old events",
@@ -659,27 +733,36 @@ Remove events older than the last 30 days
 
             # Delete MomentTensor.Comments of unassociated focal mechanisms
             self.delete("Delete moment tensor comments of unassociated focal mechanisms",
-                        self.deleteUnusedChilds, "Comment", "MomentTensor", "tmp_fm")
+                        self.deleteUnusedChilds, "Comment", "MomentTensor",
+                        "tmp_fm")
 
             # Delete MomentTensor.DataUsed of unassociated focal mechanisms
             self.delete("Delete moment tensor data of unassociated focal mechanisms",
-                        self.deleteUnusedChilds, "DataUsed", "MomentTensor", "tmp_fm")
+                        self.deleteUnusedChilds, "DataUsed", "MomentTensor",
+                        "tmp_fm")
 
             # Delete MomentTensor.PhaseSetting of unassociated focal mechanisms
             self.delete("Delete moment tensor phase settings of unassociated focal mechanisms",
-                        self.deleteUnusedChilds, "MomentTensorPhaseSetting", "MomentTensor", "tmp_fm")
+                        self.deleteUnusedChilds, "MomentTensorPhaseSetting",
+                        "MomentTensor", "tmp_fm")
 
             # Delete MomentTensor.StationContribution.ComponentContribution of unassociated focal mechanisms
-            self.delete("Delete moment tensor component contributions of unassociated focal mechanisms", self.deleteUnusedChilds,
-                        "MomentTensorComponentContribution", "MomentTensorStationContribution", "MomentTensor", "tmp_fm")
+            self.delete("Delete moment tensor component contributions of unassociated focal mechanisms",
+                        self.deleteUnusedChilds,
+                        "MomentTensorComponentContribution",
+                        "MomentTensorStationContribution", "MomentTensor",
+                        "tmp_fm")
 
             # Delete MomentTensor.StationContributions of unassociated focal mechanisms
             self.delete("Delete moment tensor station contributions of unassociated focal mechanisms",
-                        self.deleteUnusedPublicChilds, "MomentTensorStationContribution", "MomentTensor", "tmp_fm")
+                        self.deleteUnusedPublicChilds,
+                        "MomentTensorStationContribution", "MomentTensor",
+                        "tmp_fm")
 
             # Delete MomentTensors of unassociated focal mechanisms
             self.delete("Delete moment tensors of unassociated focal mechanisms",
-                        self.deleteUnusedPublicChilds, "MomentTensor", "tmp_fm")
+                        self.deleteUnusedPublicChilds, "MomentTensor",
+                        "tmp_fm")
 
             # Delete FocalMechanism itself
             self.delete("Delete unassociated focal mechanisms",
@@ -719,15 +802,19 @@ Remove events older than the last 30 days
 
             # Delete StationMagnitudes of unassociated origins
             self.delete("Delete unassociated station magnitudes",
-                        self.deleteUnusedPublicChilds, "StationMagnitude", "tmp_origin")
+                        self.deleteUnusedPublicChilds, "StationMagnitude",
+                        "tmp_origin")
 
             # Delete StationMagnitudeContributions of unassociated origins
             self.delete("Delete unassociated station magnitude contributions",
-                        self.deleteUnusedChilds, "StationMagnitudeContribution", "Magnitude", "tmp_origin")
+                        self.deleteUnusedChilds,
+                        "StationMagnitudeContribution", "Magnitude",
+                        "tmp_origin")
 
             # Delete Magnitudes of unassociated origins
             self.delete("Delete unassociated magnitudes",
-                        self.deleteUnusedPublicChilds, "Magnitude", "tmp_origin")
+                        self.deleteUnusedPublicChilds, "Magnitude",
+                        "tmp_origin")
 
             # Delete Comments of unassociated origins
             self.delete("Delete comments of unassociation origins",
@@ -811,17 +898,6 @@ Remove events older than the last 30 days
 
             self.beginMessage("Cleaning up temporary results")
             if not self.runCommand("drop table tmp_amp"):
-                return False
-            self.endMessage()
-
-            self.beginMessage("Delete waveform quality parameters")
-            if not self.runCommand(
-                    self._query.deleteObjectQuery("Object", "WaveformQuality")
-                    + "WaveformQuality.%s %s '%s'" %
-                    (self.cnvCol("end"), op,
-                     timestamp.toString("%Y-%m-%d %H:%M:%S"))):
-                return False
-            if not self.runCommand("delete from WaveformQuality where WaveformQuality.%s %s '%s'" % (self.cnvCol("end"), op, timestamp.toString("%Y-%m-%d %H:%M:%S"))):
                 return False
             self.endMessage()
 
