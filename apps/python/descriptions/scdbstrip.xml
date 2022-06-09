@@ -1,10 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="scdbstrip" category="Utilities">
-		<description>Database clean-up of processing results.</description>
+		<description>Clean up a database from event and waveform quality parameters.</description>
 		<configuration>
 			<group name="database">
 				<group name="cleanup">
+					<parameter name="invertMode" type="boolean" default="false">
+						<description>
+						Delete all parameters after the specified time period,
+						not before.
+						</description>
+					</parameter>
+					<parameter name="eventParameters" type="boolean" default="true">
+						<description>
+						Strip all event parameters including events, origins,
+						magnitudes, amplitudes, arrivals, picks, focal mechanisms.
+						</description>
+					</parameter>
+					<parameter name="qualityControl" type="boolean" default="true">
+						<description>
+						Strip waveform quality control (QC) parameters.
+						</description>
+					</parameter>
 					<group name="keep">
 					<description>
 					Parameters controlling the time to keep objects in the database.
@@ -42,7 +59,6 @@
 				<optionReference>generic#version</optionReference>
 				<optionReference>generic#config-file</optionReference>
 				<optionReference>generic#plugins</optionReference>
-				<optionReference>generic#daemon</optionReference>
 				<option long-flag="first-new" param-ref="firstNew"/>
 			</group>
 
@@ -66,48 +82,53 @@
 				<optionReference>database#db-disable</optionReference>
 			</group>
 
-			<group name="Settings">
-				<option long-flag="days" argument="arg" param-ref="database.cleanup.keep.days">
+			<group name="Mode">
+				<option long-flag="check">
 					<description>
-					The number of days to keep. Hours and minutes are also
-					used the compute the whole time span.
+					Checks if unreachable objects exist.
 					</description>
 				</option>
-				<option long-flag="hours" argument="arg" param-ref="database.cleanup.keep.hours">
+				<option long-flag="clean-unused">
 					<description>
-					The number of hours to keep. Days and minutes are also
-					used the compute the whole time span.
-					</description>
-				</option>
-				<option long-flag="minutes" argument="arg" param-ref="database.cleanup.keep.minutes">
-					<description>
-					The number of minutes to keep. Days and hours are also
-					used the compute the whole time span.
-					</description>
-				</option>
-				<option long-flag="datetime" argument="arg">
-					<description>
-					Replaces the days:hours:minutes timespan definition by an
-					arbtrary absolute timestamp in UTC. The format is
-					%Y-%m-%d %H:%M:%S.
-					</description>
-				</option>
-				<option long-flag="invert" flag="i">
-					<description>
-					Delete all events after the specified time period and not
-					before.
-					</description>
-				</option>
-				<option long-flag="keep-events">
-					<description>
-					Event-IDs to keep in the database separated with comma.
+					Remove all unreachable objects when in checkmode. Default:
+					off.
 					</description>
 				</option>
 			</group>
 
-			<group name="Mode">
-				<option long-flag="check"/>
-				<option long-flag="clean-unused"/>
+			<group name="Objects">
+				<option long-flag="ep-only" flag="E">
+					<description>
+					Strip only event parameters. Other parameters, like QC, are
+					are ignored.
+					</description>
+				</option>
+				<option long-flag="qc-only" flag="Q">
+					<description>
+					Strip only waveform quality control (QC) parameters. Other
+					parameters, like event parameters, are are ignored.
+					Overrides 'eq-only'.
+					</description>
+				</option>
+			</group>
+
+			<group name="Timespan">
+				<option long-flag="days" argument="arg" param-ref="database.cleanup.keep.days"/>
+				<option long-flag="hours" argument="arg" param-ref="database.cleanup.keep.hours"/>
+				<option long-flag="minutes" argument="arg" param-ref="database.cleanup.keep.minutes"/>
+				<option long-flag="datetime" argument="arg">
+					<description>
+					Replaces the days:hours:minutes timespan definition by an
+					aribtrary absolute timestamp in UTC. The format is
+					%Y-%m-%d %H:%M:%S.
+					</description>
+				</option>
+				<option long-flag="invert" flag="i" param-ref="database.cleanup.invertMode"/>
+				<option long-flag="keep-events">
+					<description>
+					IDs of events to keep in the database separated with comma.
+					</description>
+				</option>
 			</group>
 		</command-line>
 	</module>

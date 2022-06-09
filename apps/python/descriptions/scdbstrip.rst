@@ -4,17 +4,31 @@ this problem and removes processed objects from the database older than a
 configurable time span. The time comparison considers the object time, not the
 time of their creation.
 
-This clean-up procedure is based on events. scdbstrip will remove all events
-with an origin time older than specified. It will also remove all associated
+This clean-up procedure is based on
+
+* Events, event parameters,
+* waveform quality control, QC, parameters.
+
+scdbstrip will remove all events with an origin time and QC parameters older or
+younger than specified. Default is 'older'. It will also remove all associated
 objects such as picks, origins, arrivals, amplitudes and so on.
 
 scdbstrip does not run as a daemon. To remove old objects continuously scdbstrip
 should be added to the list of cronjobs running every e.g. 30 minutes. The more
 often it runs the less objects it has to remove and the faster it will unlock
-the database again.
+the database again. The timing and the parameters to be removed is controlled
+by module configuration or command-line options.
 
 
-Known issues
+.. hint ::
+
+   For removing specific parameters and not all in a time range, use
+   :ref:`scdispatch` along with XML files created by :ref:`scxmldump` and
+   :ref:`scqueryqc` for event parameters and waveform QC parameters,
+   respectively.
+
+
+Known Issues
 ============
 
 When running scdbstrip for the first time on a large database it can happen
@@ -36,15 +50,16 @@ that it aborts in case of MYSQL with the following error message:
 That means your MYSQL server cannot hold enough data required for deletion.
 There are two solutions to this:
 
-#. Increase the memory pool used by MYSQL by changing the configuration to:
+#. Increase the memory pool used by MYSQL by changing the configuration. The
+   minimum is 64 MBytes but modern system typically have a larger default:
 
    .. code-block:: sh
 
       innodb_buffer_pool_size = 64M
 
    The size of the new buffer depends on the size of the database that should
-   be cleaned up.
-
+   be cleaned up. Read also the section :ref:`database_configuration`. It
+   provides more options for optimizing your database server.
 
 #. Run scdbstrip on smaller batches for the first time:
 
@@ -59,8 +74,14 @@ There are two solutions to this:
 Examples
 ========
 
-* Keep the events of the last 30 days
+* Remove event and waveform quality parameters older than 30 days
 
   .. code-block:: sh
 
-     scdbstrip --days 30 -d mysql://sysop:sysop@localhost/seiscomp
+     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --days 30
+
+* Only remove waveform QC parameters older than 30 days but no others
+
+  .. code-block:: sh
+
+     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --days 30 --qc-only

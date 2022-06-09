@@ -39,13 +39,18 @@ database you may:
 
          scqueryqc -d [host] -b '2021-11-20 00:00:00' --streams-from-inventory -o [XML file]
 
-   #. clean the database from the QC parameters saved in XML files using
-      :ref:`scdispatch`. You may need to set the routing table for sending the
-      QualityControl parameters to the right message group
+   #. clean the database from the QC parameters
 
-      .. code-block:: sh
+      * based on the parameters saved in XML files using :ref:`scdispatch`. You
+        may need to set the routing table for sending the QualityControl
+        parameters to the right message group
 
-         scdispatch -H [host] -O remove --routingtable QualityControl:QC -i [XML file]
+        .. code-block:: sh
+
+           scdispatch -H [host] -O remove --routingtable QualityControl:QC -i [XML file]
+
+      * Alternatively, you may use :ref:`scdbstrip`, e.g. with the command-line
+        option ``--Q``, and remove all QC paramters in a time span.
 
 
 Examples
