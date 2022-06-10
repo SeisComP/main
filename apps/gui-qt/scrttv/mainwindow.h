@@ -233,6 +233,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		void abortSearch();
 
 		void checkTraceDelay();
+		void updateTraceCount();
 
 
 	protected:

@@ -969,6 +969,8 @@ void MainWindow::updateTraces(const std::string& networkCode,
 			}
 		}
 	}
+
+	updateTraceCount();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1959,6 +1961,7 @@ void MainWindow::openAcquisition() {
 
 	alignRight();
 	checkTraceDelay();
+	updateTraceCount();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2195,6 +2198,31 @@ void MainWindow::checkTraceDelay() {
 
 			if ( w->records() != NULL ) lastSample = w->records()->timeWindow().endTime();
 			item->setVisible(now - (!lastSample.valid()?_startTime:lastSample) <= maxDelay);
+		}
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::updateTraceCount() {
+	if ( !_tabWidget ) {
+		return;
+	}
+
+	if ( _traceViews.count() > 0 ) {
+		int idx = _tabWidget->indexOf(_traceViews[0]);
+		if ( idx >= 0 ) {
+			_tabWidget->setTabText(idx, QString("Enabled (%1)").arg(_traceViews[0]->rowCount()));
+		}
+	}
+
+	if ( _traceViews.count() > 1 ) {
+		int idx = _tabWidget->indexOf(_traceViews[1]);
+		if ( idx >= 0 ) {
+			_tabWidget->setTabText(idx, QString("Disabled (%1)").arg(_traceViews[1]->rowCount()));
 		}
 	}
 }
