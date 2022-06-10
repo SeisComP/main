@@ -16,9 +16,11 @@
 from __future__ import absolute_import, division, print_function
 
 import sys
+import os
 import optparse
 import fnmatch
-import seiscomp.core, seiscomp.io
+import seiscomp.core
+import seiscomp.io
 
 
 class MyOptionParser(optparse.OptionParser):
@@ -68,14 +70,29 @@ def recordInput(filename=None, datatype=seiscomp.core.Array.INT):
     if not filename:
         filename = "-"
 
+    if filename == '-':
+        print("Waiting for data input from stdin. Use Ctrl + C to interrupt.",
+              file=sys.stderr)
+    else:
+        if not os.path.exists(filename):
+            print("Cannot find file {}".format(filename), file=sys.stderr)
+            sys.exit()
+
     if not stream.setSource(filename):
-        raise IOError("failed to assign source file to RecordStream")
+        print("  + failed to assign source file to RecordStream",
+              file=sys.stderr)
+        sys.exit()
 
     input = seiscomp.io.RecordInput(
         stream, datatype, seiscomp.core.Record.SAVE_RAW)
 
     while True:
-        rec = next(input)
+        try:
+            rec = next(input)
+        except:
+            print("Received invalid or no input", file=sys.stderr)
+            sys.exit()
+
         if not rec:
             return
         yield rec
@@ -85,9 +102,10 @@ tmin = str2time("1970-01-01 00:00:00")
 tmax = str2time("2500-01-01 00:00:00")
 ifile = "-"
 
-description = "Read unsorted and possibly multiplexed MiniSEED files. " \
-              "Sort and filter the individual records by time. This is useful e.g. " \
-              "for simulating data acquisition and blending data."
+description = "Read unsorted and possibly multiplexed miniSEED files. " \
+              "Sort data by time (multiplexing) and filter the individual "\
+              "records by time and/or streams. Apply this before playbacks "\
+              "and waveform archiving."
 
 epilog = """
 Examples:
@@ -102,7 +120,7 @@ Extract streams by time, stream code and sort records by end time
 """
 
 p = MyOptionParser(
-    usage="%prog [options] [files | < ] > ", description=description, epilog=epilog)
+    usage="\n  %prog [options] [files | < ] > ", description=description, epilog=epilog)
 p.add_option("-t", "--time-window", action="store",
              help="specify time window (as one -properly quoted- string). Times "
              "are of course UTC and separated by a tilde ~")
@@ -169,8 +187,8 @@ def readStreamList(file):
         toks = line.split('.')
         if len(toks) != 4:
             f.close()
-            print("error: %s in line %d has invalid line format, expected stream "
-                  "list: NET.STA.LOC.CHA - 1 line per stream" %
+            print("error: %s in line %d has invalid line format, expected "
+                  "stream list: NET.STA.LOC.CHA - 1 line per stream" %
                   (listFile, lineNumber), file=sys.stderr)
             return([])
 
@@ -192,7 +210,7 @@ if listFile:
     streams = readStreamList(listFile)
     if not streams:
         print(" + cannot extract data", file=sys.stderr)
-        quit()
+        sys.exit()
 
     if opt.verbose:
         string = " + streams: "
@@ -201,12 +219,12 @@ if listFile:
             string += stream + " "
         print("%s" % (string), file=sys.stderr)
 
-outRecords = 0
+readRecords = 0
 networks = set()
 stations = set()
 locations = set()
 channels = set()
-outStreams = set()
+readStreams = set()
 outEnd = None
 outStart = None
 
@@ -215,7 +233,7 @@ if filenames:
     time_raw = []
     for filename in filenames:
         if opt.verbose:
-            print("reading file '%s'" % filename, file=sys.stderr)
+            print("Reading file '%s'" % filename, file=sys.stderr)
 
         for rec in recordInput(filename):
             if not rec:
@@ -242,8 +260,8 @@ if filenames:
                 stations.add(rec.stationCode())
                 locations.add(rec.locationCode())
                 channels.add(rec.channelCode())
-                outStreams.add(streamCode)
-                outRecords += 1
+                readStreams.add(streamCode)
+                readRecords += 1
 
                 start = rec.startTime()
                 end = rec.endTime()
@@ -254,7 +272,6 @@ if filenames:
                 if (outEnd is None) or (end > outEnd):
                     outEnd = seiscomp.core.Time(end)
 
-
             t = _time(rec)
             if first is None:
                 first = t
@@ -262,11 +279,16 @@ if filenames:
             time_raw.append((t, raw))
 
     if opt.verbose:
-        print("sorting records", file=sys.stderr)
+        print(" + %d networks, %d stations, %d sensor locations, "
+              "%d channel codes, %d streams, %d records"
+              % (len(networks), len(stations), len(locations),
+                 len(channels), len(readStreams), readRecords),
+              file=sys.stderr)
+        print("Sorting records", file=sys.stderr)
     time_raw.sort()
 
     if opt.verbose:
-        print("writing output", file=sys.stderr)
+        print("Writing output", file=sys.stderr)
     previous = None
 
     out = sys.stdout
@@ -277,22 +299,36 @@ if filenames:
         # assuming this is Python 2, nothing to be done
         pass
 
+    duplicates = 0
     for item in time_raw:
-        if opt.uniqueness and item == previous:
-            continue
+        if item == previous:
+            duplicates += 1
+            if opt.uniqueness:
+                continue
+
         t, raw = item
         out.write(raw)
 
         previous = item
 
     if opt.verbose:
-        print("finished", file=sys.stderr)
-        print("output:", file=sys.stderr)
+        print("Finished", file=sys.stderr)
+        if opt.uniqueness:
+            print("  + found and removed {} duplicate records"
+                  .format(duplicates), file=sys.stderr)
+        else:
+            print("  + found {} duplicate records - remove with: scmssort -u"
+                  .format(duplicates), file=sys.stderr)
+        print("Output:", file=sys.stderr)
         if outStart and outEnd:
-            print(" + Time window: %s~%s" % (seiscomp.core.Time(outStart), seiscomp.core.Time(outEnd)),
+            print(" + time window: %s~%s" % (seiscomp.core.Time(outStart),
+                                             seiscomp.core.Time(outEnd)),
                   file=sys.stderr)
-            print(" + %d networks, %d stations, %d location codes, %d channel codes, %d streams, %d records"
-                  % (len(networks), len(stations), len(locations), len(channels),
-                     len(outStreams), outRecords), file=sys.stderr)
         else:
             print("No data found in time window", file=sys.stderr)
+
+    else:
+        # This is an important hint which should always be printed
+        if duplicates > 0 and not opt.uniqueness:
+            print("Found {} duplicate records - remove with: scmssort -u"
+                  .format(duplicates), file=sys.stderr)
