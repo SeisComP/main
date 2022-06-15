@@ -188,9 +188,11 @@ MainFrame::MainFrame(){
 	else
 		_trayIcon = nullptr;
 
-	connect(_trayIcon, SIGNAL(messageClicked()), this, SLOT(trayIconMessageClicked()));
-	connect(_trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
-	        this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
+	if ( _trayIcon ) {
+		connect(_trayIcon, SIGNAL(messageClicked()), this, SLOT(trayIconMessageClicked()));
+		connect(_trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
+		        this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
+	}
 #endif
 
 	Map::ImageTreePtr mapTree = new Map::ImageTree(SCApp->mapsDesc());
@@ -1777,7 +1779,9 @@ void MainFrame::eventAdded(Seiscomp::DataModel::Event *e, bool fromNotification)
 			}
 		}
 
-		_trayIcon->showMessage(tr("New event"), msg);
+		if ( _trayIcon ) {
+			_trayIcon->showMessage(tr("New event"), msg);
+		}
 	}
 #endif
 }
