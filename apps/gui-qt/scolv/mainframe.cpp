@@ -173,7 +173,6 @@ MainFrame::MainFrame(){
 
 	_ui.menuSettings->addAction(_actionConfigureAcquisition);
 
-#if QT_VERSION >= 0x040300
 	// Setup system tray
 	bool addSystemTray = true;
 	try { addSystemTray = SCApp->configGetBool("olv.systemTray"); }
@@ -193,7 +192,6 @@ MainFrame::MainFrame(){
 		connect(_trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
 		        this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
 	}
-#endif
 
 	Map::ImageTreePtr mapTree = new Map::ImageTree(SCApp->mapsDesc());
 
@@ -952,14 +950,12 @@ void MainFrame::loadEvents(float days) {
 	_eventList->setInterval(tw);
 	_eventList->readFromDatabase();
 	_eventList->selectFirstEnabledEvent();
-#if QT_VERSION >= 0x040300
 	if ( _trayIcon && _eventList->eventCount() > 0 ) {
 		_trayIcon->showMessage(tr("Finished"),
 		                       tr("%1 has loaded %2 events")
 		                       .arg(SCApp->name().c_str())
 		                       .arg(_eventList->eventCount()));
 	}
-#endif
 }
 
 
@@ -1764,7 +1760,6 @@ void MainFrame::messageAvailable(Seiscomp::Core::Message *msg, Seiscomp::Client:
 
 
 void MainFrame::eventAdded(Seiscomp::DataModel::Event *e, bool fromNotification) {
-#if QT_VERSION >= 0x040300
 	if ( fromNotification ) {
 		_trayMessageEventID = e->publicID();
 
@@ -1783,7 +1778,6 @@ void MainFrame::eventAdded(Seiscomp::DataModel::Event *e, bool fromNotification)
 			_trayIcon->showMessage(tr("New event"), msg);
 		}
 	}
-#endif
 }
 
 
@@ -1797,15 +1791,12 @@ void MainFrame::updateEventTabText() {
 }
 
 
-#if QT_VERSION >= 0x040300
-
 
 void MainFrame::trayIconActivated(QSystemTrayIcon::ActivationReason reason) {
 	if ( reason == QSystemTrayIcon::Trigger ||
 	     reason == QSystemTrayIcon::DoubleClick )
 		setVisible(!isVisible());
 }
-#endif
 
 
 void MainFrame::trayIconMessageClicked() {
