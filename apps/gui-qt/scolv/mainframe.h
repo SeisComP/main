@@ -89,10 +89,8 @@ class MainFrame : public MainWindow {
 		void fileOpen();
 		void fileSave();
 
-#if QT_VERSION >= 0x040300
 		void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
 		void trayIconMessageClicked();
-#endif
 
 	private:
 		bool populateOrigin(Seiscomp::DataModel::Origin*, Seiscomp::DataModel::Event*, bool);
@@ -109,10 +107,8 @@ class MainFrame : public MainWindow {
 
 	private:
 		Ui::MainFrame      _ui;
-#if QT_VERSION >= 0x040300
 		QSystemTrayIcon   *_trayIcon;
 		std::string        _trayMessageEventID;
-#endif
 		QAction           *_actionConfigureAcquisition;
 		EventListView     *_eventList;
 		EventSummary      *_eventSmallSummary;
