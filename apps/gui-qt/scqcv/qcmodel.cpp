@@ -189,20 +189,14 @@ void QcModel::setStreamEnabled(const QString& streamID, bool enabled) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void QcModel::setStreamEnabled(const QModelIndex& index, bool enabled) {
-#if QT_VERSION >= 0x040600
 	beginResetModel();
-#endif
 
 	(_streamMap.begin()+index.row()).value().enabled = enabled;
 
 	// trigger: send configStation message
 	emit stationStateChanged((_streamMap.begin()+index.row()).key(), enabled);
 
-#if QT_VERSION >= 0x040600
 	endResetModel();
-#else
-	reset();
-#endif
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -240,17 +234,11 @@ void QcModel::addStream(const QString &streamID, bool enabled) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void QcModel::removeStream(const QString& streamID) {
-#if QT_VERSION >= 0x040600
 	beginResetModel();
-#endif
 
 	_streamMap.remove(streamID);
 
-#if QT_VERSION >= 0x040600
 	endResetModel();
-#else
-	reset();
-#endif
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
