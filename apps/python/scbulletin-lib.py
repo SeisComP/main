@@ -774,7 +774,7 @@ class Bulletin(object):
                 tm = evt.creationInfo().creationTime().toString("%Y/%m/%d %H:%M:%S.%f")
             else:
                 tm = evt.creationInfo().creationTime().toString("%Y/%m/%d %H:%M:%S")
-            txt += " First location:  %s\n" % tm
+            txt += " Event created from origin:  %s\n" % tm
         except:
             pass
 
@@ -783,7 +783,7 @@ class Bulletin(object):
                 tm = org.creationInfo().creationTime().toString("%Y/%m/%d %H:%M:%S.%f")
             else:
                 tm = org.creationInfo().creationTime().toString("%Y/%m/%d %H:%M:%S")
-            txt += " This location:   %s\n" % tm
+            txt += " This origin created:        %s\n" % tm
         except:
             pass
 
