@@ -56,7 +56,7 @@ namespace QL2SC {
 namespace {
 
 
-typedef Diff3::PropertyIndex PropertyIndex;
+using PropertyIndex = Diff3::PropertyIndex;
 
 
 PropertyIndex CreationInfoIndex;
@@ -88,10 +88,7 @@ Core::Time getLastModificationTime(const T *o) {
 }
 
 
-class MyDiff : public Diff3 {
-	public:
-		MyDiff() {}
-
+class MyDiff : public Diff4 {
 	protected:
 		bool blocked(const Core::BaseObject *o, LogNode *node, bool local) {
 			const Core::MetaProperty *prop = 0;
@@ -130,19 +127,22 @@ class MyDiff : public Diff3 {
 		bool confirmUpdate(const Core::BaseObject *localO,
 		                   const Core::BaseObject *remoteO,
 		                   LogNode *node) {
-			const Core::MetaProperty *prop = 0;
-			PropertyIndex::const_iterator it = CreationInfoIndex.find(localO->className());
+			const Core::MetaProperty *prop = nullptr;
+			auto it = CreationInfoIndex.find(localO->className());
 			if ( it == CreationInfoIndex.end() ) {
 				if ( localO->meta() ) {
 					prop = localO->meta()->property("creationInfo");
 					CreationInfoIndex[localO->className()] = prop;
 				}
 			}
-			else
+			else {
 				prop = it->second;
+			}
 
 			// No creationInfo, no creationTime check possible
-			if ( !prop ) return true;
+			if ( !prop ) {
+				return true;
+			}
 
 			try {
 				Core::MetaValue v;
@@ -158,7 +158,7 @@ class MyDiff : public Diff3 {
 					Core::Time localMTime = getLastModificationTime(*ciLocal);
 					Core::Time remoteMTime = getLastModificationTime(*ciRemote);
 
-					if ( remoteMTime < localMTime ) {
+					if ( localMTime >= remoteMTime ) {
 						if ( node && node->level() >= LogNode::OPERATIONS )
 							node->setMessage("SKIP UPDATE due to modification time");
 						return false;
@@ -169,13 +169,45 @@ class MyDiff : public Diff3 {
 
 			return true;
 		}
+
+		bool confirmDescent(const Core::BaseObject *,
+		                    const Core::BaseObject *,
+		                    bool updateConfirmed,
+		                    const Core::MetaProperty *prop,
+		                    LogNode *) override {
+			// If the object type of the child property does not contain
+			// a creationInfo then we consider that as part of the object
+			// and do not descent if the update of the parent is not
+			// confirmed. Otherwise pass the modification check on to the
+			// childs.
+			if ( prop->isClass() && !prop->type().empty() ) {
+				const Core::MetaProperty *propCreationInfo = nullptr;
+				auto it = CreationInfoIndex.find(prop->type());
+				if ( it == CreationInfoIndex.end() ) {
+					auto meta = Core::MetaObject::Find(prop->type());
+					if ( meta ) {
+						propCreationInfo = meta->property("creationInfo");
+						CreationInfoIndex[prop->type()] = propCreationInfo;
+					}
+				}
+				else {
+					propCreationInfo = it->second;
+				}
+
+				if ( propCreationInfo ) {
+					return true;
+				}
+			}
+
+			return updateConfirmed;
+		}
 };
 
 
 template<typename Container> class container_source {
 	public:
-		typedef typename Container::value_type  char_type;
-		typedef io::source_tag                  category;
+		using char_type = typename Container::value_type;
+		using category = io::source_tag;
 		container_source(const Container& container)
 		 : _con(container), _pos(0) {}
 		streamsize read(char_type* s, streamsize n) {
@@ -190,7 +222,7 @@ template<typename Container> class container_source {
 		}
 		Container& container() { return _con; }
 	private:
-		typedef typename Container::size_type   size_type;
+		using size_type = typename Container::size_type;
 		const Container&  _con;
 		size_type   _pos;
 };
