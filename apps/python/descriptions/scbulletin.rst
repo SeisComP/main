@@ -1,6 +1,7 @@
 scbulletin transforms the parameters of an event or an origin either to autoloc1
 or to autoloc3 format.
 
+
 Input Modes
 -----------
 
@@ -14,24 +15,30 @@ The first mode is the dump-mode the second is the input-mode. For dumping either
 choose eventID or the originID. If the eventID is choosen the preferred origin
 will be used.
 
+
 Output Modes
 ------------
 
-Different output formats are available:
+Different output formats are available by command-line options:
 
-1. **autoloc1** working with **-1**
-#. **autoloc3** working with **-3**
-#. **extended autoloc3** working with **-3 -x**
-#. **enhanced** working with **-1 -e** or  **-3 -e** for high-precision output.
+#. ``-1`` for **autoloc1**: Print one bulletin per event.
+#. ``-3`` for **autoloc3**: Print one bulletin per event.
+#. ``--fdsn`` for FDSN event: Print one line per event. Useful for generating
+   event catalogs from XML file containing several events. This option is an
+   alternative to generating catalogs by :ref:`fdsnws-event <sec-event>`.
+#. ``-3 -x`` for **extended autoloc3**.
+#. ``-1 -e`` or ``-3 -e`` for **enhanced** output at high-precision. All times
+   and distances are in units of milliseconds and meters, respectively.
 
 If called with an event or origin ID a database connection is necessary to
 fetch the corresponding object. Otherwise scbulletin will read the input source
 (defaults to stdin), grab the first found event or origin and dump it.
 
+
 Examples
 ========
 
-#. Create bulletin from event in database
+#. Create bulletin from one event in database
 
    .. code-block:: sh
 
@@ -46,3 +53,15 @@ Examples
    .. code-block:: sh
 
       scbulletin -i gfz2012abcd.xml
+
+
+#. Convert XML file to bulletin but filter by event ID
+
+   .. code-block:: sh
+
+      scbulletin -i gfz2012abcd.xml -E gempa2022abcd
+
+.. note::
+
+   When considering a single event XML file containing many events, the
+   bulletins of all events will be generated unless ``--first-only`` is used.
