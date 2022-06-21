@@ -155,8 +155,8 @@ bool Config::init() {
 		catch ( ... ) {
 			cfg.routingTable[DataModel::Pick::TypeInfo().className()] = Client::Protocol::IMPORT_GROUP;
 			cfg.routingTable[DataModel::Amplitude::TypeInfo().className()] = Client::Protocol::IMPORT_GROUP;
-			cfg.routingTable[DataModel::Origin::TypeInfo().className()] = "LOCATION";
-			cfg.routingTable[DataModel::FocalMechanism::TypeInfo().className()] = "FOCMECH";
+			cfg.routingTable[DataModel::Origin::TypeInfo().className()] = "EVENT";
+			cfg.routingTable[DataModel::FocalMechanism::TypeInfo().className()] = "EVENT";
 		}
 
 		// create explicit routing entries for top-level EventParameters

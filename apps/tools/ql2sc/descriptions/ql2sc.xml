@@ -115,7 +115,7 @@
 							time      := %Y,%m,%d[,%H,%M,%S,%f]
 						</description>
 					</parameter>
-					<parameter name="routingTable" type="list:string" default="Pick:IMPORT_GROUP,Amplitude:IMPORT_GROUP,FocalMechanism:FOCMECH,Origin:LOCATION">
+					<parameter name="routingTable" type="list:string" default="Pick:IMPORT_GROUP,Amplitude:IMPORT_GROUP,FocalMechanism:EVENT,Origin:EVENT">
 						<description>
 							Maps datamodel class names to messaging groups. For unmapped objects
 							the mapping of their parent objects is evaluated recursively. Objects
