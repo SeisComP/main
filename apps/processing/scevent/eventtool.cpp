@@ -1214,7 +1214,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 
 				response = createEntry(info->event->publicID(), entry->action() + OK, "created by command");
 				info->addJournalEntry(response.get());
-				response->setSender(name() + "@" + System::HostInfo().name());
+				response->setSender(author());
 				Notifier::Enable();
 				Notifier::Create(_journal->publicID(), OP_ADD, response.get());
 				Notifier::Disable();
@@ -1226,7 +1226,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 		}
 
 		if ( response ) {
-			response->setSender(name() + "@" + System::HostInfo().name());
+			response->setSender(author());
 			Notifier::Enable();
 			Notifier::Create(_journal->publicID(), OP_ADD, response.get());
 			Notifier::Disable();
@@ -1511,7 +1511,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 					srcResponse = createEntry(sourceInfo->event->publicID(), "EvDeleteOK", string("merged into ") + info->event->publicID());
 					if ( srcResponse ) {
 						sourceInfo->addJournalEntry(srcResponse.get());
-						srcResponse->setSender(name() + "@" + System::HostInfo().name());
+						srcResponse->setSender(author());
 						Notifier::Enable();
 						Notifier::Create(_journal->publicID(), OP_ADD, srcResponse.get());
 						Notifier::Disable();
@@ -1716,7 +1716,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 						newResponse = createEntry(newInfo->event->publicID(), "EvNewEventOK", "created by command");
 						if ( newResponse ) {
 							newInfo->addJournalEntry(newResponse.get());
-							newResponse->setSender(name() + "@" + System::HostInfo().name());
+							newResponse->setSender(author());
 							Notifier::Enable();
 							Notifier::Create(_journal->publicID(), OP_ADD, newResponse.get());
 							Notifier::Disable();
@@ -1752,7 +1752,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 
 	if ( response ) {
 		info->addJournalEntry(response.get());
-		response->setSender(name() + "@" + System::HostInfo().name());
+		response->setSender(author());
 		Notifier::Enable();
 		Notifier::Create(_journal->publicID(), OP_ADD, response.get());
 		Notifier::Disable();
@@ -2880,7 +2880,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 								entry->setObjectID(info->event->publicID());
 								entry->setAction("EvPrefOrgEvalMode");
 								entry->setParameters("");
-								entry->setSender(name() + "@" + System::HostInfo().name());
+								entry->setSender(author());
 								entry->setCreated(Core::Time::GMT());
 								Notifier::Create(_journal->publicID(), OP_ADD, entry.get());
 								info->addJournalEntry(entry.get());
@@ -2924,7 +2924,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 								entry->setObjectID(info->event->publicID());
 								entry->setAction("EvPrefOrgEvalMode");
 								entry->setParameters("");
-								entry->setSender(name() + "@" + System::HostInfo().name());
+								entry->setSender(author());
 								entry->setCreated(Core::Time::GMT());
 								Notifier::Create(_journal->publicID(), OP_ADD, entry.get());
 								info->addJournalEntry(entry.get());
@@ -3187,7 +3187,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							entry->setObjectID(info->event->publicID());
 							entry->setAction("EvPrefOrgEvalMode");
 							entry->setParameters("");
-							entry->setSender(name() + "@" + System::HostInfo().name());
+							entry->setSender(author());
 							entry->setCreated(Core::Time::GMT());
 							Notifier::Create(_journal->publicID(), OP_ADD, entry.get());
 							info->addJournalEntry(entry.get());
@@ -3324,6 +3324,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 	}
 
 	bool callProcessors = true;
+	bool changedEventType = false;
 
 	// If only the magnitude changed, call updated processors
 	if ( !update && triggeredMag && !realOriginUpdate &&
@@ -3371,6 +3372,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 				                           "status 'rejected' in event %s",
 				             info->event->publicID().c_str());
 				info->event->setType(EventType(NOT_EXISTING));
+				changedEventType = true;
 				update = true;
 			}
 		}
@@ -3387,10 +3389,17 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 				                           "changed from 'rejected' in event %s",
 				             info->event->publicID().c_str());
 				info->event->setType(None);
+				changedEventType = true;
 				update = true;
 			}
 		}
 	}
+
+	OPT(EventType) oldEventType;
+	try {
+		oldEventType = info->event->type();
+	}
+	catch ( ... ) {}
 
 	if ( update ) {
 		SEISCOMP_DEBUG("%s: update (created: %d, notifiers enabled: %d)",
@@ -3406,6 +3415,44 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			for ( EventProcessorPtr &proc : _processors )
 				proc->process(info->event.get(), info->journal);
 		}
+	}
+
+	OPT(EventType) newEventType;
+	try {
+		newEventType = info->event->type();
+	}
+	catch ( ... ) {}
+
+	if ( changedEventType || (oldEventType != newEventType) ) {
+		// Either this method or the processors have changed the event type
+		if ( !changedEventType ) {
+			SEISCOMP_LOG(_infoChannel, "Event type of %s has changed to '%s' "
+			                           "by an event processor",
+			             info->event->publicID().c_str(),
+			             newEventType ? newEventType->toString() : "");
+		}
+
+		Notifier::Enable();
+		auto response = createEntry(
+			info->event->publicID(),
+			"EvType",
+			newEventType ? newEventType->toString() : ""
+		);
+
+		info->addJournalEntry(response.get());
+		response->setSender(author());
+		Notifier::Create(_journal->publicID(), OP_ADD, response.get());
+
+		response = createEntry(
+			info->event->publicID(),
+			"EvTypeOK",
+			newEventType ? newEventType->toString() : ":unset:"
+		);
+
+		info->addJournalEntry(response.get());
+		response->setSender(author());
+		Notifier::Create(_journal->publicID(), OP_ADD, response.get());
+		Notifier::Disable();
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -3583,7 +3630,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 								entry->setObjectID(info->event->publicID());
 								entry->setAction("EvPrefOrgEvalMode");
 								entry->setParameters("");
-								entry->setSender(name() + "@" + System::HostInfo().name());
+								entry->setSender(author());
 								entry->setCreated(Core::Time::GMT());
 								Notifier::Create(_journal->publicID(), OP_ADD, entry.get());
 								info->addJournalEntry(entry.get());
@@ -3628,7 +3675,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 								entry->setObjectID(info->event->publicID());
 								entry->setAction("EvPrefOrgEvalMode");
 								entry->setParameters("");
-								entry->setSender(name() + "@" + System::HostInfo().name());
+								entry->setSender(author());
 								entry->setCreated(Core::Time::GMT());
 								Notifier::Create(_journal->publicID(), OP_ADD, entry.get());
 								info->addJournalEntry(entry.get());
@@ -3764,7 +3811,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 							entry->setObjectID(info->event->publicID());
 							entry->setAction("EvPrefOrgEvalMode");
 							entry->setParameters("");
-							entry->setSender(name() + "@" + System::HostInfo().name());
+							entry->setSender(author());
 							entry->setCreated(Core::Time::GMT());
 							Notifier::Create(_journal->publicID(), OP_ADD, entry.get());
 							info->addJournalEntry(entry.get());
