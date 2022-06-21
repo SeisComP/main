@@ -121,12 +121,12 @@ DEFINE_SMARTPOINTER(ClearCacheRequestMessage);
 
 /**
  * \brief Message for requesting a clearing of the cache
- * This message type requests a response from a peer. 
+ * This message type requests a response from a peer.
  */
 class SC_SYSTEM_CLIENT_API ClearCacheRequestMessage : public Seiscomp::Core::Message {
 	DECLARE_SC_CLASS(ClearCacheRequestMessage)
 	DECLARE_SERIALIZATION;
-	
+
 	public:
 		//! Constructor
 		ClearCacheRequestMessage() {}
@@ -149,7 +149,7 @@ DEFINE_SMARTPOINTER(ClearCacheResponseMessage);
 class SC_SYSTEM_CLIENT_API ClearCacheResponseMessage : public Seiscomp::Core::Message {
 	DECLARE_SC_CLASS(ClearCacheResponseMessage)
 	DECLARE_SERIALIZATION;
-	
+
 	public:
 		//! Constructor
 		ClearCacheResponseMessage() {}
@@ -3358,14 +3358,17 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		catch ( ... ) {}
 
 		if ( isRejected ) {
-			SEISCOMP_INFO("%s: preferred origin is rejected",
+			SEISCOMP_INFO("%s: preferred origin has evalution status 'rejected'",
 			              info->event->publicID().c_str());
 
 			// User has manually fixed an origin, don't touch the event type
 			if ( !info->constraints.fixedOrigin() && !notExistingEvent ) {
-				SEISCOMP_INFO("%s: set type to 'not existing' since preferred origin is rejected",
+				SEISCOMP_INFO("%s: set event type to 'not existing' since "
+				              "preferred origin has evaluation status 'rejected'",
 				              info->event->publicID().c_str());
-				SEISCOMP_LOG(_infoChannel, "Set type to 'not existing' since preferred origin is rejected in event %s",
+				SEISCOMP_LOG(_infoChannel, "Set event type to 'not existing' since "
+				                           "preferred origin has evaluation "
+				                           "status 'rejected' in event %s",
 				             info->event->publicID().c_str());
 				info->event->setType(EventType(NOT_EXISTING));
 				update = true;
@@ -3373,12 +3376,15 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		}
 		else {
 			// User has manually fixed an origin, don't touch the event type
-			// Preferred origin is not rejected, remove the event type if it is
-			// set to 'not existing'
+			// Preferred origin is not rejected, remove the event type if it was
+			// previously 'not existing'
 			if ( !info->constraints.fixedOrigin() && notExistingEvent ) {
-				SEISCOMP_INFO("%s: remove type since preferred origin changed to not rejected",
+				SEISCOMP_INFO("%s: remove event type since evaluation status of"
+				              "preferred origin changed from 'rejected'",
 				              info->event->publicID().c_str());
-				SEISCOMP_LOG(_infoChannel, "Remove type since preferred origin is changed from rejected in event %s",
+				SEISCOMP_LOG(_infoChannel, "Remove event type since evaluation "
+				                           "status of preferred origin "
+				                           "changed from 'rejected' in event %s",
 				             info->event->publicID().c_str());
 				info->event->setType(None);
 				update = true;
