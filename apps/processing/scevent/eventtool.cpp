@@ -3339,9 +3339,11 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 	}
 
 	OPT(EventType) oldEventType;
-	try {
-		oldEventType = info->event->type();
-	}
+	OPT(EventTypeCertainty) oldEventTypeCertainty;
+
+	try { oldEventType = info->event->type(); }
+	catch ( ... ) {}
+	try { oldEventTypeCertainty = info->event->typeCertainty(); }
 	catch ( ... ) {}
 
 	// If an preferred origin is set and the event type has not been fixed
@@ -3415,9 +3417,11 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 	}
 
 	OPT(EventType) newEventType;
-	try {
-		newEventType = info->event->type();
-	}
+	OPT(EventTypeCertainty) newEventTypeCertainty;
+
+	try { newEventType = info->event->type(); }
+	catch ( ... ) {}
+	try { newEventTypeCertainty = info->event->typeCertainty(); }
 	catch ( ... ) {}
 
 	if ( oldEventType != newEventType ) {
@@ -3442,6 +3446,36 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			info->event->publicID(),
 			"EvTypeOK",
 			newEventType ? newEventType->toString() : ":unset:"
+		);
+
+		info->addJournalEntry(response.get());
+		response->setSender(author());
+		Notifier::Create(_journal->publicID(), OP_ADD, response.get());
+		Notifier::Disable();
+	}
+
+	if ( oldEventTypeCertainty != newEventTypeCertainty ) {
+		// Either this method or the processors have changed the event type
+		SEISCOMP_LOG(_infoChannel, "Event type certainty of %s has changed to '%s' "
+		                           "by scevent or an event processor",
+		             info->event->publicID().c_str(),
+		             newEventTypeCertainty ? newEventTypeCertainty->toString() : "");
+
+		Notifier::Enable();
+		auto response = createEntry(
+			info->event->publicID(),
+			"EvTypeCertainty",
+			newEventType ? newEventTypeCertainty->toString() : ""
+		);
+
+		info->addJournalEntry(response.get());
+		response->setSender(author());
+		Notifier::Create(_journal->publicID(), OP_ADD, response.get());
+
+		response = createEntry(
+			info->event->publicID(),
+			"EvTypeCertaintyOK",
+			newEventTypeCertainty ? newEventTypeCertainty->toString() : ":unset:"
 		);
 
 		info->addJournalEntry(response.get());
