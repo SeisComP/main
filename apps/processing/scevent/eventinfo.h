@@ -46,19 +46,23 @@ struct EventInformation : public Seiscomp::Core::BaseObject {
 	EventInformation(Cache *cache, Config *cfg);
 
 	EventInformation(Cache *cache, Config *cfg,
-	                 DataModel::DatabaseQuery *q, const std::string &eventID);
+	                 DataModel::DatabaseQuery *q, const std::string &eventID,
+	                 const std::string &self);
 
 	EventInformation(Cache *cache, Config *cfg,
-	                 DataModel::DatabaseQuery *q, DataModel::EventPtr &event);
+	                 DataModel::DatabaseQuery *q, DataModel::EventPtr &event,
+	                 const std::string &self);
 
 	~EventInformation();
 
 	//! Loads an event from the database
 	void load(DataModel::DatabaseQuery *q,
-	          const std::string &eventID);
+	          const std::string &eventID,
+	          const std::string &self);
 
 	void load(DataModel::DatabaseQuery *q,
-	          DataModel::EventPtr &event);
+	          DataModel::EventPtr &event,
+	          const std::string &self);
 
 	void loadAssocations(DataModel::DatabaseQuery *q);
 
@@ -70,7 +74,7 @@ struct EventInformation : public Seiscomp::Core::BaseObject {
 	bool associate(DataModel::Origin *o);
 	bool associate(DataModel::FocalMechanism *fm);
 
-	bool addJournalEntry(DataModel::JournalEntry *e);
+	bool addJournalEntry(DataModel::JournalEntry *e, const std::string &self);
 
 	bool setEventName(DataModel::JournalEntry *e, std::string &error);
 	bool setEventOpComment(DataModel::JournalEntry *e, std::string &error);

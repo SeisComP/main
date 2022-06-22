@@ -34,16 +34,18 @@ EventInformation::EventInformation(Cache *c, Config *cfg_)
 
 
 EventInformation::EventInformation(Cache *c, Config *cfg_,
-                                   DatabaseQuery *q, const string &eventID)
+                                   DatabaseQuery *q, const string &eventID,
+                                   const string &self)
 : cache(c), cfg(cfg_), created(false), aboutToBeRemoved(false), dirtyPickSet(false) {
-	load(q, eventID);
+	load(q, eventID, self);
 }
 
 
 EventInformation::EventInformation(Cache *c, Config *cfg_,
-                                   DatabaseQuery *q, EventPtr &event)
+                                   DatabaseQuery *q, EventPtr &event,
+                                   const string &self)
 : cache(c), cfg(cfg_), created(false), aboutToBeRemoved(false), dirtyPickSet(false) {
-	load(q, event);
+	load(q, event, self);
 }
 
 
@@ -55,13 +57,13 @@ EventInformation::~EventInformation() {
 }
 
 
-void EventInformation::load(DatabaseQuery *q, const string &eventID) {
+void EventInformation::load(DatabaseQuery *q, const string &eventID, const string &self) {
 	EventPtr e = cache->get<Event>(eventID);
-	load(q, e);
+	load(q, e, self);
 }
 
 
-void EventInformation::load(DatabaseQuery *q, EventPtr &e) {
+void EventInformation::load(DatabaseQuery *q, EventPtr &e, const string &self) {
 	event = e;
 	if ( !event )
 		return;
@@ -101,7 +103,7 @@ void EventInformation::load(DatabaseQuery *q, EventPtr &e) {
 		while ( dbit.get() != NULL ) {
 			JournalEntryPtr entry = JournalEntry::Cast(dbit.get());
 			if ( entry )
-				addJournalEntry(entry.get());
+				addJournalEntry(entry.get(), self);
 			++dbit;
 		}
 	}
@@ -254,7 +256,8 @@ bool EventInformation::associate(DataModel::FocalMechanism *fm) {
 }
 
 
-bool EventInformation::addJournalEntry(DataModel::JournalEntry *e) {
+bool EventInformation::addJournalEntry(DataModel::JournalEntry *e,
+                                       const string &self) {
 	journal.push_back(e);
 
 	// Update constraints
@@ -319,7 +322,7 @@ bool EventInformation::addJournalEntry(DataModel::JournalEntry *e) {
 		// Else keep the last state
 	}
 	else if ( e->action() == "EvTypeOK" ) {
-		if ( e->parameters() == ":unset:" )
+		if ( e->parameters() == ":unset:" || e->sender() == self )
 			constraints.fixType = false;
 		else
 			constraints.fixType = true;
