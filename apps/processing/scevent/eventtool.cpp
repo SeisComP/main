@@ -1217,8 +1217,8 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 				Notifier::Disable();
 
 				response = createEntry(info->event->publicID(), entry->action() + OK, "created by command");
-				info->addJournalEntry(response.get(), author());
 				response->setSender(author());
+				info->addJournalEntry(response.get(), author());
 				Notifier::Enable();
 				Notifier::Create(_journal->publicID(), OP_ADD, response.get());
 				Notifier::Disable();
@@ -1514,8 +1514,8 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 					JournalEntryPtr srcResponse;
 					srcResponse = createEntry(sourceInfo->event->publicID(), "EvDeleteOK", string("merged into ") + info->event->publicID());
 					if ( srcResponse ) {
-						sourceInfo->addJournalEntry(srcResponse.get(), author());
 						srcResponse->setSender(author());
+						sourceInfo->addJournalEntry(srcResponse.get(), author());
 						Notifier::Enable();
 						Notifier::Create(_journal->publicID(), OP_ADD, srcResponse.get());
 						Notifier::Disable();
@@ -1719,8 +1719,8 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 
 						newResponse = createEntry(newInfo->event->publicID(), "EvNewEventOK", "created by command");
 						if ( newResponse ) {
-							newInfo->addJournalEntry(newResponse.get(), author());
 							newResponse->setSender(author());
+							newInfo->addJournalEntry(newResponse.get(), author());
 							Notifier::Enable();
 							Notifier::Create(_journal->publicID(), OP_ADD, newResponse.get());
 							Notifier::Disable();
@@ -1755,8 +1755,8 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 	}
 
 	if ( response ) {
-		info->addJournalEntry(response.get(), author());
 		response->setSender(author());
+		info->addJournalEntry(response.get(), author());
 		Notifier::Enable();
 		Notifier::Create(_journal->publicID(), OP_ADD, response.get());
 		Notifier::Disable();
