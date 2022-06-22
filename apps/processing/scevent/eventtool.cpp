@@ -3465,7 +3465,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		auto response = createEntry(
 			info->event->publicID(),
 			"EvTypeCertainty",
-			newEventType ? newEventTypeCertainty->toString() : ""
+			newEventTypeCertainty ? newEventTypeCertainty->toString() : ""
 		);
 
 		info->addJournalEntry(response.get());
