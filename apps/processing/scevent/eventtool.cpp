@@ -3324,7 +3324,6 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 	}
 
 	bool callProcessors = true;
-	bool changedEventType = false;
 
 	// If only the magnitude changed, call updated processors
 	if ( !update && triggeredMag && !realOriginUpdate &&
@@ -3338,6 +3337,12 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		// Processors have been called already
 		callProcessors = false;
 	}
+
+	OPT(EventType) oldEventType;
+	try {
+		oldEventType = info->event->type();
+	}
+	catch ( ... ) {}
 
 	// If an preferred origin is set and the event type has not been fixed
 	// manually set it to 'not existing' if the preferred origin is rejected.
@@ -3372,7 +3377,6 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 				                           "status 'rejected' in event %s",
 				             info->event->publicID().c_str());
 				info->event->setType(EventType(NOT_EXISTING));
-				changedEventType = true;
 				update = true;
 			}
 		}
@@ -3389,17 +3393,10 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 				                           "changed from 'rejected' in event %s",
 				             info->event->publicID().c_str());
 				info->event->setType(None);
-				changedEventType = true;
 				update = true;
 			}
 		}
 	}
-
-	OPT(EventType) oldEventType;
-	try {
-		oldEventType = info->event->type();
-	}
-	catch ( ... ) {}
 
 	if ( update ) {
 		SEISCOMP_DEBUG("%s: update (created: %d, notifiers enabled: %d)",
@@ -3423,14 +3420,12 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 	}
 	catch ( ... ) {}
 
-	if ( changedEventType || (oldEventType != newEventType) ) {
+	if ( oldEventType != newEventType ) {
 		// Either this method or the processors have changed the event type
-		if ( !changedEventType ) {
-			SEISCOMP_LOG(_infoChannel, "Event type of %s has changed to '%s' "
-			                           "by an event processor",
-			             info->event->publicID().c_str(),
-			             newEventType ? newEventType->toString() : "");
-		}
+		SEISCOMP_LOG(_infoChannel, "Event type of %s has changed to '%s' "
+		                           "by scevent or an event processor",
+		             info->event->publicID().c_str(),
+		             newEventType ? newEventType->toString() : "");
 
 		Notifier::Enable();
 		auto response = createEntry(
