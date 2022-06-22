@@ -501,7 +501,9 @@ bool EventTool::run() {
 
 		for ( size_t i = 0; i < _ep->eventCount(); ++i ) {
 			EventPtr evt = _ep->event(i);
-			EventInformationPtr info = new EventInformation(&_cache, &_config, query(), evt);
+			EventInformationPtr info = new EventInformation(
+				&_cache, &_config, query(), evt, author()
+			);
 
 			// Loading the references does not make sense here, because
 			// the event has been just added
@@ -565,7 +567,9 @@ bool EventTool::run() {
 	}
 
 	if ( !_eventID.empty() ) {
-		EventInformationPtr info = new EventInformation(&_cache, &_config, query(), _eventID);
+		EventInformationPtr info = new EventInformation(
+			&_cache, &_config, query(), _eventID, author()
+		);
 		if ( !info->event ) {
 			std::cout << "Event " << _eventID << " not found" << std::endl;
 			return false;
@@ -753,7 +757,7 @@ void EventTool::handleTimeout() {
 				SEISCOMP_LOG(_infoChannel, "Handling pending event update for %s", it->id.c_str());
 				EventInformationPtr info = cachedEvent(it->id);
 				if ( !info ) {
-					info = new EventInformation(&_cache, &_config, query(), it->id);
+					info = new EventInformation(&_cache, &_config, query(), it->id, author());
 					if ( !info->event ) {
 						SEISCOMP_ERROR("event %s not found", it->id.c_str());
 						SEISCOMP_LOG(_infoChannel, "Skipped delayed preferred FM update, "
@@ -904,7 +908,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 
 		EventInformationPtr info = cachedEvent(parentID);
 		if ( !info ) {
-			info = new EventInformation(&_cache, &_config, query(), parentID);
+			info = new EventInformation(&_cache, &_config, query(), parentID, author());
 			if ( !info->event ) {
 				SEISCOMP_ERROR("event %s for OriginReference not found", parentID.c_str());
 				SEISCOMP_LOG(_infoChannel, " - skipped, event %s not found in database", parentID.c_str());
@@ -940,7 +944,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 
 		EventInformationPtr info = cachedEvent(parentID);
 		if ( !info ) {
-			info = new EventInformation(&_cache, &_config, query(), parentID);
+			info = new EventInformation(&_cache, &_config, query(), parentID, author());
 			if ( !info->event ) {
 				SEISCOMP_ERROR("event %s for ForcalMechanismReference not found", parentID.c_str());
 				SEISCOMP_LOG(_infoChannel, " - skipped, event %s not found in database", parentID.c_str());
@@ -974,7 +978,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 		SEISCOMP_LOG(_infoChannel, "Received new event %s", evt->publicID().c_str());
 		EventInformationPtr info = cachedEvent(evt->publicID());
 		if ( !info ) {
-			info = new EventInformation(&_cache, &_config, query(), evt);
+			info = new EventInformation(&_cache, &_config, query(), evt, author());
 			// Loading the references does not make sense here, because
 			// the event has been just added
 			cacheEvent(info);
@@ -1060,7 +1064,7 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 		SEISCOMP_LOG(_infoChannel, "Received updated event %s", evt->publicID().c_str());
 		EventInformationPtr info = cachedEvent(evt->publicID());
 		if ( !info ) {
-			info = new EventInformation(&_cache, &_config, query(), evt);
+			info = new EventInformation(&_cache, &_config, query(), evt, author());
 			info->loadAssocations(query());
 			cacheEvent(info);
 		}
@@ -1094,7 +1098,7 @@ void EventTool::removeObject(const string &parentID, Object* object) {
 
 		EventInformationPtr info = cachedEvent(parentID);
 		if ( !info ) {
-			info = new EventInformation(&_cache, &_config, query(), parentID);
+			info = new EventInformation(&_cache, &_config, query(), parentID, author());
 			info->loadAssocations(query());
 			if ( !info->event ) {
 				SEISCOMP_ERROR("event %s for OriginReference not found", parentID.c_str());
@@ -1213,7 +1217,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 				Notifier::Disable();
 
 				response = createEntry(info->event->publicID(), entry->action() + OK, "created by command");
-				info->addJournalEntry(response.get());
+				info->addJournalEntry(response.get(), author());
 				response->setSender(author());
 				Notifier::Enable();
 				Notifier::Create(_journal->publicID(), OP_ADD, response.get());
@@ -1244,7 +1248,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 
 	if ( !info ) {
 		// No chached information yet -> load it and cache it
-		info = new EventInformation(&_cache, &_config, query(), entry->objectID());
+		info = new EventInformation(&_cache, &_config, query(), entry->objectID(), author());
 		if ( !info->event ) {
 			SEISCOMP_INFO("event %s for JournalEntry not found", entry->objectID().c_str());
 			return false;
@@ -1254,7 +1258,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 		cacheEvent(info);
 	}
 	else
-		info->addJournalEntry(entry);
+		info->addJournalEntry(entry, author());
 
 	if ( !info->event->parent() ) {
 		SEISCOMP_ERROR("%s: internal error: no parent", info->event->publicID().c_str());
@@ -1489,7 +1493,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 		else {
 			EventInformationPtr sourceInfo = cachedEvent(entry->parameters());
 			if ( !sourceInfo ) {
-				sourceInfo = new EventInformation(&_cache, &_config, query(), entry->parameters());
+				sourceInfo = new EventInformation(&_cache, &_config, query(), entry->parameters(), author());
 				if ( !sourceInfo->event ) {
 					SEISCOMP_ERROR("source event %s for merge not found", entry->parameters().c_str());
 					SEISCOMP_LOG(_infoChannel, " - skipped, source event %s for merge not found in database", entry->parameters().c_str());
@@ -1510,7 +1514,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 					JournalEntryPtr srcResponse;
 					srcResponse = createEntry(sourceInfo->event->publicID(), "EvDeleteOK", string("merged into ") + info->event->publicID());
 					if ( srcResponse ) {
-						sourceInfo->addJournalEntry(srcResponse.get());
+						sourceInfo->addJournalEntry(srcResponse.get(), author());
 						srcResponse->setSender(author());
 						Notifier::Enable();
 						Notifier::Create(_journal->publicID(), OP_ADD, srcResponse.get());
@@ -1539,7 +1543,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 			if ( e ) {
 				EventInformationPtr sourceInfo = cachedEvent(e->publicID());
 				if ( !sourceInfo ) {
-					sourceInfo = new EventInformation(&_cache, &_config, query(), e);
+					sourceInfo = new EventInformation(&_cache, &_config, query(), e, author());
 					sourceInfo->loadAssocations(query());
 					cacheEvent(sourceInfo);
 				}
@@ -1715,7 +1719,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 
 						newResponse = createEntry(newInfo->event->publicID(), "EvNewEventOK", "created by command");
 						if ( newResponse ) {
-							newInfo->addJournalEntry(newResponse.get());
+							newInfo->addJournalEntry(newResponse.get(), author());
 							newResponse->setSender(author());
 							Notifier::Enable();
 							Notifier::Create(_journal->publicID(), OP_ADD, newResponse.get());
@@ -1751,7 +1755,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 	}
 
 	if ( response ) {
-		info->addJournalEntry(response.get());
+		info->addJournalEntry(response.get(), author());
 		response->setSender(author());
 		Notifier::Enable();
 		Notifier::Create(_journal->publicID(), OP_ADD, response.get());
@@ -1853,7 +1857,9 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 
 			for ( size_t i = 0; i < fetchedEvents.size(); ++i ) {
 				// Load the eventinformation for this event
-				EventInformationPtr tmp = new EventInformation(&_cache, &_config, query(), fetchedEvents[i]);
+				EventInformationPtr tmp = new EventInformation(
+					&_cache, &_config, query(), fetchedEvents[i], author()
+				);
 				if ( tmp->valid() ) {
 					tmp->loadAssocations(query());
 					MatchResult res = compare(tmp.get(), origin);
@@ -2052,7 +2058,7 @@ void EventTool::updatedOrigin(DataModel::Origin *org,
 			return;
 		}
 
-		info = new EventInformation(&_cache, &_config, query(), e);
+		info = new EventInformation(&_cache, &_config, query(), e, author());
 		info->loadAssocations(query());
 		cacheEvent(info);
 	}
@@ -2154,7 +2160,7 @@ EventInformationPtr EventTool::associateFocalMechanism(FocalMechanism *fm) {
 			return nullptr;
 		}
 
-		info = new EventInformation(&_cache, &_config, query(), e);
+		info = new EventInformation(&_cache, &_config, query(), e, author());
 		info->loadAssocations(query());
 		cacheEvent(info);
 	}
@@ -2221,7 +2227,7 @@ void EventTool::updatedFocalMechanism(FocalMechanism *focalMechanism) {
 			return;
 		}
 
-		info = new EventInformation(&_cache, &_config, query(), e);
+		info = new EventInformation(&_cache, &_config, query(), e, author());
 		info->loadAssocations(query());
 		cacheEvent(info);
 	}
@@ -2883,7 +2889,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 								entry->setSender(author());
 								entry->setCreated(Core::Time::GMT());
 								Notifier::Create(_journal->publicID(), OP_ADD, entry.get());
-								info->addJournalEntry(entry.get());
+								info->addJournalEntry(entry.get(), author());
 							}
 							else
 								preferredOriginPriority = ORIGIN_PRIORITY_MAX;
@@ -2927,7 +2933,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 								entry->setSender(author());
 								entry->setCreated(Core::Time::GMT());
 								Notifier::Create(_journal->publicID(), OP_ADD, entry.get());
-								info->addJournalEntry(entry.get());
+								info->addJournalEntry(entry.get(), author());
 							}
 							else
 								preferredOriginPriority = ORIGIN_PRIORITY_MAX;
@@ -3190,7 +3196,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							entry->setSender(author());
 							entry->setCreated(Core::Time::GMT());
 							Notifier::Create(_journal->publicID(), OP_ADD, entry.get());
-							info->addJournalEntry(entry.get());
+							info->addJournalEntry(entry.get(), author());
 						}
 						else
 							preferredOriginPriority = ORIGIN_PRIORITY_MAX;
@@ -3438,7 +3444,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			newEventType ? newEventType->toString() : ""
 		);
 
-		info->addJournalEntry(response.get());
+		info->addJournalEntry(response.get(), author());
 		response->setSender(author());
 		Notifier::Create(_journal->publicID(), OP_ADD, response.get());
 
@@ -3448,7 +3454,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			newEventType ? newEventType->toString() : ":unset:"
 		);
 
-		info->addJournalEntry(response.get());
+		info->addJournalEntry(response.get(), author());
 		response->setSender(author());
 		Notifier::Create(_journal->publicID(), OP_ADD, response.get());
 		Notifier::Disable();
@@ -3468,7 +3474,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			newEventTypeCertainty ? newEventTypeCertainty->toString() : ""
 		);
 
-		info->addJournalEntry(response.get());
+		info->addJournalEntry(response.get(), author());
 		response->setSender(author());
 		Notifier::Create(_journal->publicID(), OP_ADD, response.get());
 
@@ -3478,7 +3484,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			newEventTypeCertainty ? newEventTypeCertainty->toString() : ":unset:"
 		);
 
-		info->addJournalEntry(response.get());
+		info->addJournalEntry(response.get(), author());
 		response->setSender(author());
 		Notifier::Create(_journal->publicID(), OP_ADD, response.get());
 		Notifier::Disable();
