@@ -3444,8 +3444,8 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			newEventType ? newEventType->toString() : ""
 		);
 
-		info->addJournalEntry(response.get(), author());
 		response->setSender(author());
+		info->addJournalEntry(response.get(), author());
 		Notifier::Create(_journal->publicID(), OP_ADD, response.get());
 
 		response = createEntry(
@@ -3454,8 +3454,8 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			newEventType ? newEventType->toString() : ":unset:"
 		);
 
-		info->addJournalEntry(response.get(), author());
 		response->setSender(author());
+		info->addJournalEntry(response.get(), author());
 		Notifier::Create(_journal->publicID(), OP_ADD, response.get());
 		Notifier::Disable();
 	}
@@ -3474,8 +3474,8 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			newEventTypeCertainty ? newEventTypeCertainty->toString() : ""
 		);
 
-		info->addJournalEntry(response.get(), author());
 		response->setSender(author());
+		info->addJournalEntry(response.get(), author());
 		Notifier::Create(_journal->publicID(), OP_ADD, response.get());
 
 		response = createEntry(
@@ -3484,8 +3484,8 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			newEventTypeCertainty ? newEventTypeCertainty->toString() : ":unset:"
 		);
 
-		info->addJournalEntry(response.get(), author());
 		response->setSender(author());
+		info->addJournalEntry(response.get(), author());
 		Notifier::Create(_journal->publicID(), OP_ADD, response.get());
 		Notifier::Disable();
 	}
