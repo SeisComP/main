@@ -547,10 +547,9 @@ bool MvMainWindow::init() {
 	if ( SCApp->commandline().hasOption("displaymode") ) {
 		displayMode = SCApp->commandline().option<std::string>("displaymode");
 	}
-
 	_displayMode = selectDisplayModeFromString(displayMode);
-	bool isDisplayModeStringInvalid = _displayMode == NONE && !displayMode.empty();
-	if ( isDisplayModeStringInvalid ) {
+
+	if ( (_displayMode == NONE) && (!displayMode.empty()) ) {
 		SEISCOMP_ERROR("Invalid displaymode found: %s", displayMode.c_str());
 		return false;
 	}
@@ -575,14 +574,21 @@ bool MvMainWindow::init() {
 		_configStationRecordFilterStr = SCApp->configGetString("stations.groundMotionFilter");
 	} catch ( Config::Exception& ) {}
 
-	StationDataCollection::iterator stationIt = _stationDataCollection.begin();
-	for ( ; stationIt != _stationDataCollection.end(); ++stationIt ) {
-		stationIt->gmFilter = StationData::GmFilterPtr(Math::Filtering::InPlaceFilter<double>::Create(_configStationRecordFilterStr));
-		if ( !stationIt->gmFilter ) {
-			SEISCOMP_ERROR("Could not create filter: %s",
-			               _configStationRecordFilterStr.c_str());
-			return false;
+	if ( !_configStationRecordFilterStr.empty() ) {
+		SEISCOMP_DEBUG("Applying ground motion filter to records: '%s'",
+		               _configStationRecordFilterStr.c_str());
+		StationDataCollection::iterator stationIt = _stationDataCollection.begin();
+		for ( ; stationIt != _stationDataCollection.end(); ++stationIt ) {
+			stationIt->gmFilter = StationData::GmFilterPtr(Math::Filtering::InPlaceFilter<double>::Create(_configStationRecordFilterStr));
+			if ( !stationIt->gmFilter ) {
+				SEISCOMP_ERROR("Could not create filter: %s",
+				               _configStationRecordFilterStr.c_str());
+				return false;
+			}
 		}
+	}
+	else {
+		SEISCOMP_DEBUG("Do not filter records: no filter configured");
 	}
 
 	if ( !initRecordStream() ) {
