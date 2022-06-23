@@ -3393,7 +3393,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			// Preferred origin is not rejected, remove the event type if it was
 			// previously 'not existing'
 			if ( !info->constraints.fixedOrigin() && notExistingEvent ) {
-				SEISCOMP_INFO("%s: remove event type since evaluation status of"
+				SEISCOMP_INFO("%s: remove event type since evaluation status of "
 				              "preferred origin changed from 'rejected'",
 				              info->event->publicID().c_str());
 				SEISCOMP_LOG(_infoChannel, "Remove event type since evaluation "
