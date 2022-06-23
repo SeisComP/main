@@ -30,6 +30,9 @@
 #include <seiscomp/datamodel/stationmagnitude.h>
 #include <seiscomp/logging/log.h>
 
+#include <algorithm>
+#include <iterator>
+
 
 using namespace std;
 
@@ -44,7 +47,9 @@ namespace QL2SC {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Config::init() {
 	Client::Application *app = SCCoreApp;
-	if ( app == NULL ) return false;
+	if ( !app ) {
+		return false;
+	}
 
 	SEISCOMP_INFO("reading configuration");
 
@@ -61,6 +66,24 @@ bool Config::init() {
 
 	try { maxWaitForEventIDTimeout = app->configGetInt("eventAssociationTimeout"); }
 	catch ( ... ) { maxWaitForEventIDTimeout = 10; }
+
+	try {
+		auto publicIDWhitelist = app->configGetStrings("processing.whitelist.publicIDs");
+		copy(
+			publicIDWhitelist.begin(), publicIDWhitelist.end(),
+			inserter(publicIDFilter.allow, publicIDFilter.allow.end())
+		);
+	}
+	catch ( ... ) {}
+
+	try {
+		auto publicIDBlacklist = app->configGetStrings("processing.blacklist.publicIDs");
+		copy(
+			publicIDBlacklist.begin(), publicIDBlacklist.end(),
+			inserter(publicIDFilter.deny, publicIDFilter.deny.end())
+		);
+	}
+	catch ( ... ) {}
 
 	// host configurations
 	hosts.clear();

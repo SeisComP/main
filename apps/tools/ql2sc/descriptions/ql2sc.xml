@@ -124,6 +124,24 @@
 					</parameter>
 				</struct>
 			</group>
+			<group name="processing">
+				<group name="blacklist">
+					<parameter name="publicIDs" type="list:string">
+						<description>
+						Defines a whitelist of publicID prefixes that are
+						allowed for processing. Separate items by comma.
+						</description>
+					</parameter>
+				</group>
+				<group name="whitelist">
+					<parameter name="publicIDs" type="list:string">
+						<description>
+						Defines a blacklist of publicID prefixes that are
+						not allowed for processing. Separate items by comma.
+						</description>
+					</parameter>
+				</group>
+			</group>
 		</configuration>
 		<command-line>
 			<group name="Generic">
