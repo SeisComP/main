@@ -72,6 +72,7 @@ struct Config {
 	size_t         backLog;
 	int            maxWaitForEventIDTimeout;
 	PrefixFirewall publicIDFilter;
+	bool           allowRemoval;
 	HostConfigs    hosts;
 };
 

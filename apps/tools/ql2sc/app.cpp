@@ -187,6 +187,38 @@ class MyDiff : public Diff4 {
 			return true;
 		}
 
+		bool confirmRemove(const Core::BaseObject *localO,
+		                   LogNode *node) override {
+			const Core::MetaProperty *prop = nullptr;
+
+			if ( _cfg.allowRemoval ) {
+				return true;
+			}
+
+			auto it = CreationInfoIndex.find(localO->className());
+			if ( it == CreationInfoIndex.end() ) {
+				if ( localO->meta() ) {
+					prop = localO->meta()->property("creationInfo");
+					CreationInfoIndex[localO->className()] = prop;
+				}
+			}
+			else {
+				prop = it->second;
+			}
+
+			if ( !prop ) {
+				// If the object does not have a creationInfo then it is considered
+				// a part of the parent and is allowed to be removed.
+				return true;
+			}
+
+			if ( node ) {
+				node->addChild(o2t(localO), "SKIP REMOVE due to configuration");
+			}
+
+			return false;
+		}
+
 		bool confirmDescent(const Core::BaseObject *,
 		                    const Core::BaseObject *,
 		                    bool updateConfirmed,

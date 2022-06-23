@@ -67,6 +67,9 @@ bool Config::init() {
 	try { maxWaitForEventIDTimeout = app->configGetInt("eventAssociationTimeout"); }
 	catch ( ... ) { maxWaitForEventIDTimeout = 10; }
 
+	try { allowRemoval = app->configGetBool("allowRemoval"); }
+	catch ( ... ) { allowRemoval = true; }
+
 	try {
 		auto publicIDWhitelist = app->configGetStrings("processing.whitelist.publicIDs");
 		copy(
