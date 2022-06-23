@@ -4,7 +4,13 @@
 		<description>Map view</description>
 		<configuration>
 			<parameter name="displaymode" type="string">
-				<description>Set one of the available displaymodes: groundmotion or qualitycontrol</description>
+				<description>
+				Start scmv in one of the available display modes:
+
+				groundmotion or qualitycontrol
+
+				and without tabs and menus as walldisplay.
+				</description>
 			</parameter>
 			<parameter name="groundMotionRecordLifeSpan" type="int" default="300" unit="s">
 				<description>Sets the maximum latency in seconds of the ground motion records to be valid.</description>
@@ -69,7 +75,7 @@
 				</parameter>
 			</group>
 			<group name="stations">
-				<parameter name="groundMotionFilter" type="string">
+				<parameter name="groundMotionFilter" type="string" default="&quot;RMHP(50)>>ITAPER(20)>>BW(2,0.04,2)&quot;">
 					<description>Sets the filter applied to determine ground motion.</description>
 				</parameter>
 			</group>
