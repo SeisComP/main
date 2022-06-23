@@ -153,6 +153,20 @@ are also skipped even if they carry a different agency id.
    updates between cross-connected SeisComP systems.
 
 
+.. _publicID_filter:
+
+PublicID prefix filter
+======================
+
+In addition to the :ref:`agency filter<agency_filter>` incoming or local objects
+can be skipped by checking their publicID prefix. It behaves similar to the
+:ref:`agency filter<agency_filter>` but checks the ``publicID`` attribute rather
+than the ``creationInfo.agencyID`` attribute.
+Prefixes can be configure as white- or blacklist with
+``processing.whitelist.publicIDs = ...`` and
+``processing.blacklist.publicIDs = ...``.
+
+
 Workflow
 ========
 
@@ -261,6 +275,9 @@ in the magnitude set sent by ``A``.
 
 To avoid losing these local magnitudes one may decide to block magnitudes from
 import by routing them to ``NULL``. If magnitudes from ``A`` and from ``B``
-should be available an :ref:`agency filter<agency_filter>` may be defined. Make
-sure ``A`` and ``B`` uses distinct agency IDs and add the agency ID of ``B`` to
-``processing.blacklist.agencies``.
+should be available an :ref:`agency filter<agency_filter>` or
+:ref:`publicID filter<publicID_filter>` may be defined.
+
+Make sure ``A`` and ``B`` use either distinct agency IDs or distinct publicID
+patterns and add the agency ID of ``B`` to ``processing.blacklist.agencies`` or
+the publicID prefix of ``B`` to ``processing.blacklist.publicIDs``.

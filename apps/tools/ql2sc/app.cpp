@@ -89,18 +89,35 @@ Core::Time getLastModificationTime(const T *o) {
 
 
 class MyDiff : public Diff4 {
+	public:
+		MyDiff(const Config &cfg) : _cfg(cfg) {}
+
 	protected:
 		bool blocked(const Core::BaseObject *o, LogNode *node, bool local) {
+			auto po = PublicObject::ConstCast(o);
+			if ( po ) {
+				if ( _cfg.publicIDFilter.isDenied(po->publicID()) ) {
+					if ( node && node->level() >= LogNode::DIFFERENCES )
+						node->addChild(o2t(o), "SKIP (" + string(local?"local":"remote") +
+						               " publicID '" + po->publicID() + "' blocked)");
+					return true;
+				}
+			}
+
 			const Core::MetaProperty *prop = 0;
 			PropertyIndex::const_iterator it = CreationInfoIndex.find(o->className());
 			if ( it == CreationInfoIndex.end() ) {
-				if ( o->meta() )
+				if ( o->meta() ) {
 					prop = o->meta()->property("creationInfo");
+					CreationInfoIndex[o->className()] = prop;
+				}
 			}
 			else
 				prop = it->second;
 
-			if ( !prop ) return false;
+			if ( !prop ) {
+				return false;
+			}
 
 			string agencyID;
 
@@ -201,6 +218,9 @@ class MyDiff : public Diff4 {
 
 			return updateConfirmed;
 		}
+
+	private:
+		const Config &_cfg;
 };
 
 
@@ -815,7 +835,7 @@ void App::diffPO(T *remotePO, const string &parentID, Notifiers &notifiers,
 		PublicObjectCacheFeeder(_cache).feed(localPO.get(), true);
 	}
 
-	MyDiff diff;
+	MyDiff diff(_config);
 	diff.diff(localPO.get(), remotePO, parentID, notifiers, logNode);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
