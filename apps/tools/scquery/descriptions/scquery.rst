@@ -3,8 +3,8 @@ on custom queries and writes them to stdout.
 It extends :ref:`scevtls` and :ref:`scorgls` which are limited to searching event
 and origin IDs, respectively, by time.
 
-scquery takes into account the :ref:`query profiles <scquery_queries>`
-defined in
+scquery takes into account and requires :ref:`query profiles <scquery_queries>`
+for querying the database. The profiles are defined in
 
 * :file:`@SYSTEMCONFIGDIR@/queries.cfg` or
 * :file:`@CONFIGDIR@/queries.cfg`
@@ -34,6 +34,7 @@ Module Setup
       in the section :ref:`Examples<scquery_examples>` can be omitted or used to
       override the configuration.
 
+
 .. _scquery_examples:
 
 Examples
@@ -47,7 +48,7 @@ parameters are indicated by hashes, e.g. ##latMin##.
 
    .. code-block:: sh
 
-      scquery -d localhost/seiscomp --showqueries
+      scquery --showqueries
 
 #. Profile **event_filter**: Fetch all event IDs and event parameters for events
    with magnitude ranging from 2.5 to 5 in central Germany between 2014 and 2017:
