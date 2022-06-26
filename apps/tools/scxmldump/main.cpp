@@ -95,28 +95,65 @@ class EventDump : public Seiscomp::Client::Application {
 	protected:
 		void createCommandLineDescription() {
 			commandline().addGroup("Dump");
-			commandline().addOption("Dump", "listen", "listen to the message server for incoming events");
-			commandline().addOption("Dump", "inventory,I", "export the inventory");
-			commandline().addOption("Dump", "without-station-groups", "remove station groups from inventory");
-			commandline().addOption("Dump", "stations", "if inventory is exported filter the stations to export where each item is in format net[.{sta|*}]", &_stationIDs);
-			commandline().addOption("Dump", "config,C", "export the config");
-			commandline().addOption("Dump", "journal,J", "export the journal");
-			commandline().addOption("Dump", "routing,R", "export routing");
-			commandline().addOption("Dump", "availability,Y", "export data availability information");
-			commandline().addOption("Dump", "with-segments", "export individual data availability segments");
-			commandline().addOption("Dump", "origin,O", "origin id(s)", &_originIDs, false);
-			commandline().addOption("Dump", "event,E", "event id(s)", &_eventIDs, false);
-			commandline().addOption("Dump", "with-picks,P", "export associated picks");
-			commandline().addOption("Dump", "with-amplitudes,A", "export associated amplitudes");
-			commandline().addOption("Dump", "with-magnitudes,M", "export station magnitudes");
-			commandline().addOption("Dump", "with-focal-mechanisms,F", "export focal mechanisms");
-			commandline().addOption("Dump", "ignore-arrivals,a", "do not export origin arrivals");
-			commandline().addOption("Dump", "ignore-magnitudes", "ignores magnitudes of exported origins");
-			commandline().addOption("Dump", "preferred-only,p", "when exporting events only the preferred origin and the preferred magnitude will be dumped");
-			commandline().addOption("Dump", "all-magnitudes,m", "if only the preferred origin is exported, all magnitudes for this origin will be dumped");
-			commandline().addOption("Dump", "formatted,f", "use formatted output");
-			commandline().addOption("Dump", "prepend-datasize", "prepend a line with the length of the XML string");
-			commandline().addOption("Dump", "output,o", "output file (default is stdout)", &_outputFile, false);
+			commandline().addOption("Dump", "config,C", "Export the config.");
+			commandline().addOption("Dump", "inventory,I", "Export the inventory.");
+			commandline().addOption("Dump", "without-station-groups",
+			                        "Remove station groups from inventory.");
+			commandline().addOption("Dump", "stations",
+			                        "If inventory is exported, filter the "
+			                        "stations to export. Format of each item: "
+			                        "net[.{sta|*}]", &_stationIDs);
+			commandline().addOption("Dump", "journal,J", "Export the journal.");
+			commandline().addOption("Dump", "routing,R", "Export routing.");
+			commandline().addOption("Dump", "availability,Y",
+			                        "Export data availability information.");
+			commandline().addOption("Dump", "with-segments",
+			                        "Export individual data availability segments.");
+			commandline().addOption("Dump", "listen",
+			                        "Listen to the message server for incoming events.");
+			commandline().addOption("Dump", "origin,O",
+			                        "ID(s) or origin(s) to export.", &_originIDs, false);
+			commandline().addOption("Dump", "event,E",
+			                        "ID(s) or event(s) to export.", &_eventIDs, false);
+			commandline().addOption("Dump", "with-picks,P", "Export associated picks.");
+			commandline().addOption("Dump", "with-amplitudes,A",
+			                        "Export associated amplitudes.");
+			commandline().addOption("Dump", "with-magnitudes,M",
+			                        "Export station magnitudes.");
+			commandline().addOption("Dump", "with-focal-mechanisms,F",
+			                        "Export focal mechanisms.");
+			commandline().addOption("Dump", "ignore-arrivals,a",
+			                        "Do not export origin arrivals.");
+			commandline().addOption("Dump", "ignore-magnitudes",
+			                        "Ignores magnitudes of exported origins.");
+			commandline().addOption("Dump", "preferred-only,p",
+			                        "When exporting events, only the preferred "
+			                        "origin and the preferred magnitude will be dumped.");
+			commandline().addOption("Dump", "all-magnitudes,m",
+			                        "If only the preferred origin is exported, "
+			                        "all magnitudes for this origin will be dumped.");
+			commandline().addGroup("Output");
+			commandline().addOption("Output", "formatted,f", "Use formatted output.");
+			commandline().addOption("Output", "output,o",
+			                        "Output file (default is stdout)",
+			                        &_outputFile, false);
+			commandline().addOption("Output", "prepend-datasize",
+			                        "Prepend a line with the length of the XML string.");
+		}
+
+		void printUsage() const {
+			std::cout << "Usage:" << std::endl << "  scxmldump [options]"
+			          << std::endl << std::endl
+			          << "Dump objects from a database to XML."
+			          << std::endl;
+
+			Client::Application::printUsage();
+
+			std::cout << "Examples:" << std::endl;
+			std::cout << "Dump event parameters for one event into a XML file"
+			          << std::endl
+			          << "  scxmldump -d mysql://sysop:sysop@localhost/seiscomp -E gempa2022abcd -PAMFf -o gempa2022abcd.xml"
+			          << std::endl << std::endl;
 		}
 
 		bool validateParameters() {
