@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="scxmlmerge" category="Utilities">
-		<description>Merge the content of multiple XML files in SC3ML format.
+		<description>Merge the content of multiple XML files in SCML format.
 		</description>
 		<command-line>
 			<synopsis>
@@ -26,34 +26,34 @@
 				<optionReference>verbosity#log-file</optionReference>
 			</group>
 			<group name="Options">
-				<option long-flag="event" argument="E">
+				<option long-flag="event">
 					<description>
-					Include Event Parameters
+					Include Event Parameters.
 					</description>
 				</option>
-				<option long-flag="inventory" argument="I">
+				<option long-flag="inventory">
 					<description>
-					Include Inventory
+					Include Inventory.
 					</description>
 				</option>
-				<option long-flag="config" argument="C">
+				<option long-flag="config">
 					<description>
-					Include Config
+					Include Config.
 					</description>
 				</option>
-				<option long-flag="routing" argument="R">
+				<option long-flag="routing">
 					<description>
-					Include Routing
+					Include Routing.
 					</description>
 				</option>
-				<option long-flag="quality" argument="Q">
+				<option long-flag="quality">
 					<description>
-					Include QualityControl
+					Include QualityControl.
 					</description>
 				</option>
-				<option long-flag="availability" argument="Y">
+				<option long-flag="availability">
 					<description>
-					Include DataAvailability
+					Include DataAvailability.
 					</description>
 				</option>
 			</group>

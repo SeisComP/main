@@ -49,36 +49,35 @@ class XMLMerge : public Seiscomp::Client::Application {
 		}
 
 		void printUsage() const {
-			std::cout << std::endl << "Description:" << std::endl;
-			std::cout << "  Merge the content of multiple XML files. "
+			std::cout << std::endl << "Usage:" << std::endl
+			          << "  scxmlmerge [options] inputFiles"
+			          << std::endl << std::endl;
+			std::cout << "Merge the content of multiple XML files. "
 			             "Different root elements like EventParameters and "
 			             "Inventory may be combined."
-			          << std::endl
-			          << std::endl << "Synopsis:" << std::endl
-			          << "  scxmlmerge [options] inputFiles" << std::endl;
+			          << std::endl;
 
 			Seiscomp::Client::Application::printUsage();
 
 			std::cout << "Examples:" << std::endl;
-			std::cout << "  scxmlmerge file1.xml file2.xml > file.xml"
-			          << std::endl << std::endl
-			          << "  Merges all SeisComP elements the from 2 XML files into a single XML file "
+			std::cout << "Merge all SeisComP elements the from 2 XML files into "
+			             "a single XML file." << std::endl
+			          << "  scxmlmerge file1.xml file2.xml > file.xml"
 			          << std::endl << std::endl;
-			std::cout << "  scxmlmerge -E -C file1.xml file2.xml > file.xml"
-			          << std::endl << std::endl
-			          << "  Merges the EventParameters and Config elements from 2 "
-                         "XML files into a single XML file "
-			          << std::endl;
+			std::cout << "Merge the EventParameters and Config elements from 2 "
+			             "XML files into a single XML file" << std::endl
+			          << "  scxmlmerge -E -C file1.xml file2.xml > file.xml"
+			          << std::endl << std::endl;
 		}
 
 		void createCommandLineDescription() {
 			commandline().addGroup("Dump");
-			commandline().addOption("Dump", "event,E", "Include EventParameters");
-			commandline().addOption("Dump", "inventory,I", "Include Inventory");
-			commandline().addOption("Dump", "config,C", "Include Config");
-			commandline().addOption("Dump", "routing,R", "Include Routing");
-			commandline().addOption("Dump", "quality,Q", "Include QualityControl");
-			commandline().addOption("Dump", "availability,Y", "Include DataAvailability");
+			commandline().addOption("Dump", "config,C", "Include Config.");
+			commandline().addOption("Dump", "event,E", "Include EventParameters.");
+			commandline().addOption("Dump", "inventory,I", "Include Inventory.");
+			commandline().addOption("Dump", "quality,Q", "Include QualityControl.");
+			commandline().addOption("Dump", "routing,R", "Include Routing.");
+			commandline().addOption("Dump", "availability,Y", "Include DataAvailability.");
 		}
 
 		bool run() {
