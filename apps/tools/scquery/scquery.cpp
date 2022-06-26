@@ -109,6 +109,7 @@ class AppQuery : public Client::Application {
 			setDatabaseEnabled(true, false);
 		}
 
+	protected:
 		void createCommandLineDescription() {
 			commandline().addGroup("Commands");
 			commandline().addOption("Commands", "showqueries",
@@ -125,6 +126,20 @@ class AppQuery : public Client::Application {
 			commandline().addOption("Commands", "query,Q",
 			                        "Execute the given query from the command line.",
 			                        &_query);
+		}
+
+		bool validateParameters() {
+			if ( !Seiscomp::Client::Application::validateParameters() ) {
+				return false;
+			}
+
+			if ( commandline().hasOption("showqueries") ) {
+				 setDatabaseEnabled(false, false);
+			}
+			else {
+				setDatabaseEnabled(true, false);
+			}
+			return true;
 		}
 
 		void printUsage() const {
