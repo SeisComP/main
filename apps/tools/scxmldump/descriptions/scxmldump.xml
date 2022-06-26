@@ -94,13 +94,13 @@
 						Dump individual data segments.
 					</description>
 				</option>
-				<option flag="O" long-flag="origin" argument="id">
+				<option flag="O" long-flag="origin" argument="ID">
 					<description>
 						Origin publicID(s) to dump. Multiple origins may be specified
 						as a comma-separated list.
 					</description>
 				</option>
-				<option flag="E" long-flag="event" argument="id">
+				<option flag="E" long-flag="event" argument="ID">
 					<description>
 						Event publicID(s) to dump. Multiple events may be specified
 						as a comma-separated list.
@@ -150,19 +150,22 @@
 						origin will be dumped.
 					</description>
 				</option>
+			</group>
+			<group name="Output">
 				<option flag="f" long-flag="formatted">
 					<description>
-						Use formatted XML output.
-					</description>
-				</option>
-				<option long-flag="prepend-datasize">
-					<description>
-						Prepend a line with the length of the XML data.
+						Use formatted XML output. Otherwise all XML is printed
+						on one line.
 					</description>
 				</option>
 				<option flag="o" long-flag="output">
 					<description>
 						The output file. Default is stdout.
+					</description>
+				</option>
+				<option long-flag="prepend-datasize">
+					<description>
+						Prepend a line with the length of the XML data.
 					</description>
 				</option>
 			</group>
