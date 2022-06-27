@@ -378,11 +378,13 @@ class DBCleaner(seiscomp.client.Application):
                     "database.cleanup.keep.days")
             except RuntimeError:
                 pass
+
             try:
                 self._hoursToKeep = self.configGetInt(
                     "database.cleanup.keep.hours")
             except RuntimeError:
                 pass
+
             try:
                 self._minutesToKeep = self.configGetInt(
                     "database.cleanup.keep.minutes")
@@ -483,7 +485,8 @@ Remove all event and waveform QC paramters older than 30 days
                     pass
 
             # fall back to default if no times are given
-            if dateTime is None and self._hoursToKeep is None and self._minutesToKeep is None:
+            if (self._daysToKeep is None and dateTime is None and
+                    self._hoursToKeep is None and self._minutesToKeep is None):
                 self._daysToKeep = 30
 
             return True
