@@ -879,7 +879,7 @@ class Bulletin(object):
         else:
             raise TypeError("illegal type for origin")
 
-        if self.format == "fdsn":
+        if self.format == "fdsnws":
             return self._printOriginFDSN(org)
         elif self.format == "autoloc1":
             return self._printOriginAutoloc1(org)
@@ -952,9 +952,9 @@ class BulletinApp(seiscomp.client.Application):
             self.commandline().addOption("Dump", "event-agency-id",
                                          "Use agency ID information from event"
                                          " instead of preferred origin.")
-            self.commandline().addOption("Dump", "fdsn",
-                                         "Dump in FDSN event format, e.g., for"
-                                         " generating catalogs.")
+            self.commandline().addOption("Dump", "fdsnws",
+                                         "Dump in FDSNWS event text format, "
+                                         "e.g., for generating catalogs.")
             self.commandline().addOption("Dump", "first-only",
                                          "Dump only the first event/origin. "
                                          "Expects input from file or stdin.")
@@ -964,8 +964,8 @@ class BulletinApp(seiscomp.client.Application):
             self.commandline().addOption("Dump", "polarities,p",
                                          "Dump onset polarities.")
             self.commandline().addStringOption("Dump", "weight,w",
-                                         "Weight threshold for printed"
-                                         " and counted picks.")
+                                               "Weight threshold for printed "
+                                               "and counted picks.")
             self.commandline().addOption("Dump", "extra,x",
                                          "Extra detailed autoloc3 format.")
 
@@ -1051,8 +1051,8 @@ Convert XML file with event parameters to bulletin
             else:
                 bulletin.format = "autoloc3"
 
-        if self.commandline().hasOption("fdsn"):
-            bulletin.format = "fdsn"
+        if self.commandline().hasOption("fdsnws"):
+            bulletin.format = "fdsnws"
 
         if self.commandline().hasOption("enhanced"):
             bulletin.enhanced = True
@@ -1165,7 +1165,7 @@ Convert XML file with event parameters to bulletin
 
         if txt:
 
-            if bulletin.format == "fdsn":
+            if bulletin.format == "fdsnws":
                 print("#EventID|Time|Latitude|Longitude|Depth/km|Author|"
                       "Catalog|Contributor|ContributorID|MagType|Magnitude|"
                       "MagAuthor|EventLocationName|EventType")

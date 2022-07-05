@@ -83,9 +83,9 @@
 					Use the agency ID of the event instead of the preferred origin.
 					</description>
 				</option>
-				<option long-flag="fdsn">
+				<option long-flag="fdsnws">
 					<description>
-					Dump in FDSN event format, e.g., for generating catalogs.
+					Dump in FDSNWS event text format, e.g., for generating catalogs.
 					</description>
 				</option>
 				<option long-flag="first-only">
