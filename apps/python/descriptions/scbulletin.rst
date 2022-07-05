@@ -23,9 +23,10 @@ Different output formats are available by command-line options:
 
 #. ``-1`` for **autoloc1**: Print one bulletin per event.
 #. ``-3`` for **autoloc3**: Print one bulletin per event.
-#. ``--fdsn`` for FDSN event: Print one line per event. Useful for generating
-   event catalogs from XML file containing several events. This option is an
-   alternative to generating catalogs by :ref:`fdsnws-event <sec-event>`.
+#. ``--fdsnws`` for FDSNWS event text: Print one line per event. Useful for
+   generating event catalogs from XML file containing several events. This
+   option offers an alternative to generating event catalogs by
+   :ref:`fdsnws-event <sec-event>`.
 #. ``-3 -x`` for **extended autoloc3**.
 #. ``-1 -e`` or ``-3 -e`` for **enhanced** output at high-precision. All times
    and distances are in units of milliseconds and meters, respectively.
