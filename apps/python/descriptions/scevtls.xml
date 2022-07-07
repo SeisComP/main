@@ -39,26 +39,35 @@
 					&quot;2012-01-01 00:00:00&quot;.
 					</description>
 				</option>
-				<option long-flag="modified-after" argument="time">
-					<description>
-					Print IDs or events modified after the specified time.
-					</description>
-				</option>
 				<option long-flag="end" argument="time">
 					<description>
 					Specify the upper bound of the time interval. Format is
 					&quot;2012-01-01 00:00:00&quot;.
 					</description>
 				</option>
+				<option long-flag="hours" argument="arg">
+					<description>
+					Start searching given hours before now. If set, --begin and
+					--end are ignored.
+					</description>
+				</option>
+				<option long-flag="modified-after" argument="time">
+					<description>
+					Print IDs or events modified after the specified time.
+					</description>
+				</option>
+			</group>
+
+			<group name="Output">
+				<option long-flag="delimiter" flag="D" argument="string">
+					<description>
+					Specify the delimiter of the resulting event ids.
+					</description>
+				</option>
 				<option long-flag="preferred-origin" flag="p" argument="">
 					<description>
 					Print the ID of the preferred origin along with the event
 					ID.
-					</description>
-				</option>
-				<option long-flag="delimiter" flag="D" argument="string">
-					<description>
-					Specify the delimiter of the resulting event ids.
 					</description>
 				</option>
 			</group>
