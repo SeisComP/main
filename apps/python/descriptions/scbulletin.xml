@@ -55,14 +55,14 @@
 			<group name="Dump">
 				<option flag="E" long-flag="event" argument="arg">
 					<description>
-					ID of event that is read from database and
-					transformed into a bulletin.
+					ID of event that is read from database and transformed into 
+					a bulletin. Separate multiple IDs by comma."
 					</description>
 				</option>
 				<option flag="O" long-flag="origin" argument="arg">
 					<description>
-					ID of origin that is read from database
-					and transformed into a bulletin.
+					ID of origin that is read from database and transformed into
+					a bulletin. Separate multiple IDs by comma.
 					</description>
 				</option>
 				<option flag="1" long-flag="autoloc1">

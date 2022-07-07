@@ -24,26 +24,28 @@ Different output formats are available by command-line options:
 #. ``-1`` for **autoloc1**: Print one bulletin per event.
 #. ``-3`` for **autoloc3**: Print one bulletin per event.
 #. ``--fdsnws`` for FDSNWS event text: Print one line per event. Useful for
-   generating event catalogs from XML file containing several events. This
-   option offers an alternative to generating event catalogs by
-   :ref:`fdsnws-event <sec-event>`.
+   generating event catalogs. This option offers an alternative to generating
+   event catalogs by :ref:`fdsnws-event <sec-event>`.
 #. ``-3 -x`` for **extended autoloc3**.
 #. ``-1 -e`` or ``-3 -e`` for **enhanced** output at high-precision. All times
    and distances are in units of milliseconds and meters, respectively.
 
-If called with an event or origin ID a database connection is necessary to
+If called with an event or origin ID, a database connection is necessary to
 fetch the corresponding object. Otherwise scbulletin will read the input source
-(defaults to stdin), grab the first found event or origin and dump it.
+(defaults to stdin), grab the found events or origins and dump the bulletins.
+The input can be filtered by the event or origin IDs. Event and origin IDs can
+be provided by :ref:`scevtls` and :ref:`scorgls`, respectively.
 
 
 Examples
 ========
 
-#. Create bulletin from one event in database
+#. Create a bulletin from one or multiple event(s) in database
 
    .. code-block:: sh
 
       scbulletin -d mysql://sysop:sysop@localhost/seiscomp -E gfz2012abcd
+      scbulletin -d mysql://sysop:sysop@localhost/seiscomp -E gfz2012abcd,gfz2022abcd
 
 #. Convert XML file to bulletin
 
@@ -56,11 +58,12 @@ Examples
       scbulletin -i gfz2012abcd.xml
 
 
-#. Convert XML file to bulletin but filter by event ID
+#. Convert XML file to bulletin but filter by event ID(s)
 
    .. code-block:: sh
 
       scbulletin -i gfz2012abcd.xml -E gempa2022abcd
+      scbulletin -i gfz2012abcd.xml -E gempa2022abcd,gfz2022abcd
 
 .. note::
 

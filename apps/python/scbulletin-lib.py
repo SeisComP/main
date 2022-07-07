@@ -803,12 +803,12 @@ class Bulletin(object):
             prefMagID = evt.preferredMagnitudeID()
 
             try:
-                author = evt.creationInfo().author()
+                author = org.creationInfo().author()
             except ValueError:
                 pass
 
             try:
-                contrib = evt.creationInfo().agencyID()
+                contrib = org.creationInfo().agencyID()
             except ValueError:
                 pass
             try:
@@ -939,9 +939,11 @@ class BulletinApp(seiscomp.client.Application):
 
             self.commandline().addGroup("Dump")
             self.commandline().addStringOption("Dump", "event,E",
-                                               "ID of event to dump.")
+                                               "ID of event to dump. Separate "
+                                               "multiple IDs by comma.")
             self.commandline().addStringOption("Dump", "origin,O",
-                                               "ID of origin to dump.")
+                                               "ID of origin to dump. Separate"
+                                               " multiple IDs by comma.")
             self.commandline().addOption("Dump", "autoloc1,1",
                                          "autoloc1 format.")
             self.commandline().addOption("Dump", "autoloc3,3",
@@ -1069,15 +1071,20 @@ Convert XML file with event parameters to bulletin
         inputFile = self.inputFile
 
         if not self.inputFile:
+            txt = ''
             try:
                 if evid:
-                    try:
-                        txt = bulletin.printEvent(evid)
-                    except ValueError:
-                        seiscomp.logging.error("Unknown event '%s'" % evid)
-                        # return False
+                    for ev in evid.split(','):
+                        try:
+                            txt += bulletin.printEvent(ev)
+                        except ValueError:
+                            seiscomp.logging.error("Unknown event '%s'" % evid)
                 elif orid:
-                    txt = bulletin.printOrigin(orid)
+                    for org in orid.split(','):
+                        try:
+                            txt += bulletin.printOrigin(org)
+                        except ValueError:
+                            seiscomp.logging.error("Unknown origin '%s'" % org)
                 else:
                     inputFile = "-"
                     print("Expecting input in XML from stdin", file=sys.stderr)
@@ -1149,7 +1156,7 @@ Convert XML file with event parameters to bulletin
                         txt = ""
                         for i in range(ep.eventCount()):
                             ev = ep.event(i)
-                            if evid and evid != ev.publicID():
+                            if evid and ev.publicID() not in evid:
                                 seiscomp.logging.error("%s: Skipping event with ID %s" %
                                                        (inputFile, ev.publicID()))
                                 continue
