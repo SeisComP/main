@@ -6,7 +6,7 @@ QC parameters must be provided, e.g. by :ref:`scqc`.
    Writing QC parameters to the database by :ref:`scqc` will result in a rapidly
    growing database and is therefore not recommended in permanent application!
 
-The database query is done from
+The database query is done for
 
 * One or multiple streams,
 * One or multiple QC parameters. All QC parameters can be requested. Defaults
@@ -21,48 +21,61 @@ The database query is done from
 Workflow
 --------
 
-For minimizing the impact of stored waveform QC parameters on the size of the
-database you may:
+You should minimize the impact of stored waveform QC parameters on the size of the
+database.
 
 #. Compute the QC parameters in real time using :ref:`scqc` and save them in the
    |scname| database. Saving the QC parameters in the database requires to
    adjust the scqc module configuration parameters
    ``plugins.*.archive.interval`` for each plugin.
-#. Regularly read QC parameters from the database and clean it up, e.g. in a
-   cron job:
+#. Regularly use scqueryqc for some time span to read the QC parameters from the
+   database. Save them in a XML files.
 
-   #. use scqueryqc for some time span to read the QC parameters from the database.
-      Save them in XML files. Example for all QC parameters fround for all
-      streams in the inventory beginning at some some time:
+   Example for all QC parameters found for all streams in the inventory before
+   end time:
 
-      .. code-block:: sh
+   .. code-block:: sh
 
-         scqueryqc -d [host] -b '2021-11-20 00:00:00' --streams-from-inventory -o [XML file]
+      scqueryqc -d [host] -e '[end time]' --streams-from-inventory -o [XML file]
 
-   #. clean the database from the QC parameters
 
-      * based on the parameters saved in XML files using :ref:`scdispatch`. You
-        may need to set the routing table for sending the QualityControl
-        parameters to the right message group
+#. Clean the database from QC parameters.
 
-        .. code-block:: sh
+   * Either use :ref:`scdispatch` with the parameters saved in XML. You may need
+     to set the routing table for sending the QualityControl parameters to the
+     right message group, e.g., QC:
 
-           scdispatch -H [host] -O remove --routingtable QualityControl:QC -i [XML file]
+     .. code-block:: sh
 
-      * Alternatively, you may use :ref:`scdbstrip`, e.g. with the command-line
-        option ``--Q``, and remove all QC paramters in a time span.
+        scdispatch -H [host] -O remove --routingtable QualityControl:QC -i [XML file]
 
+   * Alternatively, use :ref:`scdbstrip` with the command-line option ``-Q`` and
+     remove **all** QC parameters in the time span. Use the same period for
+     which the QC parameters were retrieved:
+
+     .. code-block:: sh
+
+        scdbstrip -d [database] -Q --date-time '[end time]'
+
+     .. note ::
+
+        Considering an end time by ``--date-time`` has the advantage that no QC
+        parameters are removed which were measured after scqueryqc was applied.
 
 Examples
 --------
 
-* Query rms and delay values for the stream AU.AS18..SHZ,AU.AS19..SHZ from
-  '2021-11-20 00:00:00' until current. Write the XML to stdout ::
+* Query rms and delay values for the stream AU.AS18..SHZ,AU.AS19..SHZ before
+  '2021-11-20 00:00:00'. Write the XML to stdout
 
-     scqueryqc -d localhost -b '2021-11-20 00:00:00' -p rms,delay -i AU.AS18..SHZ,AU.AS19..SHZ
+  .. code-block:: sh
+
+     scqueryqc -d localhost -e '2021-11-20 00:00:00' -p rms,delay -i AU.AS18..SHZ,AU.AS19..SHZ
 
 * Query all default QC parameter values for all streams found in the inventory
   from '2021-11-20 00:00:00' until current. Write the formatted XML output to
-  :file:`/tmp/query.xml` ::
+  :file:`/tmp/query.xml`
+
+  .. code-block:: sh
 
      scqueryqc -d localhost -b '2021-11-20 00:00:00' --streams-from-inventory -f -o /tmp/query.xml
