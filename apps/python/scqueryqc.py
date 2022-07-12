@@ -106,11 +106,11 @@ class WfqQuery(seiscomp.client.Application):
             " [networkCode].[stationCode].[sensorLocationCode].[channelCode]. "
             "Provide a single ID or a comma-separated list. Overrides "
             "--streams-from-inventory")
-        self.commandline().addStringOption("Query", "parameter,p",
-                                           "QC parameter to output: (e.g. delay, rms, "
-                                           "'gaps count' ...). Provide a single parameter "
-                                           "or a comma-separated list. Defaults "
-                                           "apply if parameter is not given.")
+        self.commandline().addStringOption(
+            "Query", "parameter,p",
+            "QC parameter to output: (e.g. delay, rms, 'gaps count' ...). "
+            "Provide a single parameter or a comma-separated list. Defaults "
+            "apply if parameter is not given.")
         self.commandline().addOption("Query", "streams-from-inventory",
                                      "Read streams from inventory. Superseded"
                                      " by stream-id.")
@@ -206,14 +206,15 @@ Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from '2
                 return False
 
         print("Request:", file=sys.stderr)
-        print("  begin time:  {}".format(str(self._start)), file=sys.stderr)
-        print("  end time:    {}".format(str(self._end)), file=sys.stderr)
-        print("  streams:     {}".format(str(streams)), file=sys.stderr)
-        print("  parameters:  {}".format(str(self._parameter)),
+        print("  streams:           {}".format(str(streams)), file=sys.stderr)
+        print("  number of streams: {}".format(len(streams)), file=sys.stderr)
+        print("  begin time:        {}".format(str(self._start)), file=sys.stderr)
+        print("  end time:          {}".format(str(self._end)), file=sys.stderr)
+        print("  parameters:        {}".format(str(self._parameter)),
               file=sys.stderr)
         print("Output:", file=sys.stderr)
-        print("  file:        {}".format(self._outfile), file=sys.stderr)
-        print("  formatted:   {}".format(self._formatted), file=sys.stderr)
+        print("  file:              {}".format(self._outfile), file=sys.stderr)
+        print("  formatted XML:     {}".format(self._formatted), file=sys.stderr)
 
         # create archive
         xarc = seiscomp.io.XMLArchive()
