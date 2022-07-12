@@ -83,28 +83,38 @@ class WfqQuery(seiscomp.client.Application):
         self._fromInventory = False
         self._outfile = '-'
         self._parameter = qcParamsDefault
-        self._start = None
+        self._start = "1900-01-01T00:00:00Z"
         self._end = str(seiscomp.core.Time.GMT())
         self._formatted = False
 
     def createCommandLineDescription(self):
         self.commandline().addGroup("Output")
-        self.commandline().addStringOption("Output", "output,o", "output file name for "
-                                           "XML. Writes to stdout if not given.")
-        self.commandline().addOption("Output", "formatted,f", "write formatted XML")
+        self.commandline().addStringOption("Output", "output,o",
+                                           "output file name for XML. Writes "
+                                           "to stdout if not given.")
+        self.commandline().addOption("Output", "formatted,f",
+                                     "write formatted XML")
 
         self.commandline().addGroup("Query")
-        self.commandline().addOption("Query", "streams-from-inventory",
-                                     "Read streams from inventory. Superseeded by streamID.")
+        self.commandline().addStringOption(
+            "Query", "begin,b", "Begin time of query: 'YYYY-MM-DD hh:mm:ss'")
+        self.commandline().addStringOption(
+            "Query", "end,e", "End time of query: 'YYYY-MM-DD hh:mm:ss'")
+        self.commandline().addStringOption(
+            "Query", "stream-id,i",
+            "Waveform stream ID to search for QC parameters: net.sta.loc.cha -"
+            " [networkCode].[stationCode].[sensorLocationCode].[channelCode]. "
+            "Provide a single ID or a comma-separated list. Overrides "
+            "--streams-from-inventory")
         self.commandline().addStringOption("Query", "parameter,p",
                                            "QC parameter to output: (e.g. delay, rms, "
                                            "'gaps count' ...). Provide a single parameter "
                                            "or a comma-separated list. Defaults "
                                            "apply if parameter is not given.")
-        self.commandline().addStringOption(
-            "Query", "begin,b", "Start time: 'YYYY-MM-DD hh:mm:ss'")
-        self.commandline().addStringOption(
-            "Query", "end,e", "End time: 'YYYY-MM-DD hh:mm:ss'")
+        self.commandline().addOption("Query", "streams-from-inventory",
+                                     "Read streams from inventory. Superseded"
+                                     " by stream-id.")
+
 
         return True
 
@@ -128,7 +138,7 @@ Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from '2
             return False
 
         try:
-            self._streams = self.commandline().optionString("streamID").split(",")
+            self._streams = self.commandline().optionString("stream-id").split(",")
         except RuntimeError:
             pass
 
@@ -138,21 +148,21 @@ Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from '2
             pass
 
         if not self._streams and not self._fromInventory:
-            print("Provide streamID(s): --streamID or --streams-from-inventory\n",
+            print("Provide streamID(s): --stream-id or --streams-from-inventory",
                   file=sys.stderr)
             return False
 
         try:
             self._outfile = self.commandline().optionString("output")
         except RuntimeError:
-            print("No output file name given: Sending to stdout\n",
+            print("No output file name given: Sending to stdout",
                   file=sys.stderr)
 
         try:
             self._start = self.commandline().optionString("begin")
         except RuntimeError:
-            print("Must provide start time: --begin", file=sys.stderr)
-            return False
+            print("No begin time given, considering: {}".format(self._start),
+                  file=sys.stderr)
 
         try:
             self._end = self.commandline().optionString("end")
@@ -163,7 +173,7 @@ Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from '2
         try:
             self._parameter = self.commandline().optionString("parameter")
         except RuntimeError:
-            print("No QC parameter given, using default\n", file=sys.stderr)
+            print("No QC parameter given, using default", file=sys.stderr)
 
         try:
             self._formatted = self.commandline().hasOption("formatted")

@@ -46,36 +46,37 @@
 			</group>
 
 			<group name="Query">
-				<option long-flag="streams-from-inventory">
-					<description>
-					read streams from inventory. Superseeded by '--streamID'.
-					</description>
-				</option>
-				<option flag="i" long-flag="streamID" argument="string">
-					<description>
-						waveform stream ID to search for QC parameters: net.sta.loc.cha -
-						[networkCode].[stationCode].[sensorLocationCode].[channelCode].
-						Provide a single ID or a comma-separated list. Overrides
-						'--streams-from-inventory'
-					</description>
-				</option>
-				<option flag="p" long-flag="parameter" argument="string">
-					<description>
-						QC parameter to output: (e.g. delay,rms,'gaps count' ...).
-						Use quotes if QC parameter has more than 1 word.
-						Provide a single parameter or a comma-separated list.
-						Defaults are used if parameter is undefined.
-					</description>
-				</option>
 				<option flag="b" long-flag="begin" argument="time">
 					<description>
-						start time of query. Format: 'YYYY-MM-DD hh:mm:ss'
+					Begin time of query. Format: 'YYYY-MM-DD hh:mm:ss'.
+					'1900-01-01T00:00:00Z' is considered if undefined.
 					</description>
 				</option>
 				<option flag="e" long-flag="end" argument="time">
 					<description>
-						end time of query. Format: 'YYYY-MM-DD hh:mm:ss'.
-						Current time is considered if the parameter is undefined.
+					End time of query. Format: 'YYYY-MM-DD hh:mm:ss'.
+					Current time is considered if undefined.
+					</description>
+				</option>
+				<option flag="i" long-flag="stream-id" argument="string">
+					<description>
+					Waveform stream ID to search for QC parameters: net.sta.loc.cha -
+					[networkCode].[stationCode].[sensorLocationCode].[channelCode].
+					Provide a single ID or a comma-separated list. Overrides
+					'--streams-from-inventory'.
+					</description>
+				</option>
+				<option flag="p" long-flag="parameter" argument="string">
+					<description>
+					QC parameter to output: (e.g. delay,rms,'gaps count' ...).
+					Use quotes if QC parameter has more than 1 word.
+					Provide a single parameter or a comma-separated list.
+					Defaults are used if parameter is undefined.
+					</description>
+				</option>
+				<option long-flag="streams-from-inventory">
+					<description>
+					Read streams from inventory. Superseeded by '--stream-id'.
 					</description>
 				</option>
 			</group>
