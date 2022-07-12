@@ -76,7 +76,7 @@
 				</option>
 				<option long-flag="streams-from-inventory">
 					<description>
-					Read streams from inventory. Superseeded by '--stream-id'.
+					Read streams from inventory. Superseded by '--stream-id'.
 					</description>
 				</option>
 			</group>
