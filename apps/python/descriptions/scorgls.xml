@@ -40,13 +40,13 @@
 			<group name="Origins">
 				<option long-flag="begin" argument="time">
 					<description>
-					Specify the lower bound of the time interval. Format is
+					The lower bound of the time interval. Format:
 					&quot;2012-01-01 00:00:00&quot;.
 					</description>
 				</option>
 				<option long-flag="end" argument="time">
 					<description>
-					Specify the upper bound of the time interval. Format is
+					The upper bound of the time interval. Format:
 					&quot;2012-01-01 00:00:00&quot;.
 					</description>
 				</option>
@@ -55,7 +55,7 @@
 			<group name="Output">
 				<option long-flag="delimiter" flag="D" argument="string">
 					<description>
-					Specify the delimiter of the resulting origin IDs.
+					The delimiter of the resulting origin IDs.
 					</description>
 				</option>
 			</group>

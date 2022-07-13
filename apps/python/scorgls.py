@@ -13,9 +13,10 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
-import traceback
 import sys
-import seiscomp.core, seiscomp.client, seiscomp.datamodel
+import seiscomp.core
+import seiscomp.client
+import seiscomp.datamodel
 
 
 class OriginList(seiscomp.client.Application):
@@ -26,24 +27,23 @@ class OriginList(seiscomp.client.Application):
         self.setDatabaseEnabled(True, False)
         self.setDaemonEnabled(False)
 
-        self._startTime = None
-        self._endTime = None
+        self._startTime = seiscomp.core.Time()
+        self._endTime = seiscomp.core.Time.GMT()
         self._delimiter = None
 
     def createCommandLineDescription(self):
         self.commandline().addGroup("Origins")
         self.commandline().addStringOption("Origins", "begin",
-                                           "specify the lower bound of the time interval. Time format: '1970-01-01 00:00:00'")
+                                           "The lower bound of the time interval. Format: '1970-01-01 00:00:00'.")
         self.commandline().addStringOption("Origins", "end",
-                                           "specify the upper bound of the time interval. Time format: '1970-01-01 00:00:00'")
+                                           "The upper bound of the time interval. Format: '1970-01-01 00:00:00'.")
         self.commandline().addStringOption("Origins", "author",
-                                           "specify the author")
+                                           "The author of the origins.")
 
         self.commandline().addGroup("Output")
         self.commandline().addStringOption("Output", "delimiter,D",
-                                           "Specify the delimiter of the "
-                                           "resulting origin IDs. "
-                                           "Default: '\\n')")
+                                           "The delimiter of the resulting "
+                                           "origin IDs. Default: '\\n')")
         return True
 
     def init(self):
@@ -52,26 +52,26 @@ class OriginList(seiscomp.client.Application):
 
         try:
             start = self.commandline().optionString("begin")
-            self._startTime = seiscomp.core.Time()
-            if self._startTime.fromString(start, "%F %T") == False:
-                sys.stderr.write(
-                    "Wrong 'begin' format '%s' -> setting to None\n" % start)
-        except:
-            sys.stderr.write("Wrong 'begin' format -> setting to None\n")
-            self._startTime = seiscomp.core.Time()
-
-#   sys.stderr.write("Setting start to %s\n" % self._startTime.toString("%F %T"))
+            if not self._startTime.fromString(start, "%F %T"):
+                print("Wrong 'begin' given -> assuming {}"
+                      .format(self._startTime), file=sys.stderr)
+        except RuntimeError:
+            print("No 'begin' given -> assuming {}".format(self._startTime),
+                  file=sys.stderr)
 
         try:
             end = self.commandline().optionString("end")
-            self._endTime = seiscomp.core.Time.FromString(end, "%F %T")
-        except:
-            self._endTime = seiscomp.core.Time.GMT()
+            if not self._endTime.fromString(end, "%F %T"):
+                print("Wrong 'end' given -> assuming {}"
+                      .format(self._endTime), file=sys.stderr)
+        except RuntimeError:
+            print("No 'end' given -> assuming {}".format(self._endTime),
+                  file=sys.stderr)
 
         try:
             self.author = self.commandline().optionString("author")
             sys.stderr.write("%s author used for output\n" % (self.author))
-        except:
+        except RuntimeError:
             self.author = False
 
         try:
@@ -98,6 +98,8 @@ Print all origin IDs from year 2022 and thereafter
 ''')
 
     def run(self):
+        seiscomp.logging.debug("Search interval: %s - %s" %
+                               (self._startTime, self._endTime))
         out = []
         q = "select PublicObject.%s, Origin.* from Origin, PublicObject where Origin._oid=PublicObject._oid and Origin.%s >= '%s' and Origin.%s < '%s'" %\
             (self.database().convertColumnName("publicID"),
@@ -120,11 +122,10 @@ Print all origin IDs from year 2022 and thereafter
         return True
 
 
-try:
+def main():
     app = OriginList(len(sys.argv), sys.argv)
-    rc = app()
-except:
-    sys.stderr.write("%s\n" % traceback.format_exc())
-    sys.exit(1)
+    app()
 
-sys.exit(rc)
+
+if __name__ == "__main__":
+    main()
