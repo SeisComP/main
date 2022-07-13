@@ -28,6 +28,7 @@ class OriginList(seiscomp.client.Application):
 
         self._startTime = None
         self._endTime = None
+        self._delimiter = None
 
     def createCommandLineDescription(self):
         self.commandline().addGroup("Origins")
@@ -37,6 +38,12 @@ class OriginList(seiscomp.client.Application):
                                            "specify the upper bound of the time interval. Time format: '1970-01-01 00:00:00'")
         self.commandline().addStringOption("Origins", "author",
                                            "specify the author")
+
+        self.commandline().addGroup("Output")
+        self.commandline().addStringOption("Output", "delimiter,D",
+                                           "Specify the delimiter of the "
+                                           "resulting origin IDs. "
+                                           "Default: '\\n')")
         return True
 
     def init(self):
@@ -67,6 +74,11 @@ class OriginList(seiscomp.client.Application):
         except:
             self.author = False
 
+        try:
+            self._delimiter = self.commandline().optionString("delimiter")
+        except RuntimeError:
+            self._delimiter = "\n"
+
 #   sys.stderr.write("Setting end to %s\n" % self._endTime.toString("%F %T"))
 
         return True
@@ -86,6 +98,7 @@ Print all origin IDs from year 2022 and thereafter
 ''')
 
     def run(self):
+        out = []
         q = "select PublicObject.%s, Origin.* from Origin, PublicObject where Origin._oid=PublicObject._oid and Origin.%s >= '%s' and Origin.%s < '%s'" %\
             (self.database().convertColumnName("publicID"),
              self.database().convertColumnName("time_value"),
@@ -101,8 +114,9 @@ Print all origin IDs from year 2022 and thereafter
         for obj in self.query().getObjectIterator(q, seiscomp.datamodel.Origin.TypeInfo()):
             org = seiscomp.datamodel.Origin.Cast(obj)
             if org:
-                sys.stdout.write("%s\n" % org.publicID())
+                out.append(org.publicID())
 
+        print("{}\n".format(self._delimiter.join(out)), file=sys.stdout)
         return True
 
 
