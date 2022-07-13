@@ -51,6 +51,14 @@
 					</description>
 				</option>
 			</group>
+
+			<group name="Output">
+				<option long-flag="delimiter" flag="D" argument="string">
+					<description>
+					Specify the delimiter of the resulting origin IDs.
+					</description>
+				</option>
+			</group>
 		</command-line>
 	</module>
 </seiscomp>
