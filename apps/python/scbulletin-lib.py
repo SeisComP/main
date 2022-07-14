@@ -794,21 +794,25 @@ class Bulletin(object):
         if not evt and self._dbq:
             evt = self._dbq.getEvent(org.publicID())
 
-        author, contrib, eType = '', '', ''
+        author, contrib, eType, prefMagID = '', '', '', ''
         if evt:
             evid = evt.publicID()
             pos = evid.find("#")  # XXX Hack!!!
             if pos != -1:
                 evid = evid[:pos]
-            prefMagID = evt.preferredMagnitudeID()
 
             try:
-                author = org.creationInfo().author()
+                prefMagID = evt.preferredMagnitudeID()
             except ValueError:
                 pass
 
             try:
-                contrib = org.creationInfo().agencyID()
+                author = evt.creationInfo().author()
+            except ValueError:
+                pass
+
+            try:
+                contrib = evt.creationInfo().agencyID()
             except ValueError:
                 pass
             try:
