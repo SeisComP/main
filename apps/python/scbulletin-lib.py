@@ -264,6 +264,7 @@ class Bulletin(object):
                 agencyID = org.creationInfo().agencyID()
             except ValueError:
                 pass
+
         txt += "    Agency                 %s\n" % agencyID
         if extra:
             try:
@@ -582,6 +583,7 @@ class Bulletin(object):
 
         if not evt and self._dbq:
             evt = self._dbq.getEvent(org.publicID())
+
         if evt:
             evid = evt.publicID()
             pos = evid.find("#")  # XXX Hack!!!
@@ -737,6 +739,7 @@ class Bulletin(object):
                     azi = "%3.0f" % arr.azimuth()
                 except ValueError:
                     azi = "N/A"
+
             pha = arr.phase().code()
             mstr = ""
             amp = per = 0.
@@ -761,6 +764,7 @@ class Bulletin(object):
                 except KeyError:
                     pass
                 mstr += " %3.1f" % mag
+
             txt += lineFMT % (sta, net, tstr, amp, per, res, dist, azi, mstr)
 
         if self.enhanced:
@@ -768,14 +772,16 @@ class Bulletin(object):
         else:
             txt += "\n RMS-ERR:         %.2f\n\n" % org.quality().standardError()
 
-        try:
-            if self.enhanced:
-                tm = evt.creationInfo().creationTime().toString("%Y/%m/%d %H:%M:%S.%f")
-            else:
-                tm = evt.creationInfo().creationTime().toString("%Y/%m/%d %H:%M:%S")
-            txt += " Event created:       %s\n" % tm
-        except ValueError:
-            pass
+        if evt:
+            try:
+                if self.enhanced:
+                    tm = evt.creationInfo().creationTime().toString("%Y/%m/%d %H:%M:%S.%f")
+                else:
+                    tm = evt.creationInfo().creationTime().toString("%Y/%m/%d %H:%M:%S")
+
+                txt += " Event created:       %s\n" % tm
+            except ValueError:
+                pass
 
         try:
             if self.enhanced:
@@ -794,7 +800,7 @@ class Bulletin(object):
         if not evt and self._dbq:
             evt = self._dbq.getEvent(org.publicID())
 
-        author, contrib, eType, prefMagID = '', '', '', ''
+        author, agencyID, eType, prefMagID = '', '', '', ''
         if evt:
             evid = evt.publicID()
             pos = evid.find("#")  # XXX Hack!!!
@@ -807,14 +813,21 @@ class Bulletin(object):
                 pass
 
             try:
-                author = evt.creationInfo().author()
+                author = org.creationInfo().author()
             except ValueError:
                 pass
 
-            try:
-                contrib = evt.creationInfo().agencyID()
-            except ValueError:
-                pass
+            if self.useEventAgencyID:
+                try:
+                    agencyID = evt.creationInfo().agencyID()
+                except ValueError:
+                    pass
+            else:
+                try:
+                    agencyID = org.creationInfo().agencyID()
+                except ValueError:
+                    pass
+
             try:
                 eType = evt.type()
             except ValueError:
@@ -864,7 +877,7 @@ class Bulletin(object):
                 except ValueError:
                     pass
         txt = "%s|%s|%s|%s|%s|%s||%s|%s|%s|%s|%s|%s|%s\n" % (
-            evid, sTime, lat, lon, depth, author, contrib, evid, mType,
+            evid, sTime, lat, lon, depth, author, agencyID, evid, mType,
             mVal, mAuthor, region, eType)
 
         return txt
@@ -1082,7 +1095,7 @@ Convert XML file with event parameters to bulletin
                         try:
                             txt += bulletin.printEvent(ev)
                         except ValueError:
-                            seiscomp.logging.error("Unknown event '%s'" % evid)
+                            seiscomp.logging.error("Unknown event '%s'" % ev)
                 elif orid:
                     for org in orid.split(','):
                         try:
@@ -1141,6 +1154,11 @@ Convert XML file with event parameters to bulletin
                         txt = ""
                         for i in range(ep.originCount()):
                             org = ep.origin(i)
+                            if orid and org.publicID() not in orid:
+                                seiscomp.logging.error(
+                                    "%s: Skipping origin with ID %s" %
+                                    (inputFile, org.publicID()))
+                                continue
                             txt += bulletin.printOrigin(org)
                 else:
                     if self.commandline().hasOption("first-only"):
@@ -1153,9 +1171,14 @@ Convert XML file with event parameters to bulletin
                         except KeyError:
                             raise TypeError("Unknown event")
                     elif orid:
-                        org = ep.findOrigin(orid)
-                        if org:
-                            txt = bulletin.printOrigin(org)
+                        txt = ""
+                        for oid in orid.split(','):
+                            org = ep.findOrigin(oid)
+                            if org:
+                                txt += bulletin.printOrigin(org)
+                            else:
+                                seiscomp.logging.error("%s: Skipping origin with ID %s" %
+                                                       (inputFile, oid))
                     else:
                         txt = ""
                         for i in range(ep.eventCount()):
