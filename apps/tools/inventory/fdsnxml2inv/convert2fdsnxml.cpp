@@ -1028,7 +1028,7 @@ bool Convert2FDSNStaXML::process(FDSNXML::Station *sx_sta,
 			try {
 				const DataModel::Blob &blob = sensor->remark();
 				rapidjson::Document json;
-				if ( !json.Parse(blob.content().c_str()).HasParseError() ) {
+				if ( !json.Parse(blob.content().c_str()).HasParseError() && json.IsObject() ) {
 					rapidjson::Value::ConstMemberIterator jit = json.FindMember("unit");
 					if ( jit != json.MemberEnd() && jit->value.IsString() )
 						inputUnits.setDescription(jit->value.GetString());
@@ -1390,7 +1390,7 @@ bool Convert2FDSNStaXML::process(FDSNXML::Channel *sx_chan,
 	try {
 		const DataModel::Blob &blob = sensor->remark();
 		rapidjson::Document json;
-		if ( !json.Parse(blob.content().c_str()).HasParseError() ) {
+		if ( !json.Parse(blob.content().c_str()).HasParseError() && json.IsObject() ) {
 			rapidjson::Value::ConstMemberIterator jit = json.FindMember("unit");
 			if ( jit != json.MemberEnd() && jit->value.IsString() )
 				unitDescription = jit->value.GetString();
