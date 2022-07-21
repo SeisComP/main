@@ -514,20 +514,46 @@ bool EventTool::run() {
 			EventInformationPtr info;
 
 			OriginPtr org = _ep->origin(i);
+			SEISCOMP_INFO("Processing origin %s", org->publicID().c_str());
 			info = findAssociatedEvent(org.get());
+
 			if ( info ) {
-				SEISCOMP_DEBUG("Origin %s already associated with event %s",
+				SEISCOMP_DEBUG("... already associated with event %s",
 				               org->publicID().c_str(),
 				               info->event->publicID().c_str());
 				continue;
 			}
 
-			SEISCOMP_INFO("Processing origin %s", org->publicID().c_str());
-
 			info = associateOrigin(org.get(), true);
-			if ( !info ) continue;
-
+			if ( !info ) {
+				SEISCOMP_DEBUG("... cannot associate with an event");
+				continue;
+			}
 			updatePreferredOrigin(info.get());
+
+		}
+
+
+		for ( size_t i = 0; i < _ep->focalMechanismCount(); ++i ) {
+			EventInformationPtr info;
+
+			FocalMechanismPtr fm = _ep->focalMechanism(i);
+			SEISCOMP_INFO("Processing focal mechanism %s", fm->publicID().c_str());
+			info = findAssociatedEvent(fm.get());
+			if ( info ) {
+				SEISCOMP_DEBUG("... already associated with event %s",
+				               fm->publicID().c_str(),
+				               info->event->publicID().c_str());
+				continue;
+			}
+
+			info = associateFocalMechanism(fm.get());
+			if ( !info ) {
+				SEISCOMP_DEBUG("... cannot associate with an event");
+				continue;
+			}
+
+			updatePreferredFocalMechanism(info.get());
 
 		}
 
@@ -624,7 +650,7 @@ void EventTool::handleMessage(Core::Message *msg) {
 
 		FocalMechanismPtr fm = FocalMechanism::Cast(it->get());
 		if ( fm ) {
-			SEISCOMP_DEBUG("* work on new focalmechanism %s",
+			SEISCOMP_DEBUG("* work on new focal mechanism %s",
 			               fm->publicID().c_str());
 			associateFocalMechanism(fm.get());
 
@@ -709,7 +735,7 @@ void EventTool::handleTimeout() {
 			else {
 				FocalMechanismPtr fm = FocalMechanism::Cast(it->obj);
 				if ( fm ) {
-					SEISCOMP_LOG(_infoChannel, "Processing delayed focalmechanism %s",
+					SEISCOMP_LOG(_infoChannel, "Processing delayed focal mechanism %s",
 					             fm->publicID().c_str());
 					associateFocalMechanism(fm.get());
 				}
@@ -735,7 +761,7 @@ void EventTool::handleTimeout() {
 		else {
 			FocalMechanismPtr fm = FocalMechanism::Cast(it->obj);
 			if ( fm ) {
-				SEISCOMP_LOG(_infoChannel, "Processing delayed focalmechanism %s",
+				SEISCOMP_LOG(_infoChannel, "Processing delayed focal mechanism %s",
 				             fm->publicID().c_str());
 				info = associateFocalMechanism(fm.get());
 			}
@@ -872,7 +898,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 	FocalMechanismPtr fm = FocalMechanism::Cast(object);
 	if ( fm ) {
 		logObject(_inputFocalMechanism, Core::Time::GMT());
-		SEISCOMP_DEBUG("* queued new focalmechanism %s (%ld)",
+		SEISCOMP_DEBUG("* queued new focal mechanism %s (%ld)",
 		               fm->publicID().c_str(), (long int)fm.get());
 		SEISCOMP_LOG(_infoChannel, "Received new focalmechanism %s", fm->publicID().c_str());
 		_adds.insert(TodoEntry(fm));
@@ -939,7 +965,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 	FocalMechanismReference *fm_ref = FocalMechanismReference::Cast(object);
 	if ( fm_ref && !fm_ref->focalMechanismID().empty() ) {
 		logObject(_inputFMRef, Core::Time::GMT());
-		SEISCOMP_LOG(_infoChannel, "Received new focalmechanism reference %s for event %s",
+		SEISCOMP_LOG(_infoChannel, "Received new focal mechanism reference %s for event %s",
 		             fm_ref->focalMechanismID().c_str(), parentID.c_str());
 
 		EventInformationPtr info = cachedEvent(parentID);
@@ -960,11 +986,11 @@ void EventTool::addObject(const string &parentID, Object* object) {
 		TodoList::iterator it = _adds.find(TodoEntry(fm));
 		// If this origin has to be associated in this turn
 		if ( it != _adds.end() ) {
-			// Remove the focalmechanism from the association list
+			// Remove the focal mechanism from the association list
 			_adds.erase(it);
-			// Add it to the focalmechanism updates (not triggered by a magnitude change)
+			// Add it to the focal mechanism updates (not triggered by a magnitude change)
 			_realUpdates.insert(TodoEntry(fm));
-			SEISCOMP_DEBUG("* removed new focalmechanism %s from queue because of preset association", (*it)->publicID().c_str());
+			SEISCOMP_DEBUG("* removed new focal mechanism %s from queue because of preset association", (*it)->publicID().c_str());
 		}
 
 		_updates.insert(TodoEntry(fm));
@@ -1030,9 +1056,9 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 			fm = FocalMechanism::Find(fm->publicID());
 		_updates.insert(TodoEntry(fm));
 		_realUpdates.insert(TodoEntry(fm));
-		SEISCOMP_DEBUG("* queued updated focalmechanism %s",
+		SEISCOMP_DEBUG("* queued updated focal mechanism %s",
 		               fm->publicID().c_str());
-		SEISCOMP_LOG(_infoChannel, "Received updated focalmechanism %s", fm->publicID().c_str());
+		SEISCOMP_LOG(_infoChannel, "Received updated focal mechanism %s", fm->publicID().c_str());
 		return;
 	}
 
@@ -2155,7 +2181,7 @@ EventInformationPtr EventTool::associateFocalMechanism(FocalMechanism *fm) {
 		}
 
 		if ( !e ) {
-			SEISCOMP_DEBUG("... triggering origin %s has not been associated yet, skipping focalmechanism",
+			SEISCOMP_DEBUG("... triggering origin %s has not been associated yet, skipping focal mechanism",
 			               triggeringOrigin->publicID().c_str());
 			return nullptr;
 		}
@@ -2165,11 +2191,11 @@ EventInformationPtr EventTool::associateFocalMechanism(FocalMechanism *fm) {
 		cacheEvent(info);
 	}
 	else {
-		SEISCOMP_DEBUG("... found cached event information %s for focalmechanism", info->event->publicID().c_str());
+		SEISCOMP_DEBUG("... found cached event information %s for focal mechanism", info->event->publicID().c_str());
 	}
 
 	if ( !fm->momentTensorCount() && query() ) {
-		SEISCOMP_DEBUG("... loading moment tensor for focalmechanism %s", fm->publicID().c_str());
+		SEISCOMP_DEBUG("... loading moment tensor for focal mechanism %s", fm->publicID().c_str());
 		query()->loadMomentTensors(fm);
 	}
 
@@ -2178,14 +2204,14 @@ EventInformationPtr EventTool::associateFocalMechanism(FocalMechanism *fm) {
 
 	Notifier::Enable();
 	if ( !info->associate(fm) ) {
-		SEISCOMP_ERROR("Association of focalmechanism %s to event %s failed",
+		SEISCOMP_ERROR("Association of focal mechanism %s to event %s failed",
 		               fm->publicID().c_str(), info->event->publicID().c_str());
-		SEISCOMP_LOG(_infoChannel, "Failed to associate focalmechanism %s to event %s",
+		SEISCOMP_LOG(_infoChannel, "Failed to associate focal mechanism %s to event %s",
 		             fm->publicID().c_str(), info->event->publicID().c_str());
 	}
 	else {
 		logObject(_outputFMRef, Time::GMT());
-		SEISCOMP_INFO("%s: associated focalmechanism %s", info->event->publicID().c_str(),
+		SEISCOMP_INFO("%s: associated focal mechanism %s", info->event->publicID().c_str(),
 		              fm->publicID().c_str());
 		SEISCOMP_LOG(_infoChannel, "FocalMechanism %s associated to event %s",
 		             fm->publicID().c_str(), info->event->publicID().c_str());
@@ -2232,11 +2258,11 @@ void EventTool::updatedFocalMechanism(FocalMechanism *focalMechanism) {
 		cacheEvent(info);
 	}
 	else {
-		SEISCOMP_DEBUG("... found cached event information %s for focalmechanism", info->event->publicID().c_str());
+		SEISCOMP_DEBUG("... found cached event information %s for focal mechanism", info->event->publicID().c_str());
 	}
 
 	if ( !fm->momentTensorCount() && query() ) {
-		SEISCOMP_DEBUG("... loading moment tensor for focalmechanism %s", fm->publicID().c_str());
+		SEISCOMP_DEBUG("... loading moment tensor for focal mechanism %s", fm->publicID().c_str());
 		query()->loadMomentTensors(fm);
 	}
 
@@ -2689,7 +2715,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 	Magnitude *mag = nullptr;
 	MagnitudePtr momentMag;
 
-	SEISCOMP_DEBUG("%s: [choose preferred origin/magnitude(%s)]",
+	SEISCOMP_DEBUG("%s: testing origin/magnitude(%s)",
 	               info->event->publicID().c_str(),
 	               origin->publicID().c_str());
 
@@ -2740,6 +2766,13 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		SEISCOMP_DEBUG("... looking for preferred magnitude in origin %s",
 		               origin->publicID().c_str());
 		mag = preferredMagnitude(origin);
+		if ( !mag ) {
+			SEISCOMP_DEBUG("...... found none");
+		}
+		else {
+			SEISCOMP_DEBUG("...... preferring %s with public ID %s",
+			               mag->type().c_str(), mag->publicID().c_str());
+		}
 	}
 
 	bool update = refresh;
@@ -2899,14 +2932,13 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							originPriority = ORIGIN_PRIORITY_MAX;
 
 						if ( originPriority == 0 ) {
-							SEISCOMP_DEBUG("...... origin %s is neither manual nor automatic",
-							               origin->publicID().c_str());
+							SEISCOMP_DEBUG("...... origin is neither manual nor automatic");
 						}
 
 						if ( originPriority < preferredOriginPriority ) {
 							SEISCOMP_DEBUG("... skipping potential preferred origin, "
-							               "priority based on evaluation mode is "
-							               "lower than of currently preferred (%d < %d)",
+							               "priority based on evaluation mode < "
+							               "currently preferred (%d < %d)",
 							               originPriority,
 							               preferredOriginPriority);
 							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: mode priority too low (%d < %d)",
@@ -2954,14 +2986,13 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							originPriority = ORIGIN_PRIORITY_MAX;
 
 						if ( originPriority == 0 ) {
-							SEISCOMP_DEBUG("...... origin %s is neither manual nor automatic",
-							               origin->publicID().c_str());
+							SEISCOMP_DEBUG("...... origin is neither manual nor automatic");
 						}
 
 						if ( originPriority < preferredOriginPriority ) {
 							SEISCOMP_DEBUG("... skipping potential preferred origin, "
-							               "priority based on evaluation mode is "
-							               "lower than of currently preferred (%d < %d)",
+							               "priority based on evaluation mode < "
+							               "currently preferred (%d < %d)",
 							               originPriority,
 							               preferredOriginPriority);
 							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: status priority too low (%d < %d)",
@@ -3225,14 +3256,13 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 						originPriority = ORIGIN_PRIORITY_MAX;
 
 					if ( originPriority == 0 ) {
-						SEISCOMP_DEBUG("...... origin %s is neither manual nor automatic",
-						               origin->publicID().c_str());
+						SEISCOMP_DEBUG("...... origin is neither manual nor automatic");
 					}
 
 					if ( originPriority < preferredOriginPriority ) {
 						SEISCOMP_DEBUG("... skipping potential preferred origin, "
-						               "priority based on evaluation mode is "
-						               "lower than of currently preferred (%d < %d)",
+						               "priority based on evaluation mode < "
+						               "currently preferred (%d < %d)",
 						               originPriority,
 						               preferredOriginPriority);
 						SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: evaluation mode/status priority too low (%d < %d)",
@@ -3524,7 +3554,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanism *fm) {
-	SEISCOMP_DEBUG("%s: [choose preferred focalmechanism(%s)]",
+	SEISCOMP_DEBUG("%s: testing focal mechanism(%s)",
 	               info->event->publicID().c_str(),
 	               fm->publicID().c_str());
 
@@ -3597,7 +3627,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 		}
 	}
 	else if ( info->preferredFocalMechanism->publicID() != fm->publicID() ) {
-		SEISCOMP_DEBUG("... checking whether focalmechanism %s can become preferred",
+		SEISCOMP_DEBUG("... checking whether focal mechanism %s can become preferred",
 		               fm->publicID().c_str());
 
 		if ( isRejected(fm) ) {
@@ -3610,18 +3640,18 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 		// Fixed focalmechanism => check if the passed focalmechanism is the fixed one
 		if ( info->constraints.fixedFocalMechanism() ) {
 			if ( !info->constraints.fixFocalMechanism(fm) ) {
-				SEISCOMP_DEBUG("... skipping potential preferred focalmechanism, focalmechanism '%s' is fixed",
+				SEISCOMP_DEBUG("... skipping potential preferred focal mechanism, focal mechanism '%s' is fixed",
 				               info->constraints.preferredFocalMechanismID.c_str());
-				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: focalmechanism %s is fixed",
+				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: focal mechanism %s is fixed",
 				             fm->publicID().c_str(), info->event->publicID().c_str(),
 				             info->constraints.preferredFocalMechanismID.c_str());
 				return;
 			}
 		}
-		// No fixed focalmechanism => select it using the automatic rules
+		// No fixed focal mechanism => select it using the automatic rules
 		else {
 			if ( isAgencyIDBlocked(objectAgencyID(fm)) ) {
-				SEISCOMP_DEBUG("... skipping potential preferred focalmechanism, agencyID '%s' is blocked",
+				SEISCOMP_DEBUG("... skipping potential preferred focal mechanism, agencyID '%s' is blocked",
 				               objectAgencyID(fm).c_str());
 				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: agencyID %s is blocked",
 				             fm->publicID().c_str(), info->event->publicID().c_str(),
@@ -3638,7 +3668,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 						int preferredFMAgencyPriority = agencyPriority(objectAgencyID(info->preferredFocalMechanism.get()), _config);
 
 						if ( fmAgencyPriority < preferredFMAgencyPriority ) {
-							SEISCOMP_DEBUG("... skipping potential preferred focalmechanism, priority of agencyID '%s' is too low",
+							SEISCOMP_DEBUG("... skipping potential preferred focal mechanism, priority of agencyID '%s' is too low",
 							               objectAgencyID(fm).c_str());
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: priority of agencyID %s is too low",
 							             fm->publicID().c_str(), info->event->publicID().c_str(),
@@ -3659,14 +3689,14 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 						int preferredFMAuthorPriority = authorPriority(objectAuthor(info->preferredFocalMechanism.get()), _config);
 
 						if ( fmAuthorPriority < preferredFMAuthorPriority ) {
-							SEISCOMP_DEBUG("... skipping potential preferred focalmechanism, priority of author '%s' is too low",
+							SEISCOMP_DEBUG("... skipping potential preferred focal mechanism, priority of author '%s' is too low",
 							               objectAuthor(fm).c_str());
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: priority of author %s is too low",
 							             fm->publicID().c_str(), info->event->publicID().c_str(),
 							             objectAuthor(fm).c_str());
 							return;
 						}
-						// Found focalmechanism with higher author priority
+						// Found focal mechanism with higher author priority
 						else if ( fmAuthorPriority > preferredFMAuthorPriority ) {
 							SEISCOMP_DEBUG("... author '%s' overrides current author '%s'",
 							               objectAuthor(fm).c_str(), objectAuthor(info->preferredFocalMechanism.get()).c_str());
@@ -3706,7 +3736,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 							fmPriority = FOCALMECHANISM_PRIORITY_MAX;
 
 						if ( fmPriority < preferredFMPriority ) {
-							SEISCOMP_DEBUG("... skipping potential preferred focalmechanism (%d < %d)",
+							SEISCOMP_DEBUG("... skipping potential preferred focal mechanism (%d < %d)",
 							               fmPriority, preferredFMPriority);
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: priority too low (%d < %d)",
 							             fm->publicID().c_str(), info->event->publicID().c_str(),
@@ -3883,11 +3913,14 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 							preferredFMPriority = FOCALMECHANISM_PRIORITY_MAX;
 					}
 
-					if ( info->constraints.fixFocalMechanismMode(fm) )
+					if ( info->constraints.fixFocalMechanismMode(fm) ) {
 						fmPriority = FOCALMECHANISM_PRIORITY_MAX;
+					}
 
 					if ( fmPriority < preferredFMPriority ) {
-						SEISCOMP_DEBUG("... skipping potential preferred focalmechanism (%d < %d)",
+						SEISCOMP_DEBUG("... skipping potential preferred focal mechanism, "
+						               "priority based on evaluation mode < "
+						               "currently preferred (%d < %d)",
 						               fmPriority, preferredFMPriority);
 						SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: priority too low (%d < %d)",
 						             fm->publicID().c_str(), info->event->publicID().c_str(),
@@ -3906,7 +3939,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 							SEISCOMP_DEBUG("Same priority and mode is AUTOMATIC");
 
 							if ( created(fm) < created(info->preferredFocalMechanism.get()) ) {
-								SEISCOMP_DEBUG("... skipping potential preferred focalmechanism, there is a better one created later");
+								SEISCOMP_DEBUG("... skipping potential preferred focal mechanism, there is a better one created later");
 								return;
 							}
 						}
@@ -3924,8 +3957,8 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 		info->event->setPreferredFocalMechanismID(fm->publicID());
 
 		info->preferredFocalMechanism = fm;
-		SEISCOMP_INFO("%s: set preferredFocalMechanismID to %s",
-		              info->event->publicID().c_str(), fm->publicID().c_str());
+		SEISCOMP_INFO("...... %s: set preferred in %s",
+		              fm->publicID().c_str(), info->event->publicID().c_str());
 		SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has been set preferred in event %s",
 		             fm->publicID().c_str(), info->event->publicID().c_str());
 
@@ -3984,7 +4017,7 @@ void EventTool::updatePreferredFocalMechanism(EventInformation *info) {
 		FocalMechanismPtr fm = _cache.get<FocalMechanism>(info->event->focalMechanismReference(i)->focalMechanismID());
 		if ( !fm ) continue;
 		if ( !fm->momentTensorCount() && query() ) {
-			SEISCOMP_DEBUG("... loading moment tensor for focalmechanism %s", fm->publicID().c_str());
+			SEISCOMP_DEBUG("... loading moment tensor for focal mechanism %s", fm->publicID().c_str());
 			query()->loadMomentTensors(fm.get());
 		}
 		choosePreferred(info, fm.get());
@@ -4100,7 +4133,7 @@ bool EventTool::mergeEvents(EventInformation *target, EventInformation *source) 
 		              fm->publicID().c_str());
 
 		if ( !fm->momentTensorCount() && query() ) {
-			SEISCOMP_DEBUG("... loading moment tensor for focalmechanism %s", fm->publicID().c_str());
+			SEISCOMP_DEBUG("... loading moment tensor for focal mechanism %s", fm->publicID().c_str());
 			query()->loadMomentTensors(fm.get());
 		}
 
