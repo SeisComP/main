@@ -39,7 +39,7 @@ class QcViewConfig {
 	private:
 		// <colorName, Color>
 		typedef QMap<QString, QColor> ColorMap;
-		
+
 		typedef struct {
 			double min, max;
 			int count;
@@ -48,14 +48,14 @@ class QcViewConfig {
 		} Range;
 		// <rangeName, Range>
 		typedef QMap<QString, Range> RangeMap;
-		
+
 		typedef struct {
 			RangeMap rangeMap;
 			QString color;
 		} Score;
 		// <scoreName, Score>
 		typedef QMap<QString, Score> ScoreMap;
-		
+
 		typedef struct {
 			RangeMap rangeMap;
 			double expire;
@@ -65,13 +65,13 @@ class QcViewConfig {
 		} Config;
 		// <ConfigName, Config>
 		typedef QMap<QString, Config> ConfigMap;
-		
+
 		// <ParameterName, ConfigName>
 		typedef QMap<QString, QString> ParameterMap;
 
 		// <ParameterName, ConfigName>
 		typedef QStringList ParameterList;
-	
+
 	private:
 		bool init();
 		QString formatTimeSpan(double s) const;
@@ -101,14 +101,14 @@ class QcViewConfig {
 
 	private:
 		Gui::Application *_app;
-		int _streamWidgetLength;
-		ParameterMap _parameterMap;
-		ParameterList _parameterList;
-		ConfigMap _configMap;
-		ScoreMap _scoreMap;
-		ColorMap	_colorMap;
-		bool _cumulative;
-		int _formatFloat = 2;
+		int              _streamWidgetLength;
+		ParameterMap     _parameterMap;
+		ParameterList    _parameterList;
+		ConfigMap        _configMap;
+		ScoreMap         _scoreMap;
+		ColorMap         _colorMap;
+		bool             _cumulative;
+		int              _formatFloat = 2;
 };
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

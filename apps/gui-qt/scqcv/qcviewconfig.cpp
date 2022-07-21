@@ -49,17 +49,17 @@ bool QcViewConfig::init() {
 	range_bad.count = -1;
 	range_bad.color = "red";
 	range_bad.action = "";
-	
+
 	Range range_sane;
 	range_sane.min = 0.0;
 	range_sane.max = 999E99;
 	range_sane.count = 0;
 	range_sane.color = "green";
 	range_sane.action = "";
-	
+
 	Config config;
-	config.rangeMap.insert("bad", readRange("sane", range_sane));
-	config.rangeMap.insert("sane", readRange("bad", range_bad));
+	config.rangeMap.insert("sane", readRange("sane", range_sane));
+	config.rangeMap.insert("bad", readRange("bad", range_bad));
 	config.expire = 0;
 	config.useAbsoluteValue = false;
 	config.format = "float";
@@ -133,7 +133,7 @@ QcViewConfig::Config QcViewConfig::readConfig(const std::string& name, QcViewCon
 		}
 	}
 	catch (Seiscomp::Config::Exception &) {}
-	
+
 	RangeMap::iterator it;
 	for (it = config.rangeMap.begin(); it != config.rangeMap.end(); ++it) {
 		it.value() = readRange(it.key().toLatin1().data(), it.value(), name+".");
@@ -151,10 +151,10 @@ QcViewConfig::Range QcViewConfig::readRange(const std::string& name, QcViewConfi
 
 	try { range.count = _app->configGetInt(pre+"range."+name+".count");}
 	catch (Seiscomp::Config::Exception &) {}
-	
+
 	try { range.action = QString( _app->configGetString(pre+"range."+name+".action").c_str());}
 	catch (Seiscomp::Config::Exception &) {}
-	
+
 	try { range.color = QString(_app->configGetString(pre+"range."+name+".color").c_str());
 		readColor(range.color.toLatin1().data());
 	}
@@ -301,12 +301,12 @@ int QcViewConfig::count(const QString& parameterName, double value) const {
 QString QcViewConfig::format(const QString& parameterName, double value) const {
 
 	QString format = _configMap[_parameterMap[parameterName]].format;
-	
+
 	// format according to given format string
 	if (format == "float") {
 		return QString().setNum(value, 'f', _formatFloat);
 	}
-	
+
 	if (format == "int") {
 		return QString().setNum(int(value));
 	}
@@ -362,6 +362,7 @@ QColor QcViewConfig::sumColor(const QString& scoreName, int score) const {
 	foreach (Range range, rm.values()) {
 		if (score >= range.min && score <= range.max) {
 			color = _colorMap[range.color];
+			SEISCOMP_DEBUG("Found score for QcOverview: ", score);
 		}
 	}
 
@@ -375,7 +376,7 @@ QColor QcViewConfig::sumColor(const QString& scoreName, int score) const {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 QString QcViewConfig::formatTimeSpan(double rs) const {
 	char buffer[256];
-	
+
 	double s = fabs(rs);
 
 	char sign = rs>=0?' ':'-';
@@ -388,39 +389,39 @@ QString QcViewConfig::formatTimeSpan(double rs) const {
 	if (s >= 60.0 && s < 3600.0) {
 		int min = (int)(s/60);
 		double sec = s-min*60;
-		sprintf(buffer, "%c%d m %.1f s", sign, min, sec); 
+		sprintf(buffer, "%c%d m %.1f s", sign, min, sec);
 		return QString(buffer);
 	}
 
 	if (s >= 3600.0 && s < 86400.0) {
 		int hour = (int)(s/3600);
 		int min = (int)(s-hour*3600)/60;
-		sprintf(buffer, "%c%d h %d m", sign, hour, min); 
+		sprintf(buffer, "%c%d h %d m", sign, hour, min);
 		return QString(buffer);
 	}
 
 	if (s >= 3600.0 && s < 7*86400.0) {
 		int day = (int)(s/86400);
 		int hour = (int)(s-day*86400)/3600;
-		sprintf(buffer, "%c%d %s %d h", sign, day, day==1?"day":"days", hour); 
+		sprintf(buffer, "%c%d %s %d h", sign, day, day==1?"day":"days", hour);
 		return QString(buffer);
 	}
 
 	if (s >= 7*86400.0 && s < 30.5*86400.0) {
 		int week = (int)(s/(7*86400));
 		int day = (int)(s-week*7*86400)/86400;
-		sprintf(buffer, "%c%d %s %d d", sign, week, week==1?"week":"weeks", day); 
+		sprintf(buffer, "%c%d %s %d d", sign, week, week==1?"week":"weeks", day);
 		return QString(buffer);
 	}
 
 	if (s >= 30.5*86400.0 && s < 365.0*86400.0) {
 		int month = (int)(s/(30.5*86400));
-		sprintf(buffer, "%c%d %s", sign, month, month==1?"month":"months"); 
+		sprintf(buffer, "%c%d %s", sign, month, month==1?"month":"months");
 		return QString(buffer);
 	}
 
 	int year = (int)(s/(365.0*86400));
-	sprintf(buffer, "%c%d %s", sign, year, year==1?"year":"years"); 
+	sprintf(buffer, "%c%d %s", sign, year, year==1?"year":"years");
 	return QString(buffer);
 
 }

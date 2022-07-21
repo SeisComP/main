@@ -121,7 +121,7 @@ void QcItemDelegate::paint0(QPainter *painter, const QStyleOptionViewItem &opt, 
 #else
 	//! paint standard base cell
 	QItemDelegate::paint(painter, opt, index);
-#endif	
+#endif
 
 
 	/*
@@ -191,9 +191,7 @@ void QcItemDelegate::paint1(QPainter *painter, const QStyleOptionViewItem &opt, 
 				painter->drawLine(option.rect.topLeft(), option.rect.bottomRight());
 				painter->drawLine(option.rect.topRight(), option.rect.bottomLeft());
 		}
-	
 
-		
 	painter->restore();
 
 }
@@ -228,7 +226,9 @@ inline QColor QcItemDelegate::getSumColor(const QModelIndex& index) const {
 		score += _qcModel->config()->count(_qcModel->config()->parameterName(i), v.toDouble());
 	}
 
-	if (unset == 0) score = 1000;
+	if (unset == 0) {
+		score = 1000;
+	}
 
 	return _qcModel->config()->sumColor("default", score);
 }
@@ -275,7 +275,7 @@ QcItemView::QcItemView(QWidget *parent)
 	_hideInfoWidget->setCheckState(Qt::Checked);
 	_hideInfoWidget->setToolTip("hide this Info Display");
 	mainLayout->addWidget(_hideInfoWidget);
-	
+
 	parent->layout()->addWidget(_infoWidget);
 
 	connect(this, SIGNAL(pressed(const QModelIndex&)), this, SLOT(showInfo(const QModelIndex&)));
@@ -306,7 +306,7 @@ void QcItemView::showInfo(const QModelIndex& index) {
 		_infoTable->hideFilterWidget(true);
 		_infoWidget->layout()->addWidget(_infoTable);
 	}
-	
+
 
 	_infoTable->setFilterRegExp(streamID);
 	_hideInfoWidget->setCheckState(Qt::Checked);
@@ -349,11 +349,11 @@ QModelIndex QcItemView::indexAt(const QPoint &point) const
 	p.setY(point.y() + verticalOffset());
 
 	for (ItemPositions::const_iterator it = _itemPositions.begin(); it !=_itemPositions.end(); ++it) {
-		
+
 		if (it.value().contains(p))
 			return it.key();
 		}
-	
+
 	return QModelIndex();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -434,14 +434,14 @@ void QcItemView::paintEvent(QPaintEvent *event)
 	int rx = vx % (wx+border);
 
 	// divide rem. space
-	wx += (rx/nx -1);	
+	wx += (rx/nx -1);
 
 	ItemPositions itemPos;
 // 	_itemPositions.clear();
 
 	painter.translate(xmargin, -verticalOffset());
 
-	
+
 // 	option.font = QFont("arial", 8);
 	option.rect = QRect(0, 0, wx, wy);
 
@@ -495,7 +495,7 @@ void QcItemView::paintEvent(QPaintEvent *event)
 	}
 
 	_itemPositions = itemPos;
-	
+
 	_totalSize = cdy + wy;
 	updateGeometries();
 
@@ -734,7 +734,7 @@ bool QcItemView::viewportEvent(QEvent* event)
 {
 	if (event->type() == QEvent::ToolTip || event->type() == QEvent::WhatsThis)
 		return false;
-		
+
 	return QAbstractItemView::viewportEvent(event);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

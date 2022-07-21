@@ -55,14 +55,15 @@
 				<description>
 					Parameters controlling the overall QC score of a station.
 					The score is computed from the valid count parameter of the
-					defined ranges.
+					defined ranges. It is vizualized in the QcOverview.
 				</description>
 				<group name="default">
 					<parameter name="ranges" type="list:string" unit="">
 						<description>
 							Ranges to be considered for forming the score. Set the
 							count parameter om the respective range section for
-							controlling the contribution of this range.
+							controlling the contribution of this range. The
+							range parameters controll the coloring.
 						</description>
 					</parameter>
 				</group>
@@ -1441,31 +1442,113 @@
 
 			<group name="range">
 				<description>
-					Range parameters defining default values which can be overridden
-					per QC parameter in the section of this parameter.
-					More ranges can be added by adjusting scqcv.cfg e.g. in
-					@SYSTEMCONFIGDIR@/.
+					Range parameters and profiles defining default values which
+					can be overridden per QC parameter in the section of this
+					parameter. Each value can take a profile. Profiles have
+					the parameters count, color, action. More ranges can be
+					added to the configuration in scqcv.cfg.
 				</description>
 				<parameter name="sane" type="list:double" default="" unit="">
 					<description>
-						Value interval for range sane
+						Value interval for range sane.
 					</description>
 				</parameter>
 				<parameter name="inter" type="list:double" default="" unit="">
 					<description>
-						Value interval for range inter
+						Value interval for range inter.
 					</description>
 				</parameter>
 				<parameter name="bad" type="list:double" default="" unit="">
 					<description>
-						Value interval for range bad
+						Value interval for range bad.
+					</description>
+				</parameter>
+				<parameter name="above" type="list:double" default="" unit="">
+					<description>
+						Value interval for range profile above.
+					</description>
+				</parameter>
+				<parameter name="below" type="list:double" default="" unit="">
+					<description>
+						Value interval for range profile below.
+					</description>
+				</parameter>
+				<parameter name="delay" type="list:double" default="" unit="">
+					<description>
+						Value interval for range profile delay.
+					</description>
+				</parameter>
+				<parameter name="latency" type="list:double" default="" unit="">
+					<description>
+						Value interval for range profile latency.
+					</description>
+				</parameter>
+				<parameter name="timing" type="list:double" default="" unit="">
+					<description>
+						Value interval for range profile timing.
+					</description>
+				</parameter>
+				<parameter name="unset" type="list:double" default="" unit="">
+					<description>
+						Value interval for range profile unset.
+					</description>
+				</parameter>
+				<parameter name="r01" type="list:double" default="" unit="">
+					<description>
+						Value interval for range profile r01.
+					</description>
+				</parameter>
+				<parameter name="r02" type="list:double" default="" unit="">
+					<description>
+						Value interval for range profile r02.
+					</description>
+				</parameter>
+				<parameter name="r03" type="list:double" default="" unit="">
+					<description>
+						Value interval for range profile r03.
+					</description>
+				</parameter>
+				<parameter name="r04" type="list:double" default="" unit="">
+					<description>
+						Value interval for range profile r04.
+					</description>
+				</parameter>
+				<parameter name="r05" type="list:double" default="" unit="">
+					<description>
+						Value interval for range profile r05.
+					</description>
+				</parameter>
+				<parameter name="r06" type="list:double" default="" unit="">
+					<description>
+						Value interval for range profile r06.
+					</description>
+				</parameter>
+				<parameter name="r07" type="list:double" default="" unit="">
+					<description>
+						Value interval for range profile r07.
+					</description>
+				</parameter>
+				<parameter name="r08" type="list:double" default="" unit="">
+					<description>
+						Value interval for range profile r08.
+					</description>
+				</parameter>
+				<parameter name="r09" type="list:double" default="" unit="">
+					<description>
+						Value interval for range profile r09.
+					</description>
+				</parameter>
+				<parameter name="r10" type="list:double" default="" unit="">
+					<description>
+						Value interval for range profile r10.
 					</description>
 				</parameter>
 				<struct type="Range profile" link="">
-					<parameter name="count" type="double" unit="" default="0">
+					<parameter name="count" type="double" unit="" default="">
 						<description>
 						Contribution of this range for computing the score.
-						The range must be considered.
+						The range must be considered. The count is also set in
+						[parameter].range.[range profile].count .
 						</description>
 					</parameter>
 					<parameter name="color" type="string" unit="">
