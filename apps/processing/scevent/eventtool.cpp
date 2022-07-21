@@ -2898,9 +2898,17 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 						if ( info->constraints.fixOriginMode(origin) )
 							originPriority = ORIGIN_PRIORITY_MAX;
 
+						if ( originPriority == 0 ) {
+							SEISCOMP_DEBUG("...... origin %s is neither manual nor automatic",
+							               origin->publicID().c_str());
+						}
+
 						if ( originPriority < preferredOriginPriority ) {
-							SEISCOMP_DEBUG("... skipping potential preferred origin (%d < %d)",
-							               originPriority, preferredOriginPriority);
+							SEISCOMP_DEBUG("... skipping potential preferred origin, "
+							               "priority based on evaluation mode is "
+							               "lower than of currently preferred (%d < %d)",
+							               originPriority,
+							               preferredOriginPriority);
 							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: mode priority too low (%d < %d)",
 							             origin->publicID().c_str(), info->event->publicID().c_str(),
 							             originPriority, preferredOriginPriority);
@@ -2908,8 +2916,11 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 						}
 						// Found origin with higher status priority
 						else if ( originPriority > preferredOriginPriority ) {
-							SEISCOMP_LOG(_infoChannel, "Origin %s: mode priority %d overrides mode priority %d",
-							             origin->publicID().c_str(), originPriority, preferredOriginPriority);
+							SEISCOMP_LOG(_infoChannel,
+							             "Origin %s has higher mode priority "
+							             "(%d) than currently preferred origin (%d)",
+							             origin->publicID().c_str(), originPriority,
+							             preferredOriginPriority);
 							break;
 						}
 					}
@@ -2942,9 +2953,17 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 						if ( info->constraints.fixOriginMode(origin) )
 							originPriority = ORIGIN_PRIORITY_MAX;
 
+						if ( originPriority == 0 ) {
+							SEISCOMP_DEBUG("...... origin %s is neither manual nor automatic",
+							               origin->publicID().c_str());
+						}
+
 						if ( originPriority < preferredOriginPriority ) {
-							SEISCOMP_DEBUG("... skipping potential preferred origin (%d < %d)",
-							               originPriority, preferredOriginPriority);
+							SEISCOMP_DEBUG("... skipping potential preferred origin, "
+							               "priority based on evaluation mode is "
+							               "lower than of currently preferred (%d < %d)",
+							               originPriority,
+							               preferredOriginPriority);
 							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: status priority too low (%d < %d)",
 							             origin->publicID().c_str(), info->event->publicID().c_str(),
 							             originPriority, preferredOriginPriority);
@@ -3205,9 +3224,17 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 					if ( info->constraints.fixOriginMode(origin) )
 						originPriority = ORIGIN_PRIORITY_MAX;
 
+					if ( originPriority == 0 ) {
+						SEISCOMP_DEBUG("...... origin %s is neither manual nor automatic",
+						               origin->publicID().c_str());
+					}
+
 					if ( originPriority < preferredOriginPriority ) {
-						SEISCOMP_DEBUG("... skipping potential preferred origin (%d < %d)",
-						               originPriority, preferredOriginPriority);
+						SEISCOMP_DEBUG("... skipping potential preferred origin, "
+						               "priority based on evaluation mode is "
+						               "lower than of currently preferred (%d < %d)",
+						               originPriority,
+						               preferredOriginPriority);
 						SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: evaluation mode/status priority too low (%d < %d)",
 						             origin->publicID().c_str(), info->event->publicID().c_str(),
 						             originPriority, preferredOriginPriority);
