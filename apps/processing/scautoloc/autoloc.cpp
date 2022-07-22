@@ -13,8 +13,6 @@
 
 
 #define SEISCOMP_COMPONENT Autoloc
-//#define EXTRA_DEBUGGING
-//#define LOG_RELOCATOR_CALLS
 #include <seiscomp/logging/log.h>
 #include <seiscomp/seismology/ttt.h>
 
@@ -474,8 +472,10 @@ bool Autoloc3::feed(Origin *origin)
 		for(unsigned int i=0; i<found->arrivals.size(); i++) {
 			Arrival arr = found->arrivals[i];
 			if ( ! arr.pick->station()) {
-				// This should actually NEVER happen at this point...
-				SEISCOMP_ERROR("Arrival referencing a pick without station information");
+				// This should actually NEVER happen
+				SEISCOMP_ERROR("This should NEVER happen:");
+				SEISCOMP_ERROR("Arrival references pick without station");
+				SEISCOMP_ERROR("Pick is %s", arr.pick->id.c_str());
 				continue;
 			}
 
@@ -699,23 +699,31 @@ Origin *Autoloc3::merge(const Origin *origin1, const Origin *origin2)
 	SEISCOMP_DEBUG_S(" MRG2 " + printOneliner(origin2));
 
 	// This is a brute-force merge! Put everything into one origin.
-	int arrivalCount2 = origin2->arrivals.size();
-	int commonPickCount = 0;
-	int commonUsedCount = 0;
-	for(int i2=0; i2<arrivalCount2; i2++) {
-		Arrival arr = origin2->arrivals[i2];
+	for (const Arrival &arr2: origin2->arrivals) {
 		// Skip pick if an arrival already references it
-		bool found = combined->findArrival(arr.pick.get()) != -1;
-		if (found) {
-			commonPickCount++;
-			if ( ! arr.excluded )
-				commonUsedCount++;
+		bool found = combined->findArrival(arr2.pick.get()) != -1;
+		if (found)
 			continue;
+
+		// Skip pick if origin1 already has a pick from that station
+		// for the same phase.
+		for (const Arrival &arr1: origin1->arrivals) {
+			if (arr1.pick->station() == arr2.pick->station() &&
+			    arr1.phase == arr2.phase) {
+				found = true;
+				break;
+			}
 		}
-		arr.excluded = Arrival::TemporarilyExcluded;
-		// XXX The phase ID may be wrong.
-		combined->add(arr);
-		SEISCOMP_DEBUG(" MRG %ld->%ld added %s", origin2->id, origin1->id, arr.pick->id.c_str());
+		if (found)
+			continue;
+
+		Arrival tmp = arr2;
+		tmp.excluded = Arrival::TemporarilyExcluded;
+		// FIXME: The phase ID may not match.
+		combined->add(tmp);
+		SEISCOMP_DEBUG(" MRG %ld->%ld added %s",
+			       origin2->id, origin1->id,
+			       arr2.pick->id.c_str());
 	}
 
 #ifdef LOG_RELOCATOR_CALLS
@@ -741,13 +749,11 @@ Origin *Autoloc3::merge(const Origin *origin1, const Origin *origin2)
 
 	// now see which of the temporarily excluded new arrivals have
 	// acceptable residuals
-	for (ArrivalVector::iterator
-	     it = combined->arrivals.begin(); it != combined->arrivals.end(); ++it) {
-
-		Arrival &arr = *it;
-
-		if ( arr.excluded == Arrival::TemporarilyExcluded)
-			arr.excluded =  _residualOK(arr, 1.3, 1.8) ? Arrival::NotExcluded : Arrival::LargeResidual;
+	for (Arrival &arr : combined->arrivals) {
+		if (arr.excluded == Arrival::TemporarilyExcluded)
+			arr.excluded = _residualOK(arr, 1.3, 1.8)
+				? Arrival::NotExcluded
+				: Arrival::LargeResidual;
 	}
 
 	_trimResiduals(combined);
@@ -925,9 +931,6 @@ OriginPtr Autoloc3::_xxlPreliminaryOrigin(const Pick *newPick)
 		_relocator.useFixedDepth(true);
 		SEISCOMP_DEBUG("Trying to relocate possible XXL origin; trial depth %g km", dep);
 		SEISCOMP_DEBUG_S(printDetailed(origin.get()));
-#ifdef LOG_RELOCATOR_CALLS
-		SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 		OriginPtr relo = _relocator.relocate(origin.get());
 		if ( ! relo) {
 			SEISCOMP_DEBUG("FAILED to relocate possible XXL origin");
@@ -959,9 +962,6 @@ OriginPtr Autoloc3::_xxlPreliminaryOrigin(const Pick *newPick)
 		// TODO: The _depthIsResolvable part needs review and could probably be cleaned up a bit...
 		if (_config.defaultDepthStickiness < 0.9 && _depthIsResolvable(origin.get())) {
 			_relocator.useFixedDepth(false);
-#ifdef LOG_RELOCATOR_CALLS
-		SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 			relo = _relocator.relocate(origin.get());
 			if (relo)
 				origin->updateFrom(relo.get());
@@ -1397,9 +1397,6 @@ bool Autoloc3::_setDefaultDepth(Origin *origin)
 
 	_relocator.setFixedDepth(_config.defaultDepth);
 	_relocator.useFixedDepth(true);
-#ifdef LOG_RELOCATOR_CALLS
-	SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 	OriginPtr relo = _relocator.relocate(test.get());
 	if ( ! relo) {
 		SEISCOMP_WARNING("_setDefaultDepth: failed relocation");
@@ -1473,9 +1470,6 @@ bool Autoloc3::_setTheRightDepth(Origin *origin)
 
 		// if setting z=default increases the rms "significantly"...
 		if ( rms2 > 1.2*rms1 && rms2 > _config.goodRMS ) {
-#ifdef EXTRA_DEBUGGING
-			SEISCOMP_DEBUG("_testDepthResolution good for origin %ld (rms criterion)", origin->id);
-#endif
 			return false;
 		}
 
@@ -1485,9 +1479,6 @@ bool Autoloc3::_setTheRightDepth(Origin *origin)
 
 		// if setting z=default decreases the score "significantly"...
 		if ( score2 < 0.9*score1-5 ) {
-#ifdef EXTRA_DEBUGGING
-			SEISCOMP_DEBUG("_testDepthResolution good for origin %ld (score criterion)", origin->id);
-#endif
 			return false;
 		}
 
@@ -1561,9 +1552,6 @@ void Autoloc3::_ensureAcceptableRMS(Origin *origin, bool keepDepth)
 			int worst = arrivalWithLargestResidual(origin);
 			origin->arrivals[worst].excluded = Arrival::LargeResidual;
 			_relocator.useFixedDepth(keepDepth ? true : false);
-#ifdef LOG_RELOCATOR_CALLS
-			SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 			OriginPtr relo = _relocator.relocate(origin);
 			if ( ! relo) {
 				SEISCOMP_WARNING("Relocation failed in _ensureAcceptableRMS for origin %ld", origin->id);
@@ -1585,9 +1573,6 @@ void Autoloc3::_updateScore(Origin *origin)
 
 bool Autoloc3::_rework(Origin *origin)
 {
-#ifdef EXTRA_DEBUGGING
-	SEISCOMP_DEBUG("_rework begin   deperr=%.1f", origin->deperr);
-#endif
 	// This is the minimum requirement
 	if (origin->definingPhaseCount() < _config.minPhaseCount) {
 		return false;
@@ -1660,9 +1645,6 @@ bool Autoloc3::_rework(Origin *origin)
 		arr.excluded = Arrival::StationDistance;
 
 		// relocate once
-#ifdef LOG_RELOCATOR_CALLS
-		SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 		OriginPtr relo = _relocator.relocate(origin);
 		if ( ! relo) {
 			SEISCOMP_WARNING("A relocation failed in _rework for origin %ld", origin->id);
@@ -1688,9 +1670,6 @@ bool Autoloc3::_rework(Origin *origin)
 	if (origin->definingPhaseCount() < _config.minPhaseCount) {
 		return false;
 	}
-#ifdef EXTRA_DEBUGGING
-	SEISCOMP_DEBUG("_rework end");
-#endif
 	return true;
 }
 
@@ -1722,9 +1701,6 @@ bool Autoloc3::_excludePKP(Origin *origin)
 		return false;
 
 	// relocate once
-#ifdef LOG_RELOCATOR_CALLS
-	SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 	OriginPtr relo = _relocator.relocate(origin);
 	if ( ! relo) {
 		SEISCOMP_WARNING("A relocation failed in _excludePKP for origin %ld", origin->id);
@@ -1784,9 +1760,6 @@ bool Autoloc3::_excludeDistantStations(Origin *origin)
 		}
 	}
 	if (excludedCount) {
-#ifdef LOG_RELOCATOR_CALLS
-		SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 		OriginPtr relo = _relocator.relocate(origin);
 		if (relo) {
 			origin->updateFrom(relo.get());
@@ -1991,14 +1964,8 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const string &phase)
 			// the minPhaseCount criterion might be counter
 			// productive, prevent the association as PKP and
 			// ultimately result in fake events.
-#ifdef EXTRA_DEBUGGING
-			SEISCOMP_DEBUG_S("aggressive PKP association for station "+station->code);
-#endif
 		}
 		else {
-#ifdef EXTRA_DEBUGGING
-			SEISCOMP_DEBUG("_associate origin=%d pick=%s weakly associated because origin.phaseCount=%d < minPhaseCount=%d", int(origin->id), pick->id.c_str(), origin->phaseCount(), minPhaseCount);
-#endif
 
 //			return false;
 			arr.excluded = Arrival::TemporarilyExcluded;
@@ -2057,9 +2024,6 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const string &phase)
 				_relocator.setFixedDepth(origin->dep);
 			}
 			_relocator.useFixedDepth(fixed);
-#ifdef LOG_RELOCATOR_CALLS
-			SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 			relo = _relocator.relocate(copy.get());
 			if ( ! relo ) {
 				if ( fixed )
@@ -2067,9 +2031,6 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const string &phase)
 				else {
 					_relocator.setFixedDepth(origin->dep);
 					_relocator.useFixedDepth(true);
-#ifdef LOG_RELOCATOR_CALLS
-				SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 					relo = _relocator.relocate(copy.get());
 					if ( ! relo) // if 2nd relocation attempt also fails
 						return false;
@@ -2078,12 +2039,6 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const string &phase)
 
 			double score2 = _score(relo.get()); // score after relocation
 			double rms2   = relo->rms();  // rms after relocation
-#ifdef EXTRA_DEBUGGING
-			SEISCOMP_DEBUG("_associate trying pick id=%s  as %s   res=%.1f",
-			       arr.pick->id.c_str(), phase.c_str(), arr.residual);
-			SEISCOMP_DEBUG("_associate score: %.1f -> %.1f    rms: %.2f -> %.2f ",
-			       original_score, score2, original_rms, rms2);
-#endif
 			if (score2 < original_score || rms2 > original_rms + 3./sqrt(10.+copy->arrivals.size())) { // no improvement
 
 				int index = copy->findArrival(pick);
@@ -2095,25 +2050,14 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const string &phase)
 				arr.excluded = Arrival::LargeResidual;
 
 				// relocate anyway, to get consistent residuals even for the unused picks
-#ifdef EXTRA_DEBUGGING
-				SEISCOMP_DEBUG("_associate trying again with fixed depth of z=%g", origin->dep);
-#endif
 				_relocator.setFixedDepth(origin->dep);
 				_relocator.useFixedDepth(true);
-#ifdef LOG_RELOCATOR_CALLS
-				SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 				relo = _relocator.relocate(copy.get());
 				if ( ! relo) {
 					SEISCOMP_ERROR("THIS SHOULD NEVER HAPPEN @_associate B");
 				}
 				else {
 					double score3 = _score(relo.get()); // score after relocation
-#ifdef EXTRA_DEBUGGING
-					double rms3   = copy->rms();
-					SEISCOMP_DEBUG("_associate score: %.1f -> %.1f -> %.1f   rms: %.2f -> %.2f -> %.2f",
-							original_score, score2, score3, original_rms, rms2, rms3);
-#endif
 					if (score3 < original_score) // still no improvement
 						relo = 0;
 				}
@@ -2174,9 +2118,6 @@ bool Autoloc3::_addMorePicks(Origin *origin, bool keepDepth)
 		have.insert(x);
 	}
 
-#ifdef EXTRA_DEBUGGING
-	SEISCOMP_DEBUG("_addMorePicks begin");
-#endif
 	int picksAdded = 0;
 	for(PickMap::iterator
 	    it = _pick.begin(); it != _pick.end(); ++it) {
@@ -2209,10 +2150,6 @@ bool Autoloc3::_addMorePicks(Origin *origin, bool keepDepth)
 
 		picksAdded ++;
 	}
-
-#ifdef EXTRA_DEBUGGING
-	SEISCOMP_DEBUG("_addMorePicks end   added %d", picksAdded);
-#endif
 
 	if ( ! picksAdded)
 		return false;
@@ -2270,9 +2207,6 @@ bool Autoloc3::_enhanceScore(Origin *origin, int maxloops)
 				copy->depthType = Origin::DepthFree;
 				copy->lat = earliestxxl->station()->lat;
 				copy->lon = earliestxxl->station()->lon;
-#ifdef LOG_RELOCATOR_CALLS
-				SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 				OriginPtr relo = _relocator.relocate(copy.get());
 				if (relo) {
 					origin->updateFrom(relo.get());
@@ -2306,17 +2240,11 @@ bool Autoloc3::_enhanceScore(Origin *origin, int maxloops)
 			copy->arrivals[i].excluded = Arrival::ManuallyExcluded;
 
 			_relocator.useFixedDepth(false);
-#ifdef LOG_RELOCATOR_CALLS
-			SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 			OriginPtr relo = _relocator.relocate(copy.get());
 			if ( ! relo) {
 				// try again, now using fixed depth (this sometimes helps)
 				// TODO: figure out why this sometimes helps and whether there is a better way
 				_relocator.useFixedDepth(true);
-#ifdef LOG_RELOCATOR_CALLS
-				SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 				relo = _relocator.relocate(copy.get());
 				if ( ! relo)
 					continue;
@@ -2346,16 +2274,10 @@ bool Autoloc3::_enhanceScore(Origin *origin, int maxloops)
 		arr.excluded = Arrival::LargeResidual;
 
 		_relocator.useFixedDepth(false);
-#ifdef LOG_RELOCATOR_CALLS
-		SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 		OriginPtr relo = _relocator.relocate(copy.get());
 		if ( ! relo) {
 			// try again, now using fixed depth (this sometimes helps)
 			_relocator.useFixedDepth(true);
-#ifdef LOG_RELOCATOR_CALLS
-			SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 			relo = _relocator.relocate(copy.get());
 			if ( ! relo) // give up if fixing depth didn't help
 				continue;
@@ -2599,10 +2521,6 @@ double Autoloc3::_testFake(Origin *origin) const
 
 int Autoloc3::_removeWorstOutliers(Origin *origin)
 {
-#ifdef EXTRA_DEBUGGING
-	string info_before = printDetailed(origin);
-	SEISCOMP_DEBUG("_removeWorstOutliers begin");
-#endif
 	int count = 0;
 	vector<string> removed;
 
@@ -2625,18 +2543,6 @@ int Autoloc3::_removeWorstOutliers(Origin *origin)
 	if (count==0)
 		return 0;
 
-#ifdef EXTRA_DEBUGGING
-	string info_after = printDetailed(origin);
-	// logging only
-	int n = removed.size();
-	string tmp=removed[0];
-	for(int i=1; i<n; i++)
-		tmp += ", "+removed[i];
-	SEISCOMP_DEBUG("removed outlying arrivals from origin %ld: %s", origin->id, tmp.c_str());
-	SEISCOMP_DEBUG_S("Before:\n" + info_before);
-	SEISCOMP_DEBUG_S("After:\n"  + info_after);
-	SEISCOMP_DEBUG("_removeWorstOutliers end");
-#endif
 	return count;
 }
 
@@ -2720,9 +2626,6 @@ bool Autoloc3::_trimResiduals(Origin *origin)
 		Arrival &arr = copy->arrivals[maxIndex];
 		arr.excluded = Arrival::LargeResidual;
 
-#ifdef LOG_RELOCATOR_CALLS
-		SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 		// NOTE that the behavior of _relocator is configured outside this routine
 		OriginPtr relo = _relocator.relocate(copy.get());
 		if ( ! relo)
@@ -2759,9 +2662,6 @@ bool Autoloc3::_trimResiduals(Origin *origin)
 		Arrival &arr = copy->arrivals[minIndex];
 		arr.excluded = Arrival::NotExcluded;
 
-#ifdef LOG_RELOCATOR_CALLS
-		SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 		OriginPtr relo = _relocator.relocate(copy.get());
 		if ( ! relo)
 			break;
@@ -2951,64 +2851,31 @@ bool Autoloc3::_depthIsResolvable(Origin *origin)
 	OriginPtr test = new Origin(*origin);
 	_relocator.useFixedDepth(false);
 	test->depthType = Origin::DepthFree;
-#ifdef LOG_RELOCATOR_CALLS
-	SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 	OriginPtr relo = _relocator.relocate(test.get());
 	if (relo) {
-#ifdef EXTRA_DEBUGGING
-		SEISCOMP_DEBUG("_depthIsResolvable for origin %ld: dep=%.1f smaj=%.1f sdep=%.1f stim=%.1f",
-			       origin->id, relo->dep, relo->error.semiMajorAxis, relo->error.sdepth, relo->error.stime);
-#endif
 		if (relo->error.sdepth > 0.) {
 			if (relo->error.sdepth < 15*relo->error.stime) {
-#ifdef EXTRA_DEBUGGING
-				SEISCOMP_DEBUG("_depthIsResolvable passed for origin %ld (using new criterion A)", origin->id);
-#endif
 				return true;
 			}
 			if (relo->error.sdepth < 0.7*relo->dep) {
-#ifdef EXTRA_DEBUGGING
-				SEISCOMP_DEBUG("_depthIsResolvable passed for origin %ld (using new criterion B)", origin->id);
-#endif
 				return true;
 			}
 		}
 	}
-#ifdef EXTRA_DEBUGGING
-	else {
-		SEISCOMP_DEBUG("_depthIsResolvable failed for origin %ld", origin->id);
-	}
-#endif
-
-
-#ifdef EXTRA_DEBUGGING
-	SEISCOMP_DEBUG("__depthIsResolvable poorly for origin %ld (using new criterion)", origin->id);
-	SEISCOMP_DEBUG("__depthIsResolvable using old criterion now");
-#endif
 
 	test = new Origin(*origin);
 	test->dep = _config.defaultDepth;
 	_relocator.useFixedDepth(true);
-#ifdef LOG_RELOCATOR_CALLS
-	SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
 	relo = _relocator.relocate(test.get());
 	if ( ! relo) {
 		// if we fail to relocate using a fixed shallow depth, we
 		// assume that the original depth is resolved.
-#ifdef EXTRA_DEBUGGING
-		SEISCOMP_DEBUG("_depthIsResolvable passed for origin %ld (using old criterion A)", origin->id);
-#endif
 		return true;
 	}
 
 	// relo here has the default depth (fixed)
 	double score1 = _score(origin), score2 = _score(relo.get());
 	if ( score2 < 0.8*score1 ) {
-#ifdef EXTRA_DEBUGGING
-		SEISCOMP_DEBUG("_depthIsResolvable passed for origin %ld (using old criterion B)", origin->id);
-#endif
 		return true;
 	}
 
@@ -3018,9 +2885,6 @@ bool Autoloc3::_depthIsResolvable(Origin *origin)
 	origin->depthType = Origin::DepthDefault;
 	_updateScore(origin); // why here?
 
-#ifdef EXTRA_DEBUGGING
-	SEISCOMP_DEBUG("_depthIsResolvable poorly for origin %ld", origin->id);
-#endif
 	return false;
 }
 
