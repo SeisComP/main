@@ -144,6 +144,20 @@ class EventList(seiscomp.client.Application):
 
         return True
 
+    def printUsage(self):
+
+        print('''Usage:
+  scevtls [options]
+
+List event IDs available in a given time range and print to stdout.''')
+
+        seiscomp.client.Application.printUsage(self)
+
+        print('''Examples:
+Print all event IDs from year 2022 and thereafter
+  scevtls -d mysql://sysop:sysop@localhost/seiscomp --begin "2022-01-01 00:00:00"
+''')
+
     def run(self):
         out = []
         seiscomp.logging.debug("Search interval: %s - %s" %
