@@ -88,7 +88,7 @@ class OriginList(seiscomp.client.Application):
         print('''Usage:
   scorgls [options]
 
-List available origin IDs in a given time range to stdout''')
+List origin IDs available in a given time range and print to stdout.''')
 
         seiscomp.client.Application.printUsage(self)
 
