@@ -1016,15 +1016,15 @@ class BulletinApp(seiscomp.client.Application):
         print('''Usage:
   scbulletin [options]
 
-Transform event or origin parameters to autoloc1 or to autoloc3 format.''')
+Generate bulletins from events or origins in autoloc1, autoloc3 or fdsnws format.''')
 
         seiscomp.client.Application.printUsage(self)
 
         print('''Examples:
-Create bulletin from event in database
+Create a bulletin from one event in the seiscomp database
   scbulletin -d mysql://sysop:sysop@localhost/seiscomp -E gempa2012abcd
 
-Convert XML file with event parameters to bulletin
+Create a bulletin from event parameters in XML
   scbulletin -i gempa2012abcd.xml
 ''')
         return True
