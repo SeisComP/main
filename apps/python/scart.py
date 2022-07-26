@@ -630,44 +630,43 @@ Usage:
   scart [options] [archive]
 
 Import miniSEED waveforms or dump records from an SDS structure, sort them,
-modify the time and replay them.
+modify the time and replay them. Also check files and archives.
 
 Verbosity:
   -h, --help       Display this help message.
   -v, --verbose    Print verbose information.
 
 Mode:
-  --check          Check mode: Check all files in the given directory
-                   for erroneous miniSEED records. All sub-directories are
-                   included. If no directory is given,
+  --check arg      Check mode: Check all files in the given directory structure
+                   for erroneous miniSEED records. If no directory is given,
                    $SEISCOMP_ROOT/var/lib/archive is scanned.
   -d, --dump       Export (dump) mode. Read from SDS archive.
-  -I               Import mode: Specify a recordstream URL when in import mode.
+  -I arg           Import mode: Specify a recordstream URL when in import mode.
                    When using another recordstream than file a
                    stream list file is needed.
                    Default: file://- (stdin)
 
 Output:
-  -c                Channel filter (regular expression).
+  -c arg            Channel filter (regular expression).
                     Default: "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
   -E                Sort according to record end time; default is start time
-  --files           Specify the file handles to cache; default: 100
-  -l, --list        Use a stream list file instead of defined networks and
+  --files arg       Specify the file handles to cache; default: 100
+  -l, --list arg    Use a stream list file instead of defined networks and
                     channels (-n and -c are ignored). The list can be generated
                     from events by scevtstreams. One line per stream
                     Line format: starttime;endtime;streamID
                         2007-03-28 15:48;2007-03-28 16:18;GE.LAST.*.*
                         2007-03-28 15:48;2007-03-28 16:18;GE.PMBI..BH?
   -m, --modify      Modify the record time for realtime playback when dumping.
-  -n                Network code list (comma separated). Default: *
-  --nslc            Use a stream list file for filtering the data by the given
+  -n arg            Network code list (comma separated). Default: *
+  --nslc arg        Use a stream list file for filtering the data by the given
                     streams. For dump mode only! One line per stream.
                     Format: NET.STA.LOC.CHA
   -s, --sort        Sort records.
-  --speed           Specify the speed to dump the records
-                    a value of 0 means no delay otherwise speed is a multiplier
-                    of the real time difference between the records.
-  --stdout          Writs to stdout if import mode is used instead
+  --speed arg       Specify the speed to dump the records. A value of 0 means
+                    no delay. Otherwise speed is a multiplier of the real time
+                    difference between the records.
+  --stdout          Writes to stdout if import mode is used instead
                     of creating a SDS archive.
   -t t1~t2          Specify time window (as one properly quoted string)
                     times are of course UTC and separated by a tilde '~' .
