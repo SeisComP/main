@@ -78,11 +78,15 @@ class TestApp : public Client::Application {
 		virtual bool initConfiguration() {
 			if ( !Client::Application::initConfiguration() )
 				return false;
-			setDatabaseEnabled(false, false);
 
 			_configuration.setBool("module.trunk.global.amplitudes." AMP_TYPE ".enableResponses", true);
 
 			return true;
+		}
+
+		bool validateParameters() override {
+			setDatabaseEnabled(false, false);
+			return Client::Application::validateParameters();
 		}
 
 		bool compareAmplitudes(const char *prefix) {
