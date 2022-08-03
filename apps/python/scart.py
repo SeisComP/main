@@ -705,6 +705,9 @@ except GetoptError:
     usage(exitcode=1)
 
 
+
+tmin = None
+tmax = None
 endtime = False
 verbose = False
 sort = False
@@ -803,11 +806,8 @@ archive.filePoolSize = filePoolSize
 
 if verbose:
     seiscomp.logging.enableConsoleLogging(seiscomp.logging.getAll())
+
     if dump and not listFile:
-        if tmin >= tmax:
-            print("info: start time '{}' after end time '{}' - stopping"
-                  .format(time2str(tmin), time2str(tmax)), file=sys.stderr)
-            sys.exit(-1)
         sys.stderr.write("Time window: %s~%s\n" %
                          (time2str(tmin), time2str(tmax)))
 
@@ -847,6 +847,16 @@ if listFile:
     nslcFile = None
 
 if dump:
+    if not listFile:
+        if not tmin or not tmax:
+            print("info: provide a time window with '-t' or '-l' when using "
+                  "'-d' - stopping", file=sys.stderr)
+            sys.exit(-1)
+        if tmin >= tmax:
+            print("info: start time '{}' after end time '{}' - stopping"
+                  .format(time2str(tmin), time2str(tmax)), file=sys.stderr)
+            sys.exit(-1)
+
     if listFile:
         print("Stream file: '{}'".format(listFile), file=sys.stderr)
         streams = readStreamTimeList(listFile)
