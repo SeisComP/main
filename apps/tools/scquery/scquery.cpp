@@ -153,7 +153,7 @@ class AppQuery : public Client::Application {
 			std::cout << "Examples:" << std::endl;
 			std::cout << "List all configured queries" << std::endl
 			          << "  scquery --showqueries" << std::endl << std::endl;
-			std::cout << "Use the 'eventFilter' query, additionally pring the column names as header"
+			std::cout << "Use the 'eventFilter' query, additionally print the column names as header"
 			          << std::endl
 			          << "  scquery -d localhost --print-column-name eventFilter 50 52 10.5 12.5 2.5 5 2021-01-01 2022-01-01"
 			          << std::endl;
