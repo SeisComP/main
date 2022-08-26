@@ -1506,7 +1506,7 @@ void Inventory::ProcessDatalogger(ChannelIdentifier& ci, DataModel::StreamPtr st
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 DataModel::DataloggerPtr Inventory::InsertDatalogger(ChannelIdentifier& ci, DataModel::StreamPtr strm, const string& name) {
-	SEISCOMP_DEBUG("Voeg nieuwe datalogger toe");
+	SEISCOMP_DEBUG("Insert datalogger");
 
 	double drift = ci.GetMaxClockDrift() * \
 		double(strm->sampleRateNumerator()) / double(strm->sampleRateDenominator());
@@ -1527,7 +1527,7 @@ DataModel::DataloggerPtr Inventory::InsertDatalogger(ChannelIdentifier& ci, Data
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Inventory::UpdateDatalogger(ChannelIdentifier& ci, DataModel::DataloggerPtr dlg, DataModel::StreamPtr strm) {
-	SEISCOMP_DEBUG("wijzig datalogger");
+	SEISCOMP_DEBUG("Update datalogger");
 
 	double drift = ci.GetMaxClockDrift() * (double)strm->sampleRateNumerator() / (double)strm->sampleRateDenominator();
 
@@ -1558,7 +1558,7 @@ void Inventory::ProcessDecimation(ChannelIdentifier& ci, DataModel::DataloggerPt
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Inventory::InsertDecimation(ChannelIdentifier& ci, DataModel::DataloggerPtr dlg, DataModel::StreamPtr strm) {
-	SEISCOMP_DEBUG("Voeg nieuwe decimation toe");
+	SEISCOMP_DEBUG("Insert decimation");
 
 	DataModel::DecimationPtr deci = new DataModel::Decimation();
 	deci->setSampleRateNumerator(strm->sampleRateNumerator());
@@ -1575,7 +1575,7 @@ void Inventory::InsertDecimation(ChannelIdentifier& ci, DataModel::DataloggerPtr
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Inventory::UpdateDecimation(ChannelIdentifier& ci, DataModel::DecimationPtr deci, DataModel::StreamPtr strm) {
-	SEISCOMP_DEBUG("Wijzig decimation");
+	SEISCOMP_DEBUG("Update decimation");
 
 	deci->setAnalogueFilterChain(Core::None);
 	deci->setDigitalFilterChain(Core::None);
@@ -2336,7 +2336,7 @@ void Inventory::ProcessSensorPolynomial(ChannelIdentifier& ci, DataModel::Sensor
 DataModel::ResponsePolynomialPtr Inventory::InsertResponsePolynomial(ChannelIdentifier& ci, const string &name, OPT(double) stageGain) {
 	int seq = (int)*response_index;
 
-	SEISCOMP_DEBUG("Voeg nieuwe response polynomial");
+	SEISCOMP_DEBUG("Insert response polynomial");
 
 	DataModel::ResponsePolynomialPtr rp = DataModel::ResponsePolynomial::Create();
 
