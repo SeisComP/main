@@ -150,6 +150,11 @@ class SCARDAC : public Client::Application {
 
 	private:
 		friend class Worker;
+
+		/**
+		 * @brief print usage information
+		 */
+		void printUsage() const override;
 };
 
 } // ns DataAvailability

@@ -707,6 +707,27 @@ SCARDAC::~SCARDAC() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void SCARDAC::printUsage() const {
+cout << "Usage:"  << endl << "  scardac [options]" << endl << endl
+     << "Scan data archives and collect availability information from records."
+     << endl;
+
+Seiscomp::Client::Application::printUsage();
+
+cout << "Examples:" << endl;
+cout << "Scan the configured archive, write information to the default SeisComP database" << endl;
+cout << "scardac -d localhost -a $SEISCOMP_ROOT/var/lib/archive"
+     << endl << endl;
+cout << "Scan a specific archive at /archive, write information to the default SeisComP database" << endl;
+cout << "scardac -d localhost -a /archive"
+	 << endl << endl;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void SCARDAC::createCommandLineDescription() {
 	commandline().addGroup("Collector");
 	commandline().addOption("Collector", "archive,a",

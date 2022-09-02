@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="scardac" category="Acquisition">
-		<description>Waveform archive data availability collector</description>
+		<description>Waveform archive data availability collector.</description>
 		<configuration>
 			<parameter name="archive" type="string" default="@SEISCOMP_ROOT@/var/lib/archive">
 				<description>
@@ -13,13 +13,13 @@
 			</parameter>
 			<parameter name="threads" type="int" default="1">
 				<description>
-				Number of threads scanning the archive in parallel
+				Number of threads scanning the archive in parallel.
 				</description>
 			</parameter>
 			<parameter name="batchSize" type="int" default="100">
 				<description>
 				Batch size of database transactions used when updating data
-				availability segments. Allowed range: [1,1000]
+				availability segments. Allowed range: [1,1000].
 				</description>
 			</parameter>
 			<parameter name="jitter" type="float" default="0.5">
@@ -47,6 +47,7 @@
 				</description>
 			</parameter>
 		</configuration>
+
 		<command-line>
 			<synopsis>
 				scardac [OPTION]...
@@ -58,7 +59,6 @@
 				<optionReference>generic#version</optionReference>
 				<optionReference>generic#config-file</optionReference>
 				<optionReference>generic#plugins</optionReference>
-				<optionReference>generic#daemon</optionReference>
 			</group>
 			<group name="Verbosity">
 				<optionReference>verbosity#verbosity</optionReference>
