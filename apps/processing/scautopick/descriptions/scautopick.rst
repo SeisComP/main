@@ -1,26 +1,46 @@
 scautopick applies threshold monitoring by searching for waveform anomalies in
 form of changes in amplitudes. It is applied for detecting phase arrivals and
-and for measuring related amplitudes.
+and for measuring related features and amplitudes. The phase arrivals are
+typically associated by modules like :ref:`scautoloc` for locating the source.
+
+.. note::
+
+   Instead of detecting phase arrivals for source location, scautopick
+   can also be applied for detecting simple amplitude exceedence applying filters
+   like the :py:func:`MAX` filter. Exceedences are reported as picks and can be
+   processed further, e.g. by :ref:`scalert`.
 
 
 Phase Detections
 ================
 
-scautopick detects phase onsets for generating :term:`picks <pick>`. Initally
-it searches for P picks on the waveform streams defined by global bindings.
+scautopick detects phase onsets for generating :term:`picks <pick>`. Initally,
+it searches for detections on the waveform streams defined by global bindings.
 
-By default scautopick applies a robust STA/LTA detector
-(:ref:`STALTA filter <filter-grammar>`) to waveforms for detecting P phases. Other
-detection filters can be choosen from the :ref:`list of SeisComP filters <filter-grammar>`.
-The waveforms are typically :ref:`pre-filtered<filter-grammar>`.
-Without further configuration a running-mean highpass, a cosine taper and a Butterworth
-bandpass filter of third order with corner frequencies of 0.7 and 2 Hz are applied before
-the STALTA filter. The entire filter sequence is configurable by :confval:`filter`,
-module configuration, or :confval:`detecFilter`, binding configuration.
+
+P picks
+-------
+
+A primary detector is applied first. When a detection is found, 'P' is by default
+assigned to the guess of the phase type (phaseHint). The actual guess can be configured by
+:confval:`phaseHint`. By default the primary detector applies a robust STA/LTA
+detector (:py:func:`STALTA` filter) to waveforms for making detections. Other
+detection filters and filter chains can be choosen from the
+:ref:`list of SeisComP filters <filter-grammar>`. A guess of the pick type may
+be defined by :confval:`phaseHint`.
+
+Waveforms are typically :ref:`pre-filtered <filter-grammar>` before the actual
+:py:func:`STALTA` filter. Without further configuration a
+running-mean highpass, a cosine taper and a Butterworth bandpass filter of
+third order with corner frequencies of 0.7 and 2 Hz are applied before the
+:py:func:`STALTA` filter. The entire filter sequence is configurable by
+:confval:`filter`, module configuration, or :confval:`detecFilter`, binding
+configuration.
+
 Once the STA/LTA ratio has reached a configurable threshold (by default 3) for a
 particular stream, a :term:`pick` is set to the time when this
-threshold is exceeded (pick time) and the picker is set inactive. The picker is reactivated
-for this stream once the STA/LTA ratio falls to the value of 1.5 (default).
+threshold is exceeded (pick time) and the picker is set inactive. The picker is
+reactivated for this stream once the STA/LTA ratio falls to the value of 1.5 (default).
 
 The trigger thresholds are configurable:
 
@@ -29,20 +49,13 @@ The trigger thresholds are configurable:
 * Trigger off: :confval:`thresholds.triggerOff`, module configuration or :confval:`trigOff`,
   binding configuration.
 
-Following inital P-phase detections a second-stage P-phase picker (post picker) and
-a S-phase picker (secondary picker) can be applied. Configure :confval:`picker`,
-:confval:`spicker` and global bindings parameters accordingly.
+Initial detections can be further adjusted by a second-stage phase re-picker
+(post picker) as defined by :confval:`picker`. The re-picker should be tuned
+carefully and global bindings parameters :confval:`picker.*` should be
+configured accordingly.
 
-.. csv-table:: Second-stage pickers available by configuration of :confval:`picker` or :confval:`spicker`
-   :align: center
-   :header: "picker name", "picker","spicker","parameters in global bindings"
-
-   "AIC", "x", "", "picker.AIC"
-   "BK", "x", "", "picker.BK"
-   "S-L2", "", "x", "spicker.L2"
-
-After having detected a P phase, scautopick will not accept any further P detection
-until
+After having detected a phase, the re-picker will be inactive and accept no further
+detection until
 
 * The amplitudes measured after filtering (:confval:`filter` in module configuration
   or :confval:`detecFilter` in binding configuration) fall below the
@@ -67,6 +80,35 @@ until
   :math:`T_{minOffset}` (:confval:`thresholds.minAmplOffset`) is typically similar to
   the trigger threshold, :confval:`thresholds.triggerOn` (module configuration) or
   :confval:`trigOn` (binding configuration).
+
+
+S picks
+-------
+
+Based on the inital detection or pick a secondary picker may applied be applied,
+e.g., for picking S phases as defined by :confval:`spicker`. The secondary picker
+is halted as soon as new detections are made unless :confval:`killPendingSPickers`
+is inactive.
+
+As for the re-picker also the spicker should be tuned carefully and global
+bindings parameters :confval:`spicker.*` should be set.
+
+.. csv-table:: Second-stage pickers available by configuration of :confval:`picker` or :confval:`spicker`
+   :align: center
+   :delim: ,
+   :widths: 1 3 1 1 3
+   :header: "picker name", "phase", "picker", "spicker", "global bindings parameters"
+
+   "AIC", "P, configurable: :confval:`phaseHint`", "x", "", "picker.AIC.*"
+   "BK", "P, configurable: :confval:`phaseHint`", "x", "", "picker.BK.*"
+   "S-L2", "S", "", "x", "spicker.L2.*"
+
+
+Feature extraction
+------------------
+
+For extracting features related to picks such as polarization parameters
+configure :confval:`fx` and the related global bindings parameters :confval:`fx.*`.
 
 
 Amplitude Measurements
@@ -114,7 +156,7 @@ In real-time mode the workflow draws like this:
 * The samples are checked for exceedance of :confval:`trigOn` and in the positive
   case either a post picker (:confval:`picker`) is launched or a :term:`Pick <pick>`
   object will be sent.
-* If :confval:`sendDetections` is set to ``true`` trigger will be sent in any
+* If :confval:`sendDetections` is set to ``true``, a trigger will be sent in any
   case for e.g. debugging.
 * After the primary stage has finished (detector only or picker) secondary
   pickers will be launched if configured with :confval:`spicker`.

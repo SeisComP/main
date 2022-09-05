@@ -1,20 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="scautopick" category="Processing" inherit-global-bindings="true">
-		<description>Makes picks on waveforms.</description>
+		<description>Phase detection and picking on waveforms.</description>
 		<configuration>
-			<parameter name="filter" type="string">
-				<description>
-					Defines the default filter used for picking. Station specific configurations
-					will override this value.
-				</description>
-			</parameter>
-			<parameter name="timeCorrection" type="double" default="-0.8" unit="s">
-				<description>
-					Time correction applied for each pick made. Station specific
-					values override this value.
-				</description>
-			</parameter>
 			<parameter name="ringBufferSize" type="int" default="300" unit="s">
 				<description>
 					Defined the record ringbuffer size in seconds.
@@ -24,6 +12,16 @@
 				<description>
 					The leadTime defines the time in seconds to start picking on
 					waveforms before current time.
+				</description>
+			</parameter>
+			<parameter name="playback" type="boolean" default="false">
+				<description>
+					If enabled, picks can be made on waveforms which are older than
+					current time - &quot;leadTime&quot;. Current time is the time
+					when the module was started. This allows to pick
+					historic data in real-time playbacks which are preserving the
+					record times. See e.g. the &quot;msrtsimul&quot; module.
+					This option deactivates &quot;leadTime&quot;. Activate only for playbacks.
 				</description>
 			</parameter>
 			<parameter name="initTime" type="int" default="60" unit="s">
@@ -39,19 +37,39 @@
 					than thresholds.maxGapLength.
 				</description>
 			</parameter>
-			<parameter name="amplitudes" type="list:string" default="MLv, mb, mB">
+			<parameter name="useAllStreams" type="boolean" default="true">
 				<description>
-					Defines the amplitude types to be computed by the picker as well.
+					If enabled, all streams that are received by the picker are
+					used for picking. This option has only effect if a
+					file is used as input which contains more data than the
+					picker requests. If connected to a waveform server such as
+					SeedLink, the picker will only receive the data it is
+					subscribed to.
+				</description>
+			</parameter>
+			<parameter name="filter" type="string" default="&quot;RMHP(10)>>ITAPER(30)>>BW(4,0.7,2)>>STALTA(2,80)&quot;">
+				<description>
+				The default filter used for making detections. Station-specific
+				configurations (bindings) override this value.
+				</description>
+			</parameter>
+			<parameter name="timeCorrection" type="double" default="-0.8" unit="s">
+				<description>
+				The time correction applied for a pick. Station-specific
+				values (bindings) override this value.
 				</description>
 			</parameter>
 			<parameter name="picker" type="string">
 				<description>
-					Configures the picker to use. By default only a simple detections
-					are emitted as picks. To enable real picking on a time window around
-					the detection, an algorithm (plugin) can be defined with this parameter.
-					Currently available is: &quot;AIC&quot;, &quot;BK&quot; or
-					&quot;GFZ&quot;. More options may be available by plugins.
-					Configure related parameters in global bindings.
+				The re-picker to use. By default only simple detections
+				are emitted as picks. To enable re-picking on a time window around
+				the detection, an algorithm (plugin) can be defined with this parameter.
+
+				Currently available: &quot;AIC&quot;, &quot;BK&quot; or
+				&quot;GFZ&quot;.
+
+				More options may be available by plugins. Configure related
+				parameters in global bindings.
 				</description>
 			</parameter>
 			<parameter name="phaseHint" type="string" default="P">
@@ -59,12 +77,43 @@
 				Phase hint to be assigned to the pick made by the primary picker.
 				</description>
 			</parameter>
+			<parameter name="sendDetections" type="boolean" default="false">
+				<description>
+				If enabled and &quot;picker&quot; is configured, then
+				initial detections are sent as well. To distinguish between
+				detections and picks the evaluation status of the pick is
+				set to &quot;rejected&quot;. This is meant to be a debug
+				option which can be used to compare detections and picks by
+				their evaluation status.
+				</description>
+			</parameter>
 			<parameter name="spicker" type="string">
 				<description>
-					Configures the secondary picker to use, e.g. for pick S-phases.
-					Currently available is: &quot;S-L2&quot;. More options may
-					be available by plugins. Configure related parameters
-					in global bindings.
+				The secondary picker to use, e.g., for picking S-phases.
+				Currently available is: &quot;S-L2&quot;. More options may
+				be available by plugins. Configure related parameters
+				in global bindings.
+				</description>
+			</parameter>
+			<parameter name="killPendingSPickers" type="boolean" default="true">
+				<description>
+				If enabled, all secondary pickers that were triggered by
+				a previous pick will be terminated when a new detection or
+				pick has been found. This aims to avoid the case where an
+				S phase is wrongly picked as P but would also be picked as
+				S by the secondary picker. But suppressing the S pick can
+				lead to undesired results. It might be better in some
+				situations to have two picks (P and S) instead only a wrong P.
+				</description>
+			</parameter>
+			<parameter name="extraPickComments" type="boolean" default="false">
+				<description>
+					If enabled and &quot;picker&quot; or &quot;spicker&quot; is
+					configured, extra comments will be added to the resulting pick.
+
+					Supported comments:
+
+					SNR: added if SNR >= 0, comment id is &quot;SNR&quot;
 				</description>
 			</parameter>
 			<parameter name="fx" type="string">
@@ -78,57 +127,16 @@
 					locator's documentation and configuration parameters.
 				</description>
 			</parameter>
-			<parameter name="useAllStreams" type="boolean" default="true">
+			<parameter name="amplitudes" type="list:string" default="MLv, mb, mB">
 				<description>
-					If enabled the all streams are used for picking that are received by the picker.
-					This option has only effect if a file is used as input which contains more data than
-					the picker requests. If connected to a waveform server such as SeedLink the picker
-					will only receive the data it subscribed to.
-				</description>
-			</parameter>
-			<parameter name="killPendingSPickers" type="boolean" default="true">
-				<description>
-					If enabled the all secondary pickers that were triggered by
-					a previous pick will be terminated when a new detection or
-					pick has been found. This aims to avoid the case where an
-					S phase is wrongly picked as P but would also be picked as
-					S by the secondary picker. But suppressing the S pick can
-					lead to undesired results. It might be better in some
-					situations to have two picks (P and S) instead only a wrong
-					P.
-				</description>
-			</parameter>
-			<parameter name="sendDetections" type="boolean" default="false">
-				<description>
-					If enabled and &quot;picker&quot; is configured, then initial detections
-					are sent as well. To distinguish between detections and picks
-					the evaluation status of the pick is set to &quot;rejected&quot;.
-					This is meant to be a debug option which can be used to compare
-					detections and picks by their evaluation status.
-				</description>
-			</parameter>
-			<parameter name="extraPickComments" type="boolean" default="false">
-				<description>
-					If enabled and &quot;picker&quot; or &quot;spicker&quot; is
-					configured, then extra comments
-					will be added to the resulting pick.
-
-					Supported comments:
-
-					SNR: added if SNR >= 0, comment id is &quot;SNR&quot;
-				</description>
-			</parameter>
-			<parameter name="playback" type="boolean" default="false">
-				<description>
-					If enabled, picks can be made on waveforms which are older than
-					current time - &quot;leadTime&quot;. Current time is the time
-					when the module was started. This allows to pick
-					historic data in real-time playbacks which are preserving the
-					record times. See e.g. the &quot;msrtsimul&quot; module.
-					This option deactivates &quot;leadTime&quot;. Activate only for playbacks.
+					The amplitude types to be computed by the picker based on
+					picks.
 				</description>
 			</parameter>
 			<group name="thresholds">
+				<description>
+				Threshold parameters for the primary picker.
+				</description>
 				<parameter name="triggerOn" type="double" default="3">
 					<description>
 						For which value on the filtered waveforms is a pick
@@ -187,7 +195,7 @@
 			<group name="connection">
 				<parameter name="amplitudeGroup" type="string" default="AMPLITUDE">
 					<description>
-						Group used to send amplitudes to.
+						Message group for sending amplitudes to.
 					</description>
 				</parameter>
 			</group>
@@ -338,7 +346,7 @@
 			</parameter>
 			<parameter name="timeCorr" type="double" default="-0.8" unit="s">
 				<description>
-					The time correction applied to a detected pick.
+					The time correction applied to a pick.
 				</description>
 			</parameter>
 			<parameter name="sensitivityCorrection" type="boolean" default="false">
