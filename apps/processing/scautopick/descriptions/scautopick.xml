@@ -54,6 +54,11 @@
 					Configure related parameters in global bindings.
 				</description>
 			</parameter>
+			<parameter name="phaseHint" type="string" default="P">
+				<description>
+				Phase hint to be assigned to the pick made by the primary picker.
+				</description>
+			</parameter>
 			<parameter name="spicker" type="string">
 				<description>
 					Configures the secondary picker to use, e.g. for pick S-phases.
