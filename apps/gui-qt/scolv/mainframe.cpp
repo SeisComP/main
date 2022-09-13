@@ -670,6 +670,7 @@ MainFrame::MainFrame(){
 
 	// Connect events layer with map
 	EventLayer *eventMapLayer = new EventLayer(_originLocator->map());
+	eventMapLayer->setCursorShape(Qt::PointingHandCursor);
 	connect(_eventList, SIGNAL(reset()), eventMapLayer, SLOT(clear()));
 	connect(_eventList, SIGNAL(eventAddedToList(Seiscomp::DataModel::Event*,bool)),
 	        eventMapLayer, SLOT(addEvent(Seiscomp::DataModel::Event*,bool)));
@@ -977,14 +978,9 @@ void MainFrame::setEventID(const std::string &eventID) {
 
 void MainFrame::hoverEvent(const std::string &eventID) {
 	if ( !_eventID.empty() && (_eventID == eventID) )
-		_originLocator->map()->setToolTip(tr("%1\nCurrently loaded").arg(eventID.c_str()));
+		_originLocator->setToolTip(tr("%1\nCurrently loaded").arg(eventID.c_str()));
 	else
-		_originLocator->map()->setToolTip(eventID.c_str());
-
-	if ( eventID.empty() )
-		_originLocator->map()->unsetCursor();
-	else
-		_originLocator->map()->setCursor(Qt::PointingHandCursor);
+		_originLocator->setToolTip(eventID.c_str());
 }
 
 
