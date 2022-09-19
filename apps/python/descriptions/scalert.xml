@@ -85,6 +85,17 @@
 					received pick has one of the value(s).
 					</description>
 				</parameter>
+				<parameter name="phaseStreams" type="list::string" default="">
+					<description>
+					Start the pick script only when the stream (NET.STA.LOC.CHA)
+					of the received pick belongs to the list of stream IDs. If empty,
+					all picks are accepted, otherwise only the ones whose stream ID
+					matches one of the entry of this comma separated list. Each entry
+					must follow the NET.STA.LOC.CHA format, but the special
+					characters ? * | ( ) are also accepeted.
+					E.g. "CH.*,GR.STA??.*,*.*.*.HH?,*.*.*.??(Z|1)"
+					</description>
+				</parameter> 
 				<parameter name="phaseNumber" type="int" default="1">
 					<description>
 					Start the pick script only when a minimum number of phases
