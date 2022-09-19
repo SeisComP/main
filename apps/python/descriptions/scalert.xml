@@ -85,6 +85,18 @@
 					received pick has one of the value(s).
 					</description>
 				</parameter>
+				<parameter name="phaseNumber" type="int" default="1">
+					<description>
+					Start the pick script only when a minimum number of phases
+					'phaseNumber' is received within 'phaseInterval'.
+					</description>
+				</parameter>
+				<parameter name="phaseInterval" type="int" default="1" unit='s'>
+					<description>
+					Start the pick script only when a minimum number of phases
+					'phaseNumber' is received within 'phaseInterval'.
+					</description> 
+				</parameter>  
 			</group>
 		</configuration>
 		<command-line>
