@@ -13,24 +13,32 @@
 				</description>
 			</parameter>
 			<parameter name="groundMotionRecordLifeSpan" type="int" default="300" unit="s">
-				<description>Sets the maximum latency in seconds of the ground motion records to be valid.</description>
+				<description>
+				Set the maximum latency in seconds of the ground motion records 
+				to be valid.
+				</description>
 			</parameter>
 			<parameter name="removeEventDataOlderThan" type="double" default="43200" unit="s">
-				<description>Sets the time span in seconds to keep events.</description>
+				<description>
+				Set the time span in seconds to keep events.
+				</description>
 			</parameter>
 			<parameter name="readEventsNotOlderThan" type="double" default="0" unit="s">
-				<description>Sets the time span in seconds to read events initially from database.</description>
+				<description>
+				Set the time span in seconds to read events initially from 
+				database.
+				</description>
 			</parameter>
 			<parameter name="centerOrigins" type="boolean" default="false">
 				<description>
-					If a new origin/event is set/selected this option defines if the map is centered
-					or not at the origin location.
+				If a new origin/event is set/selected this option defines if the
+				map is centered or not at the origin location.
 				</description>
 			</parameter>
 			<parameter name="eventActivityLifeSpan" type="double" default="900" unit="s">
 				<description>
-					Time span of which an event is active after origin time to show blinking associated
-					stations.
+					Time span of which an event is active after origin time to 
+					show blinking associated stations.
 				</description>
 			</parameter>
 			<parameter name="expiredEventsInterval" type="double" default="0" unit="s">
@@ -42,20 +50,25 @@
 				</description>
 			</parameter>
 			<parameter name="annotations" type="boolean" default="false">
-				<description>Enables/disabled drawing of station annotations at startup.</description>
+				<description>
+				Enable/disable drawing of station annotations at startup.
+				</description>
 			</parameter>
 			<parameter name="annotationsWithChannels" type="boolean" default="true">
-				<description>Enables/disabled drawing of station annotations with location/channel codes.</description>
+				<description>
+				Enable/disable drawing of station annotations with 
+				location/channel codes.
+				</description>
 			</parameter>
 			<parameter name="mapLegendPosition" type="string" default="topleft">
 				<description>
-					Sets the location of the map symbol legend (QC, ground motion).
-					Use either: topleft, topright, bottomright or bottomleft.
+				Set the location of the map symbol legend (QC, ground motion).
+				Use either: topleft, topright, bottomright or bottomleft.
 				</description>
 			</parameter>
 			<parameter name="eventLegendPosition" type="string" default="bottomleft">
 				<description>
-					Sets the location of the event symbol legend. Use either:
+					Set the location of the event symbol legend. Use either:
 					topleft, topright, bottomright or bottomleft.
 				</description>
 			</parameter>
@@ -67,22 +80,29 @@
 				</parameter>
 				<parameter name="columns" type="list:string">
 					<description>
-						The columns that are visible in the table. If nothing
-						is specified then all columns are visible. Valid column names are:
-						&quot;Event&quot;, &quot;Origin Time&quot;, &quot;Magnitude&quot;, &quot;Magnitude Type&quot;,
-						&quot;Region&quot;, &quot;Latitude&quot;, &quot;Longitude&quot;, &quot;Depth&quot;.
+					The columns that are visible in the table. If nothing
+					is specified then all columns are visible. Valid column names are:
+					&quot;Event&quot;, &quot;Origin Time&quot;, &quot;Magnitude&quot;, 
+					&quot;Magnitude Type&quot;, &quot;Region&quot;, &quot;Latitude&quot;, 
+					&quot;Longitude&quot;, &quot;Depth&quot;.
 					</description>
 				</parameter>
 			</group>
 			<group name="stations">
 				<parameter name="groundMotionFilter" type="string" default="&quot;RMHP(50)>>ITAPER(20)>>BW(2,0.04,2)&quot;">
-					<description>Sets the filter applied to determine ground motion.</description>
+					<description>
+					The filter applied to waveforms for measuring ground motion.
+					</description>
 				</parameter>
 			</group>
 			<group name="display">
-				<description>Allows to define an initial rectangular region for the map.</description>
+				<description>
+				Allow to define an initial rectangular region for the map.
+				</description>
 				<parameter name="latmin" type="double" default="-90" unit="deg">
-					<description>Minimum latitude in degrees.</description>
+					<description>
+					Minimum latitude in degrees.
+					</description>
 				</parameter>
 				<parameter name="lonmin" type="double" default="-180" unit="deg">
 					<description>Minimum longitude in degrees.</description>
@@ -97,7 +117,7 @@
 		</configuration>
 		<command-line>
 			<synopsis>
-			scmv [options]
+				scmv [options]
 			</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
@@ -107,6 +127,9 @@
 				<optionReference>generic#auto-shutdown</optionReference>
 				<optionReference>generic#shutdown-master-module</optionReference>
 				<optionReference>generic#shutdown-master-username</optionReference>
+				<optionReference>generic#print-config-vars</optionReference>
+				<optionReference>generic#validate-schema-params</optionReference>
+				<optionReference>generic#dump-settings</optionReference>
 			</group>
 
 			<group name="Verbosity">
@@ -119,6 +142,10 @@
 				<optionReference>verbosity#console</optionReference>
 				<optionReference>verbosity#debug</optionReference>
 				<optionReference>verbosity#log-file</optionReference>
+				<optionReference>verbosity#print-context</optionReference>
+				<optionReference>verbosity#print-component</optionReference>
+				<optionReference>verbosity#log-utc</optionReference>
+				<optionReference>verbosity#trace</optionReference>
 			</group>
 
 			<group name="Messaging">
@@ -136,6 +163,7 @@
 				<optionReference>database#database</optionReference>
 				<optionReference>database#config-module</optionReference>
 				<optionReference>database#inventory-db</optionReference>
+				<optionReference>database#db-disable</optionReference>
 			</group>
 
 			<group name="Records">
@@ -158,12 +186,12 @@
 				<option flag="" long-flag="displaymode" argument="arg">
 					<description>
 					Start scmv as walldisplay.
-					Modes: groundmotion, qualitycontrol.
+					Modes: groundmotion, qualitycontrol
 					</description>
 				</option>
 				<option flag="" long-flag="with-legend" argument="">
 					<description>
-					Shows the map legend if started as walldisplay.
+					Show the map legend if started as walldisplay.
 					</description>
 				</option>
 			</group>

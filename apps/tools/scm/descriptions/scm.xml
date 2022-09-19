@@ -5,6 +5,9 @@
 		<configuration>
 		</configuration>
 		<command-line>
+		<synopsis>
+		scm [options]
+		</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
@@ -46,8 +49,8 @@
 				</option>
 				<option long-flag="print-tags">
 					<description>
-					Print available keys for accessing client info data and to build
-					filter configurations.
+					Print available keys for accessing client info data and to
+					build filter configurations.
 					</description>
 				</option>
 				<option long-flag="no-output-plugins">

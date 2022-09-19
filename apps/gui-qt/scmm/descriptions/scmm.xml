@@ -3,15 +3,20 @@
 	<module name="scmm" category="GUI">
 		<description>Messaging Monitor</description>
 		<command-line>
+			<synopsis>
+				scmm [options]
+			</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
 				<optionReference>generic#config-file</optionReference>
 				<optionReference>generic#plugins</optionReference>
-				<optionReference>generic#daemon</optionReference>
 				<optionReference>generic#auto-shutdown</optionReference>
 				<optionReference>generic#shutdown-master-module</optionReference>
 				<optionReference>generic#shutdown-master-username</optionReference>
+				<optionReference>generic#print-config-vars</optionReference>
+				<optionReference>generic#validate-schema-params</optionReference>
+				<optionReference>generic#dump-settings</optionReference>
 			</group>
 
 			<group name="Verbosity">
@@ -24,6 +29,10 @@
 				<optionReference>verbosity#console</optionReference>
 				<optionReference>verbosity#debug</optionReference>
 				<optionReference>verbosity#log-file</optionReference>
+				<optionReference>verbosity#print-context</optionReference>
+				<optionReference>verbosity#print-component</optionReference>
+				<optionReference>verbosity#log-utc</optionReference>
+				<optionReference>verbosity#trace</optionReference>
 			</group>
 
 			<group name="Messaging">
@@ -41,9 +50,7 @@
 				<optionReference>database#database</optionReference>
 				<optionReference>database#config-module</optionReference>
 				<optionReference>database#inventory-db</optionReference>
-				<option flag="" long-flag="db-disable" argument="" publicID="database#db-disable">
-					<description>Do not use the database at all</description>
-				</option>
+				<optionReference>database#db-disable</optionReference>
 			</group>
 
 			<group name="Records">

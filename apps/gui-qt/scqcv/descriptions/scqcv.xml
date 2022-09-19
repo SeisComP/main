@@ -5,14 +5,17 @@
 		<configuration>
 			<parameter name="parameter" type="list:string">
 			<description>
-			List of QC parameters to be displayed in the details table. Read the scqc documentation
-			for a list of available QC parameters and the default configuration
-			of scqcv $SEISCOMP_ROOT/etc/defaults/scqcv.cfg for more examples.
+			List of QC parameters to be displayed in the details table.
+			Read the scqc documentation for a list of available QC parameters 
+			and the default configuration of scqcv
+			$SEISCOMP_ROOT/etc/defaults/scqcv.cfg for more examples.
 
 			Format: "Parameter name : ConfigName"
 
-			Example: "delay : delay","spikes count : spike","spikes amplitude : spikeAmplitude"
-			Refer to the parameters by their ConfigName to configure the attributes.
+			Example: "delay : delay","spikes count : spike","spikes amplitude :
+			spikeAmplitude".
+			Refer to the parameters by their ConfigName to configure the
+			attributes.
 			</description>
 			</parameter>
 
@@ -21,49 +24,51 @@
 					<description>
 					The list of channel codes to be displayed. List items may
 					contain wildcards and are separated by comma.
-					The list is	intersected with all channels configured in inventory.
+					The list is	intersected with all channels configured in
+					inventory.
 
 					Examples:
 
 					default : display all streams configured by global bindings
 
-					default, PF.BON.00.HH? : display default and all HH streams of PF.BON.00
+					default, PF.BON.00.HH? : display default and all HH streams
+					of PF.BON.00
 					</description>
 				</parameter>
 				<parameter name="cumulative" type="boolean" default="false">
 					<description>
-						Add new streams automatically to the streams
-						configured in streams.codes when waveform QC parameters are
-						provided for these streams.
+					Add new streams automatically to the streams configured in
+					streams.codes when waveform QC parameters are provided for
+					these streams.
 					</description>
 				</parameter>
 			</group>
 
 			<group name="streamWidget">
 				<description>
-					Control the stream widget which opens when clicking on a stream
-					name in the detailed table.
+				Control the stream widget which opens when clicking on a stream
+				name in the detailed table.
 				</description>
 				<parameter name="length" type="int" default="600" unit="s">
 					<description>
-						Length of data to be displayed.
+					Length of data to be displayed.
 					</description>
 				</parameter>
 			</group>
 
 			<group name="score">
 				<description>
-					Parameters controlling the overall QC score of a station.
-					The score is computed from the valid count parameter of the
-					defined ranges. It is vizualized in the QcOverview.
+				Parameters controlling the overall QC score of a station.
+				The score is computed from the valid count parameter of the
+				defined ranges. It is vizualized in the QcOverview.
 				</description>
 				<group name="default">
 					<parameter name="ranges" type="list:string" unit="">
 						<description>
-							Ranges to be considered for forming the score. Set the
-							count parameter om the respective range section for
-							controlling the contribution of this range. The
-							range parameters controll the coloring.
+						Ranges to be considered for forming the score. Set the
+						count parameter om the respective range section for
+						controlling the contribution of this range. The
+						range parameters control the coloring.
 						</description>
 					</parameter>
 				</group>
@@ -71,22 +76,22 @@
 
 			<group name="default">
 				<description>
-					Default configuration for all QC parameters. The configuration
-					can be extended to each QC parameter by placing
-					"default" with the parameter name in scqcv.cfg. Examples for
-					some QC parameters are given below.
+				Default configuration for all QC parameters. The configuration
+				can be extended to each QC parameter by placing "default" with
+				the parameter name in scqcv.cfg. Examples for some QC parameters
+				are given below.
 
-					Read the scqc documentation for a list of available QC
-					parameters and the default configuration of scqcv
-					$SEISCOMP_ROOT/etc/defaults/scqcv.cfg for more examples.
+				Read the scqc documentation for a list of available QC
+				parameters and the default configuration of scqcv
+				$SEISCOMP_ROOT/etc/defaults/scqcv.cfg for more examples.
 				</description>
 				<parameter name="ranges" type="list:string" default="bad, sane" unit="">
 					<description>
-						Names of range profile to be considered.
-						The range profiles define the background color table
-						fields depending on the field value. Add the default
-						ranges for which different intervals and the color are
-						configured.
+					Names of range profile to be considered.
+					The range profiles define the background color table
+					fields depending on the field value. Add the default
+					ranges for which different intervals and the color are
+					configured.
 					</description>
 				</parameter>
 				<parameter name="format" type="string" default="" unit="">
@@ -98,9 +103,9 @@
 				</parameter>
 				<parameter name="expire" type="double" default="" unit="s">
 					<description>
-					Default time in seconds, how long a value is displayed in scqcv
-					if no update is received. Setting to 0 means, show value until
-					updated.
+					Default time in seconds, how long a value is displayed in
+					scqcv if no update is received. Setting to 0 means, show
+					value until updated.
 					</description>
 				</parameter>
 				<parameter name="color" type="string" unit="">
@@ -163,7 +168,8 @@
 
 			<group name="availability">
 				<description>
-				Parameters controlling the display of the QC parameter 'availability'
+				Parameters controlling the display of the QC parameter
+				'availability'
 				</description>
 				<parameter name="ranges" type="list:string" default="" unit="">
 					<description>
@@ -183,9 +189,9 @@
 				</parameter>
 				<parameter name="expire" type="double" default="" unit="s">
 					<description>
-					Default time in seconds, how long a value is displayed in scqcv
-					if no update is received. Setting to 0 means, show value until
-					updated.
+					Default time in seconds, how long a value is displayed in
+					scqcv if no update is received. Setting to 0 means, show
+					value until updated.
 					</description>
 				</parameter>
 				<parameter name="color" type="string" unit="">
@@ -268,9 +274,9 @@
 				</parameter>
 				<parameter name="expire" type="double" default="" unit="s">
 					<description>
-					Default time in seconds, how long a value is displayed in scqcv
-					if no update is received. Setting to 0 means, show value until
-					updated.
+					Default time in seconds, how long a value is displayed in
+					scqcv if no update is received. Setting to 0 means, show
+					value until updated.
 					</description>
 				</parameter>
 				<parameter name="color" type="string" unit="">
@@ -333,7 +339,8 @@
 
 			<group name="gap">
 				<description>
-				Parameters controlling the display of the QC parameter 'gaps count'
+				Parameters controlling the display of the QC parameter
+				'gaps count'.
 				</description>
 				<parameter name="ranges" type="list:string" default="" unit="">
 					<description>
@@ -353,9 +360,9 @@
 				</parameter>
 				<parameter name="expire" type="double" default="" unit="s">
 					<description>
-					Default time in seconds, how long a value is displayed in scqcv
-					if no update is received. Setting to 0 means, show value until
-					updated.
+					Default time in seconds, how long a value is displayed in
+					scqcv if no update is received. Setting to 0 means, show
+					value until updated.
 					</description>
 				</parameter>
 				<parameter name="color" type="string" unit="">
@@ -418,7 +425,8 @@
 
 			<group name="gapLength">
 				<description>
-				Parameters controlling the display of the QC parameter 'gaps length'
+				Parameters controlling the display of the QC parameter
+				'gaps length'
 				</description>
 				<parameter name="ranges" type="list:string" default="" unit="">
 					<description>
@@ -438,9 +446,9 @@
 				</parameter>
 				<parameter name="expire" type="double" default="" unit="s">
 					<description>
-					Default time in seconds, how long a value is displayed in scqcv
-					if no update is received. Setting to 0 means, show value until
-					updated.
+					Default time in seconds, how long a value is displayed in
+					scqcv if no update is received. Setting to 0 means, show
+					value until updated.
 					</description>
 				</parameter>
 				<parameter name="color" type="string" unit="">
@@ -455,7 +463,7 @@
 				</parameter>
 				<parameter name="action" type="string" unit="">
 					<description>
-					Possible values: enableStream, disableStream
+					Possible values: enableStream, disableStream.
 					</description>
 				</parameter>
 				<group name="range">
@@ -467,17 +475,17 @@
 					</description>
 					<parameter name="sane" type="list:double" default="" unit="">
 						<description>
-							Value interval for range sane
+							Value interval for range sane.
 						</description>
 					</parameter>
 					<parameter name="inter" type="list:double" default="" unit="">
 						<description>
-							Value interval for range inter
+							Value interval for range inter.
 						</description>
 					</parameter>
 					<parameter name="bad" type="list:double" default="" unit="">
 						<description>
-							Value interval for range bad
+							Value interval for range bad.
 						</description>
 					</parameter>
 					<struct type="Add range profile" link="ranges">
@@ -865,9 +873,9 @@
 				</parameter>
 				<parameter name="expire" type="double" default="" unit="s">
 					<description>
-					Default time in seconds, how long a value is displayed in scqcv
-					if no update is received. Setting to 0 means, show value until
-					updated.
+					Default time in seconds, how long a value is displayed in
+					scqcv if no update is received. Setting to 0 means, show
+					value until updated.
 					</description>
 				</parameter>
 				<parameter name="color" type="string" unit="">
@@ -930,7 +938,8 @@
 
 			<group name="overlapLength">
 				<description>
-				Parameters controlling the display of the QC parameter 'overlaps length'
+				Parameters controlling the display of the QC parameter
+				'overlaps length'
 				</description>
 				<parameter name="ranges" type="list:string" default="" unit="">
 					<description>
@@ -950,9 +959,9 @@
 				</parameter>
 				<parameter name="expire" type="double" default="" unit="s">
 					<description>
-					Default time in seconds, how long a value is displayed in scqcv
-					if no update is received. Setting to 0 means, show value until
-					updated.
+					Default time in seconds, how long a value is displayed in
+					scqcv if no update is received. Setting to 0 means, show
+					value until updated.
 					</description>
 				</parameter>
 				<parameter name="color" type="string" unit="">
@@ -1035,9 +1044,9 @@
 				</parameter>
 				<parameter name="expire" type="double" default="" unit="s">
 					<description>
-					Default time in seconds, how long a value is displayed in scqcv
-					if no update is received. Setting to 0 means, show value until
-					updated.
+					Default time in seconds, how long a value is displayed in
+					scqcv if no update is received. Setting to 0 means, show
+					value until updated.
 					</description>
 				</parameter>
 				<parameter name="color" type="string" unit="">
@@ -1101,11 +1110,12 @@
 
 			<group name="spike">
 				<description>
-				Parameters controlling the display of the QC parameter 'spikes count'
+				Parameters controlling the display of the QC parameter
+				'spikes count'
 				</description>
 				<parameter name="ranges" type="list:string" default="" unit="">
 					<description>
-					Names of range profile to be considered
+					Names of range profile to be considered.
 					The range profiles s define the background color table
 					fields depending on the field value. Add the default
 					ranges for which different intervals and the color are
@@ -1121,9 +1131,9 @@
 				</parameter>
 				<parameter name="expire" type="double" default="" unit="s">
 					<description>
-					Default time in seconds, how long a value is displayed in scqcv
-					if no update is received. Setting to 0 means, show value until
-					updated.
+					Default time in seconds, how long a value is displayed in
+					scqcv if no update is received. Setting to 0 means, show
+					value until updated.
 					</description>
 				</parameter>
 				<parameter name="color" type="string" unit="">
@@ -1187,7 +1197,8 @@
 
 			<group name="spikeAmplitude">
 				<description>
-				Parameters controlling the display of the QC parameter 'spikes amplitude'
+				Parameters controlling the display of the QC parameter
+				'spikes amplitude'.
 				</description>
 				<parameter name="ranges" type="list:string" default="" unit="">
 					<description>
@@ -1207,9 +1218,9 @@
 				</parameter>
 				<parameter name="expire" type="double" default="" unit="s">
 					<description>
-					Default time in seconds, how long a value is displayed in scqcv
-					if no update is received. Setting to 0 means, show value until
-					updated.
+					Default time in seconds, how long a value is displayed in
+					scqcv if no update is received. Setting to 0 means, show
+					value until updated.
 					</description>
 				</parameter>
 				<parameter name="color" type="string" unit="">
@@ -1272,7 +1283,8 @@
 
 			<group name="spikeInterval">
 				<description>
-				Parameters controlling the display of the QC parameter 'spikes interval'
+				Parameters controlling the display of the QC parameter
+				'spikes interval'.
 				</description>
 				<parameter name="ranges" type="list:string" default="" unit="">
 					<description>
@@ -1292,9 +1304,9 @@
 				</parameter>
 				<parameter name="expire" type="double" default="" unit="s">
 					<description>
-					Default time in seconds, how long a value is displayed in scqcv
-					if no update is received. Setting to 0 means, show value until
-					updated.
+					Default time in seconds, how long a value is displayed in
+					scqcv if no update is received. Setting to 0 means, show
+					value until updated.
 					</description>
 				</parameter>
 				<parameter name="color" type="string" unit="">
@@ -1357,7 +1369,8 @@
 
 			<group name="timing">
 				<description>
-				Parameters controlling the display of the QC parameter 'timing quality'
+				Parameters controlling the display of the QC parameter
+				'timing quality'.
 				</description>
 				<parameter name="ranges" type="list:string" default="" unit="">
 					<description>
@@ -1377,9 +1390,9 @@
 				</parameter>
 				<parameter name="expire" type="double" default="" unit="s">
 					<description>
-					Default time in seconds, how long a value is displayed in scqcv
-					if no update is received. Setting to 0 means, show value until
-					updated.
+					Default time in seconds, how long a value is displayed in
+					scqcv if no update is received. Setting to 0 means, show
+					value until updated.
 					</description>
 				</parameter>
 				<parameter name="color" type="string" unit="">
@@ -1442,11 +1455,10 @@
 
 			<group name="range">
 				<description>
-					Range parameters and profiles defining default values which
-					can be overridden per QC parameter in the section of this
-					parameter. Each value can take a profile. Profiles have
-					the parameters count, color, action. More ranges can be
-					added to the configuration in scqcv.cfg.
+				Range parameters defining default values which can be overridden
+				per QC parameter in the section of this parameter.
+				More ranges can be added by adjusting scqcv.cfg e.g. in
+				@SYSTEMCONFIGDIR@/.
 				</description>
 				<parameter name="sane" type="list:double" default="" unit="">
 					<description>
@@ -1663,17 +1675,84 @@
 
 			<group name="format">
 				<description>
-					Format describtions for showing values. The format parameter
-					is defined seprately for earch parameter but the actual format
-					can be adjusted here.
+				Format describtions for showing values. The format parameter
+				is defined seprately for earch parameter but the actual format
+				can be adjusted here.
 				</description>
 				<parameter name="float" type="int" default="2" unit="">
 					<description>
-						Number of decimal values shown for parameters of format float.
+					Number of decimal values shown for parameters of format float.
 					</description>
 				</parameter>
 			</group>
 		</configuration>
+		<command-line>
+			<synopsis>
+				scqcv [options]
+			</synopsis>
+			<group name="Generic">
+				<optionReference>generic#help</optionReference>
+				<optionReference>generic#version</optionReference>
+				<optionReference>generic#config-file</optionReference>
+				<optionReference>generic#plugins</optionReference>
+				<optionReference>generic#auto-shutdown</optionReference>
+				<optionReference>generic#shutdown-master-module</optionReference>
+				<optionReference>generic#shutdown-master-username</optionReference>
+				<optionReference>generic#print-config-vars</optionReference>
+				<optionReference>generic#validate-schema-params</optionReference>
+				<optionReference>generic#dump-settings</optionReference>
+			</group>
+
+			<group name="Verbosity">
+				<optionReference>verbosity#verbosity</optionReference>
+				<optionReference>verbosity#v</optionReference>
+				<optionReference>verbosity#quiet</optionReference>
+				<optionReference>verbosity#component</optionReference>
+				<optionReference>verbosity#syslog</optionReference>
+				<optionReference>verbosity#lockfile</optionReference>
+				<optionReference>verbosity#console</optionReference>
+				<optionReference>verbosity#debug</optionReference>
+				<optionReference>verbosity#log-file</optionReference>
+				<optionReference>verbosity#print-context</optionReference>
+				<optionReference>verbosity#print-component</optionReference>
+				<optionReference>verbosity#log-utc</optionReference>
+				<optionReference>verbosity#trace</optionReference>
+			</group>
+
+			<group name="Messaging">
+				<optionReference>messaging#user</optionReference>
+				<optionReference>messaging#host</optionReference>
+				<optionReference>messaging#timeout</optionReference>
+				<optionReference>messaging#primary-group</optionReference>
+				<optionReference>messaging#subscribe-group</optionReference>
+				<optionReference>messaging#content-type</optionReference>
+				<optionReference>messaging#start-stop-msg</optionReference>
+			</group>
+
+			<group name="Database">
+				<optionReference>database#db-driver-list</optionReference>
+				<optionReference>database#database</optionReference>
+				<optionReference>database#config-module</optionReference>
+				<optionReference>database#inventory-db</optionReference>
+				<optionReference>database#db-disable</optionReference>
+			</group>
+
+			<group name="Records">
+				<optionReference>records#record-driver-list</optionReference>
+				<optionReference>records#record-url</optionReference>
+				<optionReference>records#record-file</optionReference>
+				<optionReference>records#record-type</optionReference>
+			</group>
+
+			<group name="Cities">
+				<optionReference>cities#city-xml</optionReference>
+			</group>
+
+			<group name="User interface">
+				<optionReference>gui#full-screen</optionReference>
+				<optionReference>gui#non-interactive</optionReference>
+			</group>
+		</command-line>
 	</module>
 </seiscomp>
 

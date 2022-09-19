@@ -5,12 +5,12 @@
 		<configuration>
 			<parameter name="firstNew" type="boolean" default="false">
 				<description>
-					Treats an event as new event when it is seen the first time.
+					Treat an event as new event when it is seen the first time.
 				</description>
 			</parameter>
 			<parameter name="agencyIDs" type="list:string" default="">
 				<description>
-					Defines a white list of agencyIDs to alert an event. The
+					Define a white list of agencyIDs to alert an event. The
 					agencyID is extracted from the preferred origin of the event.
 					If this list is empty, all agencies are allowed.
 				</description>
@@ -18,26 +18,26 @@
 			<group name="poi">
 				<parameter name="message" type="string">
 					<description>
-						The default message string for the event-script is
-						&quot;earthquake, [HOURS] hours [MINS] minutes ago, [DESC],
-						magnitude [MAG], depth [DEP] kilometers&quot; whereas [DESC] is the
-						string given in the event.description attribute. This string can be
-						overwritten using one of the following options.
-						There are three placeholders that can be used: @region@, @dist@ and
-						@poi@.
-						Example: &quot;@region@, @dist@ kilometers from @poi@ away&quot;.
+					The default message string for the event-script is
+					&quot;earthquake, [HOURS] hours [MINS] minutes ago, [DESC],
+					magnitude [MAG], depth [DEP] kilometers&quot; whereas [DESC]
+					is the string given in the event.description attribute. 
+					This string can be overwritten using one of the following 
+					options. There are three placeholders that can be used:
+					@region@, @dist@ and @poi@.
+					Example: &quot;@region@, @dist@ kilometers from @poi@ away&quot;.
 					</description>
 				</parameter>
 				<parameter name="maxDist" type="double" default="20" unit="deg">
 					<description>
-						When using the nearest point of interest (city) as part of the
-						message string, specify the maximum distance in degrees from the
-						event. Any point of interest farther away will be ignored.
+					When using the nearest point of interest (city) as part of the
+					message string, specify the maximum distance in degrees from the
+					event. Any point of interest farther away will be ignored.
 					</description>
 				</parameter>
 				<parameter name="minPopulation" type="double" default="50000">
 					<description>
-						Minimum population for a city to become a point of interest.
+					Minimum population for a city to become a point of interest.
 					</description>
 				</parameter>
 			</group>
@@ -68,6 +68,9 @@
 			</group>
 		</configuration>
 		<command-line>
+		<synopsis>
+		scvoice [options]
+		</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
@@ -129,8 +132,8 @@
 			<group name="Debug">
 				<option flag="E" long-flag="eventid" argument="arg">
 					<description>
-					Specify event ID that is used for testing. After running the alert
-					scripts scvoice will exit.
+					Specify event ID that is used for testing. 
+					After running the alert scripts scvoice will exit.
 					</description>
 				</option>
 			</group>

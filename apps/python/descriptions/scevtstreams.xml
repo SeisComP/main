@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="scevtstreams" category="Utilities">
-		<description>Extracts stream information and time windows from an event.</description>
+		<description>
+		Extract stream information and time windows from an event.
+		</description>
 		<command-line>
+			<synopsis>
+				scevtstreams [options]
+			</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
@@ -37,7 +42,7 @@
 			<group name="Input">
 				<option flag="i" long-flag="input" argument="arg">
 					<description>
-					Input XML file name. Overwrites reading from database.
+					Input XML file name. Override reading from database.
 					</description>
 				</option>
 				<option flag="f" long-flag="format" argument="arg">
@@ -55,41 +60,48 @@
 				<option flag="m" long-flag="margin" argument="arg">
 					<description>
 					Time margin around the picked time window, default is 300.
-					Added before the first and after the last pick, respectively. Use 2
-					comma-separted values (before,after) for asymmetric margins, e.g. 120,300.
+					Added before the first and after the last pick, respectively.
+					Use 2 comma-separted values (before,after) for asymmetric
+					margins. Example: 120,300.
 					</description>
 				</option>
 				<option flag="S" long-flag="streams" argument="arg">
 					<description>
-					Comma separated list of streams per station to add, e.g. BH,SH,HH.
+					Comma separated list of streams per station to add.
+					Example: BH,SH,HH.
 					</description>
 				</option>
 				<option flag="C" long-flag="all-components" argument="arg">
 					<description>
-					Specifies whether to use all components (1) or just the picked ones (0). Default: 1.
+					Specify whether to use all components (1) or just the
+					picked ones (0). Default: 1.
 					</description>
 				</option>
 				<option flag="L" long-flag="all-locations" argument="arg">
 					<description>
-					Specifies whether to use all location codes (1) or just the picked ones (0). Default: 1.
+					Specify whether to use all location codes (1) or just
+					the picked ones (0). Default: 1.
 					</description>
 				</option>
-				<option flag="" long-flag="all-stations" argument="flag">
+				<option flag="" long-flag="all-stations" argument="">
 					<description>
-					Dump all stations from the same network. If unused, just stations with picks are dumped.
+					Dump all stations from the same network. If unused, just
+					stations with picks are dumped.
 					</description>
 				</option>
-				<option flag="" long-flag="all-networks" argument="flag">
+				<option flag="" long-flag="all-networks" argument="">
 					<description>
 					Dump all networks. If unused, just networks with picks are
 					dumped. This option implies all-stations, all-locations,
-					all-streams, all-components and will only provide the time window.
+					all-streams, all-components and will only provide the time
+					window.
 					</description>
 				</option>
 				<option flag="R" long-flag="resolve-wildcards" argument="flag">
 					<description>
 					If all components are used, use inventory to resolve stream
-					components instead of using '?' (important when Arclink should be used).
+					components instead of using '?' (important when Arclink 
+					should be used).
 					</description>
 				</option>
 				<option flag="" long-flag="net-sta" argument="arg">
@@ -98,9 +110,10 @@
 					Format: NET or NET.STA
 					</description>
 				</option>
-				<option flag="" long-flag="caps" argument="flag">
+				<option flag="" long-flag="caps" argument="">
 					<description>
-					Dump in capstool format (Common Acquisition Protocol Server by gempa GmbH)
+					Dump in capstool format (Common Acquisition Protocol Server
+					by gempa GmbH)
 					</description>
 				</option>
 				<option flag="" long-flag="fdsnws" argument="flag">

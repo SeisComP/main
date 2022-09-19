@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="scheli" category="GUI">
-		<description>Real-time helicorder view for one stream</description>
+		<description>Real-time helicorder view for one stream.</description>
 		<configuration>
 			<group name="heli">
 				<parameter name="streams" type="list:string" default="" unit="">
@@ -25,43 +25,51 @@
 				</parameter>
 				<parameter name="timeFormat" type="string" default="%F" unit="">
 					<description>
-					The time format used to print the start and end time of the whole
-					plot (upper right corner). The format specification is the one used
-					in the strftime function (man strftime).
+					The time format used to print the start and end time of the
+					whole plot (upper right corner). The format specification is
+					the one used in the strftime function (man strftime).
 					</description>
 				</parameter>
 				<parameter name="recordTime" type="boolean" default="false">
-					<description>Sets current time to last data sample</description>
+					<description>
+					Set current time to last data sample.
+					</description>
 				</parameter>
 				<parameter name="lineWidth" type="integer" default="1" unit="px">
 					<description>Line width of traces.</description>
 				</parameter>
 				<parameter name="colors" type="list:string" default="FF0000, 0000FF" unit="">
 					<description>
-						A list of alternating row colors cycled through for painting traces.
+					A list of alternating row colors cycled through for painting
+					traces.
 					</description>
 				</parameter>
 				<parameter name="antialiasing" type="boolean" default="false">
 					<description>
-						Use anti aliasing to plot the traces. The default uses the
-						settings from scheme.records.antiAliasing
+					Use anti aliasing to plot the traces. The default uses the
+					settings from scheme.records.antiAliasing
 					</description>
 				</parameter>
 				<group name="stream">
 					<parameter name="description" type="boolean" default="true">
-						<description>Add stream description to traces.</description>
+						<description>
+						Add stream description to traces.
+						</description>
 					</parameter>
 				</group>
 				<group name="amplitudeRange">
 					<description>
-					Gain-corrected amplitudes given in units of the sensor, e.g. m/s.
+					Gain-corrected amplitudes given in units of the sensor.
+					For example: m/s.
 					</description>
 					<parameter name="scaling" type="string" default="minmax">
 						<description>
-						Define the method to scale traces within rows. Possible values are:
+						Define the method to scale traces within rows. Possible
+						values are: 
 
 						minmax: Scale all rows to configured minimum and maximum
-						amplitudes configured by amplitudeRange.min and amplitudeRange.max.
+						amplitudes configured by amplitudeRange.min and
+						amplitudeRange.max
 
 						row: Scale each row to the maximum within this row.
 						</description>
@@ -82,13 +90,15 @@
 				<group name="dump">
 					<description>
 					Control dumping of PNG images.
-					Execute &quot;scheli capture&quot; for image generation in the
-					background without the graphics.
+					Execute &quot;scheli capture&quot; for image generation in
+					the background without the graphics.
 					</description>
 					<parameter name="interval" type="integer" default="-1" unit="s">
 						<description>
-							Image creation interval. Negative values disable image dumping.
-							If enabled, images are generated at the configured interval.
+						Image creation interval. Negative values disable image
+						dumping.
+						If enabled, images are generated at the configured
+						interval.
 						</description>
 					</parameter>
 					<parameter name="outputFile" type="string" default="/tmp/heli_%N_%S_%L_%C.png">
@@ -104,25 +114,25 @@
 
 							%C : channel code
 
-							Placeholders are important if more than one stream is given
-							and capture mode is active.
+							Placeholders are important if more than one stream
+							is given and capture mode is active.
 							</description>
 					</parameter>
 					<parameter name="dpi" type="integer" default="300" unit="dpi">
-						<description>Image resolution</description>
+						<description>Image resolution.</description>
 					</parameter>
 					<parameter name="xres" type="integer" default="1024" unit="px">
-						<description>Number of pixels horizontally</description>
+						<description>Number of pixels horizontally.</description>
 					</parameter>
 					<parameter name="yres" type="integer" default="768" unit="px">
-						<description>Number of pixels vertically</description>
+						<description>Number of pixels vertically.</description>
 					</parameter>
 				</group>
 			</group>
 			<group name="scripts">
 				<parameter name="postprocessing" type="path">
 					<description>
-					Defines the path to a script that is called whenever an image
+					Define the path to a script that is called whenever an image
 					has been captured and written to disc. The only parameter is
 					the path to the generated image.
 					</description>
@@ -130,6 +140,9 @@
 			</group>
 		</configuration>
 		<command-line>
+			<synopsis>
+				scheli [options]
+			</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
@@ -139,6 +152,9 @@
 				<optionReference>generic#auto-shutdown</optionReference>
 				<optionReference>generic#shutdown-master-module</optionReference>
 				<optionReference>generic#shutdown-master-username</optionReference>
+				<optionReference>generic#print-config-vars</optionReference>
+				<optionReference>generic#validate-schema-params</optionReference>
+				<optionReference>generic#dump-settings</optionReference>
 			</group>
 
 			<group name="Verbosity">
@@ -151,6 +167,10 @@
 				<optionReference>verbosity#console</optionReference>
 				<optionReference>verbosity#debug</optionReference>
 				<optionReference>verbosity#log-file</optionReference>
+				<optionReference>verbosity#print-context</optionReference>
+				<optionReference>verbosity#print-component</optionReference>
+				<optionReference>verbosity#log-utc</optionReference>
+				<optionReference>verbosity#trace</optionReference>
 			</group>
 
 			<group name="Messaging">
@@ -168,6 +188,7 @@
 				<optionReference>database#database</optionReference>
 				<optionReference>database#config-module</optionReference>
 				<optionReference>database#inventory-db</optionReference>
+				<optionReference>database#config-db</optionReference>
 			</group>
 
 			<group name="Records">
@@ -177,15 +198,22 @@
 				<optionReference>records#record-type</optionReference>
 			</group>
 
+			<group name="User interface">
+				<optionReference>gui#full-screen</optionReference>
+				<optionReference>gui#non-interactive</optionReference>
+			</group>
+
 			<group name="Mode">
 				<option long-flag="offline" argument="" publicID="mode#offline">
 					<description>
-					Do not connect to a messaging server and do not use the database.
+					Do not connect to a messaging server and do not use the
+					database.
 					</description>
 				</option>
 				<option long-flag="end-time" argument="arg" publicID="mode#end-time">
 					<description>
-					Set the acquisition end time, e.g. '2017-09-08 13:30:00', default: 'gmt'
+					Set the acquisition end time, e.g. '2017-09-08 13:30:00',
+					default: 'gmt'
 					</description>
 				</option>
 			</group>
@@ -213,7 +241,8 @@
 					<description>
 					Lower bound of amplitude range per row. Possible values:
 
-					minmax: Scale all rows to configured minimum and maximum amplitudes.
+					minmax: Scale all rows to configured minimum and maximum
+					amplitudes.
 
 					row: Scale each row to the maximum within this row.
 					</description>
@@ -235,7 +264,7 @@
 				</option>
 				<option long-flag="record-time" argument="arg">
 					<description>
-						Does the last row always contain the last record received
+						Do the last row always contain the last record received
 					</description>
 				</option>
 			</group>
@@ -243,22 +272,22 @@
 			<group name="Output">
 				<option long-flag="desc" argument="arg">
 					<description>
-						Enables/disables the display of a station description
+						Enable/disable the display of a station description
 					</description>
 				</option>
 				<option long-flag="rows" argument="arg">
 					<description>
-						Configures the number of rows to display
+						Configure the number of rows to display
 					</description>
 				</option>
 				<option long-flag="time-span" argument="arg" unit="s">
 					<description>
-						Configures the time-span (in secs) per row. Unit: seconds.
+					Configure the time-span (in secs) per row. Unit: seconds.
 					</description>
 				</option>
 				<option long-flag="aa" argument="arg">
 					<description>
-						Sets antialiasing for rendering the traces
+						Set antialiasing for rendering the traces
 					</description>
 				</option>
 				<option long-flag="xres" argument="arg" unit="dpi">
@@ -273,19 +302,19 @@
 				</option>
 				<option long-flag="dpi" argument="arg" unit="dpi">
 					<description>
-						Output dpi when generating postscript. Unit: dpi.
+						Output dpi when generating postscript. Unit:dpi.
 					</description>
 				</option>
 				<option flag="o" argument="arg">
 					<description>
-						Output filename. Placeholders are %N,%S,%L,%C for network code,
-						station code, location code, channel code.
+					Output filename. Placeholders are %N,%S,%L,%C for network
+					code, station code, location code, channel code.
 					</description>
 				</option>
 				<option long-flag="interval" argument="arg" unit="s">
 					<description>
-						Snapshot interval (less than 0 disables timed snapshots).
-						Unit: seconds.
+					Snapshot interval (less than 0 disables timed snapshots).
+					Unit: seconds.
 					</description>
 				</option>
 			</group>

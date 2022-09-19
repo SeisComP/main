@@ -2,9 +2,12 @@
 <seiscomp>
 	<module name="scqueryqc" category="Utilities">
 		<description>
-			Queries waveform quality control (QC) parameters from database.
+			Query waveform quality control (QC) parameters from database.
 		</description>
 		<command-line>
+		<synopsis>
+			scqueryqc [options]
+		</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
@@ -31,13 +34,13 @@
 			<group name="Output">
 				<option flag="o" long-flag="output" argument="filename">
 					<description>
-					name of output XML file. Objects are sent to stderr if none
+					Name of output XML file. Objects are sent to stderr if none
 					is given.
 					</description>
 				</option>
 				<option flag="f" long-flag="formatted">
 					<description>
-					write formatted XML
+					Write formatted XML.
 					</description>
 				</option>
 			</group>

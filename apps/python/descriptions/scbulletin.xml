@@ -2,9 +2,12 @@
 <seiscomp>
 	<module name="scbulletin" category="Utilities">
 		<description>
-		Create bulletins from SC3ML.
+		Create bulletins from SCML.
 		</description>
 		<command-line>
+			<synopsis>
+				scbulletin [options]
+			</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
@@ -70,6 +73,12 @@
 				<option flag="3" long-flag="autoloc3">
 					<description>
 					Use autoloc3 format for output.
+					</description>
+				</option>
+				<option flag="x" long-flag="extra">
+					<description>
+					Use a specially detailed autoloc3 format. This options works
+					only in combination with the autoloc3-flag.
 					</description>
 				</option>
 				<option flag="e" long-flag="enhanced">

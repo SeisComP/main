@@ -3,6 +3,9 @@
 	<module name="scorgls" category="Utilities">
 		<description>List origin IDs from database.</description>
 		<command-line>
+		<synopsis>
+		scorgls [options]
+		</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>

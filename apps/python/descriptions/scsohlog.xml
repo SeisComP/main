@@ -2,9 +2,13 @@
 <seiscomp>
 	<module name="scsohlog" category="Utilities">
 		<description>
-		Connect to the messaging and collect all information sent from connected clients.
+		Connect to the messaging and collect all information sent from connected
+		clients.
 		</description>
 		<command-line>
+			<synopsis>
+				scsohlog [options]
+			</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
@@ -72,7 +76,8 @@
 					</parameter>
 					<parameter name="script" type="string" default="">
 						<description>
-						The script to execute. Example: @CONFIGDIR@/scripts/scsohlog_script.sh.
+						The script to execute. 
+						Example: @CONFIGDIR@/scripts/scsohlog_script.sh.
 						</description>
 					</parameter>
 				</group>

@@ -2,10 +2,13 @@
 <seiscomp>
 	<module name="scdispatch" category="Utilities">
 		<description>
-		Reads objects (event, origin, etc) from a SC3ML file and sends the objects
+		Read objects (event, origin, etc) from a SCML file and sends the objects
 		to the messaging system.
 		</description>
 		<command-line>
+			<synopsis>
+				scdispatch [options]
+			</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
@@ -55,13 +58,14 @@
 				</option>
 				<option flag="O" long-flag="operation" argument="flag" default="merge">
 					<description>
-					Operation to use: add, update, remove, merge or merge-without-remove.
-					Merge and merge-without-remove are special operations and require
-					a database connection. Both will read a corresponding object
-					from the database and calculate the differences which will be
-					sent to the messaging. Merge-no-remove behaves like merge
-					with the exception that remove operations will be filtered
-					out that no objects in the database will be removed.
+					Operation to use: add, update, remove, merge or 
+					merge-without-remove.
+					Merge and merge-without-remove are special operations and 
+					require a database connection. Both will read a corresponding
+					object from the database and calculate the differences which
+					will be sent to the messaging. Merge-no-remove behaves like
+					merge with the exception that remove operations will be
+					filtered out that no objects in the database will be removed.
 
 					If add, update or remove is specified then all objects in
 					XML are sent with the given operation regardless of their
@@ -70,15 +74,16 @@
 				</option>
 				<option long-flag="routingtable" argument="flag">
 					<description>
-					Specify routing table as comma separated list of object:group pairs,
-					e.g. &quot;Origin:LOCATION,Event:EVENT&quot;. When an objects
-					should be routed to a group and no table entry for that perticular
-					class type is available, all parent objects are checked for
-					valid routing entries and the first found is used. E.g. if only
-					&quot;Origin:LOCATION&quot; is specified but the input file
-					contains also Arrivals which are child objects of Origin then
-					the routing entry of Origin is used because of the parent-child
-					relationship between Origin and Arrival.
+					Specify routing table as comma separated list of object:group
+					pairs, e.g. &quot;Origin:LOCATION,Event:EVENT&quot;. When an
+					object should be routed to a group and no table entry for 
+					that perticular class type is available, all parent objects
+					are checked for valid routing entries and the first found is
+					used. E.g. if only &quot;Origin:LOCATION&quot; is specified
+					but the input file contains also Arrivals which are child
+					objects of Origin then the routing entry of Origin is used
+					because of the parent-child relationship between Origin and 
+					Arrival.
 					</description>
 				</option>
 				<option long-flag="print-objects">

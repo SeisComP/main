@@ -7,7 +7,7 @@
 		</description>
 		<command-line>
 			<synopsis>
-			scdumpcfg [options]
+				scdumpcfg [options]
 			</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>

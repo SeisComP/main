@@ -54,6 +54,9 @@
 			</group>
 		</configuration>
 		<command-line>
+		<synopsis>
+		scdbstrip [options]
+		</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
