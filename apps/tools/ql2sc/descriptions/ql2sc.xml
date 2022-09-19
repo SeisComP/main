@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="ql2sc" category="Utilities">
-		<description>QuakeLink (gempa GmbH) to SeisComP event parameter exchange</description>
+		<description>QuakeLink (gempa GmbH) to SeisComP event parameter exchange.</description>
 		<configuration>
 			<parameter name="backLog" type="int" default="1800" unit="s">
 				<description>
@@ -24,7 +24,7 @@
 			<parameter name="eventAssociationTimeout" type="int" default="10" unit="s">
 				<description>
 					If event synchronisation is enabled and an incoming origin
-					is not yet associated with an event on the target machine
+					is not yet associated with an event on the target machine,
 					then this timeout defines the maximum number of seconds to
 					wait for an association.
 				</description>
@@ -56,7 +56,7 @@
 					</parameter>
 					<parameter name="gzip" type="boolean" default="false">
 						<description>
-							Enables/disables GZip (GNU zip) compression.
+							Enable/disable GZip (GNU zip) compression.
 						</description>
 					</parameter>
 					<parameter name="native" type="boolean" default="false">
@@ -65,7 +65,7 @@
 					</parameter>
 					<parameter name="syncEventAttributes" type="boolean" default="true">
 						<description>
-							Tries to update the event attributes of the target event
+							Try to update the event attributes of the target event
 							with the attributes of the source event which includes
 							event type and event certainty. It will not import
 							events but tries to find the associated event of the
@@ -117,7 +117,7 @@
 					</parameter>
 					<parameter name="routingTable" type="list:string" default="Pick:IMPORT_GROUP,Amplitude:IMPORT_GROUP,FocalMechanism:EVENT,Origin:EVENT">
 						<description>
-							Maps datamodel class names to messaging groups. For unmapped objects
+							Map datamodel class names to messaging groups. For unmapped objects
 							the mapping of their parent objects is evaluated recursively. Objects
 							may be excluded by mapping them to 'NULL'.
 						</description>
@@ -144,6 +144,9 @@
 			</group>
 		</configuration>
 		<command-line>
+			<synopsis>
+			ql2sc [options]
+			</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>

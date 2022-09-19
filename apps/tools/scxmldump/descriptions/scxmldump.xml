@@ -2,9 +2,12 @@
 <seiscomp>
 	<module name="scxmldump" category="Utilities">
 		<description>
-			Dumps database objects to XML files.
+			Dump database objects to XML files.
 		</description>
 		<command-line>
+		<synopsis>
+		scxmldump [options]
+		</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
@@ -49,24 +52,24 @@
 			<group name="Dump">
 				<option long-flag="listen">
 					<description>
-						Enables server mode which listens to the message server for
-						incoming events and dumps each received add/update.
+					Enable server mode which listens to the message server for
+					incoming events and dumps each received add/update.
 					</description>
 				</option>
 				<option flag="I" long-flag="inventory">
 					<description>
-						Dump the inventory.
+					Dump the inventory.
 					</description>
 				</option>
 				<option long-flag="without-station-groups">
 					<description>
-						Removes all station groups from inventory.
+					Remove all station groups from inventory.
 					</description>
 				</option>
 				<option long-flag="stations" argument="sta-list">
 					<description>
-						If inventory is exported filter the stations to export where each
-						item is in format net[.{sta|*}].
+					If inventory is exported filter the stations to export where
+					each item is in format net[.{sta|*}].
 					</description>
 				</option>
 				<option flag="C" long-flag="config">
@@ -76,78 +79,79 @@
 				</option>
 				<option flag="J" long-flag="journal">
 					<description>
-						Dump the journal. In combination with -E only corresponding journal entries are included.
+					Dump the journal. In combination with -E only corresponding 
+					journal entries are included.
 					</description>
 				</option>
 				<option flag="R" long-flag="routing">
 					<description>
-						Dump the routing database.
+					Dump the routing database.
 					</description>
 				</option>
 				<option flag="Y" long-flag="availability">
 					<description>
-						Dump data availability information.
+					Dump data availability information.
 					</description>
 				</option>
 				<option long-flag="with-segments">
 					<description>
-						Dump individual data segments.
+					Dump individual data segments.
 					</description>
 				</option>
 				<option flag="O" long-flag="origin" argument="ID">
 					<description>
-						Origin publicID(s) to dump. Multiple origins may be specified
-						as a comma-separated list.
+					Origin public ID(s) to dump. Multiple origins may be specified
+					as a comma-separated list.
 					</description>
 				</option>
 				<option flag="E" long-flag="event" argument="ID">
 					<description>
-						Event publicID(s) to dump. Multiple events may be specified
-						as a comma-separated list.
+					Event public ID(s) to dump. Multiple events may be specified
+					as a comma-separated list.
 					</description>
 				</option>
 				<option flag="P" long-flag="with-picks">
 					<description>
-						Dump associated picks along with origins.
+					Dump associated picks along with origins.
 					</description>
 				</option>
 				<option flag="A" long-flag="with-amplitudes">
 					<description>
-						Dump associated amplitudes along with magnitudes.
+					Dump associated amplitudes along with magnitudes.
 					</description>
 				</option>
 				<option flag="M" long-flag="with-magnitudes">
 					<description>
-						Dump station magnitudes.
+					Dump station magnitudes.
 					</description>
 				</option>
 				<option flag="F" long-flag="with-focal-mechanism">
 					<description>
-						Dump focal mechanisms of events.
+					Dump focal mechanisms of events.
 					</description>
 				</option>
 				<option flag="a" long-flag="ignore-arrivals">
 					<description>
-						Do not dump arrivals part of origins.
+					Do not dump arrivals part of origins.
 					</description>
 				</option>
 				<option long-flag="ignore-magnitudes">
 					<description>
-						Does not export (network) magnitudes of origins. This
-						option is most useful in combination with -O to only
-						export the location information.
+					Do not export (network) magnitudes of origins. This
+					option is most useful in combination with -O to only
+					export the location information.
 					</description>
 				</option>
 				<option flag="p" long-flag="preferred-only">
 					<description>
-						When exporting events only the preferred origin, the preferred
-						magnitude and the preferred focal mechanism will be dumped.
+					When exporting events only the preferred origin, the preferred
+					magnitude and the preferred focal mechanism will be dumped.
 					</description>
 				</option>
 				<option flag="m" long-flag="all-magnitudes">
 					<description>
-						If only the preferred origin is exported, all magnitudes for this
-						origin will be dumped.
+					If only the preferred origin is exported, all magnitudes for
+					this origin will be dumped.
 					</description>
 				</option>
 			</group>

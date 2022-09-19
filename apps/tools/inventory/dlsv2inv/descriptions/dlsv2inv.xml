@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="dlsv2inv" category="Inventory">
-		<description>Converts dataless SEED to SeisComP inventory XML.</description>
+		<description>
+		Convert dataless SEED to SeisComP inventory XML.
+		</description>
 		<command-line>
 			<synopsis>
 				dlsv2inv [OPTIONS] input [output=stdout]
@@ -12,6 +14,9 @@
 				<optionReference>generic#config-file</optionReference>
 				<optionReference>generic#plugins</optionReference>
 				<optionReference>generic#daemon</optionReference>
+				<optionReference>generic#print-config-vars</optionReference>
+				<optionReference>generic#validate-schema-params</optionReference>
+				<optionReference>generic#dump-settings</optionReference>
 			</group>
 
 			<group name="Verbosity">
@@ -24,20 +29,25 @@
 				<optionReference>verbosity#console</optionReference>
 				<optionReference>verbosity#debug</optionReference>
 				<optionReference>verbosity#log-file</optionReference>
+				<optionReference>verbosity#print-context</optionReference>
+				<optionReference>verbosity#print-component</optionReference>
+				<optionReference>verbosity#log-utc</optionReference>
+				<optionReference>verbosity#trace</optionReference>
 			</group>
 
 			<group name="ArcLink">
 				<option long-flag="dcid" argument="arg">
 					<description>
-						Overrides the datacenter ID which is read from the datacenterID
-						configuration parameter and written to the network and
-						station archive attribute.
+					Override the datacenter ID which is read from the
+					datacenterID configuration parameter and written to the
+					network and station archive attribute.
 					</description>
 				</option>
 				<option long-flag="net-description" argument="arg">
 					<description>
-						Sets the network description. It supports the following
-						placeholders: ${code}, ${start}, ${end}, ${class} and ${archive}.
+					Set the network description. It supports the following
+					placeholders: ${code}, ${start}, ${end}, ${class} and
+					${archive}.
 					</description>
 				</option>
 				<option long-flag="net-start" argument="arg">
@@ -52,28 +62,28 @@
 				</option>
 				<option long-flag="net-type" argument="arg">
 					<description>
-						Sets the network type (VBB, SM, etc.).
+						Set the network type (VBB, SM, etc.).
 					</description>
 				</option>
 				<option long-flag="temporary">
 					<description>
-						Sets the network temporary flag to true.
+						Set the network temporary flag to true.
 					</description>
 				</option>
 				<option long-flag="restricted">
 					<description>
-						Sets the network restricted flag to true.
+						Set the network restricted flag to true.
 					</description>
 				</option>
 				<option long-flag="private">
 					<description>
-						Sets the network private flag to true.
+						Set the network private flag to true.
 					</description>
 				</option>
 			</group>
 			<group name="Convert">
 				<option flag="f" long-flag="formatted">
-					<description>Enables formatted XML output.</description>
+					<description>Enable formatted XML output.</description>
 				</option>
 			</group>
 		</command-line>

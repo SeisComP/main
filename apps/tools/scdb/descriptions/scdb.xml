@@ -2,35 +2,40 @@
 <seiscomp>
 	<module name="scdb" category="Utilities">
 		<description>
-			Populates a SQL database from XML files or messages.
+			Populate a SQL database from XML files or messages.
 		</description>
 		<configuration>
 			<group name="connection">
 				<parameter name="requestGroup" type="string">
 					<description>
-						Defines the group on scmaster to subscribe for database requests.
+					Define the group on scmaster to subscribe for database
+					requests.
 					</description>
 				</parameter>
 				<parameter name="provideGroup" type="string">
 					<description>
-						Defines the group on scmaster to send database response messages to.
+					Define the group on scmaster to send database response
+					messages to.
 					</description>
 				</parameter>
 			</group>
 			<group name="output">
 				<parameter name="type" type="string">
 					<description>
-						Defines the output database connection type.
+					Define the output database connection type.
 					</description>
 				</parameter>
 				<parameter name="parameters" type="string">
 					<description>
-						Defines the output database connection parameters.
+					Define the output database connection parameters.
 					</description>
 				</parameter>
 			</group>
 		</configuration>
 		<command-line>
+			<synopsis>
+				scdb [options]
+			</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
@@ -64,11 +69,12 @@
 				<optionReference>messaging#start-stop-msg</optionReference>
 				<option flag="-m" long-flag="mode" argument="arg">
 					<description>
-						scdb can either process a XML file and write it to the database
-						or collecting messages from scmaster. If connected to scmaster
-						the mode defines what objects are handled: none (no objects at all),
-						notifier (notifier only) or all (all objects whereas non-notifier
-						objects are INSERTED into the database).
+					scdb can either process a XML file and write it to the
+					database or collect messages from scmaster.
+					If connected to scmaster, the mode defines what objects
+					are handled: none (no objects at all), notifier (notifier
+					only) or all (all objects whereas non-notifier objects
+					are INSERTED into the database).
 					</description>
 				</option>
 			</group>
@@ -81,10 +87,10 @@
 				<optionReference>database#config-db</optionReference>
 				<option flag="-o" long-flag="output" argument="arg">
 					<description>
-						If connected to scmaster this flag defines the database
-						connection to use for writing. The configured application
-						database connection (as received from scmaster) is reported
-						to clients as part of a database response messages.
+					If connected to scmaster, this flag defines the database
+					connection to use for writing. The configured application
+					database connection (as received from scmaster) is reported
+					to clients as part of a database response messages.
 					</description>
 				</option>
 			</group>
@@ -92,15 +98,15 @@
 			<group name="Import">
 				<option flag="i" long-flag="input" argument="arg">
 					<description>
-						Defines the import XML file to be written to database.
-						Can be provided multiple times to import multiple files.
+					Define the import XML file to be written to database.
+					Can be provided multiple times to import multiple files.
 					</description>
 				</option>
 				<option flag="b" long-flag="batchsize" argument="arg">
 					<description>
-						Batch size of a database transactions [0..1000].
-						By default all INSERT/UPDATE/DELETE statements are
-						executed in one single transaction.
+					Batch size of a database transactions [0..1000].
+					By default all INSERT/UPDATE/DELETE statements are
+					executed in one single transaction.
 					</description>
 				</option>
 			</group>

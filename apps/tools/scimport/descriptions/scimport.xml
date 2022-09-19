@@ -20,24 +20,26 @@
 			<parameter name="routingtable" type="list:string">
 				<description>
 				This option has to be set if the application runs in import mode.
-				The routing table has to be defined in the form of source_group:sink_group
+				The routing table has to be defined in the form of 
+				source_group:sink_group
 				</description>
 			</parameter>
 			<parameter name="msggroups" type="list:string">
 				<description>
-				Defines a list of message groups of the source system (connection.server).
-				If not specified the source system is queried for a list of message groups
-				which are then used to check each subscription extracted from the routing
-				table. This parameter allows to override to source query result.
+				Define a list of message groups of the source system
+				(connection.server). If not specified, the source system is 
+				queried for a list of message groups which are then used to check
+				each subscription extracted from the routing table.
+				This parameter allows to override to source query result.
 				</description>
 			</parameter>
 			<parameter name="useFilter" type="boolean" default="true">
 				Enable/Disable filtering of messages
 			</parameter>
 			<group name="filter">
-				<description>Define filter criteria before sending</description>
+				<description>Define filter criteria before sending.</description>
 				<group name="pick">
-					<description>Criteria for filtering picks</description>
+					<description>Criteria for filtering picks.</description>
 					<parameter name="mode" type="string">
 						<description>
 						The mode of picks to filter for. Allowed values:
@@ -177,6 +179,9 @@
 			</group>
 		</configuration>
 		<command-line>
+		<synopsis>
+		scimport [options]
+		</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
@@ -214,9 +219,9 @@
 				<option flag="o" long-flag="sink" param-ref="sink"/>
 				<option flag="i" long-flag="import">
 					<description>
-					Switch to import mode (default is relay). Im import mode the routing
-					table has to be specified whereas in relay the routing table will be
-					calculated  automatically.
+					Switch to import mode (default is relay). Im import mode the
+					routing table has to be specified whereas in relay the 
+					routing table will be calculated  automatically.
 					</description>
 				</option>
 				<option long-flag="no-filter">

@@ -4,7 +4,7 @@
 		<description>Inventory database synchronisation.</description>
 		<command-line>
 			<synopsis>
-			scinv command [options] [files]
+				scinv command [options] [files]
 			</synopsis>
 			<description>
 			Command is one of: sync, merge, apply, keys, ls and check.
@@ -18,6 +18,9 @@
 				<optionReference>generic#auto-shutdown</optionReference>
 				<optionReference>generic#shutdown-master-module</optionReference>
 				<optionReference>generic#shutdown-master-username</optionReference>
+				<optionReference>generic#print-config-vars</optionReference>
+				<optionReference>generic#validate-schema-params</optionReference>
+				<optionReference>generic#dump-settings</optionReference>
 			</group>
 
 			<group name="Verbosity">
@@ -30,6 +33,10 @@
 				<optionReference>verbosity#console</optionReference>
 				<optionReference>verbosity#debug</optionReference>
 				<optionReference>verbosity#log-file</optionReference>
+				<optionReference>verbosity#print-context</optionReference>
+				<optionReference>verbosity#print-component</optionReference>
+				<optionReference>verbosity#log-utc</optionReference>
+				<optionReference>verbosity#trace</optionReference>
 			</group>
 
 			<group name="Messaging">
@@ -47,23 +54,21 @@
 				<optionReference>database#database</optionReference>
 				<optionReference>database#config-module</optionReference>
 				<optionReference>database#inventory-db</optionReference>
-				<option flag="" long-flag="db-disable" argument="" publicID="database#db-disable">
-					<description>Do not use the database at all</description>
-				</option>
+				<optionReference>database#db-disable</optionReference>
 			</group>
 
 			<group name="Manager">
 				<option long-flag="filebase" argument="dir">
 					<description>
-					Filebase to check for XML files. If not given, all XML files passed
-					are checked.
+					Filebase to check for XML files. If not given, all XML files
+					passed are checked.
 					</description>
 				</option>
 				<option long-flag="rc-dir" argument="dir">
 					<description>
-					If given, rc (resource) files will be created in this directory for
-					each station. The station descriptions will be from the last available
-					epoch.
+					If given, rc (resource) files will be created in this
+					directory for each station. The station descriptions will be
+					from the last available epoch.
 					</description>
 				</option>
 				<option long-flag="key-dir" argument="dir">
@@ -98,8 +103,8 @@
 			<group name="Check">
 				<option long-flag="distance" unit="km" default="10">
 					<description>
-					Maximum allowed distance between station and location coordinates
-					when using the check command.
+					Maximum allowed distance between station and location
+					coordinates when using the check command.
 					</description>
 				</option>
 				<option long-flag="max-elevation-difference" unit="m" default="500">
@@ -119,8 +124,8 @@
 			<group name="Sync">
 				<option long-flag="create-notifier">
 					<description>
-					If an output file is given then all notifiers will be saved and not
-					the result set itself.
+					If an output file is given then all notifiers will be saved
+					and not the result set itself.
 					</description>
 				</option>
 				<option long-flag="no-keys">
@@ -135,18 +140,20 @@
 				</option>
 				<option long-flag="purge-keys">
 					<description>
-					(default) Delete key files if a station does not exist in inventory.
+					(default) Delete key files if a station does not exist in
+					inventory.
 					</description>
 				</option>
 				<option long-flag="no-purge-keys">
 					<description>
-					Do not delete key files if a station does not exist in inventory.
+					Do not delete key files if a station does not exist in
+					inventory.
 					</description>
 				</option>
 				<option long-flag="test">
 					<description>
-					Do not send any notifiers and just output resulting operations and
-					conflicts.
+					Do not send any notifiers and just output resulting
+					operations and conflicts.
 					</description>
 				</option>
 			</group>
@@ -168,7 +175,8 @@
 				</description>
 				<parameter name="maxDistance" type="double" unit="km" default="10">
 					<description>
-					Maximum allowed distance between station and location coordinates.
+					Maximum allowed distance between station and sensor location
+					coordinates.
 					</description>
 				</parameter>
 				<parameter name="maxElevationDifference" type="double" unit="m" default="500">

@@ -4,7 +4,7 @@
 		<description>List event IDs from database.</description>
 		<command-line>
 			<synopsis>
-			scevtls [options]
+				scevtls [options]
 			</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
@@ -61,7 +61,7 @@
 			<group name="Output">
 				<option long-flag="delimiter" flag="D" argument="string">
 					<description>
-					Specify the delimiter of the resulting event ids.
+					Specify the delimiter of the resulting event IDs.
 					</description>
 				</option>
 				<option long-flag="preferred-origin" flag="p" argument="">

@@ -2,7 +2,8 @@
 <seiscomp>
 	<module name="fdsnxml2inv" category="Inventory">
 		<description>
-			Convert station inventory between FDSN StationXML format and SeisComP inventory XML.
+			Convert station inventory between FDSN StationXML format and 
+			SeisComP inventory XML.
 		</description>
 
 		<configuration>
@@ -19,6 +20,9 @@
 				<optionReference>generic#config-file</optionReference>
 				<optionReference>generic#plugins</optionReference>
 				<optionReference>generic#daemon</optionReference>
+				<optionReference>generic#print-config-vars</optionReference>
+				<optionReference>generic#validate-schema-params</optionReference>
+				<optionReference>generic#dump-settings</optionReference>
 			</group>
 
 			<group name="Verbosity">
@@ -31,30 +35,35 @@
 				<optionReference>verbosity#console</optionReference>
 				<optionReference>verbosity#debug</optionReference>
 				<optionReference>verbosity#log-file</optionReference>
+				<optionReference>verbosity#print-context</optionReference>
+				<optionReference>verbosity#print-component</optionReference>
+				<optionReference>verbosity#log-utc</optionReference>
+				<optionReference>verbosity#trace</optionReference>
 			</group>
 
 			<group name="Convert">
 				<option flag="f" long-flag="formatted">
 					<description>
-						Generate formatted SCML. Otherwise, output XML to a single line.
+					Generate formatted SCML. Otherwise, output XML to a single line.
 					</description>
 				</option>
 				<option flag="" long-flag="to-staxml">
 					<description>
-						Converts from SCML to StationXML and expects SCML as input.
-						If not given, input is SCML and output is StationXML.
+					Convert from SCML to StationXML and expects SCML as input.
+					If not given, input is SCML and output is StationXML.
 					</description>
 				</option>
 				<option flag="" long-flag="relaxed-ns-check">
 					<description>
-						Enables relaxed XML namespace checks. This will also accept
-						tags within a different namespace than defined in the supported schema.
+					Enable relaxed XML namespace checks. This will also accept
+					tags within a different namespace than defined in the 
+					supported schema.
 					</description>
 				</option>
 				<option flag="" long-flag="log-stages">
 					<description>
-						Adds more output to stderr for all channel response stages
-						when converting from StationXML.
+					Add more output to stderr for all channel response stages
+					when converting from StationXML.
 					</description>
 				</option>
 			</group>

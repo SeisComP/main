@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="sh2proc" category="Utilities">
-		<description>Converts SeismicHandler event files to SC3ML.</description>
+		<description>
+		Convert SeismicHandler event files to SCML.
+		</description>
 		<command-line>
+		<synopsis>
+		sh2proc [options]
+		</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>

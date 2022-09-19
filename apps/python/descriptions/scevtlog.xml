@@ -26,6 +26,9 @@
 			</parameter>
 		</configuration>
 		<command-line>
+			<synopsis>
+				scevtlog [options]
+			</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
 				<optionReference>generic#version</optionReference>
