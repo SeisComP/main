@@ -61,6 +61,8 @@ class ObjectAlert(seiscomp.client.Application):
         self._oldEvents = []
         self._agencyIDs = []
         self._phaseHints = []
+        self._phaseNumber = 1
+        self._phaseInterval = 1
 
     def createCommandLineDescription(self):
         self.commandline().addOption("Generic", "first-new",
@@ -122,6 +124,21 @@ class ObjectAlert(seiscomp.client.Application):
                     self._phaseHints.append(item)
         except:
             pass
+
+        try:
+            self._phaseNumber = self.configGetInt("constraints.phaseNumber")
+        except:
+            pass
+
+        try:
+            self._phaseInterval = self.configGetInt("constraints.phaseInterval")
+        except:
+            pass
+
+        if self._phaseNumber > 1:
+            self._pickCache = seiscomp.datamodel.PublicObjectTimeSpanBuffer()
+            self._pickCache.setTimeSpan(seiscomp.core.TimeSpan(self._phaseInterval))
+            self.enableTimer(1)
 
         try:
             self._eventDescriptionPattern = self.configGetString("poi.message")
@@ -306,40 +323,45 @@ class ObjectAlert(seiscomp.client.Application):
             return False
 
 
-    def runPickScript(self, pickObject):
+    def runPickScript(self, pickObjectList):
         if not self._pickScript:
             return
 
-        # parse values
-        try:
-            net = pickObject.waveformID().networkCode()
-        except:
-            net = "unknown"
-        try:
-            sta = pickObject.waveformID().stationCode()
-        except:
-            sta = "unknown"
-        pickID = pickObject.publicID()
-        try:
-            phaseHint =  pickObject.phaseHint().code()
-        except:
-            phaseHint = "unknown"
+        for pickObject in pickObjectList:
+            # parse values
+            try:
+                net = pickObject.waveformID().networkCode()
+            except:
+                net = "unknown"
+            try:
+                sta = pickObject.waveformID().stationCode()
+            except:
+                sta = "unknown"
+            pickID = pickObject.publicID()
+            try:
+                phaseHint =  pickObject.phaseHint().code()
+            except:
+                phaseHint = "unknown"
 
-        print(net, sta, pickID, phaseHint)
+            print(net, sta, pickID, phaseHint)
 
-        if self._pickProc is not None:
-            if self._pickProc.poll() is None:
-                seiscomp.logging.warning(
-                    "Pick script still in progress -> skipping message")
-                return
-        try:
-            self._pickProc = subprocess.Popen(
-                [self._pickScript, net, sta, pickID, phaseHint])
-            seiscomp.logging.info(
-                "Started pick script with pid %d" % self._pickProc.pid)
-        except:
-            seiscomp.logging.error(
-                "Failed to start pick script '%s'" % self._pickScript)
+            if self._pickProc is not None:
+                if self._pickProc.poll() is None:
+                    seiscomp.logging.info(
+                            "Pick script still in progress -> wait one second")
+                    self._pickProc.wait(1)
+                if self._pickProc.poll() is None:
+                    seiscomp.logging.warning(
+                        "Pick script still in progress -> skipping message")
+                    return
+            try:
+                self._pickProc = subprocess.Popen(
+                    [self._pickScript, net, sta, pickID, phaseHint])
+                seiscomp.logging.info(
+                    "Started pick script with pid %d" % self._pickProc.pid)
+            except:
+                seiscomp.logging.error(
+                    "Failed to start pick script '%s'" % self._pickScript)
 
     def runAmpScript(self, ampObject):
         if not self._ampScript:
@@ -489,8 +511,25 @@ class ObjectAlert(seiscomp.client.Application):
             for i in info:
                 sys.stderr.write(i)
 
+    def handleTimeout(self):
+        self.checkEnoughPicks()
+
+    def checkEnoughPicks(self):
+        if self._pickCache.size() >= self._phaseNumber:
+            # wait until self._phaseInterval has elapsed before calling the
+            # script (more picks might come)
+            timeWindowLength = (seiscomp.core.Time.GMT() - self._pickCache.oldest()).length()
+            if timeWindowLength >= self._phaseInterval:
+                picks = [seiscomp.datamodel.Pick.Cast(o) for o in self._pickCache]
+                self.runPickScript(picks)
+                self._pickCache.clear()
+
     def notifyPick(self, pick):
-        self.runPickScript(pick)
+        if self._phaseNumber <= 1:
+            self.runPickScript([pick])
+        else:
+            self.checkEnoughPicks()
+            self._pickCache.feed(pick)
 
     def notifyAmplitude(self, amp):
         self.runAmpScript(amp)
