@@ -354,7 +354,8 @@ template<typename T1, typename T2>
 void populateComments(const T1 *sc, T2 sx) {
 	for ( size_t c = 0; c < sc->commentCount(); ++c ) {
 		DataModel::Comment *comment = sc->comment(c);
-		if ( comment->id().substr(0, 8) == "FDSNXML:" ) {
+		if ( comment->id().substr(0, 8) == "FDSNXML:" &&
+		     comment->id().substr(0, 16) != "FDSNXML:Comment/" ) {
 			string name = comment->id().substr(0, comment->id().find('/'));
 			IO::JSONArchive ar;
 
@@ -368,12 +369,37 @@ void populateComments(const T1 *sc, T2 sx) {
 		}
 
 		FDSNXML::CommentPtr sx_comment = new FDSNXML::Comment;
-		int id;
-		if ( Core::fromString(id, comment->id()) )
+
+		if ( comment->id().substr(0, 16) == "FDSNXML:Comment/" ) {
+			IO::JSONArchive ar;
+
+			if (!ar.from(comment->text().c_str())) {
+				SEISCOMP_ERROR("failed to parse FDSNXML:Comment '%s'", comment->text().c_str());
+				continue;
+			}
+
+			int id = c+1;
+			string subject, value;
+			ar & NAMED_OBJECT("id", id);
+			ar & NAMED_OBJECT("subject", subject);
+			ar & NAMED_OBJECT("value", value);
+
 			sx_comment->setId(id);
-		else
-			sx_comment->setId(c+1);
-		sx_comment->setValue(comment->text());
+
+			if ( subject.length() > 0 )
+				sx_comment->setSubject(subject);
+
+			sx_comment->setValue(value);
+		}
+		else {
+			int id;
+			if ( Core::fromString(id, comment->id()) )
+				sx_comment->setId(id);
+			else
+				sx_comment->setId(c+1);
+			sx_comment->setValue(comment->text());
+		}
+
 		try { sx_comment->setBeginEffectiveTime(FDSNXML::DateTime(comment->start())); }
 		catch ( Core::ValueException & ) {}
 		try { sx_comment->setEndEffectiveTime(FDSNXML::DateTime(comment->end())); }

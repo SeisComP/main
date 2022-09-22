@@ -1363,10 +1363,44 @@ void populateComments(const T1 *sx, T2 sc) {
 	for ( size_t c = 0; c < sx->commentCount(); ++c ) {
 		FDSNXML::Comment *comment = sx->comment(c);
 		DataModel::CommentPtr sc_comment = new DataModel::Comment;
-		try { sc_comment->setId(Core::toString(comment->id())); }
-		catch ( Core::ValueException & ) { sc_comment->setId(Core::toString(c+1)); }
 
-		sc_comment->setText(comment->value());
+		try {
+			std::string subject = comment->subject();
+			std::string data;
+
+			{
+				boost::iostreams::stream_buffer<boost::iostreams::back_insert_device<std::string> > buf(data);
+				IO::JSONArchive ar;
+				ar.create(&buf, false);
+
+				try {
+					int id = comment->id();
+					ar & NAMED_OBJECT("id", id);
+				}
+				catch ( Core::ValueException & ) {}
+
+				ar & NAMED_OBJECT("subject", subject);
+
+				try {
+					std::string value = comment->value();
+					ar & NAMED_OBJECT("value", value);
+				}
+				catch ( Core::ValueException & ) {}
+			}
+
+			try { sc_comment->setId("FDSNXML:Comment/" + Core::toString(comment->id())); }
+			catch ( Core::ValueException & ) { sc_comment->setId("FDSNXML:Comment/" + Core::toString(c+1)); }
+
+			sc_comment->setText(data);
+
+		}
+		catch ( Core::ValueException & ) {  // comment has no subject
+			try { sc_comment->setId(Core::toString(comment->id())); }
+			catch ( Core::ValueException & ) { sc_comment->setId(Core::toString(c+1)); }
+
+			sc_comment->setText(comment->value());
+		}
+
 		try { sc_comment->setStart(comment->beginEffectiveTime()); }
 		catch ( Core::ValueException & ) {}
 		try { sc_comment->setEnd(comment->endEffectiveTime()); }
