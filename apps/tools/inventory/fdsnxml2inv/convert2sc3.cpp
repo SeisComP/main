@@ -1070,6 +1070,24 @@ createSensorLocation(const string &net, const string &sta, const string &code)
 }
 
 
+class MyIdentifier : public Core::BaseObject {
+	private:
+		FDSNXML::IdentifierPtr _identifier;
+
+	public:
+		MyIdentifier() {}
+
+		MyIdentifier(FDSNXML::Identifier *identifier): _identifier(identifier) {}
+
+		virtual void serialize(Core::Archive& ar) {
+			string type = _identifier->type();
+			string value = _identifier->value();
+			ar & NAMED_OBJECT_HINT("type", type, Core::Archive::STATIC_TYPE);
+			ar & NAMED_OBJECT_HINT("value", value, Core::Archive::STATIC_TYPE);
+		}
+};
+
+
 class MyContact : public Core::BaseObject {
 	private:
 		FDSNXML::PersonPtr _person;
@@ -1143,12 +1161,12 @@ void serializeJSON(const FDSNXML::Operator *oper, IO::JSONArchive &ar) {
 	}
 
 	if ( oper->contactCount() > 0 ) {
-		vector<MyContact> contact;
+		vector<MyContact> contacts;
 		for ( size_t n = 0; n < oper->contactCount(); ++n ) {
-			contact.push_back(oper->contact(n));
+			contacts.push_back(oper->contact(n));
 		}
 
-		ar & NAMED_OBJECT_HINT("contact", contact, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT_HINT("contact", contacts, Core::Archive::STATIC_TYPE);
 	}
 }
 
@@ -1204,26 +1222,35 @@ void serializeJSON(const FDSNXML::Equipment *equipment, IO::JSONArchive &ar) {
 	}
 
 	try {
-		Core::Time installationDate = equipment->installationDate();
+		string installationDate = equipment->installationDate().iso();
 		ar & NAMED_OBJECT_HINT("installationDate", installationDate, Core::Archive::STATIC_TYPE);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
-		Core::Time removalDate = equipment->removalDate();
+		string removalDate = equipment->removalDate().iso();
 		ar & NAMED_OBJECT_HINT("removalDate", removalDate, Core::Archive::STATIC_TYPE);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	if (equipment->calibrationDateCount() > 0 ) {
-		vector<Core::Time> calibrationDate;
+		vector<string> calibrationDates;
 		for ( size_t n = 0; n < equipment->calibrationDateCount(); ++n ) {
-			calibrationDate.push_back(equipment->calibrationDate(n)->value());
+			calibrationDates.push_back(equipment->calibrationDate(n)->value().iso());
 		}
 
-		ar & NAMED_OBJECT_HINT("calibrationDate", calibrationDate, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT_HINT("calibrationDate", calibrationDates, Core::Archive::STATIC_TYPE);
+	}
+
+	if (equipment->identifierCount() > 0 ) {
+		vector<MyIdentifier> identifiers;
+		for ( size_t n = 0; n < equipment->identifierCount(); ++n ) {
+			identifiers.push_back(equipment->identifier(n));
+		}
+
+		ar & NAMED_OBJECT_HINT("identifier", identifiers, Core::Archive::STATIC_TYPE);
 	}
 }
 
@@ -1353,6 +1380,9 @@ void populateJSON(const FDSNXML::Station *sx, DataModel::StationPtr sc) {
 void populateJSON(const FDSNXML::Channel *sx, DataModel::StreamPtr sc) {
 	populateJSON("Identifier", sx, sc, &FDSNXML::Channel::identifier, &FDSNXML::Channel::identifierCount);
 	populateJSON("Equipment", sx, sc, &FDSNXML::Channel::equipment, &FDSNXML::Channel::equipmentCount);
+	populateJSON("Sensor", sx, sc, &FDSNXML::Channel::sensor);
+	populateJSON("PreAmplifier", sx, sc, &FDSNXML::Channel::preAmplifier);
+	populateJSON("DataLogger", sx, sc, &FDSNXML::Channel::dataLogger);
 	populateJSON("WaterLevel", sx, sc, &FDSNXML::Channel::waterLevel);
 	populateJSON("SourceID", sx, sc, &FDSNXML::Channel::sourceID);
 }
