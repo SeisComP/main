@@ -149,8 +149,8 @@ class MyIdentifier : public Core::BaseObject {
 
 		virtual void serialize(Core::Archive &ar) {
 			string type, value;
-			ar & NAMED_OBJECT_HINT("type", type, Core::Archive::STATIC_TYPE);
-			ar & NAMED_OBJECT_HINT("value", value, Core::Archive::STATIC_TYPE);
+			ar & NAMED_OBJECT("type", type);
+			ar & NAMED_OBJECT("value", value);
 
 			_identifier->setType(type);
 			_identifier->setValue(value);
@@ -171,9 +171,9 @@ class MyContact : public Core::BaseObject {
 
 		virtual void serialize(Core::Archive &ar) {
 			vector<string> names, agencies, emails;
-			ar & NAMED_OBJECT_HINT("name", names, Core::Archive::STATIC_TYPE);
-			ar & NAMED_OBJECT_HINT("agency", agencies, Core::Archive::STATIC_TYPE);
-			ar & NAMED_OBJECT_HINT("email", emails, Core::Archive::STATIC_TYPE);
+			ar & NAMED_OBJECT("name", names);
+			ar & NAMED_OBJECT("agency", agencies);
+			ar & NAMED_OBJECT("email", emails);
 
 			for ( const auto &name : names ) {
 				FDSNXML::NamePtr fdsnName = new FDSNXML::Name;
@@ -199,8 +199,8 @@ class MyContact : public Core::BaseObject {
 template<typename T>
 void deserializeIdentifier(IO::JSONArchive &ar, T sx) {
 	string type, value;
-	ar & NAMED_OBJECT_HINT("type", type, Core::Archive::STATIC_TYPE);
-	ar & NAMED_OBJECT_HINT("value", value, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT("type", type);
+	ar & NAMED_OBJECT("value", value);
 
 	FDSNXML::IdentifierPtr identifier = new FDSNXML::Identifier;
 	identifier->setType(type);
@@ -213,8 +213,8 @@ template<typename T>
 void deserializeOperator(IO::JSONArchive &ar, T sx) {
 	string agency, webSite;
 	vector<MyContact> contacts;
-	ar & NAMED_OBJECT_HINT("agency", agency, Core::Archive::STATIC_TYPE);
-	ar & NAMED_OBJECT_HINT("webSite", webSite, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT("agency", agency);
+	ar & NAMED_OBJECT("webSite", webSite);
 	ar & NAMED_OBJECT_HINT("contact", contacts, Core::Archive::STATIC_TYPE);
 
 	FDSNXML::OperatorPtr oper = new FDSNXML::Operator;
@@ -245,16 +245,16 @@ void deserializeEquipmentCommon(FDSNXML::EquipmentPtr equipment, IO::JSONArchive
 	string installationDate, removalDate;
 	vector<string> calibrationDates;
 	vector<MyIdentifier> identifiers;
-	ar & NAMED_OBJECT_HINT("type", type, Core::Archive::STATIC_TYPE);
-	ar & NAMED_OBJECT_HINT("description", description, Core::Archive::STATIC_TYPE);
-	ar & NAMED_OBJECT_HINT("manufacturer", manufacturer, Core::Archive::STATIC_TYPE);
-	ar & NAMED_OBJECT_HINT("vendor", vendor, Core::Archive::STATIC_TYPE);
-	ar & NAMED_OBJECT_HINT("model", model, Core::Archive::STATIC_TYPE);
-	ar & NAMED_OBJECT_HINT("serialNumber", serialNumber, Core::Archive::STATIC_TYPE);
-	ar & NAMED_OBJECT_HINT("resourceId", resourceId, Core::Archive::STATIC_TYPE);
-	ar & NAMED_OBJECT_HINT("installationDate", installationDate, Core::Archive::STATIC_TYPE);
-	ar & NAMED_OBJECT_HINT("removalDate", removalDate, Core::Archive::STATIC_TYPE);
-	ar & NAMED_OBJECT_HINT("calibrationDate", calibrationDates, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT("type", type);
+	ar & NAMED_OBJECT("description", description);
+	ar & NAMED_OBJECT("manufacturer", manufacturer);
+	ar & NAMED_OBJECT("vendor", vendor);
+	ar & NAMED_OBJECT("model", model);
+	ar & NAMED_OBJECT("serialNumber", serialNumber);
+	ar & NAMED_OBJECT("resourceId", resourceId);
+	ar & NAMED_OBJECT("installationDate", installationDate);
+	ar & NAMED_OBJECT("removalDate", removalDate);
+	ar & NAMED_OBJECT("calibrationDate", calibrationDates);
 	ar & NAMED_OBJECT_HINT("identifier", identifiers, Core::Archive::STATIC_TYPE);
 
 	if ( type.length() > 0 )
@@ -328,11 +328,11 @@ template<typename T1, typename T2, typename T3>
 void deserializeFloatType(IO::JSONArchive &ar, T1 sx, void (T2::*setProperty)(T3)) {
 	double value = NAN, upperUncertainty = NAN, lowerUncertainty = NAN;
 	string unit, measurementMethod;
-	ar & NAMED_OBJECT_HINT("value", value, Core::Archive::STATIC_TYPE);
-	ar & NAMED_OBJECT_HINT("unit", unit, Core::Archive::STATIC_TYPE);
-	ar & NAMED_OBJECT_HINT("upperUncertainty", upperUncertainty, Core::Archive::STATIC_TYPE);
-	ar & NAMED_OBJECT_HINT("lowerUncertainty", lowerUncertainty, Core::Archive::STATIC_TYPE);
-	ar & NAMED_OBJECT_HINT("measurementMethod", measurementMethod, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT("value", value);
+	ar & NAMED_OBJECT("unit", unit);
+	ar & NAMED_OBJECT("upperUncertainty", upperUncertainty);
+	ar & NAMED_OBJECT("lowerUncertainty", lowerUncertainty);
+	ar & NAMED_OBJECT("measurementMethod", measurementMethod);
 
 	FDSNXML::FloatType ft;
 
@@ -358,7 +358,7 @@ void deserializeFloatType(IO::JSONArchive &ar, T1 sx, void (T2::*setProperty)(T3
 template<typename T1, typename T2, typename T3>
 void deserializeString(IO::JSONArchive &ar, T1 sx, void (T2::*setProperty)(T3)) {
 	string value;
-	ar & NAMED_OBJECT_HINT("value", value, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT("value", value);
 	(sx.get()->*setProperty)(value);
 }
 

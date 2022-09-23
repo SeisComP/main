@@ -1082,8 +1082,8 @@ class MyIdentifier : public Core::BaseObject {
 		virtual void serialize(Core::Archive& ar) {
 			string type = _identifier->type();
 			string value = _identifier->value();
-			ar & NAMED_OBJECT_HINT("type", type, Core::Archive::STATIC_TYPE);
-			ar & NAMED_OBJECT_HINT("value", value, Core::Archive::STATIC_TYPE);
+			ar & NAMED_OBJECT("type", type);
+			ar & NAMED_OBJECT("value", value);
 		}
 };
 
@@ -1104,7 +1104,7 @@ class MyContact : public Core::BaseObject {
 					name.push_back(_person->name(n)->text());
 				}
 
-				ar & NAMED_OBJECT_HINT("name", name, Core::Archive::STATIC_TYPE);
+				ar & NAMED_OBJECT("name", name);
 			}
 
 			if ( _person->agencyCount() > 0 ) {
@@ -1113,7 +1113,7 @@ class MyContact : public Core::BaseObject {
 					agency.push_back(_person->agency(n)->text());
 				}
 
-				ar & NAMED_OBJECT_HINT("agency", agency, Core::Archive::STATIC_TYPE);
+				ar & NAMED_OBJECT("agency", agency);
 			}
 
 			if ( _person->emailCount() > 0 ) {
@@ -1122,7 +1122,7 @@ class MyContact : public Core::BaseObject {
 					email.push_back(_person->email(n)->text());
 				}
 
-				ar & NAMED_OBJECT_HINT("email", email, Core::Archive::STATIC_TYPE);
+				ar & NAMED_OBJECT("email", email);
 			}
 		}
 };
@@ -1131,14 +1131,14 @@ class MyContact : public Core::BaseObject {
 void serializeJSON(const FDSNXML::Identifier *identifier, IO::JSONArchive &ar) {
 	try {
 		string type = identifier->type();
-		ar & NAMED_OBJECT_HINT("type", type, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("type", type);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string value = identifier->value();
-		ar & NAMED_OBJECT_HINT("value", value, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("value", value);
 	}
 	catch ( Core::ValueException & ) {
 	}
@@ -1148,14 +1148,14 @@ void serializeJSON(const FDSNXML::Identifier *identifier, IO::JSONArchive &ar) {
 void serializeJSON(const FDSNXML::Operator *oper, IO::JSONArchive &ar) {
 	try {
 		string agency = oper->agency();
-		ar & NAMED_OBJECT_HINT("agency", agency, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("agency", agency);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string webSite = oper->webSite();
-		ar & NAMED_OBJECT_HINT("webSite", webSite, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("webSite", webSite);
 	}
 	catch ( Core::ValueException & ) {
 	}
@@ -1174,63 +1174,63 @@ void serializeJSON(const FDSNXML::Operator *oper, IO::JSONArchive &ar) {
 void serializeJSON(const FDSNXML::Equipment *equipment, IO::JSONArchive &ar) {
 	try {
 		string type = equipment->type();
-		ar & NAMED_OBJECT_HINT("type", type, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("type", type);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string description = equipment->description();
-		ar & NAMED_OBJECT_HINT("description", description, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("description", description);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string manufacturer = equipment->manufacturer();
-		ar & NAMED_OBJECT_HINT("manufacturer", manufacturer, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("manufacturer", manufacturer);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string vendor = equipment->vendor();
-		ar & NAMED_OBJECT_HINT("vendor", vendor, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("vendor", vendor);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string model = equipment->model();
-		ar & NAMED_OBJECT_HINT("model", model, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("model", model);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string serialNumber = equipment->serialNumber();
-		ar & NAMED_OBJECT_HINT("serialNumber", serialNumber, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("serialNumber", serialNumber);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string resourceId = equipment->resourceId();
-		ar & NAMED_OBJECT_HINT("resourceId", resourceId, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("resourceId", resourceId);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string installationDate = equipment->installationDate().iso();
-		ar & NAMED_OBJECT_HINT("installationDate", installationDate, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("installationDate", installationDate);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string removalDate = equipment->removalDate().iso();
-		ar & NAMED_OBJECT_HINT("removalDate", removalDate, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("removalDate", removalDate);
 	}
 	catch ( Core::ValueException & ) {
 	}
@@ -1241,7 +1241,7 @@ void serializeJSON(const FDSNXML::Equipment *equipment, IO::JSONArchive &ar) {
 			calibrationDates.push_back(equipment->calibrationDate(n)->value().iso());
 		}
 
-		ar & NAMED_OBJECT_HINT("calibrationDate", calibrationDates, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("calibrationDate", calibrationDates);
 	}
 
 	if (equipment->identifierCount() > 0 ) {
@@ -1258,35 +1258,35 @@ void serializeJSON(const FDSNXML::Equipment *equipment, IO::JSONArchive &ar) {
 void serializeJSON(const FDSNXML::FloatType *ft, IO::JSONArchive &ar) {
 	try {
 		double value = ft->value();
-		ar & NAMED_OBJECT_HINT("value", value, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("value", value);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string unit = ft->unit();
-		ar & NAMED_OBJECT_HINT("unit", unit, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("unit", unit);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		double upperUncertainty = ft->upperUncertainty();
-		ar & NAMED_OBJECT_HINT("upperUncertainty", upperUncertainty, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("upperUncertainty", upperUncertainty);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		double lowerUncertainty = ft->lowerUncertainty();
-		ar & NAMED_OBJECT_HINT("lowerUncertainty", lowerUncertainty, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("lowerUncertainty", lowerUncertainty);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string measurementMethod = ft->measurementMethod();
-		ar & NAMED_OBJECT_HINT("measurementMethod", measurementMethod, Core::Archive::STATIC_TYPE);
+		ar & NAMED_OBJECT("measurementMethod", measurementMethod);
 	}
 	catch ( Core::ValueException & ) {
 	}
@@ -1295,7 +1295,7 @@ void serializeJSON(const FDSNXML::FloatType *ft, IO::JSONArchive &ar) {
 
 void serializeJSON(const string *val, IO::JSONArchive &ar) {
 	string value = *val;
-	ar & NAMED_OBJECT_HINT("value", value, Core::Archive::STATIC_TYPE);
+	ar & NAMED_OBJECT("value", value);
 }
 
 
