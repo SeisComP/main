@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp xmlns="http://geofon.gfz-potsdam.de/ns/seiscomp3-schema/0.12" version="0.12">
+  <Inventory>
+    <sensor publicID="Sensor/20220923184044.77899.7" name="2E.SWE02.HHZ.2012.341.00.10.00" response="ResponsePAZ/20220923132824.308358.32">
+      <description>Guralp CMG-40T 60s seismometer, DEPAS pool [config: SN-T4K39_Z]</description>
+      <model>Guralp CMG-40T 60s</model>
+      <manufacturer>Guralp Systems Ltd.</manufacturer>
+      <unit>m/s</unit>
+      <remark>{"unit":"VELOCITY"}</remark>
+    </sensor>
+    <datalogger publicID="Datalogger/20220923184044.778882.6" name="2E.SWE02.HHZ.2012.341.00.10.00">
+      <description>geolon-MCS: A/D converter + FIR digital filter [config: 100sps]</description>
+      <digitizerModel>geolon-MCS</digitizerModel>
+      <digitizerManufacturer>SEND Off-Shore Electronics GmbH</digitizerManufacturer>
+      <gain>373380</gain>
+      <maxClockDrift>1e-08</maxClockDrift>
+      <decimation sampleRateNumerator="100" sampleRateDenominator="1">
+        <digitalFilterChain>ResponseFIR/20220923132824.306868.9 ResponseFIR/20220923132824.30706.10 ResponseFIR/20220923132824.307133.11 ResponseFIR/20220923132824.307184.12 ResponseFIR/20220923132824.30706.10 ResponseFIR/20220923132824.307133.11 ResponseFIR/20220923132824.307381.15 ResponseFIR/20220923132824.307444.16</digitalFilterChain>
+      </decimation>
+    </datalogger>
+    <responsePAZ publicID="ResponsePAZ/20220923132824.308358.32" name="ResponsePAZ/20220923132824.308358.32">
+      <type>A</type>
+      <gain>1992</gain>
+      <gainFrequency>1</gainFrequency>
+      <normalizationFactor>608949.7872</normalizationFactor>
+      <normalizationFrequency>1</normalizationFrequency>
+      <numberOfZeros>2</numberOfZeros>
+      <numberOfPoles>4</numberOfPoles>
+      <zeros>(0,0) (0,0)</zeros>
+      <poles>(-0.0740159,0.0734705) (-0.0740159,-0.0734705) (-502.655,596.903) (-502.655,-596.903)</poles>
+    </responsePAZ>
+    <responseFIR publicID="ResponseFIR/20220923132824.306868.9" name="ResponseFIR/20220923132824.306868.9">
+      <gain>1</gain>
+      <gainFrequency>0</gainFrequency>
+      <decimationFactor>8</decimationFactor>
+      <delay>17.5</delay>
+      <correction>0</correction>
+      <numberOfCoefficients>18</numberOfCoefficients>
+      <symmetry>C</symmetry>
+      <coefficients>3.051757812e-05 0.0001525878906 0.0004577636719 0.001068115234 0.002136230469 0.003845214844 0.006408691406 0.01007080078 0.01495361328 0.02105712891 0.02825927734 0.03631591797 0.04486083984 0.05340576172 0.06134033203 0.06793212891 0.07263183594 0.07507324219</coefficients>
+    </responseFIR>
+    <responseFIR publicID="ResponseFIR/20220923132824.30706.10" name="ResponseFIR/20220923132824.30706.10">
+      <gain>1</gain>
+      <gainFrequency>0</gainFrequency>
+      <decimationFactor>2</decimationFactor>
+      <delay>2.5</delay>
+      <correction>0</correction>
+      <numberOfCoefficients>3</numberOfCoefficients>
+      <symmetry>C</symmetry>
+      <coefficients>0.03125 0.15625 0.3125</coefficients>
+    </responseFIR>
+    <responseFIR publicID="ResponseFIR/20220923132824.307133.11" name="ResponseFIR/20220923132824.307133.11">
+      <gain>1</gain>
+      <gainFrequency>0</gainFrequency>
+      <decimationFactor>2</decimationFactor>
+      <delay>3</delay>
+      <correction>0</correction>
+      <numberOfCoefficients>4</numberOfCoefficients>
+      <symmetry>B</symmetry>
+      <coefficients>0.015625 0.09375 0.234375 0.3125</coefficients>
+    </responseFIR>
+    <responseFIR publicID="ResponseFIR/20220923132824.307184.12" name="ResponseFIR/20220923132824.307184.12">
+      <gain>1</gain>
+      <gainFrequency>0</gainFrequency>
+      <decimationFactor>5</decimationFactor>
+      <delay>8</delay>
+      <correction>0</correction>
+      <numberOfCoefficients>9</numberOfCoefficients>
+      <symmetry>B</symmetry>
+      <coefficients>0.0016 0.0064 0.016 0.032 0.056 0.0832 0.1088 0.128 0.136</coefficients>
+    </responseFIR>
+    <responseFIR publicID="ResponseFIR/20220923132824.307381.15" name="ResponseFIR/20220923132824.307381.15">
+      <gain>1</gain>
+      <gainFrequency>0</gainFrequency>
+      <decimationFactor>4</decimationFactor>
+      <delay>23.5</delay>
+      <correction>0</correction>
+      <numberOfCoefficients>24</numberOfCoefficients>
+      <symmetry>C</symmetry>
+      <coefficients>1.42825126e-05 4.876019088e-05 9.813468338e-05 0.0001309998199 9.342503764e-06 -0.0003716012867 -0.001018384102 -0.001724267852 -0.001789383824 -0.0004978402691 0.002493910991 0.006626292375 0.009612847668 0.008507232736 0.001020354986 -0.01270480688 -0.02774928385 -0.03565066162 -0.02696023902 0.00484878505 0.05801126609 0.1220654684 0.1802648387 0.214713952</coefficients>
+    </responseFIR>
+    <responseFIR publicID="ResponseFIR/20220923132824.307444.16" name="ResponseFIR/20220923132824.307444.16">
+      <gain>1</gain>
+      <gainFrequency>0</gainFrequency>
+      <decimationFactor>2</decimationFactor>
+      <delay>63.5</delay>
+      <correction>69.0396</correction>
+      <numberOfCoefficients>63</numberOfCoefficients>
+      <symmetry>C</symmetry>
+      <coefficients>-3.417523133e-06 -1.785776172e-05 -4.187669191e-05 -4.746025084e-05 1.636560374e-06 8.596755375e-05 0.0001102752887 1.400703143e-05 -9.800108591e-05 -4.539048331e-05 0.000143680374 0.0001821395428 -7.017955955e-05 -0.0002795630191 -4.847106754e-05 0.0003733283017 0.0002856760535 -0.0003434370078 -0.0005627360979 0.0001699616082 0.0008423472512 0.0002112125565 -0.0009944992318 -0.0007682206931 0.0009111790551 0.001434782106 -0.00047147379 -0.002049214258 -0.0003727988263 0.002406417627 0.001589437062 -0.002266732386 -0.003015651293 0.001429679889 0.004367883369 0.0002135229946 -0.005255717372 -0.002607522017 0.005247053229 0.00549470332 -0.003946661609 -0.008397095009 0.001099864839 0.01064779873 0.0033146605 -0.01145712597 -0.009007868967 0.01001276517 0.01534337925 -0.005583799593 -0.02133651147 -0.002404684798 0.02567156736 0.01439090111 -0.02666019423 -0.0309249743 0.02190054719 0.05361121487 -0.006602991632 -0.08925684756 -0.03688181339 0.1865349107 0.4037782884</coefficients>
+    </responseFIR>
+    <network publicID="NET/2E/20220923184044.777947.294" code="2E">
+      <start>2012-01-01T00:00:00.0000Z</start>
+      <end>2013-12-31T00:00:00.0000Z</end>
+      <description>Southwest Indian Ridge Earthquakes and Hydrothermal Plumes (SWEAP) - Network of 8 broadband ocean bottom seismometers on the Oblique Supersegment of the Southwest Indian Ridge at about 52°S 13°E. Continuous records were acquired for 11 months, recording mid-ocean ridge seismicity at a station spacing of about 15 km.</description>
+      <shared>true</shared>
+      <comment>
+        <text>{"id":1,"subject":"keyword","value":"Broadband seismic waveforms"}</text>
+        <id>FDSNXML:Comment/1</id>
+      </comment>
+      <comment>
+        <text>{"id":2,"subject":"keyword","value":"Seismic monitoring"}</text>
+        <id>FDSNXML:Comment/2</id>
+      </comment>
+      <comment>
+        <text>{"id":3,"subject":"keyword","value":"temporary local seismic network"}</text>
+        <id>FDSNXML:Comment/3</id>
+      </comment>
+      <comment>
+        <text>{"id":4,"subject":"keyword","value":"Ocean-bottom seismometer"}</text>
+        <id>FDSNXML:Comment/4</id>
+      </comment>
+      <comment>
+        <text>{"id":5,"subject":"keyword","value":"OBS"}</text>
+        <id>FDSNXML:Comment/5</id>
+      </comment>
+      <comment>
+        <text>{"id":6,"subject":"keyword","value":"Southwest Indian Ridge"}</text>
+        <id>FDSNXML:Comment/6</id>
+      </comment>
+      <comment>
+        <text>{"id":7,"subject":"keyword","value":"passive seismology"}</text>
+        <id>FDSNXML:Comment/7</id>
+      </comment>
+      <comment>
+        <text>{"id":8,"subject":"keyword","value":"DEPAS"}</text>
+        <id>FDSNXML:Comment/8</id>
+      </comment>
+      <comment>
+        <text>{"agency":"AWI Deutscher Geräte-Pool für amphibische Seismologie","webSite":"www.awi.de/depas","contact":[{"name":["xxx"],"agency":["AWI-DEPAS"],"email":["xxx@xxx.org"]}]}</text>
+        <id>FDSNXML:Operator/0</id>
+      </comment>
+      <station publicID="STA/2E/SWE02/20220923184044.778419.304" code="SWE02">
+        <start>2012-12-06T00:10:00.0000Z</start>
+        <end>2013-11-26T11:03:00.0000Z</end>
+        <description>2E-SWE02</description>
+        <latitude>-52.363</latitude>
+        <longitude>13.0742</longitude>
+        <elevation>-3288</elevation>
+        <shared>true</shared>
+        <comment>
+          <text>{"agency":"AWI Deutscher Geräte-Pool für amphibische Seismologie","webSite":"www.awi.de/depas","contact":[{"name":["xxx"],"agency":["AWI-DEPAS"],"email":["xxx@xxx.org"]}]}</text>
+          <id>FDSNXML:Operator/0</id>
+        </comment>
+        <comment>
+          <text>{"type":"Broadband Ocean Bottom Seismometer","description":"Depas Obs","manufacturer":"K.U.M.","model":"DEPAS Lobster"}</text>
+          <id>FDSNXML:Equipment/0</id>
+        </comment>
+        <comment>
+          <text>{"value":"Sea floor"}</text>
+          <id>FDSNXML:Vault</id>
+        </comment>
+        <comment>
+          <text>{"value":"unknown"}</text>
+          <id>FDSNXML:Geology</id>
+        </comment>
+        <sensorLocation publicID="LOC/2E/SWE02//20220923184044.778585.309" code="">
+          <start>2012-12-06T00:10:00.0000Z</start>
+          <end>2013-11-26T11:03:00.0000Z</end>
+          <latitude>-52.363</latitude>
+          <longitude>13.0742</longitude>
+          <elevation>-3288</elevation>
+          <stream publicID="Stream/20220923184044.7787.5" code="HHZ" datalogger="Datalogger/20220923184044.778882.6" sensor="Sensor/20220923184044.77899.7">
+            <start>2012-12-06T00:10:00.0000Z</start>
+            <end>2013-11-26T11:03:00.0000Z</end>
+            <dataloggerSerialNumber>060718</dataloggerSerialNumber>
+            <dataloggerChannel>0</dataloggerChannel>
+            <sensorSerialNumber>T4K39</sensorSerialNumber>
+            <sensorChannel>0</sensorChannel>
+            <sampleRateNumerator>100</sampleRateNumerator>
+            <sampleRateDenominator>1</sampleRateDenominator>
+            <depth>0</depth>
+            <azimuth>0</azimuth>
+            <dip>90</dip>
+            <gain>743772960</gain>
+            <gainFrequency>1</gainFrequency>
+            <gainUnit>m/s</gainUnit>
+            <comment>
+              <text>{"type":"Broadband Ocean Bottom Seismometer","description":"Depas Obs","manufacturer":"K.U.M.","model":"DEPAS Lobster","identifier":[{"type":"hdl","value":"10881/sensor.33195360-28ba-4de7-935e-bdd71f4fd06b"}]}</text>
+              <id>FDSNXML:Equipment/0</id>
+            </comment>
+            <comment>
+              <text>{"type":"Broadband seismometer","description":"Guralp CMG-40T 60s seismometer, DEPAS pool [config: SN-T4K39_Z]","manufacturer":"Guralp Systems Ltd.","vendor":"Guralp Systems Ltd.","model":"Guralp CMG-40T 60s","serialNumber":"T4K39","installationDate":"2012-12-06T00:10:00.0000Z","removalDate":"2013-11-26T11:03:00.0000Z","calibrationDate":["2013-01-01T00:00:00.0000Z","2013-05-01T00:00:00.0000Z","2013-09-01T00:00:00.0000Z"],"identifier":[{"type":"hdl","value":"10881/sensor.a7561d1a-d518-475d-9733-30370432996c"}]}</text>
+              <id>FDSNXML:Sensor</id>
+            </comment>
+            <comment>
+              <text>{"type":"A/D converter + digital filter","description":"geolon-MCS: A/D converter + FIR digital filter [config: 100sps]","manufacturer":"SEND Off-Shore Electronics GmbH","vendor":"various","model":"geolon-MCS","serialNumber":"060718","identifier":[{"type":"hdl","value":"10881/sensor.33195360-28ba-4de7-935e-bdd71f4fd06b"}]}</text>
+              <id>FDSNXML:DataLogger</id>
+            </comment>
+          </stream>
+        </sensorLocation>
+      </station>
+    </network>
+  </Inventory>
+</seiscomp>
