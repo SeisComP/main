@@ -184,8 +184,7 @@ std::string generateEventID(int year, uint64_t x, const std::string &prefix,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 string allocateEventID(DatabaseArchive *ar, const Origin *origin,
-                       const string &prefix, const string &pattern,
-                       const Client::Config::StringSet *blackList) {
+                       const Seiscomp::Client::Config &config) {
 	if ( !origin )
 		return "";
 
@@ -194,36 +193,60 @@ string allocateEventID(DatabaseArchive *ar, const Origin *origin,
 	if ( !origin->time().value().get2(&year, &yday, &hour, &min, &sec, &usec) )
 		return "";
 
-	uint64_t width;
+	uint64_t width; // in milliseconds
 	// Maximum precission is 1 millisecond
 	uint64_t x = uint64_t((((yday*24)+hour)*60+min)*60+sec)*1000 + usec/1000;
 
 	string text;
-	string eventID = generateEventID(year, x, prefix, pattern, text, &width);
+	string eventID = generateEventID(year, x, config.eventIDPrefix,
+	                                 config.eventIDPattern, text, &width);
 	ObjectPtr o = ar?ar->getObject(Event::TypeInfo(), eventID):Event::Find(eventID);
-	bool blocked = (blackList != NULL) && (blackList->find(text) != blackList->end());
+	bool blocked = config.blacklistIDs.find(text) != config.blacklistIDs.end();
 
-	if ( !o && !blocked )
+	if ( !o && !blocked ) {
 		return eventID;
-
-	if ( blocked ) SEISCOMP_WARNING("Blocked ID: %s (rejected %s)", eventID.c_str(), text.c_str());
-
-	for ( int i = 1; i < 5; ++i ) {
-		eventID = generateEventID(year, x+i*width, prefix, pattern, text);
-		blocked = (blackList != NULL) && (blackList->find(text) != blackList->end());
-		o = ar?ar->getObject(Event::TypeInfo(), eventID):Event::Find(eventID);
-		if ( !o && !blocked )
-			return eventID;
-		if ( blocked ) SEISCOMP_WARNING("Blocked ID: %s (rejected %s)", eventID.c_str(), text.c_str());
 	}
 
-	for ( int i = 1; i < 5; ++i ) {
-		eventID = generateEventID(year, x-i*width, prefix, pattern, text);
-		blocked = (blackList != NULL) && (blackList->find(text) != blackList->end());
+	if ( blocked ) {
+		SEISCOMP_WARNING("Blocked ID: %s (rejected %s)", eventID.c_str(), text.c_str());
+	}
+
+	int eventIDLookupMargin = config.eventIDLookupMargin;
+
+	if ( config.eventIDLookupMargin < 0 ) {
+		// Auto mode, compute the number of slots based on half an hour.
+		eventIDLookupMargin = static_cast<int>(config.eventTimeAfter.length() * 1000 / width);
+		SEISCOMP_DEBUG("Using event ID slot ahead lookup of %d", eventIDLookupMargin);
+	}
+
+	for ( int i = 1; i < eventIDLookupMargin; ++i ) {
+		eventID = generateEventID(year, x+i*width, config.eventIDPrefix,
+		                          config.eventIDPattern, text);
+		blocked = config.blacklistIDs.find(text) != config.blacklistIDs.end();
 		o = ar?ar->getObject(Event::TypeInfo(), eventID):Event::Find(eventID);
 		if ( !o && !blocked )
 			return eventID;
-		if ( blocked ) SEISCOMP_WARNING("Blocked ID: %s (rejected %s)", eventID.c_str(), text.c_str());
+		if ( blocked ) {
+			SEISCOMP_WARNING("Blocked ID: %s (rejected %s)", eventID.c_str(), text.c_str());
+		}
+	}
+
+	if ( config.eventIDLookupMargin < 0 ) {
+		// Auto mode, compute the number of slots based on half an hour.
+		eventIDLookupMargin = static_cast<int>(config.eventTimeBefore.length() * 1000 / width);
+		SEISCOMP_DEBUG("Using event ID slot back lookup of %d", eventIDLookupMargin);
+	}
+
+	for ( int i = 1; i < eventIDLookupMargin; ++i ) {
+		eventID = generateEventID(year, x-i*width, config.eventIDPrefix,
+		                          config.eventIDPattern, text);
+		blocked = config.blacklistIDs.find(text) != config.blacklistIDs.end();
+		o = ar?ar->getObject(Event::TypeInfo(), eventID):Event::Find(eventID);
+		if ( !o && !blocked )
+			return eventID;
+		if ( blocked ) {
+			SEISCOMP_WARNING("Blocked ID: %s (rejected %s)", eventID.c_str(), text.c_str());
+		}
 	}
 
 	return "";

@@ -91,6 +91,8 @@ struct Config {
 	bool            ignoreMTDerivedOrigins;
 	bool            setAutoEventTypeNotExisting;
 	bool            populateFERegion{false};
+
+	int             eventIDLookupMargin{-1};
 };
 
 

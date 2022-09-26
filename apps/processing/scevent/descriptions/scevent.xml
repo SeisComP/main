@@ -29,6 +29,19 @@
 					[w] is an optional width parameter.
 				</description>
 			</parameter>
+			<parameter name="eventIDLookupMargin" type="integer" default="-1">
+				<description>
+					Configures the number of event ID slots to look back and
+					forth when an event ID is already taken. The default in
+					previous versions was 5. Now -1 means that the margin is
+					determined automatically based on "eventAssociation.eventTimeBefore"
+					and "eventAssociation.eventTimeAfter". According to the
+					configured "eventIDPattern" a fixed time range per slot
+					can be computed and with that width the number of look
+					ahead slots and look back slots can be computed based on
+					the given time ranges for event association.
+				</description>
+			</parameter>
 			<parameter name="populateFERegion" type="boolean" default="false">
 				<description>
 					If enabled then the EventDescription with type

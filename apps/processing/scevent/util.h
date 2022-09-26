@@ -53,9 +53,7 @@ std::string generateEventID(int year, uint64_t x,
 
 std::string allocateEventID(DataModel::DatabaseArchive *,
                             const DataModel::Origin *origin,
-                            const std::string &prefix,
-                            const std::string &pattern,
-                            const Client::Config::StringSet *blackList = NULL);
+                            const Seiscomp::Client::Config &config);
 
 std::string region(const DataModel::Origin *origin);
 

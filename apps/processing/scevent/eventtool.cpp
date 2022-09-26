@@ -293,6 +293,7 @@ bool EventTool::initConfiguration() {
 
 	try { _config.eventIDPrefix = configGetString("eventIDPrefix"); } catch (...) {}
 	try { _config.eventIDPattern = configGetString("eventIDPattern"); } catch (...) {}
+	try { _config.eventIDLookupMargin = configGetInt("eventIDLookupMargin"); } catch ( ... ) {}
 
 	try { _config.populateFERegion = configGetBool("populateFERegion"); } catch ( ... ) {}
 
@@ -518,7 +519,7 @@ bool EventTool::run() {
 			info = findAssociatedEvent(org.get());
 
 			if ( info ) {
-				SEISCOMP_DEBUG("... already associated with event %s",
+				SEISCOMP_DEBUG("... %s already associated with event %s",
 				               org->publicID().c_str(),
 				               info->event->publicID().c_str());
 				continue;
@@ -541,7 +542,7 @@ bool EventTool::run() {
 			SEISCOMP_INFO("Processing focal mechanism %s", fm->publicID().c_str());
 			info = findAssociatedEvent(fm.get());
 			if ( info ) {
-				SEISCOMP_DEBUG("... already associated with event %s",
+				SEISCOMP_DEBUG("... %s already associated with event %s",
 				               fm->publicID().c_str(),
 				               info->event->publicID().c_str());
 				continue;
@@ -2373,8 +2374,7 @@ EventTool::MatchResult EventTool::compare(EventInformation *info,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventInformationPtr EventTool::createEvent(Origin *origin) {
-	string eventID = allocateEventID(query(), origin, _config.eventIDPrefix,
-	                                 _config.eventIDPattern, &_config.blacklistIDs);
+	string eventID = allocateEventID(query(), origin, _config);
 
 	if ( eventID.empty() ) {
 		SEISCOMP_ERROR("Unable to allocate a new eventID, skipping origin %s\n"
