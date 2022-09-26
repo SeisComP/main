@@ -807,7 +807,7 @@ void AmpTool::process(Origin *origin) {
 		        << ", " << req.timeWindow.endTime().toString("%F %T") << std::endl;
 	}
 
-	SEISCOMP_INFO("set stream timeout to 30 seconds");
+	SEISCOMP_INFO("Set stream timeout to %f seconds", _initialAcquisitionTimeout);
 	_acquisitionTimeout = _initialAcquisitionTimeout;
 	_firstRecord = true;
 
@@ -1312,7 +1312,8 @@ void AmpTool::storeLocalAmplitude(const Seiscomp::Processing::AmplitudeProcessor
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool AmpTool::storeRecord(Record *rec) {
 	if ( _firstRecord ) {
-		SEISCOMP_INFO("Data request: got first record, set timeout to 2 seconds");
+		SEISCOMP_INFO("Data request: got first record, set timeout to %f seconds",
+		              _runningAcquisitionTimeout);
 		_noDataTimer.restart();
 		_acquisitionTimeout = _runningAcquisitionTimeout;
 		_firstRecord = false;
