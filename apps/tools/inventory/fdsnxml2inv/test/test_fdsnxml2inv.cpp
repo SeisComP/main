@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(CheckConvert2SCXML) {
 
 	// remove dynamically generated publicIDs
 	regex rx("publicID=\"[^\"]*\"|sensor=\"[^\"]*\"|datalogger=\"[^\"]*\"");
-	BOOST_CHECK_EQUAL(regex_replace(result, rx, ""), regex_replace(expected, rx, ""));
+	BOOST_CHECK_EQUAL(regex_replace(result, rx, string("")), regex_replace(expected, rx, string("")));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
