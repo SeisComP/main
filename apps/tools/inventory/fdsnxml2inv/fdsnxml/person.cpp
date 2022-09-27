@@ -73,6 +73,10 @@ bool Person::operator==(const Person &rhs) const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Person& Person::operator=(const Person &other) {
+	_names = other._names;
+	_agencys = other._agencys;
+	_emails = other._emails;
+	_phones = other._phones;
 	return *this;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

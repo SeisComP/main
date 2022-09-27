@@ -97,6 +97,7 @@ SymmetryType FIR::symmetry() const {
 FIR& FIR::operator=(const FIR &other) {
 	BaseFilter::operator=(other);
 	_symmetry = other._symmetry;
+	_numeratorCoefficients = other._numeratorCoefficients;
 	return *this;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

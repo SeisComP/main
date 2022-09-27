@@ -137,6 +137,7 @@ const Polynomial& Response::instrumentPolynomial() const {
 Response& Response::operator=(const Response &other) {
 	_instrumentSensitivity = other._instrumentSensitivity;
 	_instrumentPolynomial = other._instrumentPolynomial;
+	_stages = other._stages;
 	return *this;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

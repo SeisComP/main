@@ -395,6 +395,10 @@ Station& Station::operator=(const Station &other) {
 	_terminationDate = other._terminationDate;
 	_totalNumberChannels = other._totalNumberChannels;
 	_selectedNumberChannels = other._selectedNumberChannels;
+	_equipments = other._equipments;
+	_operatorss = other._operatorss;
+	_externalReferences = other._externalReferences;
+	_channels = other._channels;
 	return *this;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

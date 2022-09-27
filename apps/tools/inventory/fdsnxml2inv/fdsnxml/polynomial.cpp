@@ -228,6 +228,7 @@ Polynomial& Polynomial::operator=(const Polynomial &other) {
 	_approximationLowerBound = other._approximationLowerBound;
 	_approximationUpperBound = other._approximationUpperBound;
 	_maximumError = other._maximumError;
+	_coefficients = other._coefficients;
 	return *this;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

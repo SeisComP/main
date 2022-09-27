@@ -260,6 +260,9 @@ BaseNode& BaseNode::operator=(const BaseNode &other) {
 	_restrictedStatus = other._restrictedStatus;
 	_alternateCode = other._alternateCode;
 	_historicCode = other._historicCode;
+	_identifiers = other._identifiers;
+	_comments = other._comments;
+	_dataAvailabilitys = other._dataAvailabilitys;
 	return *this;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

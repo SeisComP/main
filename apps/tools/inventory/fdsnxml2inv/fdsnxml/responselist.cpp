@@ -68,6 +68,7 @@ bool ResponseList::operator==(const ResponseList &rhs) const {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 ResponseList& ResponseList::operator=(const ResponseList &other) {
 	BaseFilter::operator=(other);
+	_elements = other._elements;
 	return *this;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
