@@ -102,6 +102,7 @@ const DataAvailabilityExtent& DataAvailability::extent() const {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 DataAvailability& DataAvailability::operator=(const DataAvailability &other) {
 	_extent = other._extent;
+	_spans = other._spans;
 	return *this;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

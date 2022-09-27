@@ -153,6 +153,8 @@ PolesAndZeros& PolesAndZeros::operator=(const PolesAndZeros &other) {
 	_pzTransferFunctionType = other._pzTransferFunctionType;
 	_normalizationFactor = other._normalizationFactor;
 	_normalizationFrequency = other._normalizationFrequency;
+	_zeros = other._zeros;
+	_poles = other._poles;
 	return *this;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

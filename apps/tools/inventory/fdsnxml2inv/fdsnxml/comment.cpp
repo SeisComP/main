@@ -183,6 +183,7 @@ Comment& Comment::operator=(const Comment &other) {
 	_endEffectiveTime = other._endEffectiveTime;
 	_id = other._id;
 	_subject = other._subject;
+	_authors = other._authors;
 	return *this;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

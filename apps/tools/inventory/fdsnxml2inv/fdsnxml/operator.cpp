@@ -133,6 +133,7 @@ const StringType& Operator::webSite() const {
 Operator& Operator::operator=(const Operator &other) {
 	_agency = other._agency;
 	_webSite = other._webSite;
+	_contacts = other._contacts;
 	return *this;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

@@ -99,6 +99,8 @@ CfTransferFunctionType Coefficients::cfTransferFunctionType() const {
 Coefficients& Coefficients::operator=(const Coefficients &other) {
 	BaseFilter::operator=(other);
 	_cfTransferFunctionType = other._cfTransferFunctionType;
+	_numerators = other._numerators;
+	_denominators = other._denominators;
 	return *this;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

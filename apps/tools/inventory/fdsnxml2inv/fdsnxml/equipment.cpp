@@ -271,6 +271,8 @@ Equipment& Equipment::operator=(const Equipment &other) {
 	_installationDate = other._installationDate;
 	_removalDate = other._removalDate;
 	_resourceId = other._resourceId;
+	_calibrationDates = other._calibrationDates;
+	_identifiers = other._identifiers;
 	return *this;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

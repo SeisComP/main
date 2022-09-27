@@ -199,6 +199,7 @@ FDSNStationXML& FDSNStationXML::operator=(const FDSNStationXML &other) {
 	_moduleURI = other._moduleURI;
 	_created = other._created;
 	_schemaVersion = other._schemaVersion;
+	_networks = other._networks;
 	return *this;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

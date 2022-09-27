@@ -140,6 +140,8 @@ Network& Network::operator=(const Network &other) {
 	BaseNode::operator=(other);
 	_totalNumberOfStations = other._totalNumberOfStations;
 	_selectedNumberStations = other._selectedNumberStations;
+	_operatorss = other._operatorss;
+	_stations = other._stations;
 	return *this;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

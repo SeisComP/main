@@ -601,6 +601,8 @@ Channel& Channel::operator=(const Channel &other) {
 	_dataLogger = other._dataLogger;
 	_response = other._response;
 	_locationCode = other._locationCode;
+	_types = other._types;
+	_equipments = other._equipments;
 	return *this;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
