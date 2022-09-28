@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<FDSNStationXML xmlns:gfz="http://gfz-potsdam.de/ns/fdsnstationxml/1" xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.1">
+<FDSNStationXML xmlns:gfz="http://gfz-potsdam.de/ns/fdsnstationxml/1" xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.2">
   <Source/>
-  <Created>1970-01-01T00:00:00</Created>
-  <Network code="2E" startDate="2012-01-01T00:00:00" endDate="2013-12-31T00:00:00">
+  <Created>1970-01-01T00:00:00Z</Created>
+  <Network code="2E" startDate="2012-01-01T00:00:00Z" endDate="2013-12-31T00:00:00Z">
     <Description>Southwest Indian Ridge Earthquakes and Hydrothermal Plumes (SWEAP) - Network of 8 broadband ocean bottom seismometers on the Oblique Supersegment of the Southwest Indian Ridge at about 52°S 13°E. Continuous records were acquired for 11 months, recording mid-ocean ridge seismicity at a station spacing of about 15 km.</Description>
     <Comment id="1" subject="keyword">
       <Value>Broadband seismic waveforms</Value>
@@ -37,7 +37,7 @@
         <Email>xxx@xxx.org</Email>
       </Contact>
     </Operator>
-    <Station code="SWE02" startDate="2012-12-06T00:10:00" endDate="2013-11-26T11:03:00">
+    <Station code="SWE02" startDate="2012-12-06T00:10:00Z" endDate="2013-11-26T11:03:00Z">
       <Latitude>-52.363</Latitude>
       <Longitude>13.0742</Longitude>
       <Elevation>-3288</Elevation>
@@ -61,8 +61,8 @@
           <Email>xxx@xxx.org</Email>
         </Contact>
       </Operator>
-      <CreationDate>2012-12-06T00:10:00</CreationDate>
-      <Channel code="HHZ" startDate="2012-12-06T00:10:00" endDate="2013-11-26T11:03:00" locationCode="">
+      <CreationDate>2012-12-06T00:10:00Z</CreationDate>
+      <Channel code="HHZ" startDate="2012-12-06T00:10:00Z" endDate="2013-11-26T11:03:00Z" locationCode="">
         <Latitude>-52.363</Latitude>
         <Longitude>13.0742</Longitude>
         <Elevation>-3288</Elevation>
@@ -82,11 +82,11 @@
           <Vendor>Guralp Systems Ltd.</Vendor>
           <Model>Guralp CMG-40T 60s</Model>
           <SerialNumber>T4K39</SerialNumber>
-          <InstallationDate>2012-12-06T00:10:00</InstallationDate>
-          <RemovalDate>2013-11-26T11:03:00</RemovalDate>
-          <CalibrationDate>2013-01-01T00:00:00</CalibrationDate>
-          <CalibrationDate>2013-05-01T00:00:00</CalibrationDate>
-          <CalibrationDate>2013-09-01T00:00:00</CalibrationDate>
+          <InstallationDate>2012-12-06T00:10:00Z</InstallationDate>
+          <RemovalDate>2013-11-26T11:03:00Z</RemovalDate>
+          <CalibrationDate>2013-01-01T00:00:00Z</CalibrationDate>
+          <CalibrationDate>2013-05-01T00:00:00Z</CalibrationDate>
+          <CalibrationDate>2013-09-01T00:00:00Z</CalibrationDate>
           <gfz:Identifier type="hdl">10881/sensor.a7561d1a-d518-475d-9733-30370432996c</gfz:Identifier>
         </Sensor>
         <DataLogger>
