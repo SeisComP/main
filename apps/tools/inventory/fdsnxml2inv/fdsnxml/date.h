@@ -53,9 +53,9 @@ inline bool fromString(DateTime& date, const std::string& str) {
 
 inline std::string toString(const DateTime& date) {
 	if ( date.microseconds() == 0 )
-		return date.toString("%FT%T");
+		return date.toString("%FT%TZ");
 	else
-		return date.toString("%FT%T.%f");
+		return date.toString("%FT%T.%fZ");
 }
 
 
