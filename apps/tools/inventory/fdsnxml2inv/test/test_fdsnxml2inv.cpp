@@ -20,8 +20,8 @@
 #include <seiscomp/unittest/unittests.h>
 
 #include <iostream>
-#include <regex>
 
+#include <boost/regex.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/device/back_inserter.hpp>
 
@@ -99,8 +99,8 @@ BOOST_AUTO_TEST_CASE(CheckConvert2SCXML) {
 	string expected = oss.str();
 
 	// remove dynamically generated publicIDs
-	regex rx("publicID=\"[^\"]*\"|sensor=\"[^\"]*\"|datalogger=\"[^\"]*\"");
-	BOOST_CHECK_EQUAL(regex_replace(result, rx, string("")), regex_replace(expected, rx, string("")));
+	boost::regex rx("publicID=\"[^\"]*\"|sensor=\"[^\"]*\"|datalogger=\"[^\"]*\"");
+	BOOST_CHECK_EQUAL(boost::regex_replace(result, rx, string("")), boost::regex_replace(expected, rx, string("")));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
