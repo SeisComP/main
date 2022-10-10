@@ -232,10 +232,16 @@ class TraceDecorator : public Gui::RecordWidgetDecorator {
 
 			QPair<double,double> amplRange = widget->amplitudeDataRange(0);
 			QString amps = QString("min: %1").arg(amplRange.first, 0, 'f', 1);
-			if ( !_desc->unit.isEmpty() ) amps += _desc->unit;
+			if ( !_desc->unit.isEmpty() ) {
+			    amps += " ";
+			    amps += _desc->unit;
+			}
 			amps += "\n";
 			amps += QString("max: %1").arg(amplRange.second, 0, 'f', 1);
-			if ( !_desc->unit.isEmpty() ) amps += _desc->unit;
+			if ( !_desc->unit.isEmpty() ) {
+			   amps += " ";
+			   amps += _desc->unit;
+			}
 			painter->setFont(SCScheme.fonts.base);
 			painter->setPen(widget->palette().color(QPalette::Text));
 			QRect r = painter->boundingRect(painter->window(), Qt::AlignLeft | Qt::AlignTop, amps);
@@ -493,7 +499,7 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 
 	connect(_ui.actionSearch, SIGNAL(triggered()), this, SLOT(enableSearch()));
 	connect(_ui.actionAbortSearch, SIGNAL(triggered()), this, SLOT(abortSearch()));
-	
+
 	connect(SCApp, SIGNAL(messageAvailable(Seiscomp::Core::Message*, Seiscomp::Client::Packet*)),
 	        this, SLOT(messageArrived(Seiscomp::Core::Message*, Seiscomp::Client::Packet*)));
 
@@ -926,7 +932,7 @@ void MainWindow::setStationEnabled(const string& networkCode,
 	}
 
 	Core::MessagePtr msg = Notifier::GetMessage(true);
-	
+
 	if ( msg )
 		SCApp->sendMessage("CONFIG", msg.get());
 }
@@ -1064,7 +1070,7 @@ TraceView* MainWindow::createTraceView() {
 	connect(_ui.actionVerZoomIn, SIGNAL(triggered()), traceView, SLOT(verticalZoomIn()));
 	connect(_ui.actionVerZoomOut, SIGNAL(triggered()), traceView, SLOT(verticalZoomOut()));
 	connect(_ui.actionToggleZoom, SIGNAL(triggered(bool)), traceView, SLOT(setZoomEnabled(bool)));
-	
+
 	//connect(_ui.actionAlignPickTime, SIGNAL(triggered()), _traceView, SLOT(setAlignPickTime()));
 	connect(_ui.actionDefaultDisplay, SIGNAL(triggered()), traceView, SLOT(setDefaultDisplay()));
 	//connect(_ui.actionFilter, SIGNAL(triggered()), _traceView, SLOT(openFilterDialog()));
@@ -1475,11 +1481,11 @@ void MainWindow::openFile(const std::vector<std::string> &files) {
 
 		cout << "loading " << files[i] << "..." << flush;
 		Util::StopWatch t;
-	
+
 		for ( Record *rec : input ) {
 			_traceViews.front()->feed(rec);
 		}
-	
+
 		cout << "(" << t.elapsed() << " sec)" << endl;
 	}
 
@@ -1594,7 +1600,7 @@ void MainWindow::openAcquisition() {
 
 			if ( module ) {
 				int index = 0;
-		
+
 				for ( size_t j = 0; j < module->configStationCount(); ++j ) {
 					DataModel::ConfigStation *station = module->configStation(j);
 					DataModel::Setup *setup = DataModel::findSetup(station, SCApp->name());
@@ -1604,7 +1610,7 @@ void MainWindow::openAcquisition() {
 							SEISCOMP_ERROR("Cannot find parameter set %s", setup->parameterSetID().c_str());
 							continue;
 						}
-		
+
 						Util::KeyValues params;
 						params.init(ps);
 
@@ -2583,12 +2589,12 @@ void MainWindow::sortByOrigin(double lat, double lon) {
 		for ( int i = 0; i < view->rowCount(); ++i ) {
 			Seiscomp::Gui::RecordViewItem* item = view->itemAt(i);
 			Seiscomp::Client::StationLocation loc = item->data().value<TraceState>().location;
-			
+
 			double delta = 0, az1, az2;
-	
+
 			Math::Geo::delazi(lat, lon, loc.latitude, loc.longitude,
 			                  &delta, &az1, &az2);
-	
+
 			item->setValue(DATA_DELTA, delta);
 		}
 	}
@@ -2650,7 +2656,7 @@ void MainWindow::messageArrived(Seiscomp::Core::Message* msg, Seiscomp::Client::
 
 	if ( origin && _automaticSortEnabled ) {
 		sortByOrigin(origin->latitude(), origin->longitude());
-	
+
 		try {
 			_switchBack->setInterval(Gui::Application::Instance()->configGetInt("autoResetDelay")*1000);
 		}
@@ -2662,7 +2668,7 @@ void MainWindow::messageArrived(Seiscomp::Core::Message* msg, Seiscomp::Client::
 		return;
 	}
 
-	
+
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

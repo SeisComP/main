@@ -5,7 +5,7 @@
 		<configuration>
 			<parameter name="maxDelay" type="int" unit="s" default="0">
 				<description>
-					If greater than 0, then all traces for which the data latency is 
+					If greater than 0, then all traces for which the data latency is
 					higher than this value are hidden.
 				</description>
 			</parameter>
@@ -101,7 +101,7 @@
 						default : display all streams configured by global
 						bindings
 
-						default, PF.BON.00.HH? : display default and all HH 
+						default, PF.BON.00.HH? : display default and all HH
 						streams of PF.BON.00
 					</description>
 				</parameter>
@@ -129,31 +129,38 @@
 					</description>
 					<parameter name="lonmin" type="double" unit="deg" default="-180.0">
 						<description>
-							Minimum longitude.
+						Minimum longitude.
 						</description>
 					</parameter>
 					<parameter name="lonmax" type="double" unit="deg" default="180.0">
 						<description>
-							Maximum longitude.
+						Maximum longitude.
 						</description>
 					</parameter>
 					<parameter name="latmin" type="double" unit="deg" default="-90.0">
 						<description>
-							Minimum latitude.
+						Minimum latitude.
 						</description>
 					</parameter>
 					<parameter name="latmax" type="double" unit="deg" default="90.0">
 						<description>
-							Maximum latitude.
+						Maximum latitude.
 						</description>
 					</parameter>
 				</group>
 				<parameter name="groups" type="string" default="">
 					<description>
-					Stream group profiles to be considered. Use comma separation for
-					a list of groups.
+					Stream group profiles to be considered which must be defined in
+					group section. Use comma separation for a list of groups.
 					</description>
 				</parameter>
+				<parameter name="profiles" type="string" default="">
+					<description>
+					Stream profiles to be considered which must be defined in
+					profile section. Use comma separation for a list of profiles.
+					</description>
+				</parameter>
+
 				<group name="group">
 					<description>
 					Definiton of stream groups shown in scrttv with unique features.
@@ -218,11 +225,138 @@
 								DashDotDotLine.
 								</description>
 							</parameter>
-							<parameter name="width" type="double" default="1.0">
+							<parameter name="width" type="double" default="1.0" unit="px">
 								<description>
 								The width of the pen.
 								</description>
 							</parameter>
+						</group>
+					</struct>
+				</group>
+
+				<group name="profile">
+					<description>
+					Definiton of profiles for streams shown with unique decorations.
+					Register the profiles in &quot;profiles&quot; to apply them.
+					</description>
+					<struct type="Stream profile" link="streams.profiles">
+						<parameter name="match" type="string" unit="" default="">
+							<description>
+							Stream applying this profile to. Use regular expressions
+							for defining multiple streams. Examples:
+
+							GR.BFO.00.BHZ: One stream on vertical component
+
+
+							GR.*.00.BHZ: All stations from GR network and their
+							vertical components.
+							</description>
+						</parameter>
+						<parameter name="description" type="string" unit="" default="">
+							<description>
+							Text added to streams.
+							</description>
+						</parameter>
+						<parameter name="minMaxMargin" type="double" unit="" default="0.0">
+							<description>
+							Fraction of trace amplitude added to trace widgets.
+							</description>
+						</parameter>
+						<parameter name="unit" type="string" unit="" default="">
+							<description>
+							The physical unit shown along with stream maximum and
+							minimum values.
+							</description>
+						</parameter>
+						<parameter name="gain" type="double" unit="" default="0.0">
+							<description>
+							The gain applied to scale trace amplitudes. 0 disables
+							showing trace amplitude value
+							</description>
+						</parameter>
+						<parameter name="fixedScale" type="boolean" default="false">
+							<description>
+							</description>
+						</parameter>
+						<group name="minimum">
+							<description>
+							Properties defining the minimum line on each trace.
+							</description>
+							<parameter name="value" type="double" default="0.0">
+								<description>
+								Value at which to draw a line.
+								</description>
+							</parameter>
+							<group name="pen">
+								<description>
+								Line properties.
+								</description>
+								<parameter name="width" type="string" default="1">
+									<description>
+									</description>
+								</parameter>
+								<parameter name="style" type="string" default="solidline">
+									<description>
+									</description>
+								</parameter>
+								<parameter name="color" type="string" default="000000ff">
+									<description>
+									</description>
+								</parameter>
+							</group>
+							<group name="brush">
+								<description>
+								Properties of the area below the minimum.
+								</description>
+								<parameter name="style" type="string" default="nobrush">
+									<description>
+									</description>
+								</parameter>
+								<parameter name="color" type="string" default="000000ff">
+									<description>
+									</description>
+								</parameter>
+							</group>
+						</group>
+						<group name="maximum">
+							<description>
+							Properties defining the maximum line on each trace.
+							</description>
+							<parameter name="value" type="double" default="0.0">
+								<description>
+								Value at which to draw a line.
+								</description>
+							</parameter>
+							<group name="pen">
+								<description>
+								Line properties.
+								</description>
+								<parameter name="width" type="string" default="1" unit="">
+									<description>
+									</description>
+								</parameter>
+								<parameter name="style" type="string" default="solidline">
+									<description>
+									</description>
+								</parameter>
+								<parameter name="color" type="string" default="000000ff">
+									<description>
+									</description>
+								</parameter>
+							</group>
+							<group name="brush">
+								<description>
+								Properties of the area above the maximum.
+								</description>
+								<parameter name="style" type="string" default="nobrush">
+									<description>
+									</description>
+								</parameter>
+								<parameter name="color" type="string" default="000000ff">
+									<description>
+									</description>
+								</parameter>
+							</group>
 						</group>
 					</struct>
 				</group>
@@ -296,15 +430,15 @@
 				</option>
 				<option long-flag="no-inventory" argument="" publicID="mode#no-inventory">
 					<description>
-					Do not read streams from inventory but display all streams 
-					available from the specified record source. This option may 
-					be combined with the streams.codes parameter to filter the 
+					Do not read streams from inventory but display all streams
+					available from the specified record source. This option may
+					be combined with the streams.codes parameter to filter the
 					available streams.
 					</description>
 				</option>
 				<option long-flag="end-time" argument="arg" publicID="mode#end-time">
 					<description>
-					Set the acquisition end time, e.g. '2017-09-08 13:30:00', 
+					Set the acquisition end time, e.g. '2017-09-08 13:30:00',
 					default: 'gmt'.
 					</description>
 				</option>
@@ -322,7 +456,7 @@
 				<option long-flag="initially-visible-all" argument="" publicID="mode#initially-visible-all" param-ref="allTracesInitiallyVisible"/>
 				<option long-flag="rt" argument="" publicID="mode#rt">
 					<description>
-					Do not ask for time window at data server. This might be 
+					Do not ask for time window at data server. This might be
 					important if e.g. Seedlink does not allow time window
 					extraction.
 					</description>
