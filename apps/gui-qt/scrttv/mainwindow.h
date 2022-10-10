@@ -312,7 +312,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		struct WaveformStreamEntry {
 			WaveformStreamEntry(const Seiscomp::DataModel::WaveformStreamID& id, int idx, double s = 1.0)
 			: streamID(id), index(idx), scale(s) {}
-		
+
 			bool operator==(const WaveformStreamEntry& other) const {
 				return streamID == other.streamID;
 			}
@@ -332,7 +332,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 			std::string matchID;
 			OPT(double) minValue;
 			OPT(double) maxValue;
-			bool        fixedScale;
+			bool        fixedScale{false};
 			OPT(double) gain;
 			OPT(double) minMaxMargin;
 			QPen        minPen;
