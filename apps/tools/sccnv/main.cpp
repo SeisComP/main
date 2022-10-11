@@ -40,13 +40,38 @@ class ConvertApp : public Application {
 	protected:
 		void createCommandLineDescription() {
 			commandline().addGroup("Formats");
-			commandline().addOption("Formats", "format-list", "list all supported formats");
+			commandline().addOption("Formats", "format-list",
+			                        "list all supported formats");
 			commandline().addGroup("Input");
-			commandline().addOption("Input", "input,i", "input stream [format:][file], default: trunk:-", &_inputStream, false);
+			commandline().addOption("Input", "input,i",
+			                        "input stream [format:][file], default: trunk:-",
+			                        &_inputStream, false);
 			commandline().addGroup("Output");
-			commandline().addOption("Output", "output,o", "output stream [format:][file], default trunk:-", &_outputStream, false);
+			commandline().addOption("Output", "output,o",
+			                        "output stream [format:][file], default trunk:-",
+			                        &_outputStream, false);
 			commandline().addOption("Output", "formatted,f", "use formatted output");
-			commandline().addOption("Output", "indent", "formatted line indent", &_indentation);
+			commandline().addOption("Output", "indent", "formatted line indent",
+			                        &_indentation);
+		}
+
+		void printUsage() const {
+			std::cout << "Usage:" << std::endl << "  sccnv [options]"
+			          << std::endl << std::endl
+			          << "Convert content between different formats."
+			          << std::endl;
+
+			Client::Application::printUsage();
+
+			std::cout << "Examples:" << std::endl;
+			std::cout << "Print the list of supported formats"
+			          << std::endl
+			          << "  sccnv --format-list"
+			          << std::endl << std::endl
+			          << "Convert an event parameter file in SCML format to QuakeML, store the content in a file"
+			          << std::endl
+			          << "  sccnv -i seiscomp.xml -o qml1.2:quakeml.xml"
+			          << std::endl << std::endl;
 		}
 
 		bool run() {
