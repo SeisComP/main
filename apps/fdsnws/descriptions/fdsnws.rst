@@ -82,20 +82,28 @@ where *request.txt* contains the POST message body. For details read the
 FDSN specifications.
 
 
-Feature notes
+Feature Notes
 ~~~~~~~~~~~~~
 
 * ``quality`` parameter not implemented (information not available in SeisComP)
 * ``minimumlength`` parameter is not implemented
 * ``longestonly`` parameter is not implemented
-* Access to drestricted networks and stations is only granted through the
+* Access to restricted networks and stations is only granted through the
   ``queryauth`` method
+* The data channels exposed by this service may be restricted by defining an
+  inventory filter, see section :ref:`sec-inv-filter`.
+* **No** trimming of miniSEED records to requested time window -- This FDSNWS
+  implementation returns the records as available in its data source, e.g., SDS
+  archive. It is guaranteed that the requested time range is within the returned
+  data (if available in the archive) but not that it is exactly the requested
+  time range. FDSNWS does not trim and therefore re-encode miniSEED records. The
+  rationale for that is that miniSEED records are probably further distributed
+  and stored in other archives and we do not see the point in modifying them.
+  Furthermore we do not want to increase the load on the web server with that
+  extra processing step.
 
-The data channels exposed by this service may be restrict by defining an
-inventory filter, see section :ref:`sec-inv-filter`.
 
-
-Service configuration
+Service Configuration
 ~~~~~~~~~~~~~~~~~~~~~
 
 * Activate :confval:`serveDataSelect` in the module configuration
@@ -146,7 +154,7 @@ Example
   http://localhost:8080/fdsnws/station/1/query?net=GE&cha=BH%3F&level=response&nodata=404
 
 
-Feature notes
+Feature Notes
 ~~~~~~~~~~~~~
 
 * To enable FDSNXML or StationXML support load the plugin ``fdsnxml``. The
@@ -505,7 +513,7 @@ where GPG stores its files. Let's use the directory
      sysop@host:~$ echo "auth.enable = true" >> ~/seiscomp/etc/fdsnws.cfg
 
 
-Usage example
+Usage Example
 -------------
 
 A client like :ref:`fdsnws_fetch <sec-fdsnws-related>` is recommended, but also tools like wget and

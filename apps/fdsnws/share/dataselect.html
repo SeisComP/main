@@ -34,6 +34,17 @@
     <li><em>longestonly</em> request parameter not implemented</li>
     <li>access to restricted networks and stations is only granted through the
       <em>queryauth</em> method</li>
+    <li>
+      <b>No</b> trimming of miniSEED records to requested time window &mdash;
+      This FDSNWS implementation returns the records as available in its data
+      source, e.g., SDS archive. It is guaranteed that the requested time range
+      is within the returned data (if available in the archive) but not that it
+      is exactly the requested time range. FDSNWS does not trim and therefore
+      re-encode miniSEED records. The rationale for that is that miniSEED
+      records are probably further distributed and stored in other archives and
+      we do not see the point in modifying them. Furthermore we do not want to
+      increase the load on the web server with that extra processing step.
+    </li>
   </ul>
 </body>
 </html>
