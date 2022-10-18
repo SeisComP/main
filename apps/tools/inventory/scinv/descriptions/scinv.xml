@@ -92,6 +92,13 @@
 					Enable compact output for ls: each object one line.
 					</description>
 				</option>
+				<option long-flag="nslc">
+					<description>
+					Enable NSLC output as NET.STA.LOC.CHA for ls: each object
+					one line. Useful up to level cha for listing all streams of
+					an inventory.
+					</description>
+				</option>
 			</group>
 			<group name="Merge">
 				<option long-flag="strip">

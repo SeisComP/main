@@ -10,8 +10,14 @@ in miniSEED format and checks miniSEED archives.
 * **Check mode:** Check an archive of miniSEED files for out-of-order records in
   files.
 
-It is possible to save event based waveform data in combination with
-:ref:`scevtstreams`.
+
+.. hint::
+
+   In dump mode scart can filter streams using stream lists with time windows
+   (:option:`--list`) or without as NSLC lists (:option:`--nslc`) which can can be
+   generated per event by :ref:`scevtstreams` or from inventory using :ref:`scinv`,
+   respectively.  It is hence possible to save event based waveform data in
+   combination with :ref:`scevtstreams`.
 
 .. warning::
 

@@ -463,6 +463,8 @@ class InventoryManager : public Client::Application,
 			                        &_level);
 			commandline().addOption("Manager", "compact",
 			                        "Enabled compact output for ls.");
+			commandline().addOption("Manager", "nslc",
+			                        "Enabled stream list output for ls as NET.STA.LOC.CHA.");
 			commandline().addOption("Manager", "no-purge-keys",
 			                        "Do not delete key files if a station does not exist in inventory");
 			commandline().addOption("Manager", "purge-keys",
@@ -1568,6 +1570,10 @@ class InventoryManager : public Client::Application,
 			cerr << "done" << endl;
 
 			bool compact = commandline().hasOption("compact");
+			bool nslc = commandline().hasOption("nslc");
+			if ( nslc ) {
+				compact = false;
+			}
 			int level = 2;
 			if ( _level == "net" )
 				level = 0;
@@ -1587,8 +1593,14 @@ class InventoryManager : public Client::Application,
 
 			for ( size_t n = 0; n < nets.size(); ++n ) {
 				DataModel::Network *net = nets[n];
-				if ( compact )
+				if ( nslc ) {
+					if ( _level == "net" ) {
+						cout << net->code() << "\t" << epochToStr(net) << endl;
+					}
+				}
+				else if ( compact ) {
 					cout << net->code() << "\t" << epochToStr(net) << endl;
+				}
 				else {
 					cout << "  network " << net->code();
 					if ( !net->description().empty() ) {
@@ -1610,8 +1622,15 @@ class InventoryManager : public Client::Application,
 
 				for ( size_t s = 0; s < stas.size(); ++s ) {
 					DataModel::Station *sta = stas[s];
-					if ( compact )
+					if ( nslc ) {
+						if ( _level == "sta" ) {
+							cout << net->code() << "." << sta->code()
+							     << "\t" << epochToStr(sta) << endl;
+							}
+					}
+					else if ( compact ) {
 						cout << " " << sta->code() << "\t" << epochToStr(sta) << endl;
+					}
 					else {
 						cout << "    station " << sta->code();
 						if ( !sta->description().empty() ) {
@@ -1641,7 +1660,7 @@ class InventoryManager : public Client::Application,
 								cout << loc->code();
 							cout << "\t" << epochToStr(loc) << endl;
 						}
-						else {
+						else if ( nslc == false ) {
 							cout << "      location ";
 							if ( loc->code().empty() )
 								cout << "__";
@@ -1661,7 +1680,12 @@ class InventoryManager : public Client::Application,
 
 						for ( size_t s = 0; s < streams.size(); ++s ) {
 							DataModel::Stream *str = streams[s];
-							if ( compact )
+							if ( ( nslc ) && ( _level == "cha" ) ) {
+								cout << net->code() << "." << sta->code() << "."
+								     << loc->code() << "." << str->code()
+								     << "\t" << epochToStr(str) << endl;
+							}
+							else if ( compact )
 								cout << "   " << str->code() << "\t" << epochToStr(str) << endl;
 							else {
 								cout << "        channel ";

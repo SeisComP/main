@@ -28,6 +28,8 @@
 						line. Instead of a file read the from stdin (-). Line
 						format: NET.STA.LOC.CHA - wildcards and regular expressions
 						are considered. Example: CX.*..BH? .
+
+						NSLC lists may be generated, e.g., using scinv.
 					</description>
 				</option>
 				<option flag="r" long-flag="rm">
