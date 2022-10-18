@@ -165,7 +165,7 @@ an XML file or the complete inventory pool.
              epoch 2010-03-25
 
 The default level of information printed is *chan*. Available levels are *net*,
-*sta*, *chan* and *resp*. The output level is controlled by ``--level``.
+*sta*, *chan* and *resp*. The output level is controlled by :option:`--level``.
 
 For checking the available networks and stations in the inventory pool, calling
 
@@ -174,6 +174,11 @@ For checking the available networks and stations in the inventory pool, calling
    scinv ls --level sta
 
 is enough.
+
+.. hint::
+
+   Stream lists may be generated when combining with :option:`--nslc`. Such lists can be
+   used as input, e.g., to :ref:`scmssort` or :ref:`scart`.
 
 
 .. _scinv_check:

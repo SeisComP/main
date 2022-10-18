@@ -1,24 +1,26 @@
 scmssort reads unsorted (and possibly multiplexed) MiniSEED files and sorts
 the individual records by time. This is useful e.g. for simulating data
-acquisition and playbacks. Removing of duplicate data and trimming of time window is available.
+acquisition and playbacks. Removing of duplicate data and trimming of time window
+is available.
 
 scmssort reads single files and output to the command line. Cat many files
-to read them at the same time. In this way huge amount of data can be processed efficiently.
+to read them at the same time. In this way huge amount of data can be processed
+efficiently.
 
 Applications to miniSEED records:
 
-* Sort by time, e.g. for playbacks
-* Remove duplicates and clean archives
-* Filter based on
+* Sort records by time, e.g. for playbacks.
+* Remove duplicate records from files and clean waveform archives.
+* Filter data records, i.e. keep or remove them, based on
 
-  * time windows
-  * stream lists
-
+  * time windows,
+  * stream lists where each line has the format NET.STA.LOC.CHA including regular
+    expressions. Such stream lists can be generated, e.g., using :ref:`scinv`.
 
 .. hint::
 
-   Combine with :ref:`scart` or :ref:`msrtsimul` to archive data or to make playbacks
-   with real-time simulations.
+   Combine scmssort with :ref:`scart` or :ref:`msrtsimul` to archive data, clean
+   archives or to make playbacks with real-time simulations.
 
 
 Examples
@@ -31,8 +33,8 @@ Examples
 
       scmssort -u -E -v unsorted.mseed > sorted.mseed
 
-#. Read all files ending with ".mseed" at the same time. The data are trimmed to a time window and duplicated
-   data are removed
+#. Read all files ending with ".mseed" at the same time. The data are trimmed to
+   a time window and duplicated data are removed
 
    .. code-block:: sh
 
