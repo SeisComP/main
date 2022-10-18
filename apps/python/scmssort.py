@@ -39,7 +39,7 @@ def str2time(timestring):
         timestring = timestring.replace(c, " ")
     timestring = timestring.split()
     assert 3 <= len(timestring) <= 6
-    timestring.extend((6-len(timestring))*["0"])
+    timestring.extend((6 - len(timestring)) * ["0"])
     timestring = " ".join(timestring)
     format = "%Y %m %d %H %M %S"
     if timestring.find(".") != -1:
@@ -70,21 +70,21 @@ def recordInput(filename=None, datatype=seiscomp.core.Array.INT):
     if not filename:
         filename = "-"
 
-    if filename == '-':
-        print("Waiting for data input from stdin. Use Ctrl + C to interrupt.",
-              file=sys.stderr)
+    if filename == "-":
+        print(
+            "Waiting for data input from stdin. Use Ctrl + C to interrupt.",
+            file=sys.stderr,
+        )
     else:
         if not os.path.exists(filename):
             print("Cannot find file {}".format(filename), file=sys.stderr)
             sys.exit()
 
     if not stream.setSource(filename):
-        print("  + failed to assign source file to RecordStream",
-              file=sys.stderr)
+        print("  + failed to assign source file to RecordStream", file=sys.stderr)
         sys.exit()
 
-    input = seiscomp.io.RecordInput(
-        stream, datatype, seiscomp.core.Record.SAVE_RAW)
+    input = seiscomp.io.RecordInput(stream, datatype, seiscomp.core.Record.SAVE_RAW)
 
     while True:
         try:
@@ -102,10 +102,12 @@ tmin = str2time("1970-01-01 00:00:00")
 tmax = str2time("2500-01-01 00:00:00")
 ifile = "-"
 
-description = "Read unsorted and possibly multiplexed miniSEED files. " \
-              "Sort data by time (multiplexing) and filter the individual "\
-              "records by time and/or streams. Apply this before playbacks "\
-              "and waveform archiving."
+description = (
+    "Read unsorted and possibly multiplexed miniSEED files. "
+    "Sort data by time (multiplexing) and filter the individual "
+    "records by time and/or streams. Apply this before playbacks "
+    "and waveform archiving."
+)
 
 epilog = """
 Examples:
@@ -120,21 +122,43 @@ Extract streams by time, stream code and sort records by end time
 """
 
 p = MyOptionParser(
-    usage="\n  %prog [options] [files | < ] > ", description=description, epilog=epilog)
-p.add_option("-t", "--time-window", action="store",
-             help="specify time window (as one -properly quoted- string). Times "
-             "are of course UTC and separated by a tilde ~")
-p.add_option("-l", "--list", action="store",
-             help="File with stream list to filter the records. "
-             "One stream per line. Instead of a file read the from stdin (-). "
-             "Line format: NET.STA.LOC.CHA - wildcards and regular expressions "
-             "are considered. Example: CX.*..BH?")
-p.add_option("-E", "--sort-by-end-time", action="store_true",
-             help="sort according to record end time; default is start time")
-p.add_option("-u", "--uniqueness", action="store_true",
-             help="ensure uniqueness of output, i.e. skip duplicate records")
-p.add_option("-v", "--verbose", action="store_true",
-             help="run in verbose mode")
+    usage="\n  %prog [options] [files | < ] > ", description=description, epilog=epilog
+)
+p.add_option(
+    "-E",
+    "--sort-by-end-time",
+    action="store_true",
+    help="Sort according to record end time; default is start time.",
+)
+p.add_option(
+    "-r",
+    "--rm",
+    action="store_true",
+    help="Remove all traces in stream list given by --list instead of keeping them.",
+)
+p.add_option(
+    "-l",
+    "--list",
+    action="store",
+    help="File with stream list to filter the records. "
+    "One stream per line. Instead of a file read the from stdin (-). "
+    "Line format: NET.STA.LOC.CHA - wildcards and regular expressions "
+    "are considered. Example: CX.*..BH?.",
+)
+p.add_option(
+    "-t",
+    "--time-window",
+    action="store",
+    help="Specify time window (as one -properly quoted- string). Times "
+    "are of course UTC and separated by a tilde '~'.",
+)
+p.add_option(
+    "-u",
+    "--uniqueness",
+    action="store_true",
+    help="Ensure uniqueness of output, i.e. skip duplicate records.",
+)
+p.add_option("-v", "--verbose", action="store_true", help="Run in verbose mode.")
 
 (opt, filenames) = p.parse_args()
 
@@ -142,13 +166,21 @@ if opt.time_window:
     tmin, tmax = list(map(str2time, opt.time_window.split("~")))
 
 if opt.verbose:
-    print("Considered time window: %s~%s" % (time2str(tmin), time2str(tmax)),
-          file=sys.stderr)
+    print(
+        "Considered time window: %s~%s" % (time2str(tmin), time2str(tmax)),
+        file=sys.stderr,
+    )
 
 listFile = None
+removeStreams = False
 if opt.list:
     listFile = opt.list
     print("Considered stream list from: %s" % (listFile), file=sys.stderr)
+
+    if opt.rm:
+        removeStreams = True
+        print("Removing listed streams", file=sys.stderr)
+
 
 def _time(rec):
     if opt.sort_by_end_time:
@@ -168,38 +200,41 @@ def readStreamList(file):
             f = sys.stdin
             file = "stdin"
         else:
-            f = open(listFile, 'r')
+            f = open(listFile, "r")
     except:
         print("%s: error: unable to open" % listFile, file=sys.stderr)
-        return([])
+        return []
 
     lineNumber = -1
     for line in f:
         lineNumber = lineNumber + 1
         line = line.strip()
         # ignore comments
-        if len(line) > 0 and line[0] == '#':
+        if len(line) > 0 and line[0] == "#":
             continue
 
         if len(line) == 0:
             continue
 
-        toks = line.split('.')
+        toks = line.split(".")
         if len(toks) != 4:
             f.close()
-            print("error: %s in line %d has invalid line format, expected "
-                  "stream list: NET.STA.LOC.CHA - 1 line per stream" %
-                  (listFile, lineNumber), file=sys.stderr)
-            return([])
+            print(
+                "error: %s in line %d has invalid line format, expected "
+                "stream list: NET.STA.LOC.CHA - 1 line per stream"
+                % (listFile, lineNumber),
+                file=sys.stderr,
+            )
+            return []
 
         streams.append(line)
 
     f.close()
 
     if len(streams) == 0:
-        return([])
+        return []
 
-    return(streams)
+    return streams
 
 
 if not filenames:
@@ -208,7 +243,7 @@ if not filenames:
 if listFile:
     streams = []
     streams = readStreamList(listFile)
-    if not streams:
+    if not streams and not removeStreams:
         print(" + cannot extract data", file=sys.stderr)
         sys.exit()
 
@@ -242,14 +277,21 @@ if filenames:
                 continue
 
             raw = rec.raw().str()
-            streamCode = "%s.%s.%s.%s" % (rec.networkCode(), rec.stationCode(),
-                                          rec.locationCode(), rec.channelCode())
+            streamCode = "%s.%s.%s.%s" % (
+                rec.networkCode(),
+                rec.stationCode(),
+                rec.locationCode(),
+                rec.channelCode(),
+            )
             if listFile:
                 foundStream = False
                 for stream in streams:
                     if fnmatch.fnmatch(streamCode, stream):
                         foundStream = True
                         break
+
+                if removeStreams:
+                    foundStream = not foundStream
 
                 if not foundStream:
                     continue
@@ -275,15 +317,23 @@ if filenames:
             t = _time(rec)
             if first is None:
                 first = t
-            t = float(t-first)  # float needs less memory
+            t = float(t - first)  # float needs less memory
             time_raw.append((t, raw))
 
     if opt.verbose:
-        print(" + %d networks, %d stations, %d sensor locations, "
-              "%d channel codes, %d streams, %d records"
-              % (len(networks), len(stations), len(locations),
-                 len(channels), len(readStreams), readRecords),
-              file=sys.stderr)
+        print(
+            " + %d networks, %d stations, %d sensor locations, "
+            "%d channel codes, %d streams, %d records"
+            % (
+                len(networks),
+                len(stations),
+                len(locations),
+                len(channels),
+                len(readStreams),
+                readRecords,
+            ),
+            file=sys.stderr,
+        )
         print("Sorting records", file=sys.stderr)
     time_raw.sort()
 
@@ -314,21 +364,33 @@ if filenames:
     if opt.verbose:
         print("Finished", file=sys.stderr)
         if opt.uniqueness:
-            print("  + found and removed {} duplicate records"
-                  .format(duplicates), file=sys.stderr)
+            print(
+                "  + found and removed {} duplicate records".format(duplicates),
+                file=sys.stderr,
+            )
         else:
-            print("  + found {} duplicate records - remove with: scmssort -u"
-                  .format(duplicates), file=sys.stderr)
+            print(
+                "  + found {} duplicate records - remove with: scmssort -u".format(
+                    duplicates
+                ),
+                file=sys.stderr,
+            )
         print("Output:", file=sys.stderr)
         if outStart and outEnd:
-            print(" + time window: %s~%s" % (seiscomp.core.Time(outStart),
-                                             seiscomp.core.Time(outEnd)),
-                  file=sys.stderr)
+            print(
+                " + time window: %s~%s"
+                % (seiscomp.core.Time(outStart), seiscomp.core.Time(outEnd)),
+                file=sys.stderr,
+            )
         else:
             print("No data found in time window", file=sys.stderr)
 
     else:
         # This is an important hint which should always be printed
         if duplicates > 0 and not opt.uniqueness:
-            print("Found {} duplicate records - remove with: scmssort -u"
-                  .format(duplicates), file=sys.stderr)
+            print(
+                "Found {} duplicate records - remove with: scmssort -u".format(
+                    duplicates
+                ),
+                file=sys.stderr,
+            )

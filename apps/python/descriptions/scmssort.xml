@@ -17,9 +17,9 @@
 						Show the command-line help and exit.
 					</description>
 				</option>
-				<option flag="v" long-flag="verbose">
+				<option flag="E" long-flag="sort-by-end-time">
 					<description>
-						Run in verbose mode.
+						Sort by end time.
 					</description>
 				</option>
 				<option flag="l" long-flag="list">
@@ -30,14 +30,10 @@
 						are considered. Example: CX.*..BH? .
 					</description>
 				</option>
-				<option flag="E" long-flag="sort-by-end-time">
+				<option flag="r" long-flag="rm">
 					<description>
-						Sort by end time.
-					</description>
-				</option>
-				<option flag="u" long-flag="uniqueness">
-					<description>
-						Ensure uniqueness of output, i.e. skip duplicate records.
+						Remove all traces in stream list given by --list
+						instead of keeping them.
 					</description>
 				</option>
 				<option flag="t" long-flag="time-window" arg="TIME_WINDOW">
@@ -48,6 +44,16 @@
 						Example:
 
 						'2020-03-28 15:48~2020-03-28 16:18'
+					</description>
+				</option>
+				<option flag="u" long-flag="uniqueness">
+					<description>
+						Ensure uniqueness of output, i.e. skip duplicate records.
+					</description>
+				</option>
+				<option flag="v" long-flag="verbose">
+					<description>
+						Run in verbose mode.
 					</description>
 				</option>
 			</group>

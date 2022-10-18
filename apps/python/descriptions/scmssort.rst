@@ -38,6 +38,14 @@ Examples
 
       cat *.mseed | scmssort -u -E -v -t '2020-03-28 15:48~2020-03-28 16:18' > sorted.mseed
 
-#. Extract streams by time, stream code and sort records by end time ::
+#. Extract streams by stream code and sort records by end time
 
-      echo CX.PB01..BH? | scmssort -v -E -t '2007-03-28 15:48~2007-03-28 16:18' -u -l - test.mseed > sorted.mseed
+   .. code-block:: sh
+
+      echo CX.PB01..BH? | scmssort -v -E -u -l - test.mseed > sorted.mseed
+
+#. Remove streams listed by stream code and sort records by end time
+
+   .. code-block:: sh
+
+      echo CX.PB01..BH? | scmssort -v -E -u -l - -r test.mseed > sorted.mseed
