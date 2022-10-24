@@ -709,12 +709,11 @@ FDSNXML::ResponseStagePtr convert(const DataModel::ResponsePAZ *paz,
 	else
 		sx_paz.setPzTransferFunctionType(FDSNXML::PZTFT_LAPLACE_RAD);
 
-	int idx = 0;
 	try {
 		const vector< complex<double> > &poles = paz->poles().content();
 		for ( size_t i = 0; i < poles.size(); ++i ) {
 			FDSNXML::PoleAndZeroPtr pole = new FDSNXML::PoleAndZero;
-			pole->setNumber(idx++);
+			pole->setNumber(i);
 			pole->setReal(poles[i].real());
 			pole->setImaginary(poles[i].imag());
 			sx_paz.addPole(pole.get());
@@ -726,7 +725,7 @@ FDSNXML::ResponseStagePtr convert(const DataModel::ResponsePAZ *paz,
 		const vector< complex<double> > &zeros = paz->zeros().content();
 		for ( size_t i = 0; i < zeros.size(); ++i ) {
 			FDSNXML::PoleAndZeroPtr zero = new FDSNXML::PoleAndZero;
-			zero->setNumber(idx++);
+			zero->setNumber(i);
 			zero->setReal(zeros[i].real());
 			zero->setImaginary(zeros[i].imag());
 			sx_paz.addZero(zero.get());
