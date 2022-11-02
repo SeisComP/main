@@ -205,6 +205,10 @@ Execute on command line with debug output
         # self.updateObject(obj)
         # return True
 
+    def done(self):
+        seiscomp.client.Application.done(self)
+        self._cache.setDatabaseArchive(None)
+
     def printEvent(self, evt, newEvent):
         if self._format != "xml":
             self.printEventProcAlert(evt, newEvent)
