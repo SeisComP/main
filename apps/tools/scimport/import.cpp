@@ -12,10 +12,10 @@
  ***************************************************************************/
 
 
-
 #define SEISCOMP_COMPONENT ScImport
 #include "import.h"
 
+#include <functional>
 #include <vector>
 
 #include <seiscomp/logging/log.h>
@@ -217,7 +217,7 @@ Client::Result Import::connectToSink(const string &sink) {
 		return Client::Error;
 	}
 
-	_sinkMessageThread = new boost::thread(boost::bind(&Import::readSinkMessages, this));
+	_sinkMessageThread = new thread(bind(&Import::readSinkMessages, this));
 
 	// Print routing table
 	for ( auto it : _routingTable )

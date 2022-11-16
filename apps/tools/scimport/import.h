@@ -17,8 +17,9 @@
 #define SEISCOMP_APPLICATIONS_IMPORT_H__
 
 
-#include <string>
 #include <map>
+#include <string>
+#include <thread>
 
 #include <seiscomp/client/application.h>
 
@@ -72,7 +73,7 @@ class Import : public Client::Application {
 		Client::ConnectionPtr  _sink;
 		Client::PacketCPtr     _lastPacket;
 		RoutingTable           _routingTable;
-		boost::thread         *_sinkMessageThread;
+		std::thread           *_sinkMessageThread;
 
 		bool                   _filter;
 		bool                   _routeUnknownGroup;
