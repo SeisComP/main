@@ -258,7 +258,7 @@ bool AmpTool::init() {
 	SEISCOMP_INFO("\nAmplitudes to calculate:\n%s", logAmplTypes.c_str());
 
 	_timer.setTimeout(1);
-	_timer.setCallback(boost::bind(&AmpTool::handleTimeout, this));
+	_timer.setCallback(bind(&AmpTool::handleTimeout, this));
 
 	return true;
 }
