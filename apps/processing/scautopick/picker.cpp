@@ -37,7 +37,7 @@
 #include <seiscomp/datamodel/config_package.h>
 
 #include <iomanip>
-#include <boost/bind.hpp>
+#include <functional>
 
 #include "picker.h"
 #include "detector.h"
@@ -854,10 +854,18 @@ bool App::initDetector(const string &streamID,
 	detector->setGapTolerance(_config.maxGapLength);
 	detector->setGapInterpolationEnabled(_config.interpolateGaps);
 	detector->setSensitivityCorrection(sensitivityCorrection);
-	detector->setPublishFunction(boost::bind(&App::emitDetection, this, _1, _2, _3));
+	detector->setPublishFunction(bind(
+		&App::emitDetection, this,
+		placeholders::_1,
+		placeholders::_2,
+		placeholders::_3
+	));
 
 	if ( _config.calculateAmplitudes )
-		detector->setAmplitudePublishFunction(boost::bind(&App::emitAmplitude, this, _1, _2));
+		detector->setAmplitudePublishFunction(bind(
+			&App::emitAmplitude, this,
+			placeholders::_1, placeholders::_2
+		));
 
 	if ( !initProcessor(detector.get(), detector->usedComponent(),
 	                    time, streamID, waveformID, sensitivityCorrection) )
@@ -952,15 +960,13 @@ bool App::addFeatureExtractor(Seiscomp::DataModel::Pick *pick,
 		),
 		pick
 	);
-	proc->setPublishFunction(
-		boost::bind(
-			&App::emitFXPick, this,
-			Seiscomp::DataModel::PickPtr(pick),
-			Seiscomp::DataModel::AmplitudePtr(amp),
-			isPrimary,
-			_1, _2
-		)
-	);
+	proc->setPublishFunction(bind(
+		&App::emitFXPick, this,
+		Seiscomp::DataModel::PickPtr(pick),
+		Seiscomp::DataModel::AmplitudePtr(amp),
+		isPrimary,
+		placeholders::_1, placeholders::_2
+	));
 
 	const DataModel::WaveformStreamID waveformID(waveformStreamID(rec));
 	const std::string &n = rec->networkCode();
@@ -1024,7 +1030,7 @@ void App::addSecondaryPicker(const Core::Time &onset, const Record *rec, const s
 	SecondaryPicker::Trigger trigger;
 	trigger.onset = onset;
 	proc->setTrigger(trigger);
-	proc->setPublishFunction(boost::bind(&App::emitSPick, this, _1, _2));
+	proc->setPublishFunction(bind(&App::emitSPick, this, placeholders::_1, placeholders::_2));
 	proc->setReferencingPickID(pickID);
 
 	const DataModel::WaveformStreamID waveformID(waveformStreamID(rec));
@@ -1132,7 +1138,7 @@ void App::addSecondaryPicker(const Core::Time &onset, const Record *rec, const s
 void App::addAmplitudeProcessor(AmplitudeProcessorPtr proc,
                                 const Record *rec,
                                 const Seiscomp::DataModel::Pick *pick) {
-	proc->setPublishFunction(boost::bind(&App::emitAmplitude, this, _1, _2));
+	proc->setPublishFunction(bind(&App::emitAmplitude, this, placeholders::_1, placeholders::_2));
 	proc->setReferencingPickID(pick->publicID());
 
 	const DataModel::WaveformStreamID waveformID(waveformStreamID(rec));
@@ -1211,7 +1217,7 @@ void App::emitTrigger(const Processing::Detector *pickProc,
 
 	proc->setTrigger(time);
 	proc->setMargin(60.);
-	proc->setPublishFunction(boost::bind(&App::emitPPick, this, _1, _2));
+	proc->setPublishFunction(bind(&App::emitPPick, this, placeholders::_1, placeholders::_2));
 
 	const DataModel::WaveformStreamID waveformID(waveformStreamID(rec));
 

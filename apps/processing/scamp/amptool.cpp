@@ -31,7 +31,7 @@
 
 #include <seiscomp/processing/amplitudeprocessor.h>
 
-#include <boost/bind.hpp>
+#include <functional>
 #include <iomanip>
 
 
@@ -99,7 +99,7 @@ AmpTool::AmpTool(int argc, char **argv) : StreamApplication(argc, argv) {
 	_amplitudeTypes.insert("mb");
 	_amplitudeTypes.insert("mB");
 
-	_cache.setPopCallback(boost::bind(&AmpTool::removedFromCache, this, _1));
+	_cache.setPopCallback(bind(&AmpTool::removedFromCache, this, placeholders::_1));
 
 	_errorChannel = NULL;
 	_errorOutput = NULL;
@@ -395,7 +395,7 @@ bool AmpTool::run() {
 					dbAmps[amp->type()] = amp;
 					proc->setTrigger(pick->time().value());
 					proc->setReferencingPickID(pick->publicID());
-					proc->setPublishFunction(boost::bind(&AmpTool::storeLocalAmplitude, this, _1, _2));
+					proc->setPublishFunction(bind(&AmpTool::storeLocalAmplitude, this, placeholders::_1, placeholders::_2));
 					_report << "     + Data" << std::endl;
 					addProcessor(proc.get(), NULL, pick.get(), None, None, None);
 				}
@@ -783,7 +783,7 @@ void AmpTool::process(Origin *origin) {
 				continue;
 			}
 
-			proc->setPublishFunction(boost::bind(&AmpTool::emitAmplitude, this, _1, _2));
+			proc->setPublishFunction(bind(&AmpTool::emitAmplitude, this, placeholders::_1, placeholders::_2));
 		}
 	}
 
