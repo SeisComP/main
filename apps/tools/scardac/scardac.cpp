@@ -11,6 +11,7 @@
  * https://www.gnu.org/licenses/agpl-3.0.html.                             *
  ***************************************************************************/
 
+
 #define SEISCOMP_COMPONENT SCARDAC
 
 #define MAX_THREADS 1000
@@ -31,6 +32,7 @@
 #include <seiscomp/logging/log.h>
 
 #include <ctime>
+#include <functional>
 #include <vector>
 
 
@@ -912,7 +914,7 @@ bool SCARDAC::run() {
 	// worker instance.
 	SEISCOMP_INFO("creating %i worker threads", _threads);
 	for ( int i = 1; i <= _threads; ++i ) {
-		_worker.push_back(new boost::thread(boost::bind(
+		_worker.push_back(new thread(bind(
 		        &SCARDAC::processExtents, this, i)));
 	}
 
