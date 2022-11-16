@@ -12,13 +12,14 @@
  ***************************************************************************/
 
 
+#ifndef SCIMEX_CRITERION_H
+#define SCIMEX_CRITERION_H
 
-#ifndef __CRITERION_H__
-#define __CRITERION_H__
 
 #include <utility>
 #include <vector>
 #include <string>
+#include <functional>
 
 #include <seiscomp/utils/leparser.h>
 #include <seiscomp/client/application.h>
@@ -26,8 +27,6 @@
 
 namespace Seiscomp {
 namespace Applications {
-
-
 
 
 class CriterionInterface : public Utils::LeExpression {
@@ -42,8 +41,6 @@ class CriterionInterface : public Utils::LeExpression {
 		virtual bool checkArrivalCount(size_t count) = 0;
 		virtual bool checkAgencyID(const std::string& id) = 0;
 };
-
-
 
 
 class Criterion : public CriterionInterface {
@@ -127,8 +124,6 @@ class BinaryOperator : public Criterion {
 };
 
 
-
-
 template <typename Criterion>
 class UnaryOperator : public Criterion {
 	public:
@@ -145,7 +140,6 @@ class UnaryOperator : public Criterion {
 	protected:
 		Criterion* _rhs;
 };
-
 
 
 class AndOperator : public BinaryOperator<CriterionInterface> {
@@ -234,8 +228,6 @@ class OrOperator : public BinaryOperator<CriterionInterface> {
 };
 
 
-
-
 class NotOperator : public UnaryOperator<CriterionInterface> {
 	public:
 		virtual bool isInLatLonRange(double lat, double lon) {
@@ -278,8 +270,6 @@ class NotOperator : public UnaryOperator<CriterionInterface> {
 };
 
 
-
-
 template <typename T>
 class CriterionFactory : public Utils::ExpressionFactoryInterface<T> {
 
@@ -312,8 +302,8 @@ class CriterionFactory : public Utils::ExpressionFactoryInterface<T> {
 #include "criterion.ipp"
 
 
-
 } // namespace Applications
 } // namespace Seiscomp
+
 
 #endif

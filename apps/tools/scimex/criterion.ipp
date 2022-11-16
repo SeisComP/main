@@ -90,7 +90,7 @@ T* CriterionFactory<T>::createExpression(const std::string& name)
 template <typename T>
 bool CriterionFactory<T>::configGetLatitude(const std::string& prefix, const std::string& name, Criterion* criterion)
 {
-	return getRangeFromConfig(prefix, name, boost::bind(&Criterion::setLatitudeRange, criterion, _1, _2));
+	return getRangeFromConfig(prefix, name, std::bind(&Criterion::setLatitudeRange, criterion, std::placeholders::_1, std::placeholders::_2));
 }
 
 
@@ -99,7 +99,7 @@ bool CriterionFactory<T>::configGetLatitude(const std::string& prefix, const std
 template <typename T>
 bool CriterionFactory<T>::configGetLongitude(const std::string& prefix, const std::string& name, Criterion* criterion)
 {
-	return getRangeFromConfig(prefix, name, boost::bind(&Criterion::setLongitudeRange, criterion, _1, _2));
+	return getRangeFromConfig(prefix, name, std::bind(&Criterion::setLongitudeRange, criterion, std::placeholders::_1, std::placeholders::_2));
 
 }
 
@@ -109,7 +109,7 @@ bool CriterionFactory<T>::configGetLongitude(const std::string& prefix, const st
 template <typename T>
 bool CriterionFactory<T>::configGetMagnitude(const std::string& prefix, const std::string& name, Criterion* criterion)
 {
-	return getRangeFromConfig(prefix, name, boost::bind(&Criterion::setMagnitudeRange, criterion, _1, _2));
+	return getRangeFromConfig(prefix, name, std::bind(&Criterion::setMagnitudeRange, criterion, std::placeholders::_1, std::placeholders::_2));
 }
 
 
