@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 # Copyright (C) 2013-2014 by gempa GmbH
@@ -6,8 +6,6 @@
 # Author:  Stephan Herrnkind
 # Email:   herrnkind@gempa.de
 ###############################################################################
-
-from __future__ import absolute_import, division, print_function
 
 import sys
 
@@ -36,7 +34,9 @@ class TestStation(TestStationBase):
                 False,
             ),
             (
-                "?format=sc3ml&network=AM&station=R0F05&location=00&channel=SHZ&latitude=52&longitude=13&maxradius=0.5&level=response&includeavailability=true",
+                "?format=sc3ml&network=AM&station=R0F05&location=00&channel=SHZ&"
+                "latitude=52&longitude=13&maxradius=0.5&level=response&"
+                "includeavailability=true",
                 TestStationBase.CT_XML,
                 [],
                 True,
@@ -80,4 +80,4 @@ if __name__ == "__main__":
     sys.exit(app())
 
 
-# vim: ts=4 et tw=79
+# vim: ts=4 et tw=88

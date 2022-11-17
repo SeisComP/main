@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 # Copyright (C) 2013-2014 by gempa GmbH
@@ -6,8 +6,6 @@
 # Author:  Stephan Herrnkind
 # Email:   herrnkind@gempa.de
 ###############################################################################
-
-from __future__ import absolute_import, division, print_function
 
 import os
 import socket
@@ -243,6 +241,7 @@ class FDSNWSTest(object):
         reqHeaders=None,
         respHeaders=None,
     ):
+        # pylint: disable=R0913
         if concurrent:
             self.testHTTPConcurrent(
                 url,
@@ -292,6 +291,7 @@ class FDSNWSTest(object):
         reqHeaders=None,
         respHeaders=None,
     ):
+        # pylint: disable=R0913
         if not silent:
             if testID is not None:
                 print("#{} ".format(testID), end="")
@@ -376,6 +376,7 @@ class FDSNWSTest(object):
         reqHeaders=None,
         respHeaders=None,
     ):
+        # pylint: disable=R0913
         if testID is not None:
             print("#{} ".format(testID), end="")
         print("concurrent [{}/{}] {}: ".format(repetitions, numThreads, url), end="")
@@ -440,4 +441,4 @@ class FDSNWSTest(object):
         sys.stdout.flush()
 
 
-# vim: ts=4 et tw=79
+# vim: ts=4 et tw=88

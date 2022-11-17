@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 # Copyright (C) 2013-2014 by gempa GmbH
@@ -6,8 +6,6 @@
 # Author:  Stephan Herrnkind
 # Email:   herrnkind@gempa.de
 ###############################################################################
-
-from __future__ import absolute_import, division, print_function
 
 import sys
 
@@ -47,14 +45,16 @@ class TestAvailability(FDSNWSTest):
                 False,
             ),
             (
-                "extentauth?station=R0F05&orderby=latestupdate_desc&includerestricted=true&format=geocsv",
+                "extentauth?station=R0F05&orderby=latestupdate_desc&"
+                "includerestricted=true&format=geocsv",
                 ctCSV,
                 [],
                 False,
             ),
             ("extent?orderby=latestupdate_desc&format=request", ctTXT, [], False),
             (
-                "extentauth?orderby=latestupdate_desc&includerestricted=true&format=json&merge=quality",
+                "extentauth?orderby=latestupdate_desc&includerestricted=true&"
+                "format=json&merge=quality",
                 ctJSON,
                 [(12, 32)],
                 True,
@@ -73,7 +73,8 @@ class TestAvailability(FDSNWSTest):
             ("query?net=AM&format=geocsv&show=latestupdate", ctCSV, [], False),
             ("query?net=AM&format=json&show=latestupdate", ctJSON, [(12, 32)], False),
             (
-                "query?net=AM&channel=HDF&format=json&merge=quality,samplerate,overlap&latestupdate",
+                "query?net=AM&channel=HDF&format=json&merge=quality,samplerate,overlap&"
+                "latestupdate",
                 ctJSON,
                 [(12, 32)],
                 False,
@@ -101,4 +102,4 @@ if __name__ == "__main__":
     sys.exit(app())
 
 
-# vim: ts=4 et tw=79
+# vim: ts=4 et tw=88
