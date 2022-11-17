@@ -3457,7 +3457,7 @@
             <value>3.103133339</value>
           </plunge>
           <length>
-            <value>-4.055029736e+15</value>
+            <value>-4055029736000000</value>
           </length>
         </nAxis>
       </principalAxes>
@@ -3480,19 +3480,19 @@
             <value>1.235296158e+17</value>
           </Mrr>
           <Mtt>
-            <value>-2.021136429e+16</value>
+            <value>-20211364290000000</value>
           </Mtt>
           <Mpp>
             <value>-1.033182515e+17</value>
           </Mpp>
           <Mrt>
-            <value>1.766083416e+16</value>
+            <value>17660834160000000</value>
           </Mrt>
           <Mrp>
-            <value>-2.397263454e+16</value>
+            <value>-23972634540000000</value>
           </Mrp>
           <Mtp>
-            <value>4.061545462e+16</value>
+            <value>40615454620000000</value>
           </Mtp>
         </tensor>
         <varianceReduction>0.9887087083</varianceReduction>
