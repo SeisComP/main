@@ -30,7 +30,7 @@ from seiscomp.fdsnws.utils import py3bstr  # pylint: disable=C0413
 class FDSNWSTest(object):
 
     # --------------------------------------------------------------------------
-    def __init__(self, port=8080):
+    def __init__(self, port=9980):
         self.port = port
         self.url = "http://localhost:{}/fdsnws".format(self.port)
         self.service = None
@@ -128,6 +128,7 @@ class FDSNWSTest(object):
             "--record-url=sdsarchive://{}/sds".format(self.rootdir),
             "--htpasswd={}/fdsnws.htpasswd".format(self.rootdir),
             "--stationFilter={}/stationFilter.cfg".format(self.rootdir),
+            "--port=9980",
         ]
 
     # --------------------------------------------------------------------------
