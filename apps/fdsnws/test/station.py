@@ -1,7 +1,4 @@
-from __future__ import absolute_import, division, print_function
-
 from fdsnwstest import FDSNWSTest
-
 
 ###############################################################################
 class TestStationBase(FDSNWSTest):
@@ -12,4 +9,4 @@ class TestStationBase(FDSNWSTest):
         return "{}/station/1/query".format(self.url)
 
 
-# vim: ts=4 et tw=79
+# vim: ts=4 et tw=88

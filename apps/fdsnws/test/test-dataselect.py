@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 # Copyright (C) 2013-2014 by gempa GmbH
@@ -6,8 +6,6 @@
 # Author:  Stephan Herrnkind
 # Email:   herrnkind@gempa.de
 ###############################################################################
-
-from __future__ import absolute_import, division, print_function
 
 import sys
 
@@ -34,7 +32,8 @@ class TestDataSelect(FDSNWSTest):
         tests = [
             ("?channel=EHZ", False),
             (
-                "?net=AM&sta=R187C&loc=00&cha=EHZ&starttime=2019-08-02T18:00:30&endtime=2019-08-02T18:00:40",
+                "?net=AM&sta=R187C&loc=00&cha=EHZ&starttime=2019-08-02T18:00:30&"
+                "endtime=2019-08-02T18:00:40",
                 False,
             ),
             ("auth?network=AM&station=R0F05&starttime=2019-08-02T12:00:00", True),
@@ -58,4 +57,4 @@ if __name__ == "__main__":
     sys.exit(app())
 
 
-# vim: ts=4 et tw=79
+# vim: ts=4 et tw=88

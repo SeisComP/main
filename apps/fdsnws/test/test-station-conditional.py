@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-
-from __future__ import absolute_import, division, print_function
+#!/usr/bin/env python3
 
 import sys
 import time
@@ -13,21 +11,20 @@ from station import TestStationBase
 ###############################################################################
 class TestStationConditionalRequests(TestStationBase):
     def command(self):
-        cmd = super(TestStationConditionalRequests, self).command()
-        cmd.append("--handleConditionalRequests=true")
-        return cmd
+        return super().command() + ["--handleConditionalRequests=true"]
 
     def test(self):
         def validateDateString(dateString):
             try:
                 _ = stringToDatetime(dateString)
-            except ValueError:
-                raise ValueError("Invalid date string: {!r}".format(dateString))
+            except ValueError as e:
+                raise ValueError("Invalid date string: {!r}".format(dateString)) from e
             return True
 
         def createQueryString(
             respFormat, level, net=None, sta=None, loc=None, cha=None
         ):
+            # pylint: disable=R0913
             d = {"level": level, "format": respFormat}
             if net:
                 d["network"] = net
@@ -55,6 +52,7 @@ class TestStationConditionalRequests(TestStationBase):
             respHeaders=None,
             **kwargs
         ):
+            # pylint: disable=R0913
             return [
                 (
                     qs,
@@ -231,4 +229,4 @@ if __name__ == "__main__":
     sys.exit(app())
 
 
-# vim: ts=4 et tw=79
+# vim: ts=4 et tw=88

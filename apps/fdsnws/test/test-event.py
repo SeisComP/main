@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ###############################################################################
 # Copyright (C) 2013-2014 by gempa GmbH
@@ -6,8 +6,6 @@
 # Author:  Stephan Herrnkind
 # Email:   herrnkind@gempa.de
 ###############################################################################
-
-from __future__ import absolute_import, division, print_function
 
 import sys
 
@@ -33,14 +31,18 @@ class TestEvent(FDSNWSTest):
             ("?format=text&eventtype=earthquake,unknown", ctTXT, False),
             ("?format=sc3ml&eventid=rs2019qsodmc&formatted=true", ctXML, True),
             (
-                "?format=sc3ml&includeallorigins=true&includeallmagnitudes=true&includearrivals=true&includefocalmechanism=true&includestationmts=true&includecomments=true&eventid=rs2019qsodmc&formatted=true",
+                "?format=sc3ml&includeallorigins=true&includeallmagnitudes=true"
+                "&includearrivals=true&includefocalmechanism=true&"
+                "includestationmts=true&includecomments=true&eventid=rs2019qsodmc&"
+                "formatted=true",
                 ctXML,
                 False,
             ),
             ("", ctXML, False),
             ("?format=qml-rt", ctXML, False),
             ("?format=csv", ctTXT, False),
-            # Mw is found in derived origin of preferred focal mechanism which is not the preferred origin
+            # Mw is found in derived origin of preferred focal mechanism which is not
+            # the preferred origin
             ("?format=text&magnitudetype=Mw", ctTXT, False),
         ]
         for q, ct, concurrent in tests:
@@ -61,4 +63,4 @@ if __name__ == "__main__":
     sys.exit(app())
 
 
-# vim: ts=4 et tw=79
+# vim: ts=4 et tw=88
