@@ -45,6 +45,8 @@
 #include <seiscomp/math/filter.h>
 #include <seiscomp/math/conversions.h>
 
+#include <cmath>
+
 #include "types.h"
 #include "infowidget.h"
 
@@ -141,7 +143,7 @@ void addEventWidgetRowData(EventTableWidget::RowData& rowData,
 	QString longitudeValue = QString("%1").arg((longitude <= 0) ? longitude * (-1.0) : longitude);
 	QString longitudeOrientation = QString("%1").arg((longitude <= 0) ? "W" : "E");
 
-	QString depth = QString("%1 km").arg(static_cast<int> (Math::round(origin->depth())));
+	QString depth = QString("%1 km").arg(static_cast<int>(round(origin->depth())));
 
 	rowData[EventTableWidget::EVENT_ID]     = eventId;
 	rowData[EventTableWidget::ORIGIN_TIME]  = originTime;

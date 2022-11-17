@@ -15,6 +15,7 @@
 #include "stationdatahandler.h"
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 
 #define SEISCOMP_COMPONENT mapview
@@ -288,7 +289,7 @@ int TriggerHandler::calculateFrameSizeFromAmplitude(double amplitude) const {
 	else if ( frameSize < STATION_MINIMUM_FRAME_SIZE )
 		frameSize = STATION_MINIMUM_FRAME_SIZE;
 
-	return static_cast<int>(Math::round(frameSize));
+	return static_cast<int>(round(frameSize));
 }
 
 
