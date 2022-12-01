@@ -678,6 +678,7 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 			catch ( ... ) {}
 
 			_channelGroups.push_back(group);
+			_channelGroupLookup[groupProfile] = _channelGroups.size() - 1;
 		}
 	}
 	catch ( ... ) {}
@@ -1252,7 +1253,9 @@ void MainWindow::setupItem(const Record*, Gui::RecordViewItem* item) {
 				}
 			}
 
-			if ( !insideRegion ) continue;
+			if ( !insideRegion ) {
+				continue;
+			}
 		}
 
 		item->setValue(DATA_GROUP, -int(_channelGroups.size()-s));
@@ -1555,37 +1558,50 @@ void MainWindow::openAcquisition() {
 		catch ( ... ) {}
 
 		try {
-			std::vector<std::string> vstreams = SCApp->configGetStrings("streams.codes");
-			if ( vstreams.empty() ) usePreconfigured = true;
-			else if ( vstreams[0] == "default" ) usePreconfigured = true;
-
-			QStringList streams;
-			for ( size_t i = 0; i < vstreams.size(); ++i ) {
-				if ( vstreams[i] == "default" ) continue;
-				streams << vstreams[i].c_str();
+			auto vstreams = SCApp->configGetStrings("streams.codes");
+			if ( vstreams.empty() ) {
+				usePreconfigured = true;
+			}
+			else if ( vstreams[0] == "default" ) {
+				usePreconfigured = true;
 			}
 
 			int index = 0;
-			foreach ( const QString& stream, streams ) {
-				QStringList tokens = stream.split(".");
-
-				if ( tokens.count() >= 1 ) {
-					if ( tokens.count() > 4 ) {
-						cerr << "error in entry '" << stream.toStdString() << "': too many tokens, missing ',' ? -> ignoring" << endl;
-						continue;
-					}
-					else {
-						requestMap.append(
-							WIDWithIndex(
-								WaveformStreamID(tokens[0].toStdString(),
-								                 tokens.count()>1?tokens[1].toStdString():"*",
-								                 tokens.count()>2?tokens[2].toStdString():"*",
-								                 tokens.count()>3?tokens[3].toStdString():"*",""),
-								index++
-							)
-						);
-					}
+			for ( auto &stream : vstreams ) {
+				if ( stream == "default" ) {
+					continue;
 				}
+
+				auto it = _channelGroupLookup.find(stream);
+				if ( it != _channelGroupLookup.end() ) {
+					auto &group = _channelGroups[it->second];
+					for ( auto &member : group.members ) {
+						requestMap.append(WIDWithIndex(member, index++));
+					}
+					continue;
+				}
+
+				vector<string> tokens;
+				Core::split(tokens, stream, ".", false);
+
+				if ( tokens.empty() ) {
+					continue;
+				}
+
+				if ( tokens.size() > 4 ) {
+					cerr << "error in entry '" << stream << "': too many tokens, missing ',' ? -> ignoring" << endl;
+					continue;
+				}
+
+				requestMap.append(
+					WIDWithIndex(
+						WaveformStreamID(tokens[0],
+						                 tokens.size() > 1 ? tokens[1] : "*",
+						                 tokens.size() > 2 ? tokens[2] : "*",
+						                 tokens.size() > 3 ? tokens[3] : "*", ""),
+						index++
+					)
+				);
 			}
 		}
 		catch ( ... ) {
@@ -1912,23 +1928,36 @@ void MainWindow::openAcquisition() {
 			_recordStreamThread->stop(true);
 
 		try {
-			std::vector<std::string> vstreams = SCApp->configGetStrings("streams.codes");
+			auto vstreams = SCApp->configGetStrings("streams.codes");
 
-			QStringList streams;
-			for ( size_t i = 0; i < vstreams.size(); ++i )
-				streams << vstreams[i].c_str();
+			for ( auto &stream : vstreams ) {
+				auto it = _channelGroupLookup.find(stream);
+				if ( it != _channelGroupLookup.end() ) {
+					auto &group = _channelGroups[it->second];
+					for ( auto &member : group.members ) {
+						_recordStreamThread->addStream(member.networkCode(),
+						                               member.stationCode(),
+						                               member.locationCode(),
+						                               member.channelCode());
+					}
+					continue;
+				}
 
-			foreach ( const QString& stream, streams ) {
-				QStringList tokens = stream.split(".");
+				vector<string> tokens;
+				Core::split(tokens, stream, ".", false);
 
-				if ( tokens.count() >= 1 ) {
-					if ( tokens.count() > 4 )
-						cout << "error in entry '" << stream.toStdString() << "': too many tokens, missing ',' ? -> ignoring" << endl;
-					else
-						_recordStreamThread->addStream(tokens[0].toStdString(),
-						                               tokens.count()>1?tokens[1].toStdString():"*",
-						                               tokens.count()>2?tokens[2].toStdString():"*",
-						                               tokens.count()>3?tokens[3].toStdString():"*");
+				if ( tokens.empty() ) {
+					continue;
+				}
+
+				if ( tokens.size() > 4 ) {
+					cout << "error in entry '" << stream << "': too many tokens, missing ',' ? -> ignoring" << endl;
+				}
+				else {
+					_recordStreamThread->addStream(tokens[0],
+					                               tokens.size() > 1 ? tokens[1] : "*",
+					                               tokens.size() > 2 ? tokens[2] : "*",
+					                               tokens.size() > 3 ? tokens[3] : "*");
 				}
 			}
 		}

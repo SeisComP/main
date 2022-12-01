@@ -35,6 +35,7 @@
 #include <QtGui>
 #include <QTabBar>
 
+#include <map>
 #include <set>
 
 
@@ -352,14 +353,17 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 			Gui::Gradient gradient;
 		};
 
-		typedef std::set<WaveformStreamEntry, ltWaveformStreamID> WaveformStreamSet;
+		using WaveformStreamSet = std::set<WaveformStreamEntry, ltWaveformStreamID>;
 		WaveformStreamSet _waveformStreams;
 
-		typedef std::vector<DecorationDesc> DecorationDescs;
+		using DecorationDescs = std::vector<DecorationDesc>;
 		DecorationDescs _decorationDescs;
 
-		typedef std::vector<ChannelGroup> ChannelGroups;
+		using ChannelGroups = std::vector<ChannelGroup>;
 		ChannelGroups _channelGroups;
+
+		using ChannelGroupLookup = std::map<std::string, size_t>;
+		ChannelGroupLookup _channelGroupLookup;
 
 	friend class TraceDecorator;
 };
