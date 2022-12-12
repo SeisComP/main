@@ -78,7 +78,7 @@ synchronization.
 
    scinv merge net1.xml net2.xml -o inv.xml
 
-.. note ::
+.. note::
 
    Merging inventory XML files is also supported by :ref:`scxmlmerge` but
    without the full :ref:`consistency checks <scinv_check>`.
@@ -177,8 +177,16 @@ is enough.
 
 .. hint::
 
-   Stream lists may be generated when combining with :option:`--nslc`. Such lists can be
-   used as input, e.g., to :ref:`scmssort` or :ref:`scart`.
+   Stream lists in NSLC format (NET.STA.LOC.CHA) may be generated when combining
+   with :option:`--nslc`. Such lists can be used as input fir filtering
+   waveforms, e.g., to :ref:`scmssort` or :ref:`scart`.
+
+   .. code-block:: sh
+
+      $ scinv ls --nslc inventory.xml
+
+        IU.WVT.00.BHZ 2017-11-16
+        IU.XMAS.00.BH1 2018-07-06 20:00:00
 
 
 .. _scinv_check:
@@ -207,7 +215,7 @@ When inconsistencies or other relevant information are found, alerts are printed
 - **R**: Unresolvable, user should check if an action is required,
 - **?**: Question.
 
-.. note ::
+.. note::
 
    * Default test tolerances are adopted from typical values for global
      networks. Consider adjusting :confval:`check.maxDistance`,
