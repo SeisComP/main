@@ -81,32 +81,8 @@
 					Output file.
 					</description>
 				</option>
-				<option long-flag="level" argument="int">
-					<description>
-					Information level reported by ls. One of "net", "sta",
-					"cha" or "resp". Default is "cha".
-					</description>
-				</option>
-				<option long-flag="compact">
-					<description>
-					Enable compact output for ls: each object one line.
-					</description>
-				</option>
-				<option long-flag="nslc">
-					<description>
-					Enable NSLC output as NET.STA.LOC.CHA for ls: each object
-					one line. Useful up to level cha for listing all streams of
-					an inventory.
-					</description>
-				</option>
 			</group>
-			<group name="Merge">
-				<option long-flag="strip">
-					<description>
-					Remove unreferenced objects (data loggers, sensors, ...).
-					</description>
-				</option>
-			</group>
+
 			<group name="Check">
 				<option long-flag="distance" unit="km" default="10">
 					<description>
@@ -128,6 +104,35 @@
 					</description>
 				</option>
 			</group>
+
+			<group name="List">
+				<option long-flag="compact">
+					<description>
+					Enable compact output for ls: each object one line.
+					</description>
+				</option>
+				<option long-flag="level" argument="int">
+					<description>
+					Information level reported by ls. One of "net", "sta",
+					"cha" or "resp". Default is "cha".
+					</description>
+				</option>
+				<option long-flag="nslc">
+					<description>
+					Enable NSLC output for ls as  NET.STA.LOC.CHA. The option
+					implies level = cha.
+					</description>
+				</option>
+			</group>
+
+			<group name="Merge">
+				<option long-flag="strip">
+					<description>
+					Remove unreferenced objects (data loggers, sensors, ...).
+					</description>
+				</option>
+			</group>
+
 			<group name="Sync">
 				<option long-flag="create-notifier">
 					<description>
@@ -165,6 +170,7 @@
 				</option>
 			</group>
 		</command-line>
+
 		<configuration>
 			<parameter name="syncKeys" type="boolean" default="true">
 				<description>
