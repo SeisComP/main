@@ -563,7 +563,9 @@ class InventoryManager : public Client::Application,
 
 
 		void printUsage() const {
-			cout << "Usage: " << name() << " [COMMAND] [FILES] [OPTIONS]" << endl;
+			cout << "Usage: " << endl << "  " << name() << " [COMMAND] [FILES] [OPTIONS]"
+			     << endl;
+			cout << endl << "Read, check, merge, synchronize inventories, create key files, list content" << endl;
 			cout << endl << "Commands:" << endl;
 			cout << "  sync  Synchronises an applications inventory with a given source" << endl
 			     << "        given as file(s). The applications inventory is either read from the" << endl
@@ -586,6 +588,19 @@ class InventoryManager : public Client::Application,
 			cout << "        all files in filebase are merged and checked." << endl;
 
 			Client::Application::printUsage();
+
+			cout << "Examples:" << endl;
+			cout << "Check inventory in XML file with custom distance control" << endl;
+			cout << "  scinv check --distance 0.1 inventory.xml" << endl;
+			cout << endl << "Create key files from inventory files in SeisComP inventory directory" << endl;
+			cout << "  scinv keys" << endl;
+			cout << endl << "Create key files and synchronize inventory with the seiscomp database" << endl;
+			cout << "  scinv keys" << endl;
+			cout << endl << "Merge inventory in multiple XML files into one file" << endl;
+			cout << "  scinv merge inventory1.xml inventory2.xml -o inventory.xml" << endl;
+			cout << endl << "List the content of inventory in one XML file at channel level" << endl;
+			cout << "  scinv ls --level cha inventory.xml" << endl;
+			cout << endl;
 		}
 
 

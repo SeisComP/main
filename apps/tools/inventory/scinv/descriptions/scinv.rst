@@ -9,6 +9,13 @@ scinv is used by :file:`etc/init/scinv.py` to synchronise the inventory from
 
    seiscomp update-config inventory
 
+.. hint::
+
+   Inventory files in :term:`SCML` format may be generated or modified by
+   :cite:t:`smp` or :ref:`invextr`. For conversion from FDSN station XML and
+   dataless SEED volume to :term:`SCML` use :ref:`fdsnxml2inv` and
+   :ref:`dlsv2inv`, respectively.
+
 
 Commands
 ========

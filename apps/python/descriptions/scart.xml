@@ -128,6 +128,12 @@
 					SDS archive.
 					</description>
 				</option>
+				<option long-flag="print-streams">
+					<description>
+					Print stream information only and exit. Works in import, dump
+					and check mode. Output: NET.STA.LOC.CHA StartTime EndTime.
+					</description>
+				</option>
 				<option long-flag="test">
 					<description>
 					Test only, no record output. This switch is useful
