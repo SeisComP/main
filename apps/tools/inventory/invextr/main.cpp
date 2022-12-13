@@ -202,26 +202,26 @@ class InventoryExtractor : public Client::Application {
 
 						if ( loc->streamCount() == 0 ) {
 							sta->removeSensorLocation(l);
+							continue;
 						}
-						else {
-							++l;
-						}
+
+						++l;
 					}
 
 					if ( sta->sensorLocationCount() == 0 ) {
 						net->removeStation(s);
+						continue;
 					}
-					else {
-						++s;
-					}
+
+					++s;
 				}
 
 				if ( net->stationCount() == 0 ) {
 					inv->removeNetwork(n);
+					continue;
 				}
-				else {
-					++n;
-				}
+
+				++n;
 			}
 
 			set<string> usedResponses;

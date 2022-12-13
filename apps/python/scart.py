@@ -54,8 +54,9 @@ class Archive:
                     files = os.listdir(netdir)
                 except BaseException:
                     sys.stderr.write(
-                        "info: skipping year %i - not found in archive %s\n" %
-                        (year, netdir))
+                        "info: skipping year %i - not found in archive %s\n"
+                        % (year, netdir)
+                    )
                     continue
 
                 its = []
@@ -75,8 +76,9 @@ class Archive:
                     files = os.listdir(stadir)
                 except BaseException:
                     sys.stderr.write(
-                        "info: skipping network '%s' - not found in archive %s\n" %
-                        (net, stadir))
+                        "info: skipping network '%s' - not found in archive %s\n"
+                        % (net, stadir)
+                    )
                     continue
 
                 its = []
@@ -92,24 +94,24 @@ class Archive:
             # Check if cha contains a regular expression or not
             mr = re.match("[A-Z|a-z|0-9]*", cha)
             if (mr and mr.group() != cha) or cha == "*":
-                cha = cha.replace('?', '.')
-                stadir = self.archiveDirectory + \
-                    str(year) + "/" + net + "/" + sta + "/"
+                cha = cha.replace("?", ".")
+                stadir = self.archiveDirectory + str(year) + "/" + net + "/" + sta + "/"
                 try:
                     files = os.listdir(stadir)
                 except BaseException:
                     sys.stderr.write(
                         "info: skipping station %s - no data files "
-                        "found in archive %s\n" %
-                        (sta, stadir))
+                        "found in archive %s\n" % (sta, stadir)
+                    )
                     return []
 
                 its = []
                 for file in files:
                     if not os.path.isdir(stadir + file):
                         sys.stderr.write(
-                            "info: skipping data file '%s' - not found in archive %s\n" %
-                            (file, stadir))
+                            "info: skipping data file '%s' - not found in archive %s\n"
+                            % (file, stadir)
+                        )
                         continue
 
                     part = file[:3]
@@ -125,8 +127,17 @@ class Archive:
                 return its
 
             if loc == "*":
-                dir = self.archiveDirectory + \
-                    str(year) + "/" + net + "/" + sta + "/" + cha + ".D/"
+                dir = (
+                    self.archiveDirectory
+                    + str(year)
+                    + "/"
+                    + net
+                    + "/"
+                    + sta
+                    + "/"
+                    + cha
+                    + ".D/"
+                )
                 its = []
 
                 start_day = t[7]
@@ -147,20 +158,22 @@ class Archive:
                     t = time.gmtime(begin.seconds() - 86400)
                     sys.stderr.write(
                         "info: skipping streams '%s.%s.*.%s on %s '"
-                        "- no data found for this day in archive %s\n" %
-                        (net, sta, cha, time.strftime(
-                            "%Y-%m-%d", t), dir))
+                        "- no data found for this day in archive %s\n"
+                        % (net, sta, cha, time.strftime("%Y-%m-%d", t), dir)
+                    )
 
                 for file in files:
-                    file = file.split('/')[-1]
+                    file = file.split("/")[-1]
                     if not os.path.isfile(dir + file):
                         sys.stderr.write(
-                            "info: skipping data file '%s' - not found in archive %s\n" %
-                            (file, dir))
+                            "info: skipping data file '%s' - not found in archive %s\n"
+                            % (file, dir)
+                        )
                         continue
 
                     tmp_its = self.iterators(
-                        begin, end, net, sta, file.split('.')[2], cha)
+                        begin, end, net, sta, file.split(".")[2], cha
+                    )
                     for it in tmp_its:
                         its.append(it)
 
@@ -175,8 +188,9 @@ class Archive:
     def location(self, rt, net, sta, loc, cha):
         t = time.gmtime(rt.seconds())
         dir = str(t[0]) + "/" + net + "/" + sta + "/" + cha + ".D/"
-        file = net + "." + sta + "." + loc + "." + \
-            cha + ".D." + str(t[0]) + ".%03d" % t[7]
+        file = (
+            net + "." + sta + "." + loc + "." + cha + ".D." + str(t[0]) + ".%03d" % t[7]
+        )
         return dir, file
 
     def findIndex(self, begin, end, file):
@@ -224,12 +238,13 @@ class Archive:
             # Remove old handles
             if len(self.filePool) < self.filePoolSize:
                 # self.filePool.pop(self.fileList[-1])
-                #print "Remove %s from filepool" % self.fileList[-1]
-                #del self.fileList[-1]
+                # print "Remove %s from filepool" % self.fileList[-1]
+                # del self.fileList[-1]
                 self.filePool[file] = rs
 
         ri = seiscomp.io.RecordInput(
-            rs, seiscomp.core.Array.INT, seiscomp.core.Record.SAVE_RAW)
+            rs, seiscomp.core.Array.INT, seiscomp.core.Record.SAVE_RAW
+        )
         # Read only valid records
         while True:
             rec = next(ri)
@@ -274,7 +289,7 @@ class StreamIterator:
 
         workdir, file = ar.location(begin, net, sta, loc, cha)
         self.file = workdir + file
-        #print "Starting at file %s" % self.file
+        # print "Starting at file %s" % self.file
 
         self.record, self.index = ar.findIndex(begin, end, self.file)
         if self.record:
@@ -287,8 +302,7 @@ class StreamIterator:
 
     def __next__(self):
         while True:
-            self.record, self.index = self.archive.readRecord(
-                self.file, self.index)
+            self.record, self.index = self.archive.readRecord(self.file, self.index)
             if self.record:
                 self.current = self.record.startTime()
                 self.currentEnd = self.record.endTime()
@@ -305,7 +319,8 @@ class StreamIterator:
 
                 # Use the new file and start from the beginning
                 workdir, file = self.archive.location(
-                    self.current, self.net, self.sta, self.loc, self.cha)
+                    self.current, self.net, self.sta, self.loc, self.cha
+                )
                 self.file = workdir + file
                 self.index = 0
 
@@ -392,7 +407,6 @@ class Sorter:
 ####################################################################
 
 
-
 def checkFile(fileName):
     """
     Check the miniSEED records in a file, report unsorted records.
@@ -429,14 +443,85 @@ def checkFile(fileName):
         if lastEnd and rec.endTime() <= lastEnd:
             overlap = float(lastEnd - rec.endTime())
 
-            if overlap >= 1/sF:
-                errorMsg = "new record ends at or before end of last record: %s < %s" \
+            if overlap >= 1 / sF:
+                errorMsg = (
+                    "new record ends at or before end of last record: %s < %s"
                     % (rec.startTime(), lastEnd)
+                )
                 return errorMsg
 
         lastEnd = rec.endTime()
 
     return False
+
+
+def checkFilePrint(fileName, streamDict):
+    """
+    Check the miniSEED records in a file, report NSLC along with parameters
+
+    Parameters
+    ----------
+    fileName : miniSEED
+        Waveform file to check.
+
+    Returns
+    -------
+    false
+        If no error is found in file
+    error string
+        If file or records are corrupted
+
+    """
+    rs = seiscomp.io.FileRecordStream()
+    rs.setRecordType("mseed")
+
+    if not rs.setSource(fileName):
+        return "cannot read file"
+
+    ri = seiscomp.io.RecordInput(rs)
+    for rec in ri:
+        if rec is None:
+            continue
+
+        stream = f"{rec.networkCode()}.{rec.stationCode()}.{rec.locationCode()}.{rec.channelCode()}"
+        recStart = rec.startTime()
+        recEnd = rec.endTime()
+
+        if stream in streamDict:
+            streamStart = streamDict[stream][0]
+            streamEnd = streamDict[stream][1]
+            streamNRec = streamDict[stream][2]
+            streamNSamp = streamDict[stream][3]
+            if recStart.valid() and recStart.iso() < streamStart:
+                # update start time
+                streamDict.update(
+                    {
+                        stream: (
+                            recStart.iso(),
+                            streamEnd,
+                            streamNRec + 1,
+                            streamNSamp + rec.data().size(),
+                        )
+                    }
+                )
+            if recEnd.valid() and recEnd.iso() > streamEnd:
+                # update end time
+                streamDict.update(
+                    {
+                        stream: (
+                            streamStart,
+                            recEnd.iso(),
+                            streamNRec + 1,
+                            streamNSamp + rec.data().size(),
+                        )
+                    }
+                )
+        else:
+            # add stream for the first time
+            streamDict[stream] = (recStart.iso(), recEnd.iso(), 1, rec.data().size())
+
+    return True
+
 
 def str2time(timestring):
     """
@@ -451,8 +536,10 @@ def str2time(timestring):
     try:
         assert 3 <= len(timestring) <= 6
     except AssertionError:
-        print("error: Provide a valid time format, e.g.: 'YYYY-MM-DD hh:mm:ss'",
-              file=sys.stderr)
+        print(
+            "error: Provide a valid time format, e.g.: 'YYYY-MM-DD hh:mm:ss'",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     timestring.extend((6 - len(timestring)) * ["0"])
@@ -485,7 +572,7 @@ def create_dir(dir):
 
 
 def isFile(url):
-    toks = url.split('://')
+    toks = url.split("://")
     return len(toks) < 2 or toks[0] == "file"
 
 
@@ -512,38 +599,40 @@ def readStreamList(listFile):
             f = sys.stdin
             listFile = "stdin"
         else:
-            f = open(listFile, 'r')
+            f = open(listFile, "r")
     except Exception:
         print("error: unable to open '{}'".format(listFile), file=sys.stderr)
-        return([])
+        return []
 
     lineNumber = -1
     for line in f:
         lineNumber = lineNumber + 1
         line = line.strip()
         # ignore comments
-        if len(line) > 0 and line[0] == '#':
+        if len(line) > 0 and line[0] == "#":
             continue
 
         if len(line) == 0:
             continue
 
-        toks = line.split('.')
+        toks = line.split(".")
         if len(toks) != 4:
             f.close()
-            print("error: %s in line %d has invalid line format, expecting "
-                  "NET.STA.LOC.CHA - 1 line per stream" %
-                  (listFile, lineNumber), file=sys.stderr)
-            return([])
+            print(
+                "error: %s in line %d has invalid line format, expecting "
+                "NET.STA.LOC.CHA - 1 line per stream" % (listFile, lineNumber),
+                file=sys.stderr,
+            )
+            return []
 
         streams.append((toks[0], toks[1], toks[2], toks[3]))
 
     f.close()
 
     if len(streams) == 0:
-        return([])
+        return []
 
-    return(streams)
+    return streams
 
 
 def readStreamTimeList(listFile):
@@ -569,10 +658,9 @@ def readStreamTimeList(listFile):
             f = sys.stdin
             listFile = "stdin"
         else:
-            f = open(listFile, 'r')
+            f = open(listFile, "r")
     except BaseException:
-        sys.stderr.write("error: unable to open '{}'".format(listFile),
-                         file=sys.stderr)
+        sys.stderr.write("error: unable to open '{}'".format(listFile), file=sys.stderr)
         return []
 
     lineNumber = -1
@@ -580,52 +668,53 @@ def readStreamTimeList(listFile):
         lineNumber = lineNumber + 1
         line = line.strip()
         # ignore comments
-        if not line or line[0] == '#':
+        if not line or line[0] == "#":
             continue
 
-        toks = line.split(';')
+        toks = line.split(";")
         if len(toks) != 3:
             f.close()
             sys.stderr.write(
                 "%s:%d: error: invalid line format, expected 3 "
-                "items separated by ';'\n" %
-                (listFile, lineNumber))
+                "items separated by ';'\n" % (listFile, lineNumber)
+            )
             return []
 
         try:
-            tmin = str2time(toks[0].strip())
+            tMin = str2time(toks[0].strip())
         except BaseException:
             f.close()
             sys.stderr.write(
-                "%s:%d: error: invalid time format (tmin)\n" %
-                (listFile, lineNumber))
+                "%s:%d: error: invalid time format (tmin)\n" % (listFile, lineNumber)
+            )
             return []
 
         try:
-            tmax = str2time(toks[1].strip())
+            tMax = str2time(toks[1].strip())
         except BaseException:
             f.close()
             sys.stderr.write(
-                "%s:%d: error: invalid time format (tmax)\n" %
-                (listFile, lineNumber))
+                "%s:%d: error: invalid time format (tMax)\n" % (listFile, lineNumber)
+            )
             return []
 
         streamID = toks[2].strip()
-        toks = streamID.split('.')
+        toks = streamID.split(".")
         if len(toks) != 4:
             f.close()
-            sys.stderr.write("%s:%d: error: invalid stream format\n" %
-                             (listFile, lineNumber))
+            sys.stderr.write(
+                "%s:%d: error: invalid stream format\n" % (listFile, lineNumber)
+            )
             return []
 
-        streams.append((tmin, tmax, toks[0], toks[1], toks[2], toks[3]))
+        streams.append((tMin, tMax, toks[0], toks[1], toks[2], toks[3]))
 
     f.close()
 
     return streams
 
 
-usage_info = '''
+usage_info = """
 Usage:
   scart [options] [archive]
 
@@ -668,6 +757,8 @@ Output:
                     difference between the records.
   --stdout          Writes to stdout if import mode is used instead
                     of creating a SDS archive.
+  --print-streams   Print stream information only and exit. Works in import, dump and
+                    check mode. Output: NET.STA.LOC.CHA StartTime EndTime.
   -t t1~t2          Specify time window (as one properly quoted string)
                     times are of course UTC and separated by a tilde '~' .
   --test            Test only, no record output.
@@ -687,7 +778,8 @@ Import miniSEED data into a SDS archive, check all modified files for errors
 
 Check an archive for files with out-of order records
   scart --check /archive
-'''
+"""
+
 
 def usage(exitcode=0):
     sys.stderr.write(usage_info)
@@ -696,13 +788,28 @@ def usage(exitcode=0):
 
 try:
     opts, files = gnu_getopt(
-        sys.argv[1:], "I:dsmEn:c:t:l:hv",
-        ["stdout", "with-filename", "with-filecheck", "dump", "list=",
-         "nslc=", "sort", "modify", "speed=", "files=", "verbose", "test",
-         "help", "check"])
+        sys.argv[1:],
+        "I:dsmEn:c:t:l:hv",
+        [
+            "stdout",
+            "with-filename",
+            "with-filecheck",
+            "dump",
+            "list=",
+            "nslc=",
+            "sort",
+            "modify",
+            "speed=",
+            "files=",
+            "verbose",
+            "test",
+            "help",
+            "check",
+            "print-streams",
+        ],
+    )
 except GetoptError:
     usage(exitcode=1)
-
 
 
 tmin = None
@@ -714,6 +821,7 @@ modifyTime = False
 dump = False
 listFile = None
 nslcFile = None
+printStreams = False
 withFilename = False  # Whether to output accessed files for import or not
 checkFiles = False  # Check if output files are sorted by time
 checkSDS = False  # check the SDS archive for errors in files
@@ -737,8 +845,10 @@ for flag, arg in opts:
             tmin, tmax = list(map(str2time, arg.split("~")))
         except ValueError as e:
             print("error: {}".format(e), file=sys.stderr)
-            print("       Provide correct time interval: -t 'startTime~endtime'",
-                  file=sys.stderr)
+            print(
+                "       Provide correct time interval: -t 'startTime~endtime'",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
     elif flag == "-E":
@@ -761,6 +871,8 @@ for flag, arg in opts:
         listFile = arg
     elif flag in ["--nslc"]:
         nslcFile = arg
+    elif flag in ["--print-streams"]:
+        printStreams = True
     elif flag in ["-s", "--sort"]:
         sort = True
     elif flag in ["-m", "--modify"]:
@@ -790,14 +902,15 @@ else:
         pass
 
 try:
-    if archiveDirectory[-1] != '/':
-        archiveDirectory = archiveDirectory + '/'
+    if archiveDirectory[-1] != "/":
+        archiveDirectory = archiveDirectory + "/"
 except BaseException:
     pass
 
 if not stdout and not os.path.isdir(archiveDirectory):
-    sys.stderr.write("info: archive directory '%s' not found - stopping\n" %
-                     archiveDirectory)
+    sys.stderr.write(
+        "info: archive directory '%s' not found - stopping\n" % archiveDirectory
+    )
     sys.exit(-1)
 
 archive = Archive(archiveDirectory)
@@ -807,8 +920,23 @@ if verbose:
     seiscomp.logging.enableConsoleLogging(seiscomp.logging.getAll())
 
     if dump and not listFile:
-        sys.stderr.write("Time window: %s~%s\n" %
-                         (time2str(tmin), time2str(tmax)))
+        if not tmin or not tmax:
+            print(
+                "info: provide a time window with '-t' or '-l' when using "
+                "'-d' - stopping",
+                file=sys.stderr,
+            )
+            sys.exit(-1)
+        if tmin >= tmax:
+            print(
+                "info: start time '{}' after end time '{}' - stopping".format(
+                    time2str(tmin), time2str(tmax)
+                ),
+                file=sys.stderr,
+            )
+            sys.exit(-1)
+
+        sys.stderr.write("Time window: %s~%s\n" % (time2str(tmin), time2str(tmax)))
 
     sys.stderr.write("Archive: %s\n" % archiveDirectory)
     if dump:
@@ -845,45 +973,46 @@ if stdout:
 if listFile:
     nslcFile = None
 
+streamDict = {}
 if dump:
-    if not listFile:
-        if not tmin or not tmax:
-            print("info: provide a time window with '-t' or '-l' when using "
-                  "'-d' - stopping", file=sys.stderr)
-            sys.exit(-1)
-        if tmin >= tmax:
-            print("info: start time '{}' after end time '{}' - stopping"
-                  .format(time2str(tmin), time2str(tmax)), file=sys.stderr)
-            sys.exit(-1)
-
     if listFile:
         print("Stream file: '{}'".format(listFile), file=sys.stderr)
         streams = readStreamTimeList(listFile)
         for stream in streams:
             if stream[0] >= stream[1]:
-                print("info: ignoring {}.{}.{}.{} - start {} after end {}"
-                      .format(stream[2], stream[3], stream[4], stream[5],
-                              stream[0], stream[1]), file=sys.stderr)
+                print(
+                    "info: ignoring {}.{}.{}.{} - start {} after end {}".format(
+                        stream[2], stream[3], stream[4], stream[5], stream[0], stream[1]
+                    ),
+                    file=sys.stderr,
+                )
                 continue
 
             if verbose:
-                print("Adding stream to list: {}.{}.{}.{} {} - {}"
-                      .format(stream[2], stream[3], stream[4], stream[5],
-                              stream[0], stream[1]), file=sys.stderr)
+                print(
+                    "Adding stream to list: {}.{}.{}.{} {} - {}".format(
+                        stream[2], stream[3], stream[4], stream[5], stream[0], stream[1]
+                    ),
+                    file=sys.stderr,
+                )
             archiveIterator.append(
-                stream[0], stream[1], stream[2],
-                stream[3], stream[4], stream[5])
+                stream[0], stream[1], stream[2], stream[3], stream[4], stream[5]
+            )
 
     elif nslcFile:
         print("Stream file: '{}'".format(nslcFile), file=sys.stderr)
         streams = readStreamList(nslcFile)
         for stream in streams:
             if verbose:
-                print("Adding stream to list: {}.{}.{}.{} {} - {}"
-                      .format(stream[0], stream[1], stream[2], stream[3], tmin, tmax),
-                      file=sys.stderr)
+                print(
+                    "Adding stream to list: {}.{}.{}.{} {} - {}".format(
+                        stream[0], stream[1], stream[2], stream[3], tmin, tmax
+                    ),
+                    file=sys.stderr,
+                )
             archiveIterator.append(
-                tmin, tmax, stream[0], stream[1], stream[2], stream[3])
+                tmin, tmax, stream[0], stream[1], stream[2], stream[3]
+            )
 
     else:
         if networks == "*":
@@ -931,11 +1060,60 @@ if dump:
 
         if verbose:
             etime = rec.endTime()
-            print("{} time current: {} start: {} end: {}"
-                  .format(rec.streamID(), seiscomp.core.Time.LocalTime().iso(),
-                          rec.startTime().iso(), etime.iso()), file=sys.stderr)
+            print(
+                "{} time current: {} start: {} end: {}".format(
+                    rec.streamID(),
+                    seiscomp.core.Time.LocalTime().iso(),
+                    rec.startTime().iso(),
+                    etime.iso(),
+                ),
+                file=sys.stderr,
+            )
 
-        if not test:
+        if printStreams:
+            stream = f"{rec.networkCode()}.{rec.stationCode()}.{rec.locationCode()}.{rec.channelCode()}"
+            recStart = rec.startTime()
+            recEnd = rec.endTime()
+
+            if stream in streamDict:
+                streamStart = streamDict[stream][0]
+                streamEnd = streamDict[stream][1]
+                streamNRec = streamDict[stream][2]
+                streamNSamp = streamDict[stream][3]
+                if recStart.valid() and recStart.iso() < streamStart:
+                    # update start time
+                    streamDict.update(
+                        {
+                            stream: (
+                                recStart.iso(),
+                                streamEnd,
+                                streamNRec + 1,
+                                streamNSamp + rec.data().size(),
+                            )
+                        }
+                    )
+                if recEnd.valid() and recEnd.iso() > streamEnd:
+                    # update end time
+                    streamDict.update(
+                        {
+                            stream: (
+                                streamStart,
+                                recEnd.iso(),
+                                streamNRec + 1,
+                                streamNSamp + rec.data().size(),
+                            )
+                        }
+                    )
+            else:
+                # add stream for the first time
+                streamDict[stream] = (
+                    recStart.iso(),
+                    recEnd.iso(),
+                    1,
+                    rec.data().size(),
+                )
+
+        if not test and not printStreams:
             out.write(rec.raw().str())
 
         foundRecords += 1
@@ -953,14 +1131,23 @@ elif checkSDS:
         for name in files:
             fileName = os.path.join(path, name)
             checkedFiles += 1
+
+            if printStreams:
+                # only collect stream IDs
+                checkFilePrint(fileName, streamDict)
+                continue
+
             issueFound = checkFile(fileName)
             if issueFound:
                 foundIssues += 1
                 print("{} has an issue".format(fileName), file=sys.stderr)
                 print("  + " + issueFound, file=sys.stderr)
 
-    print("Found issues in {}/{} files".format(foundIssues, checkedFiles),
-          file=sys.stderr)
+    if not printStreams:
+        print(
+            "Found issues in {}/{} files".format(foundIssues, checkedFiles),
+            file=sys.stderr,
+        )
 
 else:
     env = seiscomp.system.Environment.Instance()
@@ -982,68 +1169,131 @@ else:
 
     if not rs.setRecordType("mseed"):
         sys.stderr.write(
-            "Format 'mseed' is not supported by recordstream '%s'\n" %
-            recordURL)
+            "Format 'mseed' is not supported by recordstream '%s'\n" % recordURL
+        )
         sys.exit(-1)
 
     if not isFile(recordURL):
         if not listFile:
             sys.stderr.write(
-                "A stream list is needed to fetch data from another source than a file\n")
+                "A stream list is needed to fetch data from another source than a file\n"
+            )
             sys.exit(-1)
 
         streams = readStreamTimeList(listFile)
         for stream in streams:
             # Add stream to recordstream
             if not rs.addStream(
-                    stream[2],
-                    stream[3],
-                    stream[4],
-                    stream[5],
-                    stream[0],
-                    stream[1]):
+                stream[2], stream[3], stream[4], stream[5], stream[0], stream[1]
+            ):
                 if verbose:
                     sys.stderr.write(
-                        "error: adding stream: %s %s %s.%s.%s.%s\n" %
-                        (stream[0], stream[1], stream[2], stream[3], stream[4], stream[5]))
+                        "error: adding stream: %s %s %s.%s.%s.%s\n"
+                        % (
+                            stream[0],
+                            stream[1],
+                            stream[2],
+                            stream[3],
+                            stream[4],
+                            stream[5],
+                        )
+                    )
             else:
                 if verbose:
                     sys.stderr.write(
-                        "adding stream: %s %s %s.%s.%s.%s\n" %
-                        (stream[0], stream[1], stream[2], stream[3], stream[4], stream[5]))
+                        "adding stream: %s %s %s.%s.%s.%s\n"
+                        % (
+                            stream[0],
+                            stream[1],
+                            stream[2],
+                            stream[3],
+                            stream[4],
+                            stream[5],
+                        )
+                    )
 
     input = seiscomp.io.RecordInput(
-        rs, seiscomp.core.Array.INT, seiscomp.core.Record.SAVE_RAW)
+        rs, seiscomp.core.Array.INT, seiscomp.core.Record.SAVE_RAW
+    )
     filePool = dict()
     f = None
     accessedFiles = set()
     try:
         for rec in input:
+            if printStreams:
+                stream = f"{rec.networkCode()}.{rec.stationCode()}.{rec.locationCode()}.{rec.channelCode()}"
+                recStart = rec.startTime()
+                recEnd = rec.endTime()
+
+                if stream in streamDict:
+                    streamStart = streamDict[stream][0]
+                    streamEnd = streamDict[stream][1]
+                    streamNRec = streamDict[stream][2]
+                    streamNSamp = streamDict[stream][3]
+                    if recStart.valid() and recStart.iso() < streamStart:
+                        # update start time
+                        streamDict.update(
+                            {
+                                stream: (
+                                    recStart.iso(),
+                                    streamEnd,
+                                    streamNRec + 1,
+                                    streamNSamp + rec.data().size(),
+                                )
+                            }
+                        )
+                    if recEnd.valid() and recEnd.iso() > streamEnd:
+                        # update end time
+                        streamDict.update(
+                            {
+                                stream: (
+                                    streamStart,
+                                    recEnd.iso(),
+                                    streamNRec + 1,
+                                    streamNSamp + rec.data().size(),
+                                )
+                            }
+                        )
+                else:
+                    # add stream for the first time
+                    streamDict[stream] = (
+                        recStart.iso(),
+                        recEnd.iso(),
+                        1,
+                        rec.data().size(),
+                    )
+
+                continue
+
             if stdout:
                 out.write(rec.raw().str())
                 continue
 
-            dir, file = archive.location(rec.startTime(), rec.networkCode(
-            ), rec.stationCode(), rec.locationCode(), rec.channelCode())
+            dir, file = archive.location(
+                rec.startTime(),
+                rec.networkCode(),
+                rec.stationCode(),
+                rec.locationCode(),
+                rec.channelCode(),
+            )
             file = dir + file
 
             if not test:
                 try:
                     f = filePool[file]
                 except BaseException:
-                    outdir = '/'.join((archiveDirectory +
-                                       file).split('/')[:-1])
+                    outdir = "/".join((archiveDirectory + file).split("/")[:-1])
                     if not create_dir(outdir):
-                        sys.stderr.write(
-                            "Could not create directory '%s'\n" % outdir)
+                        sys.stderr.write("Could not create directory '%s'\n" % outdir)
                         sys.exit(-1)
 
                     try:
-                        f = open(archiveDirectory + file, 'ab')
+                        f = open(archiveDirectory + file, "ab")
                     except BaseException:
                         sys.stderr.write(
-                            "File '%s' could not be opened for writing\n" %
-                            (archiveDirectory + file))
+                            "File '%s' could not be opened for writing\n"
+                            % (archiveDirectory + file)
+                        )
                         sys.exit(-1)
 
                     # Remove old handles
@@ -1058,8 +1308,9 @@ else:
                     accessedFiles.add(archiveDirectory + file)
 
             if verbose:
-                sys.stderr.write("%s %s %s\n" %
-                                 (rec.streamID(), rec.startTime().iso(), file))
+                sys.stderr.write(
+                    "%s %s %s\n" % (rec.streamID(), rec.startTime().iso(), file)
+                )
     except Exception as e:
         sys.stderr.write("Exception: %s\n" % str(e))
 
@@ -1075,11 +1326,21 @@ else:
                 print("{} has an issue".format(fileName), file=sys.stderr)
                 print("  + " + issueFound, file=sys.stderr)
 
-        print("Found issues in {}/{} files".format(foundIssues, checkedFiles),
-              file=sys.stderr)
+        print(
+            "Found issues in {}/{} files".format(foundIssues, checkedFiles),
+            file=sys.stderr,
+        )
 
     if withFilename:
         if verbose:
             print("List of accessed files:", file=sys.stderr)
         for fileName in accessedFiles:
             print(fileName, file=sys.stdout)
+
+if len(streamDict) > 0:
+    print("# streamID start end records samples", file=sys.stdout)
+    for key, (start, end, nRecs, nSamples) in sorted(streamDict.items()):
+        print(
+            f"{key: <{18}} {start: <{27}} {end: <{27}} {nRecs} {nSamples}",
+            file=sys.stdout,
+        )
