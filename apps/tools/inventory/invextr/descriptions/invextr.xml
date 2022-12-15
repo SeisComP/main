@@ -40,10 +40,17 @@
 			<group name="Extract">
 				<option flag="" long-flag="chans" argument="arg">
 					<description>
-						A comma separated list of channel ids to extract
-						which can contain wildcards.
+						A comma separated list of channel IDs to extract
+						which can contain wildcards. Default: *.*.*.* meaning
+						all streams.
 
 						Example: invextr --chans &quot;GE.*.*.BHZ,GE.MORC.*.*&quot; inv.xml
+					</description>
+				</option>
+				<option flag="r" long-flag="region" argument="arg">
+					<description>
+					Filter streams by geographic region given as
+					"South, East, North, West". Region is unused by default.
 					</description>
 				</option>
 				<option flag="" long-flag="rm" argument="arg">
