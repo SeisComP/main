@@ -594,7 +594,7 @@ class InventoryManager : public Client::Application,
 			cout << "  scinv check --distance 0.1 inventory.xml" << endl;
 			cout << endl << "Create key files from inventory files in SeisComP inventory directory" << endl;
 			cout << "  scinv keys" << endl;
-			cout << endl << "Create key files and synchronize inventory with the seiscomp database" << endl;
+			cout << endl << "Create key files and synchronize inventory with the SeisComP database" << endl;
 			cout << "  scinv keys" << endl;
 			cout << endl << "Merge inventory in multiple XML files into one file" << endl;
 			cout << "  scinv merge inventory1.xml inventory2.xml -o inventory.xml" << endl;

@@ -55,14 +55,13 @@ class InventoryExtractor : public Client::Application {
 			commandline().addGroup("Extract");
 			commandline().addOption("Extract", "chans",
 			                        "A comma separated list of channel id's to "
-			                        "extract which can contain wildcards.",
+			                        "extract which can contain wildcards. "
+			                        "Default: *.*.*.* meaning all streams.",
 			                        &_chanIDs);
 			commandline().addOption("Extract", "region,r",
-			                        "Filter streams by geografic region given as "
-			                        "\"East,South,West,North\"\n"
-			                        "latitudes [degree]: -90 - +90\n"
-			                        "longitudes [degree]: -180 - +180 or +0 - +360\n"
-			                        "Default: \"-90,-180,90,180\"", &_region);
+			                        "Filter streams by geographic region given as "
+			                        "\"South,East,North,West\". Region is "
+			                        "unused by default.", &_region);
 			commandline().addOption("Extract", "rm",
 			                        "Remove the given channels instead of "
 			                        "extracting them.");
@@ -91,7 +90,7 @@ class InventoryExtractor : public Client::Application {
 			     << "  " << name() << " -f -chans GR.*.*.* inventory_all.xml > inventory_GR.xml"
 			     << endl << endl;
 			cout << "Extract inventory for all stations within the given region" << endl
-			     << "  " << name() << " -f -chans *.*.*.* -r -10,0,50,15 inventory_all.xml > inventory_GR.xml"
+			     << "  " << name() << " -f -r -10,0,50,15 inventory_all.xml > inventory_GR.xml"
 			     << endl << endl;
 			cout << "Remove inventory for entire GR network" << endl
 			     << "  " << name() << " -f --rm -chans GR.*.*.* inventory_all.xml > inventory_others.xml"
@@ -123,12 +122,12 @@ class InventoryExtractor : public Client::Application {
 			vector<string> opts = commandline().unrecognizedOptions();
 			string input("-"), output("-");
 
-			if ( opts.size() > 0 ) {
-				input = opts[0];
-			}
-			else {
+			if ( opts.empty() ) {
 				cerr << "Reading inventory from stdin. Use Ctrl + C to interrupt."
 				     << endl;
+			}
+			else {
+				input = opts[0];
 			}
 
 			if ( opts.size() > 1 ) {
@@ -169,11 +168,10 @@ class InventoryExtractor : public Client::Application {
 						// check coordinate of sensor location
 						if ( !_bBox.isEmpty() ) {
 							Geo::GeoCoordinate coord(loc->latitude(), loc->longitude());
-							if ( !_remove && !_bBox.contains(coord) ) {
-								sta->removeSensorLocation(l);
-								continue;
-							}
-							else if ( _remove && _bBox.contains(coord) ) {
+							// ignore if
+							// _remove IS active AND location IS within OR
+							// _remove IS NOT active AND location is NOT within
+							if ( _remove == _bBox.contains(coord) ) {
 								sta->removeSensorLocation(l);
 								continue;
 							}
@@ -331,9 +329,8 @@ class InventoryExtractor : public Client::Application {
 			return true;
 		}
 
-
 	private:
-		string              _chanIDs;
+		string              _chanIDs{"*.*.*.*"};
 		bool                _remove{false};
 		string              _region;
 		Geo::GeoBoundingBox _bBox;
