@@ -501,6 +501,7 @@ def checkFilePrint(fileName, streamDict):
                             streamEnd,
                             streamNRec + 1,
                             streamNSamp + rec.data().size(),
+                            rec.samplingFrequency()
                         )
                     }
                 )
@@ -513,12 +514,19 @@ def checkFilePrint(fileName, streamDict):
                             recEnd.iso(),
                             streamNRec + 1,
                             streamNSamp + rec.data().size(),
+                            rec.samplingFrequency()
                         )
                     }
                 )
         else:
             # add stream for the first time
-            streamDict[stream] = (recStart.iso(), recEnd.iso(), 1, rec.data().size())
+            streamDict[stream] = (
+                recStart.iso(),
+                recEnd.iso(),
+                1,
+                rec.data().size(),
+                rec.samplingFrequency()
+            )
 
     return True
 
@@ -1089,6 +1097,7 @@ if dump:
                                 streamEnd,
                                 streamNRec + 1,
                                 streamNSamp + rec.data().size(),
+                                rec.samplingFrequency()
                             )
                         }
                     )
@@ -1101,6 +1110,7 @@ if dump:
                                 recEnd.iso(),
                                 streamNRec + 1,
                                 streamNSamp + rec.data().size(),
+                                rec.samplingFrequency()
                             )
                         }
                     )
@@ -1111,6 +1121,7 @@ if dump:
                     recEnd.iso(),
                     1,
                     rec.data().size(),
+                    rec.samplingFrequency()
                 )
 
         if not test and not printStreams:
@@ -1239,6 +1250,7 @@ else:
                                     streamEnd,
                                     streamNRec + 1,
                                     streamNSamp + rec.data().size(),
+                                    rec.samplingFrequency()
                                 )
                             }
                         )
@@ -1251,6 +1263,7 @@ else:
                                     recEnd.iso(),
                                     streamNRec + 1,
                                     streamNSamp + rec.data().size(),
+                                    rec.samplingFrequency()
                                 )
                             }
                         )
@@ -1261,6 +1274,7 @@ else:
                         recEnd.iso(),
                         1,
                         rec.data().size(),
+                        rec.samplingFrequency()
                     )
 
                 continue
@@ -1338,9 +1352,12 @@ else:
             print(fileName, file=sys.stdout)
 
 if len(streamDict) > 0:
-    print("# streamID start end records samples", file=sys.stdout)
-    for key, (start, end, nRecs, nSamples) in sorted(streamDict.items()):
+    print(
+        "# streamID       start                       end                         records samples samplingRate",
+        file=sys.stdout,
+    )
+    for key, (start, end, nRecs, nSamples, sps) in sorted(streamDict.items()):
         print(
-            f"{key: <{18}} {start: <{27}} {end: <{27}} {nRecs} {nSamples}",
+            f"{key: <{16}} {start: <{27}} {end: <{27}} {nRecs} {nSamples} {sps}",
             file=sys.stdout,
         )
