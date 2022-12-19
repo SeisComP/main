@@ -84,11 +84,20 @@ Examples
 
       scart --check [archive]
 
-#. Print stream information from recordstream, e.g., files or miniSEED files in
-   archives without actually writing data:
+#. Print stream information from miniSEED files in archives or from
+   :term:`RecordStream` without actually writing miniSEED data:
 
    .. code-block:: sh
 
       scart -I [miniSEED file] --print-streams
       scart -d -t [time span] [SDS archive] --print-streams
       scart --check [archive] --print-streams
+
+   The output looks like this:
+
+   .. code-block:: sh
+
+      # streamID       start                       end                         records samples samplingRate
+      GE.RGN..BHZ      2022-12-08T15:34:41.895Z    2022-12-08T15:52:19.145Z    58 21145 20.0
+
+   where the header and the text body are printed to stdout.
