@@ -459,9 +459,9 @@ class InventoryManager : public Client::Application,
 			                        "Output file.",
 			                        &_output);
 			commandline().addOption("Manager", "no-purge-keys",
-			                        "Do not delete key files if a station does not exist in inventory");
+			                        "Do not delete key files if a station does not exist in inventory.");
 			commandline().addOption("Manager", "purge-keys",
-			                        "(default) Delete key files if a station does not exist in inventory");
+			                        "(default) Delete key files if a station does not exist in inventory.");
 
 			commandline().addGroup("Check");
 			commandline().addOption("Check", "distance",
@@ -471,8 +471,8 @@ class InventoryManager : public Client::Application,
 			                        &_maxDistance);
 			commandline().addOption("Check", "max-elevation-difference",
 			                        "Maximum allowed difference in elevation "
-			                        "between station and sensorlocation in m. "
-			                        "Larger diferences will be reported.",
+			                        "between station and sensor location in meters. "
+			                        "Larger differences will be reported.",
 			                        &_maxElevationDifference);
 			commandline().addOption("Check", "max-sensor-depth",
 			                        "Maximum allowed depth of channel (sensor)."
@@ -497,7 +497,7 @@ class InventoryManager : public Client::Application,
 
 			commandline().addGroup("Sync");
 			commandline().addOption("Sync", "create-notifier",
-			                        "If an output file is given then all "
+			                        "If an output file is given, then all "
 			                        "notifiers will be saved and not the "
 			                        "result set itself.");
 			commandline().addOption("Sync", "no-keys",
@@ -1593,6 +1593,7 @@ class InventoryManager : public Client::Application,
 			bool compact = commandline().hasOption("compact");
 			bool nslc = commandline().hasOption("nslc");
 			if ( nslc ) {
+
 			    // for nslc full channel information are required but no respones
 				_level = "cha";
 			}
@@ -1618,8 +1619,9 @@ class InventoryManager : public Client::Application,
 				DataModel::Network *net = nets[n];
 
 				if ( !nslc ) {
-					if ( compact )
+					if ( compact ) {
 						cout << net->code() << "\t" << epochToStr(net) << endl;
+					}
 					else {
 						cout << "  network " << net->code();
 						if ( !net->description().empty() ) {
@@ -1643,8 +1645,9 @@ class InventoryManager : public Client::Application,
 				for ( size_t s = 0; s < stas.size(); ++s ) {
 					DataModel::Station *sta = stas[s];
 					if ( !nslc ) {
-						if ( compact )
+						if ( compact ) {
 							cout << " " << sta->code() << "\t" << epochToStr(sta) << endl;
+						}
 						else {
 							cout << "    station " << sta->code();
 							if ( !sta->description().empty() ) {
@@ -1659,8 +1662,9 @@ class InventoryManager : public Client::Application,
 					std::vector<DataModel::SensorLocation*> locs;
 
 					if ( level > 1 ) {
-						for ( size_t l = 0; l < sta->sensorLocationCount(); ++l )
+						for ( size_t l = 0; l < sta->sensorLocationCount(); ++l ) {
 							locs.push_back(sta->sensorLocation(l));
+						}
 					}
 
 					sort(locs.begin(), locs.end(), lessID<DataModel::SensorLocation>);
@@ -1670,18 +1674,22 @@ class InventoryManager : public Client::Application,
 						if ( !nslc ) {
 							if ( compact ) {
 								cout << "  ";
-								if ( loc->code().empty() )
+								if ( loc->code().empty() ) {
 									cout << "__";
-								else
+								}
+								else {
 									cout << loc->code();
+								}
 								cout << "\t" << epochToStr(loc) << endl;
 							}
 							else {
 								cout << "      location ";
-								if ( loc->code().empty() )
+								if ( loc->code().empty() ) {
 									cout << "__";
-								else
+								}
+								else {
 									cout << loc->code();
+								}
 								cout << endl;
 
 								cout << "        epoch " << epochToStr(loc) << endl;
@@ -1702,8 +1710,9 @@ class InventoryManager : public Client::Application,
 								     << loc->code() << "." << str->code()
 								     << "\t" << epochToStr(str) << endl;
 							}
-							else if ( compact )
+							else if ( compact ) {
 								cout << "   " << str->code() << "\t" << epochToStr(str) << endl;
+							}
 							else if ( nslc ) {
 								cout << net->code() << "." << sta->code() << "."
 								     << loc->code() << "." << str->code() << " "

@@ -1,4 +1,4 @@
-invextr reads and modfies inventory XML provided as file or from stdin:
+invextr reads and modifies inventory XML provided as file or on stdin:
 
 * Extract or remove networks, stations and channels based on
 
@@ -6,7 +6,7 @@ invextr reads and modfies inventory XML provided as file or from stdin:
   * geographic region
 
 * Clean inventories from unused objects such as data loggers, sensors or
-  instrument respones.
+  instrument responses.
 
 The important parameters are:
 
@@ -53,19 +53,14 @@ Suppose an inventory with network GE, a station MORC and several channels:
 
      invextr --chans "GE*" inv.xml
 
-
-* The IDs are matched against streams passed with --chans and a region.
-
-  .. code-block:: sh
-
-     invextr --chans "GE*" -r -90,-180,90,180 inv.xml
-
   All streams are passed and nothing is filtered because GE* matches all
-  available IDs and region is the entire Earth.
+  available IDs and region filter is not used. Since :file:`inv.xml` only
+  contains stations from the GE network the option :option:`--chans` is not
+  useful here at all.
 
   .. code-block:: sh
 
-     invextr --chans "GE*" -r 0,-180,90,180 inv.xml
+     invextr -r 0,-180,90,180 inv.xml
 
    All streams located in the northern hemisphere are passed as commanded by the
    region bounding box.
