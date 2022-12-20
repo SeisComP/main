@@ -46,7 +46,6 @@ class InventoryExtractor : public Client::Application {
 			setMessagingEnabled(false);
 			setDatabaseEnabled(false, false);
 			setLoggingToStdErr(true);
-
 		}
 
 
@@ -83,7 +82,7 @@ class InventoryExtractor : public Client::Application {
 			     << endl << endl
 			     << "Extract or remove streams from inventory." << endl;
 
-			Client::Application::printUsage() ;
+			Client::Application::printUsage();
 
 			cout << "Examples:" << endl;
 			cout << "Extract inventory for entire GR network" << endl

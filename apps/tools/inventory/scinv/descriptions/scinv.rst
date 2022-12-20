@@ -185,7 +185,7 @@ is enough.
 .. hint::
 
    Stream lists in NSLC format (NET.STA.LOC.CHA) may be generated when combining
-   with :option:`--nslc`. Such lists can be used as input fir filtering
+   with :option:`--nslc`. Such lists can be used as input for filtering
    waveforms, e.g., to :ref:`scmssort` or :ref:`scart`.
 
    .. code-block:: sh

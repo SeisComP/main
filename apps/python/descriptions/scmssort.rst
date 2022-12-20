@@ -42,14 +42,14 @@ Examples
 
       cat *.mseed | scmssort -vuE -t '2020-03-28 15:48~2020-03-28 16:18' > sorted.mseed
 
-#. Remove streams listed by stream code and sort records by end time
+#. Remove streams listed by stream code and sort records by end time. Stream
+   lists can be generated, e.g., by :ref:`scinv`.
 
    .. code-block:: sh
 
       scmssort -vuE --rm -l stream-list.txt test.mseed > sorted.mseed
 
-#. Extract streams by time and stream code and sort records by end time. Stream
-   lists can be generated, e.g., by :ref:`scinv`.
+#. Extract streams by time and stream code and sort records by end time.
 
    .. code-block:: sh
 

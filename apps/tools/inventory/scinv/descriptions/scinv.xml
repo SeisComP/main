@@ -73,12 +73,24 @@
 				</option>
 				<option long-flag="key-dir" argument="dir">
 					<description>
-					If given this directory is used to synchronise key files.
+					If given, this directory is used to synchronise key files.
 					</description>
 				</option>
 				<option flag="o" long-flag="output" argument="file">
 					<description>
 					Output file.
+					</description>
+				</option>
+				<option long-flag="purge-keys">
+					<description>
+					(default) Delete key files if a station does not exist in
+					inventory.
+					</description>
+				</option>
+				<option long-flag="no-purge-keys">
+					<description>
+					Do not delete key files if a station does not exist in
+					inventory.
 					</description>
 				</option>
 			</group>
@@ -136,7 +148,7 @@
 			<group name="Sync">
 				<option long-flag="create-notifier">
 					<description>
-					If an output file is given then all notifiers will be saved
+					If an output file is given, then all notifiers will be saved
 					and not the result set itself.
 					</description>
 				</option>
@@ -148,18 +160,6 @@
 				<option long-flag="no-rc">
 					<description>
 					Do not synchronise rc files.
-					</description>
-				</option>
-				<option long-flag="purge-keys">
-					<description>
-					(default) Delete key files if a station does not exist in
-					inventory.
-					</description>
-				</option>
-				<option long-flag="no-purge-keys">
-					<description>
-					Do not delete key files if a station does not exist in
-					inventory.
 					</description>
 				</option>
 				<option long-flag="test">
