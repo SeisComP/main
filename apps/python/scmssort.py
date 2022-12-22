@@ -17,14 +17,14 @@ from __future__ import absolute_import, division, print_function
 
 import sys
 import os
-import optparse
-import fnmatch
+import re
+import argparse
 import seiscomp.core
 import seiscomp.io
 
 
-class MyOptionParser(optparse.OptionParser):
-    def format_epilog(self, formatter):
+class MyArgumentParser(argparse.ArgumentParser):
+    def format_epilog(self):
         return self.epilog
 
 
@@ -41,13 +41,13 @@ def str2time(timestring):
     assert 3 <= len(timestring) <= 6
     timestring.extend((6 - len(timestring)) * ["0"])
     timestring = " ".join(timestring)
-    format = "%Y %m %d %H %M %S"
+    timeFormat = "%Y %m %d %H %M %S"
     if timestring.find(".") != -1:
-        format += ".%f"
+        timeFormat += ".%f"
 
-    t = seiscomp.core.Time()
-    t.fromString(timestring, format)
-    return t
+    time = seiscomp.core.Time()
+    time.fromString(timestring, timeFormat)
+    return time
 
 
 def time2str(time):
@@ -84,18 +84,18 @@ def recordInput(filename=None, datatype=seiscomp.core.Array.INT):
         print("  + failed to assign source file to RecordStream", file=sys.stderr)
         sys.exit()
 
-    input = seiscomp.io.RecordInput(stream, datatype, seiscomp.core.Record.SAVE_RAW)
+    records = seiscomp.io.RecordInput(stream, datatype, seiscomp.core.Record.SAVE_RAW)
 
     while True:
         try:
-            rec = next(input)
-        except:
+            record = next(records)
+        except Exception:
             print("Received invalid or no input", file=sys.stderr)
             sys.exit()
 
-        if not rec:
+        if not record:
             return
-        yield rec
+        yield record
 
 
 tmin = str2time("1970-01-01 00:00:00")
@@ -109,34 +109,41 @@ description = (
     "and waveform archiving."
 )
 
-epilog = """
-Examples:
-Read data from multiple files, extract streams by time, sort records by start
-time, remove duplicate records
-  cat f1.mseed f2.mseed f3.mseed |\\
-  scmssort -v -t '2007-03-28 15:48~2007-03-28 16:18' -u > sorted.mseed
-
-Extract streams by time, stream code and sort records by end time
-  echo CX.PB01..BH? |\\
-  scmssort -v -E -t '2007-03-28 15:48~2007-03-28 16:18' -u -l - test.mseed > sorted.mseed
-"""
-
-p = MyOptionParser(
-    usage="\n  %prog [options] [files | < ] > ", description=description, epilog=epilog
+epilog = (
+    "Examples:\n"
+    "Read data from multiple files, extract streams by time, sort records by start "
+    "time, remove duplicate records\n"
+    "  cat f1.mseed f2.mseed f3.mseed |\\\n"
+    "  scmssort -v -t '2007-03-28 15:48~2007-03-28 16:18' -u > sorted.mseed\n"
+    "\n"
+    "Extract streams by time, stream code and sort records by end time\n"
+    "  echo CX.PB01..BH? |\\ \n"
+    "  scmssort -v -E -t '2007-03-28 15:48~2007-03-28 16:18' -u -l - test.mseed > "
+    "sorted.mseed"
 )
-p.add_option(
+
+
+# p = MyArgumentParser(
+#     usage="\n  %prog [options] [files | < ] > ", description=description, epilog=epilog
+# )
+p = MyArgumentParser(
+    description=description,
+    epilog=epilog,
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+)
+p.add_argument(
     "-E",
     "--sort-by-end-time",
     action="store_true",
     help="Sort according to record end time; default is start time.",
 )
-p.add_option(
+p.add_argument(
     "-r",
     "--rm",
     action="store_true",
     help="Remove all traces in stream list given by --list instead of keeping them.",
 )
-p.add_option(
+p.add_argument(
     "-l",
     "--list",
     action="store",
@@ -145,22 +152,28 @@ p.add_option(
     "Line format: NET.STA.LOC.CHA - wildcards and regular expressions "
     "are considered. Example: CX.*..BH?.",
 )
-p.add_option(
+p.add_argument(
     "-t",
     "--time-window",
     action="store",
     help="Specify time window (as one -properly quoted- string). Times "
     "are of course UTC and separated by a tilde '~'.",
 )
-p.add_option(
+p.add_argument(
     "-u",
     "--uniqueness",
     action="store_true",
     help="Ensure uniqueness of output, i.e. skip duplicate records.",
 )
-p.add_option("-v", "--verbose", action="store_true", help="Run in verbose mode.")
+p.add_argument("-v", "--verbose", action="store_true", help="Run in verbose mode.")
 
-(opt, filenames) = p.parse_args()
+p.add_argument(
+    "filenames",
+    nargs="+",
+    help="Names of input files in miniSEED format.",
+)
+opt = p.parse_args()
+filenames = opt.filenames
 
 if opt.time_window:
     tmin, tmax = list(map(str2time, opt.time_window.split("~")))
@@ -182,26 +195,26 @@ if opt.list:
         print("Removing listed streams", file=sys.stderr)
 
 
-def _time(rec):
+def _time(record):
     if opt.sort_by_end_time:
-        return seiscomp.core.Time(rec.endTime())
-    return seiscomp.core.Time(rec.startTime())
+        return seiscomp.core.Time(record.endTime())
+    return seiscomp.core.Time(record.startTime())
 
 
-def _in_time_window(rec, tmin, tmax):
-    return rec.endTime() >= tmin and rec.startTime() <= tmax
+def _in_time_window(record, tMin, tMax):
+    return record.endTime() >= tMin and record.startTime() <= tMax
 
 
 def readStreamList(file):
-    streams = []
+    streamList = []
 
     try:
         if file == "-":
             f = sys.stdin
             file = "stdin"
         else:
-            f = open(listFile, "r")
-    except:
+            f = open(listFile, "r", encoding="utf-8")
+    except FileNotFoundError:
         print("%s: error: unable to open" % listFile, file=sys.stderr)
         return []
 
@@ -221,27 +234,27 @@ def readStreamList(file):
             f.close()
             print(
                 "error: %s in line %d has invalid line format, expected "
-                "stream list: NET.STA.LOC.CHA - 1 line per stream"
-                % (listFile, lineNumber),
+                "stream list: NET.STA.LOC.CHA - 1 line per stream including "
+                "regular expressions" % (listFile, lineNumber),
                 file=sys.stderr,
             )
             return []
 
-        streams.append(line)
+        streamList.append(line)
 
     f.close()
 
-    if len(streams) == 0:
+    if len(streamList) == 0:
         return []
 
-    return streams
+    return streamList
 
 
 if not filenames:
     filenames = ["-"]
 
+streams = None
 if listFile:
-    streams = []
     streams = readStreamList(listFile)
     if not streams and not removeStreams:
         print(" + cannot extract data", file=sys.stderr)
@@ -253,6 +266,8 @@ if listFile:
         for stream in streams:
             string += stream + " "
         print("%s" % (string), file=sys.stderr)
+
+    pattern = re.compile("|".join(streams))
 
 readRecords = 0
 networks = set()
@@ -266,13 +281,14 @@ outStart = None
 if filenames:
     first = None
     time_raw = []
-    for filename in filenames:
+    for fileName in filenames:
         if opt.verbose:
-            print("Reading file '%s'" % filename, file=sys.stderr)
+            print("Reading file '%s'" % fileName, file=sys.stderr)
 
-        for rec in recordInput(filename):
+        for rec in recordInput(fileName):
             if not rec:
                 continue
+
             if not _in_time_window(rec, tmin, tmax):
                 continue
 
@@ -283,12 +299,12 @@ if filenames:
                 rec.locationCode(),
                 rec.channelCode(),
             )
+
             if listFile:
                 foundStream = False
-                for stream in streams:
-                    if fnmatch.fnmatch(streamCode, stream):
-                        foundStream = True
-                        break
+
+                if pattern.match(streamCode):
+                    foundStream = True
 
                 if removeStreams:
                     foundStream = not foundStream
@@ -369,12 +385,16 @@ if filenames:
                 file=sys.stderr,
             )
         else:
-            print(
-                "  + found {} duplicate records - remove with: scmssort -u".format(
-                    duplicates
-                ),
-                file=sys.stderr,
-            )
+            if duplicates > 0:
+                print(
+                    "  + found {} duplicate records - remove with: scmssort -u".format(
+                        duplicates
+                    ),
+                    file=sys.stderr,
+                )
+            else:
+                print("  + found 0 duplicate records", file=sys.stderr)
+
         print("Output:", file=sys.stderr)
         if outStart and outEnd:
             print(
