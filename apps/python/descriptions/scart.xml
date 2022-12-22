@@ -67,7 +67,7 @@
 				</option>
 				<option long-flag="files" argument="count">
 					<description>
-					Specify the number of file handles to cache. Default: 100.
+					Dump mode: specify the number of file handles to cache. Default: 100.
 					</description>
 				</option>
 				<option flag="l" long-flag="list" argument="file">
@@ -99,7 +99,7 @@
 				</option>
 				<option flag="m" long-flag="modify">
 					<description>
-					Modify the record time for real time playback when in export mode.
+					Dump mode: modify the record time for real time playback.
 					The first record time is NOW. The relative time of successive records
 					to the first one are kept.
 					</description>
@@ -115,21 +115,21 @@
 				</option>
 				<option flag="s" long-flag="sort">
 					<description>
-					Sort records by [start-]time. To sort records by their endtime use -E.
+					Dump mode: sort records by [start-]time. To sort records by their
+					endtime use -E.
 					</description>
 				</option>
 				<option long-flag="speed">
 					<description>
-					Specify the speed to dump the records. A value of 0 means no delay
-					otherwise speed is a multiplier of the real time difference between
-					the records. When feeding the records directly into the replay pipe
-					a value of 1 (real time) is recommended.
+					Dump mode: specify the speed to dump the records. A value of 0 means
+					no delay otherwise speed is a multiplier of the real time difference
+					between the records. When feeding the records directly into the replay
+					pipe a value of 1 (real time) is recommended.
 					</description>
 				</option>
 				<option long-flag="stdout">
 					<description>
-					Write to stdout if import mode is used instead of creating a
-					SDS archive.
+					Import mode: write to stdout instead of creating a SDS archive.
 					</description>
 				</option>
 				<option long-flag="print-streams">
@@ -155,13 +155,13 @@
 				</option>
 				<option flag="" long-flag="with-filecheck">
 					<description>
-					Check all accessed files after import. Unsorted or
-					unreadable files are reported to stderr.
+					Import mode: check all accessed files. Unsorted or unreadable
+					files are reported to stderr.
 					</description>
 				</option>
 				<option flag="" long-flag="with-filename">
 					<description>
-					Print all accessed files to stdout after import.
+					Import mode: print all accessed files to stdout after import.
 					</description>
 				</option>
 			</group>
