@@ -749,14 +749,15 @@ Output:
                     Default for Dump: "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
                     Default for Import: "*"
   -E                Sort according to record end time; default is start time
-  --files arg       Specify the file handles to cache; default: 100
+  --files arg       Dump mode: specify the file handles to cache; default: 100
   -l, --list arg    Use a stream list file instead of defined networks and
                     channels (-n and -c are ignored). The list can be generated
                     from events by scevtstreams. One line per stream
                     Line format: starttime;endtime;streamID
                         2007-03-28 15:48;2007-03-28 16:18;GE.LAST.*.*
                         2007-03-28 15:48;2007-03-28 16:18;GE.PMBI..BH?
-  -m, --modify      Modify the record time for realtime playback when dumping.
+  -m, --modify      Dump mode: modify the record time for realtime playback when
+                    dumping.
   -n arg            Stream list (comma separated) stream1,stream2,streamX
                     where each stream can be NET or NET.STA or NET.STA.LOC
                     or NET.STA.LOC.CHA, if CHA is not provided it defaults
@@ -764,20 +765,19 @@ Output:
   --nslc arg        Use a stream list file for filtering the data by the given
                     streams. For dump mode only! One line per stream.
                     Format: NET.STA.LOC.CHA
-  -s, --sort        Sort records.
-  --speed arg       Specify the speed to dump the records. A value of 0 means
-                    no delay. Otherwise speed is a multiplier of the real time
-                    difference between the records.
-  --stdout          Writes to stdout if import mode is used instead
-                    of creating a SDS archive.
+  -s, --sort        Dump mode: sort records.
+  --speed arg       Dump mode: specify the speed to dump the records. A value
+                    of 0 means no delay. Otherwise speed is a multiplier of
+                    the real time difference between the records.
+  --stdout          Import mode: writes to stdout instead of creating a SDS archive.
   --print-streams   Print stream information only and exit. Works in import, dump and
                     check mode. Output: NET.STA.LOC.CHA StartTime EndTime.
   -t t1~t2          Specify time window (as one properly quoted string)
                     times are of course UTC and separated by a tilde '~' .
   --test            Test only, no record output.
-  --with-filecheck  Check all accessed files after import. Unsorted or
-                    unreadable files are reported to stderr.
-  --with-filename   Print all accessed files to stdout after import.
+  --with-filecheck  Import mode: check all accessed files after import. Unsorted
+                    or unreadable files are reported to stderr.
+  --with-filename   Import mode: print all accessed files to stdout after import.
 
 Examples:
 Read from /archive, create a miniSEED file where records are sorted by end time
