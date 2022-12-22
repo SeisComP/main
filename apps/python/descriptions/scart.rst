@@ -2,11 +2,14 @@ The archive tool scart reads and writes :term:`SDS` archives and files
 in miniSEED format and checks miniSEED archives or prints stream information.
 
 * **Dump mode:** Create miniSEED files (multiplexed), e.g. for playbacks, from
-  :term:`SDS` structured data (e.g. created by slarchive) or from data passed
-  from another record source such as :ref:`Arclink <rs-arclink>`.
+  :term:`SDS` structured data (e.g. created by slarchive).
 * **Dump mode:** Play back records directly out of an SDS structure.
 * **Import mode:** Import multiplexed miniSEED files into a local SDS waveform
   archive.
+* **Import mode:** Import data using the :ref:`global_recordstream` interface
+  into a local SDS waveform archive.
+* **Import mode:** Read data from any :ref:`global_recordstream` interface
+  and dump it to file.
 * **Check mode:** Check an archive of miniSEED files for out-of-order records in
   files.
 
@@ -47,14 +50,29 @@ For loading additional plugins, e.g. the *xyz* plugin create and configure :file
 Examples
 ========
 
+.. hint::
+
+   The usage of wildcards in place of network, station, location or channel code
+   is allowed in many options (-n,-c,-l,-nslc) and follows these rules:
+
+   * Import mode: the wildcards are passed to the :ref:`global_recordstream` interface,
+     that interprets them. Normally both "*" and "?" are supported by RecordStreams.
+   * Dump mode: the wildcards are interpreted by scart command that supports "*" for
+     network, station, location codes and "*", "?", "(", ")", "|" for channel code.
+
 #. Extract data from the default :term:`SDS` archive in :file:`$SEISCOMP_ROOT/var/lib/archive`
    or from a local :term:`SDS` archive [SDS archive] into a miniSEED file :file:`file.mseed`
    and sort by end time of the records:
 
    .. code-block:: sh
 
-      scart -dsvE -t '[start-time]~[end-time]' > file.mseed
       scart -dsvE -t '[start-time]~[end-time]' [SDS archive] > [file.mseed]
+      scart -dsvE -t '[start-time]~[end-time]' > file.mseed
+      scart -dsvE -t '[start-time]~[end-time]' -n 'NET1,NET2' > file.mseed
+      scart -dsvE -t '[start-time]~[end-time]' -n 'NET' -c '(E,H)H(1,2,3)' > file.mseed
+      scart -dsvE -t '[start-time]~[end-time]' -n 'N1.S1.L1.C1,N2.S2.L2.C2' > file.mseed
+      scart -dsvE -t '[start-time]~[end-time]' --nslc list.file > file.mseed
+      scart -dsvE -t --list list.file > file.mseed
 
    .. note::
 
@@ -69,17 +87,32 @@ Examples
       scart -I [file.mseed] [SDS archive]
       scart -I [file.mseed] --with-filecheck [SDS archive]
 
-#. Collect data from an FDSNWS server using the :ref:`global_recordstream`
-   interface and write to a miniSEED file. The data streams and the time spans are
-   defined in a list file using the option ``list``. The list can be generated e.g.
-   by :ref:`scevtstreams`.
+#. Collect data using the :ref:`global_recordstream` interface e.g. (FDSNWS server)
+   and write to a miniSEED file or import it into a local :term:`SDS` archive. The
+   data streams and the time spans can be defined in several ways. The list of option
+   ``list`` can be generated e.g. by :ref:`scevtstreams`.
 
    .. code-block:: sh
 
+      scart -I fdsnws://[server]:80 --list list.file [SDS archive]
       scart -I fdsnws://[server]:80 --list list.file --stdout > file.mseed
+      scart -I fdsnws://[server]:80 -t '[start-time]~[end-time]' --nslc list.file [SDS archive]
+      scart -I fdsnws://[server]:80 -t '[start-time]~[end-time]' -n 'NET1,NET2' [SDS archive]
+      scart -I fdsnws://[server]:80 -t '[start-time]~[end-time]' -n 'NET' -c 'EH?' [SDS archive]
+      scart -I fdsnws://[server]:80 -t '[start-time]~[end-time]' -n 'N1.S1.L1.C1,N2.S2.L2.C2' [SDS archive]
+
+   It is possible to achieve the same result of the dump mode using a 
+   combination of the input mode and the :ref:`scmssort` command, which allows
+   to read the input data from any supported :ref:`global_recordstream`,
+   not only an SDS archive:
+
+   .. code-block:: sh
+
+      scart -I recordStream --list list.file --stdout | \
+        scmssort -u -E -v > file.mseed
 
 #. Check all files of an SDS archive or other directory structure for
-   miniSEED files with out-of-order records:
+   miniSEED files for out-of-order records:
 
    .. code-block:: sh
 
