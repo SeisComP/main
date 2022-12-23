@@ -330,21 +330,28 @@
 				</parameter>
 
 				<group name="region">
+					<description>
+					Region filter for creating events. Use with care! Origins
+					outside may be ignored even if they would
+					become preferred otherwise.
+					</description>
 					<parameter name="rect" type = "string" >
 						<description>
-							Region in which scevent is allowed to create Events.
+						Region by geographic coordinates.
+
+						Format: "South, East, North, West"
 						</description>
 					</parameter>
 
 					<parameter name="minDepth" type="double"  unit="km">
 						<description>
-							Minimum depth for which scevent is allowed to create Events.
+						Minimum depth.
 						</description>
 					</parameter>
 
 					<parameter name="maxDepth" type="double" unit="km">
 						<description>
-							Maximum depth for which scevent is allowed to create Events.
+						Maximum depth.
 						</description>
 					</parameter>
 				</group>
