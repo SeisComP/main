@@ -16,6 +16,7 @@
 from __future__ import print_function
 
 from getopt import gnu_getopt, GetoptError
+from collections import namedtuple
 
 import bisect
 import glob
@@ -23,6 +24,7 @@ import re
 import time
 import sys
 import os
+import re
 
 import seiscomp.core
 import seiscomp.client
@@ -398,6 +400,79 @@ class Sorter:
             if not rec:
                 return
             yield rec
+
+
+RenameRule = namedtuple(
+    "RenameRule",
+    "pattern newNet newSta newLoc newCha"
+)
+
+
+class RecordRenamer:
+
+    def __init__(self):
+        self.renameRules = []
+
+    def addRule(self, rules):
+
+        # split multiple comma separated rules
+        for singleRule in rules.split(","):
+
+            # A rule is [match-stream:]rename-stream 
+            matchStream = None
+            renameStream = None
+            token = singleRule.split(":")
+            if len(token) == 2: # a mathing stream rule is present
+                matchStream  = token[0]
+                renameStream = token[1]
+            else:
+                renameStream = token[0]
+
+            if matchStream is not None:
+                if len(matchStream.split(".")) != 4: # split in NET STA LOC CHA
+                  print(f"Error: check rename option syntax ({rules})",
+                        file=sys.stderr)
+                  return False
+
+                # convert to a valid regular expression pattern
+                matchStream = re.sub(r'\.',  r'\.', matchStream) # . becomes \.
+                matchStream = re.sub(r'\?',  '.'  , matchStream) # ? becomes .
+                matchStream = re.sub(r'\*' , '.*' , matchStream) # * becomes.*
+                matchStream = re.compile(matchStream)
+
+            renameNslc = renameStream.split(".") # split in NET STA LOC CHA
+            if len(renameNslc) != 4:
+              print(f"Error: check rename option syntax ({rules})", file=sys.stderr)
+              return False
+
+            r = RenameRule(matchStream, renameNslc[0], renameNslc[1], renameNslc[2],
+                           renameNslc[3])
+            self.renameRules.append(r)
+
+        return True
+
+    def printRules(self):
+        for r in self.renameRules:
+            print("Renaming %s to %s.%s.%s.%s" % ( 
+                  (r.pattern.pattern if r.pattern is not None else "*.*.*.*"),
+                  r.newNet, r.newSta, r.newLoc, r.newCha), file=sys.stderr)
+
+    def applyRules(self, rec):
+        for rule in self.renameRules:
+            if rule.pattern is None or rule.pattern.fullmatch(
+                f"{rec.networkCode()}.{rec.stationCode()}."
+                f"{rec.locationCode()}.{rec.channelCode()}"):
+                if rule.newNet != "-":
+                    rec.setNetworkCode(rule.newNet)
+                if rule.newSta != "-":
+                    rec.setStationCode(rule.newSta)
+                if rule.newLoc != "-":
+                    rec.setLocationCode(rule.newLoc)
+                if rule.newCha != "-":
+                    if len(rule.newCha) == 3 and rule.newCha[2] == "-":
+                        rec.setChannelCode(rule.newCha[0:2] + rec.channelCode()[2] )
+                    else:
+                        rec.setChannelCode(rule.newCha)
 
 
 ####################################################################
@@ -787,6 +862,16 @@ Output:
                     channels (-n and -c are ignored) for filtering the data by
                     the given streams. Use in combination with -t.
                     One line per stream, line format: NET.STA.LOC.CHA
+  --rename arg      Rename stream data according to the provided rule(s).
+                    A rule is "[match-stream:]rename-stream" and match-stream
+                    is optional. match-stream and rename-stream are in the 
+                    "NET.STA.LOC.CHA" format. match-stream supports special
+                    charactes "?" "*" "|" "(" ")". rename-stream supports the
+                    special character "-" that can be used in place of NET, STA,
+                    LOC, CHA codes with the meaning of not renaming those. 
+                    "-" can also be used as the last character in CHA code.
+                    Multiple rules can be provided as a comma separated list
+                    or by providing multiple --rename options.
   -s, --sort        Dump mode: sort records.
   --speed arg       Dump mode: specify the speed to dump the records. A value
                     of 0 means no delay. Otherwise speed is a multiplier of
@@ -843,6 +928,7 @@ try:
             "help",
             "check",
             "print-streams",
+            "rename="
         ],
     )
 except GetoptError:
@@ -875,6 +961,8 @@ channels = None
 networks = "*"
 
 archiveDirectory = "./"
+
+recordRenamer = RecordRenamer()
 
 for flag, arg in opts:
     if flag == "-t":
@@ -910,6 +998,9 @@ for flag, arg in opts:
         listFile = arg
     elif flag in ["--nslc"]:
         nslcFile = arg
+    elif flag in ["--rename"]:
+        if not recordRenamer.addRule(arg):
+            sys.exit(-1)
     elif flag in ["--print-streams"]:
         printStreams = True
     elif flag in ["-s", "--sort"]:
@@ -991,6 +1082,8 @@ if verbose:
             sys.stderr.write("Mode: DUMP & SORT & MODIFY_TIME\n")
     else:
         sys.stderr.write("Mode: IMPORT\n")
+
+    recordRenamer.printRules()
 
 archiveIterator = ArchiveIterator(archive, endtime)
 
@@ -1165,6 +1258,8 @@ if dump:
                     rec.samplingFrequency(),
                 )
 
+        recordRenamer.applyRules(rec)
+
         if not test and not printStreams:
             out.write(rec.raw().str())
 
@@ -1310,6 +1405,8 @@ else: # Import mode
                     )
 
                 continue
+
+            recordRenamer.applyRules(rec)
 
             if stdout:
                 if verbose:
