@@ -744,8 +744,10 @@ Mode:
                    Default: file://- (stdin)
 
 Output:
-  -c arg            Channel filter (regular expression).
-                    Default: "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
+  -c arg            Channel filter to be applied to the streams selected by
+                    -n option.
+                    Default for Dump: "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
+                    Default for Import: "*"
   -E                Sort according to record end time; default is start time
   --files arg       Specify the file handles to cache; default: 100
   -l, --list arg    Use a stream list file instead of defined networks and
@@ -755,7 +757,10 @@ Output:
                         2007-03-28 15:48;2007-03-28 16:18;GE.LAST.*.*
                         2007-03-28 15:48;2007-03-28 16:18;GE.PMBI..BH?
   -m, --modify      Modify the record time for realtime playback when dumping.
-  -n arg            Network code list (comma separated). Default: *
+  -n arg            Stream list (comma separated) stream1,stream2,streamX
+                    where each stream can be NET or NET.STA or NET.STA.LOC
+                    or NET.STA.LOC.CHA, if CHA is not provided it defaults
+                    to the value of -c option.  Default: "*"
   --nslc arg        Use a stream list file for filtering the data by the given
                     streams. For dump mode only! One line per stream.
                     Format: NET.STA.LOC.CHA
@@ -841,11 +846,10 @@ recordURL = "file://-"
 speed = 0
 stdout = False
 
-channels = "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
+channels = None
 networks = "*"
 
 archiveDirectory = "./"
-
 
 for flag, arg in opts:
     if flag == "-t":
@@ -921,30 +925,32 @@ if not stdout and not os.path.isdir(archiveDirectory):
     )
     sys.exit(-1)
 
+# Import and Dump mode require either -l or -t option. 
+# However if a miniseed file is specified in Input mode then neither -l nor -t
+# option is required
+if (not checkSDS and not listFile) and (dump or not isFile(recordURL)):
+    if not tmin or not tmax:
+        print("info: provide a time window with '-t' when '--list' is "
+              "not used - stopping", file=sys.stderr)
+        sys.exit(-1)
+    if tmin >= tmax:
+        print("info: start time '{}' after end time '{}' - stopping"
+              .format(time2str(tmin), time2str(tmax)), file=sys.stderr)
+        sys.exit(-1)
+
 archive = Archive(archiveDirectory)
 archive.filePoolSize = filePoolSize
 
 if verbose:
     seiscomp.logging.enableConsoleLogging(seiscomp.logging.getAll())
 
-    if dump and not listFile:
-        if not tmin or not tmax:
-            print(
-                "info: provide a time window with '-t' or '-l' when using "
-                "'-d' - stopping",
-                file=sys.stderr,
-            )
-            sys.exit(-1)
-        if tmin >= tmax:
-            print(
-                "info: start time '{}' after end time '{}' - stopping".format(
-                    time2str(tmin), time2str(tmax)
-                ),
-                file=sys.stderr,
-            )
-            sys.exit(-1)
-
-        sys.stderr.write("Time window: %s~%s\n" % (time2str(tmin), time2str(tmax)))
+    if tmin and tmax:
+        sys.stderr.write("Time window: %s~%s\n" %
+                         (time2str(tmin), time2str(tmax)))
+    if listFile:
+        print("Stream file: '{}'".format(listFile), file=sys.stderr)
+    elif nslcFile:
+        print("Stream file: '{}'".format(nslcFile), file=sys.stderr)
 
     sys.stderr.write("Archive: %s\n" % archiveDirectory)
     if dump:
@@ -981,56 +987,58 @@ if stdout:
 if listFile:
     nslcFile = None
 
+if channels is None:
+    if dump:
+        channels = "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
+    else: # RecordStream doesn't support that complex syntax for channels
+        channels = "*"
+
+# Populate streams for both Dump and Import mode
+streams = []
+if listFile:
+    for stream in readStreamTimeList(listFile):
+        if stream[0] >= stream[1]:
+            print("info: ignoring {}.{}.{}.{} - start {} after end {}"
+                  .format(stream[2], stream[3], stream[4], stream[5],
+                          stream[0], stream[1]), file=sys.stderr)
+            continue
+        streams.append(stream)
+
+elif nslcFile:
+    for stream in readStreamList(nslcFile):
+        streams.append((tmin, tmax, stream[0], stream[1], stream[2], stream[3]))
+
+elif not checkSDS:
+    if networks == "*":
+        streams.append((tmin, tmax, "*", "*", "*", channels))
+    else:
+        items = networks.split(",")
+        for n in items:
+            n = n.strip()
+            nsl = n.split(".")
+            if len(nsl) == 1:
+                streams.append((tmin, tmax, nsl[0], "*", "*", channels))
+            elif len(nsl) == 2:
+                streams.append((tmin, tmax, nsl[0], nsl[1], "*", channels) )
+            elif len(nsl) == 3:
+                streams.append((tmin, tmax, nsl[0], nsl[1], nsl[2], channels))
+            elif len(nsl) == 4:
+                streams.append((tmin, tmax, nsl[0], nsl[1], nsl[2], nsl[3]))
+            else:
+                print("error: wrong format of -n option - stopping",
+                      file=sys.stderr)
+                sys.exit(-1)
+
 streamDict = {}
 if dump:
-    if listFile:
-        print("Stream file: '{}'".format(listFile), file=sys.stderr)
-        streams = readStreamTimeList(listFile)
-        for stream in streams:
-            if stream[0] >= stream[1]:
-                print(
-                    "info: ignoring {}.{}.{}.{} - start {} after end {}".format(
-                        stream[2], stream[3], stream[4], stream[5], stream[0], stream[1]
-                    ),
-                    file=sys.stderr,
-                )
-                continue
-
-            if verbose:
-                print(
-                    "Adding stream to list: {}.{}.{}.{} {} - {}".format(
-                        stream[2], stream[3], stream[4], stream[5], stream[0], stream[1]
-                    ),
-                    file=sys.stderr,
-                )
-            archiveIterator.append(
-                stream[0], stream[1], stream[2], stream[3], stream[4], stream[5]
-            )
-
-    elif nslcFile:
-        print("Stream file: '{}'".format(nslcFile), file=sys.stderr)
-        streams = readStreamList(nslcFile)
-        for stream in streams:
-            if verbose:
-                print(
-                    "Adding stream to list: {}.{}.{}.{} {} - {}".format(
-                        stream[0], stream[1], stream[2], stream[3], tmin, tmax
-                    ),
-                    file=sys.stderr,
-                )
-            archiveIterator.append(
-                tmin, tmax, stream[0], stream[1], stream[2], stream[3]
-            )
-
-    else:
-        if networks == "*":
-            archiveIterator.append(tmin, tmax, "*", "*", "*", channels)
-        else:
-            items = networks.split(",")
-            for n in items:
-                n = n.strip()
-                archiveIterator.append(tmin, tmax, n, "*", "*", channels)
-
+    for stream in streams:
+        archiveIterator.append(
+            stream[0], stream[1], stream[2],
+            stream[3], stream[4], stream[5])
+        if verbose:
+            print("Adding stream to list: {}.{}.{}.{} {} - {}"
+                  .format(stream[2], stream[3], stream[4], stream[5],
+                          stream[0], stream[1]), file=sys.stderr) 
     stime = None
     realTime = seiscomp.core.Time.GMT()
 
@@ -1160,7 +1168,7 @@ elif checkSDS:
             file=sys.stderr,
         )
 
-else:
+else: # Import mode
     env = seiscomp.system.Environment.Instance()
     cfg = seiscomp.config.Config()
     env.initConfig(cfg, "scart")
@@ -1185,13 +1193,6 @@ else:
         sys.exit(-1)
 
     if not isFile(recordURL):
-        if not listFile:
-            sys.stderr.write(
-                "A stream list is needed to fetch data from another source than a file\n"
-            )
-            sys.exit(-1)
-
-        streams = readStreamTimeList(listFile)
         for stream in streams:
             # Add stream to recordstream
             if not rs.addStream(

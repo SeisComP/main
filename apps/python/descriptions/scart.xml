@@ -55,9 +55,9 @@
 			<group name="Output">
 				<option flag="c" argument="channels">
 					<description>
-					Specify the channel filter for the dumped streams as regular
-					expression. Default: (B|S|M|H)(L|H)(Z|N|E). To dump only
-					BHZ, BHN and BHE streams use BH(Z|N|E).
+					Channel filter to be applied to the streams selected by -n option.
+					Default for Dump: "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
+					Default for Import: "*" 
 					</description>
 				</option>
 				<option flag="E">
@@ -106,7 +106,11 @@
 				</option>
 				<option flag="n" argument="networks">
 					<description>
-					List of network codes to dump (comma separated). Default: *.
+					Stream list (comma separated) stream1,stream2,streamX,
+					where each stream can be NET or NET.STA or NET.STA.LOC
+					or NET.STA.LOC.CHA. if CHA is not provided it defaults
+					to the value of -c option. if NET, STA, LOC are not provided
+					they default to "*". Default: "*"
 					</description>
 				</option>
 				<option flag="s" long-flag="sort">
