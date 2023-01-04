@@ -162,6 +162,20 @@
 					Import mode: print all accessed files to stdout after import.
 					</description>
 				</option>
+				<option flag="" long-flag="rename" argument="rule">
+					<description>
+					Rename stream data according to the provided rule(s).
+					A rule is "[match-stream:]rename-stream" and match-stream
+					is optional. match-stream and rename-stream are in the 
+					"NET.STA.LOC.CHA" format. match-stream supports special
+					charactes "?" "*" "|" "(" ")". rename-stream supports the
+					special character "-" that can be used in place of NET, STA,
+					LOC, CHA codes with the meaning of not renaming those. 
+					"-" can also be used as the last character in CHA code.
+					Multiple rules can be provided as a comma separated list
+					or by providing multiple --rename options. 
+					</description>
+				</option>
 			</group>
 		</command-line>
 	</module>
