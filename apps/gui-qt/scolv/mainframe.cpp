@@ -1130,11 +1130,16 @@ void MainFrame::fileOpen() {
 	QString filename = QFileDialog::getOpenFileName(this,
 		tr("Open EventParameters"), "", tr("XML files (*.xml)"));
 
-	if ( filename.isEmpty() ) return;
+	openFile(filename.toStdString());
+}
+
+
+void MainFrame::openFile(const std::string &filename) {
+	if ( filename.empty() ) return;
 
 	IO::XMLArchive ar;
-	if ( !ar.open(filename.toStdString().c_str()) ) {
-		QMessageBox::critical(this, "Error", QString("Invalid file: %1").arg(filename));
+	if ( !ar.open(filename.c_str()) ) {
+		QMessageBox::critical(this, "Error", QString("Invalid file: %1").arg(filename.c_str()));
 		return;
 	}
 
@@ -1154,7 +1159,7 @@ void MainFrame::fileOpen() {
 
 	ar >> ep;
 	if ( !ep ) {
-		QMessageBox::critical(this, "Error", QString("Unable to find EventParameters structures in %1.").arg(filename));
+		QMessageBox::critical(this, "Error", QString("Unable to find EventParameters structures in %1.").arg(filename.c_str()));
 		return;
 	}
 

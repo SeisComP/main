@@ -51,6 +51,7 @@ class MainFrame : public MainWindow {
 		void setOriginID(const std::string &originID);
 		void loadEvents(float days);
 		void setOffline(bool);
+		void openFile(const std::string &filename);
 
 
 	protected slots:
