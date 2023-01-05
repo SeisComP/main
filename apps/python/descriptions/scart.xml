@@ -55,14 +55,14 @@
 			<group name="Output">
 				<option flag="c" argument="channels">
 					<description>
-					Channel filter to be applied to the streams selected by -n option.
+					Channel filter to be applied to the data streams.
 					Default for Dump: "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
 					Default for Import: "*" 
 					</description>
 				</option>
 				<option flag="E">
 					<description>
-					Sort records according to their end time. Default: start time.
+					Dump mode: sort records according to their end time. Default: start time.
 					</description>
 				</option>
 				<option long-flag="files" argument="count">
@@ -106,11 +106,9 @@
 				</option>
 				<option flag="n" argument="networks">
 					<description>
-					Stream list (comma separated) stream1,stream2,streamX,
-					where each stream can be NET or NET.STA or NET.STA.LOC
-					or NET.STA.LOC.CHA. if CHA is not provided it defaults
-					to the value of -c option. if NET, STA, LOC are not provided
-					they default to "*". Default: "*"
+					Data stream selection as a comma separated list "stream1,stream2,streamX"
+					where each stream can be NET or NET.STA or NET.STA.LOC or NET.STA.LOC.CHA.
+					If CHA is omitted, it defaults to the value of -c option. Default: "*"
 					</description>
 				</option>
 				<option flag="s" long-flag="sort">
