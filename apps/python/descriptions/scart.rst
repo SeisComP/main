@@ -53,7 +53,7 @@ Examples
 .. hint::
 
    The usage of wildcards in place of network, station, location or channel code
-   is allowed in many options (-n,-c,-l,-nslc) and follows these rules:
+   is allowed in many options (-n, -c, -l, --list, --nslc) and follows these rules:
 
    * Import mode: the wildcards are passed to the :ref:`global_recordstream` interface,
      that interprets them. Normally both "*" and "?" are supported by RecordStreams.
@@ -68,9 +68,9 @@ Examples
 
       scart -dsvE -t '[start-time]~[end-time]' [SDS archive] > [file.mseed]
       scart -dsvE -t '[start-time]~[end-time]' > file.mseed
-      scart -dsvE -t '[start-time]~[end-time]' -n 'NET1,NET2' > file.mseed
-      scart -dsvE -t '[start-time]~[end-time]' -n 'NET' -c '(E,H)H(1,2,3)' > file.mseed
-      scart -dsvE -t '[start-time]~[end-time]' -n 'N1.S1.L1.C1,N2.S2.L2.C2' > file.mseed
+      scart -dsvE -t '[start-time]~[end-time]' -n '[NET1],[NET2]' > file.mseed
+      scart -dsvE -t '[start-time]~[end-time]' -n '[NET]' -c '(E,H)H(1,2,3)' > file.mseed
+      scart -dsvE -t '[start-time]~[end-time]' -n '[N1.S1.L1.C1],[N2.S2.L2.C2]' > file.mseed
       scart -dsvE -t '[start-time]~[end-time]' --nslc list.file > file.mseed
       scart -dsvE -t --list list.file > file.mseed
 
@@ -87,19 +87,19 @@ Examples
       scart -I [file.mseed] [SDS archive]
       scart -I [file.mseed] --with-filecheck [SDS archive]
 
-#. Collect data using the :ref:`global_recordstream` interface e.g. (FDSNWS server)
+#. Collect data using the :ref:`global_recordstream` interface (e.g. FDSNWS server)
    and write to a miniSEED file or import it into a local :term:`SDS` archive. The
-   data streams and the time spans can be defined in several ways. The list of option
-   ``list`` can be generated e.g. by :ref:`scevtstreams`.
+   data streams and the time spans can be defined in several ways. The data streams
+   (::option:`list`) can be automatically generated, e.g., by :ref:`scevtstreams`.
 
    .. code-block:: sh
 
       scart -I fdsnws://[server]:80 --list list.file [SDS archive]
       scart -I fdsnws://[server]:80 --list list.file --stdout > file.mseed
       scart -I fdsnws://[server]:80 -t '[start-time]~[end-time]' --nslc list.file [SDS archive]
-      scart -I fdsnws://[server]:80 -t '[start-time]~[end-time]' -n 'NET1,NET2' [SDS archive]
-      scart -I fdsnws://[server]:80 -t '[start-time]~[end-time]' -n 'NET' -c 'EH?' [SDS archive]
-      scart -I fdsnws://[server]:80 -t '[start-time]~[end-time]' -n 'N1.S1.L1.C1,N2.S2.L2.C2' [SDS archive]
+      scart -I fdsnws://[server]:80 -t '[start-time]~[end-time]' -n '[NET1],[NET2]' [SDS archive]
+      scart -I fdsnws://[server]:80 -t '[start-time]~[end-time]' -n '[NET]' -c 'EH?' [SDS archive]
+      scart -I fdsnws://[server]:80 -t '[start-time]~[end-time]' -n '[N1.S1.L1.C1],[N2.S2.L2.C2]' [SDS archive]
 
    It is possible to achieve the same result of the dump mode using a 
    combination of the input mode and the :ref:`scmssort` command, which allows
@@ -108,11 +108,11 @@ Examples
 
    .. code-block:: sh
 
-      scart -I recordStream --list list.file --stdout | \
+      scart -I [record-stream] --list list.file --stdout | \
         scmssort -u -E -v > file.mseed
 
 #. Check all files of an SDS archive or other directory structure for
-   miniSEED files for out-of-order records:
+   miniSEED files with out-of-order records:
 
    .. code-block:: sh
 

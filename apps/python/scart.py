@@ -724,10 +724,15 @@ def readStreamTimeList(listFile):
 
 usage_info = """
 Usage:
-  scart [options] [archive]
+  scart -I [RecordStream] [options] [archive]
+  scart -I [RecordStream] [options] --stdout
+  scart -d [options] [archive]
+  scart --check [options] [archive]
 
 Import miniSEED waveforms or dump records from an SDS structure, sort them,
 modify the time and replay them. Also check files and archives.
+For Import and Dump mode the data streams can be selected in three ways
+using the combinations of options: -n -c -t  or --nslc -t or --list
 
 Verbosity:
   -h, --help       Display this help message.
@@ -744,27 +749,29 @@ Mode:
                    Default: file://- (stdin)
 
 Output:
-  -c arg            Channel filter to be applied to the streams selected by
-                    -n option.
+  -c arg            Channel filter to be applied to the data streams.
                     Default for Dump: "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
                     Default for Import: "*"
-  -E                Sort according to record end time; default is start time
+  -E                Dump mode: Sort according to record end time; default is
+                    start time
   --files arg       Dump mode: specify the file handles to cache; default: 100
-  -l, --list arg    Use a stream list file instead of defined networks and
-                    channels (-n and -c are ignored). The list can be generated
-                    from events by scevtstreams. One line per stream
+  -l, --list arg    Use a stream list file instead of defined networks, channels
+                    and time window (-n -c and -t are ignored). The list can be
+                    generated from events by scevtstreams. One line per stream
                     Line format: starttime;endtime;streamID
                         2007-03-28 15:48;2007-03-28 16:18;GE.LAST.*.*
                         2007-03-28 15:48;2007-03-28 16:18;GE.PMBI..BH?
-  -m, --modify      Dump mode: modify the record time for realtime playback when
-                    dumping.
-  -n arg            Stream list (comma separated) stream1,stream2,streamX
-                    where each stream can be NET or NET.STA or NET.STA.LOC
-                    or NET.STA.LOC.CHA, if CHA is not provided it defaults
-                    to the value of -c option.  Default: "*"
-  --nslc arg        Use a stream list file for filtering the data by the given
-                    streams. For dump mode only! One line per stream.
-                    Format: NET.STA.LOC.CHA
+  -m, --modify      Dump mode: modify the record time for real time playback
+                    when dumping.
+  -n arg            Data stream selection as a comma separated list
+                    "stream1,stream2,streamX" where each stream can be NET or
+                    NET.STA or NET.STA.LOC or NET.STA.LOC.CHA. If CHA is
+                    omitted, it defaults to the value of -c option.
+                    Default: "*"
+  --nslc arg        Use a stream list file instead of defined networks and
+                    channels (-n and -c are ignored) for filtering the data by
+                    the given streams. Use in combination with -t.
+                    One line per stream, line format: NET.STA.LOC.CHA
   -s, --sort        Dump mode: sort records.
   --speed arg       Dump mode: specify the speed to dump the records. A value
                     of 0 means no delay. Otherwise speed is a multiplier of
@@ -772,8 +779,9 @@ Output:
   --stdout          Import mode: writes to stdout instead of creating a SDS archive.
   --print-streams   Print stream information only and exit. Works in import, dump and
                     check mode. Output: NET.STA.LOC.CHA StartTime EndTime.
-  -t t1~t2          Specify time window (as one properly quoted string)
-                    times are of course UTC and separated by a tilde '~' .
+  -t t1~t2          UTC time window filter to be applied to the data streams
+                    in the format: "StartTime~EndTime"
+                    e.g. "2022-12-20 12:00:00~2022-12-23 14:00:10"
   --test            Test only, no record output.
   --with-filecheck  Import mode: check all accessed files after import. Unsorted
                     or unreadable files are reported to stderr.
