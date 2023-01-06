@@ -1197,31 +1197,14 @@ else:
             if not rs.addStream(
                 stream[2], stream[3], stream[4], stream[5], stream[0], stream[1]
             ):
-                if verbose:
-                    sys.stderr.write(
-                        "error: adding stream: %s %s %s.%s.%s.%s\n"
-                        % (
-                            stream[0],
-                            stream[1],
-                            stream[2],
-                            stream[3],
-                            stream[4],
-                            stream[5],
-                        )
-                    )
+                print(f"error: adding stream: {stream[0]} {stream[1]} "
+                      f"{stream[2]}.{stream[3]}.{stream[4]}.{stream[5]}",
+                      file=sys.stderr)
             else:
                 if verbose:
-                    sys.stderr.write(
-                        "adding stream: %s %s %s.%s.%s.%s\n"
-                        % (
-                            stream[0],
-                            stream[1],
-                            stream[2],
-                            stream[3],
-                            stream[4],
-                            stream[5],
-                        )
-                    )
+                    print(f"adding stream: {stream[0]} {stream[1]} "
+                          f"{stream[2]}.{stream[3]}.{stream[4]}.{stream[5]}",
+                          file=sys.stderr)
 
     input = seiscomp.io.RecordInput(
         rs, seiscomp.core.Array.INT, seiscomp.core.Record.SAVE_RAW
