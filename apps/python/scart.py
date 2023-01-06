@@ -1280,7 +1280,12 @@ else:
                 continue
 
             if stdout:
-                out.write(rec.raw().str())
+                if verbose:
+                    sys.stderr.write(
+                        "%s %s\n" % (rec.streamID(), rec.startTime().iso())
+                    )
+                if not test and not printStreams:
+                    out.write(rec.raw().str())
                 continue
 
             dir, file = archive.location(
@@ -1292,7 +1297,7 @@ else:
             )
             file = dir + file
 
-            if not test:
+            if not test and not printStreams:
                 try:
                     f = filePool[file]
                 except BaseException:
