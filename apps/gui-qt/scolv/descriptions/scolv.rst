@@ -1393,7 +1393,10 @@ Below you find examples for
 * :ref:`Custom information in the Event tab <sec-scolv-parameters-event>`
 * :ref:`Custom information in the Events tab <sec-scolv-parameters-events>`
 
-An example script which just returns the standard error looks like this:
+.. _sec-scolv-example-script:
+
+Example script reading origin parameters from stdin just returning the standard
+error of the origin:
 
 .. code-block:: python
 
@@ -1456,7 +1459,8 @@ Location tab
 ~~~~~~~~~~~~
 
 To add the output of an external custom script to the information panel of the Location tab,
-configure display parameters in scolv. Example (:file:`scolv.cfg`):
+configure display parameters in scolv. An example script is given
+:ref:`above <sec-scolv-example-script>`. Configuration example (:file:`scolv.cfg`):
 
 .. code-block:: sh
 
@@ -1465,10 +1469,10 @@ configure display parameters in scolv. Example (:file:`scolv.cfg`):
 
    # Configure each add-on
    display.origin.addon.qual1.label = "Qual1"
-   display.origin.addon.qual1.script = "@CONFIGDIR@/scripts/scolv/qual1"
+   display.origin.addon.qual1.script = "@DATADIR@/scripts/scolv/script1"
 
    display.origin.addon.qual2.label = "Qual2"
-   display.origin.addon.qual2.script = "@CONFIGDIR@/scripts/scolv/qual2"
+   display.origin.addon.qual2.script = "@DATADIR@/scripts/scolv/script2"
 
 
 .. _sec-scolv-parameters-event:
@@ -1476,18 +1480,22 @@ configure display parameters in scolv. Example (:file:`scolv.cfg`):
 Event tab
 ~~~~~~~~~
 
-Provide an external script and add the output to the **origin list of the Event tab**,
-configure the eventedit parameters in scolv or global. Example (:file:`scolv.cfg` or :file:`scolv.cfg`):
+Provide the external script and add the output to the **origin list of the Event tab**,
+configure the eventedit parameters in :file:`global.cfg` or :file:`scolv.cfg`.
+An example script is given :ref:`above <sec-scolv-example-script>`.
+Configuration example:
 
 .. code-block:: sh
 
    eventedit.scripts.columns = qual1, qual2
+
    eventedit.scripts.column.qual1.label = "Qual1"
    eventedit.scripts.column.qual1.pos = 8
-   eventedit.scripts.column.qual1.script = "@CONFIGDIR@/scripts/scolv/qual1"
+   eventedit.scripts.column.qual1.script = "@DATADIR@/scripts/scolv/script1"
+
    eventedit.scripts.column.qual2.label = "Qual2"
    eventedit.scripts.column.qual2.pos = 9
-   eventedit.scripts.column.qual2.script = "@CONFIGDIR@/scripts/scolv/qual2"
+   eventedit.scripts.column.qual2.script = "@DATADIR@/scripts/scolv/script2"
 
 
 .. _sec-scolv-parameters-events:
@@ -1495,18 +1503,28 @@ configure the eventedit parameters in scolv or global. Example (:file:`scolv.cfg
 Events tab
 ~~~~~~~~~~
 
+From the event list external scripts can be excuted with :term:`origin` or
+:term:`event` objects or both as input from stdin to display the output of the
+script (stdout) in a custom column.
+
 Provide an external script and add the output to **event list of the Events tab**,
-configure the eventlist parameters in scolv or global. Example (:file:`scolv.cfg` or :file:`global.cfg`):
+configure the eventlist parameters in :file:`global.cfg` or :file:`scolv.cfg`.
+An example script is given :ref:`above <sec-scolv-example-script>`.
+Configuration example for passing origin or event objects:
 
 .. code-block:: sh
 
    eventlist.scripts.columns = qual1, qual2
+
    eventlist.scripts.column.qual1.label = "Qual1"
    eventlist.scripts.column.qual1.pos = 5
-   eventlist.scripts.column.qual1.script = "@CONFIGDIR@/scripts/scolv/qual1"
+   eventlist.scripts.column.qual1.script = "@DATADIR@/scripts/scolv/script1"
+   eventlist.scripts.column.qual1.types = Origin
+
    eventlist.scripts.column.qual2.label = "Qual2"
    eventlist.scripts.column.qual2.pos = 6
-   eventlist.scripts.column.qual2.script = "@CONFIGDIR@/scripts/scolv/qual2"
+   eventlist.scripts.column.qual2.script = "@DATADIR@/scripts/scolv/script2"
+   eventlist.scripts.column.qual2.types = Event
 
 Adding external scripts to the event list is the most expensive part. Whenever
 the event list is reloaded, it will start to run the scripts on all origins
