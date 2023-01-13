@@ -632,7 +632,7 @@ class Bulletin(object):
 
                 try:
                     dist, azi = dist_azi[net + "_" + sta]
-                except ValueError:
+                except KeyError:
                     dist, azi = 0, "  N/A" if self.enhanced else "N/A"
 
                 val = mag.magnitude().value()
