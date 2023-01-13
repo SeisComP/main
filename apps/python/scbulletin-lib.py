@@ -138,7 +138,6 @@ class Bulletin(object):
                     depthPhaseCount += 1
 
         txt = ""
-
         evt = self._evt
         if not evt and self._dbq:
             evt = self._dbq.getEvent(orid)
@@ -489,6 +488,7 @@ class Bulletin(object):
                     res = "%5.1f" % arr.timeResidual()
                 except ValueError:
                     res = "  N/A"
+
             dist_azi[net + "_" + sta] = (dist, azi)
             wt = arr.weight()
             pha = arr.phase().code()
