@@ -1,4 +1,4 @@
-#!/usr/bin/env seiscomp-python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 ############################################################################
 # Copyright (C) GFZ Potsdam                                                #
@@ -12,8 +12,6 @@
 # Public License version 3.0 requirements will be met:                     #
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
-
-from __future__ import absolute_import, division, print_function
 
 import sys
 import os
@@ -69,6 +67,7 @@ def recordInput(filename=None, datatype=seiscomp.core.Array.INT):
 
     if not filename:
         filename = "-"
+    filenames = "-"
 
     if filename == "-":
         print(
@@ -167,13 +166,19 @@ p.add_argument(
 )
 p.add_argument("-v", "--verbose", action="store_true", help="Run in verbose mode.")
 
-p.add_argument(
-    "filenames",
-    nargs="+",
-    help="Names of input files in miniSEED format.",
-)
+
+if sys.stdin.isatty():
+    p.add_argument(
+        "filenames",
+        nargs="+",
+        help="Names of input files in miniSEED format.",
+    )
+
 opt = p.parse_args()
-filenames = opt.filenames
+try:
+    filenames = opt.filenames
+except AttributeError:
+    filenames = ["-"]
 
 if opt.time_window:
     tmin, tmax = list(map(str2time, opt.time_window.split("~")))
