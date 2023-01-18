@@ -42,7 +42,15 @@
 			   <optionReference>messaging#subscribe-group</optionReference>
 			   <optionReference>messaging#encoding</optionReference>
 			   <optionReference>messaging#start-stop-msg</optionReference>
-		   </group>
+			</group>
+
+			<group name="Input">
+				<option flag="i" long-flag="input" argument="arg">
+					<description>
+					Read parameters from given file instead from command line.
+					</description>
+				</option>
+			</group>
 		</command-line>
 	</module>
 </seiscomp>
