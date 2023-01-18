@@ -1,4 +1,4 @@
-scsendjournal sends journals to the \scname messaging system.
+scsendjournal sends journals to the `scname` messaging system.
 Currently, journals can be used to command :ref:`scevent`.
 The journals command :ref:`scevent` to manipulate event parameters according to
 the :ref:`journal actions <scsendjournal-actions>` which must be known to
@@ -11,12 +11,6 @@ The actions allow to:
 * Control the association of origins to events.
 
 
-Synopsis
-========
-
-scsendjournal [opts] {objectID} {action} [parameters]
-
-
 .. _scsendjournal-actions:
 
 Actions
@@ -24,6 +18,8 @@ Actions
 
 There are specific journal actions for handling non-events and events. The documentation
 of :ref:`scevent` contains a :ref:`complete list of journals known to scevent <scevent-journals>`.
+Parameters used on the command line can also be passed from file using the option
+:option:`-i`.
 
 
 None-event specific actions
