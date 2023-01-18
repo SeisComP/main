@@ -96,9 +96,8 @@ Examples
 
      $ sccnv -i trunk:event.xml -o ims10:event.ims
 
-* Convert QuakeML real time (RT) format in version 1.2 to SCML in data schema
-  version 0.12:
+* Convert QuakeML in version 1.2 to SCML in data schema version 0.12:
 
   .. code-block:: sh
 
-     $ xsltproc -o quakeml.xml $SEISCOMP_ROOT/share/xml/0.12/sc3ml_0.12__quakeml_1.2-RT.xsl scml.xml
+     $ xsltproc $SEISCOMP_ROOT/share/xml/0.12/quakeml_1.2__sc3ml_0.12.xsl file.quakeml > file_sc.xml
