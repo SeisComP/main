@@ -8,6 +8,7 @@ possible server-side filters should be preferred to reduce both the network
 bandwidth consumption as well as the CPU and memory utilization on the local
 machine.
 
+
 .. _ql2sc_event_filter:
 
 Server-Side Event Filter
@@ -19,17 +20,28 @@ used to filter interesting events on the server side:
 .. code-block:: none
 
    clause    := condition[ AND|OR [(]clause[)]]
-   condition := MAG|DEPTH|LAT|LON|PHASES|OTIME|UPDATED [op float|time]|[IS [NOT] NULL]
-   op        := =|&gt;|&gt;=|&lt;|&lt;=|eq|gt|ge|lt|ge
+   condition := MAG|DEPTH|LAT|LON|PHASES|DIST(lat,lon) op {float} |
+                DIST(lat,lon) IN [{float}, {float}] |
+                UPDATED|OTIME op time |
+                AGENCY|AUTHOR|STATUS|ESTATUS|EMODE|TYPE|REGION|MAG_T op 'string' |
+                MAG|DEPTH|LAT|LON|PHASES|OTIME|UPDATED IS [NOT] NULL
+   op        := =|!=|>|>=|<|<=|eq|gt|ge|lt|ge
    time      := %Y,%m,%d[,%H,%M,%S,%f]
 
-E.g. the following filter string would select only those events with a minimum
+E.g., the following filter string would select only those events with a minimum
 magnitude of 6, detected by at least 10 stations and which are shallower than
 100km:
 
 .. code-block:: sql
 
    MAG >= 6.0 AND PHASES >= 10 AND DEPTH < 100
+
+.. note::
+
+   The supported filter commands depend on the specific QuakeLink version. To
+   list all available options you may connect to the server, e.g., using
+   `telnet localhost 18010`, and request the help page of the `SELECT` command
+   using `help select`.
 
 
 .. _ql2sc_object_filter:
@@ -70,6 +82,7 @@ recursively within the SeisComP object tree. If no explicit rule exists for an
 object, the routing of its parent is evaluated up to the ``EventParameters``
 root node.
 
+
 Examples
 --------
 
@@ -108,7 +121,7 @@ By default we route:
 * Origins (including its StationMagnitude and Magnitude children) to the
   ``LOCATION`` to allow event association.
 * FocalMechanisms to the ``FOCMECH`` group to trigger processing by specialized
-  applications, e.g. graphical user interfaces for strong motion analysis or
+  applications, e.g., graphical user interfaces for strong motion analysis or
   tsunami risk assessment.
 
 We don't route events at all. With the help of :ref:`scevent` locations are
@@ -145,7 +158,7 @@ added to the white list.
 The agency filter is applied on remote as well as local objects. In this way
 remote objects may be excluded from import and local objects my be protected
 from overriding or removing. Also the filter is applied recursively. If parent
-object (e.g. an origin) is filtered out, all of its children (e.g. magnitudes)
+object (e.g., an origin) is filtered out, all of its children (e.g., magnitudes)
 are also skipped even if they carry a different agency ID.
 
 .. note::
@@ -193,12 +206,12 @@ The ``ADD`` and ``REMOVE`` operation always generates notifies of the same type
 for all children of the current object. ``ADD`` notifiers are collected top-down,
 ``REMOVE`` notifiers are collected bottom-up.
 
-Because the order of child objects is arbitrary, e.g. the arrivals of an origin,
+Because the order of child objects is arbitrary, e.g., the arrivals of an origin,
 each object on the remote side has to be found in the set of local objects. For
-public objects (e.g. origins, magnitudes, magnitudes..), the ``publicID`` property
-is used for comparison. All other objects are compared by looking at their index
-properties. For e.g. arrivals this is the ``pickID`` property, for comments the
-``id`` property.
+public objects (e.g., origins, magnitudes, magnitudes..), the ``publicID``
+property is used for comparison. All other objects are compared by looking at
+their index properties. For e.g., arrivals this is the ``pickID`` property, for
+comments the ``id`` property.
 
 Ones all notifiers are collected they are send to the local messaging system.
 For performance reasons and because of the processing logic of listening |scname|
