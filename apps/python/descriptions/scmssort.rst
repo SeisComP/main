@@ -36,22 +36,23 @@ Examples
       scmssort -vuE unsorted.mseed > sorted.mseed
 
 #. Read all files ending with ".mseed" at the same time. The data are trimmed
-   to a time window and duplicated data are removed.
+   to a time window and duplicated or empty records are ignored.
 
    .. code-block:: sh
 
-      cat *.mseed | scmssort -vuE -t '2020-03-28 15:48~2020-03-28 16:18' > sorted.mseed
+      cat *.mseed | scmssort -vuiE -t '2020-03-28 15:48~2020-03-28 16:18' > sorted.mseed
 
-#. Remove streams listed by stream code and sort records by end time. Stream
-   lists can be generated, e.g., by :ref:`scinv`.
+#. Remove streams listed by stream code and sort records by end time. Also ignore
+   duplicated or empty records. Stream lists can be generated, e.g., by :ref:`scinv`.
 
    .. code-block:: sh
 
-      scmssort -vuE --rm -l stream-list.txt test.mseed > sorted.mseed
+      scmssort -vuiE --rm -l stream-list.txt test.mseed > sorted.mseed
 
-#. Extract streams by time and stream code and sort records by end time.
+#. Extract streams by time and stream code and sort records by end time. Also ignore
+   duplicated or empty records.
 
    .. code-block:: sh
 
       echo CX.PB01..BH? | scmssort -vuE -t '2007-03-28 15:48~2007-03-28 16:18' -l - test.mseed > sorted.mseed
-      scmssort -vuE -t '2007-03-28 15:48~2007-03-28 16:18' -l stream-list.txt test.mseed > sorted.mseed
+      scmssort -vuiE -t '2007-03-28 15:48~2007-03-28 16:18' -l stream-list.txt test.mseed > sorted.mseed

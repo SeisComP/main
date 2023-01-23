@@ -22,6 +22,11 @@
 						Sort by end time.
 					</description>
 				</option>
+				<option flag="i" long-flag="ignore">
+					<description>
+						Ignore all records which have no data samples.
+					</description>
+				</option>
 				<option flag="l" long-flag="list">
 					<description>
 						File with streams to filter the records. One stream per

@@ -76,9 +76,9 @@ def parse_args():
 
     epilog = """Examples:
 Read data from multiple files, extract streams by time, sort records by start time, \
-remove duplicate records
+ignore duplicated and empty records
   cat f1.mseed f2.mseed f3.mseed | \
-scmssort -v -t '2007-03-28 15:48~2007-03-28 16:18' -u > sorted.mseed
+scmssort -v -t '2007-03-28 15:48~2007-03-28 16:18' -ui > sorted.mseed
 
 Extract streams by time, stream code and sort records by end time
   echo CX.PB01..BH? | \
@@ -105,11 +105,10 @@ scmssort -v -E -t '2007-03-28 15:48~2007-03-28 16:18' \
         help="Sort according to record end time; default is start time.",
     )
     p.add_argument(
-        "-r",
-        "--rm",
+        "-i",
+        "--ignore",
         action="store_true",
-        help="Remove all traces in stream list given by '--list' instead of keeping "
-        "them.",
+        help="Ignore all records which have no data samples.",
     )
     p.add_argument(
         "-l",
@@ -118,6 +117,13 @@ scmssort -v -E -t '2007-03-28 15:48~2007-03-28 16:18' \
         help="Filter records by a list of stream codes specified in a file or on stdin "
         "(-). One stream per line of format: NET.STA.LOC.CHA - wildcards and regular "
         "expressions are considered. Example: CX.*..BH?.",
+    )
+    p.add_argument(
+        "-r",
+        "--rm",
+        action="store_true",
+        help="Remove all traces in stream list given by '--list' instead of keeping "
+        "them.",
     )
     p.add_argument(
         "-t",
@@ -140,7 +146,7 @@ scmssort -v -E -t '2007-03-28 15:48~2007-03-28 16:18' \
         action="count",
         default=0,
         help="Run in verbose mode. This option may be repeated several time to "
-        "increase the level of verbosity.",
+        "increase the level of verbosity. Example: -vvv.",
     )
 
     opt = p.parse_args()
@@ -293,7 +299,6 @@ def record_input(file, datatype=core.Array.INT):
     """
     Simple record iterator that reads from a file (or stdin in case of '-')
     """
-
     stream = io.RecordStream.Create("file")
     if not stream:
         raise IOError("Failed to create a RecordStream")
@@ -311,6 +316,7 @@ def record_input(file, datatype=core.Array.INT):
             record = it.next()
             if not record:
                 return
+
             trace(
                 f"    + {time2str(record.startTime())}~{time2str(record.endTime())} "
                 f"{rec2id(record)}"
@@ -321,6 +327,7 @@ def record_input(file, datatype=core.Array.INT):
             record = it.next()
             if not record:
                 return
+
             yield record
 
 
@@ -346,6 +353,7 @@ def main():
     # statistics
     records_read = 0
     records_window = 0
+    records_empty = 0
 
     # statistics (info mode)
     networks = set()
@@ -374,6 +382,7 @@ def main():
     # read records from input file
     for file in files:
         records_file = 0
+        records_empty_file = 0
 
         try:
             for rec in record_input(file):
@@ -391,6 +400,16 @@ def main():
 
                 if pattern and bool(pattern.match(stream_id)) == bool(opt.rm):
                     continue
+
+                if not rec.sampleCount():
+                    trace(
+                        f"    + found empty record staring at {time2str(rec.startTime())} "
+                        f"{rec2id(rec)}"
+                    )
+                    records_empty_file += 1
+                    if opt.ignore:
+                        trace("      + ignored")
+                        continue
 
                 # record time reference set to start or end time depending on sort
                 # option
@@ -417,7 +436,8 @@ def main():
                         buf_max = core.Time(rec.endTime())
 
             name = "<stdin>" if file == "-" else file
-            debug(f"  + {name}: {records_file} records")
+            empty = f", empty: {records_empty_file}" if records_empty_file else ""
+            debug(f"  + {name}: {records_file} records{empty}")
 
         except Exception as e:
             error(f"Could not read file '{file}: {e}")
@@ -426,6 +446,7 @@ def main():
             return 1
 
         records_read += records_file
+        records_empty += records_empty_file
 
     # stop if no records have been read
     if not records_read:
@@ -481,13 +502,23 @@ def main():
         records_written = buf_len - duplicates if opt.uniqueness else buf_len
         msg = f"""Wrote {records_written} records
   + time window: {time2str(buf_min)}~{time2str(buf_max)}"""
+
         if opt.uniqueness:
             msg += f"""
   + found and removed {duplicates} duplicate records"""
         elif not duplicates:
             msg += """
   + no duplicate records found"""
+
+        if opt.ignore:
+            msg += f"""
+  + {records_empty} empty records found and ignored"""
+
         info(msg)
+
+    # additional warning output
+    if records_empty and not opt.ignore:
+        warning(f"Found {records_empty} empty records - remove with: scmssort -i")
 
     # This is an important hint which should always be printed
     if duplicates > 0 and not opt.uniqueness:
