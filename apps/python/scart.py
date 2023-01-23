@@ -432,9 +432,15 @@ def checkFile(fileName):
 
     ri = seiscomp.io.RecordInput(rs)
     lastEnd = None
+    foundSortError = 0
+    foundCountError = 0
+    errorMsg = ""
     for rec in ri:
         if rec is None:
             continue
+
+        if not rec.sampleCount():
+            foundCountError += 1
 
         sF = rec.samplingFrequency()
         if sF <= 0:
@@ -444,13 +450,21 @@ def checkFile(fileName):
             overlap = float(lastEnd - rec.endTime())
 
             if overlap >= 1 / sF:
-                errorMsg = (
-                    "new record ends at or before end of last record: %s < %s"
-                    % (rec.startTime(), lastEnd)
-                )
-                return errorMsg
+                foundSortError += 1
 
         lastEnd = rec.endTime()
+
+    if foundSortError:
+        errorMsg += f"  + found {foundSortError} unordered records"
+
+    if foundCountError:
+        if errorMsg:
+            errorMsg += "\n"
+
+        errorMsg += f"  + found {foundCountError} records without samples"
+
+    if errorMsg:
+        return errorMsg
 
     return False
 
@@ -501,7 +515,7 @@ def checkFilePrint(fileName, streamDict):
                             streamEnd,
                             streamNRec + 1,
                             streamNSamp + rec.data().size(),
-                            rec.samplingFrequency()
+                            rec.samplingFrequency(),
                         )
                     }
                 )
@@ -514,7 +528,7 @@ def checkFilePrint(fileName, streamDict):
                             recEnd.iso(),
                             streamNRec + 1,
                             streamNSamp + rec.data().size(),
-                            rec.samplingFrequency()
+                            rec.samplingFrequency(),
                         )
                     }
                 )
@@ -525,7 +539,7 @@ def checkFilePrint(fileName, streamDict):
                 recEnd.iso(),
                 1,
                 rec.data().size(),
-                rec.samplingFrequency()
+                rec.samplingFrequency(),
             )
 
     return True
@@ -755,6 +769,7 @@ Output:
   -E                Dump mode: Sort according to record end time; default is
                     start time
   --files arg       Dump mode: specify the file handles to cache; default: 100
+  -i, --ignore      Ignore records without data samples.
   -l, --list arg    Use a stream list file instead of defined networks, channels
                     and time window (-n -c and -t are ignored). The list can be
                     generated from events by scevtstreams. One line per stream
@@ -810,12 +825,13 @@ def usage(exitcode=0):
 try:
     opts, files = gnu_getopt(
         sys.argv[1:],
-        "I:dsmEn:c:t:l:hv",
+        "I:dismEn:c:t:l:hv",
         [
             "stdout",
             "with-filename",
             "with-filecheck",
             "dump",
+            "ignore",
             "list=",
             "nslc=",
             "sort",
@@ -853,6 +869,7 @@ recordURL = "file://-"
 
 speed = 0
 stdout = False
+ignoreRecords = False
 
 channels = None
 networks = "*"
@@ -887,6 +904,8 @@ for flag, arg in opts:
         verbose = True
     elif flag in ["-d", "--dump"]:
         dump = True
+    elif flag in ["-i", "--ignore"]:
+        ignoreRecords = True
     elif flag in ["-l", "--list"]:
         listFile = arg
     elif flag in ["--nslc"]:
@@ -1056,8 +1075,14 @@ if dump:
         records = Copy(archiveIterator)
 
     foundRecords = 0
+    foundCountError = 0
     for rec in records:
         # skip corrupt records
+        if not rec.sampleCount():
+            foundCountError += 1
+            if ignoreRecords:
+                continue
+
         etime = seiscomp.core.Time(rec.endTime())
 
         if stime is None:
@@ -1113,7 +1138,7 @@ if dump:
                                 streamEnd,
                                 streamNRec + 1,
                                 streamNSamp + rec.data().size(),
-                                rec.samplingFrequency()
+                                rec.samplingFrequency(),
                             )
                         }
                     )
@@ -1126,7 +1151,7 @@ if dump:
                                 recEnd.iso(),
                                 streamNRec + 1,
                                 streamNSamp + rec.data().size(),
-                                rec.samplingFrequency()
+                                rec.samplingFrequency(),
                             )
                         }
                     )
@@ -1137,7 +1162,7 @@ if dump:
                     recEnd.iso(),
                     1,
                     rec.data().size(),
-                    rec.samplingFrequency()
+                    rec.samplingFrequency(),
                 )
 
         if not test and not printStreams:
@@ -1146,10 +1171,18 @@ if dump:
         foundRecords += 1
 
     if verbose:
-        print("Found records: {}".format(foundRecords), file=sys.stderr)
+        print(f"Found records: {foundRecords}", file=sys.stderr)
 
         if test:
             print("Test mode: no records written", file=sys.stderr)
+
+    if foundCountError:
+        print(f"Found {foundCountError} empty records", file=sys.stderr)
+        if ignoreRecords:
+            print("  + which are ignored and not written", file=sys.stderr)
+        else:
+            print("  + which are written", file=sys.stderr)
+
 
 elif checkSDS:
     foundIssues = 0
@@ -1167,14 +1200,11 @@ elif checkSDS:
             issueFound = checkFile(fileName)
             if issueFound:
                 foundIssues += 1
-                print("{} has an issue".format(fileName), file=sys.stderr)
-                print("  + " + issueFound, file=sys.stderr)
+                print(f"{fileName} has an issue", file=sys.stderr)
+                print(f"{issueFound}", file=sys.stderr)
 
     if not printStreams:
-        print(
-            "Found issues in {}/{} files".format(foundIssues, checkedFiles),
-            file=sys.stderr,
-        )
+        print(f"Found issues in {foundIssues}/{checkedFiles} files", file=sys.stderr)
 
 else: # Import mode
     env = seiscomp.system.Environment.Instance()
@@ -1206,14 +1236,18 @@ else: # Import mode
             if not rs.addStream(
                 stream[2], stream[3], stream[4], stream[5], stream[0], stream[1]
             ):
-                print(f"error: adding stream: {stream[0]} {stream[1]} "
-                      f"{stream[2]}.{stream[3]}.{stream[4]}.{stream[5]}",
-                      file=sys.stderr)
+                print(
+                    f"error: adding stream: {stream[0]} {stream[1]} "
+                    f"{stream[2]}.{stream[3]}.{stream[4]}.{stream[5]}",
+                    file=sys.stderr,
+                )
             else:
                 if verbose:
-                    print(f"adding stream: {stream[0]} {stream[1]} "
-                          f"{stream[2]}.{stream[3]}.{stream[4]}.{stream[5]}",
-                          file=sys.stderr)
+                    print(
+                        f"adding stream: {stream[0]} {stream[1]} "
+                        f"{stream[2]}.{stream[3]}.{stream[4]}.{stream[5]}",
+                        file=sys.stderr,
+                    )
 
     input = seiscomp.io.RecordInput(
         rs, seiscomp.core.Array.INT, seiscomp.core.Record.SAVE_RAW
@@ -1221,8 +1255,14 @@ else: # Import mode
     filePool = dict()
     f = None
     accessedFiles = set()
+    foundCountError = 0
     try:
         for rec in input:
+            if not rec.sampleCount():
+                foundCountError += 1
+                if ignoreRecords:
+                    continue
+
             if printStreams:
                 stream = f"{rec.networkCode()}.{rec.stationCode()}.{rec.locationCode()}.{rec.channelCode()}"
                 recStart = rec.startTime()
@@ -1242,7 +1282,7 @@ else: # Import mode
                                     streamEnd,
                                     streamNRec + 1,
                                     streamNSamp + rec.data().size(),
-                                    rec.samplingFrequency()
+                                    rec.samplingFrequency(),
                                 )
                             }
                         )
@@ -1255,7 +1295,7 @@ else: # Import mode
                                     recEnd.iso(),
                                     streamNRec + 1,
                                     streamNSamp + rec.data().size(),
-                                    rec.samplingFrequency()
+                                    rec.samplingFrequency(),
                                 )
                             }
                         )
@@ -1266,7 +1306,7 @@ else: # Import mode
                         recEnd.iso(),
                         1,
                         rec.data().size(),
-                        rec.samplingFrequency()
+                        rec.samplingFrequency(),
                     )
 
                 continue
@@ -1319,11 +1359,16 @@ else: # Import mode
                     accessedFiles.add(archiveDirectory + file)
 
             if verbose:
-                sys.stderr.write(
-                    "%s %s %s\n" % (rec.streamID(), rec.startTime().iso(), file)
-                )
+                print(f"{rec.streamID()} {rec.startTime().iso()} {file}")
     except Exception as e:
-        sys.stderr.write("Exception: %s\n" % str(e))
+        print(f"Exception: {str(e)}")
+
+    if foundCountError:
+        print(f"Input has {foundCountError} empty records", file=sys.stderr)
+        if ignoreRecords:
+            print("  + which are ignored and not written", file=sys.stderr)
+        else:
+            print("  + which are ignored and not written", file=sys.stderr)
 
     if checkFiles:
         print("Testing accessed files (may take some time):", file=sys.stderr)
@@ -1346,15 +1391,15 @@ else: # Import mode
         if verbose:
             print("List of accessed files:", file=sys.stderr)
         for fileName in accessedFiles:
-            print(fileName, file=sys.stdout)
+            print(fileName, file=sys.stderr)
 
 if len(streamDict) > 0:
     print(
         "# streamID       start                       end                         records samples samplingRate",
-        file=sys.stdout,
+        file=sys.stderr,
     )
     for key, (start, end, nRecs, nSamples, sps) in sorted(streamDict.items()):
         print(
             f"{key: <{16}} {start: <{27}} {end: <{27}} {nRecs} {nSamples} {sps}",
-            file=sys.stdout,
+            file=sys.stderr,
         )
