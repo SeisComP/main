@@ -59,9 +59,11 @@ def stationCount(org, minArrivalWeight):
     count = 0
     for i in range(org.arrivalCount()):
         arr = org.arrival(i)
-        #   if arr.weight()> 0.5:
-        if arr.weight() >= minArrivalWeight:
+        #   if eight()> 0.5:
+        wt = arrivalWeight(arr)
+        if wt >= minArrivalWeight:
             count += 1
+
     return count
 
 
@@ -76,6 +78,22 @@ def uncertainty(quantity):
             err = None
 
     return err
+
+
+def arrivalWeight(arrival):
+    # guess arrival weight if not available
+    wt = 0
+    try:
+        wt = arrival.weight()
+    except ValueError:
+        if (
+            arrival.timeUsed()
+            or arrival.horizontalSlownessUsed()
+            or arrival.backazimuthUsed()
+        ):
+            wt = 1
+
+    return wt
 
 
 class Bulletin(object):
@@ -131,7 +149,7 @@ class Bulletin(object):
         except ValueError:
             depthPhaseCount = 0
             for arr in arrivals:
-                wt = arr.weight()
+                wt = arrivalWeight(arr)
                 pha = arr.phase().code()
                 #  if (pha[0] in ["p","s"] and wt >= 0.5 ):
                 if pha[0] in ["p", "s"] and wt >= self.minArrivalWeight:
@@ -490,9 +508,10 @@ class Bulletin(object):
                     res = "  N/A"
 
             dist_azi[net + "_" + sta] = (dist, azi)
-            wt = arr.weight()
+            wt = arrivalWeight(arr)
             pha = arr.phase().code()
             flag = "X "[wt > 0.1]
+
             try:
                 status = seiscomp.datamodel.EEvaluationModeNames.name(
                     p.evaluationMode()
@@ -784,8 +803,10 @@ class Bulletin(object):
         lineFMT += " %s%s\n"
 
         for arr in arrivals:
-            if arr.weight() < self.minArrivalWeight:
+            wt = arrivalWeight(arr)
+            if wt < self.minArrivalWeight:
                 continue
+
             if self.distInKM:
                 dist = seiscomp.math.deg2km(arr.distance())
             else:
@@ -1007,19 +1028,17 @@ class Bulletin(object):
             pass
 
     def printEvent(self, event):
-        print(event.publicID())
         try:
             evt = None
             if isinstance(event, seiscomp.datamodel.Event):
-                print("fdgfd -1")
                 self._evt = event
                 org = seiscomp.datamodel.Origin.Find(event.preferredOriginID())
                 if not org:
                     org = event.preferredOriginID()
                 return self.printOrigin(org)
             elif isinstance(event, str):
-                print("fdgfd -2")
                 if self._dbq:
+                    print(event.publicID())
                     evt = self._dbq.loadObject(
                         seiscomp.datamodel.Event.TypeInfo(), event
                     )
@@ -1031,7 +1050,6 @@ class Bulletin(object):
             else:
                 raise TypeError("illegal type for event")
         finally:
-            print("fdgfd")
             self._evt = None
 
 
@@ -1315,7 +1333,7 @@ Create a bulletin from event parameters in XML
                                     % (inputFile, ev.publicID())
                                 )
                                 continue
-                            print(ev.publicID())
+
                             try:
                                 txt += bulletin.printEvent(ev)
                             except KeyError:
