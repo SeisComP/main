@@ -50,6 +50,17 @@ static void removeAllArrivals(Seiscomp::DataModel::Origin *origin) {
 }
 
 
+static void removeUnusedArrivals(Seiscomp::DataModel::Origin *origin) {
+	for ( size_t i = 0; i < origin->arrivalCount(); ) {
+		auto arrival = origin->arrival(i);
+		if (arrival->weight() == 0) {
+			origin->removeArrival(i);
+		} else {
+			++i;
+		}
+	}
+}
+
 static void removeAllNetworkMagnitudes(Seiscomp::DataModel::Origin *origin) {
 
 	while ( origin->magnitudeCount() > 0 )
@@ -124,6 +135,8 @@ class EventDump : public Seiscomp::Client::Application {
 			                        "Export focal mechanisms.");
 			commandline().addOption("Dump", "ignore-arrivals,a",
 			                        "Do not export origin arrivals.");
+			commandline().addOption("Dump", "ignore-unused",
+			                        "Do not export unused origin arrivals.");
 			commandline().addOption("Dump", "ignore-magnitudes",
 			                        "Ignores magnitudes of exported origins.");
 			commandline().addOption("Dump", "preferred-only,p",
@@ -184,6 +197,7 @@ class EventDump : public Seiscomp::Client::Application {
 			withStationMagnitudes = commandline().hasOption("with-magnitudes");
 			allMagnitudes         = commandline().hasOption("all-magnitudes");
 			ignoreArrivals        = commandline().hasOption("ignore-arrivals");
+			ignoreUnusedArrivals  = commandline().hasOption("ignore-unused");
 			withFocalMechanisms   = commandline().hasOption("with-focal-mechanisms");
 
 			return true;
@@ -617,6 +631,9 @@ class EventDump : public Seiscomp::Client::Application {
 			if ( ignoreArrivals )
 				removeAllArrivals(origin);
 
+			if ( ignoreUnusedArrivals )
+				removeUnusedArrivals(origin);
+
 			if ( withPicks ) {
 				for ( size_t a = 0; a < origin->arrivalCount(); ++a ) {
 					const string &pickID =
@@ -766,6 +783,9 @@ class EventDump : public Seiscomp::Client::Application {
 				if ( ignoreArrivals )
 					removeAllArrivals(origin.get());
 
+				if ( ignoreUnusedArrivals )
+					removeUnusedArrivals(origin.get());
+
 				ep->add(origin.get());
 
 				if ( withPicks ) {
@@ -887,6 +907,9 @@ class EventDump : public Seiscomp::Client::Application {
 							if ( ignoreArrivals )
 								removeAllArrivals(triggeringOrigin.get());
 
+							if ( ignoreUnusedArrivals )
+								removeUnusedArrivals(triggeringOrigin.get());
+
 							if ( preferredOnly && !allMagnitudes ) {
 								MagnitudePtr netMag;
 								while ( triggeringOrigin->magnitudeCount() > 0 ) {
@@ -948,6 +971,9 @@ class EventDump : public Seiscomp::Client::Application {
 					if ( ignoreArrivals )
 						removeAllArrivals(origin.get());
 
+					if ( ignoreUnusedArrivals )
+						removeUnusedArrivals(origin.get());
+
 					if ( preferredOnly && !allMagnitudes ) {
 						MagnitudePtr netMag;
 						while ( origin->magnitudeCount() > 0 ) {
@@ -971,6 +997,7 @@ class EventDump : public Seiscomp::Client::Application {
 		bool preferredOnly;
 		bool allMagnitudes;
 		bool ignoreArrivals;
+		bool ignoreUnusedArrivals;
 		bool withPicks;
 		bool withAmplitudes;
 		bool withStationMagnitudes;
