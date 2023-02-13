@@ -1210,7 +1210,6 @@ void App::emitTrigger(const Processing::Detector *pickProc,
 	}
 
 	proc->setTrigger(time);
-	proc->setMargin(60.);
 	proc->setPublishFunction(boost::bind(&App::emitPPick, this, _1, _2));
 
 	const DataModel::WaveformStreamID waveformID(waveformStreamID(rec));
