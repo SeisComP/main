@@ -472,7 +472,7 @@ bool App::init() {
 				recordStream()->addStream(it->first.first, it->first.second, it->second.locationCode, compE->code());
 		}
 
-		if ( _config.playback ) {
+		if ( _config.playback && inv ) {
 			// Figure out all historic epochs for locations and channels and
 			// subscribe to all channels covering all epochs. This is only
 			// required in playback mode if historic data is fed into the picker
