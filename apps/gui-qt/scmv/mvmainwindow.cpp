@@ -1184,7 +1184,11 @@ bool MvMainWindow::readStationsFromDataBase() {
 			if ( it == stations.end() ) continue;
 
 			it->second.stationRef = station;
-			it->second.stationSymbolRef = new MvStationSymbol(lat, lon, _annotationLayer->annotations()->add("TEST"));
+			it->second.stationSymbolRef = new MvStationSymbol(
+				_mapWidget->canvas().symbolCollection(),
+				lat, lon,
+				_annotationLayer->annotations()->add("")
+			);
 			it->second.stationSymbolRef->setType(StationSymbolType);
 			it->second.stationSymbolRef->setID(it->second.id);
 			it->second.stationSymbolRef->setNetworkCode(station->network()->code());

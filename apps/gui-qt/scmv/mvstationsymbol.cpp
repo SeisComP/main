@@ -30,10 +30,12 @@ QColor MvStationSymbol::_characterDrawingColor = Qt::black;
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-MvStationSymbol::MvStationSymbol(double latitude, double longitude,
+MvStationSymbol::MvStationSymbol(Map::Layer *layer,
+                                 double latitude, double longitude,
                                  Map::AnnotationItem *annotation,
                                  Map::Decorator *decorator)
 : StationSymbol(latitude, longitude, decorator)
+, _layer(layer)
 , _annotation(annotation) {}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -111,6 +113,20 @@ void MvStationSymbol::updateAnnotation() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MvStationSymbol::setDrawFullID(bool f) {
 	_drawFullId = f;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool MvStationSymbol::isInside(int x, int y) const {
+	if ( Seiscomp::Gui::StationSymbol::isInside(x, y) ) {
+		_layer->setToolTip(_annotation->text);
+		return true;
+	}
+
+	return false;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
