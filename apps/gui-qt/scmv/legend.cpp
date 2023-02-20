@@ -252,7 +252,7 @@ void Legend::drawStation(QPainter& painter, const QPoint& pos, const QColor& col
                          const QChar& character, const QString& annotation) const {
 	painter.save();
 
-	MvStationSymbol stationSymbol(0.0, 0.0, nullptr);
+	MvStationSymbol stationSymbol(nullptr, 0.0, 0.0, nullptr);
 	stationSymbol.setCharacter(character);
 	stationSymbol.setCharacterDrawingColor(SCScheme.colors.stations.text);
 

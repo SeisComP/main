@@ -18,11 +18,13 @@
 
 #include <seiscomp/gui/datamodel/stationsymbol.h>
 #include <seiscomp/gui/map/annotations.h>
+#include <seiscomp/gui/map/layer.h>
 
 
 class MvStationSymbol : public Seiscomp::Gui::StationSymbol {
 	public:
-		MvStationSymbol(double latitude, double longitude,
+		MvStationSymbol(Seiscomp::Gui::Map::Layer *layer,
+		                double latitude, double longitude,
 		                Seiscomp::Gui::Map::AnnotationItem *annotation,
 		                Seiscomp::Gui::Map::Decorator* decorator = nullptr);
 
@@ -44,6 +46,7 @@ class MvStationSymbol : public Seiscomp::Gui::StationSymbol {
 		void updateAnnotation();
 
 	protected:
+		bool isInside(int x, int y) const override;
 		void calculateMapPosition(const Seiscomp::Gui::Map::Canvas *canvas) override;
 		void customDraw(const Seiscomp::Gui::Map::Canvas *canvas, QPainter& painter) override;
 
@@ -51,6 +54,7 @@ class MvStationSymbol : public Seiscomp::Gui::StationSymbol {
 		void drawCharacter(QPainter& painter);
 
 	private:
+		Seiscomp::Gui::Map::Layer          *_layer;
 		Seiscomp::Gui::Map::AnnotationItem *_annotation;
 		std::string                         _networkCode;
 		std::string                         _stationCode;
