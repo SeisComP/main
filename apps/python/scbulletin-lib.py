@@ -1038,7 +1038,6 @@ class Bulletin(object):
                 return self.printOrigin(org)
             elif isinstance(event, str):
                 if self._dbq:
-                    print(event.publicID())
                     evt = self._dbq.loadObject(
                         seiscomp.datamodel.Event.TypeInfo(), event
                     )
