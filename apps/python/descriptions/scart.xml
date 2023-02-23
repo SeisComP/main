@@ -52,12 +52,13 @@
 					</description>
 				</option>
 			</group>
-			<group name="Output">
+
+			<group name="Processing">
 				<option flag="c" argument="channels">
 					<description>
 					Channel filter to be applied to the data streams.
 					Default for Dump: "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
-					Default for Import: "*" 
+					Default for Import: "*"
 					</description>
 				</option>
 				<option flag="E">
@@ -70,11 +71,16 @@
 					Dump mode: specify the number of file handles to cache. Default: 100.
 					</description>
 				</option>
+				<option flag="i">
+					<description>
+					Ignore records without data samples.
+					</description>
+				</option>
 				<option flag="l" long-flag="list" argument="file">
 					<description>
-					Uses a stream list file instead of defined networks and channels
-					(-n and -c are ignored). The list can be generated from events
-					by scevetstreams. One line per stream.
+					Use a stream list file with time windows instead of defined networks
+					and channels (-n, -c and -t are ignored). The list can be generated
+					from events by scevtstreams. One line per stream.
 					Line format: starttime;endtime;streamID.
 					The time format is the same as described in option '-t'.
 
@@ -83,23 +89,9 @@
 					2019-07-17 02:00:00;2019-07-17 02:10:00;GR.CLL..BH?
 					</description>
 				</option>
-				<option flag="" long-flag="nslc" argument="file">
-					<description>
-					Uses a stream list file instead of defined networks and
-					channels (-n and -c are ignored). In dump mode only. The
-					time window must be provided separately. Wild cards may be
-					used. The list can be generated from bindings by scdumpcfg
-					or from inventory by scinv. Use one line per stream. Line
-					format: NET.STA.LOC.CHA.
-
-					Example:
-
-					GR.CLL..BH?
-					</description>
-				</option>
 				<option flag="m" long-flag="modify">
 					<description>
-					Dump mode: modify the record time for real time playback.
+					Dump mode: Modify the record time for real time playback.
 					The first record time is NOW. The relative time of successive records
 					to the first one are kept.
 					</description>
@@ -111,35 +103,46 @@
 					If CHA is omitted, it defaults to the value of -c option. Default: "*"
 					</description>
 				</option>
+				<option flag="" long-flag="nslc" argument="file">
+					<description>
+					Stream list file to be used instead of defined networks and
+					channels (-n and -c are ignored). In dump mode only. The
+					time window must be provided separately. Wild cards may be
+					used. The list can be generated from bindings by scdumpcfg
+					or from inventory by scinv. Use one line per stream. Line
+					format: NET.STA.LOC.CHA.
+
+					Example:
+
+					GR.CLL..BH?
+					</description>
+				</option>
+				<option flag="" long-flag="rename" argument="rule">
+					<description>
+					Rename stream data according to the provided rule(s).
+					A rule is "[match-stream:]rename-stream" and match-stream
+					is optional. match-stream and rename-stream are in the
+					"NET.STA.LOC.CHA" format. match-stream supports special
+					charactes "?" "*" "|" "(" ")". rename-stream supports the
+					special character "-" that can be used in place of NET, STA,
+					LOC, CHA codes with the meaning of not renaming those.
+					"-" can also be used as the last character in CHA code.
+					Multiple rules can be provided as a comma separated list
+					or by providing multiple --rename options.
+					</description>
+				</option>
 				<option flag="s" long-flag="sort">
 					<description>
-					Dump mode: sort records by [start-]time. To sort records by their
+					Dump mode: Sort records by [start-]time. To sort records by their
 					endtime use -E.
 					</description>
 				</option>
 				<option long-flag="speed">
 					<description>
-					Dump mode: specify the speed to dump the records. A value of 0 means
+					Dump mode: Specify the speed to dump the records. A value of 0 means
 					no delay otherwise speed is a multiplier of the real time difference
 					between the records. When feeding the records directly into the replay
 					pipe a value of 1 (real time) is recommended.
-					</description>
-				</option>
-				<option long-flag="stdout">
-					<description>
-					Import mode: write to stdout instead of creating a SDS archive.
-					</description>
-				</option>
-				<option long-flag="print-streams">
-					<description>
-					Print stream information only and exit. Works in import, dump
-					and check mode. Output: NET.STA.LOC.CHA StartTime EndTime.
-					</description>
-				</option>
-				<option long-flag="test">
-					<description>
-					Test only, no record output. This switch is useful
-					for debugging.
 					</description>
 				</option>
 				<option flag="t" argument="timeWindow">
@@ -151,29 +154,35 @@
 					&lt;-t &quot;2008-01-01 00:00:00~2008-01-01 01:00:00&quot;&gt;.
 					</description>
 				</option>
+			</group>
+
+			<group name="Output">
+				<option long-flag="print-streams">
+					<description>
+					Print stream information only and exit. Works in import, dump
+					and check mode. Output: NET.STA.LOC.CHA StartTime EndTime.
+					</description>
+				</option>
+				<option long-flag="stdout">
+					<description>
+					Import mode: Write to stdout instead of creating a SDS archive.
+					</description>
+				</option>
+				<option long-flag="test">
+					<description>
+					Test only, no record output. This switch is useful
+					for debugging.
+					</description>
+				</option>
 				<option flag="" long-flag="with-filecheck">
 					<description>
-					Import mode: check all accessed files. Unsorted or unreadable
+					Import mode: Check all accessed files. Unsorted or unreadable
 					files are reported to stderr.
 					</description>
 				</option>
 				<option flag="" long-flag="with-filename">
 					<description>
-					Import mode: print all accessed files to stdout after import.
-					</description>
-				</option>
-				<option flag="" long-flag="rename" argument="rule">
-					<description>
-					Rename stream data according to the provided rule(s).
-					A rule is "[match-stream:]rename-stream" and match-stream
-					is optional. match-stream and rename-stream are in the 
-					"NET.STA.LOC.CHA" format. match-stream supports special
-					charactes "?" "*" "|" "(" ")". rename-stream supports the
-					special character "-" that can be used in place of NET, STA,
-					LOC, CHA codes with the meaning of not renaming those. 
-					"-" can also be used as the last character in CHA code.
-					Multiple rules can be provided as a comma separated list
-					or by providing multiple --rename options. 
+					Import mode: Print all accessed files to stdout after import.
 					</description>
 				</option>
 			</group>
