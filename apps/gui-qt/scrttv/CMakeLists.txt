@@ -2,31 +2,24 @@ SET(PACKAGE_NAME TRACEVIEW)
 SET(APP_NAME scrttv)
 
 SET(
-    ${PACKAGE_NAME}_SOURCES
-	main.cpp
-	mainwindow.cpp
+	${PACKAGE_NAME}_SOURCES
+		main.cpp
+		associator.cpp
+		mainwindow.cpp
+		statuslabel.cpp
+		tracemarker.cpp
 )
 
 SET(
-    ${PACKAGE_NAME}_HEADERS
+	${PACKAGE_NAME}_MOC_HEADERS
+		associator.h
+		mainwindow.h
+		progressbar.h
+		statuslabel.h
 )
 
+SET(${PACKAGE_NAME}_UI associator.ui mainwindow.ui)
 
-SET(
-    ${PACKAGE_NAME}_MOC_HEADERS
-	mainwindow.h
-	progressbar.h
-)
-
-SET(
-    ${PACKAGE_NAME}_UI
-	mainwindow.ui
-)
-
-
-SET(
-    ${PACKAGE_NAME}_RESOURCES
-)
 
 SC_ADD_GUI_EXECUTABLE(${PACKAGE_NAME} ${APP_NAME})
 SC_LINK_LIBRARIES_INTERNAL(${APP_NAME} qt)

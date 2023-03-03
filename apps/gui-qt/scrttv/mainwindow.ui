@@ -1,682 +1,779 @@
-<ui version="4.0" >
- <author></author>
- <comment></comment>
- <exportmacro></exportmacro>
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow" >
-  <property name="geometry" >
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1058</width>
+    <height>844</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>RealtimeTraceView</string>
   </property>
-  <widget class="QWidget" name="centralwidget" >
-   <layout class="QVBoxLayout" >
-    <property name="margin" >
-     <number>9</number>
-    </property>
-    <property name="spacing" >
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout">
+    <property name="spacing">
      <number>6</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>9</number>
     </property>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menubar" >
-   <property name="geometry" >
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
-     <height>24</height>
+     <width>1058</width>
+     <height>38</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menu_Inventory" >
-    <property name="title" >
-     <string>I&amp;nventory</string>
-    </property>
-    <addaction name="actionSelectStreams" />
-   </widget>
-   <widget class="QMenu" name="menu_Traces" >
-    <property name="title" >
-     <string>&amp;Traces</string>
-    </property>
-   </widget>
-   <widget class="QMenu" name="menu_File" >
-    <property name="title" >
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
      <string>&amp;File</string>
     </property>
-    <addaction name="actionOpenXMLFile" />
-    <addaction name="separator" />
-    <addaction name="actionQuit" />
+    <addaction name="actionOpenXMLFile"/>
+    <addaction name="separator"/>
+    <addaction name="actionQuit"/>
    </widget>
-   <widget class="QMenu" name="menu_Interaction" >
-    <property name="title" >
-     <string>&amp;Interaction</string>
+   <widget class="QMenu" name="menuWindow">
+    <property name="title">
+     <string>&amp;Window</string>
     </property>
-    <addaction name="actionCycleFilters" />
-    <addaction name="actionCycleFiltersReverse" />
-    <addaction name="actionToggleAllRecords" />
-    <addaction name="actionToggleRecordBorders" />
-    <addaction name="actionToggleZoom" />
-    <addaction name="actionToggleAutoMove" />
-    <addaction name="actionApplyGain" />
-    <addaction name="separator" />
-    <addaction name="actionLineUp" />
-    <addaction name="actionLineDown" />
-    <addaction name="actionPageUp" />
-    <addaction name="actionPageDown" />
-    <addaction name="actionToTop" />
-    <addaction name="actionToBottom" />
-    <addaction name="actionScrollLeft" />
-    <addaction name="actionScrollRight" />
-    <addaction name="actionAlignLeft" />
-    <addaction name="actionAlignRight" />
-    <addaction name="actionJumpToLastRecord" />
-    <addaction name="actionClearPickMarkers" />
-    <addaction name="separator" />
-    <addaction name="actionRestoreConfigOrder" />
-    <addaction name="actionSortDistance" />
-    <addaction name="actionSortStaCode" />
-    <addaction name="actionSortNetStaCode" />
-    <addaction name="actionSortGroup" />
-    <addaction name="separator" />
-    <addaction name="actionHorZoomIn" />
-    <addaction name="actionHorZoomOut" />
-    <addaction name="actionVerZoomIn" />
-    <addaction name="actionVerZoomOut" />
-    <addaction name="actionNormalizeVisibleAmplitudes" />
-    <addaction name="separator" />
-    <addaction name="actionAlignOriginTime" />
-    <addaction name="actionDefaultDisplay" />
-    <addaction name="actionListHiddenStreams" />
    </widget>
-   <addaction name="menu_File" />
-   <addaction name="menu_Interaction" />
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+    <addaction name="actionLineUp"/>
+    <addaction name="actionLineDown"/>
+    <addaction name="actionPageUp"/>
+    <addaction name="actionPageDown"/>
+    <addaction name="actionToTop"/>
+    <addaction name="actionToBottom"/>
+    <addaction name="actionScrollLeft"/>
+    <addaction name="actionScrollRight"/>
+    <addaction name="separator"/>
+    <addaction name="actionAlignLeft"/>
+    <addaction name="actionAlignRight"/>
+    <addaction name="actionAlignOriginTime"/>
+    <addaction name="separator"/>
+    <addaction name="actionHorZoomIn"/>
+    <addaction name="actionHorZoomOut"/>
+    <addaction name="actionVerZoomIn"/>
+    <addaction name="actionVerZoomOut"/>
+    <addaction name="separator"/>
+    <addaction name="actionJumpToLastRecord"/>
+    <addaction name="separator"/>
+    <addaction name="actionViewPicks"/>
+    <addaction name="actionViewArrivals"/>
+    <addaction name="separator"/>
+    <addaction name="actionToggleAllRecords"/>
+    <addaction name="actionToggleRecordBorders"/>
+    <addaction name="actionToggleAutoMove"/>
+    <addaction name="actionApplyGain"/>
+    <addaction name="actionNormalizeVisibleAmplitudes"/>
+    <addaction name="actionDefaultDisplay"/>
+    <addaction name="separator"/>
+    <addaction name="actionSortStaCode"/>
+    <addaction name="actionSortDistance"/>
+    <addaction name="actionSortNetStaCode"/>
+    <addaction name="actionSortGroup"/>
+    <addaction name="actionRestoreConfigOrder"/>
+    <addaction name="separator"/>
+    <addaction name="actionListHiddenStreams"/>
+   </widget>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>&amp;Edit</string>
+    </property>
+    <addaction name="actionCycleFilters"/>
+    <addaction name="actionCycleFiltersReverse"/>
+    <addaction name="separator"/>
+    <addaction name="actionClearPickMarkers"/>
+   </widget>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>&amp;Settings</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuMode">
+    <property name="title">
+     <string>&amp;Mode</string>
+    </property>
+    <addaction name="actionModeNone"/>
+    <addaction name="actionModePicks"/>
+    <addaction name="actionModeZoom"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
+   <addaction name="menuMode"/>
+   <addaction name="menuView"/>
+   <addaction name="menuSettings"/>
+   <addaction name="menuWindow"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar" >
-   <property name="geometry" >
-    <rect>
-     <x>0</x>
-     <y>576</y>
-     <width>800</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="sizeGripEnabled" >
+  <widget class="QStatusBar" name="statusbar">
+   <property name="sizeGripEnabled">
     <bool>false</bool>
    </property>
   </widget>
-  <action name="actionQuit" >
-   <property name="text" >
+  <action name="actionQuit">
+   <property name="text">
     <string>&amp;Quit</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Alt+Q</string>
    </property>
   </action>
-  <action name="actionOpenXMLFile" >
-   <property name="text" >
+  <action name="actionOpenXMLFile">
+   <property name="text">
     <string>&amp;Open XML</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Ctrl+O</string>
    </property>
   </action>
-  <action name="actionLineUp" >
-   <property name="text" >
+  <action name="actionLineUp">
+   <property name="text">
     <string>Line up</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Line up</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Line up</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Up</string>
    </property>
   </action>
-  <action name="actionLineDown" >
-   <property name="text" >
+  <action name="actionLineDown">
+   <property name="text">
     <string>Line down</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Line down</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Line down</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Down</string>
    </property>
   </action>
-  <action name="actionPageUp" >
-   <property name="text" >
+  <action name="actionPageUp">
+   <property name="text">
     <string>Page up</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Page up</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Page up</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>PgUp</string>
    </property>
   </action>
-  <action name="actionPageDown" >
-   <property name="text" >
+  <action name="actionPageDown">
+   <property name="text">
     <string>Page down</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Page down</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Page down</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>PgDown</string>
    </property>
   </action>
-  <action name="actionToTop" >
-   <property name="text" >
+  <action name="actionToTop">
+   <property name="text">
     <string>To top</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>To top</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>To top</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Alt+PgUp</string>
    </property>
   </action>
-  <action name="actionToBottom" >
-   <property name="text" >
+  <action name="actionToBottom">
+   <property name="text">
     <string>To bottom</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>To bottom</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>To bottom</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Alt+PgDown</string>
    </property>
   </action>
-  <action name="actionScrollLeft" >
-   <property name="text" >
+  <action name="actionScrollLeft">
+   <property name="text">
     <string>Scroll left</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Scroll left</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Scroll left</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Left</string>
    </property>
   </action>
-  <action name="actionScrollRight" >
-   <property name="text" >
+  <action name="actionScrollRight">
+   <property name="text">
     <string>Scroll right</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Scroll right</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Scroll right</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Right</string>
    </property>
   </action>
-  <action name="actionCycleFilters" >
-   <property name="checkable" >
+  <action name="actionCycleFilters">
+   <property name="checkable">
     <bool>false</bool>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Cycle through filters</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Cycle through filters</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Cycle through filters</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>F</string>
    </property>
   </action>
-  <action name="actionSortDistance" >
-   <property name="text" >
+  <action name="actionSortDistance">
+   <property name="text">
     <string>Sort by distance</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Sort by distance</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Sort by distance</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>2</string>
    </property>
   </action>
-  <action name="actionSortStaCode" >
-   <property name="text" >
+  <action name="actionSortStaCode">
+   <property name="text">
     <string>Sort by station code</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Sort by station code</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Sort by station code</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>3</string>
    </property>
   </action>
-  <action name="actionHorZoomIn" >
-   <property name="text" >
+  <action name="actionHorZoomIn">
+   <property name="text">
     <string>Zoom in horizontally</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Zoom in horizontally</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Zoom in horizontally</string>
    </property>
-   <property name="shortcut" >
-    <string>></string>
+   <property name="shortcut">
+    <string>&gt;</string>
    </property>
   </action>
-  <action name="actionHorZoomOut" >
-   <property name="text" >
+  <action name="actionHorZoomOut">
+   <property name="text">
     <string>Zoom out horizontally</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Zoom out horizontally</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Zoom out horizontally</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>&lt;</string>
    </property>
   </action>
-  <action name="actionVerZoomIn" >
-   <property name="text" >
+  <action name="actionVerZoomIn">
+   <property name="text">
     <string>Zoom in vertically</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Zoom in vertically</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Zoom in vertically</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Shift+Y</string>
    </property>
   </action>
-  <action name="actionVerZoomOut" >
-   <property name="text" >
+  <action name="actionVerZoomOut">
+   <property name="text">
     <string>Zoom out vertically</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Zoom out vertically</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Zoom out vertically</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Y</string>
    </property>
   </action>
-  <action name="actionToggleZoom" >
-   <property name="checkable" >
-    <bool>true</bool>
-   </property>
-   <property name="text" >
-    <string>Toggle zoom mode</string>
-   </property>
-   <property name="iconText" >
-    <string>Toggle zoom mode</string>
-   </property>
-   <property name="toolTip" >
-    <string>Toggle zoom mode</string>
-   </property>
-   <property name="shortcut" >
-    <string>Z</string>
-   </property>
-  </action>
-  <action name="actionFilter" >
-   <property name="checkable" >
+  <action name="actionModeZoom">
+   <property name="checkable">
     <bool>false</bool>
    </property>
-   <property name="text" >
+   <property name="text">
+    <string>Zoom</string>
+   </property>
+   <property name="iconText">
+    <string>Zoom mode</string>
+   </property>
+   <property name="toolTip">
+    <string>Enter zoom mode</string>
+   </property>
+   <property name="shortcut">
+    <string>Z</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionModePicks">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Associate picks</string>
+   </property>
+   <property name="iconText">
+    <string>Associate picks</string>
+   </property>
+   <property name="toolTip">
+    <string>Enter pick association mode</string>
+   </property>
+   <property name="shortcut">
+    <string>P</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionFilter">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="text">
     <string>Filter</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Alt+F</string>
    </property>
   </action>
-  <action name="actionSearch" >
-   <property name="checkable" >
+  <action name="actionSearch">
+   <property name="checkable">
     <bool>false</bool>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Search</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Ctrl+F</string>
    </property>
   </action>
-  <action name="actionAbortSearch" >
-   <property name="checkable" >
+  <action name="actionAbortSearch">
+   <property name="checkable">
     <bool>false</bool>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Abort search</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Esc</string>
    </property>
   </action>
-  <action name="actionDisplay" >
-   <property name="text" >
+  <action name="actionDisplay">
+   <property name="text">
     <string>Display</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Alt+D</string>
    </property>
   </action>
-  <action name="actionContents" >
-   <property name="text" >
+  <action name="actionContents">
+   <property name="text">
     <string>Contents</string>
    </property>
   </action>
-  <action name="actionAbout" >
-   <property name="text" >
+  <action name="actionAbout">
+   <property name="text">
     <string>About</string>
    </property>
   </action>
-  <action name="actionDefaultDisplay" >
-   <property name="text" >
+  <action name="actionDefaultDisplay">
+   <property name="text">
     <string>Restore default display</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Restore default display</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Restore default display</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>N</string>
    </property>
   </action>
-  <action name="actionOpen" >
-   <property name="enabled" >
+  <action name="actionOpen">
+   <property name="enabled">
     <bool>false</bool>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>&amp;Open</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Ctrl+O</string>
    </property>
   </action>
-  <action name="actionOpenSeedLink" >
-   <property name="enabled" >
+  <action name="actionOpenSeedLink">
+   <property name="enabled">
     <bool>false</bool>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Open recordstream</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Open recordstream</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Open recordstream</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Ctrl+S</string>
    </property>
   </action>
-  <action name="actionToggleAllRecords" >
-   <property name="checkable" >
+  <action name="actionToggleAllRecords">
+   <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="text" >
-    <string>Toggle all records</string>
+   <property name="text">
+    <string>Show filtered and unfiltered records</string>
    </property>
-   <property name="iconText" >
-    <string>Toggle all records</string>
+   <property name="iconText">
+    <string>Show filtered and unfiltered records</string>
    </property>
-   <property name="toolTip" >
-    <string>Toggle all records</string>
+   <property name="toolTip">
+    <string>Show filtered and unfiltered records</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>R</string>
    </property>
   </action>
-  <action name="actionAlignLeft" >
-   <property name="text" >
+  <action name="actionAlignLeft">
+   <property name="text">
     <string>Align left</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Align left</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Align left</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Ctrl+Left</string>
    </property>
   </action>
-  <action name="actionAlignRight" >
-   <property name="text" >
+  <action name="actionAlignRight">
+   <property name="text">
     <string>Align right</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Align right</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Align right</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Ctrl+Right</string>
    </property>
   </action>
-  <action name="actionRestoreConfigOrder" >
-   <property name="text" >
+  <action name="actionRestoreConfigOrder">
+   <property name="text">
     <string>Restore config order</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Restore config order</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Restore config order</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>1</string>
    </property>
   </action>
-  <action name="actionNormalizeVisibleAmplitudes" >
-   <property name="checkable" >
+  <action name="actionNormalizeVisibleAmplitudes">
+   <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Normalize visible amplitudes</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Normalize visible amplitudes</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Normalize visible amplitudes</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>S</string>
    </property>
   </action>
-  <action name="actionJumpToLastRecord" >
-   <property name="text" >
+  <action name="actionJumpToLastRecord">
+   <property name="text">
     <string>Goto last record</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Goto last record</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Goto last record</string>
    </property>
   </action>
-  <action name="actionSelectStreams" >
-   <property name="text" >
+  <action name="actionSelectStreams">
+   <property name="text">
     <string>&amp;Select streams</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Select streams</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Select streams</string>
    </property>
   </action>
-  <action name="actionAddTabulator" >
-   <property name="text" >
+  <action name="actionAddTabulator">
+   <property name="text">
     <string>Add tabulator</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Ctrl+T</string>
    </property>
   </action>
-  <action name="actionSortNetStaCode" >
-   <property name="text" >
+  <action name="actionSortNetStaCode">
+   <property name="text">
     <string>Sort by network-stationcode</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Sort by network-stationcode</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Sort by network-stationcode</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>4</string>
    </property>
   </action>
-  <action name="actionSortGroup" >
-   <property name="text" >
+  <action name="actionSortGroup">
+   <property name="text">
     <string>Sort by groups</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Sort by groups</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Sort by groups</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>5</string>
    </property>
   </action>
-  <action name="actionAlignOriginTime" >
-   <property name="text" >
-    <string>Align by origin time</string>
+  <action name="actionAlignOriginTime">
+   <property name="text">
+    <string>Align on origin time</string>
    </property>
-   <property name="iconText" >
-    <string>Align by origin time</string>
+   <property name="iconText">
+    <string>Align on origin time</string>
    </property>
-   <property name="toolTip" >
-    <string>Align by origin time</string>
+   <property name="toolTip">
+    <string>Align on origin time</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>O</string>
    </property>
   </action>
-  <action name="actionListHiddenStreams" >
-   <property name="text" >
+  <action name="actionListHiddenStreams">
+   <property name="text">
     <string>List hidden streams</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>List hidden streams</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>List hidden streams</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>H</string>
    </property>
   </action>
-  <action name="actionToggleAutoMove" >
-   <property name="checkable" >
+  <action name="actionToggleAutoMove">
+   <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="checked" >
+   <property name="checked">
     <bool>true</bool>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Auto move traces</string>
    </property>
-   <property name="iconText" >
+   <property name="iconText">
     <string>Auto move traces</string>
    </property>
-   <property name="toolTip" >
+   <property name="toolTip">
     <string>Auto move traces</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>F8</string>
    </property>
   </action>
-  <action name="actionClearPickMarkers" >
-   <property name="text" >
-    <string>Clear pick markers</string>
+  <action name="actionClearPickMarkers">
+   <property name="text">
+    <string>Clear loaded picks</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>C</string>
    </property>
   </action>
-  <action name="actionApplyGain" >
-   <property name="checkable" >
+  <action name="actionApplyGain">
+   <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="checked" >
+   <property name="checked">
     <bool>true</bool>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Apply gain</string>
    </property>
   </action>
-  <action name="actionCycleFiltersReverse" >
-   <property name="text" >
+  <action name="actionCycleFiltersReverse">
+   <property name="text">
     <string>Cycle through filters (reverse)</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Shift+F</string>
    </property>
   </action>
-  <action name="actionToggleRecordBorders" >
-   <property name="checkable" >
+  <action name="actionToggleRecordBorders">
+   <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="text" >
-    <string>Toggle record borders</string>
+   <property name="text">
+    <string>Show record borders</string>
    </property>
-   <property name="iconText" >
-    <string>Toggle record borders</string>
+   <property name="iconText">
+    <string>Show record borders</string>
    </property>
-   <property name="toolTip" >
-    <string>Toggle record borders</string>
+   <property name="toolTip">
+    <string>Show record borders</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>B</string>
    </property>
   </action>
+  <action name="actionZoom">
+   <property name="text">
+    <string>Zoom</string>
+   </property>
+  </action>
+  <action name="actionCollect_picks">
+   <property name="text">
+    <string>Collect picks</string>
+   </property>
+  </action>
+  <action name="actionModeNone">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Standard mode</string>
+   </property>
+   <property name="toolTip">
+    <string>Disable any selection mode and return to standard mode</string>
+   </property>
+   <property name="shortcut">
+    <string>Esc</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionViewPicks">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Picks</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
+  </action>
+  <action name="actionViewArrivals">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Arrivals</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
+   </property>
+  </action>
  </widget>
- <pixmapfunction></pixmapfunction>
  <resources/>
  <connections/>
 </ui>

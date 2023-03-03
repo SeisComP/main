@@ -12,10 +12,8 @@
  ***************************************************************************/
 
 
-
-
-#ifndef __MAINWINDOW__
-#define __MAINWINDOW__
+#ifndef SEISCOMP_GUI_SCRTTV_MAINWINDOW
+#define SEISCOMP_GUI_SCRTTV_MAINWINDOW
 
 #ifndef Q_MOC_RUN
 #include <seiscomp/core/record.h>
@@ -33,6 +31,7 @@
 #include "ui_mainwindow.h"
 
 #include <QtGui>
+#include <QComboBox>
 #include <QTabBar>
 
 #include <map>
@@ -42,6 +41,7 @@
 class QLineEdit;
 
 namespace Seiscomp {
+
 namespace DataModel {
 
 class Pick;
@@ -54,6 +54,10 @@ class Pick;
 
 namespace Applications {
 namespace TraceView {
+
+
+class Associator;
+class TraceMarker;
 
 
 struct TraceState {
@@ -149,20 +153,8 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		MainWindow();
 		~MainWindow();
 
+
 	public:
-		void setFiltersByName(const std::vector<std::string> &filters);
-
-		void setStartTime(const Seiscomp::Core::Time &t);
-		void setEndTime(const Seiscomp::Core::Time &t);
-
-		void setBufferSize(Seiscomp::Core::TimeSpan bs);
-
-		void setAllowTimeWindowExtraction(bool);
-		void setMaximumDelay(int d);
-		void setShowPicks(bool);
-		void setAutomaticSortEnabled(bool);
-		void setInventoryEnabled(bool);
-
 		void start();
 
 
@@ -211,6 +203,8 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		void scaleVisibleAmplitudes(bool);
 		void listHiddenStreams();
 
+		void updateMarkerVisibility();
+
 		void removeTab(int);
 
 		void setupItem(const Seiscomp::Record*, Seiscomp::Gui::RecordViewItem*);
@@ -221,7 +215,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		void objectAdded(const QString& parentID, Seiscomp::DataModel::Object*);
 		void objectUpdated(const QString& parentID, Seiscomp::DataModel::Object*);
 
-		bool addPick(Seiscomp::DataModel::Pick* pick);
+		bool addPick(Seiscomp::DataModel::Pick* pick, int refCount);
 
 		void moveSelection(Seiscomp::Gui::RecordView* target,
 		                   Seiscomp::Gui::RecordView* source);
@@ -233,8 +227,21 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		void nextSearch();
 		void abortSearch();
 
+		void clearSelection();
+
 		void checkTraceDelay();
 		void updateTraceCount();
+
+		void selectModeNone();
+		void selectModeZoom();
+		void selectModePicks();
+		void selectMode(int mode);
+
+		void filterSelectionChanged();
+
+		void selectedTraceViewRubberBand(QList<Seiscomp::Gui::RecordViewItem*>,
+		                                 double tmin, double tmax,
+		                                 Seiscomp::Gui::RecordView::SelectionOperation operation);
 
 
 	protected:
@@ -267,48 +274,40 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 
 
 	private:
-		Ui::MainWindow _ui;
-		QVector<TraceView*> _traceViews;
+		Ui::MainWindow                            _ui;
+		QDockWidget                              *_dockAssociator{nullptr};
+		QVector<TraceView*>                       _traceViews;
+		Associator                               *_associator{nullptr};
+		QMap<std::string, TraceMarker*>           _markerMap;
 
-		Seiscomp::Gui::RecordStreamThread* _recordStreamThread;
+		Seiscomp::Gui::RecordStreamThread        *_recordStreamThread;
 
-		QLabel* _statusBarFile;
-		QLabel* _statusBarFilter;
-		QLineEdit *_statusBarSearch;
-		Seiscomp::Gui::ProgressBar* _statusBarProg;
-		Seiscomp::Core::Time _endTime;
-		Seiscomp::Core::Time _originTime;
-		Seiscomp::Core::Time _lastRecordTime;
-		Seiscomp::Core::Time _startTime;
-		Core::TimeSpan _bufferSize;
-
-		bool _autoApplyFilter;
-		bool _automaticSortEnabled;
-		bool _inventoryEnabled;
-		int _maxDelay;
+		QComboBox                                *_statusBarSelectMode;
+		QLabel                                   *_statusBarFile;
+		QComboBox                                *_statusBarFilter;
+		QLineEdit                                *_statusBarSearch;
+		Seiscomp::Gui::ProgressBar               *_statusBarProg;
+		Seiscomp::Core::Time                      _originTime;
+		Seiscomp::Core::Time                      _lastRecordTime;
+		Seiscomp::Core::Time                      _startTime;
 
 		QMap<DataModel::WaveformStreamID, double> _scaleMap;
-		QColor _searchBase, _searchError;
+		QColor                                    _searchBase, _searchError;
 
-		TraceTabWidget* _tabWidget;
+		TraceTabWidget                           *_tabWidget;
 
-		QTimer* _timer;
-		QTimer* _switchBack;
+		QTimer                                   *_timer;
+		QTimer                                   *_switchBack;
 
-		bool _needColorUpdate;
-		bool _allowTimeWindowExtraction;
-		int  _lastFoundRow;
-		bool _showPicks;
-		int  _rowSpacing;
-		bool _withFrames;
-		int  _frameMargin;
-		int  _rowHeight;
-		int  _numberOfRows;
+		bool                                      _needColorUpdate;
+		int                                       _lastFoundRow;
+		int                                       _rowSpacing;
+		bool                                      _withFrames;
+		int                                       _frameMargin;
+		int                                       _rowHeight;
+		int                                       _numberOfRows;
 
-		std::vector<std::string> _filters;
-		int _currentFilterIdx;
-
-		Seiscomp::Gui::QuestionBox _questionApplyChanges;
+		Seiscomp::Gui::QuestionBox                _questionApplyChanges;
 
 		struct WaveformStreamEntry {
 			WaveformStreamEntry(const Seiscomp::DataModel::WaveformStreamID& id, int idx, double s = 1.0)
