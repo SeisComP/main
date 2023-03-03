@@ -44,6 +44,10 @@ the new artificial origin without any arrivals. Pressing "Create" sends this ori
 LOCATION group. This artificial origin is received e.g. by :ref:`scolv` and enables an immediate
 manual analysis of the closest traces.
 
+Alternatively picks can be selected and origins can be located as preliminary
+solution to be sent to the system as regular origin objects, see section
+:ref:`scrttv-origin-association`.
+
 Among the configurable parameters are:
 
 * Global :term:`bindings <binding>`:
@@ -160,6 +164,109 @@ configured in the scheme parameters in :file:`global.cfg` or :file:`scrttv.cfg`:
 * :confval:`scheme.records.borders.drawMode`: Define where to draw borders, e.g. on top, bottom or as boxes.
 * :confval:`scheme.colors.records.borders.*`: Define pen and brush properties.
 
+.. _scrttv-origin-association:
+
+Origin Association
+==================
+
+scrttv comes with a minimal version of a manual locator. Picks can be selected,
+relocated and committed to the messaging system as manual preliminary location.
+In constrast to the artificial origin operation which requires an immediate
+intervention with, e.g. :ref:`scolv, this operation allows to store all those
+detected origins and work on them later because they will be stored in the
+database.
+
+Picks and Arrivals
+------------------
+
+Previous versions of scrttv (< 5.4) only displayed :term:`picks <pick>`.
+This hasn't really changed in later versions but additionally scrttv determines
+an additional state of a pick called :term:`arrival`. A pick is an arrival if
+it is associated to an valid origin. An origin is called valid if its evaluation
+status is not REJECTED. When scrttv loads all picks from the database for the
+currently visible time span it also checks if each pick is associated with a
+valid origin and declares the arrival state if the check yields true.
+
+Picks and arrivals can be differentiated visually by their colours. Consistently
+the same colours are being used as in any other GUI displaying both types, namely
+
+* :confval:`scheme.colors.picks.automatic`
+* :confval:`scheme.colors.picks.manual`
+* :confval:`scheme.colors.picks.undefined`
+* :confval:`scheme.colors.arrivals.automatic`
+* :confval:`scheme.colors.arrivals.manual`
+* :confval:`scheme.colors.arrivals.undefined`
+
+That visual difference should support the operator in finding clusters of picks
+and creating new location missed by the automatic system. In addition to the
+different colours an operator can hide either type and remove the markers from
+the traces.
+
+The next sections will only use the :term:`pick` which can be used
+interchangeable for pick or arrival.
+
+Pick Selection
+--------------
+
+In order to select picks, the pick selection mode must be entered. Then dragging
+a box (rubberband) around the picks in question will add them to the "cart".
+The "cart" refers to the list of picks of the manual associated widget used to
+attempt to locate an origin.
+
+If at least one pick has been added to the cart the manual associator will
+open as a dock widget.
+
+.. note::
+
+   A dock widget is a special kind of window which can be docked to any border
+   of the application or even displayed floated as kind of overlay window. The
+   position of the dock widget will be persistent across application restarts.
+
+At any change of the pick cart, the associator attempts a relocation and will
+display the result in the details or an error message at the top.
+
+To add more picks to the cart, shift has to be pressed while dragging the
+selection box. To remove picks from the cart, ctrl has to be pressed while
+dragging the selection box. Picks can also be removed individually from the
+cart by clicking the close icon of each pick item.
+
+Picks being part of the cart are also highlighted in the traces.
+
+Location Setup
+--------------
+
+The associator adds all available locators in the system and presents them
+in a dropdown list at the bottom. The locator which should be selected as default
+can be controlled with :confval:`defaultLocator`. The profile which is selected
+as default can be controlled with :confval:`defaultLocatorProfile`.
+
+Whenever the operator changes any of the values, a new location attempt is being
+made which can succeed or fail. A successful attempt will update the details,
+a failed attempt will reset the details and print an error message at the top
+of the window.
+
+Each locator can be configured locally by clicking the wrench icon. This
+configuration is not persistent across application restarts. It can be used
+to tune and test various settings. Global locator configurations in the
+configuration files are of course being considered by scrttv.
+
+In addition to the locator and its profile a fixed depth can be set. By default
+the depth is free and it is up to the locator implementation to assign a depth
+to the origin. The depth dropdown list allows to set a predefined depth. The
+list of depth values can be controlled with :confval:`fixedDepths`.
+
+Committing a solution
+---------------------
+
+Once a solution is accepted by the operator it can be committed to the system
+as regular origin as emitted by, e.g. `scautoloc`. Those origins will be
+grabbed by scevent and possibly associated with an :term:`event`.
+
+Alternatively the button "Show Details" can be used to just send the origin to
+the GUI group and let :ref:`scolv` pick it up and show it. This will not store
+the origin in the database and works the same way as creating an artificial
+origin.
+
 
 Offline Mode
 ============
@@ -183,17 +290,22 @@ Hotkey                   Description
 :kbd:`Shift+F1`          Open scrttv documentation
 :kbd:`F2`                Setup connection dialog
 :kbd:`F11`               Toggle fullscreen
+:kbd:`ESC`               Set standard selection mode and deselect all traces
 :kbd:`c`                 Clear picker  markers
 :kbd:`b`                 Toggle record borders
 :kbd:`h`                 List hidden streams
+:kbd:`Ctrl+a`            Toggle showing arrivals
+:kbd:`Ctrl+p`            Toggle showing picks
 :kbd:`n`                 Restore default display
 :kbd:`o`                 Align by origin time
+:kbd:`p`                 Enable pick selection mode
 :kbd:`Alt+q`             Quit
 -----------------------  ---------------------------------------
 **Filtering**
 -----------------------  ---------------------------------------
-:kbd:`f`                 Toggle filter
-:kbd:`r`                 Toggle all records
+:kbd:`f`                 Switch to next filter in list
+:kbd:`Shift+f`           Switch to previous filter in list
+:kbd:`r`                 Toggle showing all records
 -----------------------  ---------------------------------------
 **Navigation**
 -----------------------  ---------------------------------------
@@ -224,5 +336,5 @@ Hotkey                   Description
 :kbd:`y`                 Vertical zoom-out
 :kbd:`Shift+y`           Vertical zoom-in
 :kbd:`Ctrl+mouse wheel`  Vertical and horizontal zooming
-:kbd:`z`                 Toggle zoom
+:kbd:`z`                 Enable zoom
 =======================  =======================================

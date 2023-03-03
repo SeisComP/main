@@ -3,6 +3,22 @@
 	<module name="scrttv" category="GUI">
 		<description>Real-time trace view.</description>
 		<configuration>
+			<group name="messaging">
+				<group name="groups">
+					<parameter name="config" type="string" default="CONFIG">
+						<description>
+							The messaging group to which config messages (such
+							as station enable/disable messages) are being sent.
+						</description>
+					</parameter>
+					<parameter name="location" type="string" default="LOCATION">
+						<description>
+							The messaging group to which location messages
+							are being sent.
+						</description>
+					</parameter>
+				</group>
+			</group>
 			<parameter name="maxDelay" type="int" unit="s" default="0">
 				<description>
 					If greater than 0, then all traces for which the data latency is
@@ -20,14 +36,14 @@
 					If enabled, picks are shown.
 				</description>
 			</parameter>
-			<parameter name="filter" type="string" default="&quot;RMHP(2)>>ITAPER(5)>>BW(3,0.5,8.0)&quot;">
+			<parameter name="filter" type="string">
 				<description>
 				Define the filter to be used when filtering is activated. This
 				is only being used if filters is not set otherwise it is
 				overridden. This option is mainly for backward compatibility.
 				</description>
 			</parameter>
-			<parameter name="filters" type="list:string">
+			<parameter name="filters" type="list:string" default="&quot;RMHP(2)>>ITAPER(5)>>BW(3,0.5,8.0)&quot;">
 				<description>
 					Define a list of filters that is cycles through when pressing 'f'.
 					This options supersedes the filter option. If not defined then
@@ -56,6 +72,23 @@
 				<description>
 				Time span in seconds to switch back to the last view after an origin
 				caused resorting. The default is 15min.
+				</description>
+			</parameter>
+			<parameter name="defaultLocator" type="string">
+				<description>
+				The locator which is activated as default locator.
+				</description>
+			</parameter>
+			<parameter name="defaultLocatorProfile" type="string">
+				<description>
+				The locator profile which is activated as default profile for
+				the default locator.
+				</description>
+			</parameter>
+			<parameter name="fixedDepths" type="list:double" unit="km" default="0, 10, 18">
+				<description>
+				A list of depths used to populate the locator depth selection
+				dropdown list.
 				</description>
 			</parameter>
 			<group name="streams">

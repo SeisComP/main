@@ -12,114 +12,77 @@
  ***************************************************************************/
 
 
-
-
 #define SEISCOMP_COMPONENT RTTV
 
 #include <seiscomp/logging/log.h>
 #include <seiscomp/gui/core/application.h>
+
+#include "settings.h"
 #include "mainwindow.h"
 
-using namespace Seiscomp::Gui;
-using namespace Seiscomp::Applications;
 
-class TraceViewApp : public Kicker<Seiscomp::Applications::TraceView::MainWindow> {
+using namespace std;
+using namespace Seiscomp::Gui;
+
+
+namespace Seiscomp {
+namespace Applications {
+namespace TraceView {
+
+
+Settings Settings::global;
+
+
+class App : public Kicker<MainWindow> {
 	public:
-		TraceViewApp(int& argc, char** argv, int flags = DEFAULT) :
-		  Kicker<Seiscomp::Applications::TraceView::MainWindow>(argc, argv, flags) {
-			_filterNames.push_back("BW(3,0.5,10.0)");
-			_initStartTime = false;
-			_automaticResort = true;
-			_showPicks = true;
-			_inventoryEnabled = true;
-			_maxDelay = 0;
+		App(int& argc, char** argv, int flags = DEFAULT)
+		: Kicker<MainWindow>(argc, argv, flags) {
+			setPrimaryMessagingGroup("GUI");
+			addMessagingSubscription("PICK");
+			addMessagingSubscription("EVENT");
+			addMessagingSubscription("LOCATION");
+			addMessagingSubscription("GUI");
+			addMessagingSubscription("CONFIG");
+			setLoadCitiesEnabled(false);
+
+			bindSettings(&Settings::global);
 		}
 
 	protected:
 
-		void printUsage() const {
-			std::cout << "Usage:" << std::endl
-			          << "  " << name() << " [options] [miniSEED file]"
-			          << std::endl << std::endl
-			          << "View waveforms from RecordStream or miniSEED file."
-			          << std::endl;
+		void printUsage() const override {
+			cout << "Usage:" << endl
+			     << "  " << name() << " [options] [miniSEED file]"
+			     << endl << endl
+			     << "View waveforms from RecordStream or miniSEED file."
+			     << endl;
 
 			Seiscomp::Gui::Application::printUsage();
 
-			std::cout << "Examples:" << std::endl;
-			std::cout << "View waveforms with default settings printing debug information"
-			          << std::endl
-			          << "  scrttv --debug"
-			          << std::endl << std::endl;
-			std::cout << "View data from default recordstream 3 hours before midnight"
-			          << std::endl
-			          << "  scrttv --buffer-size 10800 --end-time '2022-06-01 00:00:00'"
-			          << std::endl << std::endl;
-			std::cout << "View data from a miniSEED file in offline mode without messaging"
-			          << std::endl
-			          << "  scrttv file.mseed"
-			          << std::endl << std::endl;
-			std::cout << "View all streams from station CX.PB01 without messaging and inventory"
-			          << std::endl
-			          << "  scrttv --offline --no-inventory --streams.codes=\"CX.PB01.*.*\""
-			          << std::endl;
+			cout << "Examples:" << endl;
+			cout << "View waveforms with default settings printing debug information"
+			     << endl
+			     << "  scrttv --debug"
+			     << endl << endl;
+			cout << "View data from default recordstream 3 hours before midnight"
+			     << endl
+			     << "  scrttv --buffer-size 10800 --end-time '2022-06-01 00:00:00'"
+			     << endl << endl;
+			cout << "View data from a miniSEED file in offline mode without messaging"
+			     << endl
+			     << "  scrttv file.mseed"
+			     << endl << endl;
+			cout << "View all streams from station CX.PB01 without messaging and inventory"
+			     << endl
+			     << "  scrttv --offline --no-inventory --streams.codes=\"CX.PB01.*.*\""
+			     << endl;
 		}
 
-		void createCommandLineDescription() {
-			Kicker<Seiscomp::Applications::TraceView::MainWindow>::createCommandLineDescription();
-
-			commandline().addGroup("Mode");
-			commandline().addOption("Mode", "filter", "Sets the filter to use",  (std::string*)NULL);
-			commandline().addOption("Mode", "offline", "Do not connect to a messaging server and do not use the database");
-			commandline().addOption("Mode", "no-inventory", "Do not wait for all data when using a file as input but read threaded");
-			commandline().addOption("Mode", "end-time", "Set the end time of acquisition, default: 'gmt'", (std::string*)NULL);
-			commandline().addOption("Mode", "buffer-size", "Sets the size of the waveformbuffer in seconds, default: 1800", (int*)NULL);
-			commandline().addOption("Mode", "max-delay", "The maximum delay in seconds to keep a trace visible (0 to disable)", (int*)NULL);
-			commandline().addOption("Mode", "initially-visible-all", "Show all traces initially");
-			commandline().addOption("Mode", "rt", "Don't ask for time window at data server. This might be important if e.g. Seedlink does not allow time window extraction.");
-		}
-
-		bool validateParameters() {
+		bool validateParameters() override {
 			if ( !Kicker<Seiscomp::Applications::TraceView::MainWindow>::validateParameters() )
 				return false;
 
-			_offline = false;
-			_inventoryEnabled = true;
-
-			if ( commandline().hasOption("offline") )
-				_offline = true;
-
-			if ( commandline().hasOption("no-inventory") )
-				_inventoryEnabled = false;
-
-			try {
-				_initStartTime = configGetBool("allTracesInitiallyVisible");
-			}
-			catch ( ... ) {}
-
-			_initStartTime = commandline().hasOption("initially-visible-all");
-
-			try {
-				_maxDelay = commandline().option<int>("max-delay");
-			}
-			catch ( ... ) {}
-
-			try {
-				_maxDelay = configGetInt("maxDelay");
-			}
-			catch ( ... ) {}
-
-			try {
-				_automaticResort = configGetBool("resortAutomatically");
-			}
-			catch ( ... ) {}
-
-			try {
-				_showPicks = configGetBool("showPicks");
-			}
-			catch ( ... ) {}
-
-			std::vector<std::string> unnamedOptions;
+			vector<string> unnamedOptions;
 			unnamedOptions = commandline().unrecognizedOptions();
 			bool hasPositionals = false;
 			for ( size_t i = 0; i < unnamedOptions.size(); ++i ) {
@@ -129,10 +92,11 @@ class TraceViewApp : public Kicker<Seiscomp::Applications::TraceView::MainWindow
 				}
 			}
 
-			if ( hasPositionals )
-				_offline = true;
+			if ( hasPositionals ) {
+				Settings::global.offline = true;
+			}
 
-			if ( _offline ) {
+			if ( Settings::global.offline ) {
 				setMessagingEnabled(false);
 				setDatabaseEnabled(false, false);
 				setLoadConfigModuleEnabled(false);
@@ -148,92 +112,52 @@ class TraceViewApp : public Kicker<Seiscomp::Applications::TraceView::MainWindow
 				setDatabaseEnabled(false, false);
 			}
 
-			try {
-				_filterNames = configGetStrings("filters");
-			}
-			catch ( ... ) {
-				try {
-					_filterNames.clear();
-					_filterNames.push_back(configGetString("filter"));
-				}
-				catch ( ... ) {}
-			}
-
-			if ( commandline().hasOption("filter") ) {
-				_filterNames.clear();
-				_filterNames.push_back(commandline().option<std::string>("filter"));
+			if ( !Settings::global.filter.empty() ) {
+				Settings::global.filters.clear();
+				Settings::global.filters.push_back(Settings::global.filter);
 			}
 
 			try {
-				std::string dt = SCApp->commandline().option<std::string>("end-time");
-				_endTime = Seiscomp::Core::Time::FromString(dt.c_str(), "%F %T");
-				if ( !_endTime.valid() ) {
-					std::cerr << "ERROR: passed endtime is not valid, expect format \"YYYY-mm-dd HH:MM:SS\"" << std::endl
-					          << "       example: --end-time \"2010-01-01 12:00:00\"" << std::endl;
+				/*
+				string dt = SCApp->commandline().option<string>("end-time");
+				Settings::global.endTime = Seiscomp::Core::Time::FromString(dt.c_str(), "%F %T");
+				if ( !Settings::global.endTime.valid() ) {
+					cerr << "ERROR: passed endtime is not valid, expect format \"YYYY-mm-dd HH:MM:SS\"" << endl
+					     << "       example: --end-time \"2010-01-01 12:00:00\"" << endl;
 					return false;
 				}
+				*/
 
-				std::cout << "Set defined endtime: " << _endTime.toString("%F %T") << std::endl;
+				cout << "Set defined endtime: " << Settings::global.endTime.toString("%F %T") << endl;
 			}
 			catch ( ... ) {}
-
-			_bufferSize = 1800;
-
-			try {
-				_bufferSize = configGetInt("bufferSize");
-			}
-			catch ( ... ) {}
-
-			try {
-				_bufferSize = (size_t)SCApp->commandline().option<int>("buffer-size");
-			}
-			catch ( ... ) {}
-
-			_forceRT = commandline().hasOption("rt");
 
 			return true;
 		}
 
-		virtual void setupUi(Seiscomp::Applications::TraceView::MainWindow* w) {
-			if ( _initStartTime )
-				w->setStartTime(Seiscomp::Core::Time::GMT());
-			w->setAllowTimeWindowExtraction(!_forceRT);
-			w->setMaximumDelay(_maxDelay);
-			w->setEndTime(_endTime);
-			w->setBufferSize(_bufferSize);
-			w->setAutomaticSortEnabled(_automaticResort);
-			w->setShowPicks(_showPicks);
-			w->setInventoryEnabled(_inventoryEnabled);
+		void setupUi(MainWindow *w) override {
 			w->start();
-			w->setFiltersByName(_filterNames);
 		}
-
-	private:
-		bool _offline;
-		int _maxDelay;
-		std::vector<std::string> _filterNames;
-		Seiscomp::Core::Time _endTime;
-		bool _initStartTime;
-		bool _automaticResort;
-		bool _showPicks;
-		bool _inventoryEnabled;
-		size_t _bufferSize;
-		bool _forceRT;
 };
 
-int main(int argc, char *argv[])
-{
+
+}
+}
+}
+
+
+
+int main(int argc, char *argv[]) {
 	int retCode;
 
 	{
-		TraceViewApp app(argc, argv, Application::DEFAULT | Application::LOAD_STATIONS | Application::LOAD_CONFIGMODULE);
-		app.setPrimaryMessagingGroup("GUI");
-		app.addMessagingSubscription("PICK");
-		app.addMessagingSubscription("EVENT");
-		app.addMessagingSubscription("LOCATION");
-		app.addMessagingSubscription("GUI");
-		app.addMessagingSubscription("CONFIG");
-		app.setLoadCitiesEnabled(false);
+		Seiscomp::Applications::TraceView::App app(
+			argc, argv,
+			Application::DEFAULT |
+			Application::LOAD_STATIONS |
+			Application::LOAD_CONFIGMODULE
+		);
+
 		retCode = app();
 		SEISCOMP_DEBUG("Number of remaining objects before destroying application: %d", Seiscomp::Core::BaseObject::ObjectCount());
 	}
