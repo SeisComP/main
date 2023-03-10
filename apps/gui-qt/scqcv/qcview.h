@@ -42,7 +42,8 @@ class QcView : public QWidget {
 	Q_OBJECT
 
 	public:
-		QcView(QcModel* qcModel, QWidget* parent=0, Qt::WindowFlags f=0);
+		QcView(QcModel *qcModel, QWidget *parent=nullptr,
+		       Qt::WindowFlags f=Qt::WindowFlags());
 
 		~QcView();
 
@@ -86,7 +87,8 @@ class QcTableView : public QcView {
 	Q_OBJECT
 
 	public:
-		QcTableView(QcModel* qcModel, QWidget* parent=0, Qt::WindowFlags f=0);
+		QcTableView(QcModel *qcModel, QWidget *parent=nullptr,
+		            Qt::WindowFlags f=Qt::WindowFlags());
 
 		~QcTableView();
 		void init();
@@ -121,7 +123,8 @@ class QcOverView : public QcView {
 	Q_OBJECT
 
 	public:
-		QcOverView(QcModel* qcModel, QWidget* parent=0, Qt::WindowFlags f=0);
+		QcOverView(QcModel *qcModel, QWidget *parent=nullptr,
+		           Qt::WindowFlags f=Qt::WindowFlags());
 		~QcOverView();
 		void init();
 
