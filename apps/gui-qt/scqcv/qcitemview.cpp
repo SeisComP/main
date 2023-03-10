@@ -218,7 +218,7 @@ inline QColor QcItemDelegate::getSumColor(const QModelIndex& index) const {
 	int count = _qcModel->config()->parameter().size();
 
 	for (int i = 0; i < count; i++) {
-		inx = index.child(index.row(), i+2); // offset for: streamID, enabled
+		inx = _qcModel->index(index.row(), i + 2, index); // offset for: streamID, enabled
 
 		QVariant v = _qcModel->data(inx, Qt::UserRole);
 		if (!v.isValid()) continue;
