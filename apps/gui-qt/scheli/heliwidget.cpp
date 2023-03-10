@@ -393,7 +393,11 @@ void HeliCanvas::save(QString streamID, QString headline, QString date,
 		printer = new QPrinter(QPrinter::HighResolution);
 		printer->setOutputFileName(filename);
 		printer->setResolution(dpi);
-		printer->setPageSize(QPrinter::A4);
+#if QT_VERSION >= 0x050300
+		printer->setPageSize(QPageSize(QPageSize::A4));
+#else
+	printer->setPageSize(QPrinter::A4);
+#endif
 		painter = new QPainter(printer);
 	}
 	else {
