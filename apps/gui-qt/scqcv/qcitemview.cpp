@@ -15,6 +15,7 @@
 #define SEISCOMP_COMPONENT Gui::QcView
 #include <seiscomp/logging/log.h>
 
+#include <seiscomp/gui/core/compat.h>
 #include <seiscomp/core/exceptions.h>
 
 #include "qcview.h"
@@ -423,7 +424,7 @@ void QcItemView::paintEvent(QPaintEvent *event)
 
 	// min item size x/y
 	QFontMetrics qfm(option.font);
-	int wx = qfm.width("WW.WWWW.00.BHZ");
+	int wx = QT_FM_WIDTH(qfm, "WW.WWWW.00.BHZ");
 	int wy = qfm.height();
 
 	// column/row count

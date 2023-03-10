@@ -15,6 +15,7 @@
 #include "legend.h"
 
 #include <seiscomp/gui/core/application.h>
+#include <seiscomp/gui/core/compat.h>
 #include <seiscomp/gui/datamodel/originsymbol.h>
 
 #include "mvstationsymbol.h"
@@ -329,7 +330,7 @@ QSize Legend::Content::getSize(const Legend &legend) const {
 
 	int width = 0;
 	for ( int i = 0; i < count(); ++i )
-		width = qMax(width, fm.width((*this)[i].first.first));
+		width = qMax(width, QT_FM_WIDTH(fm, (*this)[i].first.first));
 
 	int stationHeight = int(1.5*legend._stationSize);
 	int height = 2*VMARGIN + stationHeight + (count()-1) * legend._offset;
@@ -360,7 +361,7 @@ void Legend::Content::draw(const Legend &legend, QPainter &p, const QRect &rect)
 
 	int width = 0;
 	for ( int i = 0; i < count(); ++i )
-		width = qMax(width, p.fontMetrics().width((*this)[i].first.first));
+		width = qMax(width, QT_FM_WIDTH(p.fontMetrics(), (*this)[i].first.first));
 
 	QPainter::RenderHints h = p.renderHints();
 	p.setRenderHint(QPainter::Antialiasing, false);
