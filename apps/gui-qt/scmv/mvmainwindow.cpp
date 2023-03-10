@@ -946,7 +946,7 @@ bool MvMainWindow::handleMapContextMenu(QContextMenuEvent* contextMenuEvent) {
 QAction* MvMainWindow::createAndConfigureContextMenuAction(const QString &title, Gui::Map::Symbol *mapSymbol) {
 	QAction* action = new QAction(title, NULL);
 
-	QVariant variant = qVariantFromValue(static_cast<void*>(mapSymbol));
+	QVariant variant = QVariant::fromValue(static_cast<void*>(mapSymbol));
 	action->setData(variant);
 
 	connect(action, SIGNAL(triggered()), this, SLOT(showInfoWidget()));
