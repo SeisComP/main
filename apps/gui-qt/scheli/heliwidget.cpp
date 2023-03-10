@@ -11,6 +11,9 @@
  * https://www.gnu.org/licenses/agpl-3.0.html.                             *
  ***************************************************************************/
 
+
+#define SEISCOMP_COMPONENT Helicorder
+
 #include "heliwidget.h"
 #include <seiscomp/core/genericrecord.h>
 #include <seiscomp/math/filter/butterworth.h>
