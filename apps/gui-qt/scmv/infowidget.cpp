@@ -47,7 +47,7 @@ void createConfigureAndAddTreeItem(QTreeWidgetItem* rootItem, const QString& tit
 
 	QTreeWidgetItem* item = new QTreeWidgetItem(rootItem, QStringList(title));
 	item->setText(column, text);
-	item->setBackgroundColor(column, backgroundColor);
+	item->setBackground(column, backgroundColor);
 }
 
 
