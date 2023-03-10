@@ -86,13 +86,13 @@ class InventoryExtractor : public Client::Application {
 
 			cout << "Examples:" << endl;
 			cout << "Extract inventory for entire GR network" << endl
-			     << "  " << name() << " -f -chans GR.*.*.* inventory_all.xml > inventory_GR.xml"
+			     << "  " << name() << " -f --chans GR.*.*.* inventory_all.xml > inventory_GR.xml"
 			     << endl << endl;
 			cout << "Extract inventory for all stations within the given region" << endl
 			     << "  " << name() << " -f -r -10,0,50,15 inventory_all.xml > inventory_GR.xml"
 			     << endl << endl;
 			cout << "Remove inventory for entire GR network" << endl
-			     << "  " << name() << " -f --rm -chans GR.*.*.* inventory_all.xml > inventory_others.xml"
+			     << "  " << name() << " -f --rm --chans GR.*.*.* inventory_all.xml > inventory_others.xml"
 			     << endl << endl;
 		}
 
