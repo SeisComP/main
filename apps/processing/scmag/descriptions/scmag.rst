@@ -129,9 +129,13 @@ Station magnitudes
 ==================
 
 Station magnitudes of a :ref:`particular magnitude type <scmag-primaryM>` are
-calculated based on amplitude values
-considered by this magnitude type and the distance between the event and the station
-at which the amplitude was measured. Typically, epicentral distance is used.
+calculated based on measured amplitudes considered by this magnitude type and
+the distance between the :term:`origin` and the station at which the amplitude
+was measured. Typically, epicentral distance is used for distance. Magnitudes
+may support configurable distance measures, e.g.,
+:term:`MLc <magnitude, local custom (MLc)>`. The relation between measured
+amplitudes, distance and station magnitude is given by a calibration function
+which is specific to a magnitude type and configurable for some magnitudes.
 
 .. note::
 
@@ -140,28 +144,55 @@ at which the amplitude was measured. Typically, epicentral distance is used.
    uses amplitudes computed for :term:`MLv <magnitude, local vertical (MLv)>`.
 
 
+Regionalization
+---------------
+
+Depending on the geographic region in which events, stations or entire ray paths
+are located, different calibration functions and constraints may apply. This is
+called "magnitude regionalization". The region is defined by a polygon stored in
+a region file. For a particular magnitude, regionalization can be configured by
+global parameters, e.g., in :file:`$SEISCOMP_ROOT/etc/global.cfg`.
+
+#. Add magnitude type profile to the magnitudes parameters. The name of the
+   profile must be the name of the magnitude type.
+#. Add the profile-specific parameters.
+
+Example for MLc in :file:`$SEISCOMP_ROOT/etc/global.cfg` the polygon with name
+*test* defined in a :ref:`BNA file <sec-gui_layers-vector>`:
+
+.. code-block:: params
+
+   magnitudes.MLc.regionFile = @DATADIR@/spatial/vector/magnitudes/regions.bna
+   magnitudes.MLc.region.test.enable = true
+   magnitudes.MLc.region.test.A0.logA0 = 0:-1.3, 60:-2.8, 100:-3.0, 400:-4.5, 1000:-5.85
+
+
 .. _scmag-networkM:
 
 Network magnitudes
 ==================
 
-The network magnitude is a magnitude value summarizing several :ref:`station magnitudes <scmag-stationM>`
-values of one :term:`origin`.
-Different methods are available for summarizing the station magnitudes:
+The network magnitude is a magnitude value summarizing several
+:ref:`station magnitudes <scmag-stationM>` values of one :term:`origin`.
+Different methods are available for forming network magnitudes from station
+magnitudes:
 
-* mean: the usual mean value
-* trimmed mean value:
-  To stabilize the network magnitudes the smallest and the largest 12.5% of the
-  :term:`station magnitude` values are removed before computing the mean.
-* median: the usual median value
-* median trimmed mean:
-  Removing all station magnitudes with a distance greater than 0.5 (default)
-  from the median of all station magnitudes and computing the mean of all
-  remaining station magnitudes.
+.. csv-table::
+   :header: Method, Description
+   :widths: 20 80
+   :align: left
+   :delim: ;
 
-Default values apply for each magnitude type.
-In :ref:`scolv` the methods, the stations magnitudes and other parameters can be
-selected interactively.
+   mean; The usual mean value.
+   trimmed mean value; To stabilize the network magnitudes the smallest and the largest 12.5% of the :term:`station magnitude` values are removed before computing the mean.
+   median; The usual median value.
+   median trimmed mean; Removing all station magnitudes with a distance greater than 0.5 (default) from the median of all station magnitudes and computing the mean of all remaining station magnitudes.
+
+Configure the method per magnitude type by :confval:`magnitudes.average`.
+Default values apply for each magnitude type which are defined by the magnitude
+itself.
+In the :ref:`scolv Magnitudes tab <scolv-sec-magnitude-tab>` the methods, the
+stations magnitudes and other parameters can be selected interactively.
 
 
 .. _scmag-summaryM:
@@ -178,9 +209,8 @@ It is computed as a weighted average over the available magnitudes:
 
 .. math::
 
-   M = \frac{\sum w_{i} M_{i}}{\sum w_i}
-
-   w_{i} = a_i stationCount(M_{i}) + b_i
+   M &= \frac{\sum w_{i} * M_{i}}{\sum w_i} \\
+   w_{i} &= a_i * stationCount(M_{i}) + b_i
 
 The coefficients a and b can be configured per magnitude type by
 :confval:`summaryMagnitude.coefficients.a`
