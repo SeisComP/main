@@ -889,6 +889,7 @@ void Associator::relocate() {
 				_ui.btnInspect->setEnabled(true);
 				unsetMessage();
 				touch(*_origin);
+				_origin->setDepthType(isNumber ? OriginDepthType(OPERATOR_ASSIGNED) : OriginDepthType(FROM_LOCATION));
 				_origin->creationInfo().setAgencyID(SCApp->agencyID());
 				_origin->creationInfo().setAuthor(SCApp->author());
 				_origin->setEvaluationMode(EvaluationMode(DataModel::MANUAL));
