@@ -42,7 +42,7 @@ class InfoWidget : public QWidget {
 
 	public:
 		InfoWidget(const std::string& id,
-				   QWidget* parent = 0, Qt::WindowFlags f = 0);
+				   QWidget* parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
 
 	public:
 		const std::string& id() const;
@@ -109,7 +109,7 @@ class StationInfoWidget : public InfoWidget {
 
 	public:
 		StationInfoWidget(const std::string& id,
-		                  QWidget* parent = 0, Qt::WindowFlags f = 0);
+		                  QWidget* parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
 		~StationInfoWidget();
 
 	public:
@@ -219,7 +219,7 @@ class OriginInfoWidget : public InfoWidget {
 
 	public:
 		OriginInfoWidget(const std::string& id,
-		                 QWidget* parent = 0, Qt::WindowFlags f = 0);
+		                 QWidget* parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
 		~OriginInfoWidget();
 
 	public:

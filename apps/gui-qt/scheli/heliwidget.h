@@ -114,7 +114,7 @@ class HeliWidget : public QWidget {
 	Q_OBJECT
 
 	public:
-		HeliWidget(QWidget *parent = 0, Qt::WindowFlags f = 0);
+		HeliWidget(QWidget *parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
 		~HeliWidget();
 
 

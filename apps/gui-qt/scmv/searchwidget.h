@@ -38,7 +38,7 @@ class SearchWidget : public QWidget {
 	// X'struction
 	// ----------------------------------------------------------------------
 	private:
-		SearchWidget(QWidget* parent = 0, Qt::WindowFlags f = 0);
+		SearchWidget(QWidget* parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
 		~SearchWidget();
 
 	// ----------------------------------------------------------------------
@@ -49,7 +49,7 @@ class SearchWidget : public QWidget {
 		const Matches& matches();
 		const Matches& previousMatches() const;
 
-		static SearchWidget* Create(QWidget* parent = 0, Qt::WindowFlags f = 0);
+		static SearchWidget* Create(QWidget* parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
 
 	// ----------------------------------------------------------------------
 	// Protected Interface

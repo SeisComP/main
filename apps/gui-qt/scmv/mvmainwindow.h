@@ -107,7 +107,7 @@ class MvMainWindow : public Seiscomp::Gui::MainWindow {
 	// X'struction
 	// ----------------------------------------------------------------------
 	public:
-		MvMainWindow(QWidget* parent = 0, Qt::WindowFlags = 0);
+		MvMainWindow(QWidget* parent = 0, Qt::WindowFlags = Qt::WindowFlags());
 		~MvMainWindow() {}
 
 		bool init();

@@ -65,7 +65,7 @@ class TraceView : public Seiscomp::Gui::RecordView {
 
 	public:
 		TraceView(const Seiscomp::Core::TimeSpan &span,
-		          QWidget *parent = 0, Qt::WindowFlags f = 0);
+		          QWidget *parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
 
 		~TraceView();
 

@@ -25,7 +25,7 @@ class TraceWidget : public QFrame {
 	Q_OBJECT
 
 	public:
-		TraceWidget(QWidget *parent = 0, Qt::WindowFlags f = 0);
+		TraceWidget(QWidget *parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
 
 	public:
 		void setValueCount(int count);
