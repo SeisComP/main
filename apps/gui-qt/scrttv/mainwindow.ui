@@ -774,7 +774,7 @@
     <string>Reload</string>
    </property>
    <property name="shortcut">
-    <string>F5, Ctrl+R</string>
+    <string>Ctrl+R</string>
    </property>
   </action>
   <action name="actionSwitchToRealtime">
@@ -782,7 +782,7 @@
     <string>Switch to real-time</string>
    </property>
    <property name="shortcut">
-    <string>Shift+F5, Ctrl+Shift+R</string>
+    <string>Ctrl+Shift+R</string>
    </property>
   </action>
  </widget>

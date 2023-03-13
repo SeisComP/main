@@ -77,6 +77,7 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 		& cfg(automaticSortEnabled, "resortAutomatically")
 		& cfg(showPicks, "showPicks")
 		& cfg(autoApplyFilter, "autoApplyFilter")
+		& cfg(warnDataTimeRange, "warnDataTimeRange")
 
 		& cfg(groupConfig, "messaging.groups.config")
 		& cfg(groupLocation, "messaging.groups.location")
@@ -98,6 +99,7 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 	bool                     inventoryDisabled{false};
 	bool                     disableTimeWindowRequest{false};
 	int                      maxDelay{0};
+	int                      warnDataTimeRange{3600 * 6}; // 6 hours
 
 	std::string              groupConfig{"CONFIG"};
 	std::string              groupLocation{"LOCATION"};
