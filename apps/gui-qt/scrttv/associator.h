@@ -16,9 +16,11 @@
 #define SEISCOMP_GUI_SCRTTV_ASSOCIATOR
 
 
+#ifndef Q_MOC_RUN
 #include <seiscomp/gui/core/recordview.h>
 #include <seiscomp/gui/datamodel/originlocatormap.h>
 #include <seiscomp/seismology/locatorinterface.h>
+#endif
 #include <QWidget>
 
 #include "ui_associator.h"
