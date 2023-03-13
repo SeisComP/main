@@ -289,8 +289,6 @@ Hotkey                   Description
 :kbd:`F1`                Open |scname| documentation
 :kbd:`Shift+F1`          Open scrttv documentation
 :kbd:`F2`                Setup connection dialog
-:kbd:`F5`                (Re)load data in current visible time range
-:kbd:`Shift+F5`          Switch to real-time with configured buffer size
 :kbd:`F11`               Toggle fullscreen
 :kbd:`ESC`               Set standard selection mode and deselect all traces
 :kbd:`c`                 Clear picker  markers

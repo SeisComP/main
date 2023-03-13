@@ -105,7 +105,7 @@ string waveformIDToStdString(const WaveformStreamID& id) {
 }
 
 
-QString prettyPrint(long seconds) {
+QString strTimeSpan(long seconds) {
 	long days = seconds / 86400;
 	long secondsPerDay = seconds % 86400;
 
@@ -131,6 +131,49 @@ QString prettyPrint(long seconds) {
 	        .arg(hours,2,10,QChar('0'))
 	        .arg(minutes,2,10,QChar('0'))
 	        .arg(seconds,2,10,QChar('0'));
+}
+
+
+QString prettyTimeRange(int seconds) {
+	QString str;
+
+	auto days = seconds / 86400;
+	if ( days > 0 ) {
+		if ( !str.isEmpty() ) {
+			str += " ";
+		}
+		str += QString("%1 days").arg(days);
+	}
+
+	seconds = seconds % 86400;
+
+	auto hours = seconds / 3600;
+	if ( hours > 0 ) {
+		if ( !str.isEmpty() ) {
+			str += " ";
+		}
+		str += QString("%1 hours").arg(hours);
+	}
+
+	seconds = seconds % 3600;
+
+	auto minutes = seconds / 60;
+	if ( minutes > 0 ) {
+		if ( !str.isEmpty() ) {
+			str += " ";
+		}
+		str += QString("%1 minutes").arg(minutes);
+	}
+
+	seconds = seconds % 60;
+	if ( seconds > 0 ) {
+		if ( !str.isEmpty() ) {
+			str += " ";
+		}
+		str += QString("%1 seconds").arg(seconds);
+	}
+
+	return str;
 }
 
 
@@ -1176,7 +1219,7 @@ void MainWindow::listHiddenStreams() {
 			else
 				data += QString("<tr><td>%1</td><td align=right>%2</td><td>%3</td></tr>")
 				                .arg(waveformIDToString(item->streamID()))
-				                .arg(prettyPrint((now - lastSample).seconds()))
+				                .arg(strTimeSpan((now - lastSample).seconds()))
 				                .arg(state);
 
 			++numberOfLines;
@@ -2403,13 +2446,15 @@ void MainWindow::filterSelectionChanged() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::reload() {
+	cerr << "Reload" << endl;
 	Core::TimeWindow dataTimeWindow;
 	CURRENT_TRACEVIEW_RET(dataTimeWindow, visibleTimeRange());
 
-	if ( dataTimeWindow.length() >= 3600 * 6 ) {
+	if ( dataTimeWindow.length() >= Settings::global.warnDataTimeRange ) {
 		if ( QMessageBox::question(this, "Load data",
-		                           QString("Data range exceeds 6 hours.\n"
-		                                   "Do you want to continue?"),
+		                           tr("Data range exceeds %1.\n"
+		                              "Do you want to continue?")
+		                           .arg(prettyTimeRange(Settings::global.warnDataTimeRange)),
 		                           QMessageBox::Yes, QMessageBox::No) == QMessageBox::No ) {
 			return;
 		}
