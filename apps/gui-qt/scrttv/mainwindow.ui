@@ -18,17 +18,8 @@
     <property name="spacing">
      <number>6</number>
     </property>
-    <property name="leftMargin">
+    <property name="margin">
      <number>0</number>
-    </property>
-    <property name="topMargin">
-     <number>0</number>
-    </property>
-    <property name="rightMargin">
-     <number>0</number>
-    </property>
-    <property name="bottomMargin">
-     <number>9</number>
     </property>
    </layout>
   </widget>
@@ -106,6 +97,9 @@
     <addaction name="actionClearPickMarkers"/>
     <addaction name="separator"/>
     <addaction name="actionSearch"/>
+    <addaction name="separator"/>
+    <addaction name="actionReload"/>
+    <addaction name="actionSwitchToRealtime"/>
    </widget>
    <widget class="QMenu" name="menuSettings">
     <property name="title">
@@ -123,8 +117,8 @@
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menuMode"/>
-   <addaction name="menuWindow"/>
    <addaction name="menuView"/>
+   <addaction name="menuWindow"/>
    <addaction name="menuSettings"/>
   </widget>
   <widget class="QStatusBar" name="statusbar">
@@ -386,13 +380,13 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Associate picks</string>
+    <string>Collect picks</string>
    </property>
    <property name="iconText">
-    <string>Associate picks</string>
+    <string>Collect picks</string>
    </property>
    <property name="toolTip">
-    <string>Enter pick association mode</string>
+    <string>Enter pick collecting mode</string>
    </property>
    <property name="shortcut">
     <string>P</string>
@@ -735,10 +729,10 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Standard mode</string>
+    <string>Select</string>
    </property>
    <property name="toolTip">
-    <string>Disable any selection mode and return to standard mode</string>
+    <string>Disable any selection mode</string>
    </property>
    <property name="shortcut">
     <string>Esc</string>
@@ -773,6 +767,22 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+A</string>
+   </property>
+  </action>
+  <action name="actionReload">
+   <property name="text">
+    <string>Reload</string>
+   </property>
+   <property name="shortcut">
+    <string>F5, Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionSwitchToRealtime">
+   <property name="text">
+    <string>Switch to real-time</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+F5, Ctrl+Shift+R</string>
    </property>
   </action>
  </widget>

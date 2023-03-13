@@ -60,6 +60,9 @@ class Associator;
 class TraceMarker;
 
 
+using RecordStreamThread = Gui::RecordStreamThread;
+
+
 struct TraceState {
 	Seiscomp::Client::StationLocation location;
 };
@@ -243,6 +246,10 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		                                 double tmin, double tmax,
 		                                 Seiscomp::Gui::RecordView::SelectionOperation operation);
 
+		void reload();
+		void switchToRealtime();
+		void recordStreamClosed(RecordStreamThread*);
+
 
 	protected:
 		void toggledFullScreen(bool);
@@ -272,6 +279,8 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 
 		void searchByText(const QString &text);
 
+		void reloadData();
+
 
 	private:
 		Ui::MainWindow                            _ui;
@@ -280,16 +289,19 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		Associator                               *_associator{nullptr};
 		QMap<std::string, TraceMarker*>           _markerMap;
 
-		Seiscomp::Gui::RecordStreamThread        *_recordStreamThread;
+		Gui::RecordStreamThread                  *_recordStreamThread;
+		QList<DataModel::WaveformStreamID>        _channelRequests;
 
 		QComboBox                                *_statusBarSelectMode;
 		QLabel                                   *_statusBarFile;
 		QComboBox                                *_statusBarFilter;
 		QLineEdit                                *_statusBarSearch;
-		Seiscomp::Gui::ProgressBar               *_statusBarProg;
-		Seiscomp::Core::Time                      _originTime;
-		Seiscomp::Core::Time                      _lastRecordTime;
-		Seiscomp::Core::Time                      _startTime;
+		Gui::ProgressBar                         *_statusBarProg;
+		Core::TimeSpan                            _bufferSize;
+		Core::Time                                _originTime;
+		Core::Time                                _lastRecordTime;
+		Core::Time                                _startTime;
+		Core::TimeWindow                          _dataTimeWindow;
 
 		QMap<DataModel::WaveformStreamID, double> _scaleMap;
 		QColor                                    _searchBase, _searchError;
@@ -306,6 +318,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		int                                       _frameMargin;
 		int                                       _rowHeight;
 		int                                       _numberOfRows;
+		bool                                      _wantReload{false};
 
 		Seiscomp::Gui::QuestionBox                _questionApplyChanges;
 

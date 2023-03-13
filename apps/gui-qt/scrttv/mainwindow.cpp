@@ -153,6 +153,9 @@ bool isStreamBlacklisted(const vector<string> &blacklist,
 
 #define _T(name) q->driver()->convertColumnName(name)
 DatabaseIterator loadPicks(const Core::Time &start, const Core::Time &end) {
+	SEISCOMP_DEBUG("Loading picks from %s to %s",
+	               start.iso().c_str(), end.iso().c_str());
+
 	// Assumed to be valid => check at caller
 	auto q = SCApp->query();
 
@@ -160,9 +163,11 @@ DatabaseIterator loadPicks(const Core::Time &start, const Core::Time &end) {
 	oss << "select PPick." << _T("publicID") << ",Pick.*,count(Origin._oid) as refCount "
 	       "from Pick join PublicObject as PPick"
 	       " on Pick._oid=PPick._oid"
-	       " and Pick." << _T("time_value") << ">='" << q->toString(start) << "'"
-	       " and Pick." << _T("time_value") << "<='" << q->toString(end) << "' "
-	       "left join Arrival"
+	       " and Pick." << _T("time_value") << ">='" << q->toString(start) << "' ";
+	if ( end.valid() ) {
+		oss << "and Pick." << _T("time_value") << "<='" << q->toString(end) << "' ";
+	}
+	oss << "left join Arrival"
 	       " on Arrival." << _T("pickID") << "=PPick." << _T("publicID") << " "
 	       "left join Origin"
 	       " on Origin._oid=Arrival._parent_oid"
@@ -474,6 +479,12 @@ void TraceTabWidget::showEvent(QShowEvent *) {
 	else\
 		_traceViews.front()->method
 
+#define CURRENT_TRACEVIEW_RET(var, method)\
+	if ( _tabWidget ) \
+		var = static_cast<TraceView*>(_tabWidget->currentWidget())->method;\
+	else\
+		var = _traceViews.front()->method
+
 MainWindow::MainWindow() : _questionApplyChanges(this) {
 	_ui.setupUi(this);
 
@@ -484,9 +495,10 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 	                              "to tell all clients adding/removing this station(s).\n"
 	                              "Do you want to continue changing the state?");
 
-	_recordStreamThread = NULL;
-	_tabWidget = NULL;
+	_recordStreamThread = nullptr;
+	_tabWidget = nullptr;
 	_needColorUpdate = false;
+	_bufferSize = Core::TimeSpan(Settings::global.bufferSize, 0);
 
 	_statusBarSelectMode = new QComboBox;
 	_statusBarSelectMode->addItem(tr("Standard mode"));
@@ -600,6 +612,9 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 	connect(_ui.actionModeZoom, SIGNAL(triggered()), this, SLOT(selectModeZoom()));
 	connect(_ui.actionModePicks, SIGNAL(triggered()), this, SLOT(selectModePicks()));
 
+	connect(_ui.actionReload, SIGNAL(triggered()), this, SLOT(reload()));
+	connect(_ui.actionSwitchToRealtime, SIGNAL(triggered()), this, SLOT(switchToRealtime()));
+
 	_timer = new QTimer(this);
 	_timer->setInterval(1000);
 
@@ -608,6 +623,9 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 
 	connect(_timer, SIGNAL(timeout()), this, SLOT(step()));
 	connect(_switchBack, SIGNAL(timeout()), this, SLOT(sortByConfig()));
+
+	connect(&RecordStreamState::Instance(), SIGNAL(connectionClosed(RecordStreamThread*)),
+	        this, SLOT(recordStreamClosed(RecordStreamThread*)));
 
 	addAction(_ui.actionAddTabulator);
 	addAction(_ui.actionSearch);
@@ -1035,7 +1053,7 @@ void MainWindow::moveSelection(Seiscomp::Gui::RecordView* target,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 TraceView* MainWindow::createTraceView() {
-	TraceView* traceView = new TraceView(Seiscomp::Core::TimeSpan(Settings::global.bufferSize));
+	TraceView* traceView = new TraceView(_bufferSize);
 	traceView->setRowSpacing(_rowSpacing);
 	traceView->setFramesEnabled(_withFrames);
 	traceView->setFrameMargin(_frameMargin);
@@ -1549,7 +1567,6 @@ void MainWindow::openFile(const std::vector<std::string> &files) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::openAcquisition() {
-	_recordStreamThread = new Seiscomp::Gui::RecordStreamThread(SCApp->recordStreamURL());
 	if ( !Settings::global.endTime ) {
 		_originTime = Core::Time::GMT();
 	}
@@ -1557,14 +1574,9 @@ void MainWindow::openAcquisition() {
 		_originTime = Settings::global.endTime;
 	}
 
-	TRACEVIEWS(setBufferSize(Core::TimeSpan(Settings::global.bufferSize)));
+	_dataTimeWindow.set(_originTime - _bufferSize, Settings::global.endTime);
 
-	if ( !_recordStreamThread->connect() ) {
-		delete _recordStreamThread;
-		_recordStreamThread = NULL;
-		QMessageBox::information(this, "Error", QString("Could not connect to stream '%1'").arg(SCApp->recordStreamURL().c_str()));
-		return;
-	}
+	TRACEVIEWS(setBufferSize(_bufferSize));
 
 	centralWidget()->layout()->addWidget(createTraceView());
 
@@ -1581,15 +1593,6 @@ void MainWindow::openAcquisition() {
 		_tabWidget->setTabIcon(_tabWidget->indexOf(_traceViews[1]), QIcon(":icons/icons/disabled.png"));
 
 		_tabWidget->setCurrentIndex(0);
-	}
-
-	if ( !Settings::global.disableTimeWindowRequest ) {
-		_recordStreamThread->setTimeWindow(
-			Core::TimeWindow(
-				_originTime - Core::TimeSpan(Settings::global.bufferSize),
-				Settings::global.endTime
-			)
-		);
 	}
 
 	if ( !Settings::global.inventoryDisabled ) {
@@ -1924,13 +1927,6 @@ void MainWindow::openAcquisition() {
 			pal.setColor(QPalette::HighlightedText, QColor(128,128,128));
 			item->widget()->setPalette(pal);
 
-			//of << waveformIDToString((*it).first).toStdString() << endl;
-
-			/*
-			_recordStreamThread->addStream((*it).first.networkCode(), (*it).first.stationCode(),
-			                               (*it).first.locationCode(), (*it).first.channelCode());
-			*/
-
 			try {
 				TraceState state;
 				state.location = Seiscomp::Client::Inventory::Instance()->stationLocation(
@@ -1959,9 +1955,10 @@ void MainWindow::openAcquisition() {
 		}
 
 		foreach ( const WaveformStreamID &wfsi, resolvedStationRequestMap ) {
-			if ( isWildcard(wfsi.networkCode()) || isWildcard(wfsi.stationCode()) ) continue;
-			_recordStreamThread->addStream(wfsi.networkCode(), wfsi.stationCode(),
-			                               wfsi.locationCode(), wfsi.channelCode());
+			if ( isWildcard(wfsi.networkCode()) || isWildcard(wfsi.stationCode()) ) {
+				continue;
+			}
+			_channelRequests.append(wfsi);
 		}
 
 		sortByConfig();
@@ -1983,10 +1980,7 @@ void MainWindow::openAcquisition() {
 				if ( it != _channelGroupLookup.end() ) {
 					auto &group = _channelGroups[it->second];
 					for ( auto &member : group.members ) {
-						_recordStreamThread->addStream(member.networkCode(),
-						                               member.stationCode(),
-						                               member.locationCode(),
-						                               member.channelCode());
+						_channelRequests.append(member);
 					}
 					continue;
 				}
@@ -2002,10 +1996,15 @@ void MainWindow::openAcquisition() {
 					cout << "error in entry '" << stream << "': too many tokens, missing ',' ? -> ignoring" << endl;
 				}
 				else {
-					_recordStreamThread->addStream(tokens[0],
-					                               tokens.size() > 1 ? tokens[1] : "*",
-					                               tokens.size() > 2 ? tokens[2] : "*",
-					                               tokens.size() > 3 ? tokens[3] : "*");
+					_channelRequests.append(
+						WaveformStreamID(
+							tokens[0],
+							tokens.size() > 1 ? tokens[1] : "*",
+							tokens.size() > 2 ? tokens[2] : "*",
+							tokens.size() > 3 ? tokens[3] : "*",
+							string()
+						)
+					);
 				}
 			}
 		}
@@ -2016,54 +2015,17 @@ void MainWindow::openAcquisition() {
 		TRACEVIEWS(show());
 	}
 
-	connect(_recordStreamThread, SIGNAL(receivedRecord(Seiscomp::Record*)),
-	        this, SLOT(receivedRecord(Seiscomp::Record*)));
-	_recordStreamThread->start();
-
 	TRACEVIEWS(setJustification(1.0));
 	TRACEVIEWS(horizontalZoom(1.0));
 	TRACEVIEWS(setAlignment(_originTime));
 
 	_timer->start();
 
-	if ( Settings::global.showPicks && SCApp->query() ) {
-		SCApp->showMessage("Loading picks");
-		DatabaseIterator it = loadPicks(
-			_originTime - Core::TimeSpan(Settings::global.bufferSize),
-			_originTime
-		);
-
-		auto db = SCApp->query()->driver();
-		int picks = 0, arrivals = 0;
-		for ( ; *it; ++it ) {
-			PickPtr pick = Pick::Cast(*it);
-			if ( pick ) {
-				auto idx = db->findColumn("refCount");
-				int refCount = -1;
-				if ( idx >= 0 ) {
-					if ( !Core::fromString(refCount, db->getRowFieldString(idx)) ) {
-						refCount = -1;
-					}
-				}
-
-				if ( addPick(pick.get(), refCount) ) {
-					++picks;
-					if ( refCount > 0 ) {
-						++arrivals;
-					}
-				}
-			}
-		}
-
-		SCApp->showMessage(QString("Loaded %1 picks").arg(it.count()).toLatin1());
-		cout << "Added " << it.count() << " picks from database" << endl;
-		cout << "Filtered " << picks << " picks" << endl;
-		cout << "Declared " << arrivals << " arrivals" << endl;
-	}
-
 	alignRight();
 	checkTraceDelay();
 	updateTraceCount();
+
+	reloadData();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2440,6 +2402,168 @@ void MainWindow::filterSelectionChanged() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::reload() {
+	Core::TimeWindow dataTimeWindow;
+	CURRENT_TRACEVIEW_RET(dataTimeWindow, visibleTimeRange());
+
+	if ( dataTimeWindow.length() >= 3600 * 6 ) {
+		if ( QMessageBox::question(this, "Load data",
+		                           QString("Data range exceeds 6 hours.\n"
+		                                   "Do you want to continue?"),
+		                           QMessageBox::Yes, QMessageBox::No) == QMessageBox::No ) {
+			return;
+		}
+	}
+
+	_dataTimeWindow = dataTimeWindow;
+	Settings::global.endTime = _dataTimeWindow.endTime();
+	_bufferSize = _dataTimeWindow.length();
+	_originTime = Settings::global.endTime;
+
+	TRACEVIEWS(setBufferSize(_bufferSize));
+	TRACEVIEWS(setAlignment(_originTime));
+	TRACEVIEWS(setTimeRange(-_dataTimeWindow.length(), 0));
+	_wantReload = true;
+
+	if ( _recordStreamThread ) {
+		_statusBarFile->setText(tr("Waiting for recordstream to finish"));
+		_recordStreamThread->stop(false);
+		return;
+	}
+
+	reloadData();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::switchToRealtime() {
+	Settings::global.endTime = Core::Time();
+	// Reset buffer size to initial config
+	_bufferSize = Core::TimeSpan(Settings::global.bufferSize, 0);
+	_originTime = Core::Time::GMT();
+	_dataTimeWindow.set(_originTime - _bufferSize, Settings::global.endTime);
+
+	TRACEVIEWS(setBufferSize(_bufferSize));
+	TRACEVIEWS(setAlignment(_originTime));
+	TRACEVIEWS(setTimeRange(-_bufferSize, 0));
+	_wantReload = true;
+
+	if ( _recordStreamThread ) {
+		_statusBarFile->setText(tr("Waiting for recordstream to finish"));
+		_recordStreamThread->stop(false);
+		return;
+	}
+
+	reloadData();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::reloadData() {
+	_wantReload = false;
+	_ui.actionSwitchToRealtime->setEnabled(Settings::global.endTime.valid());
+
+	_statusBarFile->setText(tr("Loading picks"));
+
+	TRACEVIEWS(clearRecords());
+	clearPickMarkers();
+
+	if ( Settings::global.showPicks && SCApp->query() ) {
+		SCApp->showMessage("Loading picks");
+		DatabaseIterator it = loadPicks(
+			_dataTimeWindow.startTime(),
+			_dataTimeWindow.endTime()
+		);
+
+		auto db = SCApp->query()->driver();
+		int picks = 0, arrivals = 0;
+		for ( ; *it; ++it ) {
+			PickPtr pick = Pick::Cast(*it);
+			if ( pick ) {
+				auto idx = db->findColumn("refCount");
+				int refCount = -1;
+				if ( idx >= 0 ) {
+					if ( !Core::fromString(refCount, db->getRowFieldString(idx)) ) {
+						refCount = -1;
+					}
+				}
+
+				if ( addPick(pick.get(), refCount) ) {
+					++picks;
+					if ( refCount > 0 ) {
+						++arrivals;
+					}
+				}
+			}
+		}
+
+		SCApp->showMessage(QString("Loaded %1 picks").arg(it.count()).toLatin1());
+		cerr << "Got " << it.count() << " picks from database" << endl;
+		cerr << "Accepted " << picks << " picks" << endl;
+		cerr << "Declared " << arrivals << " arrivals" << endl;
+	}
+
+	_statusBarFile->setText(QString());
+
+	_recordStreamThread = new RecordStreamThread(SCApp->recordStreamURL());
+	if ( !_recordStreamThread->connect() ) {
+		delete _recordStreamThread;
+		_recordStreamThread = nullptr;
+		QMessageBox::critical(
+			this, tr("Error"),
+			tr("Could not connect to stream '%1'")
+			.arg(SCApp->recordStreamURL().c_str())
+		);
+	}
+	else {
+		if ( !Settings::global.disableTimeWindowRequest ) {
+			_recordStreamThread->setTimeWindow(_dataTimeWindow);
+		}
+
+		for ( auto item : _channelRequests ) {
+			_recordStreamThread->addStream(
+				item.networkCode(), item.stationCode(),
+				item.locationCode(), item.channelCode()
+			);
+		}
+
+		connect(_recordStreamThread, SIGNAL(receivedRecord(Seiscomp::Record*)),
+		        this, SLOT(receivedRecord(Seiscomp::Record*)));
+		_recordStreamThread->start();
+
+		_statusBarFile->setText(tr("Loading records"));
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::recordStreamClosed(RecordStreamThread *thread) {
+	if ( _recordStreamThread == thread ) {
+		_statusBarFile->setText(tr("Recordstream finished"));
+		_recordStreamThread->wait(true);
+		delete _recordStreamThread;
+		_recordStreamThread = nullptr;
+	}
+
+	if ( _wantReload ) {
+		reloadData();
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::selectedTraceViewRubberBand(QList<RecordViewItem*> items,
                                              double tmin, double tmax,
                                              RecordView::SelectionOperation operation) {
@@ -2750,13 +2874,7 @@ void MainWindow::jumpToLastRecord() {
 void MainWindow::clearPickMarkers() {
 	_markerMap.clear();
 
-	foreach ( TraceView* view, _traceViews ) {
-		for ( int i = 0; i < view->rowCount(); ++i ) {
-			Seiscomp::Gui::RecordViewItem *item = view->itemAt(i);
-			item->widget()->clearMarker();
-			item->widget()->update();
-		}
-	}
+	TRACEVIEWS(clearMarker());
 
 	// Clear associator cart
 	if ( _associator ) {
@@ -3044,22 +3162,19 @@ bool MainWindow::addPick(Pick* pick, int refCount) {
 
 	// Remove old markers
 	for ( int i = 0; i < item->widget()->markerCount(); ++i ) {
-		Seiscomp::Gui::RecordMarker* marker = item->widget()->marker(i);
-		if ( static_cast<double>(marker->time() - _traceViews.front()->alignment()) < -static_cast<double>(Settings::global.bufferSize) ) {
+		auto marker = item->widget()->marker(i);
+		if ( _traceViews.front()->alignment() - marker->time() > _bufferSize ) {
 			delete marker;
 		}
 	}
 
-	auto age = static_cast<double>(pick->time().value() - _traceViews.front()->alignment());
-	if ( age <= -static_cast<double>(Settings::global.bufferSize) ) {
-		cout << "pick '"
-		     << pick->publicID()
-		     << "' is too old ("
-		     << pick->time().value().toString("%F %T") << "), "
-		     << -age << " sec > "
-		     << static_cast<double>(Settings::global.bufferSize)
-		     << " sec"
-		     << endl;
+	auto age = _traceViews.front()->alignment() - pick->time().value();
+
+	if ( age > _bufferSize ) {
+		return false;
+	}
+
+	if ( Settings::global.endTime.valid() && age < Core::TimeSpan(0, 0) ) {
 		return false;
 	}
 
