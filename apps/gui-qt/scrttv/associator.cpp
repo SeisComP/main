@@ -180,7 +180,7 @@ Associator::Associator(QWidget *parent) : QWidget(parent) {
 	for ( auto depth : Settings::global.depths ) {
 		_ui.cbDepth->addItem(QString("%1").arg(depth, 0, 'f', SCScheme.precision.depth));
 	}
-	_ui.cbDepth->setCurrentText(QString());
+	_ui.cbDepth->clearEditText();
 
 	connect(_ui.cbLocator, SIGNAL(currentTextChanged(QString)),
 	        this, SLOT(locatorChanged(QString)));
