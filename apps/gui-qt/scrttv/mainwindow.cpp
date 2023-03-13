@@ -533,6 +533,8 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 	_searchBase = _statusBarSearch->palette().color(QPalette::Base);
 	_searchError = Gui::blend(Qt::red, _searchBase, 50);
 
+	_ui.menuView->addAction(_actionToggleFullScreen);
+
 	if ( SCApp->isMessagingEnabled() || SCApp->isDatabaseEnabled() ) {
 		_ui.menuSettings->addAction(_actionShowSettings);
 	}

@@ -380,8 +380,14 @@
      <string>&amp;Plugins</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>&amp;Settings</string>
+    </property>
+   </widget>
    <addaction name="menuFile" />
    <addaction name="menuPlugins" />
+   <addaction name="menuSettings"/>
   </widget>
   <action name="actionConsoleLog" >
    <property name="checkable" >

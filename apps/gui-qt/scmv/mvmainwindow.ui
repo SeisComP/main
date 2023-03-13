@@ -123,7 +123,19 @@
     <addaction name="separator" />
     <addaction name="quitAction" />
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>&amp;Settings</string>
+    </property>
+   </widget>
    <addaction name="menuMenu" />
+   <addaction name="menuView"/>
+   <addaction name="menuSettings"/>
   </widget>
   <widget class="QStatusBar" name="statusbar" >
    <property name="geometry" >

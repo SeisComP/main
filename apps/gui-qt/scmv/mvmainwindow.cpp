@@ -789,6 +789,11 @@ void MvMainWindow::setupStandardUi() {
 
 	connect(&_mapUpdateTimer, SIGNAL(timeout()), this, SLOT(updateMap()));
 
+	if ( SCApp->isMessagingEnabled() || SCApp->isDatabaseEnabled() ) {
+		_ui.menuSettings->addAction(_actionShowSettings);
+	}
+
+	_ui.menuView->addAction(_actionToggleFullScreen);
 	_mapUpdateTimer.start(_mapUpdateInterval);
 
 	_eventModeControls[DataModel::EEvaluationModeQuantity] = _ui.actionEventsModeUnset;

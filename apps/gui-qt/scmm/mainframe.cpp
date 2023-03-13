@@ -263,6 +263,8 @@ MainFrame::MainFrame() {
 
 	_messageView = NULL;
 
+	_ui.menuSettings->addAction(_actionShowSettings);
+
 	connect(SCApp, SIGNAL(changedConnection()),
 	        this, SLOT(onConnectionChanged()));
 
