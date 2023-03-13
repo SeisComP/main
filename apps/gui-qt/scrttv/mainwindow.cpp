@@ -2446,7 +2446,6 @@ void MainWindow::filterSelectionChanged() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::reload() {
-	cerr << "Reload" << endl;
 	Core::TimeWindow dataTimeWindow;
 	CURRENT_TRACEVIEW_RET(dataTimeWindow, visibleTimeRange());
 
