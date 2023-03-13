@@ -63,7 +63,7 @@ MainFrame::MainFrame() {
 		QLayout* layoutSummary = new QVBoxLayout(_ui.tabSummary);
 		layoutSummary->setMargin(9);
 		layoutSummary->addWidget(_eventSummary);
-	
+
 		QLayout* layoutEventList = new QVBoxLayout(_ui.tabEventList);
 		layoutEventList->setMargin(9);
 		layoutEventList->addWidget(_listPage);
@@ -231,9 +231,9 @@ void MainFrame::showInStatusbar(QString text, int time) {
 				_wt->setText(text);
 				statusBar()->insertPermanentWidget(0, _wt);
 			}
-			else 
+			else
 				statusBar()->removeWidget(_wt);
-		}	
+		}
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

@@ -77,6 +77,8 @@
     <addaction name="actionVerZoomOut"/>
     <addaction name="separator"/>
     <addaction name="actionJumpToLastRecord"/>
+    <addaction name="actionNormalizeVisibleAmplitudes"/>
+    <addaction name="actionDefaultDisplay"/>
     <addaction name="separator"/>
     <addaction name="actionViewPicks"/>
     <addaction name="actionViewArrivals"/>
@@ -85,14 +87,12 @@
     <addaction name="actionToggleRecordBorders"/>
     <addaction name="actionToggleAutoMove"/>
     <addaction name="actionApplyGain"/>
-    <addaction name="actionNormalizeVisibleAmplitudes"/>
-    <addaction name="actionDefaultDisplay"/>
     <addaction name="separator"/>
-    <addaction name="actionSortStaCode"/>
+    <addaction name="actionRestoreConfigOrder"/>
     <addaction name="actionSortDistance"/>
+    <addaction name="actionSortStaCode"/>
     <addaction name="actionSortNetStaCode"/>
     <addaction name="actionSortGroup"/>
-    <addaction name="actionRestoreConfigOrder"/>
     <addaction name="separator"/>
     <addaction name="actionListHiddenStreams"/>
    </widget>
@@ -104,6 +104,8 @@
     <addaction name="actionCycleFiltersReverse"/>
     <addaction name="separator"/>
     <addaction name="actionClearPickMarkers"/>
+    <addaction name="separator"/>
+    <addaction name="actionSearch"/>
    </widget>
    <widget class="QMenu" name="menuSettings">
     <property name="title">
@@ -121,9 +123,9 @@
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menuMode"/>
+   <addaction name="menuWindow"/>
    <addaction name="menuView"/>
    <addaction name="menuSettings"/>
-   <addaction name="menuWindow"/>
   </widget>
   <widget class="QStatusBar" name="statusbar">
    <property name="sizeGripEnabled">
@@ -364,7 +366,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Zoom</string>
+    <string>Zoom mode</string>
    </property>
    <property name="iconText">
     <string>Zoom mode</string>
@@ -415,7 +417,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Search</string>
+    <string>Search station by name</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+F</string>
@@ -480,13 +482,13 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Open recordstream</string>
+    <string>Open RecordStream</string>
    </property>
    <property name="iconText">
-    <string>Open recordstream</string>
+    <string>Open RecordStream</string>
    </property>
    <property name="toolTip">
-    <string>Open recordstream</string>
+    <string>Open RecordStream</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>

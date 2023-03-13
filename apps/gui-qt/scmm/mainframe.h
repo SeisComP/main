@@ -41,7 +41,7 @@ class Plugin;
 
 class Logger : public QObject {
 	Q_OBJECT
-	
+
 	signals:
 		void logReceived(const QString &channelName,
 		                 int level,
@@ -58,7 +58,7 @@ class LogDispatcher : public Seiscomp::Logging::Output {
 		~LogDispatcher() { delete _logger; }
 
 		operator QObject*() { return _logger; }
-	
+
 	protected:
 		void log(const char* channelName,
 		         Seiscomp::Logging::LogLevel level,
@@ -93,7 +93,7 @@ class MainFrame : public Seiscomp::Gui::MainWindow {
 
 		void onPluginOpen(bool);
 		void onPluginClosed(QObject*);
-		
+
 		void onTimer();
 
 		void onLog(const QString &channelName,
@@ -128,7 +128,7 @@ class MainFrame : public Seiscomp::Gui::MainWindow {
 			double bytes;
 			QTreeWidgetItem* item;
 		};
-	
+
 		Ui::MainWindow _ui;
 
 		TraceWidget* _traceWidget;
