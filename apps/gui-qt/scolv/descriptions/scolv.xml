@@ -396,6 +396,41 @@
 						</parameter>
 					</struct>
 				</group>
+				<parameter name="magnitudeComments" type="list:string">
+					<description>
+					A list of magnitude comment profiles. These profiles will be
+					used to populate magnitude comments when committing a magnitude.
+					</description>
+				</parameter>
+				<group name="magnitudeComments">
+					<description>
+					The container for all magnitude comment profiles.
+					</description>
+					<struct name="MagnitudeCommentProfile" link="olv.magnitudeComments">
+						<parameter name="id" type="string">
+							<description>
+							The id of the comment to be added, updated or removed.
+							</description>
+						</parameter>
+						<parameter name="label" type="string">
+							<description>
+							The label shown in the magnitude view.
+							</description>
+						</parameter>
+						<parameter name="options" type="list:string">
+							<description>
+							A list of options to select from. Actually the values
+							to populate the dropdown list with.
+							</description>
+						</parameter>
+						<parameter name="allowFreeText" type="boolean" default="false">
+							<description>
+							If free text is allowed in addition to the predefined
+							values.
+							</description>
+						</parameter>
+					</struct>
+				</group>
 			</group>
 			<group name="picker">
 				<description>Parameters controlling the phase picker window.</description>
