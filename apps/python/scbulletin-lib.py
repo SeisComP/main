@@ -13,8 +13,6 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
-from __future__ import print_function
-
 import sys
 import seiscomp.client
 import seiscomp.io
@@ -620,17 +618,22 @@ class Bulletin(object):
             for mag in stationMagnitudes[typ]:
 
                 key = mag.amplitudeID()
-                amp = seiscomp.datamodel.Amplitude.Find(key)
-                if amp is None and self._dbq:
-                    seiscomp.logging.debug("missing station amplitude '%s'" % key)
+                if key:
+                    amp = seiscomp.datamodel.Amplitude.Find(key)
+                    if amp is None and self._dbq:
+                        seiscomp.logging.debug("missing station amplitude '%s'" % key)
 
-                    # FIXME really slow!!!
-                    obj = self._dbq.loadObject(
-                        seiscomp.datamodel.Amplitude.TypeInfo(), key
-                    )
-                    amp = seiscomp.datamodel.Amplitude.Cast(obj)
+                        # try to load amplitude from database
+                        obj = self._dbq.loadObject(
+                            seiscomp.datamodel.Amplitude.TypeInfo(), key
+                        )
+                        amp = seiscomp.datamodel.Amplitude.Cast(obj)
+                else:
+                    amp = None
+                    # This is expected behaviour for some magnitudes like Me.
 
-                p = a = "N/A"
+                p = ""
+                a = "N/A"
                 if amp:
                     try:
                         a = "%g" % amp.amplitude().value()
