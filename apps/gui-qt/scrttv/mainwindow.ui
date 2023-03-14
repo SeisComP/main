@@ -91,8 +91,9 @@
     <property name="title">
      <string>&amp;Edit</string>
     </property>
-    <addaction name="actionCycleFilters"/>
-    <addaction name="actionCycleFiltersReverse"/>
+    <addaction name="actionToggleFilter"/>
+    <addaction name="actionNextFilter"/>
+    <addaction name="actionPreviousFilter"/>
     <addaction name="separator"/>
     <addaction name="actionClearPickMarkers"/>
     <addaction name="separator"/>
@@ -254,21 +255,21 @@
     <string>Right</string>
    </property>
   </action>
-  <action name="actionCycleFilters">
+  <action name="actionNextFilter">
    <property name="checkable">
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Cycle through filters</string>
+    <string>Activate next filter</string>
    </property>
    <property name="iconText">
-    <string>Cycle through filters</string>
+    <string>Activate next filter</string>
    </property>
    <property name="toolTip">
-    <string>Cycle through filters</string>
+    <string>Activate next filter</string>
    </property>
    <property name="shortcut">
-    <string>F</string>
+    <string>G</string>
    </property>
   </action>
   <action name="actionSortDistance">
@@ -689,12 +690,12 @@
     <string>Apply gain</string>
    </property>
   </action>
-  <action name="actionCycleFiltersReverse">
+  <action name="actionPreviousFilter">
    <property name="text">
-    <string>Cycle through filters (reverse)</string>
+    <string>Activate previous filter</string>
    </property>
    <property name="shortcut">
-    <string>Shift+F</string>
+    <string>D</string>
    </property>
   </action>
   <action name="actionToggleRecordBorders">
@@ -783,6 +784,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+R</string>
+   </property>
+  </action>
+  <action name="actionToggleFilter">
+   <property name="text">
+    <string>Toggle filter</string>
+   </property>
+   <property name="shortcut">
+    <string>F</string>
    </property>
   </action>
  </widget>

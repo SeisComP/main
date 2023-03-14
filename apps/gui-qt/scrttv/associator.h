@@ -60,6 +60,7 @@ class Associator : public QWidget {
 	private slots:
 		void locatorChanged(QString locator);
 		void profileChanged(QString profile);
+		void arrivalChanged(int id, bool state);
 		void configureLocator();
 		void removePick();
 		void relocate();

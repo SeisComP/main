@@ -611,8 +611,9 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 	connect(_ui.actionOpenXMLFile, SIGNAL(triggered()), this, SLOT(openXML()));
 	connect(_ui.actionQuit, SIGNAL(triggered()), this, SLOT(close()));
 
-	connect(_ui.actionCycleFilters, SIGNAL(triggered(bool)), this, SLOT(cycleFilters(bool)));
-	connect(_ui.actionCycleFiltersReverse, SIGNAL(triggered(bool)), this, SLOT(cycleFiltersReverse(bool)));
+	connect(_ui.actionNextFilter, SIGNAL(triggered()), this, SLOT(nextFilter()));
+	connect(_ui.actionPreviousFilter, SIGNAL(triggered()), this, SLOT(previousFilter()));
+	connect(_ui.actionToggleFilter, SIGNAL(triggered()), this, SLOT(toggleFilter()));
 	connect(_ui.actionApplyGain, SIGNAL(toggled(bool)), this, SLOT(showScaledValues(bool)));
 	connect(_ui.actionRestoreConfigOrder, SIGNAL(triggered()), this, SLOT(sortByConfig()));
 	connect(_ui.actionSortDistance, SIGNAL(triggered()), this, SLOT(sortByDistance()));
@@ -904,7 +905,7 @@ void MainWindow::start() {
 	catch ( ... ) {}
 
 	if ( Settings::global.autoApplyFilter ) {
-		cycleFilters(true);
+		toggleFilter();
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2433,10 +2434,15 @@ void MainWindow::filterSelectionChanged() {
 	if ( _statusBarFilter->currentIndex() > 0 ) {
 		TRACEVIEWS(setFilterByName(Settings::global.filters[_statusBarFilter->currentIndex() - 1].c_str()));
 		TRACEVIEWS(enableFilter(true));
+		_lastFilterIndex = _statusBarFilter->currentIndex();
+		_ui.actionPreviousFilter->setEnabled(Settings::global.filters.size() > 1);
+		_ui.actionNextFilter->setEnabled(Settings::global.filters.size() > 1);
 	}
 	else {
 		TRACEVIEWS(setFilter(nullptr));
 		TRACEVIEWS(enableFilter(false));
+		_ui.actionPreviousFilter->setEnabled(false);
+		_ui.actionNextFilter->setEnabled(false);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2644,10 +2650,14 @@ void MainWindow::selectedTraceViewRubberBand(QList<RecordViewItem*> items,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MainWindow::cycleFilters(bool) {
+void MainWindow::nextFilter() {
+	if ( _statusBarFilter->currentIndex() == 0 ) {
+		return;
+	}
+
 	auto idx = _statusBarFilter->currentIndex() + 1;
 	if ( idx >= _statusBarFilter->count() ) {
-		idx = 0;
+		idx = 1;
 	}
 	_statusBarFilter->setCurrentIndex(idx);
 }
@@ -2657,12 +2667,30 @@ void MainWindow::cycleFilters(bool) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MainWindow::cycleFiltersReverse(bool) {
+void MainWindow::previousFilter() {
+	if ( _statusBarFilter->currentIndex() == 0 ) {
+		return;
+	}
+
 	auto idx = _statusBarFilter->currentIndex() - 1;
-	if ( idx < 0 ) {
+	if ( idx < 1 ) {
 		idx = _statusBarFilter->count() - 1;
 	}
 	_statusBarFilter->setCurrentIndex(idx);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::toggleFilter() {
+	if ( _statusBarFilter->currentIndex() > 0 ) {
+		_statusBarFilter->setCurrentIndex(0);
+	}
+	else if ( _statusBarFilter->count() > 1 ) {
+		_statusBarFilter->setCurrentIndex(_lastFilterIndex < 0 ? 1 : _lastFilterIndex);
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
