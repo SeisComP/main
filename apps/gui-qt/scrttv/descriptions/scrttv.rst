@@ -305,8 +305,9 @@ Hotkey                   Description
 -----------------------  ---------------------------------------
 **Filtering**
 -----------------------  ---------------------------------------
-:kbd:`f`                 Switch to next filter in list
-:kbd:`Shift+f`           Switch to previous filter in list
+:kbd:`f`                 Toggle filtering
+:kbd:`d`                 Switch to previous filter in list if filtering is enabled.
+:kbd:`g`                 Switch to next filter in list if filtering is enabled.
 :kbd:`r`                 Toggle showing all records
 -----------------------  ---------------------------------------
 **Navigation**

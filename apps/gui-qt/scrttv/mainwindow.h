@@ -169,8 +169,9 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		void selectStreams();
 		void addTabulator();
 
-		void cycleFilters(bool);
-		void cycleFiltersReverse(bool);
+		void nextFilter();
+		void previousFilter();
+		void toggleFilter();
 		void showScaledValues(bool enable);
 		void changeTraceState();
 
@@ -319,6 +320,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		int                                       _rowHeight;
 		int                                       _numberOfRows;
 		bool                                      _wantReload{false};
+		int                                       _lastFilterIndex{-1};
 
 		Seiscomp::Gui::QuestionBox                _questionApplyChanges;
 

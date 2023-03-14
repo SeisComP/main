@@ -113,18 +113,6 @@ QString waveformIDToString(const WaveformStreamID& id) {
 }
 
 
-QColor color(const Pick *pick) {
-	try {
-		if ( pick->evaluationMode() == MANUAL ) {
-			return SCScheme.colors.picks.manual;
-		}
-	}
-	catch ( ... ) {}
-
-	return SCScheme.colors.picks.automatic;
-}
-
-
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -157,6 +145,9 @@ Associator::Associator(QWidget *parent) : QWidget(parent) {
 	// _mapWidget->setDrawStationAnnotations(true);
 	_ui.frameMap->layout()->setMargin(0);
 	_ui.frameMap->layout()->addWidget(_mapWidget);
+
+	connect(_mapWidget, SIGNAL(arrivalChanged(int, bool)),
+	        this, SLOT(arrivalChanged(int, bool)));
 
 	auto locators = Seismology::LocatorInterfaceFactory::Services();
 	if ( locators ) {
@@ -304,7 +295,7 @@ void Associator::syncPicksView() {
 
 		QLabel *labelMode = new QLabel;
 		auto pal = labelMode->palette();
-		pal.setColor(QPalette::Window, color(marker->pick.get()));
+		pal.setColor(QPalette::Window, marker->color());
 		labelMode->setPalette(pal);
 		labelMode->setBackgroundRole(QPalette::Window);
 		labelMode->setAutoFillBackground(true);
@@ -727,6 +718,29 @@ void Associator::profileChanged(QString profile) {
 	unsetMessage();
 	_locator->setProfile(profile.toStdString());
 	relocate();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Associator::arrivalChanged(int id, bool state) {
+	if ( state ) {
+		return;
+	}
+
+	auto arrival = _origin->arrival(id);
+
+	for ( auto it = _markers.begin(); it != _markers.end(); ++it ) {
+		auto marker = *it;
+		if ( marker->pick->publicID() == arrival->pickID() ) {
+			_markers.erase(it);
+			syncPicksView();
+			relocate();
+			break;
+		}
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
