@@ -23,12 +23,16 @@
 #include "mapcut.h"
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 using namespace std;
 using namespace Seiscomp;
 using namespace Seiscomp::Gui;
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void parseDim(const string &str, QSize *size) {
 	size_t pos = str.find('x');
 
@@ -50,8 +54,12 @@ void parseDim(const string &str, QSize *size) {
 
 	if ( size ) *size = QSize(w,h);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool parseMargin(const string &str, QSizeF *size) {
 	bool symmetric = false;
 
@@ -75,8 +83,12 @@ bool parseMargin(const string &str, QSizeF *size) {
 	if ( size ) *size = QSizeF(w,h);
 	return true;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void parseRegion(const string &str, QRectF *rect) {
 	size_t pos = str.find('x');
 
@@ -140,8 +152,12 @@ void parseRegion(const string &str, QRectF *rect) {
 
 	if ( rect ) *rect = QRectF(lon0, lat0, h, w);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void setupView(Map::Canvas *canvas, const QRectF &rect) {
 	canvas->displayRect(rect);
 
@@ -162,8 +178,12 @@ void setupView(Map::Canvas *canvas, const QRectF &rect) {
 	canvas->setView(center, 360.0 / (canvas->width()*dt));
 	*/
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 MapCut::MapCut(int& argc, char **argv, Seiscomp::Gui::Application::Type type)
 : Application(argc, argv, 0, type) {
 	setMessagingEnabled(false);
@@ -176,7 +196,23 @@ MapCut::MapCut(int& argc, char **argv, Seiscomp::Gui::Application::Type type)
 	_magnitude = 0;
 	_margins = QSizeF(0,0);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+MapCut::~MapCut() {
+	if ( _canvas ) {
+		delete _canvas;
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MapCut::createCommandLineDescription() {
 	commandline().addGroup("Options");
 	commandline().addOption("Options", "region,r", "cut region ([lat_dim]x[lon_dim]+lat0+lon0 or +lat0+lon+lat1+lon1)", &_region, false);
@@ -192,7 +228,12 @@ void MapCut::createCommandLineDescription() {
 	commandline().addOption("Options", "event-id,E", "event to plot", &_eventID, false);
 	commandline().addOption("Options", "html-area", "print html/area section");
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool MapCut::run() {
 	SCScheme.map.vectorLayerAntiAlias = true;
 	DataModel::EventParametersPtr ep;
@@ -369,14 +410,22 @@ bool MapCut::run() {
 
 	return true;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MapCut::renderCanvas() {
 	QPainter p(&_canvas->buffer());
 	_canvas->draw(p);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MapCut::renderingCompleted() {
 	cerr << "Rendering finished" << endl;
 
@@ -387,8 +436,12 @@ void MapCut::renderingCompleted() {
 	else
 		Client::Application::quit();
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MapCut::drawArrivals(QPainter *p) {
 	if ( !_org ) return;
 
@@ -469,9 +522,12 @@ void MapCut::drawArrivals(QPainter *p) {
 		catch ( ... ) {}
 	}
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int main(int argc, char ** argv) {
 	Application::Type type = Application::Tty;
 	// Qt 4.2.x crashes when rendering text with console
@@ -483,3 +539,4 @@ int main(int argc, char ** argv) {
 	MapCut app(argc, argv,type);
 	return app();
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

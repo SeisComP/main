@@ -31,6 +31,7 @@ class MapCut : public Seiscomp::Gui::Application {
 
 	public:
 		MapCut(int& argc, char **argv, Seiscomp::Gui::Application::Type);
+		~MapCut();
 
 		void createCommandLineDescription();
 
