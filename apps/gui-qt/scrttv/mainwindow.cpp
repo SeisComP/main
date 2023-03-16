@@ -2180,11 +2180,8 @@ void MainWindow::filterChanged(const QString &s) {
 	Settings::global.filters.clear();
 	Settings::global.filters.push_back(s.toStdString());
 	_statusBarFilter->blockSignals(true);
-	while ( _statusBarFilter->count() > 1 ) {
-		_statusBarFilter->removeItem(1);
-	}
 	_statusBarFilter->addItem(s);
-	_statusBarFilter->setCurrentIndex(1);
+	_statusBarFilter->setCurrentIndex(_statusBarFilter->count() - 1);
 	_statusBarFilter->blockSignals(false);
 	filterSelectionChanged();
 }
