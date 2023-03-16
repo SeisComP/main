@@ -935,6 +935,23 @@ void App::syncEvent(const EventParameters *ep, const Event *event,
 		return;
 	}
 
+	auto origin = ep->findOrigin(event->preferredOriginID());
+	if ( !origin ) {
+		SEISCOMP_ERROR("Remote preferred origin '%s' not found: skipping event synchronization",
+		               event->preferredOriginID().c_str());
+		return;
+	}
+
+	try {
+		if ( isAgencyIDBlocked(origin->creationInfo().agencyID()) ) {
+			SEISCOMP_DEBUG("Remote preferred origin '%s' agencyID '%s' is blocked: skipping event synchronization",
+			               origin->publicID().c_str(),
+			               origin->creationInfo().agencyID().c_str());
+			return;
+		}
+	}
+	catch ( ... ) {}
+
 	EventPtr targetEvent = query()->getEvent(event->preferredOriginID());
 	if ( !targetEvent ) {
 		SEISCOMP_DEBUG("No event found for origin %s, need to wait",
