@@ -892,13 +892,17 @@ Processing:
                     e.g. "2022-12-20 12:00:00~2022-12-23 14:00:10".
 
 Output:
+  -o, --output arg  Import mode: Write data to given file instead of creating
+                    a SDS archive. Deactivates --stdout. Deactivated by --test.
   --print-streams   Print stream information only and exit. Works in import, dump and
                     check mode. Output: NET.STA.LOC.CHA StartTime EndTime.
-  --test            Test only, no record output.
-  --stdout          Import mode: Write to stdout instead of creating a SDS archive.
+  --stdout          Import mode: Write to stdout instead of creating a SDS
+                    archive. Deactivated by --test and --output.
+  --test            Test input only, no record output. Deactivates all other
+                    output.
   --with-filecheck  Import mode:  Check all accessed files after import. Unsorted
                     or unreadable files are reported to stderr.
-  --with-filename   Import mode: Print all accessed files to stdout after import.
+  --with-filename   Import mode: Print all accessed files to sterr after import.
 
 Examples:
 Read from /archive, create a miniSEED file where records are sorted by end time
@@ -925,7 +929,7 @@ def main():
     try:
         opts, files = gnu_getopt(
             sys.argv[1:],
-            "I:dismEn:c:t:l:hv",
+            "I:dismEn:c:t:l:o:hv",
             [
                 "stdout",
                 "with-filename",
@@ -944,6 +948,7 @@ def main():
                 "check",
                 "print-streams",
                 "rename=",
+                "output=",
             ],
         )
     except GetoptError:
@@ -969,6 +974,7 @@ def main():
 
     speed = 0
     stdout = False
+    outputFile = None
     ignoreRecords = False
 
     channels = None
@@ -1000,6 +1006,8 @@ def main():
             checkSDS = True
         elif flag in ["--stdout"]:
             stdout = True
+        elif flag in ["-o", "--output"]:
+            outputFile = arg
         elif flag in ["--with-filename"]:
             withFilename = True
         elif flag in ["--with-filecheck"]:
@@ -1046,13 +1054,16 @@ def main():
         except BaseException:
             pass
 
+    if outputFile:
+        stdout = False
+
     try:
         if archiveDirectory[-1] != "/":
             archiveDirectory = archiveDirectory + "/"
     except BaseException:
         pass
 
-    if not stdout and not os.path.isdir(archiveDirectory):
+    if not stdout and not outputFile and not os.path.isdir(archiveDirectory):
         print(
             f"info: archive directory '{archiveDirectory}' not found - stopping",
             file=sys.stderr,
@@ -1118,6 +1129,14 @@ def main():
 
     if stdout:
         out = sys.stdout.buffer
+
+    if outputFile:
+        print(f"Output data to file: {outputFile}", file=sys.stderr)
+        try:
+            out = open(outputFile,"wb")
+        except Exception:
+            print("Cannot create output file {outputFile}", file=sys.stderr)
+            return -1
 
     # list file witht times takes priority over nslc list
     if listFile:
@@ -1374,8 +1393,11 @@ def main():
         filePool = {}
         f = None
         accessedFiles = set()
+        if outputFile:
+            accessedFiles.add(outputFile)
         foundCountError = 0
         foundRecords = False
+
         try:
             for rec in inputRecord:
                 if not foundRecords:
@@ -1435,7 +1457,7 @@ def main():
 
                 recordRenamer.applyRules(rec)
 
-                if stdout:
+                if stdout or outputFile:
                     if verbose:
                         print(
                             f"{rec.streamID()} {rec.startTime().iso()}", file=sys.stderr
@@ -1480,10 +1502,8 @@ def main():
 
                     if withFilename or checkFiles:
                         accessedFiles.add(archiveDirectory + file)
+
                     f.write(rec.raw().str())
-                else:
-                    if withFilename or checkFiles:
-                        accessedFiles.add(archiveDirectory + file)
 
                 if verbose:
                     print(f"{rec.streamID()} {rec.startTime().iso()} {file}")
@@ -1500,6 +1520,10 @@ def main():
                 print("  + which are ignored and not written", file=sys.stderr)
             else:
                 print("  + which are ignored and not written", file=sys.stderr)
+
+        if test:
+            print("Test mode: Found errors were stated above, if any", file=sys.stderr)
+            return 0
 
         if checkFiles:
             print("Testing accessed files (may take some time):", file=sys.stderr)
@@ -1521,6 +1545,9 @@ def main():
             print("List of accessed files:", file=sys.stderr)
             for fileName in accessedFiles:
                 print(fileName, file=sys.stderr)
+
+        if outputFile:
+            out.close()
 
     if streamDict:
         print(

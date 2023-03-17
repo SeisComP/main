@@ -95,13 +95,13 @@ Examples
    .. code-block:: sh
 
       scart -I fdsnws://[server]:80 --list list.file [SDS archive]
-      scart -I fdsnws://[server]:80 --list list.file --stdout > file.mseed
+      scart -I fdsnws://[server]:80 --list list.file -o file.mseed
       scart -I fdsnws://[server]:80 -t '[start-time]~[end-time]' --nslc list.file [SDS archive]
       scart -I fdsnws://[server]:80 -t '[start-time]~[end-time]' -n '[NET1],[NET2]' [SDS archive]
       scart -I fdsnws://[server]:80 -t '[start-time]~[end-time]' -n '[NET]' -c 'EH?' [SDS archive]
       scart -I fdsnws://[server]:80 -t '[start-time]~[end-time]' -n '[N1.S1.L1.C1],[N2.S2.L2.C2]' [SDS archive]
 
-   It is possible to achieve the same result of the dump mode using a 
+   It is possible to achieve the same result of the dump mode using a
    combination of the input mode and the :ref:`scmssort` command, which allows
    to read the input data from any supported :ref:`global_recordstream`,
    not only an SDS archive:

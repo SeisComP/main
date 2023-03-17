@@ -157,6 +157,12 @@
 			</group>
 
 			<group name="Output">
+				<option flag="o" long-flag="output">
+					<description>
+					Dump, Import mode: Write data to given file instead of creating
+                    a SDS archive. Deactivates --stdout. Deactivated by --test.
+					</description>
+				</option>
 				<option long-flag="print-streams">
 					<description>
 					Print stream information only and exit. Works in import, dump
@@ -166,12 +172,13 @@
 				<option long-flag="stdout">
 					<description>
 					Import mode: Write to stdout instead of creating a SDS archive.
+					Deactivated by --test and --output.
 					</description>
 				</option>
 				<option long-flag="test">
 					<description>
 					Test only, no record output. This switch is useful
-					for debugging.
+					for debugging. Deactivates all other output.
 					</description>
 				</option>
 				<option flag="" long-flag="with-filecheck">
@@ -182,7 +189,7 @@
 				</option>
 				<option flag="" long-flag="with-filename">
 					<description>
-					Import mode: Print all accessed files to stdout after import.
+					Import mode: Print all accessed files to stderr after import.
 					</description>
 				</option>
 			</group>
