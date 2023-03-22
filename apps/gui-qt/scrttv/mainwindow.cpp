@@ -2177,7 +2177,6 @@ void MainWindow::addTabulator() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::filterChanged(const QString &s) {
-	Settings::global.filters.clear();
 	Settings::global.filters.push_back(s.toStdString());
 	_statusBarFilter->blockSignals(true);
 	_statusBarFilter->addItem(s);
@@ -2429,6 +2428,7 @@ void MainWindow::selectMode(int mode) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::filterSelectionChanged() {
 	if ( _statusBarFilter->currentIndex() > 0 ) {
+		cerr << Settings::global.filters.size() << "  " << _statusBarFilter->currentIndex() << endl;
 		TRACEVIEWS(setFilterByName(Settings::global.filters[_statusBarFilter->currentIndex() - 1].c_str()));
 		TRACEVIEWS(enableFilter(true));
 		_lastFilterIndex = _statusBarFilter->currentIndex();
