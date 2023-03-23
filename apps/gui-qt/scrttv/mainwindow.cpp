@@ -1596,9 +1596,11 @@ void MainWindow::openFile(const std::vector<std::string> &files) {
 
 	Core::TimeWindow tw = _traceViews.front()->coveredTimeRange();
 	_originTime = tw.endTime();
-	_traceViews.front()->setAlignment(_originTime);
 
+	TRACEVIEWS(setAlignment(_originTime));
 	TRACEVIEWS(setBufferSize(tw.length()));
+	TRACEVIEWS(setTimeRange(-tw.length(), 0));
+
 	alignRight();
 	colorByConfig();
 
