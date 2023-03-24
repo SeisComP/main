@@ -63,12 +63,14 @@
 				</option>
 				<option flag="E">
 					<description>
-					Dump mode: sort records according to their end time. Default: start time.
+					Dump mode: sort records according to their end time.
+					Default: start time.
 					</description>
 				</option>
 				<option long-flag="files" argument="count">
 					<description>
-					Dump mode: specify the number of file handles to cache. Default: 100.
+					Dump mode: Specify the number of file handles to cache.
+					Default: 100.
 					</description>
 				</option>
 				<option flag="i">
@@ -78,10 +80,10 @@
 				</option>
 				<option flag="l" long-flag="list" argument="file">
 					<description>
-					Use a stream list file with time windows instead of defined networks
-					and channels (-n, -c and -t are ignored). The list can be generated
-					from events by scevtstreams. One line per stream.
-					Line format: starttime;endtime;streamID.
+					Dump mode: Use a stream list file with time windows instead
+					of defined networks and channels (-n, -c and -t are ignored).
+					The list can be generated from events by scevtstreams. One
+					line per stream. Line format: starttime;endtime;streamID
 					The time format is the same as described in option '-t'.
 
 					Example:
@@ -92,8 +94,8 @@
 				<option flag="m" long-flag="modify">
 					<description>
 					Dump mode: Modify the record time for real time playback.
-					The first record time is NOW. The relative time of successive records
-					to the first one are kept.
+					The first record time is NOW. The relative time of
+					successive records to the first one are kept.
 					</description>
 				</option>
 				<option flag="n" argument="networks">
@@ -105,12 +107,11 @@
 				</option>
 				<option flag="" long-flag="nslc" argument="file">
 					<description>
-					Stream list file to be used instead of defined networks and
-					channels (-n and -c are ignored). In dump mode only. The
-					time window must be provided separately. Wild cards may be
-					used. The list can be generated from bindings by scdumpcfg
-					or from inventory by scinv. Use one line per stream. Line
-					format: NET.STA.LOC.CHA.
+					Import, dump mode: Stream list file to be used instead of
+					defined networks and channels (-n and -c are ignored)
+					for filtering the data by the given streams. Dump mode:
+					Use in combination with -t! One line per stream, line
+					format: NET.STA.LOC.CHA
 
 					Example:
 
@@ -160,7 +161,7 @@
 				<option flag="o" long-flag="output">
 					<description>
 					Dump, Import mode: Write data to given file instead of creating
-                    a SDS archive. Deactivates --stdout. Deactivated by --test.
+					a SDS archive. Deactivates --stdout. Deactivated by --test.
 					</description>
 				</option>
 				<option long-flag="print-streams">
