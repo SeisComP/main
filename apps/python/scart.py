@@ -417,10 +417,8 @@ class RecordRenamer:
         self.renameRules = []
 
     def addRule(self, rules):
-
         # split multiple comma separated rules
         for singleRule in rules.split(","):
-
             # A rule is [match-stream:]rename-stream
             matchStream = None
             renameStream = None
@@ -894,8 +892,9 @@ Processing:
 Output:
   -o, --output arg  Import mode: Write data to given file instead of creating
                     a SDS archive. Deactivates --stdout. Deactivated by --test.
-  --print-streams   Print stream information only and exit. Works in import, dump and
-                    check mode. Output: NET.STA.LOC.CHA StartTime EndTime.
+  --print-streams   Import, dump, check mode: Print stream information to
+                    stderr in addition to all other output. Output:
+                    NET.STA.LOC.CHA StartTime EndTime records samples samplingRate.
   --stdout          Import mode: Write to stdout instead of creating a SDS
                     archive. Deactivated by --test and --output.
   --test            Test input only, no record output. Deactivates all other
@@ -925,7 +924,6 @@ def usage(exitcode=0):
 
 
 def main():
-
     try:
         opts, files = gnu_getopt(
             sys.argv[1:],
@@ -1130,10 +1128,10 @@ def main():
     if stdout:
         out = sys.stdout.buffer
 
-    if outputFile:
+    if not test and outputFile:
         print(f"Output data to file: {outputFile}", file=sys.stderr)
         try:
-            out = open(outputFile,"wb")
+            out = open(outputFile, "wb")
         except Exception:
             print("Cannot create output file {outputFile}", file=sys.stderr)
             return -1
@@ -1297,7 +1295,7 @@ def main():
 
             recordRenamer.applyRules(rec)
 
-            if not test and not printStreams:
+            if not test:
                 out.write(rec.raw().str())
 
             foundRecords += 1
@@ -1326,7 +1324,6 @@ def main():
                 if printStreams:
                     # only collect stream IDs
                     checkFilePrint(fileName, streamDict)
-                    continue
 
                 issueFound = checkFile(fileName)
                 if issueFound:
@@ -1391,6 +1388,7 @@ def main():
         )
 
         filePool = {}
+        outdir = None
         f = None
         accessedFiles = set()
         if outputFile:
@@ -1453,8 +1451,6 @@ def main():
                             rec.samplingFrequency(),
                         )
 
-                    continue
-
                 recordRenamer.applyRules(rec)
 
                 if stdout or outputFile:
@@ -1462,7 +1458,7 @@ def main():
                         print(
                             f"{rec.streamID()} {rec.startTime().iso()}", file=sys.stderr
                         )
-                    if not test and not printStreams:
+                    if not test:
                         out.write(rec.raw().str())
                     continue
 
@@ -1475,7 +1471,7 @@ def main():
                 )
                 file = directory + file
 
-                if not test and not printStreams:
+                if not test:
                     try:
                         f = filePool[file]
                     except BaseException:
@@ -1522,34 +1518,46 @@ def main():
                 print("  + which are ignored and not written", file=sys.stderr)
 
         if test:
-            print("Test mode: Found errors were stated above, if any", file=sys.stderr)
-            return 0
-
-        if checkFiles:
-            print("Testing accessed files (may take some time):", file=sys.stderr)
-            foundIssues = 0
-            checkedFiles = 0
-            for fileName in accessedFiles:
-                checkedFiles += 1
-                issueFound = checkFile(fileName)
-                if issueFound:
-                    foundIssues += 1
-                    print(f"{fileName} has an issue", file=sys.stderr)
-                    print(f"  + {issueFound}", file=sys.stderr)
-
             print(
-                f"Found issues in {foundIssues}/{checkedFiles} files", file=sys.stderr
+                "Test mode: Found errors were stated above, if any",
+                file=sys.stderr,
             )
 
-        if withFilename:
-            print("List of accessed files:", file=sys.stderr)
-            for fileName in accessedFiles:
-                print(fileName, file=sys.stderr)
+        else:
+            if outputFile:
+                out.close()
+                if verbose:
+                    print(f"Records were written to file: {outputFile}")
 
-        if outputFile:
-            out.close()
+            if outdir and verbose:
+                print(f"Records were written to archive: {archiveDirectory}")
 
-    if streamDict:
+            if checkFiles:
+                print(
+                    "Testing accessed files (may take some time):",
+                    file=sys.stderr,
+                )
+                foundIssues = 0
+                checkedFiles = 0
+                for fileName in accessedFiles:
+                    checkedFiles += 1
+                    issueFound = checkFile(fileName)
+                    if issueFound:
+                        foundIssues += 1
+                        print(f"{fileName} has an issue", file=sys.stderr)
+                        print(f"  + {issueFound}", file=sys.stderr)
+
+                print(
+                    f"Found issues in {foundIssues}/{checkedFiles} files",
+                    file=sys.stderr,
+                )
+
+            if withFilename:
+                print("List of accessed files:", file=sys.stderr)
+                for fileName in accessedFiles:
+                    print(fileName, file=sys.stderr)
+
+    if printStreams and streamDict:
         print(
             "# streamID       start                       end                         "
             "records samples samplingRate",
