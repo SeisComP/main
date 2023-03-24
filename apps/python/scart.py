@@ -854,7 +854,7 @@ Processing:
                     start time
   --files arg       Dump mode: Specify the file handles to cache; default: 100
   -i, --ignore      Ignore records without data samples.
-  -l, --list arg    Use a stream list file with time windows instead of defined
+  -l, --list arg    Dump mode: Use a stream list file with time windows instead of defined
                     networks, channels and time window (-n, -c and -t are ignored). The
                     list can be generated from events by scevtstreams. One line per
                     stream. Line format: starttime;endtime;streamID
@@ -867,8 +867,8 @@ Processing:
                     NET.STA or NET.STA.LOC or NET.STA.LOC.CHA. If CHA is
                     omitted, it defaults to the value of -c option.
                     Default: "*"
-  --nslc arg        Stream list file to be used instead of defined networks and
-                    channels (-n and -c are ignored) for filtering the data by
+  --nslc arg        Dump mode: Stream list file to be used instead of defined networks
+                    and channels (-n and -c are ignored) for filtering the data by
                     the given streams. Use in combination with -t.
                     One line per stream, line format: NET.STA.LOC.CHA
   --rename arg      Rename stream data according to the provided rule(s).
@@ -1180,7 +1180,8 @@ def main():
             streams.append(stream)
 
     elif nslcFile:
-        for stream in readStreamList(nslcFile):
+        streamFilter = readStreamList(nslcFile)
+        for stream in streamFilter:
             streams.append((tmin, tmax, *stream[:4]))
 
     elif not checkSDS:
