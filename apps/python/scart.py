@@ -959,6 +959,7 @@ def main():
     sort = False
     modifyTime = False
     dump = False
+    importMode = False
     listFile = None
     nslcFile = None
     printStreams = False
@@ -1037,6 +1038,7 @@ def main():
             test = True
         elif flag == "-I":
             recordURL = arg
+            importMode = True
         elif flag == "-n":
             networks = arg
         elif flag == "-c":
@@ -1054,6 +1056,18 @@ def main():
 
     if outputFile:
         stdout = False
+
+    if checkSDS and dump:
+        print("Stopping: either use '-d' or '--check'", file=sys.stderr)
+        return -1
+
+    if checkSDS and importMode:
+        print("Stopping: either use '-I' or '--check'", file=sys.stderr)
+        return -1
+
+    if dump and importMode:
+        print("Stopping: either use '-d' or '-I'", file=sys.stderr)
+        return -1
 
     try:
         if archiveDirectory[-1] != "/":
@@ -1101,7 +1115,6 @@ def main():
         elif nslcFile:
             print(f"Stream file: '{nslcFile}'", file=sys.stderr)
 
-        print(f"Archive: {archiveDirectory}", file=sys.stderr)
         if dump:
             if not sort and not modifyTime:
                 print("Mode: DUMP", file=sys.stderr)
@@ -1111,8 +1124,15 @@ def main():
                 print("Mode: DUMP & MODIFY_TIME", file=sys.stderr)
             elif sort and modifyTime:
                 print("Mode: DUMP & SORT & MODIFY_TIME", file=sys.stderr)
-        else:
+            print(f"Archive: {archiveDirectory}", file=sys.stderr)
+
+        if checkSDS:
+            print("Mode: Check", file=sys.stderr)
+
+        if importMode:
             print("Mode: IMPORT", file=sys.stderr)
+            if not stdout and not outputFile:
+                print(f"Archive: {archiveDirectory}", file=sys.stderr)
 
         recordRenamer.printRules()
 
@@ -1336,7 +1356,7 @@ def main():
                 f"Found issues in {foundIssues}/{checkedFiles} files", file=sys.stderr
             )
 
-    else:  # Import mode
+    elif importMode:  # Import mode
         env = seiscomp.system.Environment.Instance()
         cfg = seiscomp.config.Config()
         env.initConfig(cfg, "scart")
