@@ -55,7 +55,7 @@ class Archive:
                     files = os.listdir(netdir)
                 except BaseException:
                     print(
-                        f"info: skipping year {year} - not found in archive {netdir}",
+                        f"Info: skipping year {year} - not found in archive {netdir}",
                         file=sys.stderr,
                     )
                     continue
@@ -77,7 +77,7 @@ class Archive:
                     files = os.listdir(stadir)
                 except BaseException:
                     print(
-                        f"info: skipping network {net} - not found in archive {stadir}",
+                        f"Info: skipping network {net} - not found in archive {stadir}",
                         file=sys.stderr,
                     )
                     continue
@@ -101,7 +101,7 @@ class Archive:
                     files = os.listdir(stadir)
                 except BaseException:
                     print(
-                        f"info: skipping station {sta} - no data files "
+                        f"Info: skipping station {sta} - no data files "
                         f"found in archive {stadir}",
                         file=sys.stderr,
                     )
@@ -111,7 +111,7 @@ class Archive:
                 for file in files:
                     if not os.path.isdir(stadir + file):
                         print(
-                            f"info: skipping data file '{file}' - not found in archive "
+                            f"Info: skipping data file '{file}' - not found in archive "
                             f"{stadir}",
                             file=sys.stderr,
                         )
@@ -160,7 +160,7 @@ class Archive:
                 if not files:
                     t = time.gmtime(begin.seconds() - 86400)
                     print(
-                        f"info: skipping streams '{net}.{sta}.*.{cha} on "
+                        f"Info: skipping streams '{net}.{sta}.*.{cha} on "
                         f"{time.strftime('%Y-%m-%d', t)}' - no data found for this day "
                         f"in archive {directory}",
                         file=sys.stderr,
@@ -170,7 +170,7 @@ class Archive:
                     file = file.split("/")[-1]
                     if not os.path.isfile(directory + file):
                         print(
-                            f"info: skipping data file '{file}' - not found in archive "
+                            f"Info: skipping data file '{file}' - not found in archive "
                             f"{directory}",
                             file=sys.stderr,
                         )
@@ -492,6 +492,36 @@ class RecordRenamer:
 # Application block
 ##
 ####################################################################
+
+
+def compile_stream_pattern(streamList):
+    if not streamList:
+        return None
+
+    pattern = None
+    streams = []
+    try:
+        for stream in streamList:
+            if len(stream) != 6:
+                raise ValueError(
+                    f"Invalid stream definition: {stream}. Expected the 4 "
+                    "stream components NET.STA.LOC.CHA."
+                )
+            line = f"{stream[2]}.{stream[3]}.{stream[4]}.{stream[5]}"
+            streams.append(line)
+
+        if not streams:
+            raise ValueError("No stream definition found.")
+
+        pattern = re.compile("|".join(streams))
+    except Exception as e:
+        print(
+            f"Could not compile pattern from streams '{streams}': {e}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    return pattern
 
 
 def checkFile(fileName):
@@ -867,9 +897,9 @@ Processing:
                     NET.STA or NET.STA.LOC or NET.STA.LOC.CHA. If CHA is
                     omitted, it defaults to the value of -c option.
                     Default: "*"
-  --nslc arg        Dump mode: Stream list file to be used instead of defined networks
-                    and channels (-n and -c are ignored) for filtering the data by
-                    the given streams. Use in combination with -t.
+  --nslc arg        Import, dump mode: Stream list file to be used instead of defined
+                    networks and channels (-n and -c are ignored) for filtering the data
+                    by the given streams. Dump mode: Use in combination with -t!
                     One line per stream, line format: NET.STA.LOC.CHA
   --rename arg      Rename stream data according to the provided rule(s).
                     A rule is "[match-stream:]rename-stream" and match-stream
@@ -1077,7 +1107,7 @@ def main():
 
     if not stdout and not outputFile and not os.path.isdir(archiveDirectory):
         print(
-            f"info: archive directory '{archiveDirectory}' not found - stopping",
+            f"Info: archive directory '{archiveDirectory}' not found - stopping",
             file=sys.stderr,
         )
         return -1
@@ -1088,7 +1118,7 @@ def main():
     if not checkSDS and not listFile and (dump or not isFile(recordURL)):
         if not tmin or not tmax:
             print(
-                "info: provide a time window with '-t' when '--list' is "
+                "Info: provide a time window with '-t' when '--list' is "
                 "not used - stopping",
                 file=sys.stderr,
             )
@@ -1096,7 +1126,7 @@ def main():
 
         if tmin >= tmax:
             print(
-                f"info: start time '{time2str(tmin)}' after end time '{time2str(tmax)}'"
+                f"Info: start time '{time2str(tmin)}' after end time '{time2str(tmax)}'"
                 " - stopping",
                 file=sys.stderr,
             )
@@ -1169,10 +1199,11 @@ def main():
     # Populate streams for both Dump and Import mode
     streams = []
     if listFile:
-        for stream in readStreamTimeList(listFile):
+        streamFilter = readStreamTimeList(listFile)
+        for stream in streamFilter:
             if stream[0] >= stream[1]:
                 print(
-                    f"info: ignoring {stream[2]}.{stream[3]}.{stream[4]}.{stream[5]} - "
+                    f"Info: ignoring {stream[2]}.{stream[3]}.{stream[4]}.{stream[5]} - "
                     f"start {stream[0]} after end {stream[1]}",
                     file=sys.stderr,
                 )
@@ -1352,10 +1383,7 @@ def main():
                     print(f"{fileName} has an issue", file=sys.stderr)
                     print(f"  + {issueFound}", file=sys.stderr)
 
-        if not printStreams:
-            print(
-                f"Found issues in {foundIssues}/{checkedFiles} files", file=sys.stderr
-            )
+        print(f"Found issues in {foundIssues}/{checkedFiles} files", file=sys.stderr)
 
     elif importMode:  # Import mode
         env = seiscomp.system.Environment.Instance()
@@ -1417,6 +1445,13 @@ def main():
         foundCountError = 0
         foundRecords = False
 
+        if isFile(recordURL) and streams:
+            pattern = False
+            try:
+                pattern = compile_stream_pattern(streams)
+            except ValueError:
+                print("Error: stream filter not correctly read", file=sys.stderr)
+
         try:
             for rec in inputRecord:
                 if not foundRecords:
@@ -1427,8 +1462,14 @@ def main():
                     if ignoreRecords:
                         continue
 
-                if printStreams:
+                if isFile(recordURL) or printStreams:
                     stream = f"{rec.networkCode()}.{rec.stationCode()}.{rec.locationCode()}.{rec.channelCode()}"
+
+                if isFile(recordURL):
+                    if pattern and not bool(pattern.match(stream)):
+                        continue
+
+                if printStreams:
                     recStart = rec.startTime()
                     recEnd = rec.endTime()
 
@@ -1548,10 +1589,15 @@ def main():
             if outputFile:
                 out.close()
                 if verbose:
-                    print(f"Records were written to file: {outputFile}")
+                    print(
+                        f"Records were written to file: {outputFile}", file=sys.stderr
+                    )
 
-            if outdir and verbose:
-                print(f"Records were written to archive: {archiveDirectory}")
+            if outdir:
+                print(
+                    f"Records were written to archive: {archiveDirectory}",
+                    file=sys.stderr,
+                )
 
             if checkFiles:
                 print(

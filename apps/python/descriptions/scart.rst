@@ -78,14 +78,15 @@ Examples
 
       Sorting data is computational expensive but required for waveform playbacks.
 
-#. Push miniSEED data from file :file:`file.mseed` into a local :term:`SDS`
+#. Push miniSEED data from file :file:`file.mseed` into a local :term:`SDS` or file
    archive. Additionally, you may check if the records of the created files are
-   correctly ordered:
+   correctly ordered, filter with NSLC list and print the output streams:
 
    .. code-block:: sh
 
       scart -I [file.mseed] [SDS archive]
       scart -I [file.mseed] --with-filecheck [SDS archive]
+      scart -I [file.mseed] --print-streams --nslc list.file -o [out.mseed]
 
 #. Collect data using the :ref:`global_recordstream` interface (e.g. FDSNWS server)
    and write to a miniSEED file or import it into a local :term:`SDS` archive. The
@@ -119,13 +120,15 @@ Examples
       scart --check [archive]
 
 #. Print stream information from miniSEED files in archives or from
-   :term:`RecordStream` without actually writing miniSEED data:
+   :term:`RecordStream` without actually writing miniSEED data. In dump and
+   import mode use the :option:`--test` if miniSEED data shall be read but not
+   written.
 
    .. code-block:: sh
 
-      scart -I [miniSEED file] --print-streams
-      scart -d -t [time span] [SDS archive] --print-streams
-      scart --check [archive] --print-streams
+      scart -I [miniSEED file] --print-streams --test
+      scart -d -t [time span] --print-streams --test [SDS archive]
+      scart --print-streams --check [archive]
 
    The output looks like this:
 
@@ -134,4 +137,4 @@ Examples
       # streamID       start                       end                         records samples samplingRate
       GE.RGN..BHZ      2022-12-08T15:34:41.895Z    2022-12-08T15:52:19.145Z    58 21145 20.0
 
-   where the header and the text body are printed to stdout.
+   where the header and the text body are printed to stderr.
