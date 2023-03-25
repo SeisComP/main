@@ -514,12 +514,8 @@ def compile_stream_pattern(streamList):
             raise ValueError("No stream definition found.")
 
         pattern = re.compile("|".join(streams))
-    except Exception as e:
-        print(
-            f"Could not compile pattern from streams '{streams}': {e}",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+    except Exception:
+        return None
 
     return pattern
 
@@ -869,7 +865,9 @@ Verbosity:
 Mode:
   --check arg      Check mode: Check all files in the given directory structure
                    for erroneous miniSEED records. If no directory is given,
-                   $SEISCOMP_ROOT/var/lib/archive is scanned.
+                   $SEISCOMP_ROOT/var/lib/archive is scanned. Checks are only complete
+                   for files containing exactly one stream. More complete checks are
+                   made with scmssort.
   -d, --dump       Export (dump) mode. Read from SDS archive.
   -I arg           Import mode: Specify a recordstream URL when in import mode.
                    When using another recordstream than file a
@@ -915,8 +913,8 @@ Processing:
   --speed arg       Dump mode: Specify the speed to dump the records. A value
                     of 0 means no delay. Otherwise speed is a multiplier of
                     the real time difference between the records.
-  -t t1~t2          UTC time window filter to be applied to the data streams
-                    in the format: "StartTime~EndTime"
+  -t t1~t2          Import, dump mode: UTC time window filter to be applied to the data
+                    streams in the format: "StartTime~EndTime"
                     e.g. "2022-12-20 12:00:00~2022-12-23 14:00:10".
 
 Output:
@@ -927,21 +925,27 @@ Output:
                     NET.STA.LOC.CHA StartTime EndTime records samples samplingRate.
   --stdout          Import mode: Write to stdout instead of creating a SDS
                     archive. Deactivated by --test and --output.
-  --test            Test input only, no record output. Deactivates all other
-                    output.
-  --with-filecheck  Import mode:  Check all accessed files after import. Unsorted
-                    or unreadable files are reported to stderr.
+  --test            Test input only, deactivate all miniSEED output. This switch is
+                    useful for debugging and printing stream information with
+                    --print-streams.
+  --with-filecheck  Import mode: Check all accessed files after import. Unsorted
+                    or unreadable files are reported to stderr. Checks are only complete
+                    for files containing exactly one stream. More complete checks are
+                    made with scmssort.
   --with-filename   Import mode: Print all accessed files to sterr after import.
 
 Examples:
 Read from /archive, create a miniSEED file where records are sorted by end time
-  scart -dsv -t '2007-03-28 15:48~2007-03-28 16:18' /archive > sorted.mseed
+  scart -dsv -t '2022-03-28 15:48~2022-03-28 16:18' /archive > sorted.mseed
 
 Import miniSEED data from file [your file], create a SDS archive
   scart -I file.mseed $SEISCOMP_ROOT/var/lib/archive
 
 Import miniSEED data into a SDS archive, check all modified files for errors
   scart -I file.mseed --with-filecheck $SEISCOMP_ROOT/var/lib/archive
+
+Import miniSEED data from FDSNWS into a SDS archive for specific time range and streams
+  scart -I fdsnws://geofon.gfz-potsdam.de -t -t '2022-03-28 15:48~2022-03-28 16:18' --nslc list.file $SEISCOMP_ROOT/var/lib/archive
 
 Check an archive for files with out-of order records
   scart --check /archive
@@ -1413,7 +1417,15 @@ def main():
             )
             return -1
 
-        if not isFile(recordURL):
+        if isFile(recordURL):
+            if streams:
+                pattern = False
+                try:
+                    pattern = compile_stream_pattern(streams)
+                except ValueError:
+                    print("Error: stream filter not correctly read", file=sys.stderr)
+
+        else:
             for stream in streams:
                 # Add stream to recordstream
                 if not rs.addStream(
@@ -1445,13 +1457,6 @@ def main():
         foundCountError = 0
         foundRecords = False
 
-        if isFile(recordURL) and streams:
-            pattern = False
-            try:
-                pattern = compile_stream_pattern(streams)
-            except ValueError:
-                print("Error: stream filter not correctly read", file=sys.stderr)
-
         try:
             for rec in inputRecord:
                 if not foundRecords:
@@ -1464,15 +1469,18 @@ def main():
 
                 if isFile(recordURL) or printStreams:
                     stream = f"{rec.networkCode()}.{rec.stationCode()}.{rec.locationCode()}.{rec.channelCode()}"
+                    recStart = rec.startTime()
+                    recEnd = rec.endTime()
 
                 if isFile(recordURL):
                     if pattern and not bool(pattern.match(stream)):
                         continue
+                    if tmax and recStart > tmax:
+                        continue
+                    if tmin and recEnd < tmin:
+                        continue
 
                 if printStreams:
-                    recStart = rec.startTime()
-                    recEnd = rec.endTime()
-
                     if stream in streamDict:
                         streamStart, streamEnd, streamNRec, streamNSamp = streamDict[
                             stream
