@@ -34,8 +34,10 @@
 					<description>
 					Check mode. Check all files
 					in the given directory for erroneous miniSEED records.
-					All sub-directories are included.
-					If no directory is given, the default SDS archive is scanned.
+					All sub-directories are included. If no directory is given,
+					the default SDS archive is scanned. Checks are only complete
+					for files containing exactly one stream. More complete checks
+					are made with scmssort.
 					</description>
 				</option>
 				<option flag="d" long-flag="dump">
@@ -148,10 +150,11 @@
 				</option>
 				<option flag="t" argument="timeWindow">
 					<description>
-					Specify the time window (as one properly quoted string) to dump
-					records for. Times are UTC and separated by a tilde &quot;~&quot;.
-					To dump one hour of waveform data between 2008/01/01 00:00:00 and
-					2008/01/01 01:00:00 use
+					Import, dump mode: Specify the time window (as one properly
+					quoted string) to dump records for. Times are UTC and
+					separated by a tilde &quot;~&quot;. To dump one hour of
+					waveform data between 2008/01/01 00:00:00 and 2008/01/01
+					01:00:00 use
 					&lt;-t &quot;2008-01-01 00:00:00~2008-01-01 01:00:00&quot;&gt;.
 					</description>
 				</option>
@@ -178,14 +181,17 @@
 				</option>
 				<option long-flag="test">
 					<description>
-					Test only, no record output. This switch is useful
-					for debugging. Deactivates all other output.
+					Test input only, deactivate all miniSEED output. This switch is
+					useful for debugging and printing stream information with
+					--print-streams.
 					</description>
 				</option>
 				<option flag="" long-flag="with-filecheck">
 					<description>
 					Import mode: Check all accessed files. Unsorted or unreadable
-					files are reported to stderr.
+					files are reported to stderr. Checks are only complete
+					for files containing exactly one stream. More complete
+					checks are made with scmssort.
 					</description>
 				</option>
 				<option flag="" long-flag="with-filename">
