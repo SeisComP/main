@@ -433,7 +433,7 @@ class InventoryManager : public Client::Application,
 			setLoggingToStdErr(true);
 			setConnectionRetries(3);
 
-			_currentTask = NULL;
+			_currentTask = nullptr;
 
 			if ( argc > 1 ) _operation = argv[1];
 		}
@@ -443,25 +443,28 @@ class InventoryManager : public Client::Application,
 			Client::Application::createCommandLineDescription();
 			commandline().addGroup("Manager");
 			commandline().addOption("Manager", "filebase",
-			                        "Filebase to check for XML files. If not "
-			                        "given, all XML files passed are checked.",
+			                        "Directory to check for inventory XML files. "
+			                        "If not given, all XML files passed are checked.",
 			                        &_filebase);
 			commandline().addOption("Manager", "rc-dir",
-			                        "If given rc files will be created in this directory for each "
-			                        "station which contains the station description "
-			                        "of the last epoch.",
+			                        "If given, rc files will be created in this "
+			                        "directory for each station which contains "
+			                        "the station description of the last epoch.",
 			                        &_rcdir);
 			commandline().addOption("Manager", "key-dir",
-			                        "If given this directory is used to synchronise "
+			                        "The directory to synchronise key files to. "
+			                        "If not given, @SYSTEMCONFIGDIR@/key is assumed."
 			                        "key files.",
 			                        &_keydir);
 			commandline().addOption("Manager", "output,o",
-			                        "Output file.",
+			                        "Output file for writing inventory XML after merging.",
 			                        &_output);
 			commandline().addOption("Manager", "no-purge-keys",
-			                        "Do not delete key files if a station does not exist in inventory.");
+			                        "Do not delete key files if a station does "
+			                        "not exist in inventory.");
 			commandline().addOption("Manager", "purge-keys",
-			                        "(default) Delete key files if a station does not exist in inventory.");
+			                        "(default) Delete key files if a station "
+			                        "does not exist in inventory.");
 
 			commandline().addGroup("Check");
 			commandline().addOption("Check", "distance",
@@ -534,17 +537,19 @@ class InventoryManager : public Client::Application,
 			}
 
 			if ( !_level.empty() && _level != "net" && _level != "sta" &&
-			     _level != "cha" && _level != "resp" ) {
+			    _level != "cha" && _level != "resp" ) {
 				cerr << "Invalid level: " << _level << endl;
 				return false;
 			}
 
 			if ( _operation == "sync" || _operation == "apply" ) {
-				if ( !isInventoryDatabaseEnabled() )
+				if ( !isInventoryDatabaseEnabled() ) {
 					setDatabaseEnabled(false, false);
+				}
 
-				if ( !_output.empty() )
+				if ( !_output.empty() ) {
 					setMessagingEnabled(false);
+				}
 			}
 			else {
 				setDatabaseEnabled(false, false);
@@ -552,11 +557,13 @@ class InventoryManager : public Client::Application,
 				setMessagingEnabled(false);
 			}
 
-			if ( _keydir.empty() )
+			if ( _keydir.empty() ) {
 				_keydir = Environment::Instance()->appConfigDir() + "/key";
+			}
 
-			if ( _rcdir.empty() )
+			if ( _rcdir.empty() ) {
 				_rcdir = Environment::Instance()->installDir() + "/var/lib/rc";
+			}
 
 			return true;
 		}
@@ -590,21 +597,17 @@ class InventoryManager : public Client::Application,
 			Client::Application::printUsage();
 
 			cout << "Examples:" << endl;
-			cout << "Check inventory in XML file with custom distance control" << endl
-			     << "  scinv check --distance 0.1 inventory.xml" << endl
-			     << endl
-			     << "Create key files from inventory files in SeisComP inventory directory" << endl
-			     << "  scinv sync" << endl
-			     << endl
-			     << "Create key files and synchronize inventory with the SeisComP database" << endl
-			     << "  scinv keys" << endl
-			     << endl
-			     << "Merge inventory in multiple XML files into one file" << endl
-			     << "  scinv merge inventory1.xml inventory2.xml -o inventory.xml" << endl
-			     << endl
-			     << "List the content of inventory in one XML file at channel level" << endl
-			     << "  scinv ls --level cha inventory.xml" << endl
-			     << endl;
+			cout << "Check inventory in XML file with custom distance control" << endl;
+			cout << "  scinv check --distance 0.1 inventory.xml" << endl;
+			cout << endl << "Create key files from inventory files in SeisComP inventory directory" << endl;
+			cout << "  scinv keys" << endl;
+			cout << endl << "Create key files and synchronize inventory with the SeisComP database" << endl;
+			cout << "  scinv sync" << endl;
+			cout << endl << "Merge inventory in multiple XML files into one file" << endl;
+			cout << "  scinv merge inventory1.xml inventory2.xml -o inventory.xml" << endl;
+			cout << endl << "List the content of inventory in one XML file at channel level" << endl;
+			cout << "  scinv ls --level cha inventory.xml" << endl;
+			cout << endl;
 		}
 
 
@@ -763,7 +766,9 @@ class InventoryManager : public Client::Application,
 				return false;
 			}
 
-			if ( _output.empty() ) _output = "-";
+			if ( _output.empty() ) {
+				_output = "-";
+			}
 
 			IO::XMLArchive ar;
 			if ( !ar.create(_output.c_str()) ) {

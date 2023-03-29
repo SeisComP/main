@@ -60,8 +60,8 @@
 			<group name="Manager">
 				<option long-flag="filebase" argument="dir">
 					<description>
-					Filebase to check for XML files. If not given, all XML files
-					passed are checked.
+					Directory to check for inventory XML files. If not given,
+					all XML files passed are checked.
 					</description>
 				</option>
 				<option long-flag="rc-dir" argument="dir">
@@ -73,12 +73,13 @@
 				</option>
 				<option long-flag="key-dir" argument="dir">
 					<description>
-					If given, this directory is used to synchronise key files.
+					The directory to synchronise key files to. If not given,
+					@SYSTEMCONFIGDIR@/key is assumed.
 					</description>
 				</option>
 				<option flag="o" long-flag="output" argument="file">
 					<description>
-					Output file.
+					Output file for writing inventory XML after merging.
 					</description>
 				</option>
 				<option long-flag="purge-keys">
