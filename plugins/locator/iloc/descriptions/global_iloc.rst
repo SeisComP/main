@@ -300,15 +300,14 @@ Setup in |scname|
 
       mkdir $SEISCOMP_ROOT/share/iloc
       wget -O /tmp/iLocAuxDir.tgz "http://iloc.geochem.hu/data/iLocAuxDir.tgz"
-      tar xvf /tmp/iLocAuxDir.tgz -C /tmp/
-      cp -r /tmp/iLocAuxDir $SEISCOMP_ROOT/share/iloc/auxdata
+      tar xvf /tmp/iLocAuxDir.tgz -C $SEISCOMP_ROOT/share/iloc
 
    .. note ::
 
       * Check the :cite:t:`iloc-iris` website for updates before downloading.
-      * Instead of copying the :file:`auxdata` directory, you can also create a
-        symbolic link and maintain always the same iLoc version in |scname| and
-        externally.
+      * Instead of generating the :file:`SEISCOMP_ROOT/share/iloc/iLocAuxDir`
+        directory, you can also create a symbolic link and maintain always the
+        same iLoc version in |scname| and externally.
 
 #. Add and configure iLoc profiles for the velocity models. The global models
    *iasp91* and *ak135* are considered by default with default configuration
