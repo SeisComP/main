@@ -590,17 +590,21 @@ class InventoryManager : public Client::Application,
 			Client::Application::printUsage();
 
 			cout << "Examples:" << endl;
-			cout << "Check inventory in XML file with custom distance control" << endl;
-			cout << "  scinv check --distance 0.1 inventory.xml" << endl;
-			cout << endl << "Create key files from inventory files in SeisComP inventory directory" << endl;
-			cout << "  scinv keys" << endl;
-			cout << endl << "Create key files and synchronize inventory with the SeisComP database" << endl;
-			cout << "  scinv keys" << endl;
-			cout << endl << "Merge inventory in multiple XML files into one file" << endl;
-			cout << "  scinv merge inventory1.xml inventory2.xml -o inventory.xml" << endl;
-			cout << endl << "List the content of inventory in one XML file at channel level" << endl;
-			cout << "  scinv ls --level cha inventory.xml" << endl;
-			cout << endl;
+			cout << "Check inventory in XML file with custom distance control" << endl
+			     << "  scinv check --distance 0.1 inventory.xml" << endl
+			     << endl
+			     << "Create key files from inventory files in SeisComP inventory directory" << endl
+			     << "  scinv sync" << endl
+			     << endl
+			     << "Create key files and synchronize inventory with the SeisComP database" << endl
+			     << "  scinv keys" << endl
+			     << endl
+			     << "Merge inventory in multiple XML files into one file" << endl
+			     << "  scinv merge inventory1.xml inventory2.xml -o inventory.xml" << endl
+			     << endl
+			     << "List the content of inventory in one XML file at channel level" << endl
+			     << "  scinv ls --level cha inventory.xml" << endl
+			     << endl;
 		}
 
 
