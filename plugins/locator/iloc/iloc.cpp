@@ -156,6 +156,14 @@ void readConfig(ILOC_CONF &cfg, const Config::Config &config, const string &pref
 	GET_CFG(DoNotRenamePhases);
 	cfg.DoNotRenamePhases = DoNotRenamePhases ? 1 : 0;
 
+	// global model
+	string globalModel;
+	GET_CFG(globalModel);
+	if ( !globalModel.empty() ) {
+		strncpy(cfg.TTmodel, globalModel.c_str(), sizeof(cfg.TTmodel)-1);
+	}
+
+	// RSTT
 	bool UseRSTTPnSn = cfg.UseRSTTPnSn;
 	GET_CFG(UseRSTTPnSn);
 	cfg.UseRSTTPnSn = UseRSTTPnSn ? 1 : 0;
@@ -164,19 +172,16 @@ void readConfig(ILOC_CONF &cfg, const Config::Config &config, const string &pref
 	GET_CFG(UseRSTTPgLg);
 	cfg.UseRSTTPgLg = UseRSTTPgLg ? 1 : 0;
 
-	bool UseLocalTT = cfg.UseLocalTT;
-	GET_CFG(UseLocalTT);
-	cfg.UseLocalTT = UseLocalTT ? 1 : 0;
-
 	bool UseRSTT = cfg.UseRSTT;
 	GET_CFG(UseRSTT);
 	cfg.UseRSTT = UseRSTT ? 1 : 0;
 
-	string globalModel;
-	GET_CFG(globalModel);
-	if ( !globalModel.empty() ) {
-		strncpy(cfg.TTmodel, globalModel.c_str(), sizeof(cfg.TTmodel)-1);
-	}
+	// local model
+	bool UseLocalTT = cfg.UseLocalTT;
+	GET_CFG(UseLocalTT);
+	cfg.UseLocalTT = UseLocalTT ? 1 : 0;
+
+	GET_CFG_STRUCT(MaxLocalTTDelta);
 
 	string LocalVmodel;
 	GET_CFG(LocalVmodel);
@@ -194,9 +199,6 @@ void initConfig(ILOC_CONF &cfg, const Config::Config *config,
 	strncpy(cfg.TTmodel, name.c_str(), sizeof(cfg.TTmodel)-1);
 
 	cfg.Verbose = 1;
-
-	strcpy(cfg.LocalVmodel, "");
-	cfg.MaxLocalTTDelta = 3.;
 
 	// ETOPO parameters
 	strcpy(cfg.EtopoFile, "etopo5_bed_g_i2.bin");
@@ -241,11 +243,17 @@ void initConfig(ILOC_CONF &cfg, const Config::Config *config,
 	cfg.UseRSTTPgLg = 1;
 	cfg.UseRSTT = 0;
 
+	// local model
+	cfg.MaxLocalTTDelta = 3.;
+	strcpy(cfg.LocalVmodel, "");
+
+	// read configuration from profiles
 	if ( config ) {
 		string prefix = "iLoc.profile." + name + ".";
 		readConfig(cfg, *config, prefix);
 	}
 
+	// use local model or not
 	if ( strlen(cfg.LocalVmodel) > 1 && cfg.UseLocalTT ) {
 		cfg.UseLocalTT = 1;
 	}
@@ -336,9 +344,9 @@ ILoc::ILoc() {
 		_allowedParameters.push_back("DoGridSearch");
 		_allowedParameters.push_back("DoNotRenamePhases");
 		_allowedParameters.push_back("UseRSTT");
+		_allowedParameters.push_back("UseLocalTT");
 		_allowedParameters.push_back("LocalVmodel");
 		_allowedParameters.push_back("MaxLocalTTDelta");
-		_allowedParameters.push_back("UseLocalTT");
 		_allowedParameters.push_back("MinIterations");
 		_allowedParameters.push_back("MaxIterations");
 		_allowedParameters.push_back("MinNdefPhases");
@@ -459,9 +467,9 @@ string ILoc::parameter(const string &name) const {
 	else RET_STRING(DoGridSearch);
 	else RET_STRING(DoNotRenamePhases);
 	else RET_STRING(UseRSTT);
+	else RET_STRING(UseLocalTT);
 	else RET_STRING(LocalVmodel);
 	else RET_STRING(MaxLocalTTDelta);
-	else RET_STRING(UseLocalTT);
 	else RET_STRING(MinIterations);
 	else RET_STRING(MaxIterations);
 	else RET_STRING(MinNdefPhases);
@@ -496,38 +504,39 @@ bool ILoc::setParameter(const string &name, const string &value) {
 	_currentConfig->NAME = v;\
 }
 
-	if ( !_currentConfig )
+	if ( !_currentConfig ) {
 		return false;
+	}
 
 	INP_STRING(Verbose, int)
 	else if ( name == "UsePickUncertainties" ) {
 		bool v;
-		if ( !Core::fromString(v, value) )
+		if ( !Core::fromString(v, value) ) {
 			return false;
-
+		}
 		_usePickUncertainties = v;
 	}
 	else if ( name == "FixOriginTime" ) {
 		bool v;
-		if ( !Core::fromString(v, value) )
+		if ( !Core::fromString(v, value) ) {
 			return false;
-
+		}
 		_fixTime = v;
 	}
 	else if ( name == "FixLocation" ) {
 		bool v;
-		if ( !Core::fromString(v, value) )
+		if ( !Core::fromString(v, value) ) {
 			return false;
-
+		}
 		_fixLocation = v;
 	}
 	else INP_STRING(DoGridSearch, int)
 	else INP_STRING(DoNotRenamePhases, int)
 	if ( name == "UseRSTT" ) {
 		int v;
-		if ( !Core::fromString(v, value) )
+		if ( !Core::fromString(v, value) ) {
 			return false;
-
+		}
 		v = v ? 1 : 0;
 
 		if ( _currentConfig->UseRSTT != v ) {
@@ -536,12 +545,12 @@ bool ILoc::setParameter(const string &name, const string &value) {
 			_auxDirty = true;
 		}
 	}
+	else INP_STRING(UseLocalTT, int)
 	else if ( name == "LocalVmodel" ) {
 		memset(_currentConfig->LocalVmodel, '\0', sizeof(_currentConfig->LocalVmodel));
 		strncpy(_currentConfig->LocalVmodel, value.c_str(), sizeof(_currentConfig->LocalVmodel)-1);
 	}
 	else INP_STRING(MaxLocalTTDelta, double)
-	else INP_STRING(UseLocalTT, int)
 	else INP_STRING(MinIterations, int)
 	else INP_STRING(MaxIterations, int)
 	else INP_STRING(MinNdefPhases, int)
@@ -559,13 +568,15 @@ bool ILoc::setParameter(const string &name, const string &value) {
 	else if ( name == "DEFAULT_PICK_UNCERTAINTY" ) {
 		double dpu;
 
-		if ( !Core::fromString(dpu, value) )
+		if ( !Core::fromString(dpu, value) ) {
 			return false;
+		}
 
 		_defaultPickUncertainty = dpu;
 	}
-	else
+	else {
 		return false;
+	}
 
 	return true;
 }
