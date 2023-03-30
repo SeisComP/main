@@ -77,7 +77,12 @@
 							 @DATADIR@/iloc/iLocAuxDir/localmodels/model.localmodel.dat.
 							</description>
 						</parameter>
-
+						<parameter name="MaxLocalTTDelta" type="float" default="3" unit="deg">
+							<description>
+							Maximum epicentral distance for applying the local
+							velocity model.
+							</description>
+						</parameter>
 						<parameter name="DoGridSearch" type="boolean" default="true">
 							<description>
 							Perform neighbourhood algorithm
