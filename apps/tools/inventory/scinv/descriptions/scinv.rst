@@ -1,9 +1,9 @@
-scinv merges inventory XML files to a single inventory, synchronises an inventory
-with another (most common use is with database), creates initial key files and
-much more ...
+scinv merges and tests inventory XML files to a single inventory, synchronises
+an inventory with another (most common use is with database), creates initial
+key files and much more ...
 
-scinv is used by :file:`etc/init/scinv.py` to synchronise the inventory from
-:file:`etc/inventory` with the database.
+scinv is used by :file:`$SEISCOMP_ROOT/etc/init/scinv.py` to synchronise the
+inventory from :file:`$SEISCOMP_ROOT/etc/inventory` with the database.
 
 .. code-block:: sh
 
@@ -22,15 +22,16 @@ Commands
 
 scinv works with different commands:
 
-- :ref:`scinv_apply`: Read and apply notifiers,
-- :ref:`scinv_check`: Check the consistency of inventories,
-- :ref:`scinv_keys`: Merge inventory files and generate key files,
-- :ref:`scinv_ls`: List the content of inventories,
-- :ref:`scinv_merge`: Merge inventory files,
-- :ref:`scinv_sync`: Synchronize inventories in files and writing sending to the
-  messaging for saving to the database.
-
-
+- :ref:`scinv_ls`: List the content of inventories in XML files,
+- :ref:`scinv_check`: Merge and test inventories, check the completeness and
+  consistency of parameters, report any issue,
+- :ref:`scinv_merge`: Merge and test inventory files,
+- :ref:`scinv_keys`: Merge and test inventories, generate key files or
+  remove key files without coorresponding inventory,
+- :ref:`scinv_sync`: Merge and test inventory files, generate or remove key
+  files, synchronise the inventory with the database and send updates by
+  notifiers to the messaging for saving to the database,
+- :ref:`scinv_apply`: Read and apply notifiers.
 
 The command **must** be given as **1st**
 parameter to the application. All others parameters must follow.
@@ -49,10 +50,10 @@ Synchronises an applications inventory with a given source given as file(s).
 It checks the consistency of the inventory using :ref:`scinv_check` before
 synchronization.
 The applications inventory is either read from the database or given with
-*--inventory-db*. As a result all information in the source is written to target
-and target does not contain any additional information. The source must hold all
-information. This works different to merge. If an output file is specified with
-*-o* no notifiers are generated and sent via messaging.
+:option:`--inventory-db`. As a result all information in the source is written
+to target and target does not contain any additional information. The source
+must hold all information. This works different to merge. If an output file is
+specified with :option:`-o` no notifiers are generated and sent via messaging.
 
 This command is used by :file:`etc/init/scinv.py` as follows:
 
@@ -77,9 +78,8 @@ merge
 -----
 
 Merges two or more inventories into one inventory checking the consistency
-of the inventory using :ref:`scinv_check`before synchronization. This command
-is useful to merge existing subtrees into a final inventory before
-synchronization.
+of the inventory by using :ref:`scinv_check`. This command is useful to merge
+existing subtrees into a final inventory before synchronization.
 
 .. code-block:: sh
 
@@ -123,9 +123,9 @@ keys
 
 Synchronise station key files with current inventory pool. This command merges
 all XML files in the inventory pool (or the given files) and checks if a
-corresponding station key file in :file:`etc/key` exists. If not an empty
-station key file is created. If a station key file without a corresponding
-station in the merged inventory is found, it is deleted.
+corresponding station key file in :file:`$SEISCOMP_ROOT/etc/key` exists. If not,
+an empty station key file is created. If a station key file without a
+corresponding station in the merged inventory is found, it is deleted.
 
 
 .. _scinv_ls:
