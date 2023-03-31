@@ -1,13 +1,21 @@
-scrttv visualizes waveform data (see :ref:`Figure below <fig-scrttv-overview>`)
-in real-time, from archives or files of a defined window length (default: 30
-minutes) and of defined streams/stations (default: streams defined by global
-bindings). scrttv dynamically switches between two modi.
-In the normal mode the trace order is given by the configuration file.
-In the event mode the traces are sorted by epicentral distance to the
-latest origin received from the messaging. In addition to waveforms
-information about gaps or overlaps, picks and the time of incoming origins are
-displayed.
+scrttv visualizes waveform data in miniSEED format
+(see :ref:`Figure below <fig-scrttv-overview>`) in real-time or from archives
+with a defined window length (default: 30 minutes) of defined streams/stations
+(default: streams defined by global bindings). Additionally, phase picks are
+visualized.
 
+scrttv can be used for view waveforms,
+:ref:`visual waveform quality control <scrttv-waveform-qc>` or
+:ref:`interactive signal detection <scrttv-signal-detection>`.
+
+When in :ref:`message mode <scrttv-modes>` scrttv dynamically resorts waveforms:
+Normally, the trace order is given by configuration, e.g., ordering by epicentral
+distance from a location given by :confval:`streams.sort.latitude` and
+:confval:`streams.sort.longitude`.
+In the event that a new SeisComP :term:`event` arrives from the messaging, the
+traces are sorted  automatically by epicentral distance to the latest origin
+received. In addition to waveforms, information about gaps or overlaps, picks
+and the time of incoming origins are displayed.
 
 .. _fig-scrttv-overview:
 
@@ -17,7 +25,7 @@ displayed.
 
    scrttv overview
 
-   An example of scrttv and the dialog window to assoicate picks to new origins.
+   An example of scrttv and the dialog window to associate picks to new origins.
    Tabs: Enable/Disable; Amplitude: mean and maximum;
    Stream: station, network, sensor location and channel code;
    Filter: filter applied traces; Status = connection status to messaging.
@@ -46,7 +54,7 @@ Among the configurable parameters are:
   * network, stations, locations and streams to show extending or overriding the
     default definition (:confval:`streams.codes`),
   * :ref:`data filters <scrttv-filtering>`,
-  * buffer size controlling the lenght of loaded data (:confval:`bufferSize`),
+  * buffer size controlling the length of loaded data (:confval:`bufferSize`),
   * sorting of traces upon arrival of new origins (:confval:`resortAutomatically`),
   * reference coordinate for sorting traces by default (:confval:`streams.sort.*`),
   * region filters (:confval:`streams.region.*`),
@@ -74,13 +82,14 @@ scrttv can be started in message mode or in offline mode.
 
 * Message mode: scrttv is started normally and connects to the messaging,
   :term:`picks <picks>`, :term:`origins <origin>` and inventory are read from
-  the database and received in real time from the messaging. Data received from
-  :term:`recordstream`.
+  the database and received in real time from the messaging. Data are received
+  from :term:`recordstream`.
 * Offline mode: scrttv is started without connection to the messaging,
   :term:`picks <picks>` and :term:`origins <origin>` are not received in real
   time from the messaging. However, they can be loaded from XML files using the
-  *File* menu. The offline mode is invoked when using the option
-  :option:`--offline` or when passing a file name to scrttv at startup, e.g.,
+  *File* menu. Data are received from :term:`recordstream` or from file. The
+  offline mode is invoked when using the option :option:`--offline` or when
+  passing a file name to scrttv at startup. Example:
 
   .. code-block:: sh
 
@@ -96,21 +105,20 @@ Waveform Visualization
 Stream selection
 ----------------
 
-Withouth further configuration scrttv displays waveforms for streams defined
+Without further configuration scrttv displays waveforms for streams defined
 in global bindings. The selection can be refined by configuring
-:confval:`streams.codes`.
-
-Streams with :ref:`data latency <scqc>` < :confval:`maxDelay` are hidden but
+:confval:`streams.codes`. Streams with
+:ref:`data latency <scqc>` < :confval:`maxDelay` are hidden but
 shown again when applicable. By default this parameter is inactive. For listing
 streams hidden from one tab press :kbd:`h`.
 
 
 .. _scrttv-time-windows:
 
-Time Windows
+Time windows
 ------------
 
-The reading waveforms from RecordsStream, the data is displayed for a time
+The reading waveforms from RecordStream, the data is displayed for a time
 window which by default ends at current time or as given by the command-line
 option :option:`--end-time`. Initially, the time window takes the length defined
 in :confval:`bufferSize` or by the option :option:`--buffer-size`. When reading data
@@ -141,9 +149,8 @@ Zooming
 -------
 
 Waveforms can be zoomed in and out interactively in amplitude and time. Use the
-*View* menu or refer to the section :ref:`scrttv-hot-keys` for options.
-
-In addition to the actions available from the View menu, zooming is supported
+*View* menu or refer to the section :ref:`scrttv-hot-keys` for options. In
+addition to the actions available from the View menu, zooming is supported by
 mouse actions:
 
 * Zooming in in time: Right-click on time axis, drag to the right. A green bar appears
@@ -160,7 +167,7 @@ mouse actions:
 
 .. _scrttv-grouping:
 
-Stream Grouping
+Stream grouping
 ---------------
 
 scrttv allows grouping of stations and even streams with different properties,
@@ -209,7 +216,7 @@ Adjust the scrttv module configuration (:file:`scrttv.cfg`).
 
 .. _scrttv-picks:
 
-Phase Picks and Arrivals
+Phase picks and arrivals
 ------------------------
 
 Previous versions of scrttv (< 5.4) only displayed :term:`picks <pick>` with the
@@ -227,7 +234,7 @@ picks from the database for the currently visible time span it also checks if
 each pick is associated with a valid origin and declares the arrival state if
 the check yields true. The visibility of picks and arrivals can be toggled by
 pressing :kbd:`Ctrl + p` and :kbd:`Ctrl + a`, respectively. :kbd:`c` removes all
-markers. The configuration paramter :confval:`showPicks` controls the default
+markers. The configuration parameter :confval:`showPicks` controls the default
 visibility.
 
 Picks and arrivals can be differentiated visually by their colours. When
@@ -250,7 +257,7 @@ interchangeable for pick or arrival.
 
 .. _scrttv-record-borders:
 
-Record Borders
+Record borders
 --------------
 
 The borders of records are toggled by using the hotkey :kbd:`b`.
@@ -280,7 +287,7 @@ highlighted in :ref:`scmv` and :ref:`scqc`.
 
 To enable or disable a station for automatic data processing in |scname| select
 a station code with the mouse and drag the stations to the disable / enable tab
-or simply double-click on the station code.
+or simply double-click on the station code in the respective tab.
 
 
 Stream Processing
@@ -314,7 +321,9 @@ physical units of the stream by default. For showing amplitudes in counts,
 deactivate the option *Apply gain* in the Interaction menu.
 
 
-Interactive signal detection
+.. _scrttv-signal-detection:
+
+Interactive Signal Detection
 ============================
 
 Beside visual inspection of waveforms for quality control, scrttv can also be
@@ -324,7 +333,7 @@ in the past.
 
 .. _scrttv-artificial-origins:
 
-Artificial Origins
+Artificial origins
 ------------------
 
 .. figure:: media/scrttv/artificial-origin.png
@@ -348,14 +357,14 @@ In order to send receive articifial origins and receive them in other GUIs
 :confval:`commands.target` of the global module configuration must be set and
 must be in line with :confval:`connection.username` of the receiving GUI module.
 
-Alternatively picks can be selected and origins can be located as preliminary
-solution to be sent to the system as regular origin objects, see section
+Alternatively, picks can be selected and origins can be located as preliminary
+solutions which are sent to the system as regular origin objects, see section
 :ref:`scrttv-origin-association`.
 
 
 .. _scrttv-origin-association:
 
-Origin Association
+Origin association
 ------------------
 
 scrttv comes with a minimal version of a phase associator and manual locator
@@ -371,7 +380,7 @@ database.
    More detailed waveform and event analysis can be made in :ref:`scolv`.
 
 
-Pick Selection
+Pick selection
 ~~~~~~~~~~~~~~
 
 In order to select picks, the pick selection mode must be entered. Then dragging
@@ -396,15 +405,15 @@ At any change of the pick cart, the associator attempts a relocation and will
 display the result in the details or an error message at the top.
 
 To add more picks to the cart, shift has to be pressed while dragging the
-selection box. To remove picks from the cart, ctrl has to be pressed while
+selection box. To remove picks from the cart, :kbd:`Ctrl` has to be pressed while
 dragging the selection box. Picks can also be removed individually from the
 cart by clicking the close icon of each pick item.
 
 Picks being part of the cart are also highlighted in the traces.
 
 
-Location Setup
-~~~~~~~~~~~~~~
+Locating from picks
+~~~~~~~~~~~~~~~~~~~
 
 The associator adds all available locators in the system and presents them
 in a dropdown list at the bottom. The locator which should be selected as default
