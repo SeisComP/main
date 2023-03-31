@@ -1,52 +1,39 @@
-scrttv visualizes real-time waveform data (see :ref:`fig-scrttv-overview`) of
-a defined window length (default=30 minutes) and of defined streams/stations
-(default is primary station channels). scrttv switches between two modi.
+scrttv visualizes waveform data (see :ref:`Figure below <fig-scrttv-overview>`)
+in real-time, from archives or files of a defined window length (default: 30
+minutes) and of defined streams/stations (default: streams defined by global
+bindings). scrttv dynamically switches between two modi.
 In the normal mode the trace order is given by the configuration file.
 In the event mode the traces are sorted by epicentral distance to the
-latest origin received from the messaging. Additional to the waveform
-traces information about gaps, picks and the time of incoming origins
-are displayed.
+latest origin received from the messaging. In addition to waveforms
+information about gaps or overlaps, picks and the time of incoming origins are
+displayed.
+
 
 .. _fig-scrttv-overview:
 
-.. figure:: media/scrttv/overview.png
+.. figure:: media/scrttv/scrttv.png
    :width: 16cm
    :align: center
 
    scrttv overview
 
-   An example of scrttv and the dialog window to set preliminary origin.
-   Tab 1-2 = enable/disable tab; Counts = maximum counts of a stream;
-   Info = stream information (station, network and channel code);
-   Filter = filter status of the traces; Status = connection status.
+   An example of scrttv and the dialog window to assoicate picks to new origins.
+   Tabs: Enable/Disable; Amplitude: mean and maximum;
+   Stream: station, network, sensor location and channel code;
+   Filter: filter applied traces; Status = connection status to messaging.
 
-scrttv shows two tabs: the enabled and the disabled tab (see :ref:`fig-scrttv-overview`: Tab 1-2).
-Stations listed in the disabled tab are excluded from processing (e.g. picking). To move a station
+scrttv shows two tabs: the Enabled and the disabled tab
+(see :ref:`fig-scrttv-overview`). Stations listed in the disabled tab
+are excluded from automatic processing (e.g. phase picking). To move a station
 from one tab to another just drag and drop the trace to the new tab. An alternative solution is
-to double click on the trace label to disable a trace.
+to double click on the trace label to disable a trace. Read the section
+:ref:`scrttv-waveform-qc` for the details.
 
 Normally, the raw data are displayed. Pressing :kbd:`f` the predefined bandpass filter
 of third order from 0.5 Hz to 8 Hz, :ref:`BW(3,0.5,8) <filter-bw>` is applied
 to the traces. Also zoom functions for the time and amplitude axis are provided.
-
-.. figure:: media/scrttv/artificial-origin.png
-   :width: 16cm
-   :align: center
-
-   Artifical origin.
-
-
-In case the operator recognizes several seismic signals, an artificial/preliminary origin can be set
-by either pressing the middle mouse button on a trace or by opening the context menu (right mouse button)
-on a trace and selecting "Create artificial origin". The following pop-up window shows the coordinates of the
-station and the time the click was made on the trace. Both are used to generate
-the new artificial origin without any arrivals. Pressing "Create" sends this origin to the
-LOCATION group. This artificial origin is received e.g. by :ref:`scolv` and enables an immediate
-manual analysis of the closest traces.
-
-Alternatively picks can be selected and origins can be located as preliminary
-solution to be sent to the system as regular origin objects, see section
-:ref:`scrttv-origin-association`.
+Read the sections :ref:`<scrttv-filtering>` and  :ref:`scrttv-visualization` for
+more details.
 
 Among the configurable parameters are:
 
@@ -56,7 +43,8 @@ Among the configurable parameters are:
 
 * :term:`Module <module>` configuration:
 
-  * network, stations, locations and streams to show extending or overriding the default definition (:confval:`streams.codes`),
+  * network, stations, locations and streams to show extending or overriding the
+    default definition (:confval:`streams.codes`),
   * :ref:`data filters <scrttv-filtering>`,
   * buffer size controlling the lenght of loaded data (:confval:`bufferSize`),
   * sorting of traces upon arrival of new origins (:confval:`resortAutomatically`),
@@ -70,41 +58,83 @@ Among the configurable parameters are:
   * trace properties and trace background colors,
   * font and general GUI parameters.
 
-More parameters are available on the command-line: ::
+More parameters are available on the command-line:
+
+.. code-block:: sh
 
    scrttv -h
 
 
-Enable / Disable Stations
-=========================
+.. _scrttv-modes:
 
-To enable or disable a station for automatic data processing in |scname| select
-a station code with the mouse and drag the
-stations to the disable / enable tab or simply double-click on the station code.
+Modes of Operation
+==================
+
+scrttv can be started in message mode or in offline mode.
+
+* Message mode: scrttv is started normally and connects to the messaging,
+  :term:`picks <picks>`, :term:`origins <origin>` and inventory are read from
+  the database and received in real time from the messaging. Data received from
+  :term:`recordstream`.
+* Offline mode: scrttv is started without connection to the messaging,
+  :term:`picks <picks>` and :term:`origins <origin>` are not received in real
+  time from the messaging. However, they can be loaded from XML files using the
+  *File* menu. The offline mode is invoked when using the option
+  :option:`--offline` or when passing a file name to scrttv at startup, e.g.,
+
+  .. code-block:: sh
+
+     scrttv file.mseed
 
 
-.. _scrttv-filtering:
+.. _scrttv-visualization:
 
-Stream Filtering
-================
+Waveform Visualization
+======================
 
-scrttv allows filtering of waveforms.
-The hotkey :kbd:`f` can be used to
-toggle the list of filters pre-defined in :confval:`filter` or in :confval:`filters`.
-Note that the list of filters defined in :confval:`filters` overwrites :confval:`filter`.
-Activate :confval:`autoApplyFilter` to filter all traces at start-up of scrttv
-with the first filter defined in :confval:`filters`.
-The applied filter is shown in the lower left corner (see :ref:`Figure below <scrttv-fig-group-filter>`).
-To show filtered and raw data together use the hotkey :kbd:`r`.
+
+Stream selection
+----------------
+
+Withouth further configuration scrttv displays waveforms for streams defined
+in global bindings. The selection can be refined by configuring
+:confval:`streams.codes`.
+
+Streams with :ref:`data latency <scqc>` < :confval:`maxDelay` are hidden but
+shown again when applicable. By default this parameter is inactive.
+
+
+.. _scrttv-time-windows:
+
+Time Windows
+------------
+
+The reading waveforms from RecordsStream, the data is displayed for a time
+window which by default ends at current time or as given by the command-line
+option :option:`--end-time`. The time window takes the length defined in
+:confval:`bufferSize` or by the option :option:`--buffer-size`.
+
+When reading data directly from file in offline mode, the time window is set
+from the time limits of the waveforms.
+
+Gaps and overlaps in waveforms are indicated by yellow and purple areas,
+respectively. The colors are configurable.
+
+
+Zooming
+-------
+
+Waveforms can be zoomed in and out interactively in amplitude and time. Use the
+*View* menu or refer to the section :ref:`scrttv-hot-keys` for options.
 
 
 .. _scrttv-grouping:
 
 Stream Grouping
-===============
+---------------
 
-scrttv allows grouping of stations and even streams with different properties, e.g. colors or color
-gradients.
+scrttv allows grouping of stations and even streams with different properties,
+e.g. colors or color gradients.
 
 .. _scrttv-fig-group-filter:
 
@@ -147,8 +177,51 @@ Adjust the scrttv module configuration (:file:`scrttv.cfg`).
       resortAutomatically = false
 
 
+.. _scrttv-picks:
+
+Phase Picks and Arrivals
+------------------------
+
+Previous versions of scrttv (< 5.4) only displayed :term:`picks <pick>` with the
+colors indicating the pick evaluation mode along with the phase hint of the
+pick:
+
+* red: automatic,
+* green: manual.
+
+This hasn't really changed in later versions but additionally scrttv determines
+an additional state of a pick called :term:`arrival`. In scrttv a pick is
+considered an arrival if it is associated to an valid origin. An origin is
+called valid if its evaluation status is not REJECTED. When scrttv loads all
+picks from the database for the currently visible time span it also checks if
+each pick is associated with a valid origin and declares the arrival state if
+the check yields true.
+
+Picks and arrivals can be differentiated visually by their colours. When
+configured in global module configuration, the same colours are being used
+consistently as in any other GUI displaying both types, namely
+
+* :confval:`scheme.colors.picks.automatic`
+* :confval:`scheme.colors.picks.manual`
+* :confval:`scheme.colors.picks.undefined`
+* :confval:`scheme.colors.arrivals.automatic`
+* :confval:`scheme.colors.arrivals.manual`
+* :confval:`scheme.colors.arrivals.undefined`
+
+That visual difference should support the operator in finding clusters of picks
+and creating new location missed by the automatic system. In addition to the
+different colours an operator can hide either pick type by configuration
+(:confval:`showPicks`) and remove the markers from traces interactively
+(:kbd:`c`).
+
+The next sections will only use the :term:`pick` which can be used
+interchangeable for pick or arrival.
+
+
+.. _scrttv-record-borders:
+
 Record Borders
-==============
+--------------
 
 The borders of records are toggled by using the hotkey :kbd:`b`.
 
@@ -164,49 +237,111 @@ configured in the scheme parameters in :file:`global.cfg` or :file:`scrttv.cfg`:
 * :confval:`scheme.records.borders.drawMode`: Define where to draw borders, e.g. on top, bottom or as boxes.
 * :confval:`scheme.colors.records.borders.*`: Define pen and brush properties.
 
+
+.. _scrttv-waveform-qc:
+
+Waveform Quality Control
+========================
+
+Use scrttv for regular visual waveform inspection and for enabling or disabling
+of stations. Disabled stations will not be used for automatic phase detections
+and can be excluded from manual processing in :ref:`scolv`. They will also be
+highlighted in :ref:`scmv` and :ref:`scqc`.
+
+To enable or disable a station for automatic data processing in |scname| select
+a station code with the mouse and drag the stations to the disable / enable tab
+or simply double-click on the station code.
+
+
+Stream Processing
+=================
+
+
+.. _scrttv-filtering:
+
+Filtering
+---------
+
+scrttv allows filtering of waveforms.
+The Filter selection dropdown menu  (see :ref:`Figure above <fig-scrttv-overview>`)
+and the hotkey :kbd:`f` can be used to toggle the list of filters pre-defined in
+:confval:`filter` or in :confval:`filters`.  The applied filter is named in the
+lower left corner. To show filtered and raw data together use the hotkey :kbd:`r`.
+
+.. note::
+
+   The list of filters defined in :confval:`filters` overwrites :confval:`filter`.
+   Activate :confval:`autoApplyFilter` to filter all traces at start-up of scrttv
+   with the first filter defined in :confval:`filters`.
+
+
+
+Gain correction
+---------------
+
+The stream gain is applied to waveforms and amplitude values are given in the
+physical units of the stream by default. For showing amplitudes in counts,
+deactivate the option *Apply gain* in the Interaction menu.
+
+
+Interactive signal detection
+============================
+
+Beside visual inspection of waveforms for quality control, scrttv can also be
+used for interactive signal detection.
+
+
+.. _scrttv-artificial-origins:
+
+Artificial Origins
+------------------
+
+.. figure:: media/scrttv/artificial-origin.png
+   :width: 16cm
+   :align: center
+
+   Artifical origin.
+
+In case the operator recognizes several seismic signals which shall be processed
+further, e.g. in :ref:`scolv`, an artificial/preliminary origin can be set by
+either pressing the middle mouse
+button on a trace or by opening the context menu (right mouse button) on a trace
+and selecting "Create artificial origin". The following pop-up window shows the
+coordinates of the selected station and the time the click was made on the
+trace. Both are used to generate the new artificial origin without any arrivals.
+Pressing "Create" sends this origin to the LOCATION group. This artificial
+origin is received e.g., by :ref:`scolv` and enables an immediate manual analysis
+of the closest traces.
+
+In order to send receive articifial origins and receive them in other GUIs
+:confval:`commands.target` of the global module configuration must be set and
+must be in line with :confval:`connection.username` of the receiving GUI module.
+
+Alternatively picks can be selected and origins can be located as preliminary
+solution to be sent to the system as regular origin objects, see section
+:ref:`scrttv-origin-association`.
+
+
 .. _scrttv-origin-association:
 
 Origin Association
-==================
+------------------
 
-scrttv comes with a minimal version of a manual locator. Picks can be selected,
-relocated and committed to the messaging system as manual preliminary location.
-In constrast to the artificial origin operation which requires an immediate
-intervention with, e.g. :ref:`scolv, this operation allows to store all those
+scrttv comes with a minimal version of a phase associator and manual locator
+(Fig. :ref:`fig-scrttv-overview`). Picks can be selected, relocated and
+committed to the messaging system as manual preliminary location.
+In contrast to the artificial origin operation which requires an immediate
+intervention with, e.g. :ref:`scolv`, this operation allows to store all those
 detected origins and work on them later because they will be stored in the
 database.
 
-Picks and Arrivals
-------------------
+.. note::
 
-Previous versions of scrttv (< 5.4) only displayed :term:`picks <pick>`.
-This hasn't really changed in later versions but additionally scrttv determines
-an additional state of a pick called :term:`arrival`. A pick is an arrival if
-it is associated to an valid origin. An origin is called valid if its evaluation
-status is not REJECTED. When scrttv loads all picks from the database for the
-currently visible time span it also checks if each pick is associated with a
-valid origin and declares the arrival state if the check yields true.
+   More detailed waveform and event analysis can be made in :ref:`scolv`.
 
-Picks and arrivals can be differentiated visually by their colours. Consistently
-the same colours are being used as in any other GUI displaying both types, namely
-
-* :confval:`scheme.colors.picks.automatic`
-* :confval:`scheme.colors.picks.manual`
-* :confval:`scheme.colors.picks.undefined`
-* :confval:`scheme.colors.arrivals.automatic`
-* :confval:`scheme.colors.arrivals.manual`
-* :confval:`scheme.colors.arrivals.undefined`
-
-That visual difference should support the operator in finding clusters of picks
-and creating new location missed by the automatic system. In addition to the
-different colours an operator can hide either type and remove the markers from
-the traces.
-
-The next sections will only use the :term:`pick` which can be used
-interchangeable for pick or arrival.
 
 Pick Selection
---------------
+~~~~~~~~~~~~~~
 
 In order to select picks, the pick selection mode must be entered. Then dragging
 a box (rubberband) around the picks in question will add them to the "cart".
@@ -232,13 +367,15 @@ cart by clicking the close icon of each pick item.
 
 Picks being part of the cart are also highlighted in the traces.
 
+
 Location Setup
---------------
+~~~~~~~~~~~~~~
 
 The associator adds all available locators in the system and presents them
 in a dropdown list at the bottom. The locator which should be selected as default
-can be controlled with :confval:`defaultLocator`. The profile which is selected
-as default can be controlled with :confval:`defaultLocatorProfile`.
+can be controlled with :confval:`associator.defaultLocator`. The profile which
+is selected as default can be controlled with
+:confval:`associator.defaultLocatorProfile`.
 
 Whenever the operator changes any of the values, a new location attempt is being
 made which can succeed or fail. A successful attempt will update the details,
@@ -253,32 +390,24 @@ configuration files are of course being considered by scrttv.
 In addition to the locator and its profile a fixed depth can be set. By default
 the depth is free and it is up to the locator implementation to assign a depth
 to the origin. The depth dropdown list allows to set a predefined depth. The
-list of depth values can be controlled with :confval:`fixedDepths`.
+list of depth values can be controlled with :confval:`associator.fixedDepths`.
+
 
 Committing a solution
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 Once a solution is accepted by the operator it can be committed to the system
-as regular origin as emitted by, e.g. `scautoloc`. Those origins will be
-grabbed by scevent and possibly associated with an :term:`event`.
+as regular origin as emitted by, e.g. `scautoloc`. Those origins will be sent to
+the message group defined by :confval:`messaging.location` and grabbed by
+connected modules, e.g., :ref:`scevent` and possibly associated to an
+:term:`event`.
 
-Alternatively the button "Show Details" can be used to just send the origin to
-the GUI group and let :ref:`scolv` pick it up and show it. This will not store
-the origin in the database and works the same way as creating an artificial
-origin.
+Alternatively, the button "Show Details" can be used to just send the origin to
+the GUI group and let :ref:`scolv` or other GUIs pick it up and show it. This
+will not store the origin in the database and works the same way as creating an
+artificial origin.
 
-
-Offline Mode
-============
-
-To start scrttv without connection to the messaging use the option ``--offline``
-or simply provide the :term:`miniSEED` data file, e.g.: ::
-
-   scrttv [your miniSEED file]
-
-In offline mode event parameters given in :term:`SCML` files, e.g. from offline processing,
-can be loaded using the *File* menu.
-
+.. _scrttv-hot-keys:
 
 Hotkeys
 =======
