@@ -754,7 +754,7 @@ QString HeliCanvas::formatAnnotation(const double pos){
 			return QString("%1s").arg(s);
 		}
 		else {
-			return QString().sprintf("%0.2fs",s+r);
+			return QString("%1s").arg(s+r, 0, 'f', 2);
 		}
 	}
 }
