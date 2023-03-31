@@ -71,24 +71,7 @@
 			<parameter name="autoResetDelay" type="int" unit="s" default="900">
 				<description>
 				Time span in seconds to switch back to the last view after an origin
-				caused resorting. The default is 15min.
-				</description>
-			</parameter>
-			<parameter name="defaultLocator" type="string">
-				<description>
-				The locator which is activated as default locator.
-				</description>
-			</parameter>
-			<parameter name="defaultLocatorProfile" type="string">
-				<description>
-				The locator profile which is activated as default profile for
-				the default locator.
-				</description>
-			</parameter>
-			<parameter name="fixedDepths" type="list:double" unit="km" default="0, 10, 18">
-				<description>
-				A list of depths used to populate the locator depth selection
-				dropdown list.
+				caused resorting. The default is 15 min.
 				</description>
 			</parameter>
 			<group name="streams">
@@ -393,6 +376,29 @@
 						</group>
 					</struct>
 				</group>
+			</group>
+			<group name="associator">
+				<description>
+				Define parameters for manually associating phases to origin and
+				for locating the origins.
+				</description>
+				<parameter name="defaultLocator" type="string">
+					<description>
+					The locator which is activated as default locator.
+					</description>
+				</parameter>
+				<parameter name="defaultLocatorProfile" type="string">
+					<description>
+					The locator profile which is activated as default profile for
+					the default locator.
+					</description>
+				</parameter>
+				<parameter name="fixedDepths" type="list:double" unit="km" default="0, 10, 18">
+					<description>
+					A list of depths used to populate the locator depth selection
+					dropdown list.
+					</description>
+				</parameter>
 			</group>
 		</configuration>
 		<command-line>

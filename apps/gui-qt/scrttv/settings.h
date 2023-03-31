@@ -82,9 +82,9 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 		& cfg(groupConfig, "messaging.groups.config")
 		& cfg(groupLocation, "messaging.groups.location")
 
-		& cfg(defaultLocator, "defaultLocator")
-		& cfg(defaultEarthModel, "defaultLocatorProfile")
-		& cfg(depths, "fixedDepths");
+		& cfg(defaultLocator, "associator.defaultLocator")
+		& cfg(defaultEarthModel, "associator.defaultLocatorProfile")
+		& cfg(depths, "associator.fixedDepths");
 	}
 
 	int                      bufferSize{1800};
