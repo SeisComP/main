@@ -101,7 +101,8 @@ in global bindings. The selection can be refined by configuring
 :confval:`streams.codes`.
 
 Streams with :ref:`data latency <scqc>` < :confval:`maxDelay` are hidden but
-shown again when applicable. By default this parameter is inactive.
+shown again when applicable. By default this parameter is inactive. For listing
+streams hidden from one tab press :kbd:`h`.
 
 
 .. _scrttv-time-windows:
@@ -111,21 +112,50 @@ Time Windows
 
 The reading waveforms from RecordsStream, the data is displayed for a time
 window which by default ends at current time or as given by the command-line
-option :option:`--end-time`. The time window takes the length defined in
-:confval:`bufferSize` or by the option :option:`--buffer-size`.
-
-When reading data directly from file in offline mode, the time window is set
+option :option:`--end-time`. Initially, the time window takes the length defined
+in :confval:`bufferSize` or by the option :option:`--buffer-size`. When reading data
+directly from file in offline mode, the time window is set
 from the time limits of the waveforms.
 
-Gaps and overlaps in waveforms are indicated by yellow and purple areas,
-respectively. The colors are configurable.
+* The **length of visible time windows** can be adjusted by
+  :ref:`zooming <scrttv-zooming>`.
+* The **end time of the data** progresses in continuously in real time (UTC)
+  with the time of the computer clock unless fixed (:kbd:`F8`). The end time is
+  fixed during startup when applying :option:`--end-time`.
+* For **progressing or rewinding by 30 minutes** press :kbd:`Alt right` or
+  :kbd:`Alt left`, respectively. Data will be loaded immediately.
+* You may also **freely zoom** into any time window. Data and picks will be loaded
+  when pressing :kbd:`Ctrl + r`
+* **Return to default real-time processing** by pressing :kbd:`Ctrl + Shift + r`
+  or :kbd:`N`.
 
+.. hint::
+
+   Gaps and overlaps in waveforms are indicated by yellow and purple areas,
+   respectively. The colors are configurable.
+
+
+.. _scrttv-zooming:
 
 Zooming
 -------
 
 Waveforms can be zoomed in and out interactively in amplitude and time. Use the
 *View* menu or refer to the section :ref:`scrttv-hot-keys` for options.
+
+In addition to the actions available from the View menu, zooming is supported
+mouse actions:
+
+* Zooming in in time: Right-click on time axis, drag to the right. A green bar appears
+  which is the new time window. Dragging up or down (gray bar) disables zooming.
+* Zooming out in time: Right-click on time axis, drag to the left. A red bar appears. The
+  longer the bar, the more you zoom out.  Dragging up or down (gray bar)
+  disables zooming.
+* Zooming in time and amplitude: Mouse over a trace of interest, use
+  :kbd:`Ctrl + mouse wheel` for zooming in or out.
+* Zooming around a selected area: Press :kbd:`z` and drag an area with while
+  pressing the left mouse button. Press :kbd:`z` again for leaving the zoom
+  mode.
 
 
 .. _scrttv-grouping:
@@ -195,7 +225,10 @@ considered an arrival if it is associated to an valid origin. An origin is
 called valid if its evaluation status is not REJECTED. When scrttv loads all
 picks from the database for the currently visible time span it also checks if
 each pick is associated with a valid origin and declares the arrival state if
-the check yields true.
+the check yields true. The visibility of picks and arrivals can be toggled by
+pressing :kbd:`Ctrl + p` and :kbd:`Ctrl + a`, respectively. :kbd:`c` removes all
+markers. The configuration paramter :confval:`showPicks` controls the default
+visibility.
 
 Picks and arrivals can be differentiated visually by their colours. When
 configured in global module configuration, the same colours are being used
@@ -209,10 +242,7 @@ consistently as in any other GUI displaying both types, namely
 * :confval:`scheme.colors.arrivals.undefined`
 
 That visual difference should support the operator in finding clusters of picks
-and creating new location missed by the automatic system. In addition to the
-different colours an operator can hide either pick type by configuration
-(:confval:`showPicks`) and remove the markers from traces interactively
-(:kbd:`c`).
+and creating new location missed by the automatic system.
 
 The next sections will only use the :term:`pick` which can be used
 interchangeable for pick or arrival.
@@ -288,7 +318,8 @@ Interactive signal detection
 ============================
 
 Beside visual inspection of waveforms for quality control, scrttv can also be
-used for interactive signal detection.
+used for interactive signal detection in real time or for selected time windows
+in the past.
 
 
 .. _scrttv-artificial-origins:
@@ -344,11 +375,15 @@ Pick Selection
 ~~~~~~~~~~~~~~
 
 In order to select picks, the pick selection mode must be entered. Then dragging
-a box (rubberband) around the picks in question will add them to the "cart".
+a box (rubber band) around the picks in question will add them to the "cart".
 The "cart" refers to the list of picks of the manual associated widget used to
-attempt to locate an origin.
+attempt to locate an origin. Simply dragging a box will remove all previously
+selected picks. Further options are:
 
-If at least one pick has been added to the cart the manual associator will
+* :kbd:`Shift + drag`: Add selected picks while keeping the previous selection.
+* :kbd:`Ctrl + drag`: Remove selected picks while keeping the previous selection.
+
+If at least one pick has been added to the cart, the manual associator will
 open as a dock widget.
 
 .. note::
@@ -428,8 +463,6 @@ Hotkey                   Description
 :kbd:`n`                 Restore default display
 :kbd:`o`                 Align by origin time
 :kbd:`p`                 Enable pick selection mode
-:kbd:`Ctrl+r`            (Re)load data in current visible time range
-:kbd:`Ctrl+Shift+r`      Switch to real-time with configured buffer size
 :kbd:`Alt+left`          Reverse the data time window by buffer size
 :kbd:`Alt+right`         Advance the data time window by buffer size
 -----------------------  ---------------------------------------
@@ -454,6 +487,13 @@ Hotkey                   Description
 :kbd:`Ctrl+left`         Align left
 :kbd:`Ctrl+right`        Align right
 -----------------------  ---------------------------------------
+**Navigation and data**
+-----------------------  ---------------------------------------
+:kbd:`Alt+left`          Rewind time window by 30' and load data
+:kbd:`Alt+right`         Progress time window by 30' and load data
+:kbd:`Ctrl+r`            (Re)load data in current visible time range
+:kbd:`Ctrl+Shift+r`      Switch to real-time with configured buffer size
+-----------------------  ---------------------------------------
 **Sorting**
 -----------------------  ---------------------------------------
 :kbd:`1`                 Restore configuration order of traces
@@ -468,6 +508,7 @@ Hotkey                   Description
 :kbd:`>`                 Horizontal zoom-out
 :kbd:`y`                 Vertical zoom-out
 :kbd:`Shift+y`           Vertical zoom-in
+:kbd:`s`                 Toggle amplitude normalization
 :kbd:`Ctrl+mouse wheel`  Vertical and horizontal zooming
-:kbd:`z`                 Enable zoom
+:kbd:`z`                 Enable/disable zooming: Drag window with left mouse button
 =======================  =======================================
