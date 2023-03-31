@@ -39,7 +39,7 @@
 
 namespace {
 
-
+/*
 void parseToks(std::vector<std::string> &toks, const std::string &line) {
 	size_t lit = 0;
 	size_t lastit = lit;
@@ -85,7 +85,7 @@ void parseToks(std::vector<std::string> &toks, const std::string &line) {
 
 	if ( lastit != lit ) toks.push_back(line.substr(lastit, lit-lastit));
 }
-
+*/
 
 }
 

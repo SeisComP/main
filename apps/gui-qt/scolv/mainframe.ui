@@ -263,9 +263,6 @@
    <property name="enabled" >
     <bool>true</bool>
    </property>
-   <property name="icon" >
-    <iconset/>
-   </property>
    <property name="text" >
     <string>Next event</string>
    </property>
@@ -282,9 +279,6 @@
   <action name="actionPreviousEvent" >
    <property name="enabled" >
     <bool>true</bool>
-   </property>
-   <property name="icon" >
-    <iconset/>
    </property>
    <property name="text" >
     <string>Previous event</string>

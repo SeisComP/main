@@ -154,7 +154,7 @@ void TraceWidget::paintEvent(QPaintEvent *event) {
 	//p.setPen(Qt::darkYellow);
 	//p.drawLine(QPoint(0, (int)(scaleY*mean)), QPoint(_count-1, (int)(scaleY*mean)));
 
-	p.setMatrixEnabled(false);
+	p.setWorldMatrixEnabled(false);
 	p.setPen(Qt::darkYellow);
 	p.drawText(widgetRect.left(),widgetRect.bottom(),QString("Max: %1, Mean: %2").arg(_max).arg(mean));
 }

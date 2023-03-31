@@ -71,7 +71,7 @@ bool initialize(const Config::Config *config) {
 
 		filename = Seiscomp::Environment::Instance()->absolutePath(filename);
 
-		if ( !validRegion.readBNAFile(filename, NULL) ) {
+		if ( !validRegion.readFile(filename, nullptr) ) {
 			SEISCOMP_ERROR("Failed to read/parse MN region file: %s",
 			               filename.c_str());
 			return false;

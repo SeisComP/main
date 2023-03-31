@@ -429,7 +429,7 @@ void gnuplot_plot_x(
     int     i ;
     int     tmpfd;
     char    name[128] ;
-    char    cmd[GP_CMD_SIZE] ;
+    char    cmd[16] ;
     char    line[GP_CMD_SIZE] ;
 
 
@@ -525,7 +525,7 @@ void gnuplot_plot_xy(
     int     i ;
     int	    tmpfd ;
     char    name[128] ;
-    char    cmd[GP_CMD_SIZE] ;
+    char    cmd[16] ;
     char    line[GP_CMD_SIZE] ;
 
 	if (handle==NULL || x==NULL || y==NULL || (n<1)) return ;
