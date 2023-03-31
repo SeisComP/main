@@ -219,7 +219,7 @@ ILOC_TT_TABLE *iLoc_GenerateLocalTTtables(char *LocalVmodel, ILOC_TTINFO *LocalT
         return (ILOC_TT_TABLE *) NULL;
     }
     for (ind = 0; ind < LocalTTInfo->numPhaseTT; ind++) {
-        ttc[i] = dtdd[i] = dtdh[i] = -999.;
+        ttc[ind] = dtdd[ind] = dtdh[ind] = -999.;
         strcpy(tt_tables[ind].Phase, LocalTTInfo->PhaseTT[ind].Phase);
         tt_tables[ind].ndel = ndists;
         tt_tables[ind].ndep = ndepths;
