@@ -200,6 +200,15 @@
 						</description>
 					</parameter>
 				</group>
+				<group name="arrivalPlot">
+					<parameter name="showUncertainties" type="boolean" default="true">
+						<description>
+							Whether the arrival plot should show uncertainties
+							or not by default. That flag can be toggled with 'e'
+							or via the context menu during runtime.
+						</description>
+					</parameter>
+				</group>
 				<group name="locator">
 					<parameter name="interface" type="string" default="LOCSAT">
 						<description>
