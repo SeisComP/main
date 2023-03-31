@@ -362,7 +362,7 @@ QColor QcViewConfig::sumColor(const QString& scoreName, int score) const {
 	foreach (Range range, rm.values()) {
 		if (score >= range.min && score <= range.max) {
 			color = _colorMap[range.color];
-			SEISCOMP_DEBUG("Found score for QcOverview: ", score);
+			SEISCOMP_DEBUG("Found score for QcOverview: %i", score);
 		}
 	}
 
