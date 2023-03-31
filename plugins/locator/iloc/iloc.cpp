@@ -969,7 +969,7 @@ throw(Core::GeneralException)
 		string vmodel;
 		bool ambiguousVmodel = false;
 
-		if ( fixedDepth() ) {
+		if ( usingFixedDepth() ) {
 			origin->setDepthType(DataModel::OriginDepthType(DataModel::OPERATOR_ASSIGNED));
 		}
 
@@ -1130,9 +1130,15 @@ string ILoc::lastMessage(MessageType) const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void ILoc::prepareAuxFiles() {
+	// use local model or not
+	if ( strlen(_currentConfig->LocalVmodel) == 0 && _currentConfig->UseLocalTT ) {
+		throw Seismology::LocatorException("iLoc: UseLocalTT set but not LocalVmodel defined");
+	}
+
 	if ( !_auxDirty ) {
 		return;
 	}
+
 	SEISCOMP_DEBUG("Read AUX files");
 	_aux.read(_currentConfig);
 	_auxDirty = false;
