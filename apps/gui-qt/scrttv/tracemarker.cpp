@@ -60,6 +60,7 @@ bool TraceMarker::setSelected(bool s) {
 
 	_isSelected = s;
 	updateStyle();
+	update();
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
