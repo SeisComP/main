@@ -43,6 +43,7 @@ class Associator : public QWidget {
 	public:
 		bool push(const QVector<TraceMarker*>,
 		          Seiscomp::Gui::RecordView::SelectionOperation op);
+		bool updatedMarker(TraceMarker *marker);
 
 	private:
 		void unsetMessage();
@@ -69,8 +70,10 @@ class Associator : public QWidget {
 		void commit();
 
 	private:
+		using MarkerBadge = QPair<TraceMarker*, QWidget*>;
+
 		Ui::Associator                          _ui;
-		QVector<TraceMarker*>                   _markers;
+		QVector<MarkerBadge>                    _markers;
 		Seismology::LocatorInterfacePtr         _locator;
 		QWidget                                *_pickContainer;
 		Gui::OriginLocatorMap                  *_mapWidget;
