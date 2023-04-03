@@ -1061,6 +1061,9 @@ void Associator::commit() {
 		.arg(_origin->publicID().c_str())
 		.arg(Settings::global.groupLocation.c_str())
 	);
+
+	// Clear the cart
+	push(QVector<TraceMarker*>(), RecordView::Select);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
