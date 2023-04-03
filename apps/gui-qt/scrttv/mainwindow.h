@@ -162,7 +162,6 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 
 
 	private slots:
-		void openFile();
 		void openAcquisition();
 		void openXML();
 
@@ -251,6 +250,9 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		void switchToRealtime();
 		void recordStreamClosed(RecordStreamThread*);
 
+		void advance();
+		void reverse();
+
 
 	protected:
 		void toggledFullScreen(bool);
@@ -258,7 +260,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 
 
 	private:
-		void openFile(const std::vector<std::string> &files);
+		void loadFiles();
 
 		DataModel::ConfigStation* configStation(const std::string& networkCode,
 		                                        const std::string& stationCode) const;
@@ -280,6 +282,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 
 		void searchByText(const QString &text);
 
+		void reloadTimeWindow(const Core::TimeWindow &tw);
 		void reloadData();
 
 
@@ -321,6 +324,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		int                                       _numberOfRows;
 		bool                                      _wantReload{false};
 		int                                       _lastFilterIndex{-1};
+		std::vector<std::string>                  _dataFiles;
 
 		Seiscomp::Gui::QuestionBox                _questionApplyChanges;
 

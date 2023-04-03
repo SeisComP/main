@@ -142,7 +142,7 @@ QString prettyTimeRange(int seconds) {
 		if ( !str.isEmpty() ) {
 			str += " ";
 		}
-		str += QString("%1 days").arg(days);
+		str += QString("%1 day%2").arg(days).arg(days > 1 ? "s" : "");
 	}
 
 	seconds = seconds % 86400;
@@ -152,7 +152,7 @@ QString prettyTimeRange(int seconds) {
 		if ( !str.isEmpty() ) {
 			str += " ";
 		}
-		str += QString("%1 hours").arg(hours);
+		str += QString("%1 hour%2").arg(hours).arg(hours > 1 ? "s" : "");
 	}
 
 	seconds = seconds % 3600;
@@ -162,7 +162,7 @@ QString prettyTimeRange(int seconds) {
 		if ( !str.isEmpty() ) {
 			str += " ";
 		}
-		str += QString("%1 minutes").arg(minutes);
+		str += QString("%1 minute%2").arg(minutes).arg(minutes > 1 ? "s" : "");
 	}
 
 	seconds = seconds % 60;
@@ -170,7 +170,7 @@ QString prettyTimeRange(int seconds) {
 		if ( !str.isEmpty() ) {
 			str += " ";
 		}
-		str += QString("%1 seconds").arg(seconds);
+		str += QString("%1 second%2").arg(seconds).arg(seconds > 1 ? "s" : "");
 	}
 
 	return str;
@@ -530,6 +530,10 @@ void TraceTabWidget::showEvent(QShowEvent *) {
 
 MainWindow::MainWindow() : _questionApplyChanges(this) {
 	_ui.setupUi(this);
+	_ui.actionLoadDataBack->setText(tr("Load data - %1").arg(prettyTimeRange(Settings::global.bufferSize)));
+	_ui.actionLoadDataBack->setIconText(_ui.actionLoadDataBack->text());
+	_ui.actionLoadDataNext->setText(tr("Load data + %1").arg(prettyTimeRange(Settings::global.bufferSize)));
+	_ui.actionLoadDataNext->setIconText(_ui.actionLoadDataNext->text());
 
 	_questionApplyChanges.setText("You are about to enable/disable one or more streams.\n"
 	                              "As a result all streams of the station(s) the stream(s)\n"
@@ -542,6 +546,9 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 	_tabWidget = nullptr;
 	_needColorUpdate = false;
 	_bufferSize = Core::TimeSpan(Settings::global.bufferSize, 0);
+
+	connect(_ui.actionLoadDataBack, SIGNAL(triggered()), this, SLOT(reverse()));
+	connect(_ui.actionLoadDataNext, SIGNAL(triggered()), this, SLOT(advance()));
 
 	_statusBarSelectMode = new QComboBox;
 	_statusBarSelectMode->addItem(tr("Standard mode"));
@@ -606,8 +613,6 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 	connect(_ui.actionListHiddenStreams, SIGNAL(triggered()), this, SLOT(listHiddenStreams()));
 	//connect(_ui.actionAddTabulator, SIGNAL(triggered()), this, SLOT(addTabulator()));
 
-	connect(_ui.actionOpen, SIGNAL(triggered()), this, SLOT(openFile()));
-	connect(_ui.actionOpenSeedLink, SIGNAL(triggered()), this, SLOT(openAcquisition()));
 	connect(_ui.actionOpenXMLFile, SIGNAL(triggered()), this, SLOT(openXML()));
 	connect(_ui.actionQuit, SIGNAL(triggered()), this, SLOT(close()));
 
@@ -858,25 +863,32 @@ void MainWindow::start() {
 		_startTime = Seiscomp::Core::Time::GMT();
 	}
 
-	std::vector<std::string> files = SCApp->commandline().unrecognizedOptions();
-	std::vector<std::string>::iterator it;
-	for ( it = files.begin(); it != files.end(); ) {
-		if ( it->size() > 1 && (*it)[0] == '-' )
-			it = files.erase(it);
-		else
+	_dataFiles = SCApp->commandline().unrecognizedOptions();
+	for ( auto it = _dataFiles.begin(); it != _dataFiles.end(); ) {
+		if ( it->size() > 1 && (*it)[0] == '-' ) {
+			it = _dataFiles.erase(it);
+		}
+		else {
 			++it;
+		}
 	}
 
-	if ( SCApp->commandline().hasOption("record-file") || !files.empty() ) {
+	if ( SCApp->commandline().hasOption("record-file") || !_dataFiles.empty() ) {
 		try {
-			files.push_back(SCApp->commandline().option<std::string>("record-file"));
+			_dataFiles.push_back(SCApp->commandline().option<std::string>("record-file"));
 		}
 		catch ( ... ) {}
 
-		openFile(files);
+		loadFiles();
+
+		_ui.actionLoadDataBack->setEnabled(false);
+		_ui.actionLoadDataNext->setEnabled(false);
+		_ui.actionReload->setEnabled(false);
+		_ui.actionSwitchToRealtime->setEnabled(false);
 	}
-	else
+	else {
 		openAcquisition();
+	}
 
 	double lat = 0.0;
 	double lon = 0.0;
@@ -1533,29 +1545,13 @@ void MainWindow::createOrigin(Gui::RecordViewItem* item, Core::Time time) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MainWindow::openFile() {
-	QString filename = QFileDialog::getOpenFileName(this, "Choose a file", "");
-	if ( filename.isEmpty() )
-		return;
-
-	std::vector<std::string> files;
-	files.push_back(filename.toStdString());
-	openFile(files);
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MainWindow::openFile(const std::vector<std::string> &files) {
-	RecordStream::File stream;
-
+void MainWindow::loadFiles() {
 	//setCentralWidget(createTraceView());
 	centralWidget()->layout()->addWidget(createTraceView());
 
-	while ( _tabWidget != NULL )
+	while ( _tabWidget ) {
 		removeTab(0);
+	}
 
 	TRACEVIEWS(setBufferSize(Core::TimeSpan(0,0)));
 
@@ -1564,27 +1560,28 @@ void MainWindow::openFile(const std::vector<std::string> &files) {
 
 	_traceViews.front()->setUpdatesEnabled(false);
 
-	for ( size_t i = 0; i < files.size(); ++i ) {
-		//TODO: Resolve wildcards using boost filesystem
-		stream.setRecordType("mseed");
+	for ( size_t i = 0; i < _dataFiles.size(); ++i ) {
+		RecordStream::File file;
+		file.setRecordType("mseed");
+		file.setTimeWindow(_dataTimeWindow);
 
-		if ( !stream.setSource(files[i]) ) {
-			cerr << "could not open file '" << files[i] << "'" << endl;
+		if ( !file.setSource(_dataFiles[i]) ) {
+			cerr << "could not open file '" << _dataFiles[i] << "'" << endl;
 			continue;
 		}
 
 		try {
 			std::string type = SCApp->commandline().option<std::string>("record-type");
-			if ( !stream.setRecordType(type.c_str()) ) {
+			if ( !file.setRecordType(type.c_str()) ) {
 				cerr << "unable to set recordtype '" << type << "'" << endl;
 				continue;
 			}
 		}
 		catch ( ... ) {}
 
-		IO::RecordInput input(&stream, Array::FLOAT, Record::DATA_ONLY);
+		IO::RecordInput input(&file, Array::FLOAT, Record::DATA_ONLY);
 
-		cout << "loading " << files[i] << "..." << flush;
+		cout << "loading " << _dataFiles[i] << "..." << flush;
 		Util::StopWatch t;
 
 		for ( Record *rec : input ) {
@@ -2464,23 +2461,7 @@ void MainWindow::reload() {
 		}
 	}
 
-	_dataTimeWindow = dataTimeWindow;
-	Settings::global.endTime = _dataTimeWindow.endTime();
-	_bufferSize = _dataTimeWindow.length();
-	_originTime = Settings::global.endTime;
-
-	TRACEVIEWS(setBufferSize(_bufferSize));
-	TRACEVIEWS(setAlignment(_originTime));
-	TRACEVIEWS(setTimeRange(-_dataTimeWindow.length(), 0));
-	_wantReload = true;
-
-	if ( _recordStreamThread ) {
-		_statusBarFile->setText(tr("Waiting for recordstream to finish"));
-		_recordStreamThread->stop(false);
-		return;
-	}
-
-	reloadData();
+	reloadTimeWindow(dataTimeWindow);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2498,6 +2479,31 @@ void MainWindow::switchToRealtime() {
 	TRACEVIEWS(setBufferSize(_bufferSize));
 	TRACEVIEWS(setAlignment(_originTime));
 	TRACEVIEWS(setTimeRange(-_bufferSize, 0));
+	_wantReload = true;
+
+	if ( _recordStreamThread ) {
+		_statusBarFile->setText(tr("Waiting for recordstream to finish"));
+		_recordStreamThread->stop(false);
+		return;
+	}
+
+	reloadData();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::reloadTimeWindow(const Core::TimeWindow &tw) {
+	_dataTimeWindow = tw;
+	Settings::global.endTime = _dataTimeWindow.endTime();
+	_bufferSize = _dataTimeWindow.length();
+	_originTime = Settings::global.endTime;
+
+	TRACEVIEWS(setBufferSize(_bufferSize));
+	TRACEVIEWS(setAlignment(_originTime));
+	TRACEVIEWS(setTimeRange(-_dataTimeWindow.length(), 0));
 	_wantReload = true;
 
 	if ( _recordStreamThread ) {
@@ -2606,6 +2612,51 @@ void MainWindow::recordStreamClosed(RecordStreamThread *thread) {
 	if ( _wantReload ) {
 		reloadData();
 	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::advance() {
+	Core::TimeWindow dataTimeWindow;
+	CURRENT_TRACEVIEW_RET(dataTimeWindow, visibleTimeRange());
+	dataTimeWindow.setEndTime(dataTimeWindow.endTime() + Core::TimeSpan(0, 500000));
+
+	auto remainder = dataTimeWindow.endTime().seconds() % Settings::global.bufferSize;
+	if ( remainder ) {
+		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().seconds() + Settings::global.bufferSize - remainder, 0));
+	}
+	else {
+		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().seconds() + Settings::global.bufferSize, 0));
+	}
+	cerr << dataTimeWindow.endTime().iso() << endl;
+	dataTimeWindow.setStartTime(dataTimeWindow.endTime() - Core::TimeSpan(Settings::global.bufferSize, 0));
+
+	reloadTimeWindow(dataTimeWindow);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::reverse() {
+	Core::TimeWindow dataTimeWindow;
+	CURRENT_TRACEVIEW_RET(dataTimeWindow, visibleTimeRange());
+	dataTimeWindow.setEndTime(dataTimeWindow.endTime() + Core::TimeSpan(0, 500000));
+
+	auto remainder = dataTimeWindow.endTime().seconds() % Settings::global.bufferSize;
+	if ( remainder ) {
+		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().seconds() - remainder, 0));
+	}
+	else {
+		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().seconds() - Settings::global.bufferSize, 0));
+	}
+	dataTimeWindow.setStartTime(dataTimeWindow.endTime() - Core::TimeSpan(Settings::global.bufferSize, 0));
+
+	reloadTimeWindow(dataTimeWindow);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

@@ -101,6 +101,9 @@
     <addaction name="separator"/>
     <addaction name="actionReload"/>
     <addaction name="actionSwitchToRealtime"/>
+    <addaction name="separator"/>
+    <addaction name="actionLoadDataBack"/>
+    <addaction name="actionLoadDataNext"/>
    </widget>
    <widget class="QMenu" name="menuSettings">
     <property name="title">
@@ -461,34 +464,6 @@
     <string>N</string>
    </property>
   </action>
-  <action name="actionOpen">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Open</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+O</string>
-   </property>
-  </action>
-  <action name="actionOpenSeedLink">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Open RecordStream</string>
-   </property>
-   <property name="iconText">
-    <string>Open RecordStream</string>
-   </property>
-   <property name="toolTip">
-    <string>Open RecordStream</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+S</string>
-   </property>
-  </action>
   <action name="actionToggleAllRecords">
    <property name="checkable">
     <bool>true</bool>
@@ -792,6 +767,34 @@
    </property>
    <property name="shortcut">
     <string>F</string>
+   </property>
+  </action>
+  <action name="actionLoadDataBack">
+   <property name="text">
+    <string>Load data - %1</string>
+   </property>
+   <property name="iconText">
+    <string>Load data - %1</string>
+   </property>
+   <property name="toolTip">
+    <string>Move the data time window to the left and load its data</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Left</string>
+   </property>
+  </action>
+  <action name="actionLoadDataNext">
+   <property name="text">
+    <string>Load data + %1</string>
+   </property>
+   <property name="iconText">
+    <string>Load data + %1</string>
+   </property>
+   <property name="toolTip">
+    <string>Move the data time window to the right and load its data</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Right</string>
    </property>
   </action>
  </widget>
