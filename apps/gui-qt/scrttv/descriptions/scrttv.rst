@@ -301,7 +301,8 @@ Hotkey                   Description
 :kbd:`p`                 Enable pick selection mode
 :kbd:`Ctrl+r`            (Re)load data in current visible time range
 :kbd:`Ctrl+Shift+r`      Switch to real-time with configured buffer size
-:kbd:`Alt+q`             Quit
+:kbd:`Alt+left`          Reverse the data time window by buffer size
+:kbd:`Alt+right`         Advance the data time window by buffer size
 -----------------------  ---------------------------------------
 **Filtering**
 -----------------------  ---------------------------------------
