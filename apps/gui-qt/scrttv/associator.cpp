@@ -47,6 +47,12 @@ namespace TraceView {
 namespace {
 
 
+QString waveformIDToString(const WaveformStreamID& id) {
+	return (id.networkCode() + "." + id.stationCode() + "." +
+	        id.locationCode() + "." + id.channelCode()).c_str();
+}
+
+
 class FlexLayout : public Seiscomp::Gui::FlowLayout {
 	public:
 		FlexLayout(int margin = -1, int hSpacing = -1, int vSpacing = -1)
@@ -107,10 +113,76 @@ class FlexLayout : public Seiscomp::Gui::FlowLayout {
 };
 
 
-QString waveformIDToString(const WaveformStreamID& id) {
-	return (id.networkCode() + "." + id.stationCode() + "." +
-	        id.locationCode() + "." + id.channelCode()).c_str();
-}
+class Badge : public QFrame {
+	public:
+		Badge(TraceMarker *marker, QMap<QString, QWidget*> &badges) {
+			setLayout(new QHBoxLayout);
+			layout()->setMargin(0);
+			setFrameShape(QFrame::StyledPanel);
+			setFrameShadow(QFrame::Raised);
+
+			auto content = new QWidget;
+			layout()->addWidget(content);
+
+			content->setSizePolicy(QSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum));
+			content->setLayout(new QHBoxLayout);
+			content->layout()->setMargin(0);
+
+			QString labelText = waveformIDToString(marker->pick->waveformID());
+			try {
+				labelText += QString("- %1").arg(marker->pick->phaseHint().code().c_str());
+			}
+			catch ( ... ) {}
+
+			if ( badges.contains(labelText) ) {
+				auto pal = content->palette();
+				pal.setColor(content->backgroundRole(), QColor(0xff, 0xfa, 0xf3));
+				pal.setColor(content->foregroundRole(), QColor(0x57, 0x3a, 0x08));
+				content->setPalette(pal);
+			}
+			else {
+				content->setBackgroundRole(QPalette::Mid);
+				content->setForegroundRole(QPalette::ButtonText);
+				badges[labelText] = this;
+			}
+
+			content->setAutoFillBackground(true);
+			content->setToolTip(marker->toolTip());
+			content->setProperty("pickID", QString(marker->pick->publicID().c_str()));
+
+			_colorLabel = new QLabel;
+			_colorLabel->setBackgroundRole(QPalette::Window);
+			_colorLabel->setAutoFillBackground(true);
+			_colorLabel->setFixedWidth(4);
+			content->layout()->addWidget(_colorLabel);
+
+			setColor(marker->color());
+
+			auto label = new QLabel(labelText);
+			label->setForegroundRole(content->foregroundRole());
+			content->layout()->addWidget(label);
+
+			_closeButton = new QPushButton();
+			_closeButton->setIcon(QIcon(":/icons/icons/remove.png"));
+			_closeButton->setFlat(true);
+
+			content->layout()->addWidget(_closeButton);
+		}
+
+		void setColor(QColor color) {
+			auto pal = _colorLabel->palette();
+			pal.setColor(QPalette::Window, color);
+			_colorLabel->setPalette(pal);
+		}
+
+		QPushButton *buttonClose() const {
+			return _closeButton;
+		}
+
+	private:
+		QLabel      *_colorLabel;
+		QPushButton *_closeButton;
+};
 
 
 }
@@ -200,35 +272,42 @@ bool Associator::push(const QVector<TraceMarker *> markers,
 
 	if ( op == RecordView::Select ) {
 		for ( auto marker : _markers ) {
-			if ( marker->setSelected(false) ) {
+			if ( marker.first->setSelected(false) ) {
 				update = true;
 			}
 		}
 
-		_markers = markers;
+		_markers.clear();
+		for ( auto marker : markers ) {
+			_markers.append(MarkerBadge(marker, nullptr));
+		}
 
 		for ( auto marker : _markers ) {
-			if ( marker->setSelected(true) ) {
+			if ( marker.first->setSelected(true) ) {
 				update = true;
 			}
 		}
 	}
 	else if ( op == RecordView::SelectPlus ) {
 		for ( auto marker : markers ) {
-			auto it = std::find(_markers.begin(), _markers.end(), marker);
+			auto it = std::find_if(_markers.begin(), _markers.end(), [marker](MarkerBadge badge) {
+				return badge.first == marker;
+			});
 			if ( it == _markers.end() ) {
 				if ( marker->setSelected(true) ) {
 					update = true;
 				}
-				_markers.push_back(marker);
+				_markers.push_back(MarkerBadge(marker, nullptr));
 			}
 		}
 	}
 	else if ( op == RecordView::SelectMinus ) {
 		for ( auto marker : markers ) {
-			auto it = std::find(_markers.begin(), _markers.end(), marker);
+			auto it = std::find_if(_markers.begin(), _markers.end(), [marker](MarkerBadge badge) {
+				return badge.first == marker;
+			});
 			if ( it != _markers.end() ) {
-				if ( (*it)->setSelected(false) ) {
+				if ( it->first->setSelected(false) ) {
 					update = true;
 				}
 				_markers.erase(it);
@@ -249,6 +328,24 @@ bool Associator::push(const QVector<TraceMarker *> markers,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Associator::updatedMarker(TraceMarker *marker) {
+	for ( int i = 0; i < _markers.count(); ++i ) {
+		if ( _markers[i].first == marker ) {
+			if ( _markers[i].second ) {
+				static_cast<Badge*>(_markers[i].second)->setColor(marker->color());
+			}
+			return true;
+		}
+	}
+
+	return false;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Associator::syncPicksView() {
 	// Clear pick container
 	while ( auto w = _pickContainer->findChild<QWidget*>() ) {
@@ -258,67 +355,11 @@ void Associator::syncPicksView() {
 	QMap<QString, QWidget*> badges;
 
 	// Populate pick container
-	for ( auto marker : _markers ) {
-		QString labelText = waveformIDToString(marker->pick->waveformID());
-		try {
-			labelText += QString("- %1").arg(marker->pick->phaseHint().code().c_str());
-		}
-		catch ( ... ) {}
-
-		auto container = new QFrame;
-		container->setLayout(new QHBoxLayout);
-		container->layout()->setMargin(0);
-		container->setFrameShape(QFrame::StyledPanel);
-		container->setFrameShadow(QFrame::Raised);
-
-		auto badge = new QWidget;
-		container->layout()->addWidget(badge);
-
-		badge->setSizePolicy(QSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum));
-		badge->setLayout(new QHBoxLayout);
-		badge->layout()->setMargin(0);
-
-		if ( badges.contains(labelText) ) {
-			auto pal = badge->palette();
-			pal.setColor(badge->backgroundRole(), QColor(0xff, 0xfa, 0xf3));
-			pal.setColor(badge->foregroundRole(), QColor(0x57, 0x3a, 0x08));
-			badge->setPalette(pal);
-		}
-		else {
-			badge->setBackgroundRole(QPalette::Mid);
-			badge->setForegroundRole(QPalette::ButtonText);
-		}
-
-		badge->setAutoFillBackground(true);
-		badge->setToolTip(marker->toolTip());
-		badge->setProperty("pickID", QString(marker->pick->publicID().c_str()));
-
-		QLabel *labelMode = new QLabel;
-		auto pal = labelMode->palette();
-		pal.setColor(QPalette::Window, marker->color());
-		labelMode->setPalette(pal);
-		labelMode->setBackgroundRole(QPalette::Window);
-		labelMode->setAutoFillBackground(true);
-		labelMode->setFixedWidth(4);
-
-		badge->layout()->addWidget(labelMode);
-
-		auto label = new QLabel(labelText);
-		label->setForegroundRole(badge->foregroundRole());
-		badge->layout()->addWidget(label);
-
-		auto btnClose = new QPushButton();
-		btnClose->setIcon(QIcon(":/icons/icons/remove.png"));
-		btnClose->setFlat(true);
-		connect(btnClose, SIGNAL(clicked()), this, SLOT(removePick()));
-
-		badge->layout()->addWidget(btnClose);
-
-		_pickContainer->layout()->addWidget(badge);
-
-		if ( !badges.contains(labelText) ) {
-			badges[labelText] = badge;
-		}
+	for ( auto &marker : _markers ) {
+		marker.second = new Badge(marker.first, badges);
+		connect(static_cast<Badge*>(marker.second)->buttonClose(),
+		        SIGNAL(clicked()), this, SLOT(removePick()));
+		_pickContainer->layout()->addWidget(marker.second);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -734,7 +775,7 @@ void Associator::arrivalChanged(int id, bool state) {
 
 	for ( auto it = _markers.begin(); it != _markers.end(); ++it ) {
 		auto marker = *it;
-		if ( marker->pick->publicID() == arrival->pickID() ) {
+		if ( marker.first->pick->publicID() == arrival->pickID() ) {
 			_markers.erase(it);
 			syncPicksView();
 			relocate();
@@ -791,15 +832,15 @@ void Associator::removePick() {
 	QPushButton *btnClose = static_cast<QPushButton*>(sender());
 	QWidget *badge = btnClose->parentWidget();
 	auto pickID = badge->property("pickID").toString().toStdString();
-	auto it = find_if(_markers.begin(), _markers.end(), [&pickID](TraceMarker *marker) {
-		return marker->pick->publicID() == pickID;
+	auto it = find_if(_markers.begin(), _markers.end(), [&pickID](MarkerBadge badge) {
+		return badge.first->pick->publicID() == pickID;
 	});
 
 	if ( it != _markers.end() ) {
-		(*it)->setSelected(false);
-		(*it)->parent()->update();
+		(*it).first->setSelected(false);
+		(*it).first->parent()->update();
+		delete (*it).second;
 		_markers.erase(it);
-		delete badge;
 		relocate();
 	}
 }
@@ -834,7 +875,7 @@ void Associator::relocate() {
 			for ( auto marker : _markers ) {
 				picks.push_back(
 					Seismology::LocatorInterface::PickItem(
-						marker->pick.get()
+						marker.first->pick.get()
 					)
 				);
 			}
@@ -988,8 +1029,8 @@ void Associator::commit() {
 
 	// Set markers as associated
 	for ( auto marker : _markers ) {
-		if ( marker->setAssociated(true) ) {
-			marker->update();
+		if ( marker.first->setAssociated(true) ) {
+			marker.first->update();
 		}
 	}
 

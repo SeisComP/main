@@ -3166,6 +3166,9 @@ void MainWindow::objectAdded(const QString &parentID,
 				if ( it != _markerMap.end() ) {
 					if ( it.value()->setAssociated(true) ) {
 						it.value()->update();
+						if ( _associator ) {
+							_associator->updatedMarker(it.value());
+						}
 					}
 				}
 			}
@@ -3231,6 +3234,9 @@ void MainWindow::objectUpdated(const QString &parentID,
 					if ( itm != _markerMap.end() ) {
 						if ( itm.value()->setAssociated(refCount > 0) ) {
 							itm.value()->update();
+							if ( _associator ) {
+								_associator->updatedMarker(itm.value());
+							}
 						}
 					}
 				}
