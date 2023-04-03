@@ -630,6 +630,7 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 	connect(_ui.actionAlignRight, SIGNAL(triggered()), this, SLOT(alignRight()));
 	connect(_ui.actionJumpToLastRecord, SIGNAL(triggered()), this, SLOT(jumpToLastRecord()));
 	connect(_ui.actionClearPickMarkers, SIGNAL(triggered()), this, SLOT(clearPickMarkers()));
+	connect(_ui.actionClearPickCart, SIGNAL(triggered()), this, SLOT(clearPickCart()));
 
 	connect(_ui.actionAlignOriginTime, SIGNAL(triggered()), this, SLOT(alignOriginTime()));
 
@@ -1169,10 +1170,10 @@ TraceView* MainWindow::createTraceView() {
 	connect(traceView, SIGNAL(addedItem(const Seiscomp::Record*, Seiscomp::Gui::RecordViewItem*)),
 	        this, SLOT(setupItem(const Seiscomp::Record*, Seiscomp::Gui::RecordViewItem*)));
 
-	connect(traceView, SIGNAL(selectedRubberBand(QList<Seiscomp::Gui::RecordViewItem*>,
+	connect(traceView, SIGNAL(selectedRubberBand(QRect, QList<Seiscomp::Gui::RecordViewItem*>,
 	                                             double, double,
 	                                             Seiscomp::Gui::RecordView::SelectionOperation)),
-	        this, SLOT(selectedTraceViewRubberBand(QList<Seiscomp::Gui::RecordViewItem*>,
+	        this, SLOT(selectedTraceViewRubberBand(QRect, QList<Seiscomp::Gui::RecordViewItem*>,
 	                                               double, double,
 	                                               Seiscomp::Gui::RecordView::SelectionOperation)));
 
@@ -2664,26 +2665,42 @@ void MainWindow::reverse() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MainWindow::selectedTraceViewRubberBand(QList<RecordViewItem*> items,
+void MainWindow::selectedTraceViewRubberBand(QRect rect,
+                                             QList<RecordViewItem*> items,
                                              double tmin, double tmax,
                                              RecordView::SelectionOperation operation) {
 	auto view = static_cast<TraceView*>(sender());
 
-	Core::Time left(tmin), right(tmax);
 	QVector<TraceMarker*> markers;
 
-	for ( auto item : items ) {
-		auto markerCount = item->widget()->markerCount();
-		for ( int i = 0; i < markerCount; ++i ) {
-			auto marker = static_cast<TraceMarker*>(item->widget()->marker(i));
-			if ( !marker->isVisible() ) {
-				continue;
-			}
-			if ( marker->time() < left || marker->time() >= right ) {
-				continue;
-			}
+	if ( rect.width() <= 1 && rect.height() <= 1 ) {
+		// Simple click
+		if ( items.empty() ) {
+			return;
+		}
 
-			markers.append(marker);
+		QPoint p = items.front()->widget()->mapFromGlobal(rect.topLeft());
+		auto marker = items.front()->widget()->markerAt(p.x(), p.y(), false);
+		if ( marker ) {
+			markers.append(static_cast<TraceMarker*>(marker));
+		}
+	}
+	else {
+		Core::Time left(tmin), right(tmax);
+
+		for ( auto item : items ) {
+			auto markerCount = item->widget()->markerCount();
+			for ( int i = 0; i < markerCount; ++i ) {
+				auto marker = static_cast<TraceMarker*>(item->widget()->marker(i));
+				if ( !marker->isVisible() ) {
+					continue;
+				}
+				if ( marker->time() < left || marker->time() >= right ) {
+					continue;
+				}
+
+				markers.append(marker);
+			}
 		}
 	}
 
@@ -2995,9 +3012,16 @@ void MainWindow::jumpToLastRecord() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::clearPickMarkers() {
 	_markerMap.clear();
-
+	clearPickCart();
 	TRACEVIEWS(clearMarker());
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::clearPickCart() {
 	// Clear associator cart
 	if ( _associator ) {
 		_associator->push(QVector<TraceMarker*>(), RecordView::Select);

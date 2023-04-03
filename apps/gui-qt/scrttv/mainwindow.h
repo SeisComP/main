@@ -199,6 +199,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 
 		void jumpToLastRecord();
 		void clearPickMarkers();
+		void clearPickCart();
 
 		void step();
 		void switchToNormalState();
@@ -242,7 +243,8 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 
 		void filterSelectionChanged();
 
-		void selectedTraceViewRubberBand(QList<Seiscomp::Gui::RecordViewItem*>,
+		void selectedTraceViewRubberBand(QRect rect,
+		                                 QList<Seiscomp::Gui::RecordViewItem*>,
 		                                 double tmin, double tmax,
 		                                 Seiscomp::Gui::RecordView::SelectionOperation operation);
 

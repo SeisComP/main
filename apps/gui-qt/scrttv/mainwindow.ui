@@ -96,6 +96,7 @@
     <addaction name="actionPreviousFilter"/>
     <addaction name="separator"/>
     <addaction name="actionClearPickMarkers"/>
+	<addaction name="actionClearPickCart"/>
     <addaction name="separator"/>
     <addaction name="actionSearch"/>
     <addaction name="separator"/>
@@ -652,6 +653,14 @@
    </property>
    <property name="shortcut">
     <string>C</string>
+   </property>
+  </action>
+  <action name="actionClearPickCart">
+   <property name="text">
+    <string>Clear association pick cart</string>
+   </property>
+   <property name="shortcut">
+    <string>X</string>
    </property>
   </action>
   <action name="actionApplyGain">
