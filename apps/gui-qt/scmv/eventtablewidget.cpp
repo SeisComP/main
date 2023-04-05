@@ -93,11 +93,7 @@ void EventTableWidget::addRow(RowData& rowData) {
 	resizeColumnsToContents();
 
 	QHeaderView *horizontalHeaderRef = horizontalHeader();
-#if QT_VERSION >= 0x050000
 	horizontalHeaderRef->setSectionResizeMode(_lastVisibleSection, QHeaderView::Stretch);
-#else
-	horizontalHeaderRef->setResizeMode(_lastVisibleSection, QHeaderView::Stretch);
-#endif
 }
 
 
@@ -183,11 +179,7 @@ void EventTableWidget::uiInit() {
 			_lastVisibleSection = i;
 	}
 
-#if QT_VERSION >= 0x050000
 	horizontalHeaderRef->setSectionResizeMode(_lastVisibleSection, QHeaderView::Stretch);
-#else
-	horizontalHeaderRef->setResizeMode(_lastVisibleSection, QHeaderView::Stretch);
-#endif
 
 	resizeColumnsToContents();
 

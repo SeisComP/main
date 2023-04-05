@@ -214,13 +214,8 @@ void QcTableView::init() {
 	_qcTable->hideColumn(0);
 	_qcTable->sortByColumn(0, Qt::AscendingOrder); 
 	_qcTable->setSortingEnabled(true);
-#if QT_VERSION >= 0x050000
 	_qcTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 	_qcTable->horizontalHeader()->setSectionsMovable(true);
-#else
-	_qcTable->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
-	_qcTable->horizontalHeader()->setMovable(true);
-#endif
 	_qcTable->horizontalHeader()->setTextElideMode(Qt::ElideRight);
 	_qcTable->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft);
 
