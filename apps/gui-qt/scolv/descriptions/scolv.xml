@@ -167,8 +167,7 @@
 				<parameter name="systemTray" type="boolean" default="true">
 					<description>
 						Adds an icon to the system tray and displays a message
-						when a new event was received. Note that this feature
-						requires libQt4 version 4.3 or higher.
+						when a new event was received.
 					</description>
 				</parameter>
 				<group name="map">
