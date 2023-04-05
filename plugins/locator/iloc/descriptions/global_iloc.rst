@@ -320,8 +320,10 @@ Setup in |scname|
    * :confval:`iLoc.profile.$name.globalModel`: The name of the
      :ref:`global model <iloc-velocity_global>`, e.g. *iasp91* or *ak135*.
    * Consider the :ref:`RSTT parameters <iloc-velocity_rstt>`.
-   * :confval:`iLoc.profile.$name.LocalVmodel`: The name of the file containing
-     the :ref:`local velocity model <iloc-velocity_local>`.
+   * :confval:`iLoc.profile.$name.LocalVmodel`, :confval:`iLoc.profile.$name.UseLocalTT`
+     and :confval:`iLoc.profile.$name.MaxLocalTTDelta`: The definition of a
+     :ref:`local velocity model <iloc-velocity_local>`: model file, default
+     usability, distance range.
    * :confval:`iLoc.profile.$name.DoNotRenamePhases`: Renaming seismic phases
      automatically
      impacts the usability of the origins with other locators and locator profiles.
