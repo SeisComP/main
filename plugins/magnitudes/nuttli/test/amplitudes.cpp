@@ -33,7 +33,7 @@
 #include <seiscomp/io/archive/xmlarchive.h>
 #include <seiscomp/io/recordstream/file.h>
 
-#include <boost/bind.hpp>
+#include <functional>
 #include <map>
 #include <iostream>
 
@@ -243,7 +243,7 @@ class TestApp : public Client::Application {
 					continue;
 				}
 
-				proc->setPublishFunction(boost::bind(&TestApp::publishAmplitude, this, _1, _2));
+				proc->setPublishFunction(bind(&TestApp::publishAmplitude, this, placeholders::_1, placeholders::_2));
 				amplitudeProcStreamRoute[sid] = proc;
 				amplitudeProcPickRoute[it->second.first->pickID()] = proc;
 				it->second.second = sid;
