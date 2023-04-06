@@ -68,6 +68,14 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 			"Don't ask for time window at data server. This might be important "
 			"if e.g. Seedlink does not allow time window extraction."
 		)
+		& cliSwitch(
+			mapPicksToBestMatchingTrace,
+			"Mode", "map-picks",
+			"Map picks to best matching rows. This is important "
+			"if picks created on BHN should be shown but only the BHZ trace "
+			"is part of the list. Network code, station code and location code "
+			"must match anyway."
+		)
 
 		& cfg(filters, "filter") // Deprecated for backward compatibility
 		& cfg(filters, "filters")
@@ -76,6 +84,7 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 		& cfg(initStartTime, "startAtNow")
 		& cfg(automaticSortEnabled, "resortAutomatically")
 		& cfg(showPicks, "showPicks")
+		& cfg(mapPicksToBestMatchingTrace, "mapPicks")
 		& cfg(autoApplyFilter, "autoApplyFilter")
 		& cfg(warnDataTimeRange, "warnDataTimeRange")
 
@@ -96,6 +105,7 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 	bool                     autoApplyFilter{false};
 	bool                     automaticSortEnabled{true};
 	bool                     showPicks{true};
+	bool                     mapPicksToBestMatchingTrace{false};
 	bool                     inventoryDisabled{false};
 	bool                     disableTimeWindowRequest{false};
 	int                      maxDelay{0};
