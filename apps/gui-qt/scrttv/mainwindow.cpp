@@ -3302,6 +3302,28 @@ bool MainWindow::addPick(Pick* pick, int refCount) {
 			item = view->item(streamID);
 		}
 
+		if ( !item && Settings::global.mapPicksToBestMatchingTrace ) {
+			// Map to location code
+			int rowCount = view->rowCount();
+
+			for ( int r = 0; r < rowCount; ++r ) {
+				auto rvitem = view->itemAt(r);
+				if ( rvitem->streamID().networkCode() != pick->waveformID().networkCode() ||
+				     rvitem->streamID().stationCode() != pick->waveformID().stationCode() ||
+				     rvitem->streamID().locationCode() != pick->waveformID().locationCode() ) {
+					continue;
+				}
+
+				item = rvitem;
+
+				if ( !rvitem->streamID().channelCode().compare(0, 2, pick->waveformID().channelCode()) ) {
+					// Channel code matches, found best match. Otherwise keep
+					// on searching and use the location code item as fallback.
+					break;
+				}
+			}
+		}
+
 		if ( item ) {
 			break;
 		}

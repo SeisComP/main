@@ -36,6 +36,14 @@
 					If enabled, picks are shown.
 				</description>
 			</parameter>
+			<parameter name="mapPicks" type="boolean" default="false">
+				<description>
+					Map picks to best matching rows. This is important
+					if picks created on BHN should be shown but only the BHZ trace
+					is part of the list. Network code, station code and location code
+					must match anyway.
+				</description>
+			</parameter>
 			<parameter name="filter" type="string">
 				<description>
 				Define the filter to be used when filtering is activated. This
@@ -492,7 +500,11 @@
 					(0 to disable).
 					</description>
 				</option>
-				<option long-flag="initially-visible-all" argument="" publicID="mode#initially-visible-all" param-ref="allTracesInitiallyVisible"/>
+				<option long-flag="start-at-now" argument="" publicID="mode#start-at-now">
+					<description>
+					Subscribe to data starting at now rather than now - bufferSize
+					</description>
+				</option>
 				<option long-flag="rt" argument="" publicID="mode#rt">
 					<description>
 					Do not ask for time window at data server. This might be
@@ -500,6 +512,14 @@
 					extraction.
 					</description>
 				</option>
+				<option long-flag="map-picks" argument="" publicID="mode#map-picks">
+					<description>
+					Map picks to best matching rows. This is important
+					if picks created on BHN should be shown but only the BHZ trace
+					is part of the list. Network code, station code and location code
+					must match anyway.
+					</description>
+				</parameter>
 			</group>
 
 			<group name="Cities">
