@@ -519,7 +519,7 @@
 					is part of the list. Network code, station code and location code
 					must match anyway.
 					</description>
-				</parameter>
+				</option>
 			</group>
 
 			<group name="Cities">
