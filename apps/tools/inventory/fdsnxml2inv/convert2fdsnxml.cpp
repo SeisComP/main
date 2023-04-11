@@ -1181,9 +1181,14 @@ bool Convert2FDSNStaXML::process(FDSNXML::Station *sx_sta,
 		try {
 			double clockDrift = datalogger->maxClockDrift();
 			double sr = sx_chan->sampleRate().value();
-			FDSNXML::ClockDriftType drift;
-			drift.setValue(clockDrift/sr);
-			sx_chan->setClockDrift(drift);
+			if ( sr > 0.0 ) {
+				FDSNXML::ClockDriftType drift;
+				drift.setValue(clockDrift/sr);
+				sx_chan->setClockDrift(drift);
+			}
+			else {
+				sx_chan->setClockDrift(Core::None);
+			}
 		}
 		catch ( ... ) {
 			sx_chan->setClockDrift(Core::None);
