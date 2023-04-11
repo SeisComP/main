@@ -82,7 +82,7 @@
 				</option>
 				<option flag="l" long-flag="list" argument="file">
 					<description>
-					Dump mode: Use a stream list file with time windows instead
+					Import, dump mode: Use a stream list file with time windows instead
 					of defined networks and channels (-n, -c and -t are ignored).
 					The list can be generated from events by scevtstreams. One
 					line per stream. Line format: starttime;endtime;streamID
@@ -102,9 +102,11 @@
 				</option>
 				<option flag="n" argument="networks">
 					<description>
-					Data stream selection as a comma separated list "stream1,stream2,streamX"
-					where each stream can be NET or NET.STA or NET.STA.LOC or NET.STA.LOC.CHA.
-					If CHA is omitted, it defaults to the value of -c option. Default: "*"
+					Import, dump mode: Data stream selection as a comma separated list 
+					"stream1,stream2,streamX" where each stream can be NET or NET.STA
+					or NET.STA.LOC or NET.STA.LOC.CHA.
+					If CHA is omitted, it defaults to the value of -c option. 
+					Default: "*"
 					</description>
 				</option>
 				<option flag="" long-flag="nslc" argument="file">
@@ -122,8 +124,8 @@
 				</option>
 				<option flag="" long-flag="rename" argument="rule">
 					<description>
-					Rename stream data according to the provided rule(s).
-					A rule is "[match-stream:]rename-stream" and match-stream
+					Import, dump mode: Rename stream data according to the provided
+					rule(s). A rule is "[match-stream:]rename-stream" and match-stream
 					is optional. match-stream and rename-stream are in the
 					"NET.STA.LOC.CHA" format. match-stream supports special
 					charactes "?" "*" "|" "(" ")". rename-stream supports the
