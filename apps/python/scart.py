@@ -494,32 +494,6 @@ class RecordRenamer:
 ####################################################################
 
 
-def compile_stream_pattern(streamList):
-    if not streamList:
-        return None
-
-    pattern = None
-    streams = []
-    try:
-        for stream in streamList:
-            if len(stream) != 6:
-                raise ValueError(
-                    f"Invalid stream definition: {stream}. Expected the 4 "
-                    "stream components NET.STA.LOC.CHA."
-                )
-            line = f"{stream[2]}.{stream[3]}.{stream[4]}.{stream[5]}"
-            streams.append(line)
-
-        if not streams:
-            raise ValueError("No stream definition found.")
-
-        pattern = re.compile("|".join(streams))
-    except Exception:
-        return None
-
-    return pattern
-
-
 def checkFile(fileName):
     """
     Check the miniSEED records in a file, report unsorted records.
@@ -704,6 +678,9 @@ def isFile(url):
     return len(toks) < 2 or toks[0] == "file"
 
 
+Stream = namedtuple("Stream", "net sta loc cha")
+
+
 def readStreamList(listFile):
     """
     Read list of streams from file
@@ -753,7 +730,7 @@ def readStreamList(listFile):
             )
             return []
 
-        streams.append((toks[0], toks[1], toks[2], toks[3]))
+        streams.append( Stream(toks[0], toks[1], toks[2], toks[3]) )
 
     f.close()
 
@@ -761,6 +738,9 @@ def readStreamList(listFile):
         return []
 
     return streams
+
+
+StreamTime = namedtuple("StreamTime", "tmin tmax net sta loc cha")
 
 
 def readStreamTimeList(listFile):
@@ -839,7 +819,9 @@ def readStreamTimeList(listFile):
             )
             return []
 
-        streams.append((tMin, tMax, toks[0], toks[1], toks[2], toks[3]))
+        streams.append(
+            StreamTime(tMin, tMax, toks[0], toks[1], toks[2], toks[3])
+        )
 
     f.close()
 
@@ -865,9 +847,9 @@ Verbosity:
 Mode:
   --check arg      Check mode: Check all files in the given directory structure
                    for erroneous miniSEED records. If no directory is given,
-                   $SEISCOMP_ROOT/var/lib/archive is scanned. Checks are only complete
-                   for files containing exactly one stream. More complete checks are
-                   made with scmssort.
+                   $SEISCOMP_ROOT/var/lib/archive is scanned. Checks are only
+                   complete for files containing exactly one stream. More
+                   complete checks are made with scmssort.
   -d, --dump       Export (dump) mode. Read from SDS archive.
   -I arg           Import mode: Specify a recordstream URL when in import mode.
                    When using another recordstream than file a
@@ -882,24 +864,27 @@ Processing:
                     start time
   --files arg       Dump mode: Specify the file handles to cache; default: 100
   -i, --ignore      Ignore records without data samples.
-  -l, --list arg    Dump mode: Use a stream list file with time windows instead of defined
-                    networks, channels and time window (-n, -c and -t are ignored). The
-                    list can be generated from events by scevtstreams. One line per
-                    stream. Line format: starttime;endtime;streamID
+  -l, --list arg    Import, dump mode: Use a stream list file with time windows
+                    instead of defined networks, channels and time window (-n,
+                    -c and -t are ignored).
+                    The list can be generated from events by scevtstreams. One
+                    line per stream. Line format: starttime;endtime;streamID
                         2007-03-28 15:48;2007-03-28 16:18;GE.LAST.*.*
                         2007-03-28 15:48;2007-03-28 16:18;GE.PMBI..BH?
   -m, --modify      Dump mode: Modify the record time for real time playback
                     when dumping.
-  -n arg            Data stream selection as a comma separated list
-                    "stream1,stream2,streamX" where each stream can be NET or
-                    NET.STA or NET.STA.LOC or NET.STA.LOC.CHA. If CHA is
-                    omitted, it defaults to the value of -c option.
+  -n arg            Import, dump mode: Data stream selection as a comma separated
+                    list "stream1,stream2,streamX" where each stream can be NET or
+                    NET.STA or NET.STA.LOC or NET.STA.LOC.CHA. If CHA is omitted,
+                    it defaults to the value of -c option.
                     Default: "*"
-  --nslc arg        Import, dump mode: Stream list file to be used instead of defined
-                    networks and channels (-n and -c are ignored) for filtering the data
-                    by the given streams. Dump mode: Use in combination with -t!
+  --nslc arg        Import, dump mode: Stream list file to be used instead of
+                    defined networks and channels (-n and -c are ignored) for
+                    filtering the data by the given streams. Dump mode: Use in
+                    combination with -t!
                     One line per stream, line format: NET.STA.LOC.CHA
-  --rename arg      Rename stream data according to the provided rule(s).
+  --rename arg      Import, dump mode: Rename stream data according to the
+                    provided rule(s).
                     A rule is "[match-stream:]rename-stream" and match-stream
                     is optional. match-stream and rename-stream are in the
                     "NET.STA.LOC.CHA" format. match-stream supports special
@@ -913,8 +898,8 @@ Processing:
   --speed arg       Dump mode: Specify the speed to dump the records. A value
                     of 0 means no delay. Otherwise speed is a multiplier of
                     the real time difference between the records.
-  -t t1~t2          Import, dump mode: UTC time window filter to be applied to the data
-                    streams in the format: "StartTime~EndTime"
+  -t t1~t2          Import, dump mode: UTC time window filter to be applied to
+                    the data streams in the format: "StartTime~EndTime"
                     e.g. "2022-12-20 12:00:00~2022-12-23 14:00:10".
 
 Output:
@@ -925,13 +910,13 @@ Output:
                     NET.STA.LOC.CHA StartTime EndTime records samples samplingRate.
   --stdout          Import mode: Write to stdout instead of creating a SDS
                     archive. Deactivated by --test and --output.
-  --test            Test input only, deactivate all miniSEED output. This switch is
-                    useful for debugging and printing stream information with
+  --test            Test input only, deactivate all miniSEED output. This switch
+                    is useful for debugging and printing stream information with
                     --print-streams.
   --with-filecheck  Import mode: Check all accessed files after import. Unsorted
-                    or unreadable files are reported to stderr. Checks are only complete
-                    for files containing exactly one stream. More complete checks are
-                    made with scmssort.
+                    or unreadable files are reported to stderr. Checks are only
+                    complete for files containing exactly one stream. More 
+                    complete checks are made with scmssort.
   --with-filename   Import mode: Print all accessed files to sterr after import.
 
 Examples:
@@ -1205,10 +1190,10 @@ def main():
     if listFile:
         streamFilter = readStreamTimeList(listFile)
         for stream in streamFilter:
-            if stream[0] >= stream[1]:
+            if stream.tmin >= stream.tmax:
                 print(
-                    f"Info: ignoring {stream[2]}.{stream[3]}.{stream[4]}.{stream[5]} - "
-                    f"start {stream[0]} after end {stream[1]}",
+                    f"Info: ignoring {stream.net}.{stream.sta}.{stream.loc}.{stream.cha} - "
+                    f"start {stream.tmin} after end {stream.tmax}",
                     file=sys.stderr,
                 )
                 continue
@@ -1217,24 +1202,26 @@ def main():
     elif nslcFile:
         streamFilter = readStreamList(nslcFile)
         for stream in streamFilter:
-            streams.append((tmin, tmax, *stream[:4]))
+            streams.append(
+                StreamTime(tmin, tmax, stream.net, stream.sta, stream.loc, stream.cha)
+            )
 
     elif not checkSDS:
         if networks == "*":
-            streams.append((tmin, tmax, "*", "*", "*", channels))
+            streams.append( StreamTime(tmin, tmax, "*", "*", "*", channels) )
         else:
             items = networks.split(",")
             for n in items:
                 n = n.strip()
                 nsl = n.split(".")
                 if len(nsl) == 1:
-                    streams.append((tmin, tmax, nsl[0], "*", "*", channels))
+                    streams.append( StreamTime(tmin, tmax, nsl[0], "*", "*", channels) )
                 elif len(nsl) == 2:
-                    streams.append((tmin, tmax, nsl[0], nsl[1], "*", channels))
+                    streams.append( StreamTime(tmin, tmax, nsl[0], nsl[1], "*", channels) )
                 elif len(nsl) == 3:
-                    streams.append((tmin, tmax, nsl[0], nsl[1], nsl[2], channels))
+                    streams.append( StreamTime(tmin, tmax, nsl[0], nsl[1], nsl[2], channels) )
                 elif len(nsl) == 4:
-                    streams.append((tmin, tmax, nsl[0], nsl[1], nsl[2], nsl[3]))
+                    streams.append( StreamTime(tmin, tmax, nsl[0], nsl[1], nsl[2], nsl[3]) )
                 else:
                     print(
                         "error: wrong format of -n option - stopping", file=sys.stderr
@@ -1245,12 +1232,12 @@ def main():
     if dump:
         for stream in streams:
             archiveIterator.append(
-                stream[0], stream[1], stream[2], stream[3], stream[4], stream[5]
+                stream.tmin, stream.tmax, stream.net, stream.sta, stream.loc, stream.cha
             )
             if verbose:
                 print(
-                    f"Adding stream to list: {stream[2]}.{stream[3]}.{stream[4]}."
-                    f"{stream[5]} {stream[0]} - {stream[1]}",
+                    f"Adding stream to list: {stream.net}.{stream.sta}.{stream.loc}."
+                    f"{stream.cha} {stream.tmin} - {stream.tmax}",
                     file=sys.stderr,
                 )
         stime = None
@@ -1417,32 +1404,29 @@ def main():
             )
             return -1
 
-        if isFile(recordURL):
-            if streams:
-                pattern = False
-                try:
-                    pattern = compile_stream_pattern(streams)
-                except ValueError:
-                    print("Error: stream filter not correctly read", file=sys.stderr)
-
-        else:
-            for stream in streams:
-                # Add stream to recordstream
-                if not rs.addStream(
-                    stream[2], stream[3], stream[4], stream[5], stream[0], stream[1]
-                ):
-                    print(
-                        f"error: adding stream: {stream[0]} {stream[1]} "
-                        f"{stream[2]}.{stream[3]}.{stream[4]}.{stream[5]}",
-                        file=sys.stderr,
-                    )
-                else:
-                    if verbose:
-                        print(
-                            f"adding stream: {stream[0]} {stream[1]} "
-                            f"{stream[2]}.{stream[3]}.{stream[4]}.{stream[5]}",
-                            file=sys.stderr,
-                        )
+        # Add time/stream selections to recordstream
+        for stream in streams:
+            done = False
+            # If the input is a file, then the time window is not mandatory
+            if stream.tmin is None and stream.tmax is None and isFile(recordURL):
+                if (stream.net != "*" or stream.sta != "*" or stream.loc != "*" or stream.cha != "*"):
+                    done = rs.addStream(stream.net, stream.sta, stream.loc, stream.cha)
+            else:
+                done = rs.addStream(
+                    stream.net, stream.sta, stream.loc, stream.cha, stream.tmin, stream.tmax
+                )
+            if not done:
+                print(
+                    f"error: adding stream: {stream.tmin} {stream.tmax} "
+                    f"{stream.net}.{stream.sta}.{stream.loc}.{stream.cha}",
+                    file=sys.stderr,
+                )
+            elif verbose:
+                print(
+                    f"adding stream: {stream.tmin} {stream.tmax} "
+                    f"{stream.net}.{stream.sta}.{stream.loc}.{stream.cha}",
+                    file=sys.stderr,
+                )
 
         inputRecord = seiscomp.io.RecordInput(
             rs, seiscomp.core.Array.INT, seiscomp.core.Record.SAVE_RAW
@@ -1467,20 +1451,11 @@ def main():
                     if ignoreRecords:
                         continue
 
-                if isFile(recordURL) or printStreams:
+                if printStreams:
                     stream = f"{rec.networkCode()}.{rec.stationCode()}.{rec.locationCode()}.{rec.channelCode()}"
                     recStart = rec.startTime()
                     recEnd = rec.endTime()
 
-                if isFile(recordURL):
-                    if pattern and not bool(pattern.match(stream)):
-                        continue
-                    if tmax and recStart > tmax:
-                        continue
-                    if tmin and recEnd < tmin:
-                        continue
-
-                if printStreams:
                     if stream in streamDict:
                         streamStart, streamEnd, streamNRec, streamNSamp = streamDict[
                             stream
