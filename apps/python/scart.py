@@ -1101,10 +1101,10 @@ def main():
         )
         return -1
 
-    # Import and Dump mode require either -l or -t option.
-    # However if a miniseed file is specified in Input mode then neither -l nor -t
-    # option is required
-    if not checkSDS and not listFile and (dump or not isFile(recordURL)):
+    # Import and Dump mode require either -l or -t option. The only exception is
+    # when a file is given in input to Import mode where the time window is
+    # optional
+    if not listFile and (dump or (importMode and not isFile(recordURL))):
         if not tmin or not tmax:
             print(
                 "Info: provide a time window with '-t' when '--list' is "
@@ -1409,7 +1409,11 @@ def main():
             done = False
             # If the input is a file, then the time window is not mandatory
             if stream.tmin is None and stream.tmax is None and isFile(recordURL):
-                if (stream.net != "*" or stream.sta != "*" or stream.loc != "*" or stream.cha != "*"):
+                if stream.net == stream.sta == stream.loc == stream.cha == "*":
+                    # skip the default *.*.*.* filter (redundant) because old
+                    # versions of File RecordStream do not support wildcards
+                    done = True
+                else:
                     done = rs.addStream(stream.net, stream.sta, stream.loc, stream.cha)
             else:
                 done = rs.addStream(
