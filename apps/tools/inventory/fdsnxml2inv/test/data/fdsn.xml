@@ -122,11 +122,11 @@
               <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
               <NormalizationFactor>608949.7872</NormalizationFactor>
               <NormalizationFrequency>1</NormalizationFrequency>
-              <Zero number="4">
+              <Zero number="0">
                 <Real>0</Real>
                 <Imaginary>0</Imaginary>
               </Zero>
-              <Zero number="5">
+              <Zero number="1">
                 <Real>0</Real>
                 <Imaginary>0</Imaginary>
               </Zero>
