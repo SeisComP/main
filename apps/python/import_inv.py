@@ -104,10 +104,13 @@ class Importer(seiscomp.client.Application):
             return False
 
         files = glob.glob(path)
+        formats = []
         for f in files:
             prog = os.path.basename(f)
-            prog = prog[:prog.find("2inv")]
-            sys.stdout.write("%s\n" % prog)
+            formats.append(prog[:prog.find("2inv")])
+
+        formats.sort()
+        sys.stdout.write("%s\n" % "\n".join(formats))
 
         return True
 
