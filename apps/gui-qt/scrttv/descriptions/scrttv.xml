@@ -51,7 +51,7 @@
 				overridden. This option is mainly for backward compatibility.
 				</description>
 			</parameter>
-			<parameter name="filters" type="list:string" default="&quot;RMHP(2)>>ITAPER(5)>>BW(3,0.5,8.0)&quot;">
+			<parameter name="filters" type="list:string" default="&quot;RMHP(2)>>ITAPER(5)>>BW(3,0.5,8.0)&quot;,&quot;RMHP(2)>>ITAPER(5)>>BW_HP(3, 3)&quot;">
 				<description>
 					Define a list of filters that is cycles through when pressing 'f'.
 					This options supersedes the filter option. If not defined then
