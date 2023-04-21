@@ -98,14 +98,16 @@ class App : public Kicker<MainWindow> {
 
 			if ( Settings::global.offline ) {
 				setMessagingEnabled(false);
-				setDatabaseEnabled(false, false);
 				setLoadConfigModuleEnabled(false);
+				setDatabaseEnabled(false, false);
 			}
 
 			// Disable database access if an inventory xml file is given
 			// as a command line argument.
-			if ( !isInventoryDatabaseEnabled() && !isConfigDatabaseEnabled() )
+			if ( Settings::global.inventoryDisabled
+			  || (!isInventoryDatabaseEnabled() && !isConfigDatabaseEnabled()) ) {
 				setDatabaseEnabled(false, false);
+			}
 
 			if ( commandline().hasOption("record-file") ) {
 				//setMessagingEnabled(false);
