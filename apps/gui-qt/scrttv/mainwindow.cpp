@@ -44,6 +44,7 @@
 #include <QLineEdit>
 #include <QMessageBox>
 
+#include <map>
 #include <set>
 #include <fstream>
 
@@ -2029,6 +2030,10 @@ void MainWindow::openAcquisition() {
 					continue;
 				}
 
+				if ( stream == "default" ) {
+					continue;
+				}
+
 				vector<string> tokens;
 				Core::split(tokens, stream, ".", false);
 
@@ -2104,18 +2109,58 @@ void MainWindow::openXML() {
 
 	cerr << "Loaded " << ep->pickCount() << " picks" << endl;
 
+	map<string, int> arrivalPicks;
+
+	for ( size_t i = 0; i < ep->originCount(); ++i ) {
+		auto org = ep->origin(i);
+		try {
+			if ( org->evaluationStatus() == REJECTED ) {
+				continue;
+			}
+		}
+		catch ( ... ) {}
+
+		for ( size_t j = 0; j < org->arrivalCount(); ++j ) {
+			auto arr = org->arrival(j);
+			auto itp = arrivalPicks.insert(map<string, int>::value_type(arr->pickID(), 0));
+			++itp.first->second;
+		}
+	}
+
+
 	int accepted = 0, rejected = 0;
 	for ( size_t i = 0; i < ep->pickCount(); ++i ) {
-		if ( addPick(ep->pick(i), 0) )
-			++accepted;
-		else
+		int refCount;
+
+		auto it = arrivalPicks.find(ep->pick(i)->publicID());
+		if ( it != arrivalPicks.end() ) {
+			refCount = it->second;
+		}
+		else {
+			refCount = 0;
+		}
+
+		auto registeredPick = Pick::Find(ep->pick(i)->publicID());
+		if ( registeredPick ) {
 			++rejected;
+			SC_FMT_WARNING("{}: pick already loaded", ep->pick(i)->publicID());
+			continue;
+		}
+
+		ep->pick(i)->registerMe();
+
+		if ( addPick(ep->pick(i), refCount) ) {
+			++accepted;
+		}
+		else {
+			++rejected;
+		}
 	}
+
+	qApp->restoreOverrideCursor();
 
 	QMessageBox::information(this, "Load XML", tr("Added %1/%2 picks")
 	                         .arg(accepted).arg(accepted+rejected));
-
-	qApp->restoreOverrideCursor();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
