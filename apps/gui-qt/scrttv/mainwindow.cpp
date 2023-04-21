@@ -1562,6 +1562,8 @@ void MainWindow::loadFiles() {
 
 	_traceViews.front()->setUpdatesEnabled(false);
 
+	_lastRecordTime = Core::Time();
+
 	for ( size_t i = 0; i < _dataFiles.size(); ++i ) {
 		RecordStream::File file;
 		file.setRecordType("mseed");
@@ -1587,7 +1589,11 @@ void MainWindow::loadFiles() {
 		Util::StopWatch t;
 
 		for ( Record *rec : input ) {
-			_traceViews.front()->feed(rec);
+			if ( _traceViews.front()->feed(rec) ) {
+				if ( !_lastRecordTime.valid() || _lastRecordTime < rec->endTime() ) {
+					_lastRecordTime = rec->endTime();
+				}
+			}
 		}
 
 		cout << "(" << t.elapsed() << " sec)" << endl;
@@ -1595,6 +1601,7 @@ void MainWindow::loadFiles() {
 
 	Core::TimeWindow tw = _traceViews.front()->coveredTimeRange();
 	_originTime = tw.endTime();
+	_bufferSize = tw.endTime() - tw.startTime();
 
 	TRACEVIEWS(setAlignment(_originTime));
 	TRACEVIEWS(setBufferSize(tw.length()));
