@@ -72,7 +72,6 @@ int main(int argc, char* argv[])
 
 	if (variableMap.count("verbose"))
 	{
-		Seiscomp::Logging::init(argc, argv);
 		Seiscomp::Logging::enableConsoleLogging(
 		    Seiscomp::Logging::getComponentAll("scplot"));
 	}
