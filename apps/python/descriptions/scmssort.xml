@@ -37,6 +37,11 @@
 						NSLC lists may be generated, e.g., using scinv.
 					</description>
 				</option>
+				<option flag="o" long-flag="output">
+					<description>
+					Name of output file for miniSEED data (default is stdout).
+					</description>
+				</option>
 				<option flag="r" long-flag="rm">
 					<description>
 						Remove all traces in stream list given by --list
