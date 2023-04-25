@@ -2143,7 +2143,7 @@ void MainWindow::openXML() {
 		auto registeredPick = Pick::Find(ep->pick(i)->publicID());
 		if ( registeredPick ) {
 			++rejected;
-			SC_FMT_WARNING("{}: pick already loaded", ep->pick(i)->publicID());
+			SEISCOMP_WARNING("%s: pick already loaded", ep->pick(i)->publicID().c_str());
 			continue;
 		}
 
