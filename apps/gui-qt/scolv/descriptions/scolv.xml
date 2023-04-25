@@ -752,6 +752,9 @@
 				<option flag="" long-flag="offline" argument="">
 					<description>Switch to offline mode</description>
 				</option>
+				<option flag="i" long-flag="input-file" argument="xml">
+					<description>Load events in given XML file during startup and switch to offline mode</description>
+				</option>
 				<option flag="" long-flag="load-event-db" argument="arg">
 					<description>Number of days to load from database</description>
 				</option>
