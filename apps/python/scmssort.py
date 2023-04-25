@@ -119,6 +119,12 @@ scmssort -v -E -t '2007-03-28 15:48~2007-03-28 16:18' \
         "expressions are considered. Example: CX.*..BH?.",
     )
     p.add_argument(
+        "-o",
+        "--output",
+        action="store",
+        help="Name of output file for miniSEED data (default is stdout).",
+    )
+    p.add_argument(
         "-r",
         "--rm",
         action="store_true",
@@ -346,6 +352,10 @@ def main():
     # stream filter
     pattern = compile_stream_pattern(opt)
 
+    outputFile = None
+    if opt.output:
+        outputFile = opt.output
+
     # record buffer to be sorted later on, each item is a tuple of
     # (delta_time, raw_binary_record_data)
     rec_buf = []
@@ -487,6 +497,17 @@ def main():
     info(f"Writing {buf_len} records")
     prev_rec = None
     duplicates = 0
+
+    if outputFile:
+        print(f"Output data to file: {outputFile}", file=sys.stderr)
+        try:
+            out = open(outputFile, "wb")
+        except Exception:
+            print("Cannot create output file {outputFile}", file=sys.stderr)
+            return -1
+    else:
+        out = sys.stdout.buffer
+
     for _t, rec in rec_buf:
         if rec == prev_rec:
             duplicates += 1
@@ -495,7 +516,7 @@ def main():
         else:
             prev_rec = rec
 
-        sys.stdout.buffer.write(rec)
+        out.write(rec)
 
     # statistics about records written
     if info_enabled():
