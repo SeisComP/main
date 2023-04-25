@@ -159,6 +159,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 
 	public:
 		void start();
+		void openFile(const std::string &filename);
 
 
 	private slots:

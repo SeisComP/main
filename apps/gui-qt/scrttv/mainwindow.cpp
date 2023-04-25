@@ -2082,16 +2082,11 @@ void MainWindow::openAcquisition() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MainWindow::openXML() {
-	QString filename = QFileDialog::getOpenFileName(this,
-		tr("Open XML file"), "", tr("XML files (*.xml);;All (*.*)"));
-
-	if ( filename.isEmpty() ) return;
-
+void MainWindow::openFile(const std::string &filename) {
 	qApp->setOverrideCursor(Qt::WaitCursor);
 
 	IO::XMLArchive ar;
-	ar.open(filename.toStdString().c_str());
+	ar.open(filename.c_str());
 
 	bool regWasEnabled = PublicObject::IsRegistrationEnabled();
 	PublicObject::SetRegistrationEnabled(false);
@@ -2161,6 +2156,20 @@ void MainWindow::openXML() {
 
 	QMessageBox::information(this, "Load XML", tr("Added %1/%2 picks")
 	                         .arg(accepted).arg(accepted+rejected));
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::openXML() {
+	QString filename = QFileDialog::getOpenFileName(this,
+		tr("Open XML file"), "", tr("XML files (*.xml);;All (*.*)"));
+
+	if ( filename.isEmpty() ) return;
+
+	openFile(filename.toStdString());
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
