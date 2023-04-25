@@ -467,6 +467,12 @@
 				<optionReference>records#record-type</optionReference>
 			</group>
 
+			<group name="Options">
+				<option flag="i" long-flag="input-file" argument="xml">
+					<description>Load picks in given XML file during startup</description>
+				</option>
+			</group>
+
 			<group name="Mode">
 				<option long-flag="filter" argument="arg" publicID="mode#filter" param-ref="filter"/>
 				<option long-flag="offline" argument="" publicID="mode#offline">

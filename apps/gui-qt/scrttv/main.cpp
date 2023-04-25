@@ -139,6 +139,9 @@ class App : public Kicker<MainWindow> {
 
 		void setupUi(MainWindow *w) override {
 			w->start();
+			if ( !Settings::global.inputFile.empty() ) {
+				w->openFile(Settings::global.inputFile);
+			}
 		}
 };
 
