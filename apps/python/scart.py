@@ -1608,6 +1608,14 @@ def main():
                     print(fileName, file=sys.stderr)
 
     if printStreams and streamDict:
+        minTime = seiscomp.core.Time.GMT()
+        maxTime = str2time("1970-01-01 00:00:00")
+        totalRecs = 0
+        totalSamples = 0
+        totalChans = set()
+        totalNetworks = set()
+        totalStations = set()
+
         print(
             "# streamID       start                       end                         "
             "records samples samplingRate",
@@ -1618,6 +1626,47 @@ def main():
                 f"{key: <{16}} {start: <{27}} {end: <{27}} {nRecs} {nSamples} {sps}",
                 file=sys.stderr,
             )
+
+            if maxTime < str2time(end):
+                maxTime = str2time(end)
+
+            if minTime > str2time(start):
+                minTime = str2time(start)
+
+            totalChans.add(key)
+            totalNetworks.add(key.split(".")[0])
+            totalStations.add(f"{key.split('.')[0]}.{key.split('.')[1]}")
+            totalRecs += nRecs
+            totalSamples += nSamples
+
+        print(
+            "# Summary",
+            file=sys.stderr,
+        )
+        print(
+            f"#   time range: {minTime.iso()} - {maxTime.iso()}",
+            file=sys.stderr,
+        )
+        print(
+            f"#   networks:   {len(totalNetworks)}",
+            file=sys.stderr,
+        )
+        print(
+            f"#   stations:   {len(totalStations)}",
+            file=sys.stderr,
+        )
+        print(
+            f"#   streams:    {len(totalChans)}",
+            file=sys.stderr,
+        )
+        print(
+            f"#   records:    {totalRecs}",
+            file=sys.stderr,
+        )
+        print(
+            f"#   samples:    {totalSamples}",
+            file=sys.stderr,
+        )
 
 
 if __name__ == "__main__":
