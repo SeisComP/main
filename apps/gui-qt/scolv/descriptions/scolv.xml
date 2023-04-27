@@ -585,12 +585,21 @@
 				</parameter>
 				<parameter name="uncertainties" type="list:string" unit="s">
 					<description>
-						List of pre-defined pick uncertainties.
-						The format of each list item is either a double value or a pair of
-						double values for asymmetric uncertainties, e.g.
-						&quot;val1&quot;,&quot;(val2,val3)&quot;.
-						This parameter is only used if &quot;picker.uncertainties.preferred&quot;
-						is undefined.
+					List of pre-defined pick uncertainties.
+					The format of each list item is either a double value or a pair of
+					double values for asymmetric uncertainties, e.g.
+					&quot;val1&quot;,&quot;(val2,val3)&quot;.
+					This parameter is only used if &quot;picker.uncertainties.preferred&quot;
+					is undefined.
+					</description>
+				</parameter>
+				<parameter name="componentFollowsMouse" type="boolean" default="false">
+					<description>
+					If enabled then the currently selected component for all traces
+					will be activated according to the mouse position in the
+					zoom trace (old behaviour). If disabled (default) then only
+					the component of the zoom trace will change but the overall
+					component will stay the same. It must be changed explicitely.
 					</description>
 				</parameter>
 				<group name="phases">
