@@ -38,7 +38,7 @@
 					<description>Dumps the filtered traces to ASCII when using -O.</description>
 				</option>
 			</group>
-			
+
 			<group name="Verbosity">
 				<optionReference>verbosity#verbosity</optionReference>
 				<optionReference>verbosity#v</optionReference>
@@ -50,7 +50,7 @@
 				<optionReference>verbosity#debug</optionReference>
 				<optionReference>verbosity#log-file</optionReference>
 			</group>
-			
+
 			<group name="Messaging">
 				<optionReference>messaging#user</optionReference>
 				<optionReference>messaging#host</optionReference>
@@ -65,7 +65,7 @@
 					</description>
 				</option>
 			</group>
-			
+
 			<group name="Database">
 				<optionReference>database#db-driver-list</optionReference>
 				<optionReference>database#database</optionReference>
@@ -91,12 +91,19 @@
 					contains the amplitudes.
 					</description>
 				</option>
+				<option flag="p" long-flag="picks">
+					<description>
+					Force measuring amplitudes for picks only. Origins are
+					ignored and time windows are independent of distance. Works
+					only in combination with --ep.
+					</description>
+				</option>
 				<option long-flag="reprocess">
 					<description>
-					Reprocess and update existing amplitudes in combination with --ep.
-					Manual amplitudes will be skipped.
-					This option can be used, e.g. for reprocessing amplitudes with
-					new inventory information. Waveform access is required.
+					Reprocess and update existing amplitudes. Manual amplitudes
+					will be skipped. Works only in combination with --ep.
+					This option can be used, e.g., for reprocessing amplitudes
+					with new inventory information. Waveform access is required.
 					</description>
 				</option>
 			</group>
