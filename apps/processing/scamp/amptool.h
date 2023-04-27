@@ -77,7 +77,7 @@ class AmpTool : public Seiscomp::Client::StreamApplication {
 		typedef std::pair<AmplitudeMap::iterator, AmplitudeMap::iterator>     AmplitudeRange;
 		typedef std::map<std::string, Seiscomp::DataModel::AmplitudePtr>      SingleAmplitudeMap;
 
-		void process(Seiscomp::DataModel::Origin *origin);
+		void process(Seiscomp::DataModel::Origin *origin = nullptr, Seiscomp::DataModel::Pick *pick = nullptr);
 
 		void feed(Seiscomp::DataModel::Pick *pick);
 		void feed(Seiscomp::DataModel::Amplitude *amp);
@@ -134,9 +134,9 @@ class AmpTool : public Seiscomp::Client::StreamApplication {
 		typedef Seiscomp::DataModel::EventParametersPtr                       EventParametersPtr;
 
 		StreamMap                  _streams;
-		double                     _fExpiry;
-		double                     _fetchMissingAmplitudes;
-		double                     _minWeight;
+		double                     _fExpiry{1.0};
+		bool                       _fetchMissingAmplitudes{true};
+		double                     _minWeight{0.5};
 		std::string                _originID;
 		std::string                _strTimeWindowStartTime;
 		std::string                _strTimeWindowEndTime;
@@ -156,12 +156,13 @@ class AmpTool : public Seiscomp::Client::StreamApplication {
 		bool                       _firstRecord;
 		bool                       _dumpRecords;
 		bool                       _reprocessAmplitudes;
-		bool                       _forceReprocessing;
+		bool                       _forceReprocessing{false};
+		bool                       _picks{false};
 		std::string                _epFile;
 		EventParametersPtr         _ep;
 
-		double                     _initialAcquisitionTimeout;
-		double                     _runningAcquisitionTimeout;
+		double                     _initialAcquisitionTimeout{30.0};
+		double                     _runningAcquisitionTimeout{2.0};
 		double                     _acquisitionTimeout;
 		bool                       _hasRecordsReceived;
 
