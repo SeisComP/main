@@ -154,7 +154,7 @@ GridPoint::feed(const Pick* pick)
 		// TODO at this point probably an exception should be thrown
 		SEISCOMP_ERROR("Nucleator: station '%s' not found", key.c_str());
 		return NULL;
-		
+
 	}
 
 	// At this point we hold a "wrapper" which wraps a station and adds a
@@ -198,14 +198,14 @@ GridPoint::feed(const Pick* pick)
 		_cnt[i] = _flg[i] = 0;
 	}
 	for (int i=0; i<npick; i++) {
-		
+
 		ProjectedPick &ppi = pps[i];
 		double t_i   = ppi.projectedTime();
 		double azi_i = ppi.wrapper->azimuth;
 		double slo_i = ppi.wrapper->hslow;
 
 		for (int k=i; k<npick; k++) {
-			
+
 			ProjectedPick &ppk = pps[k];
 			double t_k   = ppk.projectedTime();
 			double azi_k = ppk.wrapper->azimuth;
@@ -223,7 +223,7 @@ GridPoint::feed(const Pick* pick)
 			}
 		}
 	}
-	
+
 	int sum=0;
 	for (int i=0; i<npick; i++)
 		sum += _flg[i];
@@ -561,7 +561,7 @@ bool GridSearch::feed(const Pick *pick)
 
 		// look at the origin, check whether
 		//  * it fulfils certain minimum criteria
-		//  * we have already seen a similar but better origin 
+		//  * we have already seen a similar but better origin
 
 		// test minimum number of picks
 		if (origin->arrivals.size() < 6) // TODO: make this limit configurable
@@ -649,7 +649,7 @@ bool GridSearch::feed(const Pick *pick)
 			}
 		}
 	}
-	
+
 
 	// Now for all "candidate" origins in tempOrigins try to find the
 	// "best" one. This is a bit problematic as we don't go back and retry

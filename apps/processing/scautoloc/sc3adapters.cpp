@@ -50,7 +50,7 @@ void delazi(const Hypocenter *hypo, const Station *station,
 	Seiscomp::Math::Geo::delazi(
 		   hypo->lat,    hypo->lon,
 		station->lat, station->lon,
-		&delta, &az1, &az2);	
+		&delta, &az1, &az2);
 }
 
 Seiscomp::Core::Time sc3time(const Time &time)
@@ -130,7 +130,7 @@ Seiscomp::DataModel::Origin *Autoloc::convertToSC3(const Autoloc::Origin* origin
 		}
 */
 		const Seiscomp::DataModel::Phase phase(arr.phase);
-		Seiscomp::DataModel::ArrivalPtr sc3arr 
+		Seiscomp::DataModel::ArrivalPtr sc3arr
 		    = new Seiscomp::DataModel::Arrival();
 		sc3arr->setPickID(   arr.pick->id);
 		sc3arr->setDistance( arr.distance);
@@ -157,7 +157,7 @@ Seiscomp::DataModel::Origin *Autoloc::convertToSC3(const Autoloc::Origin* origin
 			sc3pick->setTime(sc3tq);
 			sc3pick->setPhaseHint(phase);
 
-			if (arr.pick->status == Autoloc::Pick::Manual)
+			if (arr.pick->mode == Autoloc::Pick::Manual)
 				sc3pick->setEvaluationMode(Seiscomp::DataModel::EvaluationMode(Seiscomp::DataModel::MANUAL));
 			else
 				sc3pick->setEvaluationMode(Seiscomp::DataModel::EvaluationMode(Seiscomp::DataModel::AUTOMATIC));
@@ -285,8 +285,8 @@ Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC3(const Seis
 	Seiscomp::DataModel::OriginDepthType dtype = sc3origin->depthType();
 	if ( dtype == Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::FROM_LOCATION) )
 		origin->depthType = ::Autoloc::Origin::DepthFree;
-	
-	else if ( dtype == Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::OPERATOR_ASSIGNED) ) 
+
+	else if ( dtype == Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::OPERATOR_ASSIGNED) )
 		origin->depthType = ::Autoloc::Origin::DepthManuallyFixed;
 	}
 	catch(...) {
@@ -321,7 +321,7 @@ Autoloc::Pick *Seiscomp::Applications::Autoloc::App::convertFromSC3(const Seisco
 	// that ID exists already. Make sure this cannot happen!
 	::Autoloc::Pick* pick = new ::Autoloc::Pick(id,net,sta,time);
 
-	pick->status = ::Autoloc::Utils::status(sc3pick);
+	pick->mode = ::Autoloc::Utils::mode(sc3pick);
 	pick->loc = sc3pick->waveformID().locationCode();
 	pick->cha = sc3pick->waveformID().channelCode();
 

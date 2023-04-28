@@ -35,7 +35,7 @@ Pick::Pick()
 {
 	amp = snr = per = normamp = 0;
 	xxl = false;
-	status = Automatic;
+	mode = Automatic;
 	_pickCount++;
 	id = "";
 //	orid1 = orid2 = 0;
@@ -44,7 +44,7 @@ Pick::Pick()
 }
 
 Pick::Pick(const Pick &other)
-	: id(other.id), net(other.net), sta(other.sta), loc(other.loc), cha(other.cha), time(other.time), amp(other.amp), per(other.per), snr(other.snr), normamp(other.normamp), status(other.status), xxl(other.xxl)
+	: id(other.id), net(other.net), sta(other.sta), loc(other.loc), cha(other.cha), time(other.time), amp(other.amp), per(other.per), snr(other.snr), normamp(other.normamp), mode(other.mode), xxl(other.xxl)
 {
 	setStation(other.station());
 }
@@ -56,7 +56,7 @@ Pick::Pick(const std::string &id, const std::string &net, const std::string &sta
 	xxl = false;
 	_station = NULL;
 	_origin = NULL;
-	status = Automatic;
+	mode = Automatic;
 	_pickCount++;
 }
 

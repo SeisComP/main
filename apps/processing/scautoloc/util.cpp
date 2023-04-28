@@ -57,20 +57,20 @@ std::string printOneliner(const Origin *origin)
 
 bool automatic(const Pick *pick)
 {
-	return pick->status == Pick::Automatic;
+	return pick->mode == Pick::Automatic;
 }
 
 bool ignored(const Pick *pick)
 {
-	return pick->status == Pick::IgnoredAutomatic;
+	return pick->mode == Pick::IgnoredAutomatic;
 }
 
 bool manual(const Pick *pick)
 {
-	return pick->status == Pick::Manual;
+	return pick->mode == Pick::Manual;
 }
 
-char statusFlag(const Pick *pick)
+char modeFlag(const Pick *pick)
 {
 	return automatic(pick) ? 'A' : 'M';
 }
@@ -291,7 +291,7 @@ std::string printOrigin(const Origin *origin, bool oneliner)
 			out	<< std::right
 				<< std::setiosflags(std::ios::fixed)
 				<< std::setw(6) << arr.residual << " "
-				<< ((arr.pick->status == Pick::Automatic) ?"A":"M") // << " "
+				<< ((arr.pick->mode == Pick::Automatic) ?"A":"M") // << " "
 				<< excludedFlag << " "
 				<< std::left << std::setw(6) << arr.phase << " "
 				<< (arr.pick->xxl ? "XXL":"   ");
@@ -403,10 +403,10 @@ Pick* readPickLine()
 	pick->snr  = snr;
 
 	switch(stat) {
-	case 'A': pick->status = Pick::Automatic ; break;
-	case 'C': pick->status = Pick::Confirmed ; break;
-	case 'M': pick->status = Pick::Manual    ; break;
-	default: SEISCOMP_ERROR("Pick status: %c", stat);
+	case 'A': pick->mode = Pick::Automatic ; break;
+	case 'C': pick->mode = Pick::Confirmed ; break;
+	case 'M': pick->mode = Pick::Manual    ; break;
+	default: SEISCOMP_ERROR("Pick mode: %c", stat);
 	}
 
 	return pick;
@@ -419,12 +419,12 @@ PickVector readPickFile()
 	PickPtr pick = 0;
 
 	while ( (pick = readPickLine()) != NULL)
-		picks.push_back(pick);	
+		picks.push_back(pick);
 
 	return picks;
 }
 
-Pick::Status status(const Seiscomp::DataModel::Pick *pick) {
+Pick::Mode mode(const Seiscomp::DataModel::Pick *pick) {
 	try {
 		switch ( pick->evaluationMode() ) {
 			case Seiscomp::DataModel::AUTOMATIC:

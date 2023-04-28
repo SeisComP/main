@@ -81,6 +81,16 @@ App::~App() {}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+void App::printUsage() const {
+	cout << "Usage:"  << endl << "  scautoloc [options]" << endl << endl
+	     << "Associator of P-phase picks for locating seismic events." << endl;
+
+	Seiscomp::Client::Application::printUsage();
+
+	cout << "Examples:" << endl;
+	cout << "Real-time processing with informative debug output." << endl
+	     << "  scautoloc --debug" << endl;
+}
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -88,60 +98,134 @@ void App::createCommandLineDescription() {
 	Client::Application::createCommandLineDescription();
 
 	commandline().addGroup("Mode");
-	commandline().addOption("Mode", "test", "Do not send any object");
-	commandline().addOption("Mode", "offline", "Do not connect to a messaging server. Instead a station-locations.conf file can be provided. This implies --test and --playback");
-	commandline().addOption("Mode", "playback", "Flush origins immediately without delay");
+	commandline().addOption("Mode", "test", "Do not send any object.");
+	commandline().addOption("Mode", "offline",
+	                        "Do not connect to a messaging server. Instead a "
+	                        "station-locations.conf file can be provided. This "
+	                        "implies --test and --playback.");
+	commandline().addOption("Mode", "playback",
+	                        "Flush origins immediately without delay.");
 	commandline().addOption("Mode", "xml-playback", "TODO"); // TODO
 	commandline().addGroup("Input");
-	commandline().addOption("Input", "input,i", "XML input file for --xml-playback",&_inputFileXML, false);
-	commandline().addOption("Input", "ep", "Event parameters XML file for offline processing of all contained picks and amplitudes" ,&_inputEPFile, false);
+	commandline().addOption("Input", "input,i",
+	                        "Name of XML input file for --xml-playback.",
+	                        &_inputFileXML, false);
+	commandline().addOption("Input", "ep",
+	                        "Name of input XML file (SCML) with all picks and"
+	                        "origins for offline processing. The database"
+	                        "connection is not received from messaging and must"
+	                        "be provided. Results are sent in XML to stdout." ,
+	                        &_inputEPFile, false);
 
 	commandline().addGroup("Settings");
-	commandline().addOption("Settings", "station-locations", "The station-locations.conf file to use when in offline mode. If no file is given the database is used.", &_stationLocationFile, false);
-	commandline().addOption("Settings", "station-config", "The station configuration file", &_config.staConfFile, false);
-	commandline().addOption("Settings", "grid", "The grid configuration file", &_gridConfigFile, false);
-	commandline().addOption("Settings", "pick-log", "The pick log file. Providing a "
-	                        "file name enables logging picks even when disabled by configuration.",
+	commandline().addOption("Settings", "allow-rejected-picks",
+	                        "Allow picks with evaluation status 'rejected' for"
+	                        "nucleation and association.");
+	commandline().addOption("Settings", "station-locations",
+	                        "The station-locations.conf file to use when in"
+	                        "offline mode. If no file is given the database is used.",
+	                        &_stationLocationFile, false);
+	commandline().addOption("Settings", "station-config",
+	                        "The station configuration file.",
+	                        &_config.staConfFile, false);
+	commandline().addOption("Settings", "grid", "The grid configuration file.",
+	                        &_gridConfigFile, false);
+	commandline().addOption("Settings", "pick-log",
+	                        "The pick log file. Providing a file name enables "
+	                        "logging picks even when disabled by configuration.",
 	                        &_config.pickLogFile, false);
 
-	commandline().addOption("Settings", "default-depth", "Default depth for locating", &_config.defaultDepth);
-	commandline().addOption("Settings", "default-depth-stickiness", "", &_config.defaultDepthStickiness);
-	commandline().addOption("Settings", "max-sgap", "Maximum secondary azimuthal gap", &_config.maxAziGapSecondary);
-	commandline().addOption("Settings", "max-rms", "Maximum RMS residual"
+	commandline().addOption("Settings", "default-depth",
+	                        "Default depth for locating",
+	                        &_config.defaultDepth);
+	commandline().addOption("Settings", "default-depth-stickiness",
+	                        "",
+	                        &_config.defaultDepthStickiness);
+	commandline().addOption("Settings", "max-sgap",
+	                        "Maximum secondary azimuthal gap.",
+	                        &_config.maxAziGapSecondary);
+	commandline().addOption("Settings", "max-rms", "Maximum RMS residual."
 	                        "to be considered", &_config.maxRMS);
 	commandline().addOption("Settings", "max-residual", "Maximum travel-time residual"
-	                        "per station to be considered", &_config.maxResidualUse);
-	commandline().addOption("Settings", "max-station-distance", "Maximum distance of stations to be used", &_config.maxStaDist);
-	commandline().addOption("Settings", "max-nucleation-distance-default", "Default maximum distance of stations to be used for nucleating new origins", &_config.defaultMaxNucDist);
-	commandline().addOption("Settings", "min-pick-affinity", "", &_config.minPickAffinity);
+	                        " per station to be considered.",
+	                        &_config.maxResidualUse);
+	commandline().addOption("Settings", "max-station-distance",
+	                        "Maximum distance of stations to be used.",
+	                        &_config.maxStaDist);
+	commandline().addOption("Settings", "max-nucleation-distance-default",
+	                        "Default maximum distance of stations to be used for"
+	                        " nucleating new origins.",
+	                        &_config.defaultMaxNucDist);
+	commandline().addOption("Settings", "min-pick-affinity", "",
+	                        &_config.minPickAffinity);
 
-	commandline().addOption("Settings", "min-phase-count", "Minimum number of picks for an origin to be reported", &_config.minPhaseCount);
-	commandline().addOption("Settings", "min-score", "Minimum score for an origin to be reported", &_config.minScore);
-	commandline().addOption("Settings", "min-pick-snr", "Minimum SNR for a pick to be processed", &_config.minPickSNR);
+	commandline().addOption("Settings", "min-phase-count",
+	                        "Minimum number of picks for an origin to be reported.",
+	                        &_config.minPhaseCount);
+	commandline().addOption("Settings", "min-score",
+	                        "Minimum score for an origin to be reported.",
+	                        &_config.minScore);
+	commandline().addOption("Settings", "min-pick-snr",
+	                        "Minimum SNR for a pick to be processed.",
+	                        &_config.minPickSNR);
 
 	commandline().addOption("Settings", "xxl-enable", "", &_config.xxlEnabled);
-	commandline().addOption("Settings", "xxl-min-phase-count", "Minimum number of picks for an XXL origin to be reported", &_config.xxlMinPhaseCount);
-	commandline().addOption("Settings", "xxl-min-amplitude", "Flag pick as XXL if BOTH snr and amplitude exceed a threshold", &_config.xxlMinAmplitude);
-	commandline().addOption("Settings", "xxl-min-snr", "Flag pick as XXL if BOTH snr and amplitude exceed a threshold", &_config.xxlMinSNR);
-	commandline().addOption("Settings", "xxl-max-distance", "", &_config.xxlMaxStaDist);
-	commandline().addOption("Settings", "xxl-max-depth", "", &_config.xxlMaxDepth);
-	commandline().addOption("Settings", "xxl-dead-time", "", &_config.xxlDeadTime);
+	commandline().addOption("Settings", "xxl-min-phase-count",
+	                        "Minimum number of picks for an XXL origin to be reported.",
+	                        &_config.xxlMinPhaseCount);
+	commandline().addOption("Settings", "xxl-min-amplitude",
+	                        "Flag pick as XXL if BOTH snr and amplitude exceed "
+	                        "a threshold.", &_config.xxlMinAmplitude);
+	commandline().addOption("Settings", "xxl-min-snr",
+	                        "Flag pick as XXL if BOTH snr and amplitude exceed "
+	                        "a threshold.", &_config.xxlMinSNR);
+	commandline().addOption("Settings", "xxl-max-distance", "",
+	                        &_config.xxlMaxStaDist);
+	commandline().addOption("Settings", "xxl-max-depth", "",
+	                        &_config.xxlMaxDepth);
+	commandline().addOption("Settings", "xxl-dead-time", "",
+	                        &_config.xxlDeadTime);
 
-	commandline().addOption("Settings", "min-sta-count-ignore-pkp", "Minimum station count for which we ignore PKP phases", &_config.minStaCountIgnorePKP);
-	commandline().addOption("Settings", "min-score-bypass-nucleator", "Minimum score at which the nucleator is bypassed", &_config.minScoreBypassNucleator);
+	commandline().addOption("Settings", "min-sta-count-ignore-pkp",
+	                        "Minimum station count for which we ignore PKP phases.",
+	                        &_config.minStaCountIgnorePKP);
+	commandline().addOption("Settings", "min-score-bypass-nucleator",
+	                        "Minimum score at which the nucleator is bypassed.",
+	                        &_config.minScoreBypassNucleator);
 
-	commandline().addOption("Settings", "keep-events-timespan", "The timespan to keep historical events", &_keepEventsTimeSpan);
+	commandline().addOption("Settings", "keep-events-timespan",
+	                        "The timespan to keep historical events.",
+	                        &_keepEventsTimeSpan);
 
-	commandline().addOption("Settings", "cleanup-interval", "The object cleanup interval in seconds", &_config.cleanupInterval);
-	commandline().addOption("Settings", "max-age", "During cleanup all objects older than maxAge (in seconds) are removed (maxAge == 0 => disable cleanup)", &_config.maxAge);
+	commandline().addOption("Settings", "cleanup-interval",
+	                        "The object cleanup interval in seconds.",
+	                        &_config.cleanupInterval);
+	commandline().addOption("Settings", "max-age",
+	                        "During cleanup all objects older than maxAge (in "
+	                        "seconds) are removed (maxAge == 0 disables cleanup).",
+	                        &_config.maxAge);
 
-	commandline().addOption("Settings", "wakeup-interval", "The interval in seconds to check pending operations", &_wakeUpTimout);
-	commandline().addOption("Settings", "speed", "Set this to greater 1 to increase XML playback speed", &_playbackSpeed);
-	commandline().addOption("Settings", "dynamic-pick-threshold-interval", "The interval in seconds in which to check for extraordinarily high pick activity, resulting in a dynamically increased pick threshold", &_config.dynamicPickThresholdInterval);
+	commandline().addOption("Settings", "wakeup-interval",
+	                        "The interval in seconds to check pending operations.",
+	                        &_wakeUpTimout);
+	commandline().addOption("Settings", "speed",
+	                        "Set this to greater 1 to increase XML playback speed.",
+	                        &_playbackSpeed);
+	commandline().addOption("Settings", "dynamic-pick-threshold-interval",
+	                        "The interval in seconds in which to check for "
+	                        "extraordinarily high pick activity, resulting in a "
+	                        "dynamically increased pick threshold.",
+	                        &_config.dynamicPickThresholdInterval);
 
-	commandline().addOption("Settings", "use-manual-picks", "allow use of manual picks for nucleation and location");
-	commandline().addOption("Settings", "use-manual-origins", "allow use of manual origins from our own agency");
-	commandline().addOption("Settings", "use-imported-origins", "allow use of imported origins from trusted agencies as configured in 'processing.whitelist.agencies'. Imported origins are not relocated and only used for phase association");
+	commandline().addOption("Settings", "use-manual-picks",
+	                        "Allow using manual picks for nucleation and association.");
+	commandline().addOption("Settings", "use-manual-origins",
+	                        "Allow using manual origins from our own agency.");
+	commandline().addOption("Settings", "use-imported-origins",
+	                        "Allow useing imported origins from trusted agencies "
+	                        "as configured in 'processing.whitelist.agencies'. "
+	                        "Imported origins are not relocated and only used "
+	                        "for phase association.");
 //	commandline().addOption("Settings", "resend-imported-origins", "Re-send imported origins after phase association");
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -197,6 +281,8 @@ bool App::validateParameters() {
 
 	if ( commandline().hasOption("use-manual-origins") )
 		_config.useManualOrigins = true;
+
+	_config.allowRejectedPicks = commandline().hasOption("allow-rejected-picks");
 
 	if ( commandline().hasOption("use-imported-origins") )
 		_config.useImportedOrigins = true;
@@ -663,7 +749,9 @@ void App::readHistoricEvents() {
 		DataModel::ObjectPtr obj = query()->getObject(DataModel::Pick::TypeInfo(), *it);
 		if ( !obj ) continue;
 		DataModel::PickPtr pick = DataModel::Pick::Cast(obj);
-		if ( !pick ) continue;
+		if ( !pick ) {
+			continue;
+		}
 
 		// Feed it!
 		//feedPick(pick.get());
@@ -762,6 +850,10 @@ bool App::runFromEPFile(const char *fname) {
 	SEISCOMP_INFO("  number of amplitudes: %ld", (long int)_ep->amplitudeCount());
 	SEISCOMP_INFO("  number of origins:    %ld", (long int)_ep->originCount());
 
+	cerr << "Read from file: " << _ep->originCount() << " origin(s), "
+	     << _ep->pickCount() << " pick(s), "
+	     << _ep->amplitudeCount() << " amplitudes(s)"<< endl;
+
 	typedef std::pair<Core::Time,DataModel::PublicObjectPtr> TimeObject;
 	typedef std::vector<TimeObject> TimeObjectVector;
 
@@ -771,13 +863,36 @@ bool App::runFromEPFile(const char *fname) {
 
 	for ( size_t i = 0; i < _ep->pickCount(); ++i ) {
 		DataModel::PickPtr pick = _ep->pick(i);
+		bool add = true;
 		try {
-			Core::Time t = pick->creationInfo().creationTime();
-			objs.push_back(TimeObject(t, pick));
+			if ( pick->evaluationStatus() == DataModel::REJECTED ) {
+				if ( !_config.allowRejectedPicks ) {
+					add = false;
+					SEISCOMP_DEBUG("Ignoring pick %s with evaluation status %s",
+					               pick->publicID().c_str(), pick->evaluationStatus().toString());
+					continue;
+				}
+				else {
+					SEISCOMP_DEBUG("Considering pick %s with evaluation status %s",
+					               pick->publicID().c_str(), pick->evaluationStatus().toString());
+				}
+			}
+		}
+		catch ( ... ) {}
+
+		Core::Time t;
+		try {
+			t = pick->creationInfo().creationTime();
 		}
 		catch ( ... ) {
+			add = false;
 			SEISCOMP_WARNING("Ignore pick %s: no creation time set",
 			                 pick->publicID().c_str());
+			continue;
+		}
+
+		if ( add ) {
+			objs.push_back(TimeObject(t, pick));
 		}
 	}
 
@@ -821,11 +936,13 @@ bool App::runFromEPFile(const char *fname) {
 
 	_flush();
 
+
 	ar.create("-");
 	ar.setFormattedOutput(true);
 	ar << _ep;
 	ar.close();
 
+	cerr << "Output to XML: " << objectCount << " objects(s)" << endl;
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1010,8 +1127,9 @@ static bool preliminary(const DataModel::Origin *origin) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::addObject(const std::string& parentID, DataModel::Object* o) {
 	DataModel::PublicObject *po = DataModel::PublicObject::Cast(o);
-	if ( po == NULL )
+	if ( po == nullptr ) {
 		return;
+	}
 	// SEISCOMP_DEBUG("adding  %-12s %s", po->className(), po->publicID().c_str());
 
 	DataModel::Pick *pick = DataModel::Pick::Cast(o);
@@ -1060,6 +1178,22 @@ void App::updateObject(const std::string& parentID, DataModel::Object* o) {
 bool App::feed(DataModel::Pick *sc3pick) {
 
 	const std::string &pickID = sc3pick->publicID();
+	try {
+		if ( sc3pick->evaluationStatus() == DataModel::REJECTED ) {
+			if ( !_config.allowRejectedPicks ) {
+				SEISCOMP_DEBUG("Ignoring pick %s with evaluation status %s",
+				               sc3pick->publicID().c_str(),
+				               sc3pick->evaluationStatus().toString());
+				return false;
+			}
+			else {
+				SEISCOMP_DEBUG("Considering pick %s with evaluation status %s",
+				               sc3pick->publicID().c_str(),
+				               sc3pick->evaluationStatus().toString());
+			}
+		}
+	}
+	catch ( ... ) {}
 
 	if (_inputFileXML.size() || _inputEPFile.size()) {
 		try {
@@ -1083,9 +1217,9 @@ bool App::feed(DataModel::Pick *sc3pick) {
 
 	const std::string &author = objectAuthor(sc3pick);
 	const int priority = _authorPriority(author);
-	SEISCOMP_INFO("pick '%s' from author '%s' has priority %d", pickID.c_str(), author.c_str(), priority);
 	if (priority == 0) {
-		SEISCOMP_INFO("pick '%s' not processed", pickID.c_str());
+		SEISCOMP_INFO("pick '%s' not processed: author %s is not considered",
+		              pickID.c_str(), author.c_str());
 		return false;
 	}
 
@@ -1094,8 +1228,16 @@ bool App::feed(DataModel::Pick *sc3pick) {
 		}
 	}
 	catch ( ... ) {
-		SEISCOMP_WARNING_S("got pick without status " + sc3pick->publicID());
+		SEISCOMP_WARNING_S("got pick without mode " + sc3pick->publicID());
 		sc3pick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
+	}
+
+	try {
+		if (sc3pick->evaluationStatus() == DataModel::REJECTED) {
+		}
+	}
+	catch ( ... ) {
+		SEISCOMP_WARNING_S("got pick without evaluation status " + sc3pick->publicID());
 	}
 
 	// configure station if needed
