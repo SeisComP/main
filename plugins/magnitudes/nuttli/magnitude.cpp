@@ -25,6 +25,7 @@
 #include <seiscomp/logging/log.h>
 #include <seiscomp/math/geo.h>
 #include <seiscomp/config/config.h>
+#include <seiscomp/client/application.h>
 #include <seiscomp/datamodel/origin.h>
 #include <seiscomp/datamodel/sensorlocation.h>
 #include <seiscomp/datamodel/stationmagnitude.h>
@@ -57,7 +58,8 @@ MNMagnitude::MNMagnitude()
 , _minPeriod(0.01)
 , _maxPeriod(1.3)
 , _minDistance(0.5)
-, _maxDistance(30) {}
+, _maxDistance(30)
+{}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -74,15 +76,17 @@ bool MNMagnitude::setup(const Settings &settings) {
 	_minDistance = 0.5;
 	_maxDistance = 30;
 
-	try { _minSNR = settings.getDouble("magnitudes." MAG_TYPE ".minSNR"); }
+	string prefix = string("magnitudes.") + type() + ".";
+
+	try { _minSNR = settings.getDouble(prefix + "minSNR"); }
 	catch ( ... ) {}
-	try { _minPeriod = settings.getDouble("magnitudes." MAG_TYPE ".minPeriod"); }
+	try { _minPeriod = settings.getDouble(prefix + "minPeriod"); }
 	catch ( ... ) {}
-	try { _maxPeriod = settings.getDouble("magnitudes." MAG_TYPE ".maxPeriod"); }
+	try { _maxPeriod = settings.getDouble(prefix + "maxPeriod"); }
 	catch ( ... ) {}
-	try { _minDistance = settings.getDouble("magnitudes." MAG_TYPE ".minDist"); }
+	try { _minDistance = settings.getDouble(prefix + "minDist"); }
 	catch ( ... ) {}
-	try { _maxDistance = settings.getDouble("magnitudes." MAG_TYPE ".maxDist"); }
+	try { _maxDistance = settings.getDouble(prefix + "maxDist"); }
 	catch ( ... ) {}
 
 	return Seiscomp::Magnitudes::MN::initialize(settings.localConfiguration);
@@ -221,6 +225,27 @@ void MNMagnitude::finalizeMagnitude(Seiscomp::DataModel::StationMagnitude *magni
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool MNMagnitude::treatAsValidMagnitude() const {
 	return _validValue;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+MNMagnitude::Status MNMagnitude::estimateMw(double magnitude,
+                                            double &estimateMw,
+                                            double &stdError) {
+	if ( SCCoreApp ) {
+		try {
+			auto offset = SCCoreApp->configGetDouble(string("magnitudes.") + type() + ".offsetMw");
+			estimateMw = magnitude + offset;
+			stdError = -1;
+			return OK;
+		}
+		catch ( ... ) {}
+	}
+
+	return MwEstimationNotSupported;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
