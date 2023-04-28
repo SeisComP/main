@@ -33,17 +33,19 @@ Pick filtering
 * **And** the picks are :ref:`accompanied by amplitudes <sec-scautoloc-amplitudes>`
   configured in :confval:`autoloc.amplTypeAbs`, :confval:`autoloc.amplTypeSNR`.
 
-  .. note::
-
-     The order of the author IDs in  :confval:`autoloc.authors` may determine
-     the pick priority. This feature may be implemented in the future.
-
 All other picks are ignored.
 
-Each incoming pick checked if it is outdated and if the complete set of
+.. note::
+
+   * The evaluation status of a picks can be set to 'rejected', e.g., by
+     :ref:`scautopick` along with the configuration of :confval:`sendDetections`,
+   * The order of the author IDs in  :confval:`autoloc.authors` may determine
+     the pick priority. This feature may be implemented in the future.
+
+Each incoming pick is checked if it is outdated and if the complete set of
 :ref:`associated amplitudes <sec-scautoloc-amplitudes>` is present already. If
 a station produces picks extremely often, these are considered to be more
-likely glitches and result in an increased :term:`SNR` threshold.
+likely glitches resulting in an increased :term:`SNR` threshold.
 
 The filtered picks are passed on to :ref:`association <sec-scautoloc-association>`
 and :ref:`nucleation <sec-scautoloc-nucleation>`.

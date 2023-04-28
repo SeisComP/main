@@ -211,6 +211,7 @@ class Autoloc3 {
 			bool aggressivePKP;
 			bool reportAllPhases;
 			bool useManualOrigins{false};
+			bool allowRejectedPicks{false};
 			bool adoptManualOriginsFixedDepth;
 			bool useImportedOrigins;
 
