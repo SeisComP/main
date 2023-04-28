@@ -346,7 +346,7 @@ bool Autoloc3::feed(const Pick *pick)
 		if ( ! hasAmplitude(pick)) {
 			if (isnew)
 				SEISCOMP_DEBUG("process pick %-35s %c   waiting for amplitude",
-					       pick->id.c_str(), statusFlag(pick));
+					       pick->id.c_str(), modeFlag(pick));
 			return false;
 		}
 	}
@@ -541,13 +541,15 @@ bool Autoloc3::feed(Origin *origin)
 
 int Autoloc3::_authorPriority(const std::string &author) const
 {
-	if (_config.authors.empty())
+	if (_config.authors.empty()) {
 		return 1;
+	}
 
 	int n = _config.authors.size();
 	for (int i=0; i<n; i++) {
-		if (_config.authors[i] == author)
+		if (_config.authors[i] == author) {
 			return n-i;
+		}
 	}
 
 	return 0;
@@ -581,7 +583,7 @@ bool Autoloc3::_log(const Pick *pick)
 	sprintf(line, "%s %-2s %-6s %-3s %-2s %6.1f %10.3f %4.1f %c %s",
 	      time2str(pick->time).c_str(),
 	      pick->net.c_str(), pick->sta.c_str(), pick->cha.c_str(), loc.c_str(),
-	      pick->snr, pick->amp, pick->per, statusFlag(pick),
+	      pick->snr, pick->amp, pick->per, modeFlag(pick),
 	      pick->id.c_str());
 	_pickLogFile << line << endl;
 
@@ -994,6 +996,7 @@ OriginPtr Autoloc3::_tryAssociate(const Pick *pick)
 	// Try to associate the pick with existing, qualified origins.
 	// Currently it is assumed that the Pick is a P phase.
 	//
+
 	double associatedOriginLargestScore = 0;
 
 	OriginPtr origin = 0;
@@ -1111,10 +1114,11 @@ OriginPtr Autoloc3::_tryAssociate(const Pick *pick)
 }
 
 
-OriginPtr Autoloc3::_tryNucleate(const Pick *pick)
-{
-	if ( ! _nucleator.feed(pick))
+OriginPtr Autoloc3::_tryNucleate(const Pick *pick) {
+
+	if ( ! _nucleator.feed(pick)) {
 		return NULL;
+	}
 
 	//
 	// The following will only be executed if the nucleation of a new
@@ -1263,7 +1267,7 @@ bool Autoloc3::_process(const Pick *pick)
 	const_cast<Pick*>(pick)->normamp = pick->amp/normalizationAmplitude;
 
 	if ( automatic(pick) && _tooManyRecentPicks(pick) ) {
-		const_cast<Pick*>(pick)->status = Pick::IgnoredAutomatic;
+		const_cast<Pick*>(pick)->mode = Pick::IgnoredAutomatic;
 		return false;
 	}
 
@@ -1271,7 +1275,7 @@ bool Autoloc3::_process(const Pick *pick)
 
 	if ( _blacklisted(pick) ) {
 		SEISCOMP_INFO("process pick %-35s %c blacklisted -> ignored",
-			       pick->id.c_str(), statusFlag(pick));
+			       pick->id.c_str(), modeFlag(pick));
 		return false;
 	}
 

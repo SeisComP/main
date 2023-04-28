@@ -65,8 +65,8 @@ class Pick;
 
 class Pick : public Seiscomp::Core::BaseObject {
 
-  public:
-	typedef enum { Automatic, Manual, Confirmed, IgnoredAutomatic } Status;
+	public:
+		typedef enum { Automatic, Manual, Confirmed, IgnoredAutomatic } Mode;
 
   public:
 
@@ -91,7 +91,7 @@ class Pick : public Seiscomp::Core::BaseObject {
 	float snr;		// signal-to-noise ratio
 	float normamp;		// normalized amplitude
 
-	Status status;
+	Mode mode;
 	bool   xxl;		// Does it look like a very big event?
 
 	Seiscomp::Core::BaseObjectCPtr attachment;

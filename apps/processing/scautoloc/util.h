@@ -31,7 +31,7 @@ std::string printOneliner(const Origin*);
 bool automatic(const Pick*);
 bool ignored(const Pick*);
 bool manual(const Pick*);
-char statusFlag(const Pick*);
+char modeFlag(const Pick*);
 bool hasAmplitude(const Pick*);
 
 
@@ -64,7 +64,7 @@ Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::stri
 //bool readStationConfig(StationMap *stations, const std::string &fname);
 PickVector readPickFile();
 Pick*      readPickLine();
-Pick::Status status(const Seiscomp::DataModel::Pick *pick);
+Pick::Mode mode(const Seiscomp::DataModel::Pick *pick);
 
 }
 

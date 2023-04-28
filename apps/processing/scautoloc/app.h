@@ -45,6 +45,7 @@ class App : public Client::Application,
 		bool feed(DataModel::Pick*);
 		bool feed(DataModel::Amplitude*);
 		bool feed(DataModel::Origin*);
+		virtual void printUsage() const override;
 
 
 	protected:
