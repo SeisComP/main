@@ -45,32 +45,35 @@ class MNMagnitude : public Seiscomp::Processing::MagnitudeProcessor {
 	//  MagnitudeProcessor interface
 	// ----------------------------------------------------------------------
 	public:
-		virtual std::string amplitudeType() const;
-		virtual void finalizeMagnitude(Seiscomp::DataModel::StationMagnitude *magnitude) const;
+		std::string amplitudeType() const override;
+		void finalizeMagnitude(Seiscomp::DataModel::StationMagnitude *magnitude) const override;
 
 
 	protected:
-		virtual bool setup(const Seiscomp::Processing::Settings &settings);
+		bool setup(const Seiscomp::Processing::Settings &settings) override;
 
 		// The MagnitudeProcessor interface has changed with API version 11
 		// and API version 12.
 		// The following compile time condition accounts for that.
-		virtual Status computeMagnitude(double amplitude,
-		                                const std::string &unit,
-		                                double period,
-		                                double snr,
-		                                double delta, double depth,
-		                                const Seiscomp::DataModel::Origin *hypocenter,
-		                                const Seiscomp::DataModel::SensorLocation *receiver,
-		                                const Seiscomp::DataModel::Amplitude *,
-		                                const Locale *,
-		                                double &value);
+		Status computeMagnitude(double amplitude,
+		                        const std::string &unit,
+		                        double period,
+		                        double snr,
+		                        double delta, double depth,
+		                        const Seiscomp::DataModel::Origin *hypocenter,
+		                        const Seiscomp::DataModel::SensorLocation *receiver,
+		                        const Seiscomp::DataModel::Amplitude *,
+		                        const Locale *,
+		                        double &value) override;
 
-		virtual bool treatAsValidMagnitude() const;
+		bool treatAsValidMagnitude() const override;
+
+		Status estimateMw(double magnitude, double &estimateMw,
+		                  double &stdError) override;
 
 
 	private:
-		bool _validValue;
+		bool   _validValue;
 		double _minSNR;
 		double _minPeriod;
 		double _maxPeriod;

@@ -31,6 +31,13 @@
 						source to receiver must lie entirely within the polygon(s).
 						</description>
 					</parameter>
+					<parameter name="offsetMw" type="double">
+						<description>
+						The offset applied to the MN network magnitude to
+						estimate Mw(MN). If not configured then no Mw estimation
+						will be applied.
+						</description>
+					</parameter>
 				</group>
 			</group>
 		</configuration>
