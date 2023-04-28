@@ -158,13 +158,9 @@
 				</parameter>
 				<parameter name="authors" type="list:string">
 					<description>
-					Pick processing may be enabled/disabled according to the
-					author ID of a pick. In addition, picks of certain authors
-					can be prioritized over other authors.
-					This is the author priority list that controls this behavior.
-					Its value is a comma-separated list of author ID's.
-					The earlier an author ID appears in the list the higher the
-					priority it gets.
+					Restrict pick processing to the given author name(s). Apply
+					comma separation for a list of names. If any author name is
+					given, picks from other authors are ignored.
 					</description>
 				</parameter>
 				<parameter name="tryDefaultDepth" type="boolean" default="true">
@@ -292,19 +288,55 @@
 
 			<group name="Mode">
 				<option flag="" long-flag="test" argument="" default="">
-					<description>Do not send any object</description>
+					<description>
+					Do not send any object.
+					</description>
 				</option>
 				<option flag="" long-flag="offline" argument="" default="">
-					<description>Do not connect to a messaging server. Instead a
+					<description>
+					Do not connect to a messaging server. Instead a
 					station-locations.conf file can be provided. This implies
-					--test and --playback</description>
+					--test and --playback
+					</description>
 				</option>
 				<option flag="" long-flag="playback" argument="" default="">
-					<description>Flush origins immediately without delay.</description>
+					<description>
+					Flush origins immediately without delay.
+					</description>
+				</option>
+			</group>
+
+			<group name="Mode">
+				<option flag="" long-flag="test" >
+					<description>
+					Do not send any object.
+					</description>
+				</option>
+				<option flag="" long-flag="offline" >
+					<description>
+					Flush origins immediately without delay.
+					</description>
+				</option>
+			</group>
+
+			<group name="Input">
+				<option flag="" long-flag="ep" argument="file">
+					<description>
+					Name of input XML file (SCML) with all picks and origins for
+					offline processing. The database connection is not received
+					from messaging and must be provided. Results are sent in XML
+					to stdout.
+					</description>
 				</option>
 			</group>
 
 			<group name="Settings">
+				<option flag="" long-flag="allow-rejected-picks">
+					<description>
+					Allow picks with evaluation status 'rejected' for nucleation
+					and association.
+					</description>
+				</option>
 				<option flag="" long-flag="station-locations" argument="arg" default="">
 					<description>
 					The station-locations.conf file to use when in
@@ -321,7 +353,8 @@
 
 				<option flag="" long-flag="grid" argument="arg" default="">
 					<description>
-					The grid configuration file. Examples are in @DATADIR@/scautoloc/</description>
+					The grid configuration file. Examples are in @DATADIR@/scautoloc/
+					</description>
 				</option>
 
 				<option flag="" long-flag="pick-log" argument="arg" default="">
@@ -338,7 +371,7 @@
 
 				<option flag="" long-flag="max-sgap" argument="arg" default="360">
 					<description>
-					Maximum secondary azimuthal gap for an origin to be reported by.
+					Maximum secondary azimuthal gap for an origin to be reported.
 					The secondary gap is the maximum of the sum of 2 station gaps.
 					</description>
 				</option>
@@ -351,16 +384,21 @@
 
 				<option flag="" long-flag="max-residual" argument="arg" default="3">
 					<description>
-					Maximum travel-time residual (unweighted) for a pick at a station to be used.
+					Maximum travel-time residual (unweighted) for a pick at a
+					station to be used.
 					</description>
 				</option>
 
 				<option flag="" long-flag="max-station-distance" argument="arg" default="5">
-					<description>Maximum distance of stations to be used</description>
+					<description>
+					Maximum distance of stations to be used.
+					</description>
 				</option>
 
 				<option flag="" long-flag="max-nucleation-distance-default" argument="arg" default="180">
-					<description>Default maximum distance of stations to be used for nucleating new origins.</description>
+					<description>
+					Default maximum distance of stations to be used for nucleating new origins.
+					</description>
 				</option>
 
 				<option flag="" long-flag="min-pick-affinity" argument="arg" default="0.05">
@@ -368,23 +406,32 @@
 				</option>
 
 				<option flag="" long-flag="min-phase-count" argument="arg" default="4">
-					<description>Minimum number of picks for an origin to be reported.</description>
+					<description>
+					Minimum number of picks for an origin to be reported.</description>
 				</option>
 
 				<option flag="" long-flag="min-score" argument="arg" default="8">
-					<description>Minimum score for an origin to be reported</description>
+					<description>
+					Minimum score for an origin to be reported.
+					</description>
 				</option>
 
 				<option flag="" long-flag="min-pick-snr" argument="arg" default="3">
-					<description>Minimum SNR for a pick to be processed</description>
+					<description>
+					Minimum SNR for a pick to be processed.
+					</description>
 				</option>
 
 				<option flag="" long-flag="threshold-xxl" argument="arg" default="10000000">
-					<description>An amplitude exceeding this threshold will flag the pick as XXL</description>
+					<description>
+					An amplitude exceeding this threshold will flag the pick as XXL.
+					</description>
 				</option>
 
 				<option flag="" long-flag="min-phase-count-xxl" argument="arg" default="4">
-					<description>Minimum number of picks for an XXL origin to be reported</description>
+					<description>
+					Minimum number of picks for an XXL origin to be reported.
+					</description>
 				</option>
 
 				<option flag="" long-flag="max-distance-xxl" argument="arg" default="15">
@@ -392,37 +439,47 @@
 				</option>
 
 				<option flag="" long-flag="min-sta-count-ignore-pkp" argument="arg" default="15">
-					<description>Minimum station count for which we ignore PKP phases</description>
+					<description>
+					Minimum station count for which we ignore PKP phases.
+					</description>
 				</option>
 
 				<option flag="" long-flag="min-score-bypass-nucleator" argument="arg" default="40">
-					<description>Minimum score at which the nucleator is bypassed</description>
+					<description>
+					Minimum score at which the nucleator is bypassed.
+					</description>
 				</option>
 
 				<option flag="" long-flag="keep-events-timespan" argument="arg" default="86400">
-					<description>The timespan to keep historical events</description>
+					<description>
+					The timespan to keep historical events.
+					</description>
 				</option>
 
 				<option flag="" long-flag="cleanup-interval" argument="arg" default="3600">
-					<description>The object cleanup interval in seconds</description>
+					<description>
+					The object cleanup interval in seconds.
+					</description>
 				</option>
 
 				<option flag="" long-flag="max-age" argument="arg" default="3784320000">
 					<description>
 					During cleanup all pick objects older than maxAge (in seconds)
-					are removed (maxAge == 0 => disable cleanup)
+					are removed (maxAge == 0 disables cleanup).
 					</description>
 				</option>
 
 				<option flag="" long-flag="wakeup-interval" argument="arg" default="5" unit="s">
-					<description>The interval in seconds to check pending operations</description>
+					<description>
+					The interval in seconds to check pending operations.
+					</description>
 				</option>
 
 				<option flag="" long-flag="dynamic-pick-threshold-interval" argument="arg" default="60">
 					<description>
 					The interval in seconds in which to check for extraordinarily
 					high pick activity, resulting in a dynamically increased
-					pick threshold
+					pick threshold.
 					</description>
 				</option>
 			</group>
