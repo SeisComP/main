@@ -38,6 +38,7 @@
 
 #include <functional>
 
+
 using namespace std;
 using namespace Seiscomp;
 using namespace Seiscomp::Core;
@@ -1900,8 +1901,10 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 
 		if ( info ) {
 			SEISCOMP_LOG(_infoChannel, "Found matching event %s for origin %s (code: %d)",
-			             info->event->publicID().c_str(), origin->publicID().c_str(), bestResult);
-			SEISCOMP_DEBUG("... found best matching event %s (code: %d)", info->event->publicID().c_str(), bestResult);
+			             info->event->publicID().c_str(), origin->publicID().c_str(),
+			             static_cast<int>(bestResult));
+			SEISCOMP_DEBUG("... found best matching event %s (code: %d)", info->event->publicID().c_str(),
+			               static_cast<int>(bestResult));
 			cacheEvent(info);
 			if ( info->event->originReference(origin->publicID()) ) {
 				SEISCOMP_DEBUG("... origin already associated to event %s", info->event->publicID().c_str());
@@ -2437,9 +2440,11 @@ EventInformationPtr EventTool::findMatchingEvent(Origin *origin) {
 
 	if ( bestInfo ) {
 		SEISCOMP_DEBUG("... found best matching cached event %s (code: %d)",
-		               bestInfo->event->publicID().c_str(), bestResult);
+		               bestInfo->event->publicID().c_str(),
+		               static_cast<int>(bestResult));
 		SEISCOMP_LOG(_infoChannel, "... found best matching cached event %s (code: %d)",
-		             bestInfo->event->publicID().c_str(), bestResult);
+		             bestInfo->event->publicID().c_str(),
+		             static_cast<int>(bestResult));
 	}
 
 	return bestInfo;

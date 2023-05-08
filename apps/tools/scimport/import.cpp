@@ -213,7 +213,7 @@ Client::Result Import::connectToSink(const string &sink) {
 		}
 	}
 	else {
-		SEISCOMP_ERROR("Unknown import mode: %i", _mode);
+		SEISCOMP_ERROR("Unknown import mode: %i", static_cast<int>(_mode));
 		return Client::Error;
 	}
 
