@@ -20,11 +20,11 @@
 
 #include <boost/visit_each.hpp>
 #include <boost/any.hpp>
-#include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
-#include<boost/tokenizer.hpp>
+#include <boost/tokenizer.hpp>
 
-#include <math.h>
+#include <functional>
+#include <cmath>
 
 #include <seiscomp/qc/qcprocessor.h>
 #include "qcmessenger.h"
@@ -114,10 +114,10 @@ bool QcPlugin::init(QcApp* app, QcConfig *cfg, std::string streamID) {
 	if (! _app->archiveMode() && _qcConfig->reportTimeout() != 0) {
 		_timer.restart();
 		SEISCOMP_INFO("using report timeout %d s for %s", _qcConfig->reportTimeout(), _name.c_str());
-		_app->addTimeout(boost::bind(&QcPlugin::onTimeout, this));
+		_app->addTimeout(std::bind(&QcPlugin::onTimeout, this));
 	}
 
-	_app->doneSignal.connect(boost::bind(&QcPlugin::done, this));
+	_app->doneSignal.connect(std::bind(&QcPlugin::done, this));
 
 	return true;
 }

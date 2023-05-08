@@ -18,7 +18,6 @@
 #include <functional>
 #include <algorithm>
 
-#include <boost/bind.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/categories.hpp>
 #include <boost/iostreams/device/array.hpp>

@@ -36,7 +36,7 @@
 #include <seiscomp/math/geo.h>
 #include <seiscomp/system/hostinfo.h>
 
-#include <boost/bind.hpp>
+#include <functional>
 
 using namespace std;
 using namespace Seiscomp;
@@ -187,7 +187,7 @@ EventTool::EventTool(int argc, char **argv) : Application(argc, argv) {
 	addMessagingSubscription("FOCMECH");
 	addMessagingSubscription("EVENT");
 
-	_cache.setPopCallback(boost::bind(&EventTool::removedFromCache, this, _1));
+	_cache.setPopCallback(bind(&EventTool::removedFromCache, this, placeholders::_1));
 
 	_infoChannel = SEISCOMP_DEF_LOGCHANNEL("processing/info", Logging::LL_INFO);
 	string logFile = Environment::Instance()->logFile(_name + "-processing-info");

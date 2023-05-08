@@ -16,8 +16,6 @@
 #include <memory>
 #include <sstream>
 
-#include <boost/bind.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/zlib.hpp>

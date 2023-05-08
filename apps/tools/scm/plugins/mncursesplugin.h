@@ -12,11 +12,14 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_APPLICATIONS_MNCURSESPLUGIN_H__
-#define SEISCOMP_APPLICATIONS_MNCURSESPLUGIN_H__
+#ifndef SEISCOMP_APPLICATIONS_MNCURSESPLUGIN_H
+#define SEISCOMP_APPLICATIONS_MNCURSESPLUGIN_H
 
 
 #include <seiscomp/plugins/monitor/monitoroutplugininterface.h>
+
+#include <mutex>
+#include <thread>
 
 
 namespace Seiscomp {
@@ -78,15 +81,16 @@ class MNcursesPlugin : public MonitorOutPluginInterface {
 	// Private data member
 	// ----------------------------------------------------------------------
 	private:
-		void                              *_context;
-		Header                             _header;
-		ColumnSizes                        _columnSizes;
-		TagOrder                           _tagOrder;
-		unsigned int                       _currentLine;
-		Client::Status::Tag                _activeTag;
-		bool                               _reverseSortOrder;
-		ClientTable                        _clientTableCache;
-		boost::mutex                       _dataStructureMutex;
+		void                *_context;
+		Header               _header;
+		ColumnSizes          _columnSizes;
+		TagOrder             _tagOrder;
+		unsigned int         _currentLine;
+		Client::Status::Tag  _activeTag;
+		bool                 _reverseSortOrder;
+		ClientTable          _clientTableCache;
+		std::mutex           _dataStructureMutex;
+		std::thread         *_inputThread{nullptr};
 
 };
 

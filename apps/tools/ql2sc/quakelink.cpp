@@ -19,8 +19,6 @@
 
 #include <seiscomp/logging/log.h>
 
-#include <boost/bind.hpp>
-
 
 using namespace std;
 

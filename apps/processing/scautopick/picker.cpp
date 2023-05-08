@@ -960,7 +960,7 @@ bool App::addFeatureExtractor(Seiscomp::DataModel::Pick *pick,
 		),
 		pick
 	);
-	proc->setPublishFunction(bind(
+	proc->setPublishFunction(std::bind(
 		&App::emitFXPick, this,
 		Seiscomp::DataModel::PickPtr(pick),
 		Seiscomp::DataModel::AmplitudePtr(amp),

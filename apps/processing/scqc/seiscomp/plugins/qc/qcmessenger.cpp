@@ -21,7 +21,6 @@
 #include <seiscomp/datamodel/outage.h>
 
 #include <boost/visit_each.hpp>
-#include <boost/bind.hpp>
 
 #include "qcmessenger.h"
 
