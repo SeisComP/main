@@ -60,7 +60,8 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 		& cli(
 			maxDelay,
 			"Mode", "max-delay",
-			"The maximum delay in seconds to keep a trace visible (0 to disable)"
+			"The maximum delay in seconds to keep a trace visible (0 to disable). "
+			"Channels with larger delays will be hidden until the delay is in range."
 		)
 		& cliSwitch(
 			initStartTime,
@@ -98,7 +99,19 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 
 		& cfg(defaultLocator, "associator.defaultLocator")
 		& cfg(defaultEarthModel, "associator.defaultLocatorProfile")
-		& cfg(depths, "associator.fixedDepths");
+		& cfg(depths, "associator.fixedDepths")
+
+		& cfg(vstreams, "streams.codes")
+		& cli(
+		    vstreams,
+		    "Mode", "channels",
+		    "Channel(s) to display. The channel code may contain wildcards at "
+		    "any position but the support of wildcars depends on RecordStream. "
+		    "Examples:\n"
+		    "default : all streams configured by global bindings.\n"
+		    "GE.*.*.HH? : all HH streams of all stations from GE network.",
+		    true
+		);
 	}
 
 	int                      bufferSize{1800};
@@ -106,6 +119,7 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 	std::string              inputFile;
 	std::string              filter;
 	std::vector<std::string> filters{{"RMHP(2)>>ITAPER(5)>>BW(3, 0.5, 8.0)"},{"RMHP(2)>>ITAPER(5)>>BW_HP(3, 3)"}};
+	std::vector<std::string> vstreams{{"default"}};
 	bool                     offline{false};
 	bool                     initStartTime{false};
 	bool                     autoApplyFilter{false};

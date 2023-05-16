@@ -526,6 +526,17 @@
 					must match anyway.
 					</description>
 				</option>
+				<option long-flag="channels" argument="" publicID="mode#channels">
+					<description>
+					Channel(s) to display. The channel code may contain wildcards
+					at any position but the support of wildcars depends on
+					RecordStream. Examples:
+
+					default : all streams configured by global bindings.
+
+					GE.*.*.HH? : all HH streams of all stations from GE network.
+					</description>
+				</option>
 			</group>
 
 			<group name="Cities">

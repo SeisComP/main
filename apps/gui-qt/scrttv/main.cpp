@@ -72,9 +72,10 @@ class App : public Kicker<MainWindow> {
 			     << endl
 			     << "  scrttv file.mseed"
 			     << endl << endl;
-			cout << "View all streams from station CX.PB01 without messaging and inventory"
+			cout << "View all HH streams from station CX.PB01 without messaging "
+			        "and inventory"
 			     << endl
-			     << "  scrttv --offline --no-inventory --streams.codes=\"CX.PB01.*.*\""
+			     << "  scrttv --offline --no-inventory --channels CX.PB01.*.HH?"
 			     << endl;
 		}
 
