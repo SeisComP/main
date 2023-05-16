@@ -1654,16 +1654,15 @@ void MainWindow::openAcquisition() {
 		catch ( ... ) {}
 
 		try {
-			auto vstreams = SCApp->configGetStrings("streams.codes");
-			if ( vstreams.empty() ) {
+			if ( Settings::global.vstreams.empty() ) {
 				usePreconfigured = true;
 			}
-			else if ( vstreams[0] == "default" ) {
+			else if ( Settings::global.vstreams[0] == "default" ) {
 				usePreconfigured = true;
 			}
 
 			int index = 0;
-			for ( auto &stream : vstreams ) {
+			for ( auto &stream : Settings::global.vstreams ) {
 				if ( stream == "default" ) {
 					continue;
 				}
@@ -2018,9 +2017,7 @@ void MainWindow::openAcquisition() {
 			_recordStreamThread->stop(true);
 
 		try {
-			auto vstreams = SCApp->configGetStrings("streams.codes");
-
-			for ( auto &stream : vstreams ) {
+			for ( auto &stream : Settings::global.vstreams ) {
 				auto it = _channelGroupLookup.find(stream);
 				if ( it != _channelGroupLookup.end() ) {
 					auto &group = _channelGroups[it->second];
