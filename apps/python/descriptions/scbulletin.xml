@@ -55,24 +55,29 @@
 			<group name="Dump">
 				<option flag="E" long-flag="event" argument="arg">
 					<description>
-					ID of event that is read from database and transformed into 
+					ID of event(s) that is read from database and transformed into
 					a bulletin. Separate multiple IDs by comma."
 					</description>
 				</option>
 				<option flag="O" long-flag="origin" argument="arg">
 					<description>
-					ID of origin that is read from database and transformed into
+					ID of origin(s) that is read from database and transformed into
 					a bulletin. Separate multiple IDs by comma.
 					</description>
 				</option>
 				<option flag="1" long-flag="autoloc1">
 					<description>
-					Use autoloc1 format for output. This is default.
+					Format: Use autoloc1 format for output. This is default.
 					</description>
 				</option>
 				<option flag="3" long-flag="autoloc3">
 					<description>
-					Use autoloc3 format for output.
+					Format: Use autoloc3 format for output.
+					</description>
+				</option>
+				<option flag="4" long-flag="fdsnws">
+					<description>
+					Format: FDSNWS event text, e.g., for generating catalogs.
 					</description>
 				</option>
 				<option flag="x" long-flag="extra">
@@ -90,11 +95,6 @@
 				<option long-flag="event-agency-id">
 					<description>
 					Use the agency ID of the event instead of the preferred origin.
-					</description>
-				</option>
-				<option long-flag="fdsnws">
-					<description>
-					Dump in FDSNWS event text format, e.g., for generating catalogs.
 					</description>
 				</option>
 				<option long-flag="first-only">
