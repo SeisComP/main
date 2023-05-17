@@ -616,7 +616,6 @@ class Bulletin(object):
 
         for typ in stationMagnitudes:
             for mag in stationMagnitudes[typ]:
-
                 key = mag.amplitudeID()
                 if key:
                     amp = seiscomp.datamodel.Amplitude.Find(key)
@@ -938,7 +937,7 @@ class Bulletin(object):
                     pass
 
             try:
-                eType = evt.type()
+                eType = seiscomp.datamodel.EEventTypeNames.name(evt.type())
             except ValueError:
                 pass
         else:
@@ -1073,7 +1072,7 @@ class BulletinApp(seiscomp.client.Application):
             self.commandline().addStringOption(
                 "Input",
                 "format,f",
-                "Input format to use (xml " "[default], zxml (zipped xml), " "binary).",
+                "Input format to use (xml [default], zxml (zipped xml), binary).",
             )
             self.commandline().addStringOption(
                 "Input", "input,i", "Input file, default: stdin."
@@ -1083,29 +1082,29 @@ class BulletinApp(seiscomp.client.Application):
             self.commandline().addStringOption(
                 "Dump",
                 "event,E",
-                "ID of event to dump. Separate " "multiple IDs by comma.",
+                "ID of event(s) to dump. Separate multiple IDs by comma.",
             )
             self.commandline().addStringOption(
                 "Dump",
                 "origin,O",
-                "ID of origin to dump. Separate" " multiple IDs by comma.",
+                "ID of origin(s) to dump. Separate multiple IDs by comma.",
             )
-            self.commandline().addOption("Dump", "autoloc1,1", "autoloc1 format.")
-            self.commandline().addOption("Dump", "autoloc3,3", "autoloc3 format")
+            self.commandline().addOption("Dump", "autoloc1,1", "Format: autoloc1.")
+            self.commandline().addOption("Dump", "autoloc3,3", "Format: autoloc3.")
+            self.commandline().addOption(
+                "Dump",
+                "fdsnws,4",
+                "Fromat: FDSNWS event text, e.g., for generating catalogs.",
+            )
             self.commandline().addOption(
                 "Dump",
                 "enhanced,e",
-                "Enhanced output precision for local " "earthquakes.",
+                "Enhanced output precision for local earthquakes.",
             )
             self.commandline().addOption(
                 "Dump",
                 "event-agency-id",
-                "Use agency ID information from event" " instead of preferred origin.",
-            )
-            self.commandline().addOption(
-                "Dump",
-                "fdsnws",
-                "Dump in FDSNWS event text format, " "e.g., for generating catalogs.",
+                "Use agency ID information from event instead of preferred origin.",
             )
             self.commandline().addOption(
                 "Dump",
@@ -1114,13 +1113,13 @@ class BulletinApp(seiscomp.client.Application):
                 "Expects input from file or stdin.",
             )
             self.commandline().addOption(
-                "Dump", "dist-in-km,k", "Plot distances in km instead of" " degree."
+                "Dump", "dist-in-km,k", "Plot distances in km instead of degree."
             )
             self.commandline().addOption(
                 "Dump", "polarities,p", "Dump onset polarities."
             )
             self.commandline().addStringOption(
-                "Dump", "weight,w", "Weight threshold for printed " "and counted picks."
+                "Dump", "weight,w", "Weight threshold for printed and counted picks."
             )
             self.commandline().addOption(
                 "Dump", "extra,x", "Extra detailed autoloc3 format."
@@ -1151,7 +1150,6 @@ class BulletinApp(seiscomp.client.Application):
         return True
 
     def printUsage(self):
-
         print(
             """Usage:
   scbulletin [options]
@@ -1346,7 +1344,6 @@ Create a bulletin from event parameters in XML
                 return False
 
         if txt:
-
             if bulletin.format == "fdsnws":
                 print(
                     "#EventID|Time|Latitude|Longitude|Depth/km|Author|"
