@@ -80,6 +80,11 @@
 					Format: FDSNWS event text, e.g., for generating catalogs.
 					</description>
 				</option>
+				<option flag="5" long-flag="kml">
+					<description>
+					Format: KML. GIS file format.
+					</description>
+				</option>
 				<option flag="x" long-flag="extra">
 					<description>
 					Use a specially detailed autoloc3 format. This options works
@@ -106,7 +111,7 @@
 				</option>
 				<option flag="k" long-flag="dist-in-km">
 					<description>
-					Plot distances in km instead of degree.
+					Print distances in km instead of degree.
 					</description>
 				</option>
 				<option flag="p" long-flag="polarities">
