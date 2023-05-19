@@ -96,12 +96,13 @@ def arrivalWeight(arrival):
 
 def createKML(mode):
     if mode == "open":
-        print(
-            '<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>SeisComP event parameters</name>',
-            file=sys.stdout,
-        )
+        text = '<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>SeisComP event parameters</name>'
     elif mode == "close":
-        print("</Document></kml>", file=sys.stdout)
+        text = "</Document></kml>"
+    else:
+        return False
+
+    return text
 
 
 class Bulletin(object):
@@ -181,8 +182,8 @@ class Bulletin(object):
                     % seiscomp.datamodel.EEventTypeNames.name(evtType)
                 )
             except ValueError:
-                seiscomp.logging.warning(
-                    "%s: ignoring unknown event type" % evt.publicID()
+                seiscomp.logging.debug(
+                    "%s: ignoring empty or unknown event type" % evt.publicID()
                 )
 
             txt += "    Description\n"
@@ -1223,23 +1224,6 @@ class BulletinApp(seiscomp.client.Application):
                 "origin,O",
                 "ID of origin(s) to dump. Separate multiple IDs by comma.",
             )
-            self.commandline().addOption("Dump", "autoloc1,1", "Format: autoloc1.")
-            self.commandline().addOption("Dump", "autoloc3,3", "Format: autoloc3.")
-            self.commandline().addOption(
-                "Dump",
-                "fdsnws,4",
-                "Format: FDSNWS event text, e.g., for generating catalogs.",
-            )
-            self.commandline().addOption(
-                "Dump",
-                "kml,5",
-                "Format: KML, GIS file format.",
-            )
-            self.commandline().addOption(
-                "Dump",
-                "enhanced,e",
-                "Enhanced output precision for local earthquakes.",
-            )
             self.commandline().addOption(
                 "Dump",
                 "event-agency-id",
@@ -1252,18 +1236,41 @@ class BulletinApp(seiscomp.client.Application):
                 "Expects input from file or stdin.",
             )
             self.commandline().addOption(
-                "Dump", "dist-in-km,k", "Print distances in km instead of degree."
-            )
-            self.commandline().addOption(
                 "Dump", "polarities,p", "Dump onset polarities."
             )
             self.commandline().addStringOption(
                 "Dump", "weight,w", "Weight threshold for printed and counted picks."
             )
-            self.commandline().addOption(
-                "Dump", "extra,x", "Extra detailed autoloc3 format."
-            )
 
+            self.commandline().addGroup("Output")
+            self.commandline().addOption("Output", "autoloc1,1", "Format: autoloc1.")
+            self.commandline().addOption("Output", "autoloc3,3", "Format: autoloc3.")
+            self.commandline().addOption(
+                "Output",
+                "fdsnws,4",
+                "Format: FDSNWS event text, e.g., for generating catalogs.",
+            )
+            self.commandline().addOption(
+                "Output",
+                "kml,5",
+                "Format: KML, GIS file format.",
+            )
+            self.commandline().addOption(
+                "Output",
+                "enhanced,e",
+                "Enhanced output precision for local earthquakes.",
+            )
+            self.commandline().addOption(
+                "Output", "dist-in-km,k", "Print distances in km instead of degree."
+            )
+            self.commandline().addStringOption(
+                "Output",
+                "output,o",
+                "Name of output file. If not given, all event parameters are printed to stdout.",
+            )
+            self.commandline().addOption(
+                "Output", "extra,x", "Extra detailed autoloc3 format."
+            )
         except RuntimeError:
             seiscomp.logging.warning("caught unexpected error %s" % sys.exc_info())
 
@@ -1315,6 +1322,7 @@ Create a bulletin from event parameters in XML
         mw = None
         inputFile = None
         txt = None
+        outputFile = None
 
         try:
             evid = self.commandline().optionString("event")
@@ -1367,6 +1375,11 @@ Create a bulletin from event parameters in XML
 
         if self.commandline().hasOption("dist-in-km"):
             bulletin.distInKM = True
+
+        try:
+            outputFile = self.commandline().optionString("output")
+        except RuntimeError:
+            pass
 
         inputFile = self.inputFile
 
@@ -1485,21 +1498,40 @@ Create a bulletin from event parameters in XML
                 seiscomp.logging.error("%s" % str(exc))
                 return False
 
+        if outputFile:
+            print(f"Output data to file: {outputFile}", file=sys.stderr)
+            try:
+                out = open(outputFile, "w")
+            except Exception:
+                print("Cannot create output file {outputFile}", file=sys.stderr)
+                return -1
+        else:
+            out = sys.stdout
+
         if bulletin.format == "fdsnws":
             print(
                 "#EventID|Time|Latitude|Longitude|Depth/km|Author|"
                 "Catalog|Contributor|ContributorID|MagType|Magnitude|"
-                "MagAuthor|EventLocationName|EventType"
+                "MagAuthor|EventLocationName|EventType",
+                file=out,
             )
 
         if bulletin.format == "kml":
-            createKML("open")
+            text = createKML("open")
+            if text:
+                print(f"{text}", file=out)
+            else:
+                return False
 
         if txt:
-            print("{}".format(txt), file=sys.stdout)
+            print(f"{txt}", file=out)
 
         if bulletin.format == "kml":
-            createKML("close")
+            text = createKML("close")
+            if text:
+                print("f{text}", file=out)
+            else:
+                return False
 
         return True
 

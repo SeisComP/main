@@ -65,6 +65,36 @@
 					a bulletin. Separate multiple IDs by comma.
 					</description>
 				</option>
+				<option long-flag="event-agency-id">
+					<description>
+					Use the agency ID of the event instead of the preferred origin.
+					</description>
+				</option>
+				<option long-flag="first-only">
+					<description>
+					Convert only the first event/origin to bulletin. Otherwise
+					all events or origins will be converted to single bulletins
+					which will be concatenated.
+					</description>
+				</option>
+				<option flag="p" long-flag="polarities">
+					<description>
+					Dump onset polarities.
+					</description>
+				</option>
+				<option flag="w" long-flag="weight" argument="arg">
+					<description>
+					Weight threshold for printed and counted picks.
+					</description>
+				</option>
+				<option flag="x" long-flag="extra">
+					<description>
+					Use a specially detailed autoloc3 format. This options works only
+					in combination with the autoloc3-flag.
+					</description>
+				</option>
+			</group>
+			<group name="Output">
 				<option flag="1" long-flag="autoloc1">
 					<description>
 					Format: Use autoloc1 format for output. This is default.
@@ -85,28 +115,10 @@
 					Format: KML. GIS file format.
 					</description>
 				</option>
-				<option flag="x" long-flag="extra">
-					<description>
-					Use a specially detailed autoloc3 format. This options works
-					only in combination with the autoloc3-flag.
-					</description>
-				</option>
 				<option flag="e" long-flag="enhanced">
 					<description>
 					Enhanced output with higher precision. Times: milliseconds,
 					distances: meter. Use for bulletins of local earthquakes.
-					</description>
-				</option>
-				<option long-flag="event-agency-id">
-					<description>
-					Use the agency ID of the event instead of the preferred origin.
-					</description>
-				</option>
-				<option long-flag="first-only">
-					<description>
-					Convert only the first event/origin to bulletin. Otherwise
-					all events or origins will be converted to single bulletins
-					which will be concatenated.
 					</description>
 				</option>
 				<option flag="k" long-flag="dist-in-km">
@@ -114,20 +126,16 @@
 					Print distances in km instead of degree.
 					</description>
 				</option>
-				<option flag="p" long-flag="polarities">
+				<option flag="o" long-flag="output">
 					<description>
-					Dump onset polarities.
-					</description>
-				</option>
-				<option flag="w" long-flag="weight" argument="arg">
-					<description>
-					Weight threshold for printed and counted picks.
+					Name of output file. If not given, all event parameters are
+					printed to stdout.
 					</description>
 				</option>
 				<option flag="x" long-flag="extra">
 					<description>
-					Use a specially detailed autoloc3 format. This options works only
-					in combination with the autoloc3-flag.
+					Use a specially detailed autoloc3 format. This options works
+					only in combination with the autoloc3-flag.
 					</description>
 				</option>
 			</group>
