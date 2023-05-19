@@ -94,6 +94,16 @@ def arrivalWeight(arrival):
     return wt
 
 
+def createKML(mode):
+    if mode == "open":
+        print(
+            '<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>SeisComP event parameters</name>',
+            file=sys.stdout,
+        )
+    elif mode == "close":
+        print("</Document></kml>", file=sys.stdout)
+
+
 class Bulletin(object):
     def __init__(self, dbq, long=True):
         self._dbq = dbq
@@ -902,6 +912,127 @@ class Bulletin(object):
 
         return txt
 
+    def _printOriginKML(self, org):
+        txt = ""
+        evt = self._evt
+        if not evt and self._dbq:
+            evt = self._dbq.getEvent(org.publicID())
+
+        author = None
+        agencyID = None
+        eType = None
+        prefMagID = None
+        depth = None
+        altitude = None
+        sTime = None
+        if evt:
+            evid = evt.publicID()
+            pos = evid.find("#")  # XXX Hack!!!
+            if pos != -1:
+                evid = evid[:pos]
+
+            try:
+                prefMagID = evt.preferredMagnitudeID()
+            except ValueError:
+                pass
+
+            try:
+                author = org.creationInfo().author()
+            except ValueError:
+                pass
+
+            if self.useEventAgencyID:
+                try:
+                    agencyID = evt.creationInfo().agencyID()
+                except ValueError:
+                    pass
+            else:
+                try:
+                    agencyID = org.creationInfo().agencyID()
+                except ValueError:
+                    pass
+
+            try:
+                eType = seiscomp.datamodel.EEventTypeNames.name(evt.type())
+            except ValueError:
+                pass
+        else:
+            evid = ""
+            prefMagID = ""
+
+        if evt:
+            ID = evt.publicID()
+        else:
+            ID = org.publicID()
+
+        if self.enhanced:
+            latitude = "{:.3f}".format(org.latitude().value())
+            longitude = "{:.3f}".format(org.longitude().value())
+            depth = "{:.3f}".format(org.depth().value())
+            sTime = org.time().value().toString("%FT%T.%f")[:23]
+        else:
+            latitude = "{:.1f}".format(org.latitude().value())
+            longitude = "{:.1f}".format(org.longitude().value())
+            depth = "{:.0f}".format(org.depth().value())
+            sTime = org.time().value().toString("%FT%T.%f")[:21]
+
+        if depth:
+            altitude = -1.0 * float(depth)
+
+        try:
+            region = seiscomp.seismology.Regions.getRegionName(
+                org.latitude().value(), org.longitude().value()
+            )
+        except ValueError:
+            region = ""
+
+        mag = False
+        mType = ""
+        mVal = None
+        networkMagnitudeCount = org.magnitudeCount()
+        for i in range(networkMagnitudeCount):
+            mag = org.magnitude(i)
+            if mag.publicID() == prefMagID:
+                mType = mag.type()
+                mVal = "{:.1f}".format(mag.magnitude().value())
+                break
+
+        if not mag and prefMagID != "":
+            mag = seiscomp.datamodel.Magnitude.Find(prefMagID)
+            if mag is None and self._dbq:
+                o = self._dbq.loadObject(
+                    seiscomp.datamodel.Magnitude.TypeInfo(), prefMagID
+                )
+                mag = seiscomp.datamodel.Magnitude.Cast(o)
+
+            if mag:
+                mType = mag.type()
+                mVal = "{:.1f}".format(mag.magnitude().value())
+
+        txt = "<Placemark>"
+        txt += "<ExtendedData>"
+        txt += f'<Data name="event/origin ID"><value>{ID}</value></Data>'
+        if eType:
+            txt += f'<Data name="event type"><value>{eType}</value></Data>'
+        if len(region) > 0:
+            txt += f'<Data name="region"><value>{region}</value></Data>'
+        txt += f'<Data name="time [UTC]"><value>{sTime}</value></Data>'
+        txt += f'<Data name="latitude [degree North]"><value>{latitude}</value></Data>'
+        txt += f'<Data name="longitude [degree East]"><value>{longitude}</value></Data>'
+        txt += f'<Data name="depth [km]"><value>{depth}</value></Data>'
+        if agencyID:
+            txt += f'<Data name="agency"><value>{agencyID}</value></Data>'
+        if author:
+            txt += f'<Data name="author"><value>{author}</value></Data>'
+        if mag:
+            txt += f'<Data name="magnitude ({mType})"><value>{mVal}</value></Data>'
+        txt += "</ExtendedData>"
+        txt += f"<name>{ID}</name>"
+        txt += f"<Point><coordinates>{longitude},{latitude},{altitude}</coordinates></Point>"
+        txt += "</Placemark>"
+
+        return txt
+
     def _printOriginFDSN(self, org):
         evt = self._evt
 
@@ -987,6 +1118,7 @@ class Bulletin(object):
                     mAuthor = mag.creationInfo().author()
                 except ValueError:
                     pass
+
         txt = "%s|%s|%s|%s|%s|%s||%s|%s|%s|%s|%s|%s|%s\n" % (
             evid,
             sTime,
@@ -1026,6 +1158,8 @@ class Bulletin(object):
             return self._printOriginAutoloc3(org, extra=False)
         elif self.format == "autoloc3extra":
             return self._printOriginAutoloc3(org, extra=True)
+        if self.format == "kml":
+            return self._printOriginKML(org)
         else:
             pass
 
@@ -1094,7 +1228,12 @@ class BulletinApp(seiscomp.client.Application):
             self.commandline().addOption(
                 "Dump",
                 "fdsnws,4",
-                "Fromat: FDSNWS event text, e.g., for generating catalogs.",
+                "Format: FDSNWS event text, e.g., for generating catalogs.",
+            )
+            self.commandline().addOption(
+                "Dump",
+                "kml,5",
+                "Format: KML, GIS file format.",
             )
             self.commandline().addOption(
                 "Dump",
@@ -1113,7 +1252,7 @@ class BulletinApp(seiscomp.client.Application):
                 "Expects input from file or stdin.",
             )
             self.commandline().addOption(
-                "Dump", "dist-in-km,k", "Plot distances in km instead of degree."
+                "Dump", "dist-in-km,k", "Print distances in km instead of degree."
             )
             self.commandline().addOption(
                 "Dump", "polarities,p", "Dump onset polarities."
@@ -1154,7 +1293,7 @@ class BulletinApp(seiscomp.client.Application):
             """Usage:
   scbulletin [options]
 
-Generate bulletins from events or origins in autoloc1, autoloc3 or fdsnws format."""
+Generate bulletins from events or origins in various formats: autoloc1, autoloc3, fdsnws, kml."""
         )
 
         seiscomp.client.Application.printUsage(self)
@@ -1213,6 +1352,9 @@ Create a bulletin from event parameters in XML
 
         if self.commandline().hasOption("fdsnws"):
             bulletin.format = "fdsnws"
+
+        if self.commandline().hasOption("kml"):
+            bulletin.format = "kml"
 
         if self.commandline().hasOption("enhanced"):
             bulletin.enhanced = True
@@ -1343,14 +1485,21 @@ Create a bulletin from event parameters in XML
                 seiscomp.logging.error("%s" % str(exc))
                 return False
 
+        if bulletin.format == "fdsnws":
+            print(
+                "#EventID|Time|Latitude|Longitude|Depth/km|Author|"
+                "Catalog|Contributor|ContributorID|MagType|Magnitude|"
+                "MagAuthor|EventLocationName|EventType"
+            )
+
+        if bulletin.format == "kml":
+            createKML("open")
+
         if txt:
-            if bulletin.format == "fdsnws":
-                print(
-                    "#EventID|Time|Latitude|Longitude|Depth/km|Author|"
-                    "Catalog|Contributor|ContributorID|MagType|Magnitude|"
-                    "MagAuthor|EventLocationName|EventType"
-                )
             print("{}".format(txt), file=sys.stdout)
+
+        if bulletin.format == "kml":
+            createKML("close")
 
         return True
 

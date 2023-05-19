@@ -1,5 +1,10 @@
-scbulletin transforms the parameters of an event or an origin either to autoloc1
-or to autoloc3 format.
+scbulletin transforms the parameters of events or origins either to various formats.
+Currently supported outpout formats are:
+
+* autoloc1,
+* autoloc3,
+* fdsnws,
+* kml.
 
 
 Input Modes
