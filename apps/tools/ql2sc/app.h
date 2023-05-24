@@ -46,7 +46,7 @@ namespace QL2SC {
 
 class SC_SYSTEM_CORE_API NoCache : public DataModel::PublicObjectCache {
 	public:
-		bool feed(DataModel::PublicObject* po) { return true; }
+		bool feed(DataModel::PublicObject* po) { push(po); return true; }
 };
 
 
