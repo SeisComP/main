@@ -653,6 +653,9 @@ bool App::dispatchNotification(int type, Core::BaseObject *obj) {
 	}
 
 	bool res = dispatchResponse(client, msg);
+	// The cache is only maintained for one particular dispatch run because
+	// updates of all objects are not captured.
+	_cache.clear();
 
 	// Allow new responses
 	_clientPublishMutex.unlock();
@@ -1277,8 +1280,12 @@ bool App::sendNotifiers(const Notifiers &notifiers, const RoutingTable &routing)
 	      it != notifiers.end(); ++it) {
 		Notifier *n = it->get();
 
-		// check if a routing exists
-		if ( !resolveRouting(group, n->object(), routing) ) continue;
+		// check if a route exists
+		if ( !resolveRouting(group, n->object(), routing) ) {
+			SEISCOMP_DEBUG("Skip %s of %s: no routing",
+			               n->operation().toString(), n->object()->className());
+			continue;
+		}
 
 		// the message has to be send if the batchSize is exceeded or the
 		// message group changed
@@ -1328,7 +1335,7 @@ bool App::sendNotifiers(const Notifiers &notifiers, const RoutingTable &routing)
 			++msgTotal;
 			ss << "  " << it->first << ": " << it->second << endl;
 		}
-		SEISCOMP_INFO("send %i notifer (ADD: %i, UPDATE: %i, REMOVE: %i) "
+		SEISCOMP_INFO("send %i notifiers (ADD: %i, UPDATE: %i, REMOVE: %i) "
 		              "to the following message groups:\n%s",
 		              add + update + remove, add, update, remove,
 		              ss.str().c_str());
