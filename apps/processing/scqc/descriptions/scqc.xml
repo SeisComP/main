@@ -14,11 +14,11 @@
 			</parameter>
 			<parameter name="use3Components" type="boolean" default="false">
 				<description>
-					If useConfiguredStreams is true then this parameter decides whether
+					If useConfiguredStreams is true, this parameter decides whether
 					to use only the vertical component (default) or all three
 					components. The 3 components are collected from the inventory
-					according to channel orientation. If that is not possible
-					then the fixed components N and E will be used.
+					according to channel orientation. If that is not possible,
+					the fixed components N and E will be used.
 				</description>
 			</parameter>
 			<parameter name="streamMask" type="string">
@@ -55,7 +55,8 @@
 					</parameter>
 					<parameter name="filter" type="string" default="" unit="">
 						<description>
-							Filter string used to filter waveforms before processing.
+							Filter string used to filter waveforms before
+							processing. Currently only used by QcRms.
 							</description>
 					</parameter>
 					<parameter name="buffer" type="int" default="4000" unit="s">
@@ -125,11 +126,6 @@
 							Default [disable]: plugin is able to process archived data AND realtime data streams.
 						</description>
 					</parameter>
-					<parameter name="filter" type="string" default="" unit="">
-						<description>
-							Filter string used to filter waveforms before processing.
-							</description>
-					</parameter>
 					<parameter name="buffer" type="int" default="4000" unit="s">
 						<description>
 							Qc-Buffer Length [s] (aka LTA-Buffer). Must be >= plugins.*.bufferLength.
@@ -195,11 +191,6 @@
 
 							Default [disable]: plugin is able to processd data AND realtime data streams.
 						</description>
-					</parameter>
-					<parameter name="filter" type="string" default="" unit="">
-						<description>
-							Filter string used to filter waveforms before processing.
-							</description>
 					</parameter>
 					<parameter name="buffer" type="int" default="4000" unit="s">
 						<description>
@@ -267,11 +258,6 @@
 							Default [disable]: plugin is able to process archived data AND realtime data streams.
 						</description>
 					</parameter>
-					<parameter name="filter" type="string" default="" unit="">
-						<description>
-							Filter string used to filter waveforms before processing.
-							</description>
-					</parameter>
 					<parameter name="buffer" type="int" default="4000" unit="s">
 						<description>
 							Qc-Buffer Length [s] (aka LTA-Buffer). Must be >= plugins.*.bufferLength.
@@ -338,11 +324,6 @@
 							Default [disable]: plugin is able to process archived data AND realtime data streams.
 						</description>
 					</parameter>
-					<parameter name="filter" type="string" default="" unit="">
-						<description>
-							Filter string used to filter waveforms before processing.
-							</description>
-					</parameter>
 					<parameter name="buffer" type="int" default="4000" unit="s">
 						<description>
 							Qc-Buffer Length [s] (aka LTA-Buffer). Must be >= plugins.*.bufferLength.
@@ -408,11 +389,6 @@
 
 							Default [disable]: plugin is able to process archived data AND realtime data streams.
 						</description>
-					</parameter>
-					<parameter name="filter" type="string" default="" unit="">
-						<description>
-							Filter string used to filter waveforms before processing.
-							</description>
 					</parameter>
 					<parameter name="buffer" type="int" default="4000" unit="s">
 						<description>
@@ -551,11 +527,6 @@
 							Default [disable]: plugin is able to process archived data AND realtime data streams.
 						</description>
 					</parameter>
-					<parameter name="filter" type="string" default="" unit="">
-						<description>
-							Filter string used to filter waveforms before processing.
-							</description>
-					</parameter>
 					<parameter name="buffer" type="int" default="4000" unit="s">
 						<description>
 							Qc-Buffer Length [s] (aka LTA-Buffer). Must be >= plugins.*.bufferLength.
@@ -621,11 +592,6 @@
 
 							Default [disable]: plugin is able to process archived data AND realtime data streams.
 						</description>
-					</parameter>
-					<parameter name="filter" type="string" default="" unit="">
-						<description>
-							Filter string used to filter waveforms before processing.
-							</description>
 					</parameter>
 					<parameter name="buffer" type="int" default="4000" unit="s">
 						<description>
@@ -693,11 +659,6 @@
 							Default [disable]: plugin is able to process archived data AND realtime data streams.
 						</description>
 					</parameter>
-					<parameter name="filter" type="string" default="" unit="">
-						<description>
-							Filter string used to filter waveforms before processing.
-							</description>
-					</parameter>
 					<parameter name="buffer" type="int" default="4000" unit="s">
 						<description>
 							Qc-Buffer Length [s] (aka LTA-Buffer). Must be >= plugins.*.bufferLength.
@@ -763,11 +724,6 @@
 
 							Default [disable]: plugin is able to process archived data AND realtime data streams.
 						</description>
-					</parameter>
-					<parameter name="filter" type="string" default="" unit="">
-						<description>
-							Filter string used to filter waveforms before processing.
-							</description>
 					</parameter>
 					<parameter name="buffer" type="int" default="4000" unit="s">
 						<description>
