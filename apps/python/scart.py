@@ -730,7 +730,7 @@ def readStreamList(listFile):
             )
             return []
 
-        streams.append( Stream(toks[0], toks[1], toks[2], toks[3]) )
+        streams.append(Stream(toks[0], toks[1], toks[2], toks[3]))
 
     f.close()
 
@@ -819,9 +819,7 @@ def readStreamTimeList(listFile):
             )
             return []
 
-        streams.append(
-            StreamTime(tMin, tMax, toks[0], toks[1], toks[2], toks[3])
-        )
+        streams.append(StreamTime(tMin, tMax, toks[0], toks[1], toks[2], toks[3]))
 
     f.close()
 
@@ -1208,20 +1206,26 @@ def main():
 
     elif not checkSDS:
         if networks == "*":
-            streams.append( StreamTime(tmin, tmax, "*", "*", "*", channels) )
+            streams.append(StreamTime(tmin, tmax, "*", "*", "*", channels))
         else:
             items = networks.split(",")
             for n in items:
                 n = n.strip()
                 nsl = n.split(".")
                 if len(nsl) == 1:
-                    streams.append( StreamTime(tmin, tmax, nsl[0], "*", "*", channels) )
+                    streams.append(StreamTime(tmin, tmax, nsl[0], "*", "*", channels))
                 elif len(nsl) == 2:
-                    streams.append( StreamTime(tmin, tmax, nsl[0], nsl[1], "*", channels) )
+                    streams.append(
+                        StreamTime(tmin, tmax, nsl[0], nsl[1], "*", channels)
+                    )
                 elif len(nsl) == 3:
-                    streams.append( StreamTime(tmin, tmax, nsl[0], nsl[1], nsl[2], channels) )
+                    streams.append(
+                        StreamTime(tmin, tmax, nsl[0], nsl[1], nsl[2], channels)
+                    )
                 elif len(nsl) == 4:
-                    streams.append( StreamTime(tmin, tmax, nsl[0], nsl[1], nsl[2], nsl[3]) )
+                    streams.append(
+                        StreamTime(tmin, tmax, nsl[0], nsl[1], nsl[2], nsl[3])
+                    )
                 else:
                     print(
                         "error: wrong format of -n option - stopping", file=sys.stderr
@@ -1417,7 +1421,12 @@ def main():
                     done = rs.addStream(stream.net, stream.sta, stream.loc, stream.cha)
             else:
                 done = rs.addStream(
-                    stream.net, stream.sta, stream.loc, stream.cha, stream.tmin, stream.tmax
+                    stream.net,
+                    stream.sta,
+                    stream.loc,
+                    stream.cha,
+                    stream.tmin,
+                    stream.tmax,
                 )
             if not done:
                 print(
