@@ -1092,7 +1092,12 @@ def main():
     except BaseException:
         pass
 
-    if not stdout and not outputFile and not os.path.isdir(archiveDirectory):
+    if (
+        not test
+        and not stdout
+        and not outputFile
+        and not os.path.isdir(archiveDirectory)
+    ):
         print(
             f"Info: archive directory '{archiveDirectory}' not found - stopping",
             file=sys.stderr,
