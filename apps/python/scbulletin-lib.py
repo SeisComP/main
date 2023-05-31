@@ -21,6 +21,8 @@ import seiscomp.datamodel
 import seiscomp.logging
 import seiscomp.seismology
 
+from seiscomp.datamodel import QMLTypeMapper
+
 
 def time2str(time):
     """
@@ -1069,7 +1071,7 @@ class Bulletin(object):
                     pass
 
             try:
-                eType = seiscomp.datamodel.EEventTypeNames.name(evt.type())
+                eType = QMLTypeMapper.EventTypeToString(evt.type())
             except ValueError:
                 pass
         else:
