@@ -1531,7 +1531,7 @@ Create a bulletin from event parameters in XML
         if bulletin.format == "kml":
             text = createKML("close")
             if text:
-                print("f{text}", file=out)
+                print(f"{text}", file=out)
             else:
                 return False
 
