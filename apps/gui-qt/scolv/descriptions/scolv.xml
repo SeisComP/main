@@ -602,6 +602,37 @@
 					component will stay the same. It must be changed explicitely.
 					</description>
 				</parameter>
+				<group name="auxilliary">
+					<description>
+					Define the notion and behaviour of auxilliary channels.
+					They are identified through configurable patterns and if
+					identified as such they will be treated differently in
+					defined situations.
+					</description>
+					<parameter name="channels" type="list:string">
+						<description>
+						A list of wildcard patterns to identify auxilliary
+						channels. A pattern is simply checked against a stream
+						ID, the concatenation of NSLC separated by a period.
+						</description>
+					</parameter>
+					<parameter name="minimumDistance" type="double" unit="deg" default="0">
+						<description>
+						The minimum distance in degrees from origin to load an
+						unassociated auxilliary channel. Loading a
+						channel / station explicitely (F3) will not respect
+						this setting.
+						</description>
+					</parameter>
+					<parameter name="maximumDistance" type="double" unit="deg" default="1000">
+						<description>
+						The maximum distance in degrees from origin to load an
+						unassociated auxilliary channel. Loading a
+						channel / station explicitely (F3) will not respect
+						this setting.
+						</description>
+					</parameter>
+				</group>
 				<group name="phases">
 					<description>
 					Phases defined for picking. The phase phases can be selected
