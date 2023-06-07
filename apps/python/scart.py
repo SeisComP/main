@@ -928,7 +928,7 @@ Import miniSEED data into a SDS archive, check all modified files for errors
   scart -I file.mseed --with-filecheck $SEISCOMP_ROOT/var/lib/archive
 
 Import miniSEED data from FDSNWS into a SDS archive for specific time range and streams
-  scart -I fdsnws://geofon.gfz-potsdam.de -t -t '2022-03-28 15:48~2022-03-28 16:18' --nslc list.file $SEISCOMP_ROOT/var/lib/archive
+  scart -I fdsnws://geofon.gfz-potsdam.de -t '2022-03-28 15:48~2022-03-28 16:18' --nslc list.file $SEISCOMP_ROOT/var/lib/archive
 
 Check an archive for files with out-of order records
   scart --check /archive
