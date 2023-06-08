@@ -233,7 +233,9 @@ Local velocity models
 
 Custom local velocity models can be provided by a file in
 :file:`@DATADIR@/iloc/localmodels`. Example file
-:file:`@DATADIR@/iloc/localmodels/test.localmodel.dat`: ::
+:file:`@DATADIR@/iloc/localmodels/test.localmodel.dat`:
+
+.. code-block:: params
 
    #
    # test
@@ -290,21 +292,27 @@ Setup in |scname|
 =================
 
 #. Add the plugin *lociloc* to the global configuration, e.g. in
-   :file:`@SYSTEMCONFIGDIR@/global.cfg`: ::
+   :file:`@SYSTEMCONFIGDIR@/global.cfg`:
+
+   .. code-block:: params
 
       plugins = ${plugins}, lociloc
 
-#. Download iLoc from the iLoc website, extract the travel-time tables and model
-   files. Then, install the required files and directories in
-   :file:`@DATADIR@/iloc`, e.g.: ::
+#. Download iLoc data files from the :cite:t:`iloc-iris` website. Extract and
+   install them in :file:`@DATADIR@/iloc`. Ensure to download a valid file.
+   Example:
+
+   .. code-block:: sh
 
       mkdir $SEISCOMP_ROOT/share/iloc
-      wget -O /tmp/iLocAuxDir.tgz "http://iloc.geochem.hu/data/iLocAuxDir.tgz"
+      wget -O /tmp/iLocAuxDir.tgz "http://iloc.geochem.hu/data/iLocAuxDir4.1.tgz"
       tar xvf /tmp/iLocAuxDir.tgz -C $SEISCOMP_ROOT/share/iloc
 
    .. note ::
 
-      * Check the :cite:t:`iloc-iris` website for updates before downloading.
+      * Check the :cite:t:`iloc-iris` website for updates before downloading
+        the file since the version number, hence the name of the download file
+        may change.
       * Instead of generating the :file:`SEISCOMP_ROOT/share/iloc/iLocAuxDir`
         directory, you can also create a symbolic link and maintain always the
         same iLoc version in |scname| and externally.
