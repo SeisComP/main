@@ -98,7 +98,14 @@ def arrivalWeight(arrival):
 
 def createKML(mode):
     if mode == "open":
-        text = '<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>SeisComP event parameters</name>'
+        text = '<?xml version="1.0" encoding="UTF-8"?>'
+        text += '<kml xmlns="http://www.opengis.net/kml/2.2">'
+        text += "<Document><name>SeisComP event parameters</name>"
+        text += "<name>SeisComP: earthquakes</name>"
+        text += '<Style id="earthquake"><LabelStyle><scale>1</scale></LabelStyle><IconStyle>'
+        text += "<Icon><href>http://maps.google.com/mapfiles/kml/paddle/wht-stars.png</href></Icon>"
+        text += '<hotSpot x="0.5" y="0.0" xunits="fraction" yunits="fraction"/>'
+        text += "</IconStyle></Style>"
     elif mode == "close":
         text = "</Document></kml>"
     else:
@@ -928,6 +935,8 @@ class Bulletin(object):
         depth = None
         altitude = None
         sTime = None
+        mode = None
+        status = None
         if evt:
             evid = evt.publicID()
             pos = evid.find("#")  # XXX Hack!!!
@@ -941,6 +950,20 @@ class Bulletin(object):
 
             try:
                 author = org.creationInfo().author()
+            except ValueError:
+                pass
+
+            try:
+                mode = seiscomp.datamodel.EEvaluationModeNames.name(
+                    org.evaluationMode()
+                )
+            except ValueError:
+                pass
+
+            try:
+                status = seiscomp.datamodel.EEvaluationStatusNames.name(
+                    org.evaluationStatus()
+                )
             except ValueError:
                 pass
 
@@ -971,12 +994,12 @@ class Bulletin(object):
         if self.enhanced:
             latitude = "{:.3f}".format(org.latitude().value())
             longitude = "{:.3f}".format(org.longitude().value())
-            depth = "{:.3f}".format(org.depth().value())
+            depth = float("{:.3f}".format(org.depth().value()))
             sTime = org.time().value().toString("%FT%T.%f")[:23]
         else:
             latitude = "{:.1f}".format(org.latitude().value())
             longitude = "{:.1f}".format(org.longitude().value())
-            depth = "{:.0f}".format(org.depth().value())
+            depth = float("{:.0f}".format(org.depth().value()))
             sTime = org.time().value().toString("%FT%T.%f")[:21]
 
         if depth:
@@ -1014,12 +1037,15 @@ class Bulletin(object):
 
         txt = "<Placemark>"
         txt += "<ExtendedData>"
-        txt += f'<Data name="event/origin ID"><value>{ID}</value></Data>'
         if eType:
             txt += f'<Data name="event type"><value>{eType}</value></Data>'
+        txt += f'<Data name="time [UTC]"><value>{sTime}</value></Data>'
+        if mVal:
+            txt += f'<Data name="magnitude ({mType})"><value>{mVal}</value></Data>'
+        else:
+            txt += '<Data name="magnitude"><value>None</value></Data>'
         if len(region) > 0:
             txt += f'<Data name="region"><value>{region}</value></Data>'
-        txt += f'<Data name="time [UTC]"><value>{sTime}</value></Data>'
         txt += f'<Data name="latitude [degree North]"><value>{latitude}</value></Data>'
         txt += f'<Data name="longitude [degree East]"><value>{longitude}</value></Data>'
         txt += f'<Data name="depth [km]"><value>{depth}</value></Data>'
@@ -1027,11 +1053,33 @@ class Bulletin(object):
             txt += f'<Data name="agency"><value>{agencyID}</value></Data>'
         if author:
             txt += f'<Data name="author"><value>{author}</value></Data>'
-        if mag:
-            txt += f'<Data name="magnitude ({mType})"><value>{mVal}</value></Data>'
+        if mode:
+            txt += f'<Data name="mode"><value>{mode}</value></Data>'
+        if status:
+            txt += f'<Data name="status"><value>{status}</value></Data>'
         txt += "</ExtendedData>"
         txt += f"<name>{ID}</name>"
+        txt += "<styleUrl>#earthquake</styleUrl>"
+        # use icon scaling like in SC but devide by 10
+        if mVal:
+            size = 4.9 * (float(mVal) - 1.2) / 10.0
+        else:
+            size = 1
+        # scale symbolColor with depth
+        # global default: 0:FF0000,50:ffA500,100:FFFF00,250:00FF00,600:0000FF
+        if depth < 50:
+            symbolColor = "ff0000ff"
+        elif depth >= 50 and depth < 100:
+            symbolColor = "ff00a5ff"
+        elif depth >= 100 and depth < 250:
+            symbolColor = "ff00ffff"
+        elif depth >= 250 and depth < 600:
+            symbolColor = "ff00ff00"
+        else:
+            symbolColor = "ffff0000"
+        txt += f"<Style><IconStyle><scale>{size}</scale><color>{symbolColor}</color></IconStyle></Style>"
         txt += f"<Point><coordinates>{longitude},{latitude},{altitude}</coordinates></Point>"
+        txt += f"<TimeStamp>{sTime}</TimeStamp>"
         txt += "</Placemark>"
 
         return txt
