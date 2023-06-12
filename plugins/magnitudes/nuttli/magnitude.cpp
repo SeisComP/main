@@ -232,7 +232,8 @@ bool MNMagnitude::treatAsValidMagnitude() const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-MNMagnitude::Status MNMagnitude::estimateMw(double magnitude,
+MNMagnitude::Status MNMagnitude::estimateMw(const Config::Config *,
+                                            double magnitude,
                                             double &estimateMw,
                                             double &stdError) {
 	if ( SCCoreApp ) {

@@ -68,7 +68,8 @@ class MNMagnitude : public Seiscomp::Processing::MagnitudeProcessor {
 
 		bool treatAsValidMagnitude() const override;
 
-		Status estimateMw(double magnitude, double &estimateMw,
+		Status estimateMw(const Seiscomp::Config::Config *config,
+		                  double magnitude, double &estimateMw,
 		                  double &stdError) override;
 
 

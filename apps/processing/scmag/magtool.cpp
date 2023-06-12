@@ -355,7 +355,7 @@ bool MagTool::init(const MagnitudeTypes &mags, const Core::TimeSpan &expiry,
 			if ( proc ) {
 				_processors.insert(ProcessorList::value_type(proc->amplitudeType(), proc));
 				double estimation, stdError;
-				if ( proc->estimateMw(6.0, estimation, stdError) != MagnitudeProcessor::MwEstimationNotSupported ) {
+				if ( proc->estimateMw(&SCCoreApp->configuration(), 6.0, estimation, stdError) != MagnitudeProcessor::MwEstimationNotSupported ) {
 					logMagTypes += '\n';
 					logMagTypes += " * ";
 					logMagTypes += proc->typeMw();
@@ -938,7 +938,7 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 	if ( staCount ) {
 		double Mw;
 		double MwStdev;
-		MagnitudeProcessor::Status res = it->second->estimateMw(value, Mw, MwStdev);
+		MagnitudeProcessor::Status res = it->second->estimateMw(&SCCoreApp->configuration(), value, Mw, MwStdev);
 		if ( res == MagnitudeProcessor::OK ) {
 			MwStdev = *stdev > MwStdev ? *stdev : MwStdev;
 			//MwStdev = stdev;
