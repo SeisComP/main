@@ -632,18 +632,14 @@ DataModel::Magnitude *MagTool::getMagnitude(DataModel::Origin *origin,
 	if ( mag ) {
 		mag->setMagnitude(value);
 		if ( !tmpNewInstance ) {
-			Time now = Time::GMT();
-			try { mag->creationInfo().setModificationTime(now); }
-			catch ( ... ) {
-				DataModel::CreationInfo ci;
-				ci.setModificationTime(now);
-				mag->setCreationInfo(ci);
-			}
+			DataModel::touch(mag);
 			mag->update();
-			SCCoreApp->logObject(outputMagLog, now);
+			SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
 		}
 
-		if ( newInstance ) *newInstance = tmpNewInstance;
+		if ( newInstance ) {
+			*newInstance = tmpNewInstance;
+		}
 	}
 
 	return mag;
@@ -945,7 +941,6 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 			netMag = getMagnitude(origin, it->second->typeMw(), Mw);
 			if ( netMag ) {
 				netMag->setStationCount(staCount);
-
 				netMag->setEvaluationStatus(Core::None);
 				netMag->magnitude().setUncertainty(MwStdev);
 				netMag->magnitude().setLowerUncertainty(Core::None);
@@ -1020,8 +1015,9 @@ bool MagTool::computeSummaryMagnitude(DataModel::Origin *origin) {
 
 	bool newInstance;
 	NetMagPtr mag = getMagnitude(origin, _summaryMagnitudeType, &newInstance);
-	if ( !mag )
+	if ( !mag ) {
 		return false;
+	}
 
 	if ( !newInstance ) {
 		try {
@@ -1036,15 +1032,9 @@ bool MagTool::computeSummaryMagnitude(DataModel::Origin *origin) {
 			SEISCOMP_WARNING("Checking existing summary magnitude: %s", ex.what());
 		}
 
-		Time now = Time::GMT();
-		try { mag->creationInfo().setModificationTime(now); }
-		catch ( ... ) {
-			DataModel::CreationInfo ci;
-			ci.setModificationTime(now);
-			mag->setCreationInfo(ci);
-		}
+		DataModel::touch(mag.get());
 		mag->update();
-		SCCoreApp->logObject(outputMagLog, now);
+		SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
 	}
 
 	mag->setMagnitude(value);
@@ -1479,15 +1469,9 @@ bool MagTool::processOrigin(DataModel::Origin* origin) {
 		if ( netMag ) {
 			computeNetworkMagnitude(origin, mtype, netMag);
 			if ( !newInstance ) {
-				Time now = Time::GMT();
-				try { netMag->creationInfo().setModificationTime(now); }
-				catch ( ... ) {
-					DataModel::CreationInfo ci;
-					ci.setModificationTime(now);
-					netMag->setCreationInfo(ci);
-				}
+				DataModel::touch(netMag.get());
 				netMag->update();
-				SCCoreApp->logObject(outputMagLog, now);
+				SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
 			}
 		}
 	}
@@ -2087,7 +2071,11 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 				NetMagPtr netMag = getMagnitude(origin.get(), mtype, &newInstance);
 				if ( netMag ) {
 					computeNetworkMagnitude(origin.get(), mtype, netMag);
-					if ( ! newInstance ) netMag->update();
+					if ( !newInstance ) {
+						DataModel::touch(netMag.get());
+						netMag->update();
+						SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+					}
 
 					SEISCOMP_INFO("feed(Amplitude): %s Magnitude '%s' for Origin '%s'",
 					              newInstance?"created":"updated",
@@ -2118,7 +2106,11 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 				NetMagPtr netMag = getMagnitude(origin.get(), mtype, &newInstance);
 				if ( netMag ) {
 					computeNetworkMagnitude(origin.get(), mtype, netMag);
-					if ( ! newInstance ) netMag->update();
+					if ( !newInstance ) {
+						DataModel::touch(netMag.get());
+						netMag->update();
+						SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+					}
 
 					SEISCOMP_INFO("feed(Amplitude): %s Magnitude '%s' for Origin '%s'",
 					              newInstance?"created":"updated",
