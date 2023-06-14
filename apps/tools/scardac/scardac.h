@@ -125,7 +125,6 @@ class SCARDAC : public Client::Application {
 		// configuration parameters
 		std::string _archive{"sds://@ROOTDIR@/var/lib/archive"};
 		int         _threads{1};
-		int         _batchSize{100};
 		float       _jitter{0.5};
 		bool        _deepScan{false};
 		int         _maxSegments{1000000};

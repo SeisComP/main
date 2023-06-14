@@ -15,7 +15,6 @@
 #define SEISCOMP_COMPONENT SCARDAC
 
 #define MAX_THREADS 1000
-#define MAX_BATCHSIZE 1000
 
 #include "scardac.h"
 
@@ -537,10 +536,7 @@ bool Worker::findDBSegment(DatabaseIterator &it, const DataSegment *segment) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Worker::removeSegment(const DataSegmentPtr &segment){
 	_segmentsRemove.push_back(segment);
-	if ( _segmentsRemove.size() + _segmentsAdd.size() >=
-	     (unsigned long) _app->_batchSize ) {
-		flushSegmentBuffers();
-	}
+	flushSegmentBuffers();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -550,10 +546,7 @@ void Worker::removeSegment(const DataSegmentPtr &segment){
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Worker::addSegment(const DataSegmentPtr &segment) {
 	_segmentsAdd.push_back(segment);
-	if ( _segmentsRemove.size() + _segmentsAdd.size() >=
-	     (unsigned long) _app->_batchSize ) {
-		flushSegmentBuffers();
-	}
+	flushSegmentBuffers();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -565,8 +558,6 @@ void Worker::flushSegmentBuffers() {
 	if ( _segmentsRemove.empty() && _segmentsAdd.empty() ) return;
 
 	if ( dbConnect(_dbWrite, "write") ) {
-		_dbWrite->driver()->start();
-
 		for ( Segments::iterator it = _segmentsRemove.begin();
 		      it != _segmentsRemove.end(); ) {
 			if ( _dbWrite->remove(it->get()) )
@@ -574,14 +565,14 @@ void Worker::flushSegmentBuffers() {
 			else
 				++it;
 		}
+
 		for ( Segments::iterator it = _segmentsAdd.begin();
 		      it != _segmentsAdd.end(); ) {
-			if ( _dbWrite->write(it->get()) )
+			if ( _dbWrite->insert(it->get()) )
 				it = _segmentsAdd.erase(it);
 			else
 				++it;
 		}
-		_dbWrite->driver()->commit();
 	}
 
 	if ( !_segmentsRemove.empty() ) {
@@ -606,17 +597,14 @@ bool Worker::writeExtent(Operation op) {
 	if ( op == OP_UNDEFINED || ! dbConnect(_dbWrite, "write") )
 		return false;
 
-	_dbWrite->driver()->start();
-	if ( ( op == OP_ADD    && ! _dbWrite->write(_extent)  ) ||
+	if ( ( op == OP_ADD    && ! _dbWrite->insert(_extent)  ) ||
 	     ( op == OP_UPDATE && ! _dbWrite->update(_extent) ) ||
 	     ( op == OP_REMOVE && ! _dbWrite->remove(_extent) ) ) {
-		_dbWrite->driver()->rollback();
 		SEISCOMP_ERROR("[%i] %s: could not %s extent: %s", _id, _sid.c_str(),
 		               op.toString(), _extent->publicID().c_str());
 		return false;
 	}
 
-	_dbWrite->driver()->commit();
 	SEISCOMP_DEBUG("[%i] %s: %s extent: %s", _id, _sid.c_str(),
 	               string(op == OP_ADD   ?"added":
 	                      op == OP_UPDATE?"updated":"removed").c_str(),
@@ -632,8 +620,6 @@ bool Worker::writeExtent(Operation op) {
 bool Worker::syncAttributeExtents(const DataExtent &tmpExt) {
 	if ( ! dbConnect(_dbWrite, "write") )
 		return false;
-
-	_dbWrite->driver()->start();
 
 	// remove attribute extents no longer existing, update those who have changed
 	for ( size_t i = 0; i < _extent->dataAttributeExtentCount(); ) {
@@ -670,11 +656,10 @@ bool Worker::syncAttributeExtents(const DataExtent &tmpExt) {
 			                _id, _sid.c_str(), attExt->sampleRate(),
 			               attExt->quality().c_str());
 			_extent->add(attExt);
-			_dbWrite->write(attExt);
+			_dbWrite->insert(attExt);
 		}
 	}
 
-	_dbWrite->driver()->commit();
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -738,11 +723,6 @@ void SCARDAC::createCommandLineDescription() {
 	commandline().addOption("Collector", "threads",
 	                        "Number of threads scanning the archive in parallel",
 	                        &_threads);
-	commandline().addOption("Collector", "batch-size",
-	                        "Batch size of database transactions used when "
-	                        "updating data availability segments, allowed "
-	                        "range: [1,1000]",
-	                        &_batchSize);
 	commandline().addOption("Collector", "jitter",
 	                        "Acceptable derivation of end time and start time "
 	                        "of successive records in multiples of sample time",
@@ -782,11 +762,6 @@ bool SCARDAC::initConfiguration() {
 
 	try {
 		_threads = SCCoreApp->configGetInt("threads");
-	}
-	catch (...) {}
-
-	try {
-		_batchSize = SCCoreApp->configGetInt("batchSize");
 	}
 	catch (...) {}
 
@@ -831,13 +806,6 @@ bool SCARDAC::validateParameters() {
 		return false;
 	}
 
-	// batch size
-	if ( _batchSize < 1 || _batchSize > MAX_BATCHSIZE ) {
-		SEISCOMP_ERROR("invalid batch size, allowed range: [1,%i]",
-		               MAX_BATCHSIZE);
-		return false;
-	}
-
 	// jitter samples
 	if ( _jitter < 0 ) {
 		SEISCOMP_ERROR("invalid jitter value, minimum value: 0");
@@ -871,11 +839,10 @@ bool SCARDAC::run() {
 	SEISCOMP_INFO("Configuration:\n"
 	              "  archive     : %s\n"
 	              "  threads     : %i\n"
-	              "  batch size  : %i\n"
 	              "  jitter      : %f\n"
 	              "  max segments: %i"/**\n"
 	              "  deep scan   : %s"*/,
-	              _archive.c_str(), _threads, _batchSize,
+	              _archive.c_str(), _threads,
 	              _jitter, _maxSegments/**, Core::toString(_deepScan).c_str()*/);
 
 	_collector = Collector::Open(_archive.c_str());
@@ -1003,7 +970,7 @@ bool SCARDAC::generateTestData() {
 		return false;
 	}
 
-	DatabaseObjectWriter dbWriter(*query(), true, _batchSize);
+	DatabaseObjectWriter dbWriter(*query(), true);
 
 	vector<string> toks;
 	Core::split(toks, _testData.c_str(), ",");
