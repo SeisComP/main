@@ -102,13 +102,6 @@
 					Can be provided multiple times to import multiple files.
 					</description>
 				</option>
-				<option flag="b" long-flag="batchsize" argument="arg">
-					<description>
-					Batch size of a database transactions [0..1000].
-					By default all INSERT/UPDATE/DELETE statements are
-					executed in one single transaction.
-					</description>
-				</option>
 			</group>
 		</command-line>
 	</module>

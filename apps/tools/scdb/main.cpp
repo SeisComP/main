@@ -38,12 +38,12 @@ class ObjectCounter : protected DataModel::Visitor {
 		unsigned int count() const { return _count; }
 
 	protected:
-		bool visit(DataModel::PublicObject*) {
+		bool visit(DataModel::PublicObject *) override {
 			++_count;
 			return true;
 		}
 		
-		virtual void visit(DataModel::Object*) {
+		void visit(DataModel::Object *) override {
 			++_count;
 		}
 
@@ -58,18 +58,17 @@ class ObjectWriter : public DataModel::DatabaseObjectWriter {
 	// ----------------------------------------------------------------------
 	public:
 		ObjectWriter(DataModel::DatabaseArchive& archive, bool addToDatabase,
-		             int batchSize, unsigned int total,
-		             unsigned int totalProgress)
-		 : DataModel::DatabaseObjectWriter(archive, addToDatabase, batchSize),
-		   _total(total), _totalProgress(totalProgress),
-		   _lastStep(0), _failure(0) {}
+		             unsigned int total, unsigned int totalProgress)
+		: DataModel::DatabaseObjectWriter(archive, addToDatabase)
+		, _total(total), _totalProgress(totalProgress)
+		, _lastStep(0), _failure(0) {}
 
 
 	// ----------------------------------------------------------------------
 	//  Visitor interface
 	// ----------------------------------------------------------------------
 	protected:
-		bool visit(DataModel::PublicObject* publicObject) {
+		bool visit(DataModel::PublicObject* publicObject) override {
 			bool result = DataModel::DatabaseObjectWriter::visit(publicObject);
 			if ( !result )
 				_failure += ObjectCounter(publicObject).count()-1;
@@ -79,7 +78,7 @@ class ObjectWriter : public DataModel::DatabaseObjectWriter {
 			return result;
 		}
 
-		void visit(DataModel::Object* object) {
+		void visit(DataModel::Object* object) override {
 			DataModel::DatabaseObjectWriter::visit(object);
 			updateProgress();
 		}
@@ -113,32 +112,22 @@ class DBTool : public Seiscomp::Client::Application {
 
 
 	protected:
-		void createCommandLineDescription() {
+		void createCommandLineDescription() override {
 			commandline().addOption("Messaging", "mode,m", "listen mode [none, notifier, all]", &_listenMode, "notifier");
 			commandline().addOption("Database", "output,o", "database connection to write to", &_databaseWriteConnection);
 
 			commandline().addGroup("Import");
 			commandline().addOption("Import", "input,i", "file to import. Provide multiple times to import multiple files", &_importFiles);
 			commandline().addOption("Import", "remove,r", "remove objects found in import file");
-			commandline().addOption("Import", "batchsize,b", "batch size of database transactions [0..1000]", &_importBatchSize, 1);
 		}
 
 
-		bool validateParameters() {
+		bool validateParameters() override {
 			if ( !Application::validateParameters() ) {
 				return false;
 			}
 
 			_remove = commandline().hasOption("remove");
-
-			if ( _importBatchSize > 1000 ) {
-				cout << "Error: batchsize '" << _importBatchSize << "' too large" << endl;
-					return false;
-			}
-			else if ( _importBatchSize < 1 ) {
-				cout << "Error: batchsize '" << _importBatchSize << "' too small" << endl;
-					return false;
-			}
 
 			if ( _listenMode != "none" ) {
 				if ( _listenMode == "all" )
@@ -158,7 +147,7 @@ class DBTool : public Seiscomp::Client::Application {
 		}
 
 
-		virtual bool initConfiguration() {
+		bool initConfiguration() override {
 			if ( !Application::initConfiguration() ) return false;
 
 			string dbType, dbParams;
@@ -173,14 +162,14 @@ class DBTool : public Seiscomp::Client::Application {
 			return true;
 		}
 
-		virtual bool initSubscriptions() {
+		bool initSubscriptions() override {
 			if ( _listenMode != "none" )
 				return Application::initSubscriptions();
 
 			return true;
 		}
 
-		virtual bool initDatabase() {
+		bool initDatabase() override {
 			int errorCode = -1;
 			if ( _listenMode != "none" && !commandline().hasOption("input") ) {
 				SEISCOMP_DEBUG("Checking database '%s'", _databaseWriteConnection.c_str());
@@ -208,7 +197,7 @@ class DBTool : public Seiscomp::Client::Application {
 		}
 
 
-		bool run() {
+		bool run() override {
 			if ( commandline().hasOption("input") ) {
 				for ( std::string filename: _importFiles ) {
 					if ( !importDatabase(filename) ) {
@@ -239,7 +228,7 @@ class DBTool : public Seiscomp::Client::Application {
 		}
 
 
-		void handleMessage(Message* msg) {
+		void handleMessage(Message* msg) override {
 			ServiceRequestMessage* serviceRequestMsg = ServiceRequestMessage::Cast(msg);
 			if ( serviceRequestMsg ) {
 				ServiceProvideMessagePtr serviceMsg = createServiceResponse(serviceRequestMsg);
@@ -261,9 +250,9 @@ class DBTool : public Seiscomp::Client::Application {
 				}
 		
 				DataModel::Notifier* notifier = DataModel::Notifier::Cast(*it);
-				if ( notifier != NULL && notifier->object() != NULL ) {
+				if ( notifier && notifier->object() ) {
 					DataModel::PublicObject *po = DataModel::PublicObject::Cast(notifier->object());
-					if ( po != NULL )
+					if ( po )
 						SEISCOMP_DEBUG("%s %s", notifier->operation().toString(), po->publicID().data());
 
 					switch ( notifier->operation() ) {
@@ -283,7 +272,6 @@ class DBTool : public Seiscomp::Client::Application {
 				}
 			}
 		}
-
 
 		bool importDatabase(std::string filename) {
 			XMLArchive ar;
@@ -305,16 +293,29 @@ class DBTool : public Seiscomp::Client::Application {
 			cout << "Parsing file '" << filename << "'..." << endl;
 		
 			Util::StopWatch timer;
-			DataModel::ObjectPtr doc;
-			ar >> doc;
+			Core::BaseObjectPtr obj;
+			ar >> obj;
 			ar.close();
+
+			if ( !obj ) {
+				cout << "Error: no valid entry found in file '" << filename << "'" << endl;
+				return false;
+			}
+
+			auto msg = Core::Message::Cast(obj);
+			if ( msg ) {
+				handleMessage(msg);
+				return true;
+			}
+
+			DataModel::ObjectPtr doc = DataModel::Object::Cast(obj);
 		
-			if ( doc == NULL ) {
+			if ( !doc ) {
 				cout << "Error: no valid object found in file '" << filename << "'" << endl;
 				return false;
 			}
 		
-			ObjectWriter writer(*query(), !_remove, _importBatchSize, ObjectCounter(doc.get()).count(), 78);
+			ObjectWriter writer(*query(), !_remove, ObjectCounter(doc.get()).count(), 78);
 		
 			cout << "Time needed to parse XML: " << Core::Time(timer.elapsed()).toString("%T.%f") << endl;
 			cout << "Document object type: " << doc->className() << endl;
@@ -339,7 +340,6 @@ class DBTool : public Seiscomp::Client::Application {
 	private:
 		std::vector<std::string> _importFiles;
 		bool _remove;
-		unsigned int _importBatchSize;
 
 		std::string _listenMode;
 		bool _dbAllObjects;
