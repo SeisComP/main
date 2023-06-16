@@ -17,6 +17,7 @@
 #include <iostream>
 #include <algorithm>
 
+using namespace std;
 using namespace Seiscomp;
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -28,7 +29,7 @@ namespace {
 
 
 template <typename DataType>
-bool idObjectComparison(std::string id, DataType object) {
+bool idObjectComparison(string id, DataType object) {
 	if ( id != object.id() )
 		return false;
 	return true;
@@ -44,26 +45,27 @@ void addObject(DataType& data, CollectionType& collection) {
 
 
 template <typename DataType, typename CollectionType>
-DataType* findObjectWithId(const std::string& id, CollectionType& collection) {
-	typename CollectionType::iterator it;
-	it = std::find_if(collection.begin(),
-	                  collection.end(),
-	                  std::bind1st(std::ptr_fun(idObjectComparison<DataType>), id));
+DataType* findObjectWithId(const string &id, CollectionType &collection) {
+	auto it = find_if(collection.begin(), collection.end(),
+	                  bind(&idObjectComparison<DataType>, id, placeholders::_1));
 
-	if ( it != collection.end() )
+	if ( it != collection.end() ) {
 		return &(*it);
+	}
 
-	return NULL;
+	return nullptr;
 }
 
 
 
 template <typename CollectionType>
-void removeDataOlderThan(CollectionType& collection, const Core::TimeSpan& objectLifeSpan) {
-	typename CollectionType::iterator it = collection.begin();
+void removeDataOlderThan(CollectionType &collection, const Core::TimeSpan &objectLifeSpan) {
+	auto it = collection.begin();
 	for ( ; it != collection.end(); it++ ) {
 		Core::Time referenceTime = Core::Time::GMT() - objectLifeSpan;
-		if ( it->containerCreationTime() > referenceTime ) break;
+		if ( it->containerCreationTime() > referenceTime ) {
+			break;
+		}
 
 		it = collection.erase(it);
 	}
@@ -165,19 +167,23 @@ bool EventDataRepository::addEvent(DataModel::Event* event,
                                    Gui::OriginSymbol* originSymbol,
                                    Gui::TensorSymbol *tensorSymbol,
                                    bool passedFilter) {
-	std::string preferredOriginId = event->preferredOriginID();
+	string preferredOriginId = event->preferredOriginID();
 	DataModel::Origin* preferredOrigin = findOrigin(preferredOriginId);
 	Core::Time preferredOriginTime = preferredOrigin->time();
 
-	if ( preferredOriginTime < Core::Time::GMT() - _eventDataObjectLifeSpan ) return false;
+	if ( preferredOriginTime < Core::Time::GMT() - _eventDataObjectLifeSpan ) {
+		return false;
+	}
 
-	EventDataCollection::iterator it = eventsBegin();
+	auto it = eventsBegin();
 	for ( ; it != eventsEnd(); it++ ) {
-		std::string tmpPreferredOriginId = it->object()->preferredOriginID();
+		string tmpPreferredOriginId = it->object()->preferredOriginID();
 		DataModel::Origin* tmpPreferredOrigin = findOrigin(tmpPreferredOriginId);
 		Core::Time tmpPreferredOriginTime = tmpPreferredOrigin->time();
 
-		if ( tmpPreferredOriginTime > preferredOriginTime ) break;
+		if ( tmpPreferredOriginTime > preferredOriginTime ) {
+			break;
+		}
 	}
 
 	EventData eventData(event, originSymbol, tensorSymbol, passedFilter);
@@ -248,7 +254,7 @@ void EventDataRepository::addPick(DataModel::Pick* arrival) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-EventData* EventDataRepository::findEvent(const std::string& id) {
+EventData* EventDataRepository::findEvent(const string &id) {
 	return findObjectWithId<EventData>(id, _eventDataCollection);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -260,17 +266,18 @@ EventData* EventDataRepository::findEvent(const std::string& id) {
 EventData *EventDataRepository::findNextExpiredEvent() {
 	Core::Time maxTime = Core::Time::GMT() - _eventDataObjectLifeSpan;
 
-	EventDataCollection::iterator it;
-	for ( it = _eventDataCollection.begin(); it != _eventDataCollection.end(); ++it ) {
+	for ( auto it = _eventDataCollection.begin(); it != _eventDataCollection.end(); ++it ) {
 		DataModel::Origin *origin = findOrigin(it->object()->preferredOriginID());
-		if ( origin == NULL )
+		if ( !origin ) {
 			return &*it;
+		}
 
-		if ( origin->time().value() < maxTime )
+		if ( origin->time().value() < maxTime ) {
 			return &*it;
+		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -278,10 +285,12 @@ EventData *EventDataRepository::findNextExpiredEvent() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-EventData* EventDataRepository::findLatestEvent() {
-	if ( !_eventDataCollection.empty() )
+EventData *EventDataRepository::findLatestEvent() {
+	if ( !_eventDataCollection.empty() ) {
 		return &_eventDataCollection.back();
-	return NULL;
+	}
+
+	return nullptr;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -289,7 +298,7 @@ EventData* EventDataRepository::findLatestEvent() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-ArrivalData* EventDataRepository::findArrivalwithPickId(const std::string& pickId) {
+ArrivalData* EventDataRepository::findArrivalwithPickId(const string &pickId) {
 	return findObjectWithId<ArrivalData>(pickId, _arrivalDataCollection);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -298,7 +307,7 @@ ArrivalData* EventDataRepository::findArrivalwithPickId(const std::string& pickI
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-DataModel::Origin* EventDataRepository::findOrigin(const std::string& id) {
+DataModel::Origin* EventDataRepository::findOrigin(const string &id) {
 	DataModel::PublicObject* publicObject = _objectTimeSpanBuffer.find(DataModel::Origin::TypeInfo(), id);
 	return DataModel::Origin::Cast(publicObject);
 }
@@ -308,7 +317,7 @@ DataModel::Origin* EventDataRepository::findOrigin(const std::string& id) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-DataModel::FocalMechanism* EventDataRepository::findFocalMechanism(const std::string& id) {
+DataModel::FocalMechanism* EventDataRepository::findFocalMechanism(const string &id) {
 	DataModel::PublicObject* publicObject = _objectTimeSpanBuffer.find(DataModel::FocalMechanism::TypeInfo(), id);
 	return DataModel::FocalMechanism::Cast(publicObject);
 }
@@ -318,7 +327,7 @@ DataModel::FocalMechanism* EventDataRepository::findFocalMechanism(const std::st
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-DataModel::Magnitude* EventDataRepository::findMagnitude(const std::string& id) {
+DataModel::Magnitude* EventDataRepository::findMagnitude(const string &id) {
 	DataModel::PublicObject* publicObject = _objectTimeSpanBuffer.find(DataModel::Magnitude::TypeInfo(), id);
 	return DataModel::Magnitude::Cast(publicObject);
 }
@@ -328,14 +337,13 @@ DataModel::Magnitude* EventDataRepository::findMagnitude(const std::string& id) 
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void EventDataRepository::removeEvent(const std::string& id) {
-	EventDataCollection::iterator it;
-	it = std::find_if(_eventDataCollection.begin(),
-	                  _eventDataCollection.end(),
-	                  std::bind1st(std::ptr_fun(idObjectComparison<EventData>), id));
+void EventDataRepository::removeEvent(const string &id) {
+	auto it = find_if(_eventDataCollection.begin(), _eventDataCollection.end(),
+	                  bind(idObjectComparison<EventData>, id, placeholders::_1));
 
-	if ( it != _eventDataCollection.end() )
+	if ( it != _eventDataCollection.end() ) {
 		_eventDataCollection.erase(it);
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

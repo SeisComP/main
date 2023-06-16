@@ -36,6 +36,7 @@
 #include <seiscomp/client/application.h>
 #include <seiscomp/utils/timer.h>
 
+#include <algorithm>
 #include <iostream>
 #include <limits>
 #include <map>
@@ -316,7 +317,7 @@ bool MagTool::init(const MagnitudeTypes &mags, const Core::TimeSpan &expiry,
 	_cacheSize = expiry;
 	_objectCache.setDatabaseArchive(SCCoreApp->query());
 	_objectCache.setTimeSpan(_cacheSize);
-	_objectCache.setPopCallback(std::bind1st(std::mem_fun(&MagTool::publicObjectRemoved), this));
+	_objectCache.setPopCallback(std::bind(&MagTool::publicObjectRemoved, this, std::placeholders::_1));
 
 	_dbAccesses = 0;
 	_allowReprocessing = allowReprocessing;
