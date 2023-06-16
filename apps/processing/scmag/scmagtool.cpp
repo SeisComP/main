@@ -421,9 +421,10 @@ class MagToolApp : public Seiscomp::Client::Application {
 		void handleTimeout() {
 			// Send out all available notifiers
 			NotifierMessagePtr xmsg = Notifier::GetMessage();
-			if (xmsg) {
-				if ( !commandline().hasOption("test") )
+			if ( xmsg ) {
+				if ( !commandline().hasOption("test") ) {
 					connection()->send(xmsg.get());
+				}
 			}
 		}
 

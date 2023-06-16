@@ -402,7 +402,7 @@ bool MagTool::init(const MagnitudeTypes &mags, const Core::TimeSpan &expiry,
 	SEISCOMP_INFO("Using default summary coefficients: a = %.2f, b = %.2f",
 	              *_defaultCoefficients.a, *_defaultCoefficients.b);
 
-	for ( auto it : _magnitudeCoefficients ) {
+	for ( auto &it : _magnitudeCoefficients ) {
 		SEISCOMP_INFO("Using '%s' summary coefficients: a = %s, b = %s",
 		              it.first.c_str(), it.second.a?toString(*it.second.a).c_str():"[default]",
 		              it.second.b?toString(*it.second.b).c_str():"[default]");
@@ -429,7 +429,7 @@ bool MagTool::init(const MagnitudeTypes &mags, const Core::TimeSpan &expiry,
 			}
 		}
 
-		for ( auto origin : fetchedOrigins ) {
+		for ( auto &origin : fetchedOrigins ) {
 			SEISCOMP_DEBUG("Load origin %s", origin->publicID().c_str());
 			SCCoreApp->query()->load(origin.get());
 		}
@@ -509,16 +509,9 @@ DataModel::StationMagnitude *MagTool::getStationMagnitude(
 
 	}
 	else {
-		Time now = Time::GMT();
-		try { mag->creationInfo().setModificationTime(now); }
-		catch ( ... ) {
-			DataModel::CreationInfo ci;
-			ci.setModificationTime(now);
-			mag->setCreationInfo(ci);
-		}
-
+		DataModel::touch(mag);
 		mag->update();
-		SCCoreApp->logObject(outputMagLog, now);
+		SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
 	}
 
 	if ( origin != mag->parent() ) {
@@ -547,9 +540,9 @@ DataModel::StationMagnitude *MagTool::getStationMagnitude(
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-DataModel::Magnitude *MagTool::getMagnitude(DataModel::Origin* origin,
+DataModel::Magnitude *MagTool::getMagnitude(DataModel::Origin *origin,
                                             const std::string &type,
-                                            bool* newInstance) const {
+                                            bool *newInstance) const {
 	DataModel::Magnitude *mag = nullptr;
 	for ( size_t i = 0; i < origin->magnitudeCount(); ++i ) {
 		NetMag *nmag = origin->magnitude(i);
@@ -560,10 +553,11 @@ DataModel::Magnitude *MagTool::getMagnitude(DataModel::Origin* origin,
 	}
 
 	if ( !mag ) {
-		if ( SCCoreApp->hasCustomPublicIDPattern() )
+		if ( SCCoreApp->hasCustomPublicIDPattern() ) {
 			mag = NetMag::Create();
+		}
 		else {
-			std::string id = origin->publicID() + "/netMag/" + type;
+			string id = origin->publicID() + "/netMag/" + type;
 			mag = NetMag::Create(id);
 		}
 
@@ -583,7 +577,11 @@ DataModel::Magnitude *MagTool::getMagnitude(DataModel::Origin* origin,
 		mag->setType(type);
 		origin->add(mag);
 
-		if ( newInstance ) *newInstance = true;
+		if ( newInstance ) {
+			*newInstance = true;
+		}
+
+		SC_FMT_DEBUG("A NETMAG {}", mag->publicID());
 	}
 	else {
 		if ( !_allowReprocessing ) {
@@ -609,11 +607,14 @@ DataModel::Magnitude *MagTool::getMagnitude(DataModel::Origin* origin,
 			}
 			catch ( ... ) {}
 
-			if ( rejectProcessing )
+			if ( rejectProcessing ) {
 				return nullptr;
+			}
 		}
 
-		if ( newInstance ) *newInstance = false;
+		if ( newInstance ) {
+			*newInstance = false;
+		}
 	}
 
 	return mag;
@@ -636,6 +637,7 @@ DataModel::Magnitude *MagTool::getMagnitude(DataModel::Origin *origin,
 			DataModel::touch(mag);
 			mag->update();
 			SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+			SC_FMT_DEBUG("U NETMAG {}: {}", mag->publicID(), value);
 		}
 
 		if ( newInstance ) {
@@ -819,7 +821,7 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 
 	set<StationMagnitudeContribution*> refs;
 
-	for ( auto stationMagnitude : stationMagnitudes ) {
+	for ( auto &stationMagnitude : stationMagnitudes ) {
 		StationMagnitudeContributionPtr magRef =
 			netMag->stationMagnitudeContribution(stationMagnitude->publicID());
 
@@ -850,10 +852,12 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 			  || oldResidual != residual
 			  || bool(staCount > 0) != hasResidual ) {
 				magRef->setWeight(weights[weightIndex]);
-				if ( staCount )
+				if ( staCount ) {
 					magRef->setResidual(residual);
-				else
+				}
+				else {
 					magRef->setResidual(Core::None);
+				}
 				magRef->update();
 				SEISCOMP_DEBUG("Updating magnitude reference for %s", stationMagnitude->publicID().c_str());
 			}
@@ -864,7 +868,7 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 	}
 
 	// Associate zero weight magnitudes with weight 0
-	for ( auto stationMagnitude : stationMagnitudesZeroWeight ) {
+	for ( auto &stationMagnitude : stationMagnitudesZeroWeight ) {
 		StationMagnitudeContributionPtr magRef =
 			netMag->stationMagnitudeContribution(stationMagnitude->publicID());
 
@@ -895,10 +899,12 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 			  || oldResidual != residual
 			  || bool(staCount > 0) != hasResidual ) {
 				magRef->setWeight(0.0);
-				if ( staCount )
+				if ( staCount ) {
 					magRef->setResidual(residual);
-				else
+				}
+				else {
 					magRef->setResidual(Core::None);
+				}
 				magRef->update();
 				SEISCOMP_DEBUG("Updating magnitude reference for %s", stationMagnitude->publicID().c_str());
 			}
@@ -960,8 +966,13 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool MagTool::computeSummaryMagnitude(DataModel::Origin *origin) {
-	if ( !_summaryMagnitudeEnabled ) return false;
-	if ( _summaryMagnitudeType.empty() ) return false;
+	if ( !_summaryMagnitudeEnabled ) {
+		return false;
+	}
+
+	if ( _summaryMagnitudeType.empty() ) {
+		return false;
+	}
 
 	double value = 0.0, totalWeight = 0.0;
 	int count = 0;
@@ -971,45 +982,58 @@ bool MagTool::computeSummaryMagnitude(DataModel::Origin *origin) {
 		const std::string &type = nmag->type();
 		int n = 0;
 
-		if ( type == _summaryMagnitudeType )
+		if ( type == _summaryMagnitudeType ) {
 			continue;
+		}
 
 		try {
 			// Ignore rejected magnitudes
-			if ( nmag->evaluationStatus() == DataModel::REJECTED )
+			if ( nmag->evaluationStatus() == DataModel::REJECTED ) {
 				continue;
+			}
 		}
 		catch ( ... ) {}
 
-		if ( !isTypeEnabledForSummaryMagnitude(type) ) continue;
+		if ( !isTypeEnabledForSummaryMagnitude(type) ) {
+			continue;
+		}
 
 		try { n = nmag->stationCount(); }
 		catch ( ... ) {}
 
-		if ( n < _summaryMagnitudeMinStationCount ) continue;
+		if ( n < _summaryMagnitudeMinStationCount ) {
+			continue;
+		}
 
 		double a = *_defaultCoefficients.a, b=*_defaultCoefficients.b; // defaults
 
 		Coefficients::iterator it = _magnitudeCoefficients.find(type);
 		if ( it != _magnitudeCoefficients.end() ) {
-			if ( it->second.a ) a = *(it->second.a);
-			if ( it->second.b ) b = *(it->second.b);
+			if ( it->second.a ) {
+				a = *(it->second.a);
+			}
+
+			if ( it->second.b ) {
+				b = *(it->second.b);
+			}
 		}
 
 		double weight = a*n+b;
-		if ( weight <= 0 )
+		if ( weight <= 0 ) {
 			continue;
+		}
 
 		totalWeight += weight;
 		value += weight*nmag->magnitude().value();
 		// The total count is currently the maximum count for any individual magnitude.
 		// FIXME: Something better is needed here.
-		count  = n > count ? n : count;
+		count = n > count ? n : count;
 	}
 
 	// No magnitudes available
-	if ( totalWeight == 0 )
+	if ( totalWeight == 0 ) {
 		return false;
+	}
 
 	// Simple average
 	value = value / totalWeight;
@@ -1036,6 +1060,7 @@ bool MagTool::computeSummaryMagnitude(DataModel::Origin *origin) {
 		DataModel::touch(mag.get());
 		mag->update();
 		SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+		SC_FMT_DEBUG("U NETMAG {}: {}", mag->publicID(), value);
 	}
 
 	mag->setMagnitude(value);
@@ -1314,8 +1339,9 @@ bool MagTool::processOrigin(DataModel::Origin* origin) {
 
 	retrieveMissingPicksAndArrivalsFromDB(origin);
 
-	if ( _staticUpdate )
+	if ( _staticUpdate ) {
 		return processOriginUpdateOnly(origin);
+	}
 
 	double depth;
 
@@ -1390,7 +1416,7 @@ bool MagTool::processOrigin(DataModel::Origin* origin) {
 		e.second = LocationAndDistance(sloc, arr->distance());
 	}
 
-	for ( auto it : pickStreamMap ) {
+	for ( auto &it : pickStreamMap ) {
 		const string &pickID = it.second.first->publicID();
 		DataModel::SensorLocation *loc = it.second.second.first;
 		double distance = it.second.second.second;
@@ -1398,27 +1424,26 @@ bool MagTool::processOrigin(DataModel::Origin* origin) {
 		SEISCOMP_DEBUG("using pick %s", pickID.c_str());
 
 		// Loop over amplitudes
-		pair<StaAmpMap::iterator, StaAmpMap::iterator>
-			itp = _ampl.equal_range(pickID);
+		auto itp = _ampl.equal_range(pickID);
 
 		// Collect all amplitudes of certain type with highest priority
 		map<string, const DataModel::Amplitude*> usedAmplitudes;
 		
-		for (StaAmpMap::iterator
-		     it = itp.first; it != itp.second; ++it) {
-			const DataModel::Amplitude *ampl  = ((*it).second).get();
-			map<string, const DataModel::Amplitude*>::iterator amp_it;
+		for ( auto itpi = itp.first; itpi != itp.second; ++itpi ) {
+			const DataModel::Amplitude *ampl  = itpi->second.get();
+			auto amp_it = usedAmplitudes.find(ampl->type());
 
-			amp_it = usedAmplitudes.find(ampl->type());
-			// New entry? Store amplitude
-			if ( amp_it == usedAmplitudes.end() )
+			if ( amp_it == usedAmplitudes.end() ) {
+				// New entry -> store amplitude
 				usedAmplitudes[ampl->type()] = ampl;
-			// If an amplitude for a particular type is stored already check
-			// its priority and replace it
+			}
 			else {
+				// If an amplitude for a particular type is stored already check
+				// its priority and replace it
 				const DataModel::Amplitude *stored_ampl = amp_it->second;
-				if ( hasHigherPriority(ampl, stored_ampl) )
+				if ( hasHigherPriority(ampl, stored_ampl) ) {
 					amp_it->second = ampl;
+				}
 			}
 
 			// Highest priority has the amplitude which is already associated
@@ -1436,19 +1461,22 @@ bool MagTool::processOrigin(DataModel::Origin* origin) {
 					}
 				}
 
-				if ( ok ) break;
+				if ( ok ) {
+					break;
+				}
 			}
 		}
 
 		// Compute magnitudes of used amplitudes
-		for ( auto amp_it : usedAmplitudes ) {
+		for ( auto &amp_it : usedAmplitudes ) {
 			const DataModel::Amplitude *ampl  = amp_it.second;
 			const string &aid   = ampl->publicID();
 
 			MagnitudeList mags;
 
-			if ( !computeStationMagnitude(ampl, origin, loc, distance, depth, mags) )
+			if ( !computeStationMagnitude(ampl, origin, loc, distance, depth, mags) ) {
 				continue;
+			}
 
 			for ( const auto &entry : mags ) {
 				StaMagPtr stationMagnitude = getStationMagnitude(origin, ampl->waveformID(), entry.proc->type(), entry.value, _allowReprocessing);
@@ -1473,6 +1501,7 @@ bool MagTool::processOrigin(DataModel::Origin* origin) {
 				DataModel::touch(netMag.get());
 				netMag->update();
 				SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+				SC_FMT_DEBUG("U NETMAG {}: {}", netMag->publicID(), netMag->magnitude().value());
 			}
 		}
 	}
@@ -1488,7 +1517,7 @@ bool MagTool::processOrigin(DataModel::Origin* origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool MagTool::processOriginUpdateOnly(DataModel::Origin* origin) {
+bool MagTool::processOriginUpdateOnly(DataModel::Origin *origin) {
 	DataModel::Magnitude *netMag;
 	DataModel::StationMagnitudeContribution *contrib;
 	DataModel::StationMagnitude *staMag;
@@ -1693,7 +1722,7 @@ bool MagTool::processOriginUpdateOnly(DataModel::Origin* origin) {
 
 		if ( !mv.empty() ) {
 			string methodID;
-			double val, stdev;
+			double val, stdev = 0.0;
 
 			if ( _keepWeights ) {
 				// Use preset weights
@@ -1729,17 +1758,20 @@ bool MagTool::processOriginUpdateOnly(DataModel::Origin* origin) {
 					}
 				}
 				else {
-					if ( !Math::Statistics::average(mv, weights, val, stdev) )
+					if ( !Math::Statistics::average(mv, weights, val, stdev) ) {
 						return false;
+					}
 				}
 			}
-			else if ( !computeAverage(averageMethod, mv, weights, methodID, val, stdev) )
+			else if ( !computeAverage(averageMethod, mv, weights, methodID, val, stdev) ) {
 				return false;
+			}
 
 			if ( stdev > _warningLevel ) {
 				string mID = "mean with preset weights";
-				if ( !_keepWeights )
+				if ( !_keepWeights ) {
 					mID = methodID;
+				}
 				SEISCOMP_WARNING("Exceedence of warning level - magnitude type: %s method: %s value: %.2f stdev: %.2f",
 				                 netMag->type().c_str(), mID.c_str(), val, stdev);
 			}
@@ -1926,7 +1958,7 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 
 		dbit.close();
 
-		for ( auto origin : reloadOrigins ) {
+		for ( auto &origin : reloadOrigins ) {
 			SEISCOMP_DEBUG("Load children from database for origin %s",
 			               origin->publicID().c_str());
 			SCCoreApp->query()->load(origin.get());
@@ -2076,6 +2108,7 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 						DataModel::touch(netMag.get());
 						netMag->update();
 						SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+						SC_FMT_DEBUG("U NETMAG {}: {}", netMag->publicID(), netMag->magnitude().value());
 					}
 
 					SEISCOMP_INFO("feed(Amplitude): %s Magnitude '%s' for Origin '%s'",
@@ -2102,7 +2135,7 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 				}
 			}
 
-			for ( auto mtype : mtypes ) {
+			for ( auto &mtype : mtypes ) {
 				bool newInstance;
 				NetMagPtr netMag = getMagnitude(origin.get(), mtype, &newInstance);
 				if ( netMag ) {
@@ -2111,6 +2144,7 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 						DataModel::touch(netMag.get());
 						netMag->update();
 						SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+						SC_FMT_DEBUG("U NETMAG {}: {}", netMag->publicID(), netMag->magnitude().value());
 					}
 
 					SEISCOMP_INFO("feed(Amplitude): %s Magnitude '%s' for Origin '%s'",
