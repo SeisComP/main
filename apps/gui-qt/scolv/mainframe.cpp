@@ -1141,6 +1141,7 @@ void MainFrame::openFile(const std::string &filename) {
 	DataModel::EventParametersPtr ep;
 
 	_offlineData = nullptr;
+	_offlineJournal = nullptr;
 
 	//_currentOrigin = nullptr;
 	_originLocator->clear();
@@ -1158,7 +1159,10 @@ void MainFrame::openFile(const std::string &filename) {
 		return;
 	}
 
+	ar >> _offlineJournal;
+
 	_offlineData = ep;
+
 	if ( !_offlineData->registered() ) {
 		if ( !_offlineData->setPublicID(_offlineData->publicID()) ) {
 			_offlineData = nullptr;
