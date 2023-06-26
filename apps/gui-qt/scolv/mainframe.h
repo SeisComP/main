@@ -22,6 +22,7 @@
 #include <seiscomp/datamodel/databasequery.h>
 #include <seiscomp/datamodel/origin.h>
 #include <seiscomp/datamodel/eventparameters.h>
+#include <seiscomp/datamodel/journaling.h>
 #endif
 #include "ui_mainframe.h"
 
@@ -122,6 +123,7 @@ class MainFrame : public MainWindow {
 
 		DataModel::OriginPtr _currentOrigin;
 		DataModel::EventParametersPtr _offlineData;
+		DataModel::JournalingPtr _offlineJournal;
 
 		bool               _expertMode;
 		bool               _magnitudeCalculationEnabled;
