@@ -5,10 +5,17 @@
 		<configuration>
 			<parameter name="archive" type="string" default="@SEISCOMP_ROOT@/var/lib/archive">
 				<description>
-				Path to MiniSeed waveform archive where all data is stored. The SDS archive
-				structure is defined as
-				YEAR/NET/STA/CHA/NET.STA.LOC.CHA.YEAR.DATEOFYEAR, e.g.
+				The URL to the waveform archive where all data is stored.
+
+				Format: [service://]location[#type]
+
+				&quot;service&quot;: The type of the archive. If not given,
+				&quot;sds://&quot; is implied assuming an SDS archive. The SDS
+				archive structure is defined as
+				YEAR/NET/STA/CHA/NET.STA.LOC.CHA.YEAR.DAYFYEAR, e.g.
 				2018/GE/APE/BHZ.D/GE.APE..BHZ.D.2018.125
+
+				Other archive types may be considered by plugins.
 				</description>
 			</parameter>
 			<parameter name="threads" type="int" default="1">
