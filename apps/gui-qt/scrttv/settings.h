@@ -106,7 +106,8 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 		    vstreams,
 		    "Mode", "channels",
 		    "Channel(s) to display. The channel code may contain wildcards at "
-		    "any position but the support of wildcars depends on RecordStream. "
+		    "any position but the support of wildcards depends on RecordStream. "
+		    "Repeat the option for multiple channel groups. "
 		    "Examples:\n"
 		    "default : all streams configured by global bindings.\n"
 		    "GE.*.*.HH? : all HH streams of all stations from GE network.",
