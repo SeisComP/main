@@ -529,8 +529,9 @@
 				<option long-flag="channels" argument="" publicID="mode#channels">
 					<description>
 					Channel(s) to display. The channel code may contain wildcards
-					at any position but the support of wildcars depends on
-					RecordStream. Examples:
+					at any position but the support of wildcards depends on
+					RecordStream. Repeat the option for multiple
+					channel groups. Examples:
 
 					default : all streams configured by global bindings.
 
