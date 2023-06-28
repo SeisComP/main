@@ -233,7 +233,7 @@
     <string>Undo</string>
    </property>
    <property name="toolTip" >
-    <string>Undo modifications on the current origin</string>
+    <string>Undo modifications on the current origin (Ctrl+Z)</string>
    </property>
    <property name="shortcut" >
     <string>Ctrl+Z</string>
@@ -253,7 +253,7 @@
     <string>Redo</string>
    </property>
    <property name="toolTip" >
-    <string>Redo the most recent undone origin modifications</string>
+    <string>Redo the most recent undone origin modifications  (Ctrl+Shift+Z)</string>
    </property>
    <property name="shortcut" >
     <string>Ctrl+Shift+Z</string>
@@ -270,7 +270,7 @@
     <string>Next event</string>
    </property>
    <property name="toolTip" >
-    <string>Load next event from the event list</string>
+    <string>Load next event from the event list (Ctrl+PgUp)</string>
    </property>
    <property name="shortcut" >
     <string>Ctrl+PgUp</string>
@@ -287,7 +287,7 @@
     <string>Previous event</string>
    </property>
    <property name="toolTip" >
-    <string>Load previous event from the event list</string>
+    <string>Load previous event from the event list (Ctrl+PgDown)</string>
    </property>
    <property name="shortcut" >
     <string>Ctrl+PgDown</string>

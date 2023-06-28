@@ -741,7 +741,9 @@
 				</description>
 				<group name="origin">
 					<description>
-						Origin information
+						Origin information to show. Event comments can be
+						processed by addons or shown in the event list as
+						configured by global parameters.
 					</description>
 					<parameter name="addons" type="list:string">
 						<description>
@@ -753,7 +755,7 @@
 					</parameter>
 					<group name="comment">
 						<description>
-						Display origin comments.
+						Origin comment value to be shown based on its comment ID.
 						</description>
 						<parameter name="id" type="string">
 							<description>
