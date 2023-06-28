@@ -366,14 +366,14 @@ class DBCleaner(seiscomp.client.Application):
                     "keep-events",
                     "Event-IDs to keep in the "
                     "database. Combining with"
-                    "'qc-only' is invalld.",
+                    "'qc-only' is invalid.",
                 )
                 self.commandline().addOption(
                     "Objects",
                     "qc-only,Q",
                     "Strip only waveform QC but no "
                     "event parameters. Combining with"
-                    "'ep-only' is invalld.",
+                    "'ep-only' is invalid.",
                 )
 
                 self.commandline().addGroup("Timespan")
@@ -484,6 +484,9 @@ Remove event and waveform quality parameters from the database in a timespan."""
             """Examples:
 Remove all event and waveform QC paramters older than 30 days
   scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --days 30
+
+Remove all waveform QC paramters older than 30 days but do not effect event parameters
+  scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --days 30 -Q
 """
         )
 
