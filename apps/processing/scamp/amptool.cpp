@@ -220,7 +220,7 @@ bool AmpTool::init() {
 		return false;
 
 	if ( _picks && _epFile.empty() ) {
-		SC_FMT_ERROR("--picks is only allowed with --ep");
+		SEISCOMP_ERROR("--picks is only allowed with --ep");
 		return false;
 	}
 
@@ -848,8 +848,8 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 
 			int res = -1;
 			if ( pick ) {
-				SC_FMT_DEBUG("Measuring {} amplitude for pick {} independent of origin",
-				             ait->c_str(), pick->publicID().c_str());
+				SEISCOMP_DEBUG("Measuring %s amplitude for pick %s independent of origin",
+				               ait->c_str(), pick->publicID().c_str());
 				res = addProcessor(proc.get(), nullptr, pick.get(), None, None, None);
 			}
 			else {
@@ -883,9 +883,9 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 			                          req.timeWindow.endTime());
 		}
 
-		SC_FMT_DEBUG("{} time window: {} - {}",
-		             it->first, req.timeWindow.startTime().toString("%F %T"),
-		             req.timeWindow.endTime().toString("%F %T"));
+		SEISCOMP_DEBUG("%s time window: %s - %s",
+		               it->first.c_str(), req.timeWindow.startTime().toString("%F %T").c_str(),
+		               req.timeWindow.endTime().toString("%F %T").c_str());
 		_report << " + TimeWindow (" << it->first << "): " << req.timeWindow.startTime().toString("%F %T")
 		        << ", " << req.timeWindow.endTime().toString("%F %T") << std::endl;
 	}
