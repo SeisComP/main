@@ -80,11 +80,20 @@ class OLVApp : public Kicker<MainFrame> {
 
 			if ( commandline().hasOption("offline") || !_inputFile.empty() ) {
 				setMessagingEnabled(false);
-				if ( !isInventoryDatabaseEnabled() )
+				if ( !isInventoryDatabaseEnabled() ) {
 					setDatabaseEnabled(false, false);
+				}
 			}
 
 			return true;
+		}
+
+		bool handleInitializationError(int stage) override {
+			if ( stage == CONFIGMODULE || stage == INVENTORY ) {
+				return commandline().hasOption("offline");
+			}
+
+			return Kicker<MainFrame>::handleInitializationError(stage);
 		}
 
 		void setupUi(MainFrame* w) {
