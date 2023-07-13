@@ -97,7 +97,7 @@
 </widget>
 <widget class="QMenu" name="menuOptions" >
 	<property name="title" >
-	<string>&amp;Options</string>
+	<string>&amp;Settings</string>
 	</property>
 	<addaction name="actionAutoSelect" />
 </widget>
