@@ -41,7 +41,6 @@ QString getStreamID(const DataModel::WaveformStreamID& wfid) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 QcModel::QcModel(const QcViewConfig* config, QObject* parent)
 	: QAbstractTableModel(parent),
 	  _config(config) {

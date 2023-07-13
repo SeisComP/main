@@ -195,10 +195,14 @@ void QcView::updateStreamCount() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 QcTableView::QcTableView(QcModel* qcModel, QWidget* parent, Qt::WindowFlags f)
 : QcView(qcModel, parent, f) {
-	_cornerButton = NULL;
 	init();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 QcTableView::~QcTableView(){}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -208,10 +212,8 @@ QcTableView::~QcTableView(){}
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void QcTableView::init() {
 	_qcTable = new QTableView();
-	_qcTable->verticalHeader()->setDefaultSectionSize(fontMetrics().height()+6);
-	_qcTable->verticalHeader()->setDefaultAlignment(Qt::AlignLeft);
+	_qcTable->verticalHeader()->hide();
 	_qcTable->setModel(_qcProxyModel);
-	_qcTable->hideColumn(0);
 	_qcTable->sortByColumn(0, Qt::AscendingOrder); 
 	_qcTable->setSortingEnabled(true);
 	_qcTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -225,24 +227,9 @@ void QcTableView::init() {
 	itemDelegate->setModel(_qcProxyModel);
 	_qcTable->setItemDelegate(itemDelegate);
 
-
-	//! set the Corner Widget
-	_cornerButton = _qcTable->findChild<QAbstractButton*>();
-	if (_cornerButton) {
-		_cornerButton = new QcTableCornerButton(_qcTable);
-		_cornerButton->setText("streamID");
-		_cornerButton->hide();
-		_cornerButton->setEnabled(true);
-		_cornerButton->installEventFilter(this);
-		connect(_cornerButton, SIGNAL(pressed()), this, SLOT(resetTableSorting()));
-	}
-
 	_layout->addWidget(_qcTable);
 
 	QcView::init();
-
-	connect(_qcModel, SIGNAL(modelReset()), this, SLOT(alterCornerButton()));
-	connect(_leFilter, SIGNAL(textChanged(const QString&)), this, SLOT(alterCornerButton()));
 
 	connect(_qcTable->verticalHeader(), SIGNAL(sectionPressed(int)), this, SLOT(showStream(int)));
 
@@ -305,20 +292,6 @@ double QcTableView::streamWidgetLength() const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void QcTableView::alterCornerButton() {
-	if (_qcProxyModel->rowCount() == 0)
-		_cornerButton->hide();
-	else {
-		_cornerButton->show();
-		_qcTable->horizontalHeader()->hideSection(0);
-	}
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 //! install eventFilter for the Table Corner Widget
 bool QcTableView::eventFilter(QObject* o, QEvent* e) {
 	if (e->type() == QEvent::Paint){
@@ -333,48 +306,36 @@ bool QcTableView::eventFilter(QObject* o, QEvent* e) {
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-void QcTableView::showDialog(const QModelIndex& index) {
-	QModelIndex inx(_qcProxyModel->mapToSource(index));
+void QcTableView::showDialog(const QModelIndex &index) {
+	QModelIndex idx(_qcProxyModel->mapToSource(index));
 
-	if (inx.column() != 1) return;
+	if ( idx.column() == 0 ) {
+		showStream(idx.row());
+	}
+	else if ( idx.column() == 1 ) {
+		// show the enable/disable message box
+		QMessageBox msgBox;
 
-	// show the enable/disable message box
-	QMessageBox msgBox;
+		msgBox.setWindowTitle(QString("%1").arg(_qcModel->getKey(idx)));
 
-	msgBox.setWindowTitle(QString("%1").arg(_qcModel->getKey(inx)));
+		bool state = _qcModel->streamEnabled(idx);
+		QString what = "Enable";
+		if ( state ) {
+			what = "Do you really want to disable";
+		}
 
-	bool state = _qcModel->streamEnabled(inx);
-	QString what = "Enable";
-	if (state)
-		what = "Do you really want to disable";
-	msgBox.setText(QString("%1 stream?").arg(what));
-		
-	msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-	switch (msgBox.exec()) {
-	case QMessageBox::Yes:
-		_qcModel->setStreamEnabled(inx, !state);
-		break;
-	case QMessageBox::No:
-		// do nothing
-		break;
-	default:
-		// should never be reached
-		break;
+		msgBox.setText(QString("%1 stream?").arg(what));
+		msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+
+		if ( msgBox.exec() == QMessageBox::Yes ) {
+			_qcModel->setStreamEnabled(idx, !state);
+		}
 	}
 }
 
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void QcTableView::resetTableSorting() {
-	_qcTable->sortByColumn(0, Qt::AscendingOrder);
- }
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 QcOverView::QcOverView(QcModel* qcModel, QWidget* parent, Qt::WindowFlags f)
 : QcView(qcModel, parent, f) {
 	init();

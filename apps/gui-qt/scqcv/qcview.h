@@ -98,8 +98,6 @@ class QcTableView : public QcView {
 		bool eventFilter(QObject* o, QEvent* e);
 
 	public slots:
-		void resetTableSorting();
-		void alterCornerButton();
 		void showStream(int);
 		double streamWidgetLength() const;
 		void setStreamWidgetLength(double length);
@@ -108,8 +106,7 @@ class QcTableView : public QcView {
 
 
 	private:
-		QTableView* _qcTable;
-		QAbstractButton* _cornerButton;
+		QTableView *_qcTable;
 		double _streamWidgetLength;
 
 };
