@@ -1605,6 +1605,7 @@ void MainWindow::loadFiles() {
 
 	TRACEVIEWS(setAlignment(_originTime));
 	TRACEVIEWS(setBufferSize(tw.length()));
+	TRACEVIEWS(setTimeSpan(tw.length()));
 	TRACEVIEWS(setTimeRange(-tw.length(), 0));
 
 	alignRight();
@@ -1629,6 +1630,7 @@ void MainWindow::openAcquisition() {
 	_dataTimeWindow.set(_originTime - _bufferSize, Settings::global.endTime);
 
 	TRACEVIEWS(setBufferSize(_bufferSize));
+	TRACEVIEWS(setTimeSpan(_bufferSize));
 
 	centralWidget()->layout()->addWidget(createTraceView());
 
@@ -2535,6 +2537,7 @@ void MainWindow::switchToRealtime() {
 	_dataTimeWindow.set(_originTime - _bufferSize, Settings::global.endTime);
 
 	TRACEVIEWS(setBufferSize(_bufferSize));
+	TRACEVIEWS(setTimeSpan(_bufferSize));
 	TRACEVIEWS(setAlignment(_originTime));
 	TRACEVIEWS(setTimeRange(-_bufferSize, 0));
 	_wantReload = true;
@@ -2560,6 +2563,7 @@ void MainWindow::reloadTimeWindow(const Core::TimeWindow &tw) {
 	_originTime = Settings::global.endTime;
 
 	TRACEVIEWS(setBufferSize(_bufferSize));
+	TRACEVIEWS(setTimeSpan(_bufferSize));
 	TRACEVIEWS(setAlignment(_originTime));
 	TRACEVIEWS(setTimeRange(-_dataTimeWindow.length(), 0));
 	_wantReload = true;
