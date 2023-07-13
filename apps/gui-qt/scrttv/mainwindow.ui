@@ -714,10 +714,10 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Select</string>
+    <string>Standard mode</string>
    </property>
    <property name="toolTip">
-    <string>Disable any selection mode</string>
+    <string>Return to standard mode.</string>
    </property>
    <property name="shortcut">
     <string>Esc</string>

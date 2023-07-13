@@ -2440,10 +2440,15 @@ void MainWindow::selectModeZoom() {
 		return;
 	}
 
-	TRACEVIEWS(setZoomEnabled());
-	_statusBarSelectMode->blockSignals(true);
-	_statusBarSelectMode->setCurrentIndex(MODE_ZOOM);
-	_statusBarSelectMode->blockSignals(false);
+	if ( _statusBarSelectMode->currentIndex() == MODE_ZOOM ) {
+		selectModeNone();
+	}
+	else {
+		TRACEVIEWS(setZoomEnabled());
+		_statusBarSelectMode->blockSignals(true);
+		_statusBarSelectMode->setCurrentIndex(MODE_ZOOM);
+		_statusBarSelectMode->blockSignals(false);
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2456,10 +2461,15 @@ void MainWindow::selectModePicks() {
 		return;
 	}
 
-	TRACEVIEWS(setRubberBandSelectionEnabled());
-	_statusBarSelectMode->blockSignals(true);
-	_statusBarSelectMode->setCurrentIndex(MODE_PICKS);
-	_statusBarSelectMode->blockSignals(false);
+	if ( _statusBarSelectMode->currentIndex() == MODE_PICKS ) {
+		selectModeNone();
+	}
+	else {
+		TRACEVIEWS(setRubberBandSelectionEnabled());
+		_statusBarSelectMode->blockSignals(true);
+		_statusBarSelectMode->setCurrentIndex(MODE_PICKS);
+		_statusBarSelectMode->blockSignals(false);
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
