@@ -307,7 +307,6 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		Core::TimeSpan                            _bufferSize;
 		Core::Time                                _originTime;
 		Core::Time                                _lastRecordTime;
-		Core::Time                                _startTime;
 		Core::TimeWindow                          _dataTimeWindow;
 
 		QMap<DataModel::WaveformStreamID, double> _scaleMap;

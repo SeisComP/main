@@ -861,8 +861,11 @@ MainWindow::~MainWindow() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::start() {
-	if ( Settings::global.initStartTime ) {
-		_startTime = Seiscomp::Core::Time::GMT();
+	if ( Settings::global.disableTimeWindowRequest ) {
+		_ui.actionReload->setEnabled(false);
+		_ui.actionSwitchToRealtime->setEnabled(false);
+		_ui.actionLoadDataBack->setEnabled(false);
+		_ui.actionLoadDataNext->setEnabled(false);
 	}
 
 	_dataFiles = SCApp->commandline().unrecognizedOptions();
@@ -2387,7 +2390,7 @@ void MainWindow::checkTraceDelay() {
 			Seiscomp::Core::Time lastSample;
 
 			if ( w->records() != NULL ) lastSample = w->records()->timeWindow().endTime();
-			item->setVisible(now - (!lastSample.valid()?_startTime:lastSample) <= maxDelay);
+			item->setVisible(now - (!lastSample.valid()?_dataTimeWindow.startTime():lastSample) <= maxDelay);
 		}
 	}
 }
@@ -2650,7 +2653,11 @@ void MainWindow::reloadData() {
 	}
 	else {
 		if ( !Settings::global.disableTimeWindowRequest ) {
-			_recordStreamThread->setTimeWindow(_dataTimeWindow);
+			auto tw = _dataTimeWindow;
+			if ( Settings::global.initStartTime && !tw.endTime().valid() ) {
+				tw.setStartTime(Core::Time::GMT());
+			}
+			_recordStreamThread->setTimeWindow(tw);
 		}
 
 		for ( auto item : _channelRequests ) {
