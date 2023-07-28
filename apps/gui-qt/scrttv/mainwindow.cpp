@@ -3412,10 +3412,19 @@ bool MainWindow::addPick(Pick* pick, int refCount) {
 	}
 
 	// Remove old markers
-	for ( int i = 0; i < item->widget()->markerCount(); ++i ) {
-		auto marker = item->widget()->marker(i);
+	for ( int i = 0; i < item->widget()->markerCount(); ) {
+		auto marker = static_cast<TraceMarker*>(item->widget()->marker(i));
 		if ( _traceViews.front()->alignment() - marker->time() > _bufferSize ) {
+			if ( marker->pick ) {
+				auto it = _markerMap.find(marker->pick->publicID());
+				if ( it != _markerMap.end() && it.value() == marker ) {
+					_markerMap.erase(it);
+				}
+			}
 			delete marker;
+		}
+		else {
+			++i;
 		}
 	}
 
