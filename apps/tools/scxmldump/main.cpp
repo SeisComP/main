@@ -653,6 +653,11 @@ class EventDump : public Seiscomp::Client::Application {
 						}
 
 						const string &amplitudeID = staMag->amplitudeID();
+						if ( amplitudeID.empty() ) {
+							SEISCOMP_DEBUG("StationMagnitude with id '%s' has empty amplitude ID",
+							               staMag->publicID().c_str());
+							continue;
+						}
 						if (_amplitudeIDs.find(amplitudeID) != _amplitudeIDs.end())
 							continue;
 						AmplitudePtr amplitude = Amplitude::Cast(PublicObjectPtr(
@@ -804,6 +809,11 @@ class EventDump : public Seiscomp::Client::Application {
 							}
 
 							const string &amplitudeID = staMag->amplitudeID();
+							if ( amplitudeID.empty() ) {
+								SEISCOMP_DEBUG("StationMagnitude with id '%s' has empty amplitude ID",
+							        	       staMag->publicID().c_str());
+								continue;
+							}
 							if (_amplitudeIDs.find(amplitudeID) != _amplitudeIDs.end())
 								continue;
 
