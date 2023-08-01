@@ -804,18 +804,19 @@ class EventDump : public Seiscomp::Client::Application {
 							StationMagnitude* staMag = StationMagnitude::Find(staMagID);
 							if ( !staMag ) {
 								SEISCOMP_WARNING("StationMagnitude with id '%s' not found",
-										 staMagID.c_str());
+								                 staMagID.c_str());
 								continue;
 							}
 
 							const string &amplitudeID = staMag->amplitudeID();
 							if ( amplitudeID.empty() ) {
 								SEISCOMP_DEBUG("StationMagnitude with id '%s' has empty amplitude ID",
-							        	       staMag->publicID().c_str());
+								               staMag->publicID().c_str());
 								continue;
 							}
-							if (_amplitudeIDs.find(amplitudeID) != _amplitudeIDs.end())
+							if ( _amplitudeIDs.find(amplitudeID) != _amplitudeIDs.end() ) {
 								continue;
+							}
 
 							AmplitudePtr amplitude = Amplitude::Cast(PublicObjectPtr(
 								query()->getObject(Amplitude::TypeInfo(), amplitudeID)));
