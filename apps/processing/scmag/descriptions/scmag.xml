@@ -10,6 +10,12 @@
 				station magnitudes.
 				</description>
 			</parameter>
+			<parameter name="minimumArrivalWeight" type="double" default="0.5">
+				<description>
+				The minimum weight of an arrival for an associated amplitude
+				to be used for calculating a magnitude.
+				</description>
+			</parameter>
 			<group name="magnitudes">
 				<description>
 				General parameters for computing magnitudes. Others are configured
@@ -39,12 +45,6 @@
 					<description>
 					Interval between 2 sending processes. The interval controls
 					how often information is updated.
-					</description>
-				</parameter>
-				<parameter name="minimumArrivalWeight" type="double" default="0.5">
-					<description>
-					The minimum weight of an arrival for an associated amplitude
-					to be used for calculating a magnitude.
 					</description>
 				</parameter>
 			</group>
