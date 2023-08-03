@@ -692,7 +692,7 @@ class FDSNDataSelect(BaseResource):
 
         if auxStreamsFound:
             seiscomp.logging.info(
-                "the request contains at least one auxillary stream which " \
+                "the request contains at least one auxiliary stream which " \
                 "are deprecated{}".format(
                     "" if maxSamples is None else \
                     " and whose samples are not included in the maximum " \
