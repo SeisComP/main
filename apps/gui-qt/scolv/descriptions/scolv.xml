@@ -602,16 +602,16 @@
 					component will stay the same. It must be changed explicitely.
 					</description>
 				</parameter>
-				<group name="auxilliary">
+				<group name="auxiliary">
 					<description>
-					Define the notion and behaviour of auxilliary channels.
+					Define the notion and behaviour of auxiliary channels.
 					They are identified through configurable patterns and if
 					identified as such they will be treated differently in
 					defined situations.
 					</description>
 					<parameter name="channels" type="list:string">
 						<description>
-						A list of wildcard patterns to identify auxilliary
+						A list of wildcard patterns to identify auxiliary
 						channels. A pattern is simply checked against a stream
 						ID, the concatenation of NSLC separated by a period.
 						</description>
@@ -619,7 +619,7 @@
 					<parameter name="minimumDistance" type="double" unit="deg" default="0">
 						<description>
 						The minimum distance in degrees from origin to load an
-						unassociated auxilliary channel. Loading a
+						unassociated auxiliary channel. Loading a
 						channel / station explicitely (F3) will not respect
 						this setting.
 						</description>
@@ -627,7 +627,7 @@
 					<parameter name="maximumDistance" type="double" unit="deg" default="1000">
 						<description>
 						The maximum distance in degrees from origin to load an
-						unassociated auxilliary channel. Loading a
+						unassociated auxiliary channel. Loading a
 						channel / station explicitely (F3) will not respect
 						this setting.
 						</description>
