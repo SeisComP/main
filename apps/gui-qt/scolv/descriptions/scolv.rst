@@ -1023,6 +1023,8 @@ calculated and the network magnitude is calculated according to the available
 settings: *Mean*, *Median* or *Trimmed mean*.
 
 
+.. _scolv-sec-event-tab:
+
 Event Tab
 =========
 
