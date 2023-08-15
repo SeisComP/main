@@ -175,7 +175,7 @@ bool MNAmplitude::readPriorities(PhaseOrVelocity *priorities,
 		Core::split(strPriorities, settings.getString(parameter).c_str(), ", ");
 		if ( strPriorities.size() > EPhaseOrVelocityQuantity ) {
 			SEISCOMP_ERROR("%s: too many priorities, maximum is %d",
-			               parameter.c_str(), EPhaseOrVelocityQuantity);
+			               parameter.c_str(), static_cast<int>(EPhaseOrVelocityQuantity));
 			return false;
 		}
 
