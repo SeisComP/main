@@ -38,7 +38,7 @@ class SendJournal(seiscomp.client.Application):
         )
 
     def init(self):
-        if not seiscomp.client.Application.init(self):
+        if seiscomp.client.Application.init(self) == False:
             return False
 
         return True
@@ -98,7 +98,7 @@ Set the type of the event with ID gempa2021abcd and read the type from file
         return True
 
     def validateParameters(self):
-        if not seiscomp.client.Application.validateParameters(self):
+        if seiscomp.client.Application.validateParameters(self) == False:
             return False
 
         try:
