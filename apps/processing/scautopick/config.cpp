@@ -33,7 +33,7 @@ Picker::Config::Config() {
 	test = false;
 	offline = false;
 
-	useAllStreams = true;
+	useAllStreams = false;
 	calculateAmplitudes = true;
 	interpolateGaps = false;
 	maxGapLength = 4.5;
