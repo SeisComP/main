@@ -20,6 +20,7 @@ import os
 import seiscomp.client
 import seiscomp.datamodel
 import seiscomp.config
+import seiscomp.system
 
 
 def readParams(sc_params):
@@ -49,10 +50,11 @@ class DumpCfg(seiscomp.client.Application):
             raise RuntimeError
 
         self.appName = argv[1]
+        self.config = seiscomp.config.Config()
 
         # Remove first parameter to replace appname with passed module name
-        argc = argc-1
-        argv = argv[1:]
+        # argc = argc - 1
+        # argv = argv[1:]
 
         seiscomp.client.Application.__init__(self, argc, argv)
 
@@ -90,7 +92,7 @@ class DumpCfg(seiscomp.client.Application):
         self.formatCfg = self.commandline().hasOption("cfg")
         self.nslc = self.commandline().hasOption("nslc")
 
-        if not self.dumpBindings:
+        if self.dumpBindings == False:
             self.setMessagingEnabled(False)
             self.setDatabaseEnabled(False, False)
             self.setLoadConfigModuleEnabled(False)
@@ -102,10 +104,15 @@ class DumpCfg(seiscomp.client.Application):
             self.printUsage()
             return False
 
-        return seiscomp.client.Application.initConfiguration(self)
+        if seiscomp.client.Application.initConfiguration(self) == False:
+            return False
 
-    # Do nothing.
+        seiscomp.system.Environment.Instance().initConfig(self.config, self.appName)
+
+        return True
+
     def initSubscriptions(self):
+        # Do nothing.
         return True
 
     def printUsage(self):
@@ -125,11 +132,11 @@ Dump global bindings configuration for all stations
 
 
     def run(self):
-        cfg = self.configuration()
+        cfg = self.config
         if self.nslc:
             nslc = set()
 
-        if not self.dumpBindings:
+        if self.dumpBindings == False:
             symtab = cfg.symbolTable()
             names = cfg.names()
             count = 0
@@ -163,7 +170,7 @@ Dump global bindings configuration for all stations
                 cfg_sta = cfg.configStation(i)
                 tmp[(cfg_sta.networkCode(), cfg_sta.stationCode())] = cfg_sta
 
-            name = self.name()
+            name = self.appName
             # For backward compatibility rename global to default
             if name == "global":
                 name = "default"
