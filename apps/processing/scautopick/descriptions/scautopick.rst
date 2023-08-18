@@ -1,7 +1,9 @@
 scautopick applies threshold monitoring by searching for waveform anomalies in
-form of changes in amplitudes. It is applied for detecting phase arrivals and
-and for measuring related features and amplitudes. The phase arrivals are
-typically associated by modules like :ref:`scautoloc` for locating the source.
+form of changes in amplitudes. It is applied for detecting phase arrivals
+creating :term:`phase picks <pick>` and for measuring related features and
+:term:`amplitudes <amplitude>`. The picks and associated amplitudes and
+features are typically provided to modules like :ref:`scautoloc` for locating
+the source.
 
 .. note::
 
@@ -119,7 +121,7 @@ corresponding magnitude type (see :ref:`scamp` for a list of amplitude types and
 :ref:`scmag` for the magnitude types). Such amplitudes are required by:
 
 * :ref:`scautoloc` for associating phase picks and generating a source location
-* EEW (earthquake early warning) systems in order to provide raüid amplitudes for
+* EEW (earthquake early warning) systems in order to provide rapid amplitudes for
   magnitudes as soon as source locations are available.
 
 The time window for measuring amplitudes starts at the pick time. The window
@@ -178,9 +180,9 @@ Non-real-time
 
 .. note::
 
-   Due to code changes in the file data source, the command line option **--playback**
-   is essential for non-real-time operation. Otherwise a real-time time window
-   is set and all records are most likely filtered out.
+   Due to code changes in the file data source, the command line option
+   :option:`--playback` is essential for non-real-time operation. Otherwise a
+   real-time time window is set and all records are most likely filtered out.
 
 To tune scautopick or to do playbacks it is helpful to run scautopick not with
 a real-time data source but on a defined data set, e.g. a multiplexed sorted miniSEED
@@ -188,7 +190,7 @@ volume. scautopick will apply the same workflow as in online mode but the
 acquisition of data records has to change. If the input data (file) has been
 read, scautopick will exit and furthermore it must not ask for a particular
 time window, especially not for a real-time time window. To accomplish that
-the command-line parameter ```--playback``` has to be used. Example:
+the command-line parameter :option:`--playback` has to be used. Example:
 
 .. code-block:: sh
 
@@ -198,7 +200,7 @@ This call will process all records in :file:`data.mseed` for which bindings
 exist and **send the results to the messaging**. If all data records are processed,
 scautopick will exit. The processing steps are similar to the online mode.
 
-Use the ```--ep``` for offline processing **without messaging**. The results are
+Use the :option:`--ep` for offline processing **without messaging**. The results are
 printed in :term:`SCML` format. Example:
 
 .. code-block:: sh

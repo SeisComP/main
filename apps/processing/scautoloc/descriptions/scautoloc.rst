@@ -1,11 +1,17 @@
 scautoloc is the |scname| program responsible for automatically locating
-seismic events in near-real time. It normally runs as a daemon continuously
-reading picks and amplitudes and processing them in real time. An offline
-mode is available as well. scautoloc reads automatic picks and several
-associated amplitudes. On that basis it tries to identify combinations of
-picks that correspond to a common seismic event. If the produced location
-meets certain consistency criteria, it is reported, i.e. passed on to other
-programs that take the origins as input.
+seismic events in near-real time from :term:`phase picks <pick>` considering
+:term:`associated amplitudes <amplitude>`. It tries to identify combinations of
+picks that correspond to a common seismic or non-seismic :term:`event`. The
+picks are sent to :ref:`global_locsat` for locating. If the
+produced location meets configurable consistency criteria, it is reported as an
+:term:`origin` object , i.e. passed on to other programs that take the origins
+as input. Phase picks and amplitudes are usually created by :ref:`scautopick`
+but can also be provided by other means.
+
+scautoloc normally runs as a :ref:`daemon <sec-scautoloc-daemon-mode>`
+continuously reading picks and amplitudes and processing them in real time. An
+:ref:`offline mode <sec-scautoloc-offline-mode>` is available as well, e.g., for
+playbacks on demand.
 
 
 Location procedure
@@ -20,16 +26,16 @@ consists of the following steps:
 Pick filtering
 --------------
 
-:program:`scautoloc` receives and filters :term:`phase picks <picks>` to generate
-:term:`origins <origin>`. These phase picks are used by default if
+:program:`scautoloc` receives and filters :term:`phase picks <picks>` to
+generate :term:`origins <origin>`. These phase picks are used by default if
 
 * The phase hint is "P",
-* **And** the evaluation mode is "automatic". The use of manual picks is controlled
-  by :confval:`autoloc.useManualPicks`.
+* **And** the evaluation mode is "automatic". The use of manual picks is
+  controlled by :confval:`autoloc.useManualPicks`.
 * **And** the evaluation status is not "rejected", can be overridden by
   :option:`--allow-rejected-picks`,
-* **And** :confval:`autoloc.authors` is empty or the author of the pick is listed in
-  :confval:`autoloc.authors`
+* **And** :confval:`autoloc.authors` is empty or the author of the pick is
+  listed in :confval:`autoloc.authors`
 * **And** the picks are :ref:`accompanied by amplitudes <sec-scautoloc-amplitudes>`
   configured in :confval:`autoloc.amplTypeAbs`, :confval:`autoloc.amplTypeSNR`.
 
@@ -326,6 +332,21 @@ the server. Log files are written as usual. This mode can be used to test
 new parameter settings before implementation in the real-time system. It also
 provides a simple way to log picks from a real-time system to the pick log.
 
+.. _sec-scautoloc-daemon-mode:
+
+Daemon Mode
+===========
+
+For running scautoloc continuously in the background as a daemon it must be
+enabled and started:
+
+.. code-block:: sh
+
+   seiscomp enable scautoloc
+   seiscomp start scautoloc
+
+
+.. _sec-scautoloc-offline-mode:
 
 Offline Mode
 ============
@@ -333,15 +354,17 @@ Offline Mode
 scautoloc normally runs as a daemon in the background, continuously reading
 picks and amplitudes and processing them in real time. However, scautoloc
 may also be operated in offline mode. This is useful for debugging. Offline
-mode is activated by adding the command-line parameter  -\\-ep or -\\-offline.
-When operated in offline mode,
+mode is activated by adding the command-line parameter  :option:`--ep` or
+:option:`--offline`. When operated in offline mode,
 scautoloc will not connect to the messaging. Instead, it reads picks from a
-:term:`SCML` file provided with -\\-ep or from standard input in the pick file
+:term:`SCML` file provided with :option:`--ep` or from standard input in the pick file
 format. The station coordinates are read from the inventory in the database or
 from the file either defined in :confval:`autoloc.stationLocations` or
 -\\-station-locations .
 
-Example for entries in a pick file::
+Example for entries in a pick file
+
+.. code-block:: sh
 
     2008-09-25 00:20:16.6 SK LIKS EH __ 4.6 196.953 1.1 A [id]
     2008-09-25 00:20:33.5 SJ BEO BH __ 3.0 479.042 0.9 A [id]
@@ -365,7 +388,9 @@ example.
    the database, in consequence the station coordinates cannot be read from the
    database and thus have to be supplied via a file. The station coordinates file
    has a simple format with one line per entry, consisting of 5 columns: network
-   code, station code, latitude, longitude, elevation (in meters), e.g., ::
+   code, station code, latitude, longitude, elevation (in meters). Example:
+
+   .. code-block:: sh
 
        GE APE 37.0689 25.5306 620.0
        GE BANI -4.5330 129.9000 0.0
@@ -427,7 +452,7 @@ Neither amplitude is used for magnitude computation by scautoloc. The default
 amplitude types used by scautoloc are of type "mb" and "snr". These defaults
 can be overridden in :file:`scautoloc.cfg`:
 
-.. code-block:: sh
+.. code-block:: params
 
    autoloc.amplTypeSNR = snr
    autoloc.amplTypeAbs = mb
