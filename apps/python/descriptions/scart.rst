@@ -30,7 +30,11 @@ in miniSEED format and checks miniSEED archives or prints stream information.
 
    * Time windows (:option:`-t`),
    * Network-station-location-channel (NSLC) lists (:option:`--nslc`) created,
-     e.g., with :ref:`scinv` from inventories.
+     e.g., with
+
+     * :ref:`scinv` from inventories,
+     * :ref:`scdumpcfg` from bindings configuration,
+     * scart itself from other miniSEED files or achives.
 
    In dump mode output streams may also be filtered by
 
@@ -57,7 +61,8 @@ Examples
 .. hint::
 
    The usage of wildcards in place of network, station, location or channel code
-   is allowed in many options (-n, -c, -l, --list, --nslc) and follows these rules:
+   is allowed in many options (:option:`-n`, :option:`-c`, :option:`-l`,
+   :option:`--list`, :option:`--nslc`) and follows these rules:
 
    * Import mode: the wildcards are passed to the :ref:`global_recordstream` interface,
      that interprets them. Normally both "*" and "?" are supported by RecordStreams.

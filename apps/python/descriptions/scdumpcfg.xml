@@ -58,7 +58,14 @@
 				</option>
 				<option long-flag="cfg">
 					<description>
-					Print output in .cfg format.
+					Print output in .cfg format. Does not work along with -B.
+					</description>
+				</option>
+				<option long-flag="nslc">
+					<description>
+					Print the list of channels which have bindings of the given module.
+					Requires to set -B. Can be used by other modules, e.g., invextr,
+					scart, scmssort, scevtstreams.
 					</description>
 				</option>
 			</group>
