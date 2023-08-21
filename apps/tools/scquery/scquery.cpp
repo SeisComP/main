@@ -113,18 +113,23 @@ class AppQuery : public Client::Application {
 		void createCommandLineDescription() {
 			commandline().addGroup("Commands");
 			commandline().addOption("Commands", "showqueries",
-			                        "Show the queries defined in queries.cfg");
-			commandline().addOption("Commands", "print-column-name",
-			                        "Print the name of each output column in a header");
+			                        "Show the queries defined in 'queries.cfg'.");
 			commandline().addOption("Commands", "delimiter",
 			                        "Column delimiter. If found, this character "
 			                        "will be escaped in output values.",
 			                        &_columnDelimiter);
+			commandline().addOption("Commands", "print-column-name",
+			                        "Print the name of each output column in a "
+			                        "header.");
 			commandline().addOption("Commands", "print-header",
 			                        "Print the query parameters and the query filter "
 			                        "description as a header of the query output.");
+			commandline().addOption("Commands", "print-query-only",
+			                        "Only print the full query to stdout and "
+			                        "then quit.");
 			commandline().addOption("Commands", "query,Q",
-			                        "Execute the given query from the command line.",
+			                        "Execute the given query instead of applying "
+			                        "queries pre-defined by configuration.",
 			                        &_query);
 		}
 
@@ -172,13 +177,16 @@ class AppQuery : public Client::Application {
 			}
 
 			if ( commandline().hasOption("print-column-name") ) {
-			    _columnName = true;
+				_columnName = true;
 			}
 
 			if ( commandline().hasOption("print-header") ) {
-			    _header = true;
+				_header = true;
 			}
 
+			if ( commandline().hasOption("print-query-only") ) {
+				_printOnly = true;
+			}
 			std::vector<std::string> qParameter = commandline().unrecognizedOptions();
 
 			if (!qParameter.empty())
@@ -195,9 +203,9 @@ class AppQuery : public Client::Application {
 						std::cerr << "The amount of parameter is not corresponding with given query!" << std::endl;
 						std::cerr << "Given arguments: ";
 						for (size_t i = 0; i < params.size(); ++i) {
-							std::cout << params[i] << " ";
+							std::cerr << params[i] << " ";
 						}
-						std::cout << std::endl;
+						std::cerr << std::endl;
 
 						std::cerr << "Query parameter: ";
 						for (size_t i = 0; i < q->parameter().size(); ++i) {
@@ -207,6 +215,11 @@ class AppQuery : public Client::Application {
 
 						std::cerr << "Query: " << q->query() << std::endl;
 						return false;
+					}
+
+					if ( _printOnly ) {
+						std::cout << "Query:" << std::endl << q->query() << std::endl;
+						return true;
 					}
 
 					DBConnection dbConnection(database());
@@ -227,6 +240,11 @@ class AppQuery : public Client::Application {
 				}
 			}
 			else if ( !_query.empty() ) {
+				if ( _printOnly ) {
+					std::cout << "Query:" << std::endl << _query << std::endl;
+					return true;
+				}
+
 				DBQuery q("default", "default", _query);
 				DBConnection dbConnection(database());
 				if ( !dbConnection.executeQuery(q, _header, _columnDelimiter) ) {
@@ -248,6 +266,7 @@ class AppQuery : public Client::Application {
 		bool        _columnName{false};
 		bool        _header{false};
 		char        _columnDelimiter{'|'};
+		bool        _printOnly{false};
 };
 
 

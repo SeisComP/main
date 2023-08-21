@@ -1,7 +1,7 @@
-*scquery* reads objects such as event information from the |scname| database based
-on custom queries and writes them to stdout.
-It extends :ref:`scevtls` and :ref:`scorgls` which are limited to searching event
-and origin IDs, respectively, by time.
+*scquery* reads objects such as event information from a
+:ref:`SeisComP database <concepts_database>` using custom queries. The results
+are written to stdout. The module extends :ref:`scevtls` and :ref:`scorgls`
+which are limited to searching event and origin IDs, respectively, by time.
 
 scquery takes into account and requires :ref:`query profiles <scquery_queries>`
 for querying the database. The profiles are defined in
@@ -9,7 +9,8 @@ for querying the database. The profiles are defined in
 * :file:`@SYSTEMCONFIGDIR@/queries.cfg` or
 * :file:`@CONFIGDIR@/queries.cfg`
 
-while parameters in the latter take priority.
+while parameters in the latter take priority. The are no default query profile,
+hence they must be created first.
 
 
 Module Setup
@@ -17,8 +18,8 @@ Module Setup
 
 .. _scquery_config:
 
-#. Create the query profiles in :file:`queries.cfg` in @SYSTEMCONFIGDIR@ or
-   @CONFIGDIR@. The file contains your database queries. Examples for
+#. Create the query profiles in :file:`queries.cfg` in :file:`@SYSTEMCONFIGDIR@`
+   or :file:`@CONFIGDIR@`. The file contains your database queries. Examples for
    MariaDB/MySQL and PostgreSQL are found in the section :ref:`scquery_queries`.
 
 #. **Optional:** Add the database connection parameter to the configuration file
@@ -30,9 +31,9 @@ Module Setup
 
    .. hint ::
 
-      If the database connection is configured, the database option :confval:`-d <database>`
-      in the section :ref:`Examples<scquery_examples>` can be omitted or used to
-      override the configuration.
+      If the database connection is configured, the database option
+      :confval:`-d <database>` in the section :ref:`Examples<scquery_examples>`
+      can be omitted or used to override the configuration.
 
 
 .. _scquery_examples:
@@ -40,11 +41,12 @@ Module Setup
 Examples
 ========
 
-Choose any query profile defined in the :ref:`queries.cfg<scquery_queries>`. Provide
-the required parameters in the same order as in the database request. The required
-parameters are indicated by hashes, e.g. ##latMin##.
+Choose any query profile defined in the :ref:`queries.cfg<scquery_queries>`.
+Provide the required parameters in the same order as in the database request.
+The required parameters are indicated by hashes, e.g. ##latMin##.
 
-#. List all available query profiles using the command-line option :confval:`showqueries`:
+#. List all available query profiles using the command-line option
+   :confval:`showqueries`:
 
    .. code-block:: sh
 
@@ -87,11 +89,11 @@ below.
 MariaDB/MySQL
 -------------
 
-**General event queries**
+**General event/origin queries**
 
-.. code-block:: sh
+.. code-block:: params
 
-   queries = eventFilter, eventUncertainty, eventByAuthor, eventWithStationCount, phaseCountPerAuthor, eventType
+   queries = eventFilter, eventUncertainty, eventByAuthor, eventWithStationCount, eventType, originByAuthor
 
    query.eventFilter.description = "Returns all events (lat, lon, mag, time) that fall into a certain region and a magnitude range"
    query.eventFilter = "SELECT PEvent.publicID, Origin.time_value AS OT, Origin.latitude_value,Origin.longitude_value, Origin.depth_value, Magnitude.magnitude_value, Magnitude.type FROM Origin,PublicObject as POrigin, Event, PublicObject AS PEvent, Magnitude, PublicObject as PMagnitude WHERE Event._oid = PEvent._oid AND Origin._oid = POrigin._oid AND Magnitude._oid = PMagnitude._oid AND PMagnitude.publicID=Event.preferredMagnitudeID AND POrigin.publicID = Event.preferredOriginID AND Origin.latitude_value >= ##latMin## AND Origin.latitude_value <= ##latMax## AND Origin.longitude_value >= ##lonMin## AND Origin.longitude_value <= ##lonMax## AND Magnitude.magnitude_value >= ##minMag## AND Magnitude.magnitude_value <= ##maxMag## AND Origin.time_value >= '##startTime##' AND Origin.time_value <= '##endTime##';"
@@ -105,17 +107,20 @@ MariaDB/MySQL
    query.eventWithStationCount.description = "Get events by preferred origin author etc"
    query.eventWithStationCount = "SELECT PEvent.publicID, Origin.time_value AS OT, Origin.latitude_value AS lat, Origin.longitude_value AS lon, Origin.depth_value AS dep, Magnitude.magnitude_value AS mag, Magnitude.type AS mtype, Origin.quality_usedStationCount AS stations, Event.type AS type, Event.typeCertainty AS certainty, Origin.creationInfo_author FROM Origin, PublicObject AS POrigin, Event, PublicObject AS PEvent, Magnitude, PublicObject AS PMagnitude WHERE Event._oid = PEvent._oid AND Origin._oid = POrigin._oid AND Magnitude._oid = PMagnitude._oid AND PMagnitude.publicID = Event.preferredMagnitudeID AND POrigin.publicID = Event.preferredOriginID AND Origin.time_value >= '##startTime##' AND Origin.time_value <= '##endTime##';"
 
-   query.phaseCountPerAuthor.description = "Get phase count per author FROM #EventID#"
-   query.phaseCountPerAuthor = "SELECT PEvent.publicID, Origin.creationInfo_author, MAX(Origin.quality_usedPhaseCount) FROM Origin, PublicObject AS POrigin, Event, PublicObject AS PEvent, OriginReference WHERE Origin._oid = POrigin._oid AND Event._oid = PEvent._oid AND OriginReference._parent_oid = Event._oid AND OriginReference.originID = POrigin.publicID AND PEvent.publicID = '##EventID##' group by Origin.creationInfo_author;"
-
    query.eventType.description = "Returns all eventIDs FROM event WHERE the type is flagged AS 'event type'"
    query.eventType = "SELECT pe.publicID, o.time_value AS OT FROM PublicObject pe, PublicObject po, Event e, Origin o WHERE pe._oid = e._oid AND po._oid = o._oid AND e.preferredOriginID = po.publicID AND e.type = '##type##' AND o.time_value >= '##startTime##' AND o.time_value <= '##endTime##';"
+
+   query.originByAuthor.description = "Get origins by author"
+   query.byAuthor = "SELECT po.publicID, o.time_value AS OT, o.creationInfo_author FROM PublicObject po JOIN Origin o ON po._oid = o._oid WHERE o.creationInfo_author like '##author##' AND o.time_value >= '##startTime##' AND o.time_value <= '##endTime##';"
 
 **More examples and statistics**
 
 .. code-block:: sh
 
-   queries = time, mag_time, space_time, all, space_mag_time, event, fm_space_time, picks, stationPicks, assoc_picks, pref_assoc_picks, sta_net_mag, sta_net_mag_type, delta_sta_net_mag, delta_sta_net_mag_type
+   queries = phaseCountPerAuthor, time, mag_time, space_time, all, space_mag_time, event, fm_space_time, picks, stationPicks, assoc_picks, pref_assoc_picks, sta_net_mag, sta_net_mag_type, delta_sta_net_mag, delta_sta_net_mag_type
+
+   query.phaseCountPerAuthor.description = "Get phase count per origin author FROM event #EventID#"
+   query.phaseCountPerAuthor = "SELECT PEvent.publicID, Origin.creationInfo_author, MAX(Origin.quality_usedPhaseCount) FROM Origin, PublicObject AS POrigin, Event, PublicObject AS PEvent, OriginReference WHERE Origin._oid = POrigin._oid AND Event._oid = PEvent._oid AND OriginReference._parent_oid = Event._oid AND OriginReference.originID = POrigin.publicID AND PEvent.publicID = '##EventID##' group by Origin.creationInfo_author;"
 
    query.time.description = "Events in time range"
    query.time = "SELECT PEvent.publicID, Origin.time_value, ROUND(Origin.latitude_value, 4), ROUND(Origin.longitude_value, 4), ROUND(Origin.depth_value, 1), ROUND(Magnitude.magnitude_value, 1), Magnitude.type, Origin.quality_usedPhaseCount, Origin.quality_usedStationCount, Event.typeCertainty, Event.type, Origin.creationInfo_author FROM Origin, PublicObject AS POrigin, Event, PublicObject AS PEvent, Magnitude, PublicObject AS PMagnitude WHERE Event._oid = PEvent._oid AND Origin._oid = POrigin._oid AND Magnitude._oid = PMagnitude._oid AND PMagnitude.publicID = Event.preferredMagnitudeID AND POrigin.publicID = Event.preferredOriginID AND Origin.time_value >= '##startTime##' AND Origin.time_value <= '##endTime##';"
