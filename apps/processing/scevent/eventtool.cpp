@@ -1876,9 +1876,16 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 			for ( ; *it; ++it ) {
 				EventPtr e = Event::Cast(*it);
 				assert(e);
+
+				if ( isAgencyIDBlocked(objectAgencyID(e.get())) ) {
+					continue;
+				}
+
 				// Is this event already cached and associated with an information
 				// object?
-				if ( isEventCached(e->publicID()) ) continue;
+				if ( isEventCached(e->publicID()) ) {
+					continue;
+				}
 
 				fetchedEvents.push_back(e);
 			}
@@ -2431,6 +2438,10 @@ EventInformationPtr EventTool::findMatchingEvent(Origin *origin) {
 	EventMap::iterator it;
 
 	for ( it = _events.begin(); it != _events.end(); ++it ) {
+		if ( it->second->event && isAgencyIDBlocked(objectAgencyID(it->second->event.get())) ) {
+			continue;
+		}
+
 		MatchResult res = compare(it->second.get(), origin);
 		if ( res > bestResult ) {
 			bestResult = res;
@@ -2717,6 +2728,14 @@ bool EventTool::removeCachedEvent(const std::string &eventID) {
 void EventTool::choosePreferred(EventInformation *info, Origin *origin,
                                 DataModel::Magnitude *triggeredMag,
                                 bool realOriginUpdate, bool refresh) {
+	if ( isAgencyIDBlocked(objectAgencyID(info->event.get())) ) {
+		SEISCOMP_DEBUG("No preferred origin selection, event %s agencyID is blocked",
+		               info->event->publicID().c_str());
+		SEISCOMP_LOG(_infoChannel, "No preferred origin selection, event %s agencyID is blocked",
+		             info->event->publicID().c_str());
+		return;
+	}
+
 	Magnitude *mag = nullptr;
 	MagnitudePtr momentMag;
 
@@ -3559,6 +3578,14 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanism *fm) {
+	if ( isAgencyIDBlocked(objectAgencyID(info->event.get())) ) {
+		SEISCOMP_DEBUG("No preferred fm selection, event %s agencyID is blocked",
+		               info->event->publicID().c_str());
+		SEISCOMP_LOG(_infoChannel, "No preferred fm selection, event %s agencyID is blocked",
+		             info->event->publicID().c_str());
+		return;
+	}
+
 	SEISCOMP_DEBUG("%s: testing focal mechanism(%s)",
 	               info->event->publicID().c_str(),
 	               fm->publicID().c_str());
