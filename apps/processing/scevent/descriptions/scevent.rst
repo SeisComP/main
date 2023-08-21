@@ -12,10 +12,11 @@ The main tasks of scevent are:
 * Set the :ref:`preferred origin <scevent-preforg>` from all available origins.
 * Set the :ref:`preferred magnitude <scevent-prefmag>` from all available magnitudes.
 * Set the :ref:`preferred focal mechanism <scevent-preffm>` from all available focal mechanisms.
-* *Optional:* Set the event type of automatic origins based on the plugin
-  :ref:`evrc <scevent_regioncheck>` and the hypocenter location of the preferred
-  origin. This requires the configuration of the :ref:`evrc <scevent_regioncheck>`
-  plugin and of regions by :ref:`BNA polygons <sec-gui_layers>`.
+* *Optional:* Set the event type of automatic origins based by the plugin
+  :ref:`evrc <scevent_regioncheck>` based on the hypocenter location of the
+  preferred origin. This requires the configuration of the
+  :ref:`evrc <scevent_regioncheck>` plugin and of geographic regions by
+  :ref:`polygons in BNA or GeoJSON format <sec-gui_layers>`.
 
 
 .. _scevent-assocorg:
@@ -31,7 +32,16 @@ scevent associates origins to events by searching for the best match of the new
 * Associate origins belonging to **different seismic events**
   to different event objects in |scname|.
 
-If a match is not found, a new event can be formed.
+If no match can be found, a new event can be formed.
+
+Origins can be filtered/ignored based on
+
+* ID of agency which has created the origin:
+  :confval:`processing.blacklist.agencies`,
+  :confval:`processing.whitelist.agencies` (global parameters),
+* Hypocenter parameters: :confval:`eventAssociation.region.rect`,
+  :confval:`eventAssociation.region.minDepth`,
+  :confval:`eventAssociation.region.maxDepth`.
 
 
 Origin match

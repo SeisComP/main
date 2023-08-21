@@ -44,7 +44,7 @@
 			</parameter>
 			<parameter name="populateFERegion" type="boolean" default="false">
 				<description>
-					If enabled then the EventDescription with type
+					If enabled, then the EventDescription with type
 					'Flinn-Engdahl region' will be populated with the
 					Flinn-Engdahl region name.
 				</description>
@@ -53,12 +53,12 @@
 				<group name="blacklist">
 					<parameter name="eventIDs" type="list:string">
 						<description>
-						Defines a blacklist of event ids. The items of this list
-						are only matches against %c, %C, %d, %x and %X of the
-						eventIDPattern description. Year (%Y) and prefix (%p) are
-						not matched. The match is case-sensitive, so blacklisting
-						e.g. abcd would only match in combination with %c. If %C
-						is used ABCD has to be blacklisted.
+						Defines a list of event ID patterns to be blocked. The
+						items of this list are only matched against %c, %C, %d,
+						%x and %X of the eventIDPattern description. Year (%Y)
+						and prefix (%p) are not matched. The match is
+						case-sensitive, so 'abcd' would only by blocked in
+						combination with %c. If %C is used, 'ABCD' is matched.
 						</description>
 					</parameter>
 				</group>
