@@ -25,11 +25,12 @@ import seiscomp.system
 
 def readParams(sc_params):
     if sc_params.baseID():
-        sc_params_base = seiscomp.datamodel.ParameterSet.Find(
-            sc_params.baseID())
+        sc_params_base = seiscomp.datamodel.ParameterSet.Find(sc_params.baseID())
         if sc_params_base is None:
-            sys.stderr.write("Warning: %s: base parameter set for %s not found\n" % (
-                sc_params.baseID(), sc_params.publicID()))
+            sys.stderr.write(
+                "Warning: %s: base parameter set for %s not found\n"
+                % (sc_params.baseID(), sc_params.publicID())
+            )
             params = {}
         else:
             params = readParams(sc_params_base)
@@ -66,16 +67,27 @@ class DumpCfg(seiscomp.client.Application):
 
     def createCommandLineDescription(self):
         self.commandline().addGroup("Dump")
-        self.commandline().addStringOption("Dump", "param,P",
-                                           "Specify parameter name to filter for.")
-        self.commandline().addOption("Dump", "bindings,B",
-                                     "Dump bindings instead of module configuration.")
-        self.commandline().addOption("Dump", "allow-global,G",
-                                     "Print global bindings if no module binding is avaible.")
-        self.commandline().addOption("Dump", "cfg",
-                                     "Print output in .cfg format.")
-        self.commandline().addOption("Dump", "nslc",
-                                     "Print the list of streams which have bindings of the given module.")
+        self.commandline().addStringOption(
+            "Dump", "param,P", "Specify parameter name to filter for."
+        )
+        self.commandline().addOption(
+            "Dump", "bindings,B", "Dump bindings instead of module configuration."
+        )
+        self.commandline().addOption(
+            "Dump",
+            "allow-global,G",
+            "Print global bindings if no module binding is avaible.",
+        )
+        self.commandline().addOption(
+            "Dump", "cfg", "Print output in .cfg format. Does not work along with -B."
+        )
+        self.commandline().addOption(
+            "Dump",
+            "nslc",
+            "Print the list of channels which have bindings of the given module. "
+            "Requires to set -B. Can be used by other modules, e.g., invextr, scart, "
+            "scmssort, scevtstreams.",
+        )
 
     def validateParameters(self):
         if not seiscomp.client.Application.validateParameters(self):
@@ -91,6 +103,10 @@ class DumpCfg(seiscomp.client.Application):
         self.allowGlobal = self.commandline().hasOption("allow-global")
         self.formatCfg = self.commandline().hasOption("cfg")
         self.nslc = self.commandline().hasOption("nslc")
+
+        if self.dumpBindings and self.databaseURI() != "":
+            self.setMessagingEnabled(False)
+            self.setDatabaseEnabled(True, False)
 
         if self.dumpBindings == False:
             self.setMessagingEnabled(False)
@@ -116,20 +132,38 @@ class DumpCfg(seiscomp.client.Application):
         return True
 
     def printUsage(self):
-
-        print('''Usage:
+        print(
+            """Usage:
   {} [options]
 
 Dump bindings or module configurations used by a specific module or global for
-particular stations.'''.format(os.path.basename(__file__)), file=sys.stderr)
+particular stations.""".format(
+                os.path.basename(__file__)
+            ),
+            file=sys.stderr,
+        )
 
         seiscomp.client.Application.printUsage(self)
 
-        print('''Examples:
-Dump global bindings configuration for all stations
-  {} global -d localhost -B > config.xml
-'''.format(os.path.basename(__file__)), file=sys.stderr)
+        print(
+            f"""Examples:
+Dump scautopick bindings configuration including global for all stations
+  {os.path.basename(__file__)} scautopick -d localhost -BG
 
+Connect to messaging for the database connection and dump scautopick bindings configuration including global for all stations
+  {os.path.basename(__file__)} scautopick -H localhost -BG
+
+Dump scautopick module configuration including global parameters
+  {os.path.basename(__file__)} scautopick --cfg
+
+Dump global bindings configuration considerd by scmv
+  {os.path.basename(__file__)} scmv -d localhost -BG
+
+Dump the list of stream configured with scautopick bindings
+  {os.path.basename(__file__)} scautopick -d localhost -B --nslc
+""",
+            file=sys.stderr,
+        )
 
     def run(self):
         cfg = self.config
@@ -148,17 +182,18 @@ Dump global bindings configuration for all stations
                     if sym.comment:
                         if count > 0:
                             sys.stdout.write("\n")
-                        sys.stdout.write("%s\n" % sym.comment)
-                    sys.stdout.write("%s = %s\n" % (cfg.escapeIdentifier(sym.name), sym.content))
+                        sys.stdout.write(f"{sym.comment}\n")
+                    sys.stdout.write(
+                        f"{cfg.escapeIdentifier(sym.name)} = {sym.content}\n"
+                    )
                 else:
-                    sys.stdout.write("%s\n" % sym.name)
-                    sys.stdout.write("  value(s) : %s\n" %
-                                     ", ".join(sym.values))
-                    sys.stdout.write("  source   : %s\n" % sym.uri)
+                    sys.stdout.write(f"{sym.name}\n")
+                    sys.stdout.write(f"  value(s) : {', '.join(sym.values)}\n")
+                    sys.stdout.write(f"  source   : {sym.uri}\n")
                 count = count + 1
 
             if self.param and count == 0:
-                sys.stderr.write("%s: definition not found\n." % self.param)
+                sys.stderr.write(f"{self.param}: definition not found\n.")
         else:
             cfg = self.configModule()
             if cfg is None:
@@ -179,7 +214,8 @@ Dump global bindings configuration for all stations
                 cfg_sta = tmp[item]
                 sta_enabled = cfg_sta.enabled()
                 cfg_setup = seiscomp.datamodel.findSetup(
-                    cfg_sta, name, self.allowGlobal)
+                    cfg_sta, name, self.allowGlobal
+                )
 
                 if not cfg_setup is None:
                     suffix = ""
@@ -195,14 +231,15 @@ Dump global bindings configuration for all stations
                             suffix += "setup disabled"
                         suffix += ")"
                         out = "- "
-                    out += "%s.%s%s\n" % (cfg_sta.networkCode(),
-                                          cfg_sta.stationCode(), suffix)
+                    out += f"{cfg_sta.networkCode()}.{cfg_sta.stationCode()}{suffix}\n"
                     params = seiscomp.datamodel.ParameterSet.Find(
-                        cfg_setup.parameterSetID())
+                        cfg_setup.parameterSetID()
+                    )
                     if params is None:
                         sys.stderr.write(
-                            "ERROR: %s: ParameterSet not found\n" %
-                            cfg_setup.parameterSetID())
+                            "ERROR: %s: ParameterSet not found\n"
+                            % cfg_setup.parameterSetID()
+                        )
                         return False
 
                     params = readParams(params)
@@ -216,15 +253,18 @@ Dump global bindings configuration for all stations
                         except:
                             detecStream = ""
 
-                        stream = "%s.%s.%s.%s" % \
-                            (cfg_sta.networkCode(), cfg_sta.stationCode(),
-                             sensorLocation, detecStream)
+                        stream = "%s.%s.%s.%s" % (
+                            cfg_sta.networkCode(),
+                            cfg_sta.stationCode(),
+                            sensorLocation,
+                            detecStream,
+                        )
                         nslc.add(stream)
                     count = 0
                     for param_name in sorted(params.keys()):
                         if self.param and self.param != param_name:
                             continue
-                        out += "  %s: %s\n" % (param_name, params[param_name])
+                        out += f"  {param_name}: {params[param_name]}\n"
                         count = count + 1
 
                     if not self.nslc and count > 0:
