@@ -149,7 +149,7 @@ Dump global bindings configuration for all stations
                         if count > 0:
                             sys.stdout.write("\n")
                         sys.stdout.write("%s\n" % sym.comment)
-                    sys.stdout.write("%s = %s\n" % (sym.name, sym.content))
+                    sys.stdout.write("%s = %s\n" % (cfg.escapeIdentifier(sym.name), sym.content))
                 else:
                     sys.stdout.write("%s\n" % sym.name)
                     sys.stdout.write("  value(s) : %s\n" %
