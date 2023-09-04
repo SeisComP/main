@@ -1201,24 +1201,24 @@ bool App::feed(DataModel::Pick *sc3pick) {
 			sync(creationTime);
 		}
 		catch(...) {
-			SEISCOMP_WARNING_S("Pick "+pickID+" without creation time!");
+			SEISCOMP_WARNING_S("Pick "+pickID+": no creation time set!");
 		}
 	}
 
 	if (objectAgencyID(sc3pick) != agencyID()) {
 		if ( isAgencyIDBlocked(objectAgencyID(sc3pick)) ) {
-			SEISCOMP_INFO_S("Blocked pick from agency '" + objectAgencyID(sc3pick) + "'");
+			SEISCOMP_INFO_S("Blocked pick from agency " + objectAgencyID(sc3pick));
 			return false;
 		}
 
-		SEISCOMP_INFO("pick '%s' from agency '%s'", pickID.c_str(), objectAgencyID(sc3pick).c_str());
+		SEISCOMP_INFO("Pick %s from agency %s", pickID.c_str(), objectAgencyID(sc3pick).c_str());
 
 	}
 
 	const std::string &author = objectAuthor(sc3pick);
 	const int priority = _authorPriority(author);
 	if (priority == 0) {
-		SEISCOMP_INFO("pick '%s' not processed: author %s is not considered",
+		SEISCOMP_INFO("Pick %s not processed: author %s is not considered",
 		              pickID.c_str(), author.c_str());
 		return false;
 	}
@@ -1228,16 +1228,9 @@ bool App::feed(DataModel::Pick *sc3pick) {
 		}
 	}
 	catch ( ... ) {
-		SEISCOMP_WARNING_S("got pick without mode " + sc3pick->publicID());
+		SEISCOMP_WARNING("Pick %s: evaluation mode not set",
+		                 sc3pick->publicID().c_str());
 		sc3pick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
-	}
-
-	try {
-		if (sc3pick->evaluationStatus() == DataModel::REJECTED) {
-		}
-	}
-	catch ( ... ) {
-		SEISCOMP_WARNING_S("got pick without evaluation status " + sc3pick->publicID());
 	}
 
 	// configure station if needed
@@ -1273,16 +1266,18 @@ bool App::feed(DataModel::Amplitude *sc3ampl) {
 			sync(creationTime);
 		}
 		catch(...) {
-			SEISCOMP_WARNING_S("Pick "+amplID+" without creation time!");
+			SEISCOMP_WARNING("Amplitude %s: creation time not set",
+			                 amplID.c_str());
 		}
 	}
 
 	if (objectAgencyID(sc3ampl) != agencyID()) {
 		if ( isAgencyIDBlocked(objectAgencyID(sc3ampl)) ) {
-			SEISCOMP_INFO_S("Blocked amplitude from agency '" + objectAgencyID(sc3ampl) + "'");
+			SEISCOMP_INFO_S("Blocked amplitude from agency " + objectAgencyID(sc3ampl));
 			return false;
 		}
-		SEISCOMP_INFO("ampl '%s' from agency '%s'", amplID.c_str(), objectAgencyID(sc3ampl).c_str());
+		SEISCOMP_INFO("Amplitude %s from agency %s",
+		              amplID.c_str(), objectAgencyID(sc3ampl).c_str());
 	}
 
 	const std::string &atype  = sc3ampl->type();

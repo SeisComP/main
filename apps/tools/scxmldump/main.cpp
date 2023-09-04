@@ -654,7 +654,7 @@ class EventDump : public Seiscomp::Client::Application {
 
 						const string &amplitudeID = staMag->amplitudeID();
 						if ( amplitudeID.empty() ) {
-							SEISCOMP_DEBUG("StationMagnitude with id '%s' has empty amplitude ID",
+							SEISCOMP_DEBUG("StationMagnitude with id '%s' has no amplitude ID",
 							               staMag->publicID().c_str());
 							continue;
 						}
@@ -810,7 +810,7 @@ class EventDump : public Seiscomp::Client::Application {
 
 							const string &amplitudeID = staMag->amplitudeID();
 							if ( amplitudeID.empty() ) {
-								SEISCOMP_DEBUG("StationMagnitude with id '%s' has empty amplitude ID",
+								SEISCOMP_DEBUG("StationMagnitude with id '%s' has no amplitude ID",
 								               staMag->publicID().c_str());
 								continue;
 							}
