@@ -682,7 +682,7 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 	if ( pickInput ){
 		pick = pickInput;
 		try {
-			if (pick->evaluationStatus() == REJECTED ) {
+			if ( pick->evaluationStatus() == REJECTED ) {
 				SEISCOMP_INFO("Ignoring pick %s with status = REJECTED",
 				              pick->publicID().c_str());
 				return;
@@ -738,7 +738,7 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 				continue;
 			}
 
-			 pick = _cache.get<Pick>(pickID);
+			pick = _cache.get<Pick>(pickID);
 			if ( !pick ) {
 				SEISCOMP_LOG(_errorChannel, "Pick '%s' not found", pickID.c_str());
 				_report << "   - " << pickID << " [pick not found]" << std::endl;
