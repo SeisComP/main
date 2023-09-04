@@ -50,8 +50,6 @@ class MNAmplitude : public Seiscomp::Processing::AmplitudeProcessor {
 	//  AmplitudeProcessor interface
 	// ----------------------------------------------------------------------
 	public:
-		virtual void setHint(ProcessingHint hint, double value);
-
 		virtual void setEnvironment(const Seiscomp::DataModel::Origin *hypocenter,
 		                            const Seiscomp::DataModel::SensorLocation *receiver,
 		                            const Seiscomp::DataModel::Pick *pick);

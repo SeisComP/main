@@ -496,16 +496,6 @@ OPT(double) MNAmplitude::getEarliestOnset(double lat0, double lon0, double depth
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MNAmplitude::setHint(ProcessingHint hint, double value) {
-	// We don't care about simple hints like distance and depth. We need
-	// the full environment with origin, receiver and pick information
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MNAmplitude::setEnvironment(const Seiscomp::DataModel::Origin *hypocenter,
                                  const Seiscomp::DataModel::SensorLocation *receiver,
                                  const Seiscomp::DataModel::Pick *pick) {
