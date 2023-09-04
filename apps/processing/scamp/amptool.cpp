@@ -846,14 +846,15 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 			proc->setReferencingPickID(pickID);
 
 			int res = -1;
-			if ( pick ) {
+			if ( origin ) {
+				res = addProcessor(proc.get(), origin, pick.get(), distance, depth, (double) origin->time().value());
+			}
+			else {
 				SC_FMT_DEBUG("Measuring {} amplitude for pick {} independent of origin",
 				             ait->c_str(), pick->publicID().c_str());
 				res = addProcessor(proc.get(), nullptr, pick.get(), None, None, None);
 			}
-			else {
-				res = addProcessor(proc.get(), origin, pick.get(), distance, depth, (double) origin->time().value());
-			}
+
 			if ( res < 0 ) {
 				// RecordStream not available
 				if ( res == -2 ) {
