@@ -238,8 +238,8 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		void updateTraceCount();
 
 		void selectModeNone();
-		void selectModeZoom();
-		void selectModePicks();
+		void selectModeZoom(bool allowToggle = true);
+		void selectModePicks(bool allowToggle = true);
 		void selectMode(int mode);
 
 		void filterSelectionChanged();
