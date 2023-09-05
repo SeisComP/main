@@ -2438,12 +2438,12 @@ void MainWindow::selectModeNone() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MainWindow::selectModeZoom() {
+void MainWindow::selectModeZoom(bool allowToggle) {
 	if ( SCApp->nonInteractive() ) {
 		return;
 	}
 
-	if ( _statusBarSelectMode->currentIndex() == MODE_ZOOM ) {
+	if ( allowToggle && (_statusBarSelectMode->currentIndex() == MODE_ZOOM) ) {
 		selectModeNone();
 	}
 	else {
@@ -2459,12 +2459,12 @@ void MainWindow::selectModeZoom() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MainWindow::selectModePicks() {
+void MainWindow::selectModePicks(bool allowToggle) {
 	if ( SCApp->nonInteractive() ) {
 		return;
 	}
 
-	if ( _statusBarSelectMode->currentIndex() == MODE_PICKS ) {
+	if ( allowToggle && (_statusBarSelectMode->currentIndex() == MODE_PICKS) ) {
 		selectModeNone();
 	}
 	else {
@@ -2486,10 +2486,10 @@ void MainWindow::selectMode(int mode) {
 			selectModeNone();
 			break;
 		case 1:
-			selectModePicks();
+			selectModePicks(false);
 			break;
 		case 2:
-			selectModeZoom();
+			selectModeZoom(false);
 			break;
 	}
 }
