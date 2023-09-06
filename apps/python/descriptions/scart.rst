@@ -92,10 +92,10 @@ Examples
 
       Sorting data is computational expensive but required for waveform playbacks.
 
-#. Push miniSEED data from file :file:`file.mseed` into a local :term:`SDS`
-   archive or a file. Additionally, you may check if the records of archived
-   files are correctly ordered, filter by time and/or with NSLC list and print
-   the output streams:
+#. Push miniSEED data from file :file:`file.mseed` or standard input
+   (stdin) into a local :term:`SDS` archive or a file. Additionally, you may
+   check if the records of archived files are correctly ordered, filter by time
+   and/or with NSLC list and print the output streams:
 
    .. code-block:: sh
 
@@ -103,6 +103,9 @@ Examples
       scart -I sorted.mseed --with-filecheck [SDS archive]
 
       scart -I [file.mseed] -t '[start-time]~[end-time]' --print-streams --nslc list.file -o [out.mseed]
+
+      cat sorted.mseed | scart -I - [SDS archive]
+      cat sorted.mseed | scart [SDS archive]
 
 #. Collect data using the :ref:`global_recordstream` interface (e.g. FDSNWS server)
    and write to a miniSEED file or import it into a local :term:`SDS` archive. The
