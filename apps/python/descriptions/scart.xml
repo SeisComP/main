@@ -48,9 +48,11 @@
 				</option>
 				<option flag="I">
 					<description>
-					Import mode: Specify the recordstream URL when in import mode.
-					When using another recordstream than a file (like ArcLink) a stream
-					list file is required. Default: file://- (stdin).
+					Import mode (default): Specify the recordstream URL to read
+					the data from for archiving. When using any other
+					recordstream than file, a stream list file is needed.
+					Specifying - implies file://- (stdin). If no mode is
+					explicitly specified, -I file://- is assumed.
 					</description>
 				</option>
 			</group>

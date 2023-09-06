@@ -849,22 +849,21 @@ Mode:
                    complete for files containing exactly one stream. More
                    complete checks are made with scmssort.
   -d, --dump       Export (dump) mode. Read from SDS archive.
-  -I arg           Import mode: Specify a recordstream URL when in import mode.
-                   When using another recordstream than file a
-                   stream list file is needed.
-                   Default: file://- (stdin)
+  -I arg           Import mode (default): Specify the recordstream URL to read the data
+                   from for archiving. When using any other recordstream than file, a
+                   stream list file is needed. Specifying - implies file://- (stdin).
+                   If no mode is explicitly specified, -I file://- is assumed.
 
 Processing:
   -c arg            Channel filter to be applied to the data streams.
                     Default for Dump: "(B|E|H|M|S)(D|H|L|N)(E|F|N|Z|1|2|3)"
                     Default for Import: "*"
-  -E                Dump mode: Sort according to record end time; default is
-                    start time
+  -E                Dump mode: Sort according to record end time; default is start time.
   --files arg       Dump mode: Specify the file handles to cache; default: 100
   -i, --ignore      Ignore records without data samples.
-  -l, --list arg    Import, dump mode: Use a stream list file with time windows
-                    instead of defined networks, channels and time window (-n,
-                    -c and -t are ignored).
+  -l, --list arg    Import, dump mode: Use a stream list file with time windows instead
+                    of defined networks, channels and time window (-n, -c and -t are
+                    ignored).
                     The list can be generated from events by scevtstreams. One
                     line per stream. Line format: starttime;endtime;streamID
                         2007-03-28 15:48;2007-03-28 16:18;GE.LAST.*.*
@@ -874,8 +873,7 @@ Processing:
   -n arg            Import, dump mode: Data stream selection as a comma separated
                     list "stream1,stream2,streamX" where each stream can be NET or
                     NET.STA or NET.STA.LOC or NET.STA.LOC.CHA. If CHA is omitted,
-                    it defaults to the value of -c option.
-                    Default: "*"
+                    it defaults to the value of -c option. Default: "*".
   --nslc arg        Import, dump mode: Stream list file to be used instead of
                     defined networks and channels (-n and -c are ignored) for
                     filtering the data by the given streams. Dump mode: Use in
@@ -1062,6 +1060,9 @@ def main():
             channels = arg
         else:
             usage(exitcode=1)
+
+    if not dump and not checkSDS and not importMode:
+        importMode = True
 
     if files:
         archiveDirectory = files[0]
