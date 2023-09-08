@@ -17,6 +17,7 @@
 #include <seiscomp/datamodel/event.h>
 #include <seiscomp/datamodel/magnitude.h>
 #include <seiscomp/datamodel/arrival.h>
+#include <seiscomp/geo/boundingbox.h>
 #include <seiscomp/gui/core/application.h>
 #include <seiscomp/gui/map/projection.h>
 
@@ -184,7 +185,14 @@ void setupView(Map::Canvas *canvas, const QRectF &rect) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-MapCut::MapCut(int& argc, char **argv, Seiscomp::Gui::Application::Type type)
+class OriginSymbol2 : public OriginSymbol {
+	using OriginSymbol::OriginSymbol;
+
+	public:
+		DataModel::Origin *origin{nullptr};
+};
+
+MapCut::MapCut(int& argc, char **argv, Application::Type type)
 : Application(argc, argv, 0, type) {
 	setMessagingEnabled(false);
 	setDatabaseEnabled(false, false);
@@ -226,6 +234,7 @@ void MapCut::createCommandLineDescription() {
 	commandline().addOption("Options", "layers", "draw polygonal layers");
 	commandline().addOption("Options", "ep", "EventParameters (XML) to load", &_epFile, false);
 	commandline().addOption("Options", "event-id,E", "event to plot", &_eventID, false);
+	commandline().addOption("Options", "without-arrivals", "do not render arrivals / stations");
 	commandline().addOption("Options", "html-area", "print html/area section");
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -238,7 +247,18 @@ bool MapCut::run() {
 	SCScheme.map.vectorLayerAntiAlias = true;
 	DataModel::EventParametersPtr ep;
 
+	if ( commandline().hasOption("without-arrivals") ) {
+		_withArrivals = false;
+	}
+
 	_htmlArea = commandline().hasOption("html-area");
+
+	Map::ImageTreePtr mapTree = new Map::ImageTree(mapsDesc());
+
+	_canvas = new Map::Canvas(mapTree.get());
+	_canvas->setParent(this);
+
+	OPT(double) centerLat, centerLon;
 
 	if ( !_epFile.empty() ) {
 		IO::XMLArchive ar;
@@ -249,7 +269,7 @@ bool MapCut::run() {
 
 		ar >> ep;
 
-		if ( ep == NULL ) {
+		if ( !ep ) {
 			cerr << "File '" << _epFile << "' does not contain event parameters" << endl;
 			return false;
 		}
@@ -261,70 +281,113 @@ bool MapCut::run() {
 			return false;
 		}
 
-		DataModel::EventPtr evt = ep->findEvent(_eventID);
+		DataModel::Event *evt = ep->findEvent(_eventID);
 		if ( !evt ) {
 			cerr << "Event '" << _eventID << "' not found" << endl;
 			return false;
 		}
 
+		DataModel::Origin *org{nullptr};
+
 		for ( size_t i = 0; i < ep->originCount(); ++i ) {
 			if ( ep->origin(i)->publicID() == evt->preferredOriginID() ) {
-				_org = ep->origin(i);
+				org = ep->origin(i);
 				break;
 			}
 		}
 
-		if ( !_org ) {
+		if ( !org ) {
 			cerr << "Preferred origin for event '" << _eventID << "' not found" << endl;
 			return false;
 		}
 
+		auto symbol = new OriginSymbol2(org->latitude(), org->longitude());
+		symbol->setDepth(org->depth().value());
+		symbol->origin = org;
+		_canvas->symbolCollection()->add(symbol);
+
 		if ( !evt->preferredMagnitudeID().empty() ) {
-			for ( size_t i = 0; i < _org->magnitudeCount(); ++i ) {
-				if ( _org->magnitude(i)->publicID() == evt->preferredMagnitudeID() ) {
-					try { _magnitude = _org->magnitude(i)->magnitude().value(); }
+			auto mag = _magnitude;
+			for ( size_t i = 0; i < org->magnitudeCount(); ++i ) {
+				if ( org->magnitude(i)->publicID() == evt->preferredMagnitudeID() ) {
+					try { mag = org->magnitude(i)->magnitude().value(); }
 					catch ( ... ) {}
 					break;
 				}
 			}
+			symbol->setPreferredMagnitudeValue(mag);
 		}
+
+		centerLat = org->latitude().value();
+		centerLon = org->longitude().value();
 	}
-	// Grab first event
+	// Grab all events
 	else if ( ep ) {
-		DataModel::EventPtr evt = ep->eventCount() > 0?ep->event(0):NULL;
-		if ( !evt ) {
-			cerr << "No event found in event parameters" << endl;
-			return false;
-		}
+		OPT(Geo::GeoBoundingBox) bbox;
 
-		for ( size_t i = 0; i < ep->originCount(); ++i ) {
-			if ( ep->origin(i)->publicID() == evt->preferredOriginID() ) {
-				_org = ep->origin(i);
-				break;
-			}
-		}
+		for ( size_t i = 0; i < ep->eventCount(); ++i ) {
+			auto evt = ep->event(i);
+			DataModel::Origin *org{nullptr};
 
-		if ( !_org ) {
-			cerr << "Preferred origin for event '" << _eventID << "' not found" << endl;
-			return false;
-		}
-
-		if ( !evt->preferredMagnitudeID().empty() ) {
-			for ( size_t i = 0; i < _org->magnitudeCount(); ++i ) {
-				if ( _org->magnitude(i)->publicID() == evt->preferredMagnitudeID() ) {
-					try { _magnitude = _org->magnitude(i)->magnitude().value(); }
-					catch ( ... ) {}
+			for ( size_t i = 0; i < ep->originCount(); ++i ) {
+				if ( ep->origin(i)->publicID() == evt->preferredOriginID() ) {
+					org = ep->origin(i);
 					break;
 				}
 			}
+
+			if ( !org ) {
+				cerr << "Preferred origin for event '" << evt->publicID() << "' not found" << endl;
+				return false;
+			}
+
+			auto symbol = new OriginSymbol2(org->latitude(), org->longitude());
+			symbol->setDepth(org->depth().value());
+			symbol->origin = org;
+			_canvas->symbolCollection()->add(symbol);
+
+			if ( !evt->preferredMagnitudeID().empty() ) {
+				auto mag = _magnitude;
+				for ( size_t i = 0; i < org->magnitudeCount(); ++i ) {
+					if ( org->magnitude(i)->publicID() == evt->preferredMagnitudeID() ) {
+						try { mag = org->magnitude(i)->magnitude().value(); }
+						catch ( ... ) {}
+						break;
+					}
+				}
+				symbol->setPreferredMagnitudeValue(mag);
+			}
+
+			if ( !bbox ) {
+				bbox = Geo::GeoBoundingBox(
+					org->latitude().value(), org->longitude().value(),
+					org->latitude().value(), org->longitude().value()
+				);
+			}
+			else {
+				*bbox += Geo::GeoBoundingBox(
+					org->latitude().value(), org->longitude().value(),
+					org->latitude().value(), org->longitude().value()
+				);
+			}
+		}
+
+		if ( bbox ) {
+			centerLat = bbox->center().latitude();
+			centerLon = bbox->center().longitude();
 		}
 	}
 
 	if ( commandline().hasOption("lat") && commandline().hasOption("lon") ) {
-		_org = DataModel::Origin::Create();
-		_org->setLatitude(_latitude);
-		_org->setLongitude(_longitude);
-		_org->setDepth(DataModel::RealQuantity(_depth));
+		if ( _canvas->symbolCollection()->count() == 0 ) {
+			auto symbol = new OriginSymbol2(_latitude, _longitude);
+			symbol->setDepth(DataModel::RealQuantity(_depth));
+			symbol->setPreferredMagnitudeValue(_magnitude);
+			_canvas->symbolCollection()->add(symbol);
+		}
+
+		centerLat = _latitude;
+		centerLon = _longitude;
 	}
 
 	if ( _output.empty() ) {
@@ -338,6 +401,8 @@ bool MapCut::run() {
 		cerr << "Wrong output dimensions" << endl;
 		return false;
 	}
+
+	_canvas->setSize(_dim.width(), _dim.height());
 
 	if ( !_region.empty() ) {
 		parseRegion(_region, &_reg);
@@ -353,8 +418,8 @@ bool MapCut::run() {
 	}
 
 	if ( _region.empty() ) {
-		if ( !_org ) {
-			cerr << "No region and no origin given" << endl;
+		if ( !centerLat || !centerLon ) {
+			cerr << "No region, no origin or not lat/lon given" << endl;
 			return false;
 		}
 
@@ -363,35 +428,23 @@ bool MapCut::run() {
 			return false;
 		}
 
-		_reg = QRectF(_org->longitude()-_margins.width(),
-		              _org->latitude()-_margins.height(),
-		              _margins.width()*2, _margins.height()*2);
+		_reg = QRectF(*centerLon - _margins.width(),
+		              *centerLat - _margins.height(),
+		              _margins.width() * 2, _margins.height() * 2);
 	}
-
-
-	Map::ImageTreePtr mapTree = new Map::ImageTree(mapsDesc());
-
-	_canvas = new Map::Canvas(mapTree.get());
-	_canvas->setParent(this);
-	_canvas->setSize(_dim.width(), _dim.height());
 
 	setupView(_canvas, QRectF(_reg.left(),_reg.top(),_reg.width(),_reg.height()));
 
 	_canvas->setPreviewMode(false);
 
-	if ( commandline().hasOption("layers") )
+	if ( commandline().hasOption("layers") ) {
 		_canvas->setDrawLayers(true);
-
-	_symbol = NULL;
-	if ( _org ) {
-		_symbol = new OriginSymbol(_org->latitude(), _org->longitude());
-		_symbol->setDepth(_org->depth().value());
-		_symbol->setPreferredMagnitudeValue(_magnitude);
-		_canvas->symbolCollection()->add(_symbol);
 	}
 
-	connect(_canvas, SIGNAL(customLayer(QPainter*)),
-	        this, SLOT(drawArrivals(QPainter*)));
+	if ( _withArrivals ) {
+		connect(_canvas, SIGNAL(customLayer(QPainter*)),
+		        this, SLOT(drawArrivals(QPainter*)));
+	}
 
 	connect(_canvas, SIGNAL(updateRequested()), this, SLOT(renderCanvas()));
 	renderCanvas();
@@ -433,8 +486,9 @@ void MapCut::renderingCompleted() {
 		cerr << "Saving the image failed" << endl;
 		Client::Application::exit(1);
 	}
-	else
+	else {
 		Client::Application::quit();
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -443,83 +497,111 @@ void MapCut::renderingCompleted() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MapCut::drawArrivals(QPainter *p) {
-	if ( !_org ) return;
-
 	Map::Canvas *c = (Map::Canvas*)sender();
 
-	QPoint originLocation;
-	c->projection()->project(originLocation, QPointF(_symbol->longitude(), _symbol->latitude()));
-
-	int cutOff = _symbol->size().width();
-	if ( cutOff ) {
-		p->setClipping(true);
-		p->setClipRegion(QRegion(p->window()) -
-		                 QRegion(QRect(originLocation.x() - cutOff/2, originLocation.y() - cutOff/2,
-		                         cutOff, cutOff), QRegion::Ellipse));
-	}
-
-	p->setPen(SCScheme.colors.map.lines);
-	for ( size_t i = 0; i < _org->arrivalCount(); ++i ) {
-		DataModel::Arrival *arr = _org->arrival(i);
-
-		try {
-			double lat, lon;
-			Math::Geo::delandaz2coord(arr->distance(), arr->azimuth(),
-			                          _org->latitude(), _org->longitude(),
-			                          &lat, &lon);
-
-			c->drawLine(*p, QPointF(_symbol->longitude(), _symbol->latitude()), QPointF(lon,lat));
+	for ( auto symbol : *c->symbolCollection() ) {
+		auto org = static_cast<OriginSymbol2*>(symbol)->origin;
+		if ( !org ) {
+			continue;
 		}
-		catch ( ... ) {}
-	}
 
-	if ( cutOff )
-		p->setClipping(false);
+		QPoint originLocation;
+		c->projection()->project(
+			originLocation, QPointF(symbol->longitude(), symbol->latitude())
+		);
 
-	int r = SCScheme.map.stationSize/2;
-	QRect screen = p->window().adjusted(-r,-r,r,r);
+		int cutOff = symbol->size().width();
+		if ( cutOff ) {
+			p->setClipping(true);
+			p->setClipRegion(
+				QRegion(p->window())
+				- QRegion(
+					QRect(
+						originLocation.x() - cutOff / 2,
+						originLocation.y() - cutOff / 2, cutOff, cutOff
+					),
+					QRegion::Ellipse
+				)
+			);
+		}
 
-	p->setPen(SCScheme.colors.map.outlines);
-	for ( int i = (int)_org->arrivalCount()-1; i >= 0; --i ) {
-		DataModel::Arrival *arr = _org->arrival(i);
+		p->setPen(SCScheme.colors.map.lines);
+		for ( size_t i = 0; i < org->arrivalCount(); ++i ) {
+			DataModel::Arrival *arr = org->arrival(i);
 
-		try {
-			double lat, lon;
-			Math::Geo::delandaz2coord(arr->distance(), arr->azimuth(),
-			                          _org->latitude(), _org->longitude(),
-			                          &lat, &lon);
-
-			bool enabled;
 			try {
-				enabled = arr->weight() > 0;
+				double lat, lon;
+				Math::Geo::delandaz2coord(
+					arr->distance(), arr->azimuth(),
+					org->latitude(), org->longitude(),
+					&lat, &lon
+				);
+
+				c->drawLine(
+					*p,
+					QPointF(symbol->longitude(), symbol->latitude()),
+					QPointF(lon, lat)
+				);
 			}
 			catch ( ... ) {
-				enabled = true;
-			}
-
-			if ( enabled ) {
-				try {
-					p->setBrush(SCScheme.colors.arrivals.residuals.colorAt(arr->timeResidual()));
-				}
-				catch ( ... ) {
-					p->setBrush(SCScheme.colors.arrivals.undefined);
-				}
-			}
-			else
-				p->setBrush(SCScheme.colors.arrivals.disabled);
-
-			QPoint pp;
-			if ( c->projection()->project(pp, QPointF(lon,lat)) ) {
-				p->drawEllipse(pp.x()-r, pp.y()-r, SCScheme.map.stationSize, SCScheme.map.stationSize);
-
-				if ( _htmlArea && screen.contains(pp) ) {
-					cout << "<area shape=\"circle\" coords=\""
-					     << pp.x() << "," << pp.y() << "," << r << "\" "
-					     << "id=\"" << arr->pickID() << "\"/>" << endl;
-				}
 			}
 		}
-		catch ( ... ) {}
+
+		if ( cutOff )
+			p->setClipping(false);
+
+		int r = SCScheme.map.stationSize / 2;
+		QRect screen = p->window().adjusted(-r, -r, r, r);
+
+		p->setPen(SCScheme.colors.map.outlines);
+		for ( int i = static_cast<int>(org->arrivalCount()) - 1; i >= 0; --i ) {
+			DataModel::Arrival *arr = org->arrival(i);
+
+			try {
+				double lat, lon;
+				Math::Geo::delandaz2coord(
+					arr->distance(), arr->azimuth(),
+					org->latitude(), org->longitude(),
+					&lat, &lon
+				);
+
+				bool enabled;
+				try {
+					enabled = arr->weight() > 0;
+				}
+				catch ( ... ) {
+					enabled = true;
+				}
+
+				if ( enabled ) {
+					try {
+						p->setBrush(SCScheme.colors.arrivals.residuals.colorAt(
+						arr->timeResidual()));
+					}
+					catch ( ... ) {
+						p->setBrush(SCScheme.colors.arrivals.undefined);
+					}
+				}
+				else
+					p->setBrush(SCScheme.colors.arrivals.disabled);
+
+				QPoint pp;
+				if ( c->projection()->project(pp, QPointF(lon, lat)) ) {
+					p->drawEllipse(
+						pp.x() - r, pp.y() - r,
+						SCScheme.map.stationSize,
+						SCScheme.map.stationSize
+					);
+
+					if ( _htmlArea && screen.contains(pp) ) {
+						cout << "<area shape=\"circle\" coords=\"" << pp.x()
+						     << "," << pp.y() << "," << r << "\" "
+						     << "id=\"" << arr->pickID() << "\"/>" << endl;
+					}
+				}
+			}
+			catch ( ... ) {	}
+		}
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

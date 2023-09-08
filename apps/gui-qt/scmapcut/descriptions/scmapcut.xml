@@ -53,37 +53,37 @@
 				</option>
 				<option flag="d" long-flag="dimension" argument="arg" type="string" unit="px">
 					<description>
-						Output image dimension (wxh).
+					Output image dimension (wxh).
 					</description>
 				</option>
 				<option flag="o" long-flag="output" argument="arg" type="string" unit="">
 					<description>
-						Output image, file name.
+					Output image, file name.
 					</description>
 				</option>
 				<option flag="" long-flag="lat" argument="arg" type="float" unit="degree">
 					<description>
-						Latitude of symbol.
+					Latitude of symbol.
 					</description>
 				</option>
 				<option flag="" long-flag="long" argument="arg" unit="degree">
 					<description>
-						Longitude of symbol.
+					Longitude of symbol.
 					</description>
 				</option>
 				<option flag="" long-flag="depth" argument="arg" unit="km">
 					<description>
-						Depth of event.
+					Depth of event.
 					</description>
 				</option>
 				<option flag="" long-flag="mag" argument="arg" unit="">
 					<description>
-						Magnitude of event.
+					Magnitude of event.
 					</description>
 				</option>
 				<option flag="" long-flag="layers" argument="arg" unit="">
 					<description>
-						Draw polygonal layers.
+					Draw polygonal layers.
 					</description>
 				</option>
 				<option flag="" long-flag="ep" argument="arg" unit="">
@@ -93,12 +93,17 @@
 				</option>
 				<option flag="E" long-flag="event-id" argument="arg" unit="">
 					<description>
-						Event ID of the event to plot on map.
+					Event ID of the event to plot on map.
 					</description>
 				</option>
-				<option flag="" long-flag="html-area" argument="arg" unit="">
+				<option flag="" long-flag="html-area">
 					<description>
-						Print html/area section.
+					Print html/area section.
+					</description>
+				</option>
+				<option flag="" long-flag="without-arrivals">
+					<description>
+					Do not render arrivals (stations).
 					</description>
 				</option>
 			</group>

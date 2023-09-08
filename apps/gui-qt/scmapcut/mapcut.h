@@ -45,28 +45,27 @@ class MapCut : public Seiscomp::Gui::Application {
 
 
 	private:
-		std::string _region;
-		std::string _margin;
-		std::string _output;
-		std::string _dimension;
+		std::string                 _region;
+		std::string                 _margin;
+		std::string                 _output;
+		std::string                 _dimension;
 
-		double      _latitude;
-		double      _longitude;
-		double      _depth;
-		double      _magnitude;
+		double                      _latitude;
+		double                      _longitude;
+		double                      _depth{10};
+		double                      _magnitude{3};
 
-		std::string _epFile;
-		std::string _eventID;
+		std::string                 _epFile;
+		std::string                 _eventID;
 
-		QRectF      _reg;
-		QSizeF      _margins;
-		QSize       _dim;
+		QRectF                      _reg;
+		QSizeF                      _margins;
+		QSize                       _dim;
 
-		bool        _htmlArea;
+		bool                        _withArrivals{true};
+		bool                        _htmlArea{false};
 
-		Seiscomp::Gui::Map::Canvas    *_canvas;
-		Seiscomp::DataModel::OriginPtr _org;
-		Seiscomp::Gui::OriginSymbol   *_symbol;
+		Seiscomp::Gui::Map::Canvas *_canvas{nullptr};
 };
 
 
