@@ -28,6 +28,8 @@ def _parseTime(timestring):
         return t
     if t.fromString(timestring, "%FT%TZ"):
         return t
+    if t.fromString(timestring, "%F"):
+        return t
     return None
 
 
