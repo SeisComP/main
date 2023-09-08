@@ -34,7 +34,6 @@ def _parseTime(timestring):
 
 
 class EventList(seiscomp.client.Application):
-
     def __init__(self, argc, argv):
         seiscomp.client.Application.__init__(self, argc, argv)
 
@@ -51,28 +50,36 @@ class EventList(seiscomp.client.Application):
 
     def createCommandLineDescription(self):
         self.commandline().addGroup("Events")
-        self.commandline().addStringOption("Events", "begin",
-                                           "Specify the lower bound of the "
-                                           "time interval.")
-        self.commandline().addStringOption("Events", "end",
-                                           "Specify the upper bound of the "
-                                           "time interval.")
-        self.commandline().addStringOption("Events", "hours",
-                                           "Start searching given hours before"
-                                           " now. If set, --begin and --end "
-                                           "are ignored.")
-        self.commandline().addStringOption("Events", "modified-after",
-                                           "Select events modified after the "
-                                           "specified time.")
+        self.commandline().addStringOption(
+            "Events", "begin", "Specify the lower bound of the " "time interval."
+        )
+        self.commandline().addStringOption(
+            "Events", "end", "Specify the upper bound of the " "time interval."
+        )
+        self.commandline().addStringOption(
+            "Events",
+            "hours",
+            "Start searching given hours before"
+            " now. If set, --begin and --end "
+            "are ignored.",
+        )
+        self.commandline().addStringOption(
+            "Events",
+            "modified-after",
+            "Select events modified after the " "specified time.",
+        )
 
         self.commandline().addGroup("Output")
-        self.commandline().addStringOption("Output", "delimiter,D",
-                                           "Specify the delimiter of the "
-                                           "resulting event IDs. "
-                                           "Default: '\\n')")
-        self.commandline().addOption("Output", "preferred-origin,p",
-                                     "Print the ID of the preferred origin "
-                                     "along with the event ID.")
+        self.commandline().addStringOption(
+            "Output",
+            "delimiter,D",
+            "Specify the delimiter of the " "resulting event IDs. " "Default: '\\n')",
+        )
+        self.commandline().addOption(
+            "Output",
+            "preferred-origin,p",
+            "Print the ID of the preferred origin " "along with the event ID.",
+        )
         return True
 
     def init(self):
@@ -93,10 +100,11 @@ class EventList(seiscomp.client.Application):
 
             self._startTime = _parseTime(start)
             if self._startTime is None:
-                seiscomp.logging.error("Wrong 'begin' format '%s'" % start)
+                seiscomp.logging.error(f"Wrong 'begin' format '{start}'")
                 return False
-            seiscomp.logging.debug("Setting start to %s"
-                                   % self._startTime.toString("%FT%TZ"))
+            seiscomp.logging.debug(
+                f"Setting start to {self._startTime.toString('%FT%TZ')}"
+            )
 
             try:
                 end = self.commandline().optionString("end")
@@ -105,17 +113,19 @@ class EventList(seiscomp.client.Application):
 
             self._endTime = _parseTime(end)
             if self._endTime is None:
-                seiscomp.logging.error("Wrong 'end' format '%s'" % end)
+                seiscomp.logging.error(f"Wrong 'end' format '{end}'")
                 return False
-            seiscomp.logging.debug("Setting end to %s"
-                                   % self._endTime.toString("%FT%TZ"))
+            seiscomp.logging.debug(f"Setting end to {self._endTime.toString('%FT%TZ')}")
         else:
-            seiscomp.logging.debug("Time window set by hours option: ignoring "
-                                   "all other time parameters")
-            secs = self.hours*3600
+            seiscomp.logging.debug(
+                "Time window set by hours option: ignoring " "all other time parameters"
+            )
+            secs = self.hours * 3600
             maxSecs = 596523 * 3600
             if secs > maxSecs:
-                seiscomp.logging.error("Maximum hours exceeeded. Maximum is %i" % (maxSecs / 3600))
+                seiscomp.logging.error(
+                    "Maximum hours exceeeded. Maximum is %i" % (maxSecs / 3600)
+                )
                 return False
 
             self._startTime = seiscomp.core.Time.UTC() - seiscomp.core.TimeSpan(secs)
@@ -130,12 +140,14 @@ class EventList(seiscomp.client.Application):
             modifiedAfter = self.commandline().optionString("modified-after")
             self._modifiedAfterTime = _parseTime(modifiedAfter)
             if self._modifiedAfterTime is None:
-                seiscomp.logging.error("Wrong 'modified-after' format '%s'"
-                                       % modifiedAfter)
+                seiscomp.logging.error(
+                    f"Wrong 'modified-after' format '{modifiedAfter}'"
+                )
                 return False
             seiscomp.logging.debug(
-                    "Setting 'modified-after' time to %s" %
-                    self._modifiedAfterTime.toString("%FT%TZ"))
+                "Setting 'modified-after' time to %s"
+                % self._modifiedAfterTime.toString("%FT%TZ")
+            )
         except RuntimeError:
             pass
 
@@ -147,23 +159,25 @@ class EventList(seiscomp.client.Application):
         return True
 
     def printUsage(self):
-
-        print('''Usage:
+        print(
+            """Usage:
   scevtls [options]
 
-List event IDs available in a given time range and print to stdout.''')
+List event IDs available in a given time range and print to stdout."""
+        )
 
         seiscomp.client.Application.printUsage(self)
 
-        print('''Examples:
+        print(
+            """Examples:
 Print all event IDs from year 2022 and thereafter
   scevtls -d mysql://sysop:sysop@localhost/seiscomp --begin "2022-01-01 00:00:00"
-''')
+"""
+        )
 
     def run(self):
         out = []
-        seiscomp.logging.debug("Search interval: %s - %s" %
-                               (self._startTime, self._endTime))
+        seiscomp.logging.debug(f"Search interval: {self._startTime} - {self._endTime}")
         for obj in self.query().getEvents(self._startTime, self._endTime):
             evt = seiscomp.datamodel.Event.Cast(obj)
             if not evt:
@@ -185,7 +199,7 @@ Print all event IDs from year 2022 and thereafter
 
             out.append(outputString)
 
-        sys.stdout.write("%s\n" % self._delimiter.join(out))
+        sys.stdout.write(f"{self._delimiter.join(out)}\n")
 
         return True
 
