@@ -342,7 +342,7 @@ bool AmpTool::run() {
 		cerr << "Collecting picks ... " << flush;
 		DatabaseIterator db_it = query()->getObjectIterator(dbQuery, Pick::TypeInfo());
 		ObjectPtr obj;
-		while ( obj = db_it.get() ) {
+		while ( (obj = db_it.get()) ) {
 			Pick *pick = static_cast<Pick*>(obj.get());
 			try {
 				pick->waveformID().networkCode();
@@ -392,7 +392,7 @@ bool AmpTool::run() {
 			_report << "   + " << pick->publicID() << std::endl;
 			cerr << "[" << idx << "]" << " " << (*it)->publicID() << endl;
 			db_it = query()->getAmplitudesForPick((*it)->publicID());
-			while ( obj = db_it.get() ) {
+			while ( (obj = db_it.get()) ) {
 				Amplitude *amp = static_cast<Amplitude*>(obj.get());
 				cerr << "  [" << setw(10) << left << amp->type() << "]  ";
 
@@ -995,8 +995,9 @@ int AmpTool::addProcessor(Processing::AmplitudeProcessor *proc,
 	for ( int i = 0; i < componentCount; ++i ) {
 		cwids[i] = pick->waveformID();
 		if ( tc.comps[components[i]] == NULL ) {
-			SEISCOMP_LOG(_errorChannel, "no inventory information found for %s -> ignoring Arrival %s",
-			             streamIDs[i].c_str(), pick->publicID().c_str());
+			SEISCOMP_LOG(_errorChannel, "%s: no inventory information found for %s (%d) -> ignoring Arrival %s",
+			             proc->type().c_str(),
+			             Private::toStreamID(cwids[i]).c_str(), i, pick->publicID().c_str());
 			_report << "   - " << proc->type().c_str() << " [streams not found]" << std::endl;
 			return -1;
 		}
@@ -1005,8 +1006,8 @@ int AmpTool::addProcessor(Processing::AmplitudeProcessor *proc,
 		streamIDs[i] = Private::toStreamID(cwids[i]);
 
 		if ( cwids[i].channelCode().empty() ) {
-			SEISCOMP_LOG(_errorChannel, "invalid channel code in %s -> ignoring Arrival %s",
-			             streamIDs[i].c_str(), pick->publicID().c_str());
+			SEISCOMP_LOG(_errorChannel, "%s: invalid channel code in %s -> ignoring Arrival %s",
+			             proc->type().c_str(), streamIDs[i].c_str(), pick->publicID().c_str());
 			_report << "   - " << proc->type().c_str() << " [invalid channel code]" << std::endl;
 			return -1;
 		}
@@ -1030,8 +1031,8 @@ int AmpTool::addProcessor(Processing::AmplitudeProcessor *proc,
 			receiver = tc.comps[components[i]]->sensorLocation();
 
 		if ( proc->streamConfig(components[i]).gain == 0.0 ) {
-			SEISCOMP_LOG(_errorChannel, "no gain found for %s -> ignoring Arrival %s",
-			             streamIDs[i].c_str(), pick->publicID().c_str());
+			SEISCOMP_LOG(_errorChannel, "%s: no gain found for %s -> ignoring Arrival %s",
+			             proc->type().c_str(), streamIDs[i].c_str(), pick->publicID().c_str());
 			_report << "     - " << proc->type().c_str() << " [gain not found]" << std::endl;
 			return -1;
 		}
