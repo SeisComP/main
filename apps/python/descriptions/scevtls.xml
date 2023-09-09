@@ -32,6 +32,15 @@
 				<optionReference>database#db-disable</optionReference>
 			</group>
 
+			<group name="Input">
+				<option flag="i" long-flag="input" argument="arg">
+					<description>
+					Name of input XML file. Read from stdin if '-' is given.
+					Deactivates reading events from database.
+					</description>
+				</option>
+			</group>
+
 			<group name="Events">
 				<option long-flag="begin" argument="time">
 					<description>
