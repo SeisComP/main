@@ -334,13 +334,13 @@ class TraceDecorator : public Gui::RecordWidgetDecorator {
 			}
 
 			QPair<double,double> amplRange = widget->amplitudeDataRange(0);
-			QString amps = QString("min: %1").arg(amplRange.first, 0, 'f', 1);
+			QString amps = QString("max: %1").arg(amplRange.second, 0, 'f', 1);
 			if ( !_desc->unit.isEmpty() ) {
 			    amps += " ";
 			    amps += _desc->unit;
 			}
 			amps += "\n";
-			amps += QString("max: %1").arg(amplRange.second, 0, 'f', 1);
+			amps += QString("min: %1").arg(amplRange.first, 0, 'f', 1);
 			if ( !_desc->unit.isEmpty() ) {
 			   amps += " ";
 			   amps += _desc->unit;
