@@ -310,7 +310,7 @@ void QcTableView::showDialog(const QModelIndex &index) {
 	QModelIndex idx(_qcProxyModel->mapToSource(index));
 
 	if ( idx.column() == 0 ) {
-		showStream(idx.row());
+		showStream(index.row());
 	}
 	else if ( idx.column() == 1 ) {
 		// show the enable/disable message box
