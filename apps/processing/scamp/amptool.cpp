@@ -735,7 +735,7 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 
 			if ( Private::shortPhaseName(arr->phase().code()) != 'P' || weight < _minWeight ) {
 				SEISCOMP_INFO("Ignoring pick '%s' weight=%.1f phase=%s",
-							  pickID.c_str(), weight, arr->phase().code().c_str());
+				              pickID.c_str(), weight, arr->phase().code().c_str());
 				continue;
 			}
 
@@ -804,12 +804,7 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 		for ( AmplitudeList::iterator ait = _amplitudeTypes.begin();
 		      ait != _amplitudeTypes.end(); ++ait ) {
 
-			AmplitudePtr existingAmp;
-
-			try {
-				hasAmplitude(amps, *ait);
-			}
-			catch ( Core::ValueException& ) {}
+			AmplitudePtr existingAmp = hasAmplitude(amps, *ait);
 
 			if ( existingAmp ) {
 				if ( !_reprocessAmplitudes ) {
