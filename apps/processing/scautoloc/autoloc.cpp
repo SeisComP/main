@@ -447,7 +447,9 @@ bool Autoloc3::feed(Origin *origin)
 		return false;
 	}
 
-	SEISCOMP_INFO("processing manual origin z=%.3fkm   dtype=%d", manualOrigin->dep, manualOrigin->depthType);
+	SEISCOMP_INFO("processing manual origin z=%.3fkm   dtype=%d",
+	              manualOrigin->dep,
+	              static_cast<int>(manualOrigin->depthType));
 
 	// Look for a matching (autoloc) origin. Our intention is to find the
 	// best-matching origin and merge it with the just received manual
