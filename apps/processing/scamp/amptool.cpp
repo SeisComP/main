@@ -1067,30 +1067,6 @@ int AmpTool::addProcessor(Processing::AmplitudeProcessor *proc,
 		);
 	}
 
-	if ( depth ) {
-		proc->setHint(WaveformProcessor::Depth, *depth);
-		if ( proc->isFinished() ) {
-			_report << "     - " << proc->type() << " [" << proc->status().toString() << " (" << proc->statusValue() << ")]" << std::endl;
-			return -1;
-		}
-	}
-
-	if ( distance ) {
-		proc->setHint(WaveformProcessor::Distance, *distance);
-		if ( proc->isFinished() ) {
-			_report << "     - " << proc->type() << " [" << proc->status().toString() << " (" << proc->statusValue() << ")]" << std::endl;
-			return -1;
-		}
-	}
-
-	if ( originTime ) {
-		proc->setHint(WaveformProcessor::Time, *originTime);
-		if ( proc->isFinished() ) {
-			_report << "     - " << proc->type() << " [" << proc->status().toString() << " (" << proc->statusValue() << ")]" << std::endl;
-			return -1;
-		}
-	}
-
 	proc->computeTimeWindow();
 
 	if ( proc->isFinished() ) {
