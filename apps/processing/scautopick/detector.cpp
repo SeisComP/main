@@ -27,8 +27,10 @@ namespace {
 
 class AmplitudeProcessor_SNR : public Processing::AmplitudeProcessor {
 	public:
-		AmplitudeProcessor_SNR(const Core::Time& trigger)
-		: Processing::AmplitudeProcessor(trigger, "snr") {}
+		AmplitudeProcessor_SNR(const Core::Time &trigger)
+		: Processing::AmplitudeProcessor("snr") {
+			setTrigger(trigger);
+		}
 
 	protected:
 		bool computeAmplitude(const DoubleArray &data,
