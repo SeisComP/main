@@ -16,12 +16,69 @@
 from __future__ import absolute_import, division, print_function
 
 import sys
+import re
 
 from seiscomp import client, core, datamodel, io
 
 
-class EventStreams(client.Application):
+def readStreamList(listFile):
+    """
+    Read list of streams from file
 
+    Parameters
+    ----------
+    file : file
+        Input list file, one line per stream
+        format: NET.STA.LOC.CHA
+
+    Returns
+    -------
+    list
+        streams.
+
+    """
+    streams = []
+
+    try:
+        if listFile == "-":
+            f = sys.stdin
+            listFile = "stdin"
+        else:
+            f = open(listFile, "r", encoding="utf8")
+    except Exception:
+        print(f"error: unable to open '{listFile}'", file=sys.stderr)
+        return []
+
+    lineNumber = -1
+    for line in f:
+        lineNumber = lineNumber + 1
+        line = line.strip()
+        # ignore comments
+        if len(line) > 0 and line[0] == "#":
+            continue
+
+        if len(line) == 0:
+            continue
+
+        if len(line.split(".")) != 4:
+            f.close()
+            print(
+                f"error: {listFile} in line {lineNumber} has invalid line format, "
+                "expecting NET.STA.LOC.CHA - 1 line per stream",
+                file=sys.stderr,
+            )
+            return []
+        streams.append(line)
+
+    f.close()
+
+    if len(streams) == 0:
+        return []
+
+    return streams
+
+
+class EventStreams(client.Application):
     def __init__(self, argc, argv):
         client.Application.__init__(self, argc, argv)
 
@@ -45,69 +102,104 @@ class EventStreams(client.Application):
         self.station = None
 
         self.streams = []
+        self.streamFilter = None
 
         # output format
         self.caps = False
         self.fdsnws = False
 
-
     def createCommandLineDescription(self):
         self.commandline().addGroup("Input")
         self.commandline().addStringOption(
-            "Input", "input,i",
-            "read event from XML file instead of database. Use '-' to read "
-            "from stdin.")
+            "Input",
+            "input,i",
+            "Input XML file name. Reads event from the XML file instead of database. "
+            "Use '-' to read from stdin.",
+        )
         self.commandline().addStringOption(
-            "Input", "format,f",
-            "input format to use (xml [default], zxml (zipped xml), binary). "
-            "Only relevant with --input.")
+            "Input",
+            "format,f",
+            "Input format to use (xml [default], zxml (zipped xml), binary). "
+            "Only relevant with --input.",
+        )
 
         self.commandline().addGroup("Dump")
-        self.commandline().addStringOption("Dump", "event,E", "event id")
         self.commandline().addStringOption(
-            "Dump", "margin,m",
-            "time margin around the picked time window, default is 300. Added "
+            "Dump", "event,E", "The ID of the event to consider."
+        )
+        self.commandline().addStringOption(
+            "Dump",
+            "net-sta",
+            "Filter read picks by network code or network and station code. Format: "
+            "NET or NET.STA.",
+        )
+        self.commandline().addStringOption(
+            "Dump",
+            "nslc",
+            "Stream list file to be used for filtering read picks by stream code. "
+            "'--net-sta' will be ignored. One line per stream, line format: "
+            "NET.STA.LOC.CHA.",
+        )
+
+        self.commandline().addGroup("Output")
+        self.commandline().addStringOption(
+            "Output",
+            "margin,m",
+            "Time margin around the picked time window, default is 300. Added "
             "before the first and after the last pick, respectively. Use 2 "
             "comma-separted values (before,after) for asymmetric margins, e.g. "
-            "-m 120,300.")
+            "-m 120,300.",
+        )
         self.commandline().addStringOption(
-            "Dump", "streams,S",
-            "comma separated list of streams per station to add, e.g. BH,SH,HH")
+            "Output",
+            "streams,S",
+            "Comma-separated list of streams per station to add, e.g. BH,SH,HH.",
+        )
         self.commandline().addOption(
-            "Dump", "all-streams",
-            "dump all streams. If unused, just streams with picks are dumped.")
+            "Output",
+            "all-streams",
+            "Dump all streams. If unused, just streams with picks are dumped.",
+        )
         self.commandline().addIntOption(
-            "Dump", "all-components,C",
-            "all components or just the picked ones (0). Default is 1")
+            "Output",
+            "all-components,C",
+            "All components or just the picked ones (0). Default is 1",
+        )
         self.commandline().addIntOption(
-            "Dump", "all-locations,L",
-            "all locations or just the picked ones (0). Default is 1")
+            "Output",
+            "all-locations,L",
+            "All locations or just the picked ones (0). Default is 1",
+        )
         self.commandline().addOption(
-            "Dump", "all-stations",
-            "dump all stations from the same network. If unused, just stations "
-            "with picks are dumped.")
+            "Output",
+            "all-stations",
+            "Dump all stations from the same network. If unused, just stations "
+            "with picks are dumped.",
+        )
         self.commandline().addOption(
-            "Dump", "all-networks",
-            "dump all networks. If unused, just networks with picks are dumped."
-            " This option implies all-stations, all-locations, all-streams, "
-            "all-components and will only provide the time window.")
+            "Output",
+            "all-networks",
+            "Dump all networks. If unused, just networks with picks are dumped."
+            " This option implies --all-stations, --all-locations, --all-streams, "
+            "--all-components and will only provide the time window.",
+        )
         self.commandline().addOption(
-            "Dump", "resolve-wildcards,R",
-            "if all components are used, use inventory to resolve stream "
+            "Output",
+            "resolve-wildcards,R",
+            "If all components are used, use inventory to resolve stream "
             "components instead of using '?' (important when Arclink should be "
-            "used)")
-        self.commandline().addStringOption(
-            "Dump", "net-sta", "Filter streams by network code or network and "
-            "station code. Format: NET or NET.STA")
+            "used).",
+        )
         self.commandline().addOption(
-            "Dump", "caps",
-            "dump in capstool format (Common Acquisition Protocol Server by "
-            "gempa GmbH)")
+            "Output",
+            "caps",
+            "Output in capstool format (Common Acquisition Protocol Server by "
+            "gempa GmbH).",
+        )
         self.commandline().addOption(
-            "Dump", "fdsnws",
-            "dump in FDSN dataselect webservice POST format")
+            "Output", "fdsnws", "Output in FDSN dataselect webservice POST format."
+        )
         return True
-
 
     def validateParameters(self):
         if not client.Application.validateParameters(self):
@@ -124,9 +216,7 @@ class EventStreams(client.Application):
 
         return True
 
-
     def init(self):
-
         if not client.Application.init(self):
             return False
 
@@ -139,8 +229,9 @@ class EventStreams(client.Application):
             self.eventID = self.commandline().optionString("event")
         except BaseException:
             if not self.inputFile:
-                raise ValueError("An eventID is mandatory if no input file is "
-                                 "specified")
+                raise ValueError(
+                    "An eventID is mandatory if no input file is " "specified"
+                )
 
         try:
             self.margin = self.commandline().optionString("margin").split(",")
@@ -171,16 +262,28 @@ class EventStreams(client.Application):
         except RuntimeError:
             networkStation = None
 
+        try:
+            nslcFile = self.commandline().optionString("nslc")
+        except RuntimeError:
+            nslcFile = None
+
+        if nslcFile:
+            networkStation = None
+            self.streamFilter = readStreamList(nslcFile)
+
         if networkStation:
             try:
-                self.network = networkStation.split('.')[0]
+                self.network = networkStation.split(".")[0]
             except IndexError:
-                print("Error in network code '{}': Use '--net-sta' with "
-                      "format NET or NET.STA".format(networkStation), file=sys.stderr)
+                print(
+                    f"Error in network code '{networkStation}': Use '--net-sta' with "
+                    "format NET or NET.STA",
+                    file=sys.stderr,
+                )
                 return False
 
             try:
-                self.station = networkStation.split('.')[1]
+                self.station = networkStation.split(".")[1]
             except IndexError:
                 pass
 
@@ -189,26 +292,27 @@ class EventStreams(client.Application):
 
         return True
 
-
     def printUsage(self):
-
-        print('''Usage:
+        print(
+            """Usage:
   scevtstreams [options]
 
-Extract stream information and time windows from an event''')
+Extract stream information and time windows from an event"""
+        )
 
         client.Application.printUsage(self)
 
-        print('''Examples:
+        print(
+            """Examples:
 Get the time windows for an event in the database:
   scevtstreams -E gfz2012abcd -d mysql://sysop:sysop@localhost/seiscomp
 
 Create lists compatible with fdsnws:
   scevtstreams -E gfz2012abcd -i event.xml -m 120,500 --fdsnws
-''')
+"""
+        )
 
     def run(self):
-
         resolveWildcards = self.commandline().hasOption("resolve-wildcards")
 
         picks = []
@@ -228,23 +332,57 @@ Create lists compatible with fdsnws:
                 picks.append(pick)
 
             if not picks:
-                raise ValueError("Could not find picks for event {} in "
-                                 "database".format(self.eventID))
+                raise ValueError(
+                    f"Could not find picks for event {self.eventID} in database"
+                )
 
         # filter picks
-        pickFiltered = []
-        if self.network:
+        if self.streamFilter:
+            # # filter channel by --nslc option
+            channels = self.streamFilter
+            channelsRe = []
+            for channel in channels:
+                channel = re.sub(r"\.", r"\.", channel)  # . becomes \.
+                channel = re.sub(r"\?", ".", channel)  # ? becomes .
+                channel = re.sub(r"\*", ".*", channel)  # * becomes.*
+                channel = re.compile(channel)
+                channelsRe.append(channel)
+
+        if self.streamFilter or self.network:
+            pickFiltered = []
             for pick in picks:
-                if pick.waveformID().networkCode() != self.network:
-                    continue
-                if self.station and self.station != pick.waveformID().stationCode():
-                    continue
-                pickFiltered.append(pick)
+                net = pick.waveformID().networkCode()
+                sta = pick.waveformID().stationCode()
+                loc = pick.waveformID().locationCode()
+                cha = pick.waveformID().channelCode()
+
+                filtered = False
+                if self.streamFilter:
+                    stream = f"{net}.{sta}.{loc}.{cha}"
+                    for chaRe in channelsRe:
+                        if chaRe.match(stream):
+                            filtered = True
+                            continue
+
+                elif self.network:
+                    if net != self.network:
+                        continue
+                    if self.station and sta != self.station:
+                        continue
+                    filtered = True
+
+                if filtered:
+                    pickFiltered.append(pick)
+                else:
+                    print(
+                        f"Ignoring channel {stream}: not considered by configuration",
+                        file=sys.stderr,
+                    )
 
             picks = pickFiltered
 
         if not picks:
-            raise ValueError("All picks filtered out")
+            raise ValueError("Info: All picks are filtered out")
 
         # calculate minimum and maximum pick time
         minTime = None
@@ -287,7 +425,8 @@ Create lists compatible with fdsnws:
                     if iloc:
                         tc = datamodel.ThreeComponents()
                         datamodel.getThreeComponents(
-                            tc, iloc, rawStream, pick.time().value())
+                            tc, iloc, rawStream, pick.time().value()
+                        )
                         streams = []
                         if tc.vertical():
                             streams.append(tc.vertical().code())
@@ -325,8 +464,7 @@ Create lists compatible with fdsnws:
                 if self.allStreams or self.allNetworks:
                     s = "*"
 
-                lines.add(lineFMT.format(
-                    minTime, maxTime, net, station, loc, s))
+                lines.add(lineFMT.format(minTime, maxTime, net, station, loc, s))
 
             for s in self.streams:
                 if s == rawStream:
@@ -335,17 +473,18 @@ Create lists compatible with fdsnws:
                 if self.allStreams or self.allNetworks:
                     s = "*"
 
-                lines.add(lineFMT.format(
-                    minTime, maxTime, net, station, loc, s + streams[0][2]))
+                lines.add(
+                    lineFMT.format(
+                        minTime, maxTime, net, station, loc, s + streams[0][2]
+                    )
+                )
 
         for line in sorted(lines):
             print(line, file=sys.stdout)
 
         return True
 
-
     def readXML(self):
-
         if self.inputFormat == "xml":
             ar = io.XMLArchive()
         elif self.inputFormat == "zxml":
@@ -354,8 +493,7 @@ Create lists compatible with fdsnws:
         elif self.inputFormat == "binary":
             ar = io.VBinaryArchive()
         else:
-            raise TypeError("unknown input format '{}'".format(
-                self.inputFormat))
+            raise TypeError(f"unknown input format '{self.inputFormat}'")
 
         if not ar.open(self.inputFile):
             raise IOError("unable to open input file")
@@ -378,30 +516,38 @@ Create lists compatible with fdsnws:
         if self.eventID:
             ev = datamodel.Event.Find(self.eventID)
             if ev:
-                originIDs = [ev.originReference(i).originID() \
-                             for i in range(ev.originReferenceCount())]
+                originIDs = [
+                    ev.originReference(i).originID()
+                    for i in range(ev.originReferenceCount())
+                ]
             else:
-                raise ValueError("event id {} not found in input file".format(
-                    self.eventID))
+                raise ValueError(f"Event ID {self.eventID} not found in input file")
 
         # use first event/origin if no id was specified
         else:
             # no event, use first available origin
             if ep.eventCount() == 0:
                 if ep.originCount() > 1:
-                    print("WARNING: Input file contains no event but more than "
-                          "1 origin. Considering only first origin",
-                          file=sys.stderr)
+                    print(
+                        "WARNING: Input file contains no event but more than "
+                        "1 origin. Considering only first origin",
+                        file=sys.stderr,
+                    )
                 originIDs.append(ep.origin(0).publicID())
 
             # use origin references of first available event
             else:
                 if ep.eventCount() > 1:
-                    print("WARNING: Input file contains more than 1 event. "
-                          "Considering only first event", file=sys.stderr)
+                    print(
+                        "WARNING: Input file contains more than 1 event. "
+                        "Considering only first event",
+                        file=sys.stderr,
+                    )
                 ev = ep.event(0)
-                originIDs = [ev.originReference(i).originID() \
-                             for i in range(ev.originReferenceCount())]
+                originIDs = [
+                    ev.originReference(i).originID()
+                    for i in range(ev.originReferenceCount())
+                ]
 
         # collect pickIDs
         pickIDs = set()
@@ -423,10 +569,10 @@ Create lists compatible with fdsnws:
         return picks
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         app = EventStreams(len(sys.argv), sys.argv)
         sys.exit(app())
     except (ValueError, TypeError) as e:
-        print("ERROR: {}".format(e), file=sys.stderr)
+        print(f"ERROR: {e}", file=sys.stderr)
     sys.exit(1)

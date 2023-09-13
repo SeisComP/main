@@ -2,7 +2,7 @@
 <seiscomp>
 	<module name="scevtstreams" category="Utilities">
 		<description>
-		Extract stream information and time windows from an event.
+		Extract stream information with time windows from picks of an event.
 		</description>
 		<command-line>
 			<synopsis>
@@ -42,27 +42,43 @@
 			<group name="Input">
 				<option flag="i" long-flag="input" argument="arg">
 					<description>
-					Input XML file name. Override reading from database.
+					Input XML file name. Reads event from the XML file instead of
+					database. Use '-' to read from stdin.
 					</description>
 				</option>
 				<option flag="f" long-flag="format" argument="arg">
 					<description>
-					Input format to use (xml [default], zxml (zipped xml), binary).
-					Only relevant with --input.
+					Input format to use (xml [default], zxml (zipped xml),
+					binary). Only relevant with -i.
 					</description>
 				</option>
 			</group>
 
 			<group name="Dump">
 				<option flag="E" long-flag="event" argument="arg">
-					<description>Specifies the event id.</description>
+					<description>The ID of the event to consider.</description>
 				</option>
+				<option flag="" long-flag="net-sta" argument="arg">
+					<description>
+					Filter read picks by network code or network and station
+					code. Format: NET or NET.STA
+					</description>
+				</option>
+				<option flag="" long-flag="nslc" argument="arg">
+					<description>
+					Stream list file to be used for filtering read picks by
+					stream code. '--net-sta' will be ignored. One line per
+					stream. Line format: NET.STA.LOC.CHA.
+					</description>
+				</option>
+			</group>
+			<group name="Output">
 				<option flag="m" long-flag="margin" argument="arg">
 					<description>
 					Time margin around the picked time window, default is 300.
-					Added before the first and after the last pick, respectively.
-					Use 2 comma-separted values (before,after) for asymmetric
-					margins. Example: 120,300.
+					Added before the first and after the last pick,
+					respectively. Use 2 comma-separted values (before,after)
+					for asymmetric margins. Example: 120,300.
 					</description>
 				</option>
 				<option flag="S" long-flag="streams" argument="arg">
@@ -92,33 +108,27 @@
 				<option flag="" long-flag="all-networks" argument="">
 					<description>
 					Dump all networks. If unused, just networks with picks are
-					dumped. This option implies all-stations, all-locations,
-					all-streams, all-components and will only provide the time
-					window.
+					dumped. This option implies --all-stations, --all-locations,
+					--all-streams, --all-components and will only provide the
+					time window.
 					</description>
 				</option>
 				<option flag="R" long-flag="resolve-wildcards" argument="flag">
 					<description>
 					If all components are used, use inventory to resolve stream
-					components instead of using '?' (important when Arclink 
+					components instead of using '?' (important when Arclink
 					should be used).
-					</description>
-				</option>
-				<option flag="" long-flag="net-sta" argument="arg">
-					<description>
-					Filter streams by network code or network and station code.
-					Format: NET or NET.STA
 					</description>
 				</option>
 				<option flag="" long-flag="caps" argument="">
 					<description>
 					Dump in capstool format (Common Acquisition Protocol Server
-					by gempa GmbH)
+					by gempa GmbH).
 					</description>
 				</option>
 				<option flag="" long-flag="fdsnws" argument="flag">
 					<description>
-					Dump in FDSN dataselect webservice POST format
+					Dump in FDSN dataselect webservice POST format.
 					</description>
 				</option>
 			</group>

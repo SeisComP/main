@@ -3,21 +3,25 @@ the first pick and the last pick. In addition a symmetric or an asymmetric time
 margin is added to this
 time window. It writes the streams that are picked including the determined
 time window for the event to stdout. This tool gives appropriate input
-information for :ref:`scart`, :ref:`fdsnws` and
-`caps <https://docs.gempa.de/caps/current/apps/capstool.html>`_
-(Common Acquisition Protocol Server by gempa GmbH) to dump waveforms from archives
-based on event data.
+information for :ref:`scart`, :ref:`fdsnws` and :cite:t:`capstool` for
+:cite:t:`caps` server (Common Acquisition Protocol Server by gempa GmbH) to dump
+waveforms from archives based on event data.
+
 
 Output Format
 =============
 
 The generated list contains start and end time as well as stream information.
 
-Generic: ::
+Generic:
 
-   starttime;endtime;streamID
+.. code-block:: params
 
-Example: ::
+   starttime;endtime;stream
+
+Example:
+
+.. code-block:: sh
 
    2019-07-17 02:00:00;2019-07-17 02:10:00;GR.CLL..BHZ
 
@@ -38,14 +42,16 @@ Examples
 
       scevtstreams -E gfz2012abcd -i event.xml -m 120,500
 
-#. Create a playback of an event with a time window of 5 minutes data and sort the records by end time:
+#. Create a playback of an event with a time window of 5 minutes data and
+   sort the records by end time:
 
    .. code-block:: sh
 
       scevtstreams -E gfz2012abcd -d mysql://sysop:sysop@localhost/seiscomp -m 300 |\
       scart -dsvE --list - ~/seiscomp/acquisition/archive > gfz2012abcd-sorted.mseed
 
-#. Download waveforms from Arclink and import into local archive. Include all stations from the contributing networks:
+#. Download waveforms from Arclink and import into local archive. Include
+   all stations from the contributing networks:
 
    .. code-block:: sh
 
