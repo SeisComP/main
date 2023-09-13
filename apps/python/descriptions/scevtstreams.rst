@@ -15,13 +15,13 @@ The generated list contains start and end time as well as stream information.
 
 Generic:
 
-.. code-block:: params
+.. code-block:: properties
 
    starttime;endtime;stream
 
 Example:
 
-.. code-block:: sh
+.. code-block:: properties
 
    2019-07-17 02:00:00;2019-07-17 02:10:00;GR.CLL..BHZ
 

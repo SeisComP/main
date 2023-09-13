@@ -75,7 +75,7 @@ scolv can be operated in 2 modes:
   parameters can be commited to the messaging. Simply start scolv without any argument
   or connect to a specific host providing the messaging, e.g.:
 
-.. code-block:: sh
+  .. code-block:: sh
 
      scolv
      scolv -H [host]
@@ -88,7 +88,7 @@ scolv can be operated in 2 modes:
   parameters in :term:`SCML` format to fetch event parameters as well as inventory
   and bindings configuration parameters. Examples:
 
-.. code-block:: sh
+  .. code-block:: sh
 
      scolv --offline
      scolv --offline -d [database]
@@ -183,7 +183,7 @@ The move out plot uses the reduced travel time with a default reduction velocity
 of 6km/s. This value is configurable by :confval:`olv.Pvel`, either in the configuration file
 (:file:`scolv.cfg`) or in the :ref:`settings window <scolv-settings>`, e.g.:
 
-.. code-block:: params
+.. code-block:: properties
 
    # Reduction velocity used for move out plot
    olv.Pvel = 6.0
@@ -246,7 +246,7 @@ Available column identifiers are:
 The columns printed bold are shown initially. The initial column
 list can be changed in :file:`scolv.cfg` by adjusting :confval:`olv.arrivalTable.visibleColumns`:
 
-.. code-block:: params
+.. code-block:: properties
 
    olv.arrivalTable.visibleColumns = Used, Status, Weight, Phase, Net, Sta,\
                                      Loc/Cha, Res, Dis, Az, Time, +/-
@@ -447,7 +447,7 @@ Up to 9 phase types can be configured for selection by
 :ref:`hot keys <sec-scolv-hotkeys>`. This list of favourite phases can be customized
 by :confval:`picker.phases.favourites`, e.g. (:file:`scolv.cfg`):
 
-.. code-block:: params
+.. code-block:: properties
 
    # Define a list of favourite phases for quick access
    picker.phases.favourites = Pn, P, Pg, PmP, P1, Pg, Sg, S, Sn, SmS
@@ -462,7 +462,7 @@ The phases can be also grouped to reflect e.g. regional
 and teleseismic profiles. In group not hot keys are available.
 An example configuration looks like this (:file:`scolv.cfg`):
 
-.. code-block:: params
+.. code-block:: properties
 
    # Define two phase groups: regional and teleseismic
    picker.phases.groups = regional, teleseismic
@@ -520,7 +520,7 @@ are used depends on the applied locator routine and its configuration.
 To set the uncertainty of a pick more easily a list of predefined uncertainties can be
 defined using :confval:`picker.uncertainties`, e.g.:
 
-.. code-block:: params
+.. code-block:: properties
 
    picker.uncertainties = 0.05, 0.1, 0.2, "(0.1,0.2)", "(0.05,0.02)"
 
@@ -531,7 +531,7 @@ The pre-defined uncertainties can be selected during picking using
 Later, the uncertainties can be adjusted manually.
 As for phase types, uncertainty profiles can be additionally configured (:file:`scolv.cfg`):
 
-.. code-block:: params
+.. code-block:: properties
 
    # Define available pick uncertainty profiles. Single values
    # are symmetric uncertainties whereas tuples are asymmetric
@@ -958,7 +958,7 @@ amplitude processor. Be warned that wrongly applied filters screw up the results
 The available filters can be defined in the settings dialog of scolv or in the
 configuration file similar to the manual picker filters (:file:`scolv.cfg`):
 
-.. code-block:: params
+.. code-block:: properties
 
    # List of filters available in the picker. Format:
    # "name1;filter-definition1", "name2;filter-definition2"
@@ -1196,7 +1196,7 @@ The initial list can configured with the global module parameter
 :confval:`eventlist.visibleColumns` in :file:`global.cfg` or :file:`scolv.cfg`,
 e.g.:
 
-.. code-block:: params
+.. code-block:: properties
 
    # Remove Type and Author from column list that is initially active
    eventlist.visibleColumns = Type, M, MType Phases, RMS, Lat, Lon, Depth, DType, Stat, FM, Author, Agency, Region, ID
@@ -1218,7 +1218,7 @@ Database request filters can be applied interactively or automatically by
   Use the :ref:`global` for presetting the values (:file:`scolv.cfg` or
   :file:`global.cfg`), e.g.:
 
-  .. code-block:: params
+  .. code-block:: properties
 
      eventlist.filter.database.minlat = 51.0
 
@@ -1232,7 +1232,7 @@ the currently loaded list.** Configure the event types used for this filter as w
 as the label text for the checkbox.
 Use the :ref:`global` for presetting the values s (:file:`scolv.cfg` or :file:`global.cfg`):
 
-.. code-block:: params
+.. code-block:: properties
 
    # Define the event types to be filtered
    eventlist.filter.types.blacklist = "not existing", "other",\
@@ -1250,7 +1250,7 @@ Use the :ref:`global` for presetting the values s (:file:`scolv.cfg` or :file:`g
   :confval:`agencyID` of scolv. This is the default behavior which can be customized
   (:file:`scolv.cfg` or :file:`global.cfg`):
 
-  .. code-block:: params
+  .. code-block:: properties
 
      # Set the preferred agencyIDs to GFZ and EMSC
      eventlist.filter.agencies.whitelist = GFZ, EMSC
@@ -1275,7 +1275,7 @@ Use the :ref:`global` for presetting the values s (:file:`scolv.cfg` or :file:`g
   box or region defined by a BNA or GeoJSON polygon
   (:file:`global.cfg`, :file:`scolv.cfg`):
 
-  .. code-block:: params
+  .. code-block:: properties
 
      # Configured a list of regions that can be used as filter of the result set.
      eventlist.filter.regions.profiles = chile
@@ -1327,7 +1327,7 @@ Location tab
 To add an origin comment value to the information panel of the Location tab,
 configure display paramters in scolv. Example (:file:`scolv.cfg`):
 
-.. code-block:: params
+.. code-block:: properties
 
    # Define the comment id to be used
    display.origin.comment.id = SED.quality
@@ -1346,7 +1346,7 @@ To add a custom column to the **origin list of the Event tab** showing an origin
 comment value, configure eventedit parameters in scolv or global. Example
 (:file:`scolv.cfg` or :file:`global.cfg`):
 
-.. code-block:: params
+.. code-block:: properties
 
    # Define the default value if no comment is present
    eventedit.origin.customColumn.default = "-"
@@ -1374,7 +1374,7 @@ To add a custom column to the **event list of the Events tab** using a comment
 value, configure eventlist parameters in scolv or global. Example
 (:file:`scolv.cfg` or :file:`global.cfg`):
 
-.. code-block:: params
+.. code-block:: properties
 
    # Define the default value if no comment is present
    eventlist.customColumn.default = "-"
@@ -1403,7 +1403,7 @@ In order to show event comments, e.g.,
 :confval:`eventlist.customColumn.originCommentID` by
 :confval:`eventlist.customColumn.eventCommentID`:
 
-.. code-block:: params
+.. code-block:: properties
 
    # Define the comment id to be used
    eventlist.customColumn.eventCommentID = "Operator"
@@ -1534,7 +1534,7 @@ To add the output of an external custom script to the information panel of the L
 configure display parameters in scolv. An example script is given
 :ref:`above <sec-scolv-example-script>`. Configuration example (:file:`scolv.cfg`):
 
-.. code-block:: params
+.. code-block:: properties
 
    # Define the available add-ons to be used
    display.origin.addons = qual, qual2
@@ -1557,7 +1557,7 @@ configure the eventedit parameters in :file:`global.cfg` or :file:`scolv.cfg`.
 An example script is given :ref:`above <sec-scolv-example-script>`.
 Configuration example:
 
-.. code-block:: params
+.. code-block:: properties
 
    eventedit.scripts.columns = qual1, qual2
 
@@ -1584,7 +1584,7 @@ configure the eventlist parameters in :file:`global.cfg` or :file:`scolv.cfg`.
 An example script is given :ref:`above <sec-scolv-example-script>`.
 Configuration example for passing origin or event objects:
 
-.. code-block:: params
+.. code-block:: properties
 
    eventlist.scripts.columns = qual1, qual2
 
@@ -1714,14 +1714,14 @@ Units and precisions
 Local network users prefer the distance unit in kilometers while others prefer degrees.
 scolv (as any other GUI) can be configured to show either the one or the other.
 
-.. code-block:: params
+.. code-block:: properties
 
    # If true, show distances in km. Use degree otherwise.
    scheme.unit.distanceInKM = true
 
 Furthermore the precision of various values can be configured:
 
-.. code-block:: params
+.. code-block:: properties
 
    # Precision of depth values.
    scheme.precision.depth = 0

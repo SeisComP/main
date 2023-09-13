@@ -452,7 +452,7 @@ Neither amplitude is used for magnitude computation by scautoloc. The default
 amplitude types used by scautoloc are of type "mb" and "snr". These defaults
 can be overridden in :file:`scautoloc.cfg`:
 
-.. code-block:: params
+.. code-block:: properties
 
    autoloc.amplTypeSNR = snr
    autoloc.amplTypeAbs = mb

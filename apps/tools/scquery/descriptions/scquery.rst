@@ -25,7 +25,7 @@ Module Setup
 #. **Optional:** Add the database connection parameter to the configuration file
    :file:`scquery.cfg` or :file:`global.cfg` in @CONFIGDIR@ or to @SYSTEMCONFIGDIR@:
 
-   .. code-block:: sh
+   .. code-block:: properties
 
       database = mysql://sysop:sysop@localhost/seiscomp
 
@@ -91,7 +91,7 @@ MariaDB/MySQL
 
 **General event/origin queries**
 
-.. code-block:: params
+.. code-block:: properties
 
    queries = eventFilter, eventUncertainty, eventByAuthor, eventWithStationCount, eventType, originByAuthor
 
@@ -115,7 +115,7 @@ MariaDB/MySQL
 
 **More examples and statistics**
 
-.. code-block:: sh
+.. code-block:: properties
 
    queries = phaseCountPerAuthor, time, mag_time, space_time, all, space_mag_time, event, fm_space_time, picks, stationPicks, assoc_picks, pref_assoc_picks, sta_net_mag, sta_net_mag_type, delta_sta_net_mag, delta_sta_net_mag_type
 
@@ -177,7 +177,7 @@ In contrast to queries for objects in :ref:`MariaDB/MySQL <scquery_mariadb>` the
 string ``m_`` must be added to the value and publicID database columns as shown
 below for the query "eventFilter".
 
-.. code-block:: sh
+.. code-block:: properties
 
    queries = eventFilter
 

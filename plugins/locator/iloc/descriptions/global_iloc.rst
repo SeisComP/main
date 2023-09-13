@@ -235,7 +235,7 @@ Custom local velocity models can be provided by a file in
 :file:`@DATADIR@/iloc/localmodels`. Example file
 :file:`@DATADIR@/iloc/localmodels/test.localmodel.dat`:
 
-.. code-block:: params
+.. code-block:: properties
 
    #
    # test
@@ -294,7 +294,7 @@ Setup in |scname|
 #. Add the plugin *lociloc* to the global configuration, e.g. in
    :file:`@SYSTEMCONFIGDIR@/global.cfg`:
 
-   .. code-block:: params
+   .. code-block:: properties
 
       plugins = ${plugins}, lociloc
 

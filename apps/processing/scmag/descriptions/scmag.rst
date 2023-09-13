@@ -160,7 +160,7 @@ global parameters, e.g., in :file:`$SEISCOMP_ROOT/etc/global.cfg`.
 Example for MLc in :file:`$SEISCOMP_ROOT/etc/global.cfg` the polygon with name
 *test* defined in a :ref:`BNA file <sec-gui_layers-vector>`:
 
-.. code-block:: params
+.. code-block:: properties
 
    magnitudes.MLc.regionFile = @DATADIR@/spatial/vector/magnitudes/regions.bna
    magnitudes.MLc.region.test.enable = true
