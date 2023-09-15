@@ -572,7 +572,9 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                 and self._hoursToKeep is None
                 and self._minutesToKeep is None
             ):
-                self._daysToKeep = 30
+                error.write("ERROR: at least one of datetime, days, hours,"
+                            " minutes should be provided\n")
+                return False
 
             return True
 
