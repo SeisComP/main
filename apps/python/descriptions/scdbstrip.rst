@@ -80,8 +80,40 @@ Examples
 
      scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --days 30
 
+* Remove event and waveform quality parameters newer than 30 days
+
+  .. code-block:: sh
+
+     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --days 30 -i
+
 * Only remove waveform QC parameters older than 30 days but no others
 
   .. code-block:: sh
 
      scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --days 30 --qc-only
+
+* Remove event and waveform quality parameters before 2000-01-01 12:00:00
+
+  .. code-block:: sh
+
+     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --datetime "2000-01-01 12:00:00"
+
+* Remove event and waveform quality parameters after 2000-01-01 12:00:00
+
+  .. code-block:: sh
+
+     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --datetime "2000-01-01 12:00:00" -i
+
+* Remove event and waveform quality parameters between 2000-01-01 12:00:00 ~ 2000-01-01 14:00:00
+
+  .. code-block:: sh
+
+     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --daterange "2000-01-01 12:00:00~2000-01-01 14:00:00"
+
+* Remove event and waveform quality parameters before 2000-01-01 12:00:00 and after 2000-01-01 14:00:00
+
+  .. code-block:: sh
+
+     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --daterange "2000-01-01 12:00:00~2000-01-01 14:00:00" -i
+
+
