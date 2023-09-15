@@ -25,15 +25,15 @@ namespace Qc {
 DEFINE_SMARTPOINTER(QcPluginDelay);
 
 class QcPluginDelay : public QcPlugin {
-    DECLARE_SC_CLASS(QcPluginDelay);
+	DECLARE_SC_CLASS(QcPluginDelay);
 
 public:
-    QcPluginDelay();
-    std::string registeredName() const;
-    std::vector<std::string> parameterNames() const;
-    void timeoutTask();
+	QcPluginDelay();
+	std::string registeredName() const override;
+	std::vector<std::string> parameterNames() const override;
+	void timeoutTask() override;
 
-    Core::Time _lastRecordEndTime;
+	Core::Time _lastRecordEndTime;
 };
 
 

@@ -72,7 +72,7 @@ std::vector<std::string> QcPluginAvailability::parameterNames() const {
 void QcPluginAvailability::timeoutTask() {
 
 	if (_qcBuffer->empty()) {
-		SEISCOMP_WARNING("_qcBuffer->back() is empty");
+		SEISCOMP_DEBUG("qcAvailability: Waveform buffer is empty");
 		return;
 	}
 

@@ -30,9 +30,10 @@ class QcPluginRms : public QcPlugin {
 
 public:
 	QcPluginRms();
-	bool init(QcApp* app, QcConfig *cfg, std::string streamID);
-	std::string registeredName() const;
-	std::vector<std::string> parameterNames() const;
+	bool init(QcApp* app, QcConfig *cfg, std::string streamID) override;
+	std::string registeredName() const override;
+	std::vector<std::string> parameterNames() const override;
+	void timeoutTask() override {};
 };
 
 

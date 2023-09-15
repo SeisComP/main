@@ -383,17 +383,6 @@ void QcPlugin::onTimeout() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void QcPlugin::timeoutTask() {
-	// NOOP ----- if needed, implement this in derived classes
-	SEISCOMP_WARNING("[%s] TimeOut specified, but no timeoutTask was defined for this QcPlugin.", registeredName().c_str());
-
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void QcPlugin::done() {
 	sendMessages(Core::Time());
 }

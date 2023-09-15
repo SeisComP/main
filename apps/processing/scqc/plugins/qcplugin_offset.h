@@ -26,12 +26,13 @@ namespace Qc {
 DEFINE_SMARTPOINTER(QcPluginOffset);
 
 class QcPluginOffset : public QcPlugin {
-    DECLARE_SC_CLASS(QcPluginOffset);
+	DECLARE_SC_CLASS(QcPluginOffset);
 
 public:
-    QcPluginOffset();
-    std::string registeredName() const;
-    std::vector<std::string> parameterNames() const;
+	QcPluginOffset();
+	std::string registeredName() const override;
+	std::vector<std::string> parameterNames() const override;
+	void timeoutTask() override {};
 };
 
 

@@ -57,7 +57,7 @@ vector<string> QcPluginDelay::parameterNames() const {
 void QcPluginDelay::timeoutTask() {
 
 	if (_qcBuffer->empty()) {
-		SEISCOMP_WARNING("_qcBuffer->back() is empty");
+		SEISCOMP_DEBUG("qcDelay: Waveform buffer is empty");
 		return;
 	}
 

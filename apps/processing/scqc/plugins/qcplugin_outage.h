@@ -29,19 +29,20 @@ namespace Qc {
 DEFINE_SMARTPOINTER(QcPluginOutage);
 
 class QcPluginOutage : public QcPlugin {
-    DECLARE_SC_CLASS(QcPluginOutage);
+	DECLARE_SC_CLASS(QcPluginOutage);
 
 public:
-    QcPluginOutage();
-    bool init(QcApp* app, QcConfig *cfg, std::string streamID);
-    std::string registeredName() const;
-    std::vector<std::string> parameterNames() const;
-    void update();
+	QcPluginOutage();
+	bool init(QcApp* app, QcConfig *cfg, std::string streamID);
+	std::string registeredName() const override;
+	std::vector<std::string> parameterNames() const override;
+	void update() override;
+	void timeoutTask() override {};
 
 private:
-    std::map<std::string, Core::Time> _recent;
+	std::map<std::string, Core::Time> _recent;
 
-    bool fillUp(const Processing::QcParameter *qcp);
+	bool fillUp(const Processing::QcParameter *qcp);
 };
 
 }

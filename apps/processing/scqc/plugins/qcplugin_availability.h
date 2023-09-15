@@ -31,15 +31,15 @@ class QcPluginAvailability : public QcPlugin {
 
 public:
 	QcPluginAvailability();
-	std::string registeredName() const;
-	std::vector<std::string> parameterNames() const;
-	void timeoutTask();
+	std::string registeredName() const override;
+	std::vector<std::string> parameterNames() const override;
+	void timeoutTask() override;
 
 private:
-	void generateReport(const QcBuffer* reportBuffer) const;
-	void generateAlert(const QcBuffer* staBuffer, const QcBuffer* ltaBuffer) const;
+	void generateReport(const QcBuffer* reportBuffer) const override;
+	void generateAlert(const QcBuffer* staBuffer, const QcBuffer* ltaBuffer) const override;
 	std::vector<double> availability(const QcBuffer* sta) const;
-    Core::Time _lastRecordEndTime;
+	Core::Time _lastRecordEndTime;
 
 };
 

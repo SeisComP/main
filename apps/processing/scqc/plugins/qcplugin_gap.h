@@ -25,18 +25,19 @@ namespace Qc {
 DEFINE_SMARTPOINTER(QcPluginGap);
 
 class QcPluginGap : public QcPlugin {
-    DECLARE_SC_CLASS(QcPluginGap);
+	DECLARE_SC_CLASS(QcPluginGap);
 
 public:
-    QcPluginGap();
-    std::string registeredName() const;
-    std::vector<std::string> parameterNames() const;
+	QcPluginGap();
+	std::string registeredName() const override;
+	std::vector<std::string> parameterNames() const override;
+	void timeoutTask() override {};
 
 private:
-    void generateReport(const QcBuffer* reportBuffer) const;
-    void generateAlert(const QcBuffer* staBuffer, const QcBuffer* ltaBuffer) const;
-    std::vector<double> _mean(const QcBuffer* sta) const;
-    std::vector<double> _stdDev(const QcBuffer* sta, double iMean, double aMean) const;
+	void generateReport(const QcBuffer* reportBuffer) const override;
+	void generateAlert(const QcBuffer* staBuffer, const QcBuffer* ltaBuffer) const override;
+	std::vector<double> _mean(const QcBuffer* sta) const;
+	std::vector<double> _stdDev(const QcBuffer* sta, double iMean, double aMean) const;
 };
 
 

@@ -93,7 +93,7 @@ class QcPlugin : public Processing::QcProcessorObserver {
 	
 	protected:
 		void onTimeout();
-		virtual void timeoutTask();
+		virtual void timeoutTask() = 0;
 
 		virtual double mean(const QcBuffer* qcb) const;
 		virtual double stdDev(const QcBuffer* qcb, double mean) const;
