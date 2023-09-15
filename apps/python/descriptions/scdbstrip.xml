@@ -7,8 +7,10 @@
 				<group name="cleanup">
 					<parameter name="invertMode" type="boolean" default="false">
 						<description>
-						Delete all parameters after the specified time period,
-						not before.
+						Invert the selection of the specified time period, that is
+						delete all parameters after the specified time period,
+						not before. When a date range is specified, then delete all
+						parameters before and after the time range, not in between.
 						</description>
 					</parameter>
 					<parameter name="eventParameters" type="boolean" default="true">
@@ -124,6 +126,13 @@
 					Replaces the days:hours:minutes timespan definition by an
 					aribtrary absolute timestamp in UTC. The format is
 					%Y-%m-%d %H:%M:%S.
+					</description>
+				</option>
+				<option long-flag="daterange" argument="arg">
+					<description>
+					Replaces the days:hours:minutes timespan definition by an
+					aribtrary absolute time range in UTC. The format is 
+					startTime~endTime that is %Y-%m-%d %H:%M:%S~%Y-%m-%d %H:%M:%S
 					</description>
 				</option>
 				<option long-flag="invert" flag="i" param-ref="database.cleanup.invertMode"/>
