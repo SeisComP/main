@@ -102,6 +102,12 @@
 					routing table without EVENT objects
 					</description>
 				</option>
+				<option long-flag="create-notifier">
+					<description>
+					Do not send any object. All notifiers will be written to
+					standard output in XML format.
+					</description>
+				</option>
 			</group>
 		</command-line>
 	</module>

@@ -40,13 +40,30 @@ Examples
 
       scdispatch -i test.xml -O update
 
-
 #. Remove the objects:
 
    .. code-block:: sh
 
       scdispatch -i test.xml -O remove
 
+#. Compare new objects with the database content and send the difference (optionally without removing objects):
+
+   .. code-block:: sh
+
+      scdispatch -i test.xml -O merge
+      scdispatch -i test.xml -O merge-without-remove
+
+#. Offline mode: all operations can be performed without the messaging system using xml files:
+
+   .. code-block:: sh
+
+      scdispatch -i test.xml -O operation --create-notifier > notifier.xml
+
+then:
+
+   .. code-block:: sh
+
+      scdb -i notifier.xml
 
 #. Subsets of SCML Objects
 
