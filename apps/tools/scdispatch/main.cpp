@@ -43,7 +43,8 @@ class BaseObjectDispatcher : protected Visitor {
 		, _connection(connection)
 		, _errors(0)
 		, _count(0)
-		, _test(test) {}
+		, _test(test)
+		, _createNotifier(false) {}
 
 
 	// ----------------------------------------------------------------------
@@ -56,9 +57,21 @@ class BaseObjectDispatcher : protected Visitor {
 			_count = 0;
 			_loggedObjects.clear();
 
+			if ( _createNotifier ) {
+				_outputNotifier = new NotifierMessage;
+			}
+
 			object->accept(this);
 
 			return _errors == 0;
+		}
+
+		void setCreateNotifierMsg(bool createNotifier) {
+			_createNotifier = createNotifier;
+		}
+
+		NotifierMessagePtr getNotifierMsg() {
+			return _outputNotifier;
 		}
 
 		void setRoutingTable(const RoutingTable &table) {
@@ -79,7 +92,7 @@ class BaseObjectDispatcher : protected Visitor {
 	protected:
 		string indent(Object *object) {
 			string tmp;
-			while ( object->parent() != NULL ) {
+			while ( object->parent() != nullptr ) {
 				tmp += "  ";
 				object = object->parent();
 			}
@@ -89,45 +102,47 @@ class BaseObjectDispatcher : protected Visitor {
 		void logObject(Object *object, Operation op, const std::string &group,
 		               const std::string &additionalIndent = "") {
 			PublicObject *po = PublicObject::Cast(object);
-			if ( po != NULL )
+			if ( po != nullptr )
 				_loggedObjects.insert(po->publicID());
 
 			PublicObject *parent = object->parent();
-			if ( parent != NULL ) {
+			if ( parent != nullptr ) {
 				if ( _loggedObjects.find(parent->publicID()) == _loggedObjects.end() )
 					logObject(parent, OP_UNDEFINED, "");
 			}
 
+			std::stringstream ss;
 			if ( op != OP_UNDEFINED )
-				cout << char(toupper(op.toString()[0]));
+				ss << char(toupper(op.toString()[0]));
 			else
-				cout << ' ';
+				ss << ' ';
 
-			cout << "  " << additionalIndent << indent(object)
+			ss << "  " << additionalIndent << indent(object)
 			     << object->className() << "(";
 
-			if ( po != NULL )
-				cout << "'" << po->publicID() << "'";
+			if ( po != nullptr )
+				ss << "'" << po->publicID() << "'";
 			else {
 				const Core::MetaObject *meta = object->meta();
 				bool first = true;
 				for ( size_t i= 0; i < meta->propertyCount(); ++i ) {
 					const Core::MetaProperty *prop = meta->property(i);
 					if ( prop->isIndex() ) {
-						if ( !first ) cout << ",";
+						if ( !first ) ss << ",";
 						if ( prop->type() == "string" )
-							cout << "'" << prop->readString(object) << "'";
+							ss << "'" << prop->readString(object) << "'";
 						else
-							cout << prop->readString(object);
+							ss << prop->readString(object);
 						first = false;
 					}
 				}
 			}
 
-			cout << ")";
-			if ( !group.empty() )
-				cout << " : " << group;
-			cout << endl;
+			ss << ")";
+			if ( !group.empty() ) {
+				ss << " : " << group;
+			}
+			SEISCOMP_INFO("%s", ss.str().c_str());
 		}
 
 
@@ -141,6 +156,8 @@ class BaseObjectDispatcher : protected Visitor {
 		RoutingTable               _routingTable;
 		bool                       _test;
 		std::set<std::string>      _loggedObjects;
+		bool                       _createNotifier;
+		NotifierMessagePtr         _outputNotifier;
 };
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -202,19 +219,19 @@ class ObjectDispatcher : public BaseObjectDispatcher {
 			PublicObject *parent = object->parent();
 
 			if ( !parent ) {
-				cerr << "No parent found for object " << object->className() << endl;
+				SEISCOMP_ERROR("No parent found for object %s", object->className());
 				return false;
 			}
 
 			RoutingTable::iterator targetIt = _routingTable.find(object->className());
 			PublicObject *p = parent;
-			while ( (targetIt == _routingTable.end()) && (p != NULL) ) {
+			while ( (targetIt == _routingTable.end()) && (p != nullptr) ) {
 				targetIt = _routingTable.find(p->className());
 				p = p->parent();
 			}
 
 			if ( targetIt == _routingTable.end() ) {
-				cerr << "! No routing for " << object->className() << endl;
+				SEISCOMP_ERROR("! No routing for %s", object->className());
 				return false;
 			}
 
@@ -226,17 +243,24 @@ class ObjectDispatcher : public BaseObjectDispatcher {
 
 			if ( _test ) return true;
 
+			NotifierPtr notif = new Notifier(_parentID, _operation, object);
+
+			if ( _createNotifier ) {
+				_outputNotifier->attach(notif.get());
+				return true;
+			}
+
 			NotifierMessage notifierMessage;
-			notifierMessage.attach(new Notifier(_parentID, _operation, object));
+			notifierMessage.attach(notif.get());
 
 			unsigned int counter = 0;
 			while ( counter <= 4 ) {
 				if ( _connection->send(targetIt->second, &notifierMessage) )
 					return true;
 
-				cerr << "Could not send object " << object->className()
-				     << " to " << targetIt->second << "@" << _connection->source()
-				<< endl;
+				SEISCOMP_ERROR("Could not send object %s to %s@%s", 
+				               object->className(), targetIt->second.c_str(),
+				               _connection->source().c_str());
 				if ( _connection->isConnected() ) break;
 				++counter;
 				sleep(1);
@@ -300,7 +324,7 @@ class ObjectMerger : public BaseObjectDispatcher {
 			PublicObject *parent = po->parent();
 
 			if ( !parent ) {
-				cerr << "! No parent found for object " << po->className() << endl;
+				SEISCOMP_ERROR("! No parent found for object %s", po->className());
 				return false;
 			}
 
@@ -308,13 +332,13 @@ class ObjectMerger : public BaseObjectDispatcher {
 
 			RoutingTable::iterator targetIt = _routingTable.find(po->className());
 			PublicObject *p = parent;
-			while ( (targetIt == _routingTable.end()) && (p != NULL) ) {
+			while ( (targetIt == _routingTable.end()) && (p != nullptr) ) {
 				targetIt = _routingTable.find(p->className());
 				p = p->parent();
 			}
 
 			if ( targetIt == _routingTable.end() ) {
-				cerr << "! No routing for " << po->className() << endl;
+				SEISCOMP_ERROR("! No routing for %s", po->className());
 				return false;
 			}
 
@@ -359,7 +383,7 @@ class ObjectMerger : public BaseObjectDispatcher {
 					continue;
 
 				po = PublicObject::Cast(n->object());
-				if ( po != NULL ) {
+				if ( po != nullptr ) {
 					flush();
 					targetIt = _routingTable.find(po->className());
 					if ( targetIt != _routingTable.end() && targetIt->second != _targetGroup )
@@ -383,7 +407,7 @@ class ObjectMerger : public BaseObjectDispatcher {
 			PublicObject *parent = obj->parent();
 
 			if ( !parent ) {
-				cerr << "! No parent found for object " << obj->className() << endl;
+				SEISCOMP_ERROR("! No parent found for object %s", obj->className());
 				return;
 			}
 
@@ -400,20 +424,29 @@ class ObjectMerger : public BaseObjectDispatcher {
 
 			logObject(object, op, _targetGroup);
 
+			NotifierPtr notif = new Notifier(parent->publicID(), op, object);
+
+			if ( _createNotifier ) {
+				_outputNotifier->attach(notif.get());
+				return true;
+			}
+
 			if ( !_msg ) _msg = new NotifierMessage;
 
-			_msg->attach(new Notifier(parent->publicID(), op, object));
+			_msg->attach(notif.get());
 
 			return false;
 		}
 
 		void flush() {
-			if ( !_msg ) return;
+			if ( !_msg || _createNotifier ) { // redundant check but better safe...
+				return;
+			}
 			if ( _test ) {
 				SEISCOMP_DEBUG("Would send %d notifiers to %s group",
 				               _msg->size(), _targetGroup.c_str());
 				++_msgCount;
-				_msg = NULL;
+				_msg = nullptr;
 				return;
 			}
 
@@ -422,19 +455,18 @@ class ObjectMerger : public BaseObjectDispatcher {
 
 			while ( !SCCoreApp->isExitRequested() ) {
 				if ( _connection->send(_targetGroup.c_str(), _msg.get()) ) {
-					_msg = NULL;
+					_msg = nullptr;
 					++_msgCount;
 					return;
 				}
 
-				cerr << "Could not send message "
-				     << " to " << _targetGroup << "@" << _connection->source()
-				     << endl;
+				SEISCOMP_ERROR("Could not send message to %s@%s",
+				               _targetGroup.c_str(), _connection->source().c_str());
 
 				sleep(1);
 			}
 
-			_msg = NULL;
+			_msg = nullptr;
 			++_errors;
 		}
 
@@ -533,6 +565,8 @@ class DispatchTool : public Seiscomp::Client::Application {
 			commandline().addOption("Dispatch", "no-events,e", "Do not send any "
 			                        "event object. This is a wrapper to setting a "
 			                        "routing table without EVENT objects");
+			commandline().addOption("Dispatch", "create-notifier", "Do not send any object. "
+			                        "All notifiers will be written to standard output in XML format.");
 		}
 
 
@@ -556,7 +590,7 @@ class DispatchTool : public Seiscomp::Client::Application {
 			}
 
 			if ( commandline().hasOption("no-events") ) {
-				cout << "erased EVENT group from routing table" << endl;
+				SEISCOMP_INFO("erased EVENT group from routing table");
 				auto it = _routingTable.find(Event::ClassName());
 				if ( it != _routingTable.end() ) {
 					_routingTable.erase(it);
@@ -570,14 +604,14 @@ class DispatchTool : public Seiscomp::Client::Application {
 			if ( commandline().hasOption("operation") ) {
 				if ( _notifierOperation != "merge" && _notifierOperation != "merge-without-remove" ) {
 					if ( !_operation.fromString(_notifierOperation) ) {
-						cout << "Notifier operation " << _notifierOperation << " is not valid" << endl;
-						cout << "Operations are add, update, remove or merge" << endl;
+						SEISCOMP_ERROR("Notifier operation %s is not valid. Operations are "
+						               "add, update, remove or merge", _notifierOperation.c_str());
 						return false;
 					}
 
 					if ( _operation != OP_ADD && _operation != OP_REMOVE && _operation != OP_UPDATE ) {
-						cout << "Notifier operation " << _notifierOperation << " is not valid" << endl;
-						cout << "Operations are add, update, remove, merge or merge-without-remove" << endl;
+						SEISCOMP_ERROR("Notifier operation %s is not valid. Operations are "
+						               "add, update, remove or merge", _notifierOperation.c_str());
 						return false;
 					}
 				}
@@ -585,23 +619,25 @@ class DispatchTool : public Seiscomp::Client::Application {
 			else if ( commandline().hasOption("print-objects") ) {
 				RoutingTable::iterator it;
 				for ( it = _routingTable.begin(); it != _routingTable.end(); ++it )
-					cout << it->first << endl;
+					SEISCOMP_INFO(it->first.c_str());
 				return false;
 			}
 			else if ( commandline().hasOption("print-routingtable") ) {
 				RoutingTable::iterator it;
 				for ( it = _routingTable.begin(); it != _routingTable.end(); ++it )
-					cout << it->first << ":" << it->second << endl;
+					SEISCOMP_INFO("%s:%s", it->first.c_str(), it->second.c_str());
 				return false;
 			}
 
 			if ( !commandline().hasOption("input") ) {
-				cerr << "No input given" << endl;
+				SEISCOMP_ERROR("No input given");
 				return false;
 			}
 
-			if ( commandline().hasOption("test") )
+			if ( commandline().hasOption("test") ||
+			     commandline().hasOption("create-notifier") ) {
 				setMessagingEnabled(false);
+			}
 
 			return true;
 		}
@@ -625,11 +661,11 @@ class DispatchTool : public Seiscomp::Client::Application {
 
 			IO::XMLArchive ar;
 			if ( !ar.open(_inputFile.c_str()) ) {
-				cout << "Error: could not open input file '" << _inputFile << "'" << endl;
+				SEISCOMP_ERROR("Error: could not open input file '%s'", _inputFile.c_str());
 				return false;
 			}
 
-			cout << "Parsing file '" << _inputFile << "'..." << endl;
+			SEISCOMP_INFO("Parsing file '%s'...", _inputFile.c_str());
 
 			Util::StopWatch timer;
 			ObjectPtr doc;
@@ -638,12 +674,12 @@ class DispatchTool : public Seiscomp::Client::Application {
 
 			PublicObject::SetRegistrationEnabled(true);
 
-			if ( doc == NULL ) {
-				cerr << "Error: no valid object found in file '" << _inputFile << "'" << endl;
+			if ( doc == nullptr ) {
+				SEISCOMP_ERROR("Error: no valid object found in file '%s'", _inputFile.c_str());
 				return false;
 			}
 
-			BaseObjectDispatcher *dispatcher = NULL;
+			BaseObjectDispatcher *dispatcher = nullptr;
 			if ( _notifierOperation == "merge" )
 				dispatcher = new ObjectMerger(connection(), query(), commandline().hasOption("test"), true);
 			else if ( _notifierOperation == "merge-without-remove" )
@@ -653,21 +689,39 @@ class DispatchTool : public Seiscomp::Client::Application {
 
 			dispatcher->setRoutingTable(_routingTable);
 
+			if ( commandline().hasOption("create-notifier") ) {
+				dispatcher->setCreateNotifierMsg(true);
+				SEISCOMP_INFO("XML output enabled, not messages will be sent");
+			}
+
 			unsigned int totalCount = ObjectCounter(doc.get()).count();
 
-			cout << "Time needed to parse XML: " << Core::Time(timer.elapsed()).toString("%T.%f") << endl;
-			cout << "Document object type: " << doc->className() << endl;
-			cout << "Total number of objects: " << totalCount << endl;
+			SEISCOMP_INFO("Time needed to parse XML: %s", Core::Time(timer.elapsed()).toString("%T.%f"));
+			SEISCOMP_INFO("Document object type: %s", doc->className());
+			SEISCOMP_INFO("Total number of objects: %d", totalCount);
 
-			if ( connection() )
-				cout << "Dispatching " << doc->className() << " to " << connection()->source() << endl;
+			if ( connection() ) {
+				SEISCOMP_INFO("Dispatching %s to %s",
+				              doc->className(), connection()->source().c_str());
+			}
 			timer.restart();
 
 			(*dispatcher)(doc.get());
-			cout << endl;
+			SEISCOMP_INFO("");
 
-			cout << "While dispatching " << dispatcher->count() << "/" << totalCount << " objects " << dispatcher->errors() << " errors occured" << endl;
-			cout << "Time needed to dispatch " << dispatcher->count() << " objects: " << Core::Time(timer.elapsed()).toString("%T.%f") << endl;
+			if ( commandline().hasOption("create-notifier") ) {
+				NotifierMessagePtr msg = dispatcher->getNotifierMsg();
+				IO::XMLArchive ar;
+				ar.create("-");
+				ar.setFormattedOutput(true);
+				ar << msg;
+				ar.close();
+			}
+
+			SEISCOMP_INFO("While dispatching %d/%d objects %d errors occured", 
+			              dispatcher->count(), totalCount, dispatcher->errors());
+			SEISCOMP_INFO("Time needed to dispatch %d objects: %s",
+			              dispatcher->count(), Core::Time(timer.elapsed()).toString("%T.%f"));
 
 			delete dispatcher;
 
