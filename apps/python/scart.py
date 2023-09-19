@@ -894,9 +894,10 @@ Processing:
   --speed arg       Dump mode: Specify the speed to dump the records. A value
                     of 0 means no delay. Otherwise speed is a multiplier of
                     the real time difference between the records.
-  -t t1~t2          Import, dump mode: UTC time window filter to be applied to
-                    the data streams in the format: "StartTime~EndTime"
-                    e.g. "2022-12-20 12:00:00~2022-12-23 14:00:10".
+  -t, --time-window t1~t2
+                    Import, dump mode: UTC time window filter to be applied to
+                    the data streams. Format: "StartTime~EndTime". Example:
+                    "2022-12-20 12:00:00~2022-12-23 14:00:10".
 
 Output:
   -o, --output arg  Import mode: Write data to given file instead of creating
@@ -949,6 +950,7 @@ def main():
                 "with-filecheck",
                 "dump",
                 "ignore",
+                "time-window=",
                 "list=",
                 "nslc=",
                 "sort",
@@ -965,6 +967,7 @@ def main():
             ],
         )
     except GetoptError:
+        print("Error: Unknown command-line option used.", file=sys.stderr)
         usage(exitcode=1)
 
     tmin = None
@@ -999,7 +1002,7 @@ def main():
     recordRenamer = RecordRenamer()
 
     for flag, arg in opts:
-        if flag == "-t":
+        if flag in ["-t", "--time-window"]:
             try:
                 tmin, tmax = list(map(str2time, arg.split("~")))
             except Exception:

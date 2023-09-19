@@ -124,14 +124,15 @@
 				<option long-flag="datetime" argument="arg">
 					<description>
 					Replaces the days:hours:minutes timespan definition by an
-					aribtrary absolute timestamp in UTC. The format is
+					arbitrary absolute timestamp in UTC. The format is
 					%Y-%m-%d %H:%M:%S.
 					</description>
 				</option>
-				<option long-flag="daterange" argument="arg">
+				<option flag="t" long-flag="time-window" argument="arg">
 					<description>
+					Delete objects in the specified time window.
 					Replaces the days:hours:minutes timespan definition by an
-					aribtrary absolute time range in UTC. The format is 
+					arbitrary absolute time range in UTC. The format is
 					startTime~endTime that is %Y-%m-%d %H:%M:%S~%Y-%m-%d %H:%M:%S
 					</description>
 				</option>

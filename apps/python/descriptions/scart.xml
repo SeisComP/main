@@ -141,10 +141,10 @@
 				<option flag="s" long-flag="sort">
 					<description>
 					Dump mode: Sort records by [start-]time. To sort records by their
-					endtime use -E.
+					end time use -E.
 					</description>
 				</option>
-				<option long-flag="speed">
+				<option long-flag="speed" argument="value">
 					<description>
 					Dump mode: Specify the speed to dump the records. A value of 0 means
 					no delay otherwise speed is a multiplier of the real time difference
@@ -152,7 +152,7 @@
 					pipe a value of 1 (real time) is recommended.
 					</description>
 				</option>
-				<option flag="t" argument="timeWindow">
+				<option flag="t" long-flag="time-window" argument="timeWindow">
 					<description>
 					Import, dump mode: Specify the time window (as one properly
 					quoted string) to dump records for. Times are UTC and

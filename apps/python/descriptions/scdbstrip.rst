@@ -20,7 +20,7 @@ the database again. The timing and the parameters to be removed is controlled
 by module configuration or command-line options.
 
 
-.. hint ::
+.. hint::
 
    For removing specific parameters and not all in a time range, use
    :ref:`scdispatch` along with XML files created by :ref:`scxmldump` and
@@ -65,10 +65,16 @@ There are two solutions to this:
 
    .. code-block:: sh
 
-      $ scdbstrip -d seis:mypass@localhost/seiscomp --days 1000
-      $ scdbstrip -d seis:mypass@localhost/seiscomp --days 900
+      $ scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --days 1000
+      $ scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --days 900
       ...
-      $ scdbstrip -d seis:mypass@localhost/seiscomp --days 100
+      $ scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --days 100
+
+.. hint::
+
+   In the examples, database connection parameters correspond to default values.
+   You may thus replace ``-d mysql://sysop:sysop@localhost/seiscomp`` by
+   ``-d localhost`` or ``-d mysql://``.
 
 
 Examples
@@ -108,12 +114,12 @@ Examples
 
   .. code-block:: sh
 
-     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --daterange "2000-01-01 12:00:00~2000-01-01 14:00:00"
+     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --time-window "2000-01-01 12:00:00~2000-01-01 14:00:00"
 
 * Remove event and waveform quality parameters before 2000-01-01 12:00:00 and after 2000-01-01 14:00:00
 
   .. code-block:: sh
 
-     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --daterange "2000-01-01 12:00:00~2000-01-01 14:00:00" -i
+     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --time-window "2000-01-01 12:00:00~2000-01-01 14:00:00" -i
 
 

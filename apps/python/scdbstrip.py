@@ -365,15 +365,13 @@ class DBCleaner(seiscomp.client.Application):
                 self.commandline().addStringOption(
                     "Objects",
                     "keep-events",
-                    "Event-IDs to keep in the "
-                    "database. Combining with"
-                    "'qc-only' is invalid.",
+                    "Event-IDs to keep in the database. Combining with 'qc-only' is "
+                    "invalid.",
                 )
                 self.commandline().addOption(
                     "Objects",
                     "qc-only,Q",
-                    "Delete only waveform QC but no "
-                    "event parameters. Combining with"
+                    "Delete only waveform QC but no event parameters. Combining with"
                     "'ep-only' is invalid.",
                 )
 
@@ -381,44 +379,37 @@ class DBCleaner(seiscomp.client.Application):
                 self.commandline().addStringOption(
                     "Timespan",
                     "datetime",
-                    "Delete events until the specified "
-                    "datetime (UTC). After that time "
-                    "all events are kept. If given, "
-                    "days, minutes and hours are ignored. "
+                    "Delete objects until the specified datetime (UTC). After that time "
+                    "all events are kept. If given, days, minutes and hours are ignored. "
                     "Format: '%Y-%m-%d %H:%M:%S'.",
                 )
                 self.commandline().addStringOption(
                     "Timespan",
-                    "daterange",
-                    "Delete events in the specified datetime "
-                    "range (UTC). Before and after the range "
-                    "all events are kept. If given, days, "
-                    "minutes and hours are ignored. "
-                    "Format: '[start-time]~[end-time]'.",
+                    "time-window,t",
+                    "Delete objects in the specified time window. Before and after the "
+                    "range all events are kept. If given, days, minutes and hours are "
+                    "ignored. Format: '[start-time]~[end-time]'.",
                 )
                 self.commandline().addIntOption(
                     "Timespan",
                     "days",
-                    "The number of days to keep. "
-                    "Added to hours and minutes. "
-                    "Default is 30 if no other "
-                    "times are given.",
+                    "The number of days to keep objects. Added to hours and minutes. "
+                    "Default is 30 if no other times are given.",
                 )
                 self.commandline().addIntOption(
                     "Timespan",
                     "hours",
-                    "The number of hours to keep. " "Added to days and minutes.",
+                    "The number of hours to keep objects. Added to days and minutes.",
                 )
                 self.commandline().addIntOption(
                     "Timespan",
                     "minutes",
-                    "The number of minutes to keep. " "Added to days and hours.",
+                    "The number of minutes to keep objects. Added to days and hours.",
                 )
                 self.commandline().addOption(
                     "Timespan",
                     "invert,i",
-                    "Invert the selection of the "
-                    "specified time period.",
+                    "Invert the selection of the specified time period.",
                 )
 
             except RuntimeError:
@@ -555,7 +546,7 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                 dateTime = None
 
             try:
-                dateRange = self.commandline().optionString("daterange")
+                dateRange = self.commandline().optionString("time-window")
             except RuntimeError:
                 dateRange = None
 
@@ -574,33 +565,40 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                 if self._datetime is None:
                     error.write("ERROR: datetime has wrong format\n")
                     return False
-                error.write("Using datetime option: %s\n"
-                    % date.toString("%Y-%m-%d %H:%M:%S") )
+                error.write(
+                    "Using datetime option: %s\n" % date.toString("%Y-%m-%d %H:%M:%S")
+                )
 
             if dateRange:
-                toks = dateRange.split('~')
+                toks = dateRange.split("~")
                 if len(toks) != 2:
                     error.write("ERROR: daterange has wrong format\n")
                     return False
                 try:
                     rangeStart = seiscomp.core.Time()
                     rangeEnd = seiscomp.core.Time()
-                    if rangeStart.fromString(toks[0], "%Y-%m-%d %H:%M:%S") and \
-                       rangeEnd.fromString(toks[1], "%Y-%m-%d %H:%M:%S") and \
-                       rangeStart < rangeEnd:
+                    if (
+                        rangeStart.fromString(toks[0], "%Y-%m-%d %H:%M:%S")
+                        and rangeEnd.fromString(toks[1], "%Y-%m-%d %H:%M:%S")
+                        and rangeStart < rangeEnd
+                    ):
                         self._daterange = (rangeStart, rangeEnd)
                 except ValueError:
                     pass
                 if self._daterange is None:
                     error.write("ERROR: daterange has wrong format\n")
                     return False
-                error.write("Using daterange option: %s~%s\n"
-                    % (rangeStart.toString("%Y-%m-%d %H:%M:%S"),
-                       rangeEnd.toString("%Y-%m-%d %H:%M:%S")) )
+                error.write(
+                    "Using daterange option: %s~%s\n"
+                    % (
+                        rangeStart.toString("%Y-%m-%d %H:%M:%S"),
+                        rangeEnd.toString("%Y-%m-%d %H:%M:%S"),
+                    )
+                )
 
             if self._datetime and self._daterange:
-                 error.write("ERROR: datetime and daterange cannot be used together\n")
-                 return False
+                error.write("ERROR: datetime and daterange cannot be used together\n")
+                return False
 
             # fall back to default if no times are given
             if (
@@ -610,8 +608,10 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                 and self._hoursToKeep is None
                 and self._minutesToKeep is None
             ):
-                error.write("ERROR: at least one of datetime, daterange, days, "
-                            "hours, minutes should be provided\n")
+                error.write(
+                    "ERROR: at least one of datetime, daterange, days, "
+                    "hours, minutes should be provided\n"
+                )
                 return False
 
             return True
@@ -767,8 +767,11 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                     else:
                         formatstr = "( %s >= '%s' and %s < '%s' )"
                     return formatstr % (
-                            what, self._daterange[0].toString("%Y-%m-%d %H:%M:%S"),
-                            what, self._daterange[1].toString("%Y-%m-%d %H:%M:%S"))
+                        what,
+                        self._daterange[0].toString("%Y-%m-%d %H:%M:%S"),
+                        what,
+                        self._daterange[1].toString("%Y-%m-%d %H:%M:%S"),
+                    )
                 elif timestamp:
                     if self._invertMode:
                         formatstr = "%s >= '%s'"
@@ -776,7 +779,9 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                         formatstr = "%s < '%s'"
                     return formatstr % (what, timestamp.toString("%Y-%m-%d %H:%M:%S"))
 
-            output.write("[INFO] Delete %s - time in UTC\n" % timeRangeSelection("objects") )
+            output.write(
+                "[INFO] Delete %s - time in UTC\n" % timeRangeSelection("objects")
+            )
 
             if len(self._keepEvents) > 0:
                 output.write(
@@ -790,13 +795,16 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                 self.beginMessage("Deleting waveform quality parameters")
                 if not self.runCommand(
                     self._query.deleteObjectQuery("Object", "WaveformQuality")
-                    + timeRangeSelection("%s.%s" % ("WaveformQuality", self.cnvCol("end")))
-
+                    + timeRangeSelection(
+                        "%s.%s" % ("WaveformQuality", self.cnvCol("end"))
+                    )
                 ):
                     return False
                 if not self.runCommand(
                     "delete from WaveformQuality where "
-                    + timeRangeSelection("%s.%s" % ("WaveformQuality", self.cnvCol("end")))
+                    + timeRangeSelection(
+                        "%s.%s" % ("WaveformQuality", self.cnvCol("end"))
+                    )
                 ):
                     return False
                 self.endMessage()
@@ -819,7 +827,7 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                     self.cnvCol("publicID"),
                     self.cnvCol("preferredOriginID"),
                     self.cnvCol("publicID"),
-                    timeRangeSelection("%s.%s" % ("Origin", self.cnvCol("time_value")))
+                    timeRangeSelection("%s.%s" % ("Origin", self.cnvCol("time_value"))),
                 )
             )
 
@@ -991,7 +999,7 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
       "
                 % (
                     self.cnvCol("publicID"),
-                    timeRangeSelection("%s.%s" % ("Origin", self.cnvCol("time_value")))
+                    timeRangeSelection("%s.%s" % ("Origin", self.cnvCol("time_value"))),
                 )
             )
 
@@ -1096,7 +1104,7 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
       "
                 % (
                     self.cnvCol("publicID"),
-                    timeRangeSelection("%s.%s" % ("Pick", self.cnvCol("time_value")))
+                    timeRangeSelection("%s.%s" % ("Pick", self.cnvCol("time_value"))),
                 )
             )
 
@@ -1146,7 +1154,9 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
       "
                 % (
                     self.cnvCol("publicID"),
-                    timeRangeSelection("%s.%s" % ("Amplitude", self.cnvCol("timeWindow_reference")))
+                    timeRangeSelection(
+                        "%s.%s" % ("Amplitude", self.cnvCol("timeWindow_reference"))
+                    ),
                 )
             )
 
