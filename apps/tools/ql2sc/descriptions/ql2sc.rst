@@ -8,6 +8,12 @@ possible server-side filters should be preferred to reduce both the network
 bandwidth consumption as well as the CPU and memory utilization on the local
 machine.
 
+.. note::
+
+   ql2sc does not delete events at the import system although quakelink
+   allows the deletion of events. Deleted events are ignored by ql2sc and kept
+   in the SeisComP database.
+
 
 .. _ql2sc_event_filter:
 
