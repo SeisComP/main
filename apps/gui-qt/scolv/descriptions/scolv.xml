@@ -539,12 +539,12 @@
 						side of the trace window.
 					</description>
 				</parameter>
-				<parameter name="repickerStart" type="double" unit="s" default="-10">
+				<parameter name="repickerStart" type="double" unit="s">
 					<description>
 						Start of the re-picker time window relative the cursor position on the trace.
 					</description>
 				</parameter>
-				<parameter name="repickerEnd" type="double" unit="s" default="30">
+				<parameter name="repickerEnd" type="double" unit="s">
 					<description>
 						End of the re-picker time window relative the cursor position on the trace.
 					</description>
