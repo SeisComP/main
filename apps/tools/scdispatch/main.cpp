@@ -617,16 +617,20 @@ class DispatchTool : public Seiscomp::Client::Application {
 				}
 			}
 			else if ( commandline().hasOption("print-objects") ) {
-				RoutingTable::iterator it;
-				for ( it = _routingTable.begin(); it != _routingTable.end(); ++it )
-					SEISCOMP_INFO(it->first.c_str());
-				return false;
+				for ( auto &kv : _routingTable ) {
+					cout << kv.first << endl;
+				}
+				setMessagingEnabled(false);
+				setDatabaseEnabled(false ,false);
+				return true;
 			}
 			else if ( commandline().hasOption("print-routingtable") ) {
-				RoutingTable::iterator it;
-				for ( it = _routingTable.begin(); it != _routingTable.end(); ++it )
-					SEISCOMP_INFO("%s:%s", it->first.c_str(), it->second.c_str());
-				return false;
+				for ( auto &kv : _routingTable ) {
+					cout << kv.first << ":" << kv.second << endl;
+				}
+				setMessagingEnabled(false);
+				setDatabaseEnabled(false ,false);
+				return true;
 			}
 
 			if ( !commandline().hasOption("input") ) {
@@ -649,10 +653,25 @@ class DispatchTool : public Seiscomp::Client::Application {
 
 
 		bool run() {
-			if ( commandline().hasOption("input") )
-				return processInput();
+			if ( commandline().hasOption("print-objects") ) {
+				for ( auto &kv : _routingTable ) {
+					cout << kv.first << endl;
+				}
+				return true;
+			}
 
-			return false;
+			if ( commandline().hasOption("print-routingtable") ) {
+				for ( auto &kv : _routingTable ) {
+					cout << kv.first << ":" << kv.second << endl;
+				}
+				return true;
+			}
+
+			if ( commandline().hasOption("input") ) {
+				return processInput();
+			}
+
+			return true;
 		}
 
 
