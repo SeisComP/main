@@ -47,6 +47,12 @@
 						Example: invextr --chans &quot;GE.*.*.BHZ,GE.MORC.*.*&quot; inv.xml
 					</description>
 				</option>
+				<option flag="" long-flag="nslc" argument="arg">
+					<description>
+					Stream list file to be used for extracting inventory.
+					Wildcards can be used. --chans is ignored.
+					</description>
+				</option>
 				<option flag="r" long-flag="region" argument="arg">
 					<description>
 					Filter streams by geographic region given as

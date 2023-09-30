@@ -57,6 +57,10 @@ class InventoryExtractor : public Client::Application {
 			                        "extract which can contain wildcards. "
 			                        "Default: *.*.*.* meaning all streams.",
 			                        &_chanIDs);
+			commandline().addOption("Extract", "nslc",
+			                        "Stream list file to be used for extracting "
+			                        "inventory. Wildcards can be used. --chans "
+			                        "is ignored.", &_nslc);
 			commandline().addOption("Extract", "region,r",
 			                        "Filter streams by geographic region given as "
 			                        "\"South,East,North,West\". Region is "
@@ -99,7 +103,27 @@ class InventoryExtractor : public Client::Application {
 
 		bool run() override {
 			vector<string> chanIDs;
-			Core::split(chanIDs, _chanIDs.c_str(), ",");
+			if ( !_nslc.empty() ) {
+				ifstream file(_nslc);
+				if ( file.is_open() ) {
+					string line;
+					while ( getline(file, line) ) {
+						line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+						if ( line.empty() ) {
+							continue;
+						}
+						chanIDs.push_back(line);
+					}
+					file.close();
+				}
+				else {
+					cerr << "Unable to open NSLC list file " << _nslc << endl;
+					return false;
+				}
+			}
+			else {
+				Core::split(chanIDs, _chanIDs.c_str(), ",");
+			}
 
 			if ( !_region.empty() ) {
 				vector<string> region;
@@ -329,6 +353,7 @@ class InventoryExtractor : public Client::Application {
 		}
 
 	private:
+		string              _nslc;
 		string              _chanIDs{"*.*.*.*"};
 		bool                _remove{false};
 		string              _region;
