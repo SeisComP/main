@@ -6,6 +6,7 @@ SET(
 		main.cpp
 		associator.cpp
 		mainwindow.cpp
+		spectrogramsettings.cpp
 		statuslabel.cpp
 		tracemarker.cpp
 )
@@ -15,10 +16,11 @@ SET(
 		associator.h
 		mainwindow.h
 		progressbar.h
+		spectrogramsettings.h
 		statuslabel.h
 )
 
-SET(${PACKAGE_NAME}_UI associator.ui mainwindow.ui)
+SET(${PACKAGE_NAME}_UI associator.ui mainwindow.ui spectrogramsettings.ui)
 
 
 SC_ADD_GUI_EXECUTABLE(${PACKAGE_NAME} ${APP_NAME})

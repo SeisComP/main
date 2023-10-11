@@ -26,6 +26,8 @@
 #include <seiscomp/gui/core/questionbox.h>
 #include <seiscomp/gui/core/recordview.h>
 #include <seiscomp/gui/core/recordstreamthread.h>
+#include <seiscomp/gui/core/spectrogramrenderer.h>
+#include <seiscomp/gui/plot/axis.h>
 
 #include "progressbar.h"
 #include "ui_mainwindow.h"
@@ -57,6 +59,7 @@ namespace TraceView {
 
 
 class Associator;
+class SpectrogramSettings;
 class TraceMarker;
 
 
@@ -66,6 +69,33 @@ using RecordStreamThread = Gui::RecordStreamThread;
 struct TraceState {
 	Seiscomp::Client::StationLocation location;
 };
+
+
+class TraceWidget : public Seiscomp::Gui::RecordWidget {
+	public:
+		TraceWidget(const DataModel::WaveformStreamID &sid);
+		~TraceWidget() override;
+
+	public:
+		void setShowSpectrogram(bool enable);
+		void setShowSpectrogramAxis(bool enable);
+		Gui::SpectrogramRenderer *spectrogram();
+		void resetSpectrogram();
+
+	public:
+		void fed(int slot, const Record *rec) override;
+		void paintEvent(QPaintEvent *event) override;
+
+	private:
+		void drawSpectrogram(QPainter &painter);
+		void drawSpectrogramAxis(QPainter &painter);
+
+	private:
+		bool                      _showSpectrogram{false};
+		Gui::SpectrogramRenderer *_spectrogram{nullptr};
+		Gui::Axis                *_spectrogramAxis{nullptr};
+};
+
 
 class TraceView : public Seiscomp::Gui::RecordView {
 	Q_OBJECT
@@ -89,6 +119,13 @@ class TraceView : public Seiscomp::Gui::RecordView {
 			setTimeRange(-_timeSpan,0);
 			setUpdatesEnabled(true);
 		}
+
+		void toggleSpectrogram(bool);
+
+	protected:
+		Gui::RecordWidget *createRecordWidget(
+			const DataModel::WaveformStreamID &streamID
+		) const override;
 
 	private:
 		double _timeSpan;
@@ -234,6 +271,8 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 
 		void clearSelection();
 
+		void applySpectrogramSettings();
+
 		void checkTraceDelay();
 		void updateTraceCount();
 
@@ -288,12 +327,15 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		void reloadTimeWindow(const Core::TimeWindow &tw);
 		void reloadData();
 
+		void applySpectrogramSettings(TraceWidget *widget);
+
 
 	private:
 		Ui::MainWindow                            _ui;
 		QDockWidget                              *_dockAssociator{nullptr};
 		QVector<TraceView*>                       _traceViews;
 		Associator                               *_associator{nullptr};
+		SpectrogramSettings                      *_spectrogramSettings{nullptr};
 		QMap<std::string, TraceMarker*>           _markerMap;
 
 		Gui::RecordStreamThread                  *_recordStreamThread;

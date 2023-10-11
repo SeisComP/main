@@ -50,6 +50,7 @@
 
 #include "associator.h"
 #include "settings.h"
+#include "spectrogramsettings.h"
 #include "tracemarker.h"
 
 
@@ -70,7 +71,12 @@ using namespace Seiscomp::DataModel;
 #define MODE_STANDARD 0
 #define MODE_PICKS    1
 #define MODE_ZOOM     2
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 namespace {
 
 
@@ -243,16 +249,28 @@ DatabaseIterator loadPickRefCounts(const string &originID) {
 
 
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Q_DECLARE_METATYPE(Seiscomp::Applications::TraceView::TraceState)
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 namespace Seiscomp {
 namespace Applications {
 namespace TraceView {
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 namespace {
 
 
@@ -275,8 +293,12 @@ class TabEditWidget : public QLineEdit {
 
 
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class TraceDecorator : public Gui::RecordWidgetDecorator {
 	public:
 		TraceDecorator(QObject *parent, const MainWindow::DecorationDesc *desc)
@@ -358,12 +380,19 @@ class TraceDecorator : public Gui::RecordWidgetDecorator {
 	private:
 		const MainWindow::DecorationDesc *_desc;
 };
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 TraceViewTabBar::TraceViewTabBar(QWidget *parent) : QTabBar(parent) {}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int TraceViewTabBar::findIndex(const QPoint& p) {
 	for ( int i = 0; i < count(); ++i )
 		if ( tabRect(i).contains(p) )
@@ -371,7 +400,12 @@ int TraceViewTabBar::findIndex(const QPoint& p) {
 
 	return -1;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void TraceViewTabBar::mousePressEvent(QMouseEvent *e) {
 	QTabBar::mousePressEvent(e);
 	return;
@@ -404,7 +438,12 @@ void TraceViewTabBar::mousePressEvent(QMouseEvent *e) {
 	edit->show();
 	*/
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void TraceViewTabBar::textChanged() {
 	TabEditWidget *editor = (TabEditWidget*)sender();
 	if ( !editor ) return;
@@ -414,17 +453,240 @@ void TraceViewTabBar::textChanged() {
 		tw->setTabText(editor->index(), editor->text());
 	editor->close();
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+TraceWidget::TraceWidget(const WaveformStreamID &sid)
+: RecordWidget(sid) {}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+TraceWidget::~TraceWidget() {
+	if ( _spectrogram ) {
+		delete _spectrogram;
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Gui::SpectrogramRenderer *TraceWidget::spectrogram() {
+	if ( !_spectrogram ) {
+		_spectrogram = new Gui::SpectrogramRenderer;
+		_spectrogram->setNormalizeAmplitudes(true);
+		_spectrogram->setSmoothTransform(false);
+		// Force the spectralizer to be created.
+		_spectrogram->setOptions(_spectrogram->options());
+	}
+
+	return _spectrogram;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void TraceWidget::setShowSpectrogram(bool enable) {
+	if ( _showSpectrogram == enable ) {
+		return;
+	}
+
+	_showSpectrogram = enable;
+
+	if ( _showSpectrogram ) {
+		spectrogram();
+	}
+
+	resetSpectrogram();
+	update();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void TraceWidget::setShowSpectrogramAxis(bool enable) {
+	if ( !enable ) {
+		if ( _spectrogramAxis ) {
+			delete _spectrogramAxis;
+			_spectrogramAxis = nullptr;
+		}
+	}
+	else {
+		if ( !_spectrogramAxis ) {
+			_spectrogramAxis = new Gui::Axis(this);
+			_spectrogramAxis->setLabel(tr("f [1/T] in Hz"));
+			_spectrogramAxis->setPosition(Seiscomp::Gui::Axis::Left);
+		}
+	}
+	update();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void TraceWidget::fed(int slot, const Seiscomp::Record *rec) {
+	RecordWidget::fed(slot, rec);
+
+	if ( _showSpectrogram && (slot == 0) ) {
+		_spectrogram->setTimeWindow(records(slot)->timeWindow());
+		_spectrogram->feed(rec);
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void TraceWidget::resetSpectrogram() {
+	if ( _showSpectrogram ) {
+		qApp->setOverrideCursor(Qt::WaitCursor);
+		const double *scale = recordScale(0);
+		if ( scale ) {
+			_spectrogram->setScale(*scale);
+		}
+		else {
+			_spectrogram->setScale(1.0);
+		}
+		auto seq = records(0);
+		if ( seq ) {
+			_spectrogram->setTimeWindow(seq->timeWindow());
+		}
+		_spectrogram->setRecords(seq);
+		qApp->restoreOverrideCursor();
+	}
+	else {
+		_spectrogram->reset();
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void TraceWidget::drawSpectrogram(QPainter &painter) {
+	QRect r(canvasRect());
+
+	_spectrogram->setAlignment(alignment());
+	_spectrogram->setTimeRange(tmin(), tmax());
+	painter.save();
+	painter.setClipRect(r);
+	_spectrogram->render(painter, r, false, false);
+	painter.restore();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void TraceWidget::drawSpectrogramAxis(QPainter &painter) {
+	if ( !_spectrogramAxis ) {
+		return;
+	}
+
+	QRect r(canvasRect());
+
+	painter.save();
+
+	QPair<double, double> range = _spectrogram->range();
+	_spectrogramAxis->setRange(Seiscomp::Gui::Range(range.first, range.second));
+
+	r.setRight(r.left());
+	r.setWidth(axisWidth());
+	_spectrogramAxis->setLogScale(_spectrogram->logScale());
+	_spectrogramAxis->updateLayout(painter, r);
+	r.setLeft(canvasRect().left());
+	painter.fillRect(r.adjusted(-axisSpacing(),0,0,0), palette().color(backgroundRole()));
+	_spectrogramAxis->draw(painter, r, true);
+
+	painter.restore();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void TraceWidget::paintEvent(QPaintEvent *event) {
+	if ( _showSpectrogram ) {
+		QPainter painter(this);
+		QFont font;
+
+		drawSpectrogram(painter);
+
+		painter.setPen(SCScheme.colors.records.alignment);
+		int x = static_cast<int>(-tmin() * timeScale());
+		painter.drawLine(x, 0, x, height());
+
+		drawMarkers(painter, font, palette().color(foregroundRole()));
+		drawSpectrogramAxis(painter);
+	}
+	else {
+		RecordWidget::paintEvent(event);
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 TraceView::TraceView(const Seiscomp::Core::TimeSpan& span,
                      QWidget *parent, Qt::WindowFlags f)
 : Seiscomp::Gui::RecordView(span, parent, f) {
 	_timeSpan = (double)span;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 TraceView::~TraceView() {}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void TraceView::toggleSpectrogram(bool enable) {
+	for ( int i = 0; i < rowCount(); ++i ) {
+		auto item = itemAt(i);
+		static_cast<TraceWidget*>(item->widget())->setShowSpectrogram(enable);
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Gui::RecordWidget *TraceView::createRecordWidget(
+	const DataModel::WaveformStreamID &streamID
+) const {
+	return new TraceWidget(streamID);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 TraceTabWidget::TraceTabWidget(QWidget* parent)
 	: QTabWidget(parent) {
 
@@ -449,8 +711,12 @@ TraceTabWidget::TraceTabWidget(QWidget* parent)
 
 	_tabToClose = -1;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void TraceTabWidget::closeTab() {
 	if ( _nonInteractive ) return;
 
@@ -460,14 +726,23 @@ void TraceTabWidget::closeTab() {
 
 	emit tabRemovalRequested(tab);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void TraceTabWidget::checkActiveTab(const QPoint& p) {
 	int tab = _tabBar->findIndex(_tabBar->mapFromParent(p));
 	if ( tab != -1 )
 		setCurrentIndex(tab);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool TraceTabWidget::checkDraging(QDropEvent *event) {
 	checkActiveTab(event->pos());
 
@@ -477,23 +752,43 @@ bool TraceTabWidget::checkDraging(QDropEvent *event) {
 
 	return true;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void TraceTabWidget::dragEnterEvent(QDragEnterEvent *event) {
 	checkActiveTab(event->pos());
 	event->acceptProposedAction();
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void TraceTabWidget::showContextMenu(const QPoint& p) {
 	if ( _nonInteractive ) return;
 	_tabToClose = _tabBar->findIndex(p);
 	_tabToClose = -1;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void TraceTabWidget::dragMoveEvent(QDragMoveEvent *event) {
 	if ( !checkDraging(event) ) return;
 	event->acceptProposedAction();
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void TraceTabWidget::dropEvent(QDropEvent *event) {
 	if ( !checkDraging(event) ) return;
 
@@ -507,13 +802,22 @@ void TraceTabWidget::dropEvent(QDropEvent *event) {
 		}
 	}
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void TraceTabWidget::showEvent(QShowEvent *) {
 	for ( int i = 0; i < count(); ++i )
 		widget(i)->setVisible(widget(i) == currentWidget());
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #define TRACEVIEWS(method)\
 	foreach ( TraceView* view, _traceViews ) view->method
 
@@ -528,7 +832,12 @@ void TraceTabWidget::showEvent(QShowEvent *) {
 		var = static_cast<TraceView*>(_tabWidget->currentWidget())->method;\
 	else\
 		var = _traceViews.front()->method
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 MainWindow::MainWindow() : _questionApplyChanges(this) {
 	_ui.setupUi(this);
 	_ui.actionLoadDataBack->setText(tr("Load data - %1").arg(prettyTimeRange(Settings::global.bufferSize)));
@@ -573,12 +882,80 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 	if ( !SCApp->nonInteractive() ) {
 		_associator = new Associator(this);
 		_dockAssociator = new QDockWidget(tr("Manual associator"), this);
-		_dockAssociator->setObjectName("ManualAssociator");
+		_dockAssociator->setObjectName("Dock" + _associator->objectName());
 		_dockAssociator->setWidget(_associator);
 		_dockAssociator->setAllowedAreas(Qt::AllDockWidgetAreas);
 		_dockAssociator->setVisible(false);
 		addDockWidget(Qt::LeftDockWidgetArea, _dockAssociator);
+		_dockAssociator->toggleViewAction()->setShortcut(QKeySequence("ctrl+shift+a"));
 		_ui.menuWindow->addAction(_dockAssociator->toggleViewAction());
+
+		_spectrogramSettings = new SpectrogramSettings(this);
+		connect(_spectrogramSettings, SIGNAL(apply()), this, SLOT(applySpectrogramSettings()));
+		auto dockSpec = new QDockWidget(tr("Spectrogram settings"), this);
+		dockSpec->setObjectName("Dock" + _spectrogramSettings->objectName());
+		dockSpec->setWidget(_spectrogramSettings);
+		dockSpec->setAllowedAreas(Qt::AllDockWidgetAreas);
+		dockSpec->setVisible(false);
+		addDockWidget(Qt::LeftDockWidgetArea, dockSpec);
+		dockSpec->toggleViewAction()->setShortcut(QKeySequence("ctrl+shift+s"));
+		_ui.menuWindow->addAction(dockSpec->toggleViewAction());
+
+		try {
+			_spectrogramSettings->ui.cbSmoothing->setChecked(
+				SCApp->configGetBool("spectrogram.smoothing")
+			);
+		}
+		catch ( ... ) {}
+
+		try {
+			_spectrogramSettings->ui.cbLogScale->setChecked(
+				SCApp->configGetBool("spectrogram.logScale")
+			);
+		}
+		catch ( ... ) {}
+
+		try {
+			_spectrogramSettings->ui.cbNormalize->setChecked(
+				SCApp->configGetBool("spectrogram.normalize")
+			);
+		}
+		catch ( ... ) {}
+
+		try {
+			_spectrogramSettings->ui.cbShowAxis->setChecked(
+				SCApp->configGetBool("spectrogram.axis")
+			);
+		}
+		catch ( ... ) {}
+
+		try {
+			_spectrogramSettings->ui.spinMinAmp->setValue(
+				SCApp->configGetDouble("spectrogram.minimumAmplitude")
+			);
+		}
+		catch ( ... ) {}
+
+		try {
+			_spectrogramSettings->ui.spinMaxAmp->setValue(
+				SCApp->configGetDouble("spectrogram.maximumAmplitude")
+			);
+		}
+		catch ( ... ) {}
+
+		try {
+			_spectrogramSettings->ui.spinTimeWindow->setValue(
+				SCApp->configGetDouble("spectrogram.timeSpan")
+			);
+		}
+		catch ( ... ) {}
+
+		try {
+			_spectrogramSettings->ui.spinOverlap->setValue(
+				SCApp->configGetDouble("spectrogram.overlap") * 100
+			);
+		}
+		catch ( ... ) {}
 	}
 	else {
 		_statusBarSelectMode->setVisible(false);
@@ -1155,6 +1532,7 @@ TraceView* MainWindow::createTraceView() {
 
 	connect(_ui.actionToggleAllRecords, SIGNAL(toggled(bool)), traceView, SLOT(showAllRecords(bool)));
 	connect(_ui.actionToggleRecordBorders, SIGNAL(toggled(bool)), traceView, SLOT(showRecordBorders(bool)));
+	connect(_ui.actionToggleSpectrogram, SIGNAL(toggled(bool)), traceView, SLOT(toggleSpectrogram(bool)));
 
 	connect(_ui.actionHorZoomIn, SIGNAL(triggered()), traceView, SLOT(horizontalZoomIn()));
 	connect(_ui.actionHorZoomOut, SIGNAL(triggered()), traceView, SLOT(horizontalZoomOut()));
@@ -1280,13 +1658,13 @@ void MainWindow::updateMarkerVisibility() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::removeTab(int index) {
-	TraceView* traceView = static_cast<TraceView*>(_tabWidget->widget(index));
+	TraceView *traceView = static_cast<TraceView*>(_tabWidget->widget(index));
 	_tabWidget->removeTab(index);
 
 	if ( _tabWidget->count() == 0 )
 		return;
 
-	TraceView* mainView = static_cast<TraceView*>(_tabWidget->widget(0));
+	TraceView *mainView = static_cast<TraceView*>(_tabWidget->widget(0));
 
 	_traceViews.remove(_traceViews.indexOf(traceView));
 	traceView->moveItemsTo(mainView);
@@ -1308,7 +1686,7 @@ void MainWindow::removeTab(int index) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MainWindow::setupItem(const Record*, Gui::RecordViewItem* item) {
+void MainWindow::setupItem(const Record*, Gui::RecordViewItem *item) {
 	item->label()->setInteractive(false);
 	item->label()->setOrientation(Qt::Horizontal);
 	QFont f(item->label()->font(0));
@@ -1428,6 +1806,8 @@ void MainWindow::setupItem(const Record*, Gui::RecordViewItem* item) {
 	item->label()->setWidth(fm.boundingRect("WWW").width(), 3);
 
 	item->setContextMenuPolicy(Qt::CustomContextMenu);
+
+	applySpectrogramSettings(static_cast<TraceWidget*>(item->widget()));
 
 	if ( SCApp->nonInteractive() ) return;
 
@@ -2352,7 +2732,7 @@ void MainWindow::abortSearch() {
 		_statusBarSearch->setVisible(false);
 		_statusBarSearch->releaseKeyboard();
 
-		foreach ( TraceView* view, _traceViews )
+		foreach ( TraceView *view, _traceViews )
 			view->setFocusProxy(NULL);
 	}
 	else {
@@ -2366,9 +2746,45 @@ void MainWindow::abortSearch() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::clearSelection() {
-	foreach ( TraceView* view, _traceViews ) {
+	foreach ( TraceView *view, _traceViews ) {
 		view->deselectAllItems();
 	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::applySpectrogramSettings() {
+	foreach ( TraceView *view, _traceViews ) {
+		for ( int i = 0; i < view->rowCount(); ++i ) {
+			auto item = view->itemAt(i);
+			applySpectrogramSettings(static_cast<TraceWidget*>(item->widget()));
+		}
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::applySpectrogramSettings(TraceWidget *traceWidget) {
+	auto spectrogram = traceWidget->spectrogram();
+	spectrogram->setSmoothTransform(_spectrogramSettings->ui.cbSmoothing->isChecked());
+	spectrogram->setNormalizeAmplitudes(_spectrogramSettings->ui.cbNormalize->isChecked());
+	spectrogram->setLogScale(_spectrogramSettings->ui.cbLogScale->isChecked());
+	spectrogram->setGradientRange(
+		_spectrogramSettings->ui.spinMinAmp->value(),
+		_spectrogramSettings->ui.spinMaxAmp->value()
+	);
+	auto options = spectrogram->options();
+	options.windowLength = _spectrogramSettings->ui.spinTimeWindow->value();
+	options.windowOverlap = _spectrogramSettings->ui.spinOverlap->value() * 0.01;
+	spectrogram->setOptions(options);
+	traceWidget->resetSpectrogram();
+	traceWidget->setShowSpectrogramAxis(_spectrogramSettings->ui.cbShowAxis->isChecked());
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

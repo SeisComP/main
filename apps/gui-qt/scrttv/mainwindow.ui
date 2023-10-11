@@ -76,6 +76,7 @@
     <addaction name="separator"/>
     <addaction name="actionToggleAllRecords"/>
     <addaction name="actionToggleRecordBorders"/>
+    <addaction name="actionToggleSpectrogram"/>
     <addaction name="actionToggleAutoMove"/>
     <addaction name="actionApplyGain"/>
     <addaction name="separator"/>
@@ -96,7 +97,7 @@
     <addaction name="actionPreviousFilter"/>
     <addaction name="separator"/>
     <addaction name="actionClearPickMarkers"/>
-	<addaction name="actionClearPickCart"/>
+    <addaction name="actionClearPickCart"/>
     <addaction name="separator"/>
     <addaction name="actionSearch"/>
     <addaction name="separator"/>
@@ -804,6 +805,17 @@
    </property>
    <property name="shortcut">
     <string>Alt+Right</string>
+   </property>
+  </action>
+  <action name="actionToggleSpectrogram">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Spectrogram</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+S</string>
    </property>
   </action>
  </widget>
