@@ -91,6 +91,12 @@ class App : public Processing::Application {
 		                           const Record *rec,
 		                           const Seiscomp::DataModel::Pick *pick);
 
+		template <typename T>
+		void pushProcessor(const std::string &networkCode,
+		                   const std::string &stationCode,
+		                   const std::string &locationCode,
+		                   T *proc);
+
 		void processorFinished(const Record *rec, Processing::WaveformProcessor *wp);
 
 		void emitTrigger(const Processing::Detector *pickProc,
