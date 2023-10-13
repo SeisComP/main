@@ -2779,6 +2779,14 @@ void MainWindow::applySpectrogramSettings(TraceWidget *traceWidget) {
 		_spectrogramSettings->ui.spinMinAmp->value(),
 		_spectrogramSettings->ui.spinMaxAmp->value()
 	);
+	spectrogram->setFrequencyRange(
+		_spectrogramSettings->ui.spinMinFrequency->value() == 0
+		? Core::None
+		: OPT(double)(_spectrogramSettings->ui.spinMinFrequency->value()),
+		_spectrogramSettings->ui.spinMaxFrequency->value() == 0
+		? Core::None
+		: OPT(double)(_spectrogramSettings->ui.spinMaxFrequency->value())
+	);
 	auto options = spectrogram->options();
 	options.windowLength = _spectrogramSettings->ui.spinTimeWindow->value();
 	options.windowOverlap = _spectrogramSettings->ui.spinOverlap->value() * 0.01;
