@@ -944,6 +944,20 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 		catch ( ... ) {}
 
 		try {
+			_spectrogramSettings->ui.spinMinFrequency->setValue(
+				SCApp->configGetDouble("spectrogram.minimumFrequency")
+			);
+		}
+		catch ( ... ) {}
+
+		try {
+			_spectrogramSettings->ui.spinMaxFrequency->setValue(
+				SCApp->configGetDouble("spectrogram.maximumFrequency")
+			);
+		}
+		catch ( ... ) {}
+
+		try {
 			_spectrogramSettings->ui.spinTimeWindow->setValue(
 				SCApp->configGetDouble("spectrogram.timeSpan")
 			);

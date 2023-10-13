@@ -445,6 +445,18 @@
 					the power spectrum (log(real**2 + imag**2)).
 					</description>
 				</parameter>
+				<parameter name="minimumFrequency" type="double" default="0" unit="Hz">
+					<description>
+					The lower bound of the frequency to be shown.
+					</description>
+				</parameter>
+				<parameter name="maximumFrequency" type="double" default="0" unit="Hz">
+					<description>
+					The upper bound of the frequency to be shown. Zero is a special
+					value and means &quote;auto&quot; and sets the maximum
+					frequency from the spectra.
+					</description>
+				</parameter>
 				<parameter name="timeSpan" type="double" default="20" unit="s">
 					<description>
 					The time span of each data slice used to compute the
