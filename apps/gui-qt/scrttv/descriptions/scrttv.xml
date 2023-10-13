@@ -453,7 +453,7 @@
 				<parameter name="maximumFrequency" type="double" default="0" unit="Hz">
 					<description>
 					The upper bound of the frequency to be shown. Zero is a special
-					value and means &quote;auto&quot; and sets the maximum
+					value and means &quot;auto&quot; and sets the maximum
 					frequency from the spectra.
 					</description>
 				</parameter>
