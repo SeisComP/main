@@ -120,6 +120,7 @@ class TraceView : public Seiscomp::Gui::RecordView {
 			setUpdatesEnabled(true);
 		}
 
+		void toggleFilter(bool);
 		void toggleSpectrogram(bool);
 
 	protected:

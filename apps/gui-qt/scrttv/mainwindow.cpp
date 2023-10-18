@@ -542,7 +542,18 @@ void TraceWidget::fed(int slot, const Seiscomp::Record *rec) {
 
 	if ( _showSpectrogram && (slot == 0) ) {
 		_spectrogram->setTimeWindow(records(slot)->timeWindow());
-		_spectrogram->feed(rec);
+		if ( isFilteringEnabled() ) {
+			auto seq = filteredRecords(slot);
+			if ( seq ) {
+				auto frec = seq->back();
+				if ( frec ) {
+					_spectrogram->feed(frec.get());
+				}
+			}
+		}
+		else {
+			_spectrogram->feed(rec);
+		}
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -561,7 +572,7 @@ void TraceWidget::resetSpectrogram() {
 		else {
 			_spectrogram->setScale(1.0);
 		}
-		auto seq = records(0);
+		auto seq = isFilteringEnabled() ? filteredRecords(0) : records(0);
 		if ( seq ) {
 			_spectrogram->setTimeWindow(seq->timeWindow());
 		}
@@ -658,6 +669,18 @@ TraceView::TraceView(const Seiscomp::Core::TimeSpan& span,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 TraceView::~TraceView() {}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void TraceView::toggleFilter(bool) {
+	for ( int i = 0; i < rowCount(); ++i ) {
+		auto item = itemAt(i);
+		static_cast<TraceWidget*>(item->widget())->resetSpectrogram();
+	}
+}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -2941,6 +2964,7 @@ void MainWindow::filterSelectionChanged() {
 	if ( _statusBarFilter->currentIndex() > 0 ) {
 		TRACEVIEWS(setFilterByName(Settings::global.filters[_statusBarFilter->currentIndex() - 1].c_str()));
 		TRACEVIEWS(enableFilter(true));
+		TRACEVIEWS(toggleFilter(true));
 		_lastFilterIndex = _statusBarFilter->currentIndex();
 		_ui.actionPreviousFilter->setEnabled(Settings::global.filters.size() > 1);
 		_ui.actionNextFilter->setEnabled(Settings::global.filters.size() > 1);
@@ -2948,6 +2972,7 @@ void MainWindow::filterSelectionChanged() {
 	else {
 		TRACEVIEWS(setFilter(nullptr));
 		TRACEVIEWS(enableFilter(false));
+		TRACEVIEWS(toggleFilter(false));
 		_ui.actionPreviousFilter->setEnabled(false);
 		_ui.actionNextFilter->setEnabled(false);
 	}
