@@ -233,8 +233,15 @@ Associator::Associator(QWidget *parent) : QWidget(parent) {
 			int defaultIndex = _ui.cbLocator->findText(Settings::global.defaultLocator.c_str());
 			_ui.cbLocator->setCurrentIndex(defaultIndex >= 0 ? defaultIndex: 0);
 
+			#if QT_VERSION < 0x050000
+			connect(_ui.cbLocatorProfile, SIGNAL(currentIndexChanged(QString)),
+			        this, SLOT(profileChanged(QString)));
+			connect(_ui.cbLocatorProfile, SIGNAL(editTextChanged(QString)),
+			        this, SLOT(profileChanged(QString)));
+			#else
 			connect(_ui.cbLocatorProfile, SIGNAL(currentTextChanged(QString)),
 			        this, SLOT(profileChanged(QString)));
+			#endif
 
 			locatorChanged(_ui.cbLocator->currentText());
 		}
@@ -245,8 +252,15 @@ Associator::Associator(QWidget *parent) : QWidget(parent) {
 	}
 	_ui.cbDepth->clearEditText();
 
+	#if QT_VERSION < 0x050000
+	connect(_ui.cbLocator, SIGNAL(currentIndexChanged(QString)),
+	        this, SLOT(locatorChanged(QString)));
+	connect(_ui.cbLocator, SIGNAL(editTextChanged(QString)),
+	        this, SLOT(locatorChanged(QString)));
+	#else
 	connect(_ui.cbLocator, SIGNAL(currentTextChanged(QString)),
 	        this, SLOT(locatorChanged(QString)));
+	#endif
 
 	connect(_ui.btnLocatorSettings, SIGNAL(clicked()),
 	        this, SLOT(configureLocator()));
@@ -255,8 +269,15 @@ Associator::Associator(QWidget *parent) : QWidget(parent) {
 	connect(_ui.btnInspect, SIGNAL(clicked()), this, SLOT(inspect()));
 	connect(_ui.btnCommit, SIGNAL(clicked()), this, SLOT(commit()));
 
+	#if QT_VERSION < 0x050000
+	connect(_ui.cbDepth, SIGNAL(currentIndexChanged(QString)),
+	        this, SLOT(relocate()));
+	connect(_ui.cbDepth, SIGNAL(editTextChanged(QString)),
+	        this, SLOT(relocate()));
+	#else
 	connect(_ui.cbDepth, SIGNAL(currentTextChanged(QString)),
 	        this, SLOT(relocate()));
+	#endif
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
