@@ -481,7 +481,7 @@ TraceWidget::~TraceWidget() {
 Gui::SpectrogramRenderer *TraceWidget::spectrogram() {
 	if ( !_spectrogram ) {
 		_spectrogram = new Gui::SpectrogramRenderer;
-		_spectrogram->setNormalizeAmplitudes(true);
+		_spectrogram->setNormalizationMode(Gui::SpectrogramRenderer::NormalizationMode::Frequency);
 		_spectrogram->setSmoothTransform(false);
 		// Force the spectralizer to be created.
 		_spectrogram->setOptions(_spectrogram->options());
@@ -939,8 +939,8 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 		catch ( ... ) {}
 
 		try {
-			_spectrogramSettings->ui.cbNormalize->setChecked(
-				SCApp->configGetBool("spectrogram.normalize")
+			_spectrogramSettings->ui.cbNormalization->setCurrentText(
+				SCApp->configGetString("spectrogram.normalize").c_str()
 			);
 		}
 		catch ( ... ) {}
@@ -2810,7 +2810,19 @@ void MainWindow::applySpectrogramSettings() {
 void MainWindow::applySpectrogramSettings(TraceWidget *traceWidget) {
 	auto spectrogram = traceWidget->spectrogram();
 	spectrogram->setSmoothTransform(_spectrogramSettings->ui.cbSmoothing->isChecked());
-	spectrogram->setNormalizeAmplitudes(_spectrogramSettings->ui.cbNormalize->isChecked());
+	switch ( _spectrogramSettings->ui.cbNormalization->currentIndex() ) {
+		default:
+		case 0:
+			spectrogram->setNormalizationMode(SpectrogramRenderer::NormalizationMode::Fixed);
+			break;
+		case 1:
+			spectrogram->setNormalizationMode(SpectrogramRenderer::NormalizationMode::Frequency);
+			break;
+		case 2:
+			spectrogram->setNormalizationMode(SpectrogramRenderer::NormalizationMode::Time);
+			break;
+	}
+
 	spectrogram->setLogScale(_spectrogramSettings->ui.cbLogScale->isChecked());
 	spectrogram->setGradientRange(
 		_spectrogramSettings->ui.spinMinAmp->value(),
