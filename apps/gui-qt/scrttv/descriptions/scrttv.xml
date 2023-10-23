@@ -422,10 +422,10 @@
 					Whether to use logarithmic frequency scale.
 					</description>
 				</parameter>
-				<parameter name="normalize" type="boolean" default="true">
+				<parameter name="normalization" type="string" default="fixed">
 					<description>
-					Whether to normalize amplitudes per time window or statically
-					using &quot;minimumAmplitude&quot; and &quot;maximumAmplitude&quot;.
+					Which amplitude normalization mode to use: &quot;fixed&quot;,
+					&quot;frequency&quot; or &quot;time&quot;.
 					</description>
 				</parameter>
 				<parameter name="axis" type="boolean" default="false">

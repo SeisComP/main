@@ -939,9 +939,16 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 		catch ( ... ) {}
 
 		try {
-			_spectrogramSettings->ui.cbNormalization->setCurrentText(
-				SCApp->configGetString("spectrogram.normalize").c_str()
-			);
+			auto mode = SCApp->configGetString("spectrogram.normalization");
+			if ( mode == "fixed" ) {
+				_spectrogramSettings->ui.cbNormalization->setCurrentIndex(0);
+			}
+			else if ( mode == "frequency" ) {
+				_spectrogramSettings->ui.cbNormalization->setCurrentIndex(1);
+			}
+			else if ( mode == "time" ) {
+				_spectrogramSettings->ui.cbNormalization->setCurrentIndex(2);
+			}
 		}
 		catch ( ... ) {}
 
