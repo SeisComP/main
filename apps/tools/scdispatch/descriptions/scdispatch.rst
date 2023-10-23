@@ -1,46 +1,98 @@
 scdispatch reads an :term:`SCML` file and creates notifier objects for them that
-are sent to the corresponding messaging groups (see :confval:`routingtable`).
-In contrast to :ref:`scdb` which writes SCML files directly into the database
-scdispatch uses the messaging bus. If :ref:`scmaster` is configured with
-the database plugin messages will end up in the database as well.
+are sent to the :ref:`messaging <concepts_messaging>` and the corresponding
+messaging groups (see :option:`--routingtable`). In contrast to :ref:`scdb`
+which writes SCML files directly into the :ref:`database <concepts_database>`
+scdispatch uses the messaging bus. If :ref:`scmaster` is configured with the
+database plugin, messages will end up in the database as well.
 
-scdispatch can work in two modes. The first mode is used when a concrete
-operation is specified such as *add*, *update* or *remove*. In that case all
-objects in the SCML are encapsulated in a notifier with that specific operation
-and sent to the messaging. No check is performed if the object is already in
-the database or not.
 
-In the second mode scdispatch loads the corresponding objects from the database
-and calculates differences. It will then create corresponding notifiers with
-operations *add*, *update* or *remove* and sent them to the messaging. That mode
-is quite close to a sync operation with the exception that top level objects
-(such as origin or event) that are not part of the input SCML are left untouched
-in the database. It can be used to synchronize event information from one system
-with another.
+Modes
+-----
+
+scdispatch can work in two modes applying different
+:ref:`operations <scdispatch-operations>:
+
+* *Without database check:* One of the :ref:`operations <scdispatch-operations>`
+  *add*, *update* or *remove* is selected along with the option :option:`-O`. In
+  that case all objects in the SCML are encapsulated in a notifier with that
+  specific operation and sent to the messaging. No check is performed if the
+  object is already in the database or not.
+* *With database check:* The option :option:`-O` is not given or the
+  option is used along with one of the :ref:`operations <scdispatch-operations>`
+  *merge* or *merge-without-remove*. scdispatch first tries to load the corresponding
+  objects from the database and calculates differences. It will then create the
+  corresponding notifiers with operations *add*, *update* or *remove* and sends
+  them to the messaging. That mode is quite close to a sync operation with the
+  exception that top level objects (such as origin or event) that are not part
+  of the input SCML are left untouched in the database. It can be used to
+  synchronize event information from one system with another.
+
+
+.. _scdispatch-operations::
+
+Operations
+----------
+
+Different operations can be chosen along with the option :option:`-O`.
+If :option:`-O` is not given, *merge* is assumed by default.
+
+* *Add*: All objects are sent trying to be added to the database. If they
+  already exist in the database, they will be rejected and not spread through
+  the messaging. Modules connected to the messaging will not receive rejected
+  objects.
+* *Remove*: All sent objects with all their attributes and child objects are
+  removed from the database. Modules connected to the messaging will not receive
+  any sent object.
+* *Update*: All objects are sent trying to be updated to the database along with
+  all of their child objects and attributes. Sent objects not existing in the
+  database will be ignored and not received by any module connected to the
+  messaging. Child objects and attributes existing in the database but not
+  included in the sent object will be removed as well.
+* *Merge* (default): Applies *Add* and *Update* and requires a database
+  connection.
+* *Merge-without-remove*: Applies *Add* and *Update* and requires a database
+  connection. However, no objects are removed from the database.
+
+.. note::
+
+   All |scname| objects along are listed and described along with their child
+   objects and attributes in the :ref:`API documentation <api-datamodel-python>`.
 
 
 Examples
-========
+--------
 
-#. Send different objects from a :term:`SCML` file because the default behavior is to merge:
+#. Send different objects from a :term:`SCML` file for merging (adding or
+   updating). The option :option:`-O` can be ommitted because the default
+   behavior is to merge:
 
    .. code-block:: sh
 
+      scdispatch -i test.xml -O merge
       scdispatch -i test.xml
 
-#. Send new objects:
+#. Send all objects by ignoring events. When :ref:`scevent` receives origins it
+   will create new events or associate the origins to existing ones. The ignored
+   events may be already existing with different IDs. Hence, event duplication
+   is avoided by ignoring them.
+
+   .. code-block:: sh
+
+      scdispatch -i test.xml -e
+
+#. Send new objects to be added:
 
    .. code-block:: sh
 
       scdispatch -i test.xml -O add
 
-#. Send an update:
+#. Send an update of objects:
 
    .. code-block:: sh
 
       scdispatch -i test.xml -O update
 
-#. Remove the objects:
+#. Send objects to be removed:
 
    .. code-block:: sh
 
@@ -59,7 +111,7 @@ Examples
 
       scdispatch -i test.xml -O operation --create-notifier > notifier.xml
 
-then:
+   then:
 
    .. code-block:: sh
 
@@ -90,7 +142,7 @@ then:
 
    .. hint::
 
-      The option ``--no-event`` is a wrapper for removing Event:EVENT from
+      The option :option:`--no-event` is a wrapper for removing Event:EVENT from
       the routing table. With this option no event objects will be sent which may
       be useful if just the origins with magnitudes, amplitudes, arrivals, picks, etc.
       shall be integrated, e.g. after XML-based playbacks.

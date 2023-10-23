@@ -552,21 +552,27 @@ class DispatchTool : public Seiscomp::Client::Application {
 	protected:
 		void createCommandLineDescription() {
 			commandline().addGroup("Dispatch");
-			commandline().addOption("Dispatch", "input,i", "File to dispatch to messaging", &_inputFile, false);
-			commandline().addOption("Dispatch", "operation,O", "Notifier operation: add, update, remove, merge or merge-without-remove",
-			                        &_notifierOperation, true);
-			commandline().addOption("Dispatch", "routingtable",
-			                        "Specify routing table as list of object:group pairs",
-			                        &_routingTableStr, false);
-
-			commandline().addOption("Dispatch", "print-objects", "Print names of routable objects");
-			commandline().addOption("Dispatch", "print-routingtable", "Print routing table");
-			commandline().addOption("Dispatch", "test", "Do not send any object");
 			commandline().addOption("Dispatch", "no-events,e", "Do not send any "
 			                        "event object. This is a wrapper to setting a "
 			                        "routing table without EVENT objects");
 			commandline().addOption("Dispatch", "create-notifier", "Do not send any object. "
 			                        "All notifiers will be written to standard output in XML format.");
+			commandline().addOption("Dispatch", "input,i",
+			                        "File to dispatch to messaging",
+			                        &_inputFile, false);
+			commandline().addOption("Dispatch", "operation,O",
+			                        "Notifier operation: add, update, remove, "
+			                        "merge or merge-without-remove.",
+			                        &_notifierOperation, true);
+			commandline().addOption("Dispatch", "print-objects",
+			                        "Print names of routable objects.");
+			commandline().addOption("Dispatch", "print-routingtable",
+			                        "Print routing table.");
+			commandline().addOption("Dispatch", "routingtable",
+			                        "Specify routing table as list of "
+			                        "object:group pairs.",
+			                        &_routingTableStr, false);
+			commandline().addOption("Dispatch", "test", "Do not send any object.");
 		}
 
 

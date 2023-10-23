@@ -51,28 +51,45 @@
 			</group>
 
 			<group name="Dispatch">
-				<option flag="i" long-flag="input" argument="flag">
+				<option flag="e" long-flag="no-events">
+					<description>
+					Do not send any event object. This is a wrapper to setting a
+					routing table without EVENT objects.
+					</description>
+				</option>
+				<option flag="i" long-flag="input" argument="arg">
 					<description>
 					File to dispatch to messaging.
 					</description>
 				</option>
-				<option flag="O" long-flag="operation" argument="flag" default="merge">
+				<option flag="O" long-flag="operation" argument="arg" default="merge">
 					<description>
-					Operation to use: add, update, remove, merge or 
+					Operation to use: add, update, remove, merge (default) or
 					merge-without-remove.
-					Merge and merge-without-remove are special operations and 
-					require a database connection. Both will read a corresponding
-					object from the database and calculate the differences which
-					will be sent to the messaging. Merge-no-remove behaves like
-					merge with the exception that remove operations will be
-					filtered out that no objects in the database will be removed.
 
-					If add, update or remove is specified then all objects in
+					Merge and merge-without-remove require a database
+					connection. Both will read the object corresponding to the
+					sent object from the database and calculate the differences.
+					Merge-without-remove behaves like merge with the exception
+					that remove operations will be filtered out and no objects
+					in the database will be removed.
+
+					If add, update or remove is specified, then all objects in
 					XML are sent with the given operation regardless of their
-					existence in the database or not.
+					existence in the database.
 					</description>
 				</option>
-				<option long-flag="routingtable" argument="flag">
+				<option long-flag="print-objects">
+					<description>
+					Print names of routable objects.
+					</description>
+				</option>
+				<option long-flag="print-routingtable">
+					<description>
+					Print routing table.
+					</description>
+				</option>
+				<option long-flag="routingtable" argument="arg">
 					<description>
 					Specify routing table as comma separated list of object:group
 					pairs, e.g. &quot;Origin:LOCATION,Event:EVENT&quot;. When an
@@ -86,20 +103,9 @@
 					Arrival.
 					</description>
 				</option>
-				<option long-flag="print-objects">
-					<description>
-					Print names of routable objects.
-					</description>
-				</option>
 				<option long-flag="test">
 					<description>
 					Test mode. Does not send any object.
-					</description>
-				</option>
-				<option flag="e" long-flag="no-events">
-					<description>
-					Do not send any event object. This is a wrapper to setting a
-					routing table without EVENT objects
 					</description>
 				</option>
 				<option long-flag="create-notifier">
