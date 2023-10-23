@@ -49,7 +49,7 @@ class SDSCollector : public Collector {
 				 * @param file The absolute file path
 				 * @param wid StreamID the file is expected to contain data for
 				 */
-				RecordIterator(const std::string &file,
+				RecordIterator(std::string file,
 				               const DataModel::WaveformStreamID &wid);
 
 			public:
@@ -79,6 +79,9 @@ class SDSCollector : public Collector {
 		~SDSCollector() override = default;
 
 		bool setSource(const char *source) override;
+		void setStartTime(Core::Time startTime) override;
+		void setEndTime(Core::Time endTime) override;
+
 		void reset() override;
 		void collectWaveformIDs(WaveformIDs &wids) override;
 		void collectChunks(DataChunks &chunks,
@@ -92,11 +95,15 @@ class SDSCollector : public Collector {
 		bool threadSafe() const override;
 
 	protected:
+		struct IDDate {
+			std::string streamID;
+			int year{0};
+			int doy{0}; // 0 = 1st of January
+		};
 
 		/**
-		 * @brief scanDirectories Recursively scans archive for available
-		 * WaveformIDs.
-		 * @param wids The collected waveform ids
+		 * @brief Scan an archive recursively for available WaveformIDs.
+		 * @param wids The collected waveform ids.
 		 * @param dir Current directory path.
 		 * @param depth Remaining directory depth. If 0 the current directory
 		 * is scanned for files.
@@ -106,24 +113,42 @@ class SDSCollector : public Collector {
 		                           uint16_t depth = 3);
 
 		/**
-		 * @brief scanFiles Scans a directory for available WaveformIDs.
-		 * @param wids The collected waveform ids
-		 * @param dir The directory path in which to search files
+		 * @brief Scan a directory for available WaveformIDs.
+		 * @param wids The collected waveform ids.
+		 * @param dir The directory path in which to search files.
 		 */
 		virtual void scanFiles(WaveformIDs &wids,
 		                       const boost::filesystem::path &dir);
 
 		/**
-		 * @brief fileStreamID Returns the stream ID for a given file name
-		 * @param filename The file name to extract the stream ID from
-		 * @return The stream ID or an empty string if the file names does not
-		 * match the expected pattern.
+		 * @brief Return the stream ID and date for a given file name.
+		 * @param filename The file name to extract the stream ID from.
+		 * @return An IDDate object holding the stream ID and file date or an
+		 * default contructed IDDate with an empty streamID.
 		 */
-		virtual std::string fileStreamID(const std::string &filename);
+		virtual IDDate fileStreamID(const std::string &filename);
+
+		/**
+		 * @brief Check if a specific date is covered by the startTime and
+		 * endTime boundaries.
+		 * @param year The year of the date.
+		 * @param doy The day of the year as days since January 1st.
+		 * @return true If the specified date is within the timewindow
+		 * boundaries (if any) else false.
+		 */
+		virtual bool checkTimeWindow(int year, int doy);
 
 	protected:
-		boost::filesystem::path              _basePath;
-		std::vector<boost::filesystem::path> _archiveYears;
+		using ArchiveYearItem = std::pair<int, boost::filesystem::path>;
+		using ArchiveYears = std::vector<ArchiveYearItem>;
+
+		boost::filesystem::path _basePath;
+		ArchiveYears            _archiveYears;
+
+		OPT(int)                _startYear;
+		OPT(int)                _startDOY;              // 0 = 1st of January
+		OPT(int)                _endYear;
+		OPT(int)                _endDOY;                // 0 = 1st of January
 };
 
 } // ns DataAvailability

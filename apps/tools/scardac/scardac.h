@@ -29,6 +29,10 @@
 #include <seiscomp/datamodel/datasegment.h>
 #include <seiscomp/datamodel/databasearchive.h>
 
+#include <seiscomp/io/database.h>
+
+#include <seiscomp/utils/stringfirewall.h>
+
 #include <thread>
 #include <string>
 
@@ -43,45 +47,44 @@ class Worker {
 
 		void processExtent(DataModel::DataExtent *extent, bool foundInDB);
 
-	private:
-		typedef std::vector<DataModel::DataSegmentPtr> Segments;
-		typedef std::vector<std::pair<DataModel::DataSegmentPtr,
-		                              DataModel::Operation> > SegmentDBBuffer;
+	protected:
+		using Segments = std::vector<DataModel::DataSegmentPtr>;
 
-		bool dbConnect(DataModel::DatabaseReaderPtr &db, const char *info);
+		bool dbConnect();
 
-		DataModel::DatabaseIterator dbSegments();
+		DataModel::DatabaseIterator dbSegments(size_t &segmentsOutside);
 		bool readChunkSegments(Segments &segments, const std::string &chunk,
+		                       DataModel::DataSegmentPtr chunkSeg,
 		                       const Core::Time &mtime,
 		                       const Core::TimeWindow &window);
 
-		bool findDBSegment(DataModel::DatabaseIterator &it,
-		                   const DataModel::DataSegment *segment);
-
-		void removeSegment(const DataModel::DataSegmentPtr &segment);
-		void addSegment(const DataModel::DataSegmentPtr &segment);
-		void flushSegmentBuffers();
+		void diffSegment(DataModel::DatabaseIterator &db_seg_it,
+		                 DataModel::DataSegment *chunkSeg, bool extent = false);
 
 		bool writeExtent(DataModel::Operation op);
-		bool syncAttributeExtents(const DataModel::DataExtent &tmpExt);
+		bool syncSegments();
+		void syncExtent();
+		void readAttExtMillis(DataModel::DataAttributeExtent *attExt);
 
-	private:
+	protected:
 		const SCARDAC*                  _app{nullptr};
 		int                             _id{0};
 		CollectorPtr                    _collector;
 
 		// initialized by first processExtent call and reused subsequently
-		DataModel::DatabaseReaderPtr    _dbRead;
-		DataModel::DatabaseReaderPtr    _dbWrite;
+		DataModel::DatabaseReaderPtr    _db;
 
 		// variables valid per processExtent call
-		DataModel::DataExtent          *_extent;
+		DataModel::DataExtent          *_extent{nullptr};
+		IO::DatabaseInterface::OID      _extentOID{IO::DatabaseInterface::INVALID_OID};
 		std::string                     _sid;
+		bool                            _segmentOverflow{false};
+		size_t                          _segCount{0};
+		Segments                        _segmentsStore;
 		Segments                        _segmentsRemove;
-		Segments                        _segmentsAdd;
-		DataModel::DataSegmentPtr       _currentSegment;
 };
 
+DEFINE_SMARTPOINTER(SCARDAC);
 class SCARDAC : public Client::Application {
 	// ----------------------------------------------------------------------
 	//  X'truction
@@ -91,30 +94,35 @@ class SCARDAC : public Client::Application {
 		SCARDAC(int argc, char **argv);
 
 		//! Destructor
-		~SCARDAC();
+		~SCARDAC() override = default;
 
 	// ----------------------------------------------------------------------
 	//  Protected types
 	// ----------------------------------------------------------------------
 	protected:
 		struct WorkQueueItem {
-			WorkQueueItem() : extent(NULL), foundInDB(false) {}
+			WorkQueueItem() = default;
 			WorkQueueItem(DataModel::DataExtent *extent, bool foundInDB)
 			 : extent(extent), foundInDB(foundInDB) {}
 
-			DataModel::DataExtent  *extent;
-			bool                    foundInDB;
+			DataModel::DataExtent  *extent{nullptr};
+			bool                    foundInDB{false};
 		};
+
+		using ExtentMap = std::map<std::string, DataModel::DataExtent*>;
+		using WorkerList = std::vector<std::thread*>;
 
 	// ----------------------------------------------------------------------
 	//  Protected functions
 	// ----------------------------------------------------------------------
 	protected:
-		void createCommandLineDescription();
-		bool initConfiguration();
-		bool validateParameters();
-		bool run();
+		void createCommandLineDescription() override;
+		bool initConfiguration() override;
+		bool validateParameters() override;
+		bool run() override;
+		void done() override;
 
+		void setTimeWindow(Collector *collector);
 		void processExtents(int threadID);
 		bool generateTestData();
 
@@ -122,31 +130,35 @@ class SCARDAC : public Client::Application {
 	//  Implementation
 	// ----------------------------------------------------------------------
 	protected:
+		using WFIDList = std::vector<std::string>;
+
 		// configuration parameters
-		std::string _archive{"sds://@ROOTDIR@/var/lib/archive"};
-		int         _threads{1};
-		float       _jitter{0.5};
-		bool        _deepScan{false};
-		int         _maxSegments{1000000};
-		std::string _from;
-		std::string _to;
-		Core::Time  _startTime;
-		Core::Time  _endTime;
+		std::string     _archive{"sds://@ROOTDIR@/var/lib/archive"};
+		int             _threads{1};
+		float           _jitter{0.5};
+		size_t          _maxSegments{1000000};
+		size_t          _batchSegments{100000};
+		std::string     _from;
+		std::string     _to;
+		OPT(Core::Time) _startTime;
+		OPT(Core::Time) _endTime;
+		WFIDList        _include;
+		WFIDList        _exclude;
+		bool            _deepScan{false};
+		std::string     _modifiedSince;
+		std::string     _modifiedUntil;
+		OPT(Core::Time) _mtimeStart;
+		OPT(Core::Time) _mtimeEnd;
+
+		Util::WildcardStringFirewall         _wfidFirewall;
 
 		std::string                          _testData;
-		DataAvailability::CollectorPtr       _collector;
+		DataAvailability::CollectorPtr       _collector{nullptr};
 
-		DataModel::DataAvailability          _dataAvailability;
-
-		// Map of stream ID to extents
-		typedef std::map<std::string, DataModel::DataExtent*> ExtentMap;
-		ExtentMap                            _extentMap;
+		DataModel::DataAvailabilityPtr       _dataAvailability{nullptr};
 
 		// Thread safe queue of extends to process
 		Client::ThreadedQueue<WorkQueueItem> _workQueue;
-
-		typedef std::vector<std::thread*> WorkerList;
-		WorkerList                           _worker;
 
 	private:
 		friend class Worker;

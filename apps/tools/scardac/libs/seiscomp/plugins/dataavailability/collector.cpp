@@ -54,7 +54,7 @@ CollectorException::CollectorException(std::string what)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Collector::RecordIterator::handleInterrupt(int) {
+void Collector::RecordIterator::handleInterrupt(int /*unused*/) {
 	_abortRequested = true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -67,6 +67,24 @@ bool Collector::setSource(const char *source) {
 	reset();
 	_source = source;
 	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Collector::setStartTime(Core::Time startTime) {
+	_startTime = std::move(startTime);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Collector::setEndTime(Core::Time endTime) {
+	_endTime = std::move(endTime);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -93,8 +111,9 @@ Core::Time Collector::chunkMTime(const std::string &/*chunk*/) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Collector *Collector::Create(const char *service) {
-	if ( service == nullptr )
+	if ( !service ) {
 		return nullptr;
+	}
 
 	return CollectorFactory::Create(service);
 }
@@ -122,9 +141,7 @@ Collector* Collector::Open(const char *url) {
 	SEISCOMP_DEBUG("trying to open data availability collector %s://%s",
 	               service.c_str(), source.c_str());
 
-	Collector *dac;
-
-	dac = Create(service.c_str());
+	auto *dac = Create(service.c_str());
 	if ( dac ) {
 		try {
 			if ( !dac->setSource(source.c_str()) ) {
@@ -146,7 +163,7 @@ Collector* Collector::Open(const char *url) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Collector::handleInterrupt(int) {
+void Collector::handleInterrupt(int /*unused*/) {
 	_abortRequested = true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

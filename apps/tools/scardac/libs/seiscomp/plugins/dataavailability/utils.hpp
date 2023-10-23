@@ -29,12 +29,15 @@ inline std::string streamID(const DataModel::WaveformStreamID &wid) {
 
 inline bool wfID(DataModel::WaveformStreamID &wid, const std::string &id) {
 	std::vector<std::string> toks;
-	if ( Seiscomp::Core::split(toks, id.c_str(), ".", false) != 4 )
+	if ( Seiscomp::Core::split(toks, id.c_str(), ".", false) != 4 ) {
 		return false;
+	}
+
 	wid.setNetworkCode(toks[0]);
 	wid.setStationCode(toks[1]);
 	wid.setLocationCode(toks[2]);
 	wid.setChannelCode(toks[3]);
+
 	return true;
 }
 

@@ -26,6 +26,7 @@
 
 #include <boost/filesystem/convenience.hpp>
 
+#include <utility>
 #include <vector>
 
 
@@ -47,9 +48,9 @@ namespace {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-SDSCollector::RecordIterator::RecordIterator(const std::string &file,
+SDSCollector::RecordIterator::RecordIterator(string file,
                                     const DataModel::WaveformStreamID &wid)
-: _file(file), _sid(streamID(wid)),
+: _file(std::move(file)), _sid(streamID(wid)),
   _input(&_stream, Array::DOUBLE, Record::DATA_ONLY) {
 	if ( !_stream.setSource(_file) ) {
 		throw CollectorException("could not open record file");
@@ -95,7 +96,7 @@ bool SDSCollector::RecordIterator::next() {
 
 		_endTime = _rec->endTime();
 
-		auto msRec = IO::MSeedRecord::Cast(_rec.get());
+		auto *msRec = IO::MSeedRecord::Cast(_rec.get());
 		if ( msRec ) {
 			_quality = string(1, msRec->dataQuality());
 		}
@@ -152,8 +153,9 @@ const std::string& SDSCollector::RecordIterator::quality() const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool SDSCollector::setSource(const char *source) {
-	if ( !Collector::setSource(source) )
+	if ( !Collector::setSource(source) ) {
 		return false;
+	}
 
 	string archive(Environment::Instance()->absolutePath(source));
 
@@ -162,14 +164,19 @@ bool SDSCollector::setSource(const char *source) {
 	try {
 		_basePath = SC_FS_PATH(archive);
 		for ( fs::directory_iterator itr(archive); itr != end_itr; ++itr ) {
-			if ( _abortRequested ) return false;
+			if ( _abortRequested ) {
+				return false;
+			}
 
 			fs::path dir = SC_FS_DE_PATH(itr);
-			if ( !fs::is_directory(dir) ) continue;
+			if ( !fs::is_directory(dir) ) {
+				continue;
+			}
+
 			std::string name = SC_FS_FILE_NAME(dir);
 			int year;
 			if ( name.length() == 4 && Core::fromString(year, name) ) {
-				_archiveYears.push_back(dir);
+				_archiveYears.emplace_back(make_pair(year, dir));
 			}
 			else {
 				SEISCOMP_WARNING("invalid archive directory: %s",
@@ -179,16 +186,43 @@ bool SDSCollector::setSource(const char *source) {
 		}
 	}
 	catch ( ... ) {
-		throw CollectorException("could not read archive years from source: " + archive);
+		throw CollectorException("could not read archive years from source: " +
+		                         archive);
 	}
 
 	// sort years
-	sort(_archiveYears.begin(), _archiveYears.end());
+	sort(_archiveYears.begin(), _archiveYears.end(),
+	     [](const ArchiveYearItem &a, const ArchiveYearItem &b) {
+		return a.first < b.first;
+	});
 
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void SDSCollector::setStartTime(Core::Time startTime) {
+	Collector::setStartTime(startTime);
+	_startYear = 0;
+	_startDOY = 0;
+	_startTime->get2(&(*_startYear), &(*_startDOY));
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void SDSCollector::setEndTime(Core::Time endTime) {
+	Collector::setEndTime(endTime);
+	_endYear = 0;
+	_endDOY = 0;
+	_endTime->get2(&(*_endYear), &(*_endDOY));
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 
@@ -206,8 +240,17 @@ void SDSCollector::collectWaveformIDs(WaveformIDs &wids) {
 	// Year/NET/STA/CHA.D/NET.STA.LOC.CHA.D.YEAR.DAY
 
 	wids.clear();
+
 	for ( const auto &year : _archiveYears ) {
-		scanDirectory(wids, year);
+		if ( _abortRequested || (_endYear && year.first > *_endYear) ) {
+			break;
+		}
+
+		if ( _startYear && year.first < *_startYear) {
+			continue;
+		}
+
+		scanDirectory(wids, year.second);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -225,14 +268,19 @@ void SDSCollector::collectChunks(DataChunks &chunks,
 	widPath /= SC_FS_PATH(wid.stationCode()) /
 	           SC_FS_PATH(wid.channelCode() + ".D");
 
-	string constFilePrefix = streamID(wid) + ".D.";
+	auto sid = streamID(wid);
 
-	for ( const auto &year : _archiveYears ) {
-		if ( _abortRequested )
+	for ( const auto &yearItem : _archiveYears ) {
+		if ( _abortRequested || (_endYear && yearItem.first > *_endYear) ) {
 			break;
+		}
 
-		string filePrefix = constFilePrefix + SC_FS_FILE_NAME(year) + ".";
-		size_t filePrefixLen = filePrefix.length();
+		if ( _startYear && yearItem.first < *_startYear) {
+			continue;
+		}
+
+		const auto &year = yearItem.second;
+
 		string fileDir = (SC_FS_FILE_PATH(year) / widPath).string() +
 		                 fs::path::preferred_separator;
 		fs::directory_iterator end_it;
@@ -240,8 +288,10 @@ void SDSCollector::collectChunks(DataChunks &chunks,
 			for ( fs::directory_iterator it(year / widPath);
 			      it != end_it && !_abortRequested; ++it ) {
 				std::string file = SC_FS_FILE_NAME(SC_FS_DE_PATH(it));
-				if ( file.length() == filePrefixLen + 3 &&
-				     file.compare(0, filePrefixLen, filePrefix) == 0 ) {
+				auto idDate = fileStreamID(file);
+
+				if ( idDate.streamID == sid &&
+				     checkTimeWindow(idDate.year, idDate.doy) ) {
 					chunks.push_back(fileDir + file);
 				}
 			}
@@ -249,7 +299,9 @@ void SDSCollector::collectChunks(DataChunks &chunks,
 		catch ( ... ) {}
 	}
 
-	if ( _abortRequested ) return;
+	if ( _abortRequested ) {
+		return;
+	}
 
 	// sort files by name
 	sort(chunks.begin(), chunks.end());
@@ -264,22 +316,16 @@ bool SDSCollector::chunkTimeWindow(Core::TimeWindow &window,
                                    const std::string &chunk) {
 	// NET.STA.LOC.CHA.D.YEAR.DAY
 	vector<string> toks;
-	int year, doy;
+	int year;
+	int doy;
 	Core::split(toks, SC_FS_FILE_NAME(SC_FS_PATH(chunk)).c_str(), ".", false);
 	if ( toks.size() == 7 &&
 	     toks[5].length() == 4 && Core::fromString(year, toks[5]) &&
 	     toks[6].length() == 3 && Core::fromString(doy, toks[6]) ) {
 
-#if SC_API_VERSION < SC_API_VERSION_CHECK(15,0,0)
-		tm t;
-		t.tm_year = year - 1900;
-		t.tm_mon = 0; // January
-		t.tm_mday = doy;
-		Core::Time start(static_cast<long>(timegm(&t)), 0);
-#else
 		Core::Time start;
 		start.set2(year, doy-1, 0, 0, 0, 0);
-#endif
+
 		window.set(start, start + Core::TimeSpan(86400, 0));
 		return true;
 	}
@@ -309,7 +355,6 @@ Core::Time SDSCollector::chunkMTime(const std::string &chunk) {
 		std::time_t mtime = boost::filesystem::last_write_time(canonicalPath);
 		if ( mtime >= 0 ) {
 			t = mtime;
-			t = t.toGMT();
 		}
 		else {
 			SEISCOMP_WARNING("could not read mtime of file: %s", chunk.c_str());
@@ -348,7 +393,8 @@ bool SDSCollector::threadSafe() const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void SDSCollector::scanDirectory(WaveformIDs &wids, const fs::path &dir, uint16_t depth) {
+void SDSCollector::scanDirectory(WaveformIDs &wids, const fs::path &dir,
+                                 uint16_t depth) {
 
 	// If depth is 0 we reached the directory level on which stream files are
 	// expected
@@ -383,22 +429,25 @@ void SDSCollector::scanFiles(WaveformIDs &wids, const fs::path &dir) {
 		      itr != end_itr && !_abortRequested; ++itr ) {
 
 			fs::path path = SC_FS_DE_PATH(itr);
-			if ( !SC_FS_IS_REGULAR_FILE(path) )
+			if ( !SC_FS_IS_REGULAR_FILE(path) ) {
 				continue;
+			}
 
 			std::string name = SC_FS_FILE_NAME(path);
-			string streamID = fileStreamID(name);
-			if ( streamID.empty() || wids.find(streamID) != wids.end() ) {
+			auto idDate = fileStreamID(name);
+			if ( idDate.streamID.empty() ||
+			     wids.find(idDate.streamID) != wids.end() ||
+			     !checkTimeWindow(idDate.year, idDate.doy) ) {
 				continue;
 			}
 
 			DataModel::WaveformStreamID wfid;
-			if ( !wfID(wfid, streamID) ) {
+			if ( !wfID(wfid, idDate.streamID) ) {
 				SEISCOMP_WARNING("invalid file name: %s",
 				                 SC_FS_FILE_PATH(path).c_str());
 				continue;
 			}
-			wids[streamID] = wfid;
+			wids[idDate.streamID] = wfid;
 		}
 	}
 	catch ( ... ) {}
@@ -409,19 +458,47 @@ void SDSCollector::scanFiles(WaveformIDs &wids, const fs::path &dir) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-std::string SDSCollector::fileStreamID(const std::string &filename) {
+SDSCollector::IDDate SDSCollector::fileStreamID(const std::string &filename) {
 	// NET.STA.LOC.CHA.D.YEAR.DAY
 	size_t pos = -1;
 	for ( int i = 0; i < 4; ++i ) {
 		pos = filename.find('.', pos+1);
-		if ( pos == string::npos ) return "";
+		if ( pos == string::npos ) {
+			return {};
+		}
 	}
+
 	if ( filename.length() - pos != 11 ||
 	     filename[pos+1] != 'D' ||
 	     filename[pos+2] != '.' ||
-	     filename[pos+7] != '.' )
-		return "";
-	return filename.substr(0, pos);
+	     filename[pos+7] != '.' ) {
+		return {};
+	}
+
+	IDDate idDate;
+	if ( !Core::fromString(idDate.year, filename.substr(pos+3, 4)) ||
+	     !Core::fromString(idDate.doy, filename.substr(pos+8)) ) {
+		return {};
+	}
+
+	--idDate.doy;
+	idDate.streamID = filename.substr(0, pos);
+
+	return idDate;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool SDSCollector::checkTimeWindow(int year, int doy) {
+	return ( !_startYear || (
+	           year > *_startYear || (year == *_startYear && doy >= *_startDOY))
+	       ) &&
+	       ( !_endTime || (
+	           year < *_endYear || (year == *_endYear && doy <= *_endDOY))
+	       );
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
