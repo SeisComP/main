@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<seiscomp xmlns="http://geofon.gfz-potsdam.de/ns/seiscomp3-schema/0.12" version="0.12">
+<seiscomp xmlns="http://geofon.gfz-potsdam.de/ns/seiscomp3-schema/0.13" version="0.13">
   <Inventory>
     <sensor publicID="Sensor/20220923184044.77899.7" name="2E.SWE02.HHZ.2012.341.00.10.00" response="ResponsePAZ/20220923132824.308358.32">
       <description>Guralp CMG-40T 60s seismometer, DEPAS pool [config: SN-T4K39_Z]</description>
