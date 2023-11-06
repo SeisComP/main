@@ -36,6 +36,8 @@
 #include <seiscomp/datamodel/utils.h>
 #include <seiscomp/datamodel/config_package.h>
 
+#include <seiscomp/utils/misc.h>
+
 #include <iomanip>
 #include <functional>
 
@@ -1339,7 +1341,17 @@ void App::emitPPick(const Processing::Picker *proc,
 		pick->add(comment.get());
 	}
 
-	SEISCOMP_DEBUG("Created P pick %s", pick->publicID().c_str());
+	proc->finalizePick(pick.get());
+
+	string phaseHintCode;
+	try {
+		phaseHintCode = pick->phaseHint().code();
+	}
+	catch ( ... ) {}
+
+	bool isPrimary = Util::getShortPhaseName(phaseHintCode) == Util::getShortPhaseName(_config.phaseHint);
+
+	SEISCOMP_DEBUG("Created %s'%s' pick %s", isPrimary ? "primary ":"", phaseHintCode, pick->publicID());
 
 	_lastPicks[res.record->streamID()] = pick;
 
@@ -1366,14 +1378,15 @@ void App::emitPPick(const Processing::Picker *proc,
 		amp->setSnr(res.snr);
 		amp->setAmplitude(DataModel::RealQuantity(res.snr));
 
-		SEISCOMP_DEBUG("Created %s amplitude %s", amp->type().c_str(), amp->publicID().c_str());
-		SEISCOMP_DEBUG("  pickID   %s", amp->pickID().c_str());
+		SEISCOMP_DEBUG("Created %s amplitude %s", amp->type(), amp->publicID());
+		SEISCOMP_DEBUG("  pickID   %s", amp->pickID());
 	}
 
-	if ( _config.featureExtractionType.empty()
-	  || !addFeatureExtractor(pick.get(), amp.get(), res.record, true) ) {
-		sendPick(pick.get(), amp.get(), res.record, true);
-		SEISCOMP_DEBUG("%s: emit P pick %s", res.record->streamID().c_str(), pick->publicID().c_str());
+	if ( _config.featureExtractionType.empty() || !isPrimary
+	  || !addFeatureExtractor(pick.get(), amp.get(), res.record, isPrimary) ) {
+		sendPick(pick.get(), amp.get(), res.record, isPrimary);
+		SEISCOMP_DEBUG("%s: emit %s pick %s", res.record->streamID(),
+		               phaseHintCode, pick->publicID());
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
