@@ -138,8 +138,8 @@ class SCARDAC : public Client::Application {
 		float           _jitter{0.5};
 		size_t          _maxSegments{1000000};
 		size_t          _batchSegments{100000};
-		std::string     _from;
-		std::string     _to;
+		std::string     _start;
+		std::string     _end;
 		OPT(Core::Time) _startTime;
 		OPT(Core::Time) _endTime;
 		WFIDList        _include;

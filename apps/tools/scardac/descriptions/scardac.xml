@@ -53,14 +53,14 @@
 					</description>
 					<parameter name="start" type="string">
 						<description>
-						Start time for data availability check.
-						Format: YYYY-mm-dd['T'HH:MM:SS] | days since now.
+						Start of data availability check given as date string or
+						as number of days before now.
 						</description>
 					</parameter>
 					<parameter name="end" type="string">
 						<description>
-						End time for data availability check.
-						Format: YYYY-mm-dd['T'HH:MM:SS] | days since now.
+						End of data availability check given as date string or
+						as number of days before now.
 						</description>
 					</parameter>
 				</group>
@@ -100,15 +100,14 @@
 				</parameter>
 				<parameter name="start" type="string">
 					<description>
-					Only read chunks modified after specified time.
-					If unset the last scan time of the extent is used.
-					Format: YYYY-mm-dd['T'HH:MM:SS] | days since now.
+					Only read chunks modified after specific date given as date
+					string or as number of days before now.
 					</description>
 				</parameter>
 				<parameter name="end" type="string">
 					<description>
-					Only read chunks modified before specified time.
-					Format: YYYY-mm-dd['T'HH:MM:SS] | days since now.
+					Only read chunks modified before specific date given as date
+					string or as number of days before now.
 					</description>
 				</parameter>
 			</group>
@@ -144,8 +143,8 @@
 				<option flag="a" long-flag="archive" argument="arg" publicID="collector#archive" param-ref="archive"/>
 				<option long-flag="threads" argument="arg" publicID="collector#threads" param-ref="threads"/>
 				<option flag="j" long-flag="jitter" argument="arg" publicID="collector#jitter" param-ref="jitter"/>
-				<option long-flag="from" argument="arg" publicID="collector#from" param-ref="filter.time.start"/>
-				<option long-flag="to" argument="arg" publicID="collector#to" param-ref="filter.time.end"/>
+				<option long-flag="start" argument="arg" publicID="collector#start" param-ref="filter.time.start"/>
+				<option long-flag="end" argument="arg" publicID="collector#end" param-ref="filter.time.end"/>
 				<option long-flag="include" argument="arg" publicID="collector#include" param-ref="filter.wfid.include"/>
 				<option long-flag="exclude" argument="arg" publicID="collector#exclude" param-ref="filter.wfid.exclude"/>
 				<option long-flag="deep-scan" argument="" publicID="collector#deepscan" param-ref="mtime.ignore"/>

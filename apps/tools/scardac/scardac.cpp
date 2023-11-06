@@ -1064,14 +1064,14 @@ void SCARDAC::createCommandLineDescription() {
 	                        "of successive records in multiples of sample "
 	                        "rate.",
 	                        &_jitter);
-	commandline().addOption("Collector", "from",
-	                        "Start time for data availability check. "
-	                        "Format: YYYY-mm-dd['T'HH:MM:SS] | days since now.",
-	                        &_from);
-	commandline().addOption("Collector", "to",
-	                        "End time for data availability check. "
-	                        "Format: YYYY-mm-dd['T'HH:MM:SS] | days since now.",
-	                        &_to);
+	commandline().addOption("Collector", "start",
+	                        "Start of data availability check given as date "
+	                        "string or as number of days before now.",
+	                        &_start);
+	commandline().addOption("Collector", "end",
+	                        "End of data availability check given as date "
+	                        "string or as number of days before now.",
+	                        &_end);
 	commandline().addOption("Collector", "include",
 	                        "Waveform ID to process. If empty all WFIDs are "
 	                        "accepted unless an exclude filter is defined. "
@@ -1087,15 +1087,15 @@ void SCARDAC::createCommandLineDescription() {
 	                        "Process all data chunks independent of their "
 	                        "modification time.");
 	commandline().addOption("Collector", "modified-since",
-	                        "Only read chunks modified after specified time. "
-	                        "Unused in deep-scan mode. "
-	                        "Defaults to last scan time of extent. "
-	                        "Format: YYYY-mm-dd['T'HH:MM:SS] | days since now.",
+	                        "Only read chunks modified after specific date "
+	                        "given as date string or as number of days before "
+	                        "now. Unused in deep-scan mode. Defaults to last "
+	                        "scan time of extent.",
 	                        &_modifiedSince);
 	commandline().addOption("Collector", "modified-until",
-	                        "Only read chunks modified before specified time. "
-	                        "Unused in deep-scan mode. "
-	                        "Format: YYYY-mm-dd['T'HH:MM:SS] | days since now.",
+	                        "Only read chunks modified before specific date "
+	                        "given as date string or as number of days before "
+	                        "now. Unused in deep-scan mode.",
 	                        &_modifiedUntil);
 	commandline().addOption("Collector", "generate-test-data",
 	                        "For each stream in inventory generate test data. "
@@ -1141,12 +1141,12 @@ bool SCARDAC::initConfiguration() {
 	catch (...) {}
 
 	try {
-		_from = SCCoreApp->configGetString("filter.time.start");
+		_start = SCCoreApp->configGetString("filter.time.start");
 	}
 	catch (...) {}
 
 	try {
-		_to = SCCoreApp->configGetString("filter.time.end");
+		_end = SCCoreApp->configGetString("filter.time.end");
 	}
 	catch (...) {}
 
@@ -1216,30 +1216,30 @@ bool SCARDAC::validateParameters() {
 	double daysAgo;
 
 	// start time
-	if ( !_from.empty() ) {
+	if ( !_start.empty() ) {
 		_startTime = Core::Time();
-		if ( !Core::fromString(*_startTime, _from) ) {
-			if ( Core::fromString(daysAgo, _from) ) {
+		if ( !Core::fromString(*_startTime, _start) ) {
+			if ( Core::fromString(daysAgo, _start) ) {
 				*_startTime = now - Core::TimeSpan(daysAgo * 86400.0);
 			}
 			else {
 				SEISCOMP_ERROR("invalid start time value, expected "
-				               "YYYY-mm-dd['T'HH:MM:SS] | days since now");
+				               "YYYY-mm-dd['T'HH:MM:SS] | days before now");
 				return false;
 			}
 		}
 	}
 
 	// end time
-	if ( !_to.empty() ) {
+	if ( !_end.empty() ) {
 		_endTime = Core::Time();
-		if ( !Core::fromString(*_endTime, _to) ) {
-			if ( Core::fromString(daysAgo, _to) ) {
+		if ( !Core::fromString(*_endTime, _end) ) {
+			if ( Core::fromString(daysAgo, _end) ) {
 				*_endTime = now - Core::TimeSpan(daysAgo * 86400.0);
 			}
 			else {
 				SEISCOMP_ERROR("invalid end time value, expected "
-				               "YYYY-mm-dd['T'HH:MM:SS] | days since now");
+				               "YYYY-mm-dd['T'HH:MM:SS] | days before now");
 				return false;
 			}
 		}
@@ -1265,7 +1265,7 @@ bool SCARDAC::validateParameters() {
 				else {
 					SEISCOMP_ERROR("invalid modified-since time value, "
 					               "expected "
-					               "YYYY-mm-dd['T'HH:MM:SS] | days since now");
+					               "YYYY-mm-dd['T'HH:MM:SS] | days before now");
 					return false;
 				}
 			}
@@ -1286,7 +1286,7 @@ bool SCARDAC::validateParameters() {
 				else {
 					SEISCOMP_ERROR("invalid modified-until time value, "
 					               "expected "
-					               "YYYY-mm-dd['T'HH:MM:SS] | days since now");
+					               "YYYY-mm-dd['T'HH:MM:SS] | days before now");
 					return false;
 				}
 			}

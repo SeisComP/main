@@ -586,39 +586,39 @@ BOOST_AUTO_TEST_CASE(timewindow) {
 	string ctx("end before first chunk");
 	BOOST_TEST_MESSAGE(ctx);
 	DataModel::DatabaseReaderPtr reader;
-	reader = runApp(dbURI, {appName, "--to", "2023-08-26"});
+	reader = runApp(dbURI, {appName, "--end", "2023-08-26"});
 	checkObjectCount(reader, ctx);
 
 	ctx = "end before first record";
 	BOOST_TEST_MESSAGE(ctx);
-	reader = runApp(dbURI, {appName, "--to", "2023-08-27T22:59:00"});
+	reader = runApp(dbURI, {appName, "--end", "2023-08-27T22:59:00"});
 	checkObjectCount(reader, ctx);
 
 	ctx = "end on first record start";
 	BOOST_TEST_MESSAGE(ctx);
-	reader = runApp(dbURI, {appName, "--to", "2023-08-27T22:59:56.941"});
+	reader = runApp(dbURI, {appName, "--end", "2023-08-27T22:59:56.941"});
 	checkObjectCount(reader, ctx);
 
 	ctx = "start after last chunk";
 	BOOST_TEST_MESSAGE(ctx);
-	reader = runApp(dbURI, {appName, "--from", "2023-08-31"});
+	reader = runApp(dbURI, {appName, "--start", "2023-08-31"});
 	checkObjectCount(reader, ctx);
 
 	ctx = "start after last record";
 	BOOST_TEST_MESSAGE(ctx);
-	reader = runApp(dbURI, {appName, "--from", "2023-08-30T01:00:06"});
+	reader = runApp(dbURI, {appName, "--start", "2023-08-30T01:00:06"});
 	checkObjectCount(reader, ctx);
 
 	ctx = "end within first segment";
 	BOOST_TEST_MESSAGE(ctx);
-	reader = runApp(dbURI, {appName, "--to", "2023-08-27T23:00:00"});
+	reader = runApp(dbURI, {appName, "--end", "2023-08-27T23:00:00"});
 	checkObjectCount(reader, ctx, 1, 1, 1);
 
 	ctx = "start within last record";
 	BOOST_TEST_MESSAGE(ctx);
 	reader = runApp(dbURI, {
 	    appName,
-	    "--from", "2023-08-30T01:00:05",
+	    "--start", "2023-08-30T01:00:05",
 	    "--modified-since", "1"
 	});
 	checkObjectCount(reader, ctx, 1, 1, 2);

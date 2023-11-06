@@ -66,9 +66,9 @@ Definitions
   - decided whether a chunk needs to be read in a secondary application run
   - calculate the ``updated`` time stamp of a `DataSegment`,
     `DataAttributeExtent` and `DataExtent`
-* ``Scan window`` -- time window limiting the synchronization of the archive with
-  the database configured via `filter.time.[start|end]` or `--from|--to`. The scan
-  window is useful to
+* ``Scan window`` -- time window limiting the synchronization of the archive
+  with the database configured via `filter.time.[start|end]` or `--start|--end`.
+  The scan window is useful to
 
   - reduce the scan time of larger archives. Depending on the size and storage
     type of the archive it may take some time to just list available chunks and
