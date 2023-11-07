@@ -48,7 +48,7 @@ class BaseObjectDispatcher : protected Visitor {
 
 
 	// ----------------------------------------------------------------------
-	//  Public interface
+	//  Public interface1
 	// ----------------------------------------------------------------------
 	public:
 		//! Does the actual writing
@@ -732,7 +732,6 @@ class DispatchTool : public Seiscomp::Client::Application {
 			timer.restart();
 
 			(*dispatcher)(doc.get());
-			SEISCOMP_INFO("");
 
 			if ( commandline().hasOption("create-notifier") ) {
 				NotifierMessagePtr msg = dispatcher->getNotifierMsg();
