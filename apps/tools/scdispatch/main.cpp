@@ -361,13 +361,13 @@ class ObjectMerger : public BaseObjectDispatcher {
 				return true;
 			}
 
-
 			std::vector<NotifierPtr> diffs;
 			Diff2 diff;
 			diff.diff(stored.get(), po, parent->publicID(), diffs);
 
 			// All equal
 			if ( diffs.empty() ) {
+				logObject(po, OP_UNDEFINED, "exists already");
 				return false;
 			}
 
