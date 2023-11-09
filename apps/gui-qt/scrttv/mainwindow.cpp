@@ -577,6 +577,7 @@ void TraceWidget::resetSpectrogram() {
 			_spectrogram->setTimeWindow(seq->timeWindow());
 		}
 		_spectrogram->setRecords(seq);
+		update();
 		qApp->restoreOverrideCursor();
 	}
 	else {
