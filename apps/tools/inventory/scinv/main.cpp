@@ -1421,7 +1421,7 @@ class InventoryManager : public Client::Application,
 				cerr << "removed " << removed << " old key file(s)";
 			else
 				cerr << "no old key file removed";
-			cerr << endl;
+			cerr << " in " << _keydir << endl;
 
 			return true;
 		}
