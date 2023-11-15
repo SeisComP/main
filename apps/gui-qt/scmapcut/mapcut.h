@@ -64,9 +64,9 @@ class MapCut : public Seiscomp::Gui::Application {
 
 		bool        _htmlArea;
 
-		Seiscomp::Gui::Map::Canvas    *_canvas;
+		Seiscomp::Gui::Map::Canvas    *_canvas{nullptr};
 		Seiscomp::DataModel::OriginPtr _org;
-		Seiscomp::Gui::OriginSymbol   *_symbol;
+		Seiscomp::Gui::OriginSymbol   *_symbol{nullptr};
 };
 
 
