@@ -51,6 +51,10 @@ class BaseObjectDispatcher : protected Visitor {
 	//  Public interface1
 	// ----------------------------------------------------------------------
 	public:
+		enum ObjectTypes{
+			Event = 1
+		};
+
 		//! Does the actual writing
 		virtual bool operator()(Object *object) {
 			_errors = 0;
@@ -77,6 +81,10 @@ class BaseObjectDispatcher : protected Visitor {
 		void setRoutingTable(const RoutingTable &table) {
 			_routingTable.clear();
 			_routingTable = table;
+		}
+
+		void setSetIgnoreObject(int types) {
+			_ignoreTypes = types;
 		}
 
 		//! Returns the number of handled objects
@@ -157,6 +165,7 @@ class BaseObjectDispatcher : protected Visitor {
 		bool                       _test;
 		std::set<std::string>      _loggedObjects;
 		bool                       _createNotifier;
+		int                        _ignoreTypes{};
 		NotifierMessagePtr         _outputNotifier;
 };
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -328,7 +337,22 @@ class ObjectMerger : public BaseObjectDispatcher {
 				return false;
 			}
 
-			if ( SCCoreApp->isExitRequested() ) return false;
+			if ( SCCoreApp->isExitRequested() ) {
+				return false;
+			}
+
+			if ( _ignoreTypes & BaseObjectDispatcher::Event ) {
+				EventPtr event;
+				try {
+					event = Event::Cast(po);
+				}
+				catch ( Core::ValueException & ) {}
+
+				if ( event ) {
+					SEISCOMP_DEBUG("Ignoring event with ID %s", event->publicID());
+					return false;
+				}
+			}
 
 			RoutingTable::iterator targetIt = _routingTable.find(po->className());
 			PublicObject *p = parent;
@@ -553,8 +577,7 @@ class DispatchTool : public Seiscomp::Client::Application {
 		void createCommandLineDescription() {
 			commandline().addGroup("Dispatch");
 			commandline().addOption("Dispatch", "no-events,e", "Do not send any "
-			                        "event object. This is a wrapper to setting a "
-			                        "routing table without EVENT objects");
+			                        "event object. They will be ignored.");
 			commandline().addOption("Dispatch", "create-notifier", "Do not send any object. "
 			                        "All notifiers will be written to standard output in XML format.");
 			commandline().addOption("Dispatch", "input,i",
@@ -592,14 +615,6 @@ class DispatchTool : public Seiscomp::Client::Application {
 					Core::split(entry, (*it).c_str(), ":", false);
 					if ( entry.size() == 2 )
 						_routingTable.insert(make_pair(entry[0], entry[1]));
-				}
-			}
-
-			if ( commandline().hasOption("no-events") ) {
-				SEISCOMP_INFO("erased EVENT group from routing table");
-				auto it = _routingTable.find(Event::ClassName());
-				if ( it != _routingTable.end() ) {
-					_routingTable.erase(it);
 				}
 			}
 
@@ -699,7 +714,7 @@ class DispatchTool : public Seiscomp::Client::Application {
 
 			PublicObject::SetRegistrationEnabled(true);
 
-			if ( doc == nullptr ) {
+			if ( !doc ) {
 				SEISCOMP_ERROR("Error: no valid object found in file '%s'", _inputFile.c_str());
 				return false;
 			}
@@ -713,6 +728,10 @@ class DispatchTool : public Seiscomp::Client::Application {
 				dispatcher = new ObjectDispatcher(connection(), _operation, commandline().hasOption("test"));
 
 			dispatcher->setRoutingTable(_routingTable);
+
+			if ( commandline().hasOption("no-events") ) {
+				dispatcher->setSetIgnoreObject(BaseObjectDispatcher::Event);
+			}
 
 			if ( commandline().hasOption("create-notifier") ) {
 				dispatcher->setCreateNotifierMsg(true);
