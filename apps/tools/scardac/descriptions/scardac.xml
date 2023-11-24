@@ -33,8 +33,17 @@
 				<description>
 				Maximum number of segments per stream. If the limit is reached
 				no more segments are added to the database and the corresponding
-				extent is flagged as to fragmented. Use a negative value to
+				extent is flagged as too fragmented. Use a negative value to
 				disable any limit.
+				</description>
+			</parameter>
+			<parameter name="nslcFile" type="string">
+				<description>
+				Line-based text file of form NET.STA.LOC.CHA defining available
+				stream IDs. Depending on the archive type, size and storage
+				media used this file may offer a significant performance
+				improvement compared to collecting the available streams on each
+				startup. Filters defined under `filter.nslc` still apply.
 				</description>
 			</parameter>
 			<group name="filter">
@@ -64,21 +73,21 @@
 						</description>
 					</parameter>
 				</group>
-				<group name="wfid">
+				<group name="nslc">
 					<description>
-					Limit the processing by waveform stream ids.
+					Limit the processing by stream IDs.
 					</description>
 					<parameter name="include" type="list:string">
 						<description>
-						Comma-separated list of waveform ids to process. If
-						empty all WFIDs are accepted unless an exclude filter is
-						defined. The following wildcards are supported: '*' and
-						'?'.
+						Comma-separated list of stream IDs to process. If
+						empty all streams are accepted unless an exclude filter
+						is defined. The following wildcards are supported: '*'
+						and '?'.
 						</description>
 					</parameter>
 					<parameter name="exclude" type="list:string">
 						<description>
-						Comma-separated list of waveform ids to exclude from
+						Comma-separated list of stream IDs to exclude from
 						processing. Excludes take precedence over includes. The
 						following wildcards are supported: '*' and '?'.
 						</description>
@@ -140,17 +149,30 @@
 				<optionReference>verbosity#log-file</optionReference>
 			</group>
 			<group name="Collector">
-				<option flag="a" long-flag="archive" argument="arg" publicID="collector#archive" param-ref="archive"/>
-				<option long-flag="threads" argument="arg" publicID="collector#threads" param-ref="threads"/>
-				<option flag="j" long-flag="jitter" argument="arg" publicID="collector#jitter" param-ref="jitter"/>
-				<option long-flag="start" argument="arg" publicID="collector#start" param-ref="filter.time.start"/>
-				<option long-flag="end" argument="arg" publicID="collector#end" param-ref="filter.time.end"/>
-				<option long-flag="include" argument="arg" publicID="collector#include" param-ref="filter.wfid.include"/>
-				<option long-flag="exclude" argument="arg" publicID="collector#exclude" param-ref="filter.wfid.exclude"/>
-				<option long-flag="deep-scan" argument="" publicID="collector#deepscan" param-ref="mtime.ignore"/>
-				<option long-flag="modified-since" argument="arg" publicID="collector#modifiedsince" param-ref="mtime.start"/>
-				<option long-flag="modified-until" argument="arg" publicID="collector#modifieduntil" param-ref="mtime.end"/>
-				<option long-flag="generate-test-data" argument="arg" publicID="collector#generate-test-data">
+				<option flag="a" long-flag="archive" argument="arg"
+				    publicID="collector#archive" param-ref="archive"/>
+				<option long-flag="threads" argument="arg"
+				    publicID="collector#threads" param-ref="threads"/>
+				<option flag="j" long-flag="jitter" argument="arg"
+				    publicID="collector#jitter" param-ref="jitter"/>
+				<option long-flag="nslc" argument="arg"
+				    publicID="collector#nslc" param-ref="nslcFile"/>
+				<option long-flag="start" argument="arg"
+				    publicID="collector#start" param-ref="filter.time.start"/>
+				<option long-flag="end" argument="arg"
+				    publicID="collector#end" param-ref="filter.time.end"/>
+				<option long-flag="include" argument="arg"
+				    publicID="collector#include" param-ref="filter.nslc.include"/>
+				<option long-flag="exclude" argument="arg"
+				    publicID="collector#exclude" param-ref="filter.nslc.exclude"/>
+				<option long-flag="deep-scan" argument=""
+				    publicID="collector#deepscan" param-ref="mtime.ignore"/>
+				<option long-flag="modified-since" argument="arg"
+				    publicID="collector#modifiedsince" param-ref="mtime.start"/>
+				<option long-flag="modified-until" argument="arg"
+				    publicID="collector#modifieduntil" param-ref="mtime.end"/>
+				<option long-flag="generate-test-data" argument="arg"
+				    publicID="collector#generate-test-data">
 					<description>
 					Do not scan the archive but generate test data for each
 					stream in the inventory. Format:

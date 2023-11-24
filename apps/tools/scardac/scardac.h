@@ -137,7 +137,7 @@ class SCARDAC : public Client::Application {
 		int             _threads{1};
 		float           _jitter{0.5};
 		size_t          _maxSegments{1000000};
-		size_t          _batchSegments{100000};
+		std::string     _wfidFile;
 		std::string     _start;
 		std::string     _end;
 		OPT(Core::Time) _startTime;

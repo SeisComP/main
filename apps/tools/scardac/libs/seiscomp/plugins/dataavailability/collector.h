@@ -144,18 +144,18 @@ class SC_DAPLUGIN_API Collector : public Core::InterruptibleObject {
 
 		/**
 		 * @brief Collect a set of waveform IDs found in the archive.
-		 * @param wids Result set containing the collected waveform ids.
+		 * @param wids Result set containing the collected waveform IDs.
 		 * @return Status flag.
 		 */
 		virtual void collectWaveformIDs(WaveformIDs &wids) = 0;
 
 		/**
 		 * @brief Collect data chucks, e.g., file names, for a spefific
-		 *        waveform id in the specified time window. The chunks must be
+		 *        waveform ID in the specified time window. The chunks must be
 		 *        sorted according to the sampling time in ascending order.
-		 * @param chunks A vector to store the chunk ids, e.g., the file names
+		 * @param chunks A vector to store the chunk IDs, e.g., the file names
 		 *        relative to the archive base path.
-		 * @param wid The stream id to look up chunks for.
+		 * @param wid The stream ID to look up chunks for.
 		 */
 		virtual void collectChunks(DataChunks &chunks,
 		                           const DataModel::WaveformStreamID &wid) = 0;
@@ -165,7 +165,7 @@ class SC_DAPLUGIN_API Collector : public Core::InterruptibleObject {
 		 *        returned time window is not expected to guarantee the
 		 *        availability of data.
 		 * @param window The time window represented by the data chunk
-		 * @param chunk The chunk id, e.g., the file name relative to the
+		 * @param chunk The chunk ID, e.g., the file name relative to the
 		 *        archive base path.
 		 * @return Status flag.
 		 */
@@ -174,7 +174,7 @@ class SC_DAPLUGIN_API Collector : public Core::InterruptibleObject {
 
 		/**
 		 * @brief Return the chunk's last modification time.
-		 * @param chunk The chunk id, e.g., the file name relative to the
+		 * @param chunk The chunk ID, e.g., the file name relative to the
 		 *        archive base path.
 		 * @return Chunk modification time.
 		 */
@@ -183,9 +183,9 @@ class SC_DAPLUGIN_API Collector : public Core::InterruptibleObject {
 
 		/**
 		 * @brief Open a data chunk for record-based iteration.
-		 * @param chunk The chunk id, e.g., the file name relative to the
+		 * @param chunk The chunk ID, e.g., the file name relative to the
 		 *        archive base path.
-		 * @param wid The waveform stream id corresponding to the chunk
+		 * @param wid The waveform stream ID corresponding to the chunk
 		 * @return The data chunk iterator or nullptr if the chunk could not be
 		 *         opened. The ownership is transferred to the caller.
 		 */
