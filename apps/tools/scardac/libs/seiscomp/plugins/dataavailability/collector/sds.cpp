@@ -82,13 +82,13 @@ bool SDSCollector::RecordIterator::next() {
 			return false;
 		}
 
-		// SEISCOMP_DEBUG("%s: received record: %i samples, %.1fHz, %s ~ %s",
+		// SEISCOMP_DEBUG("%s: Received record: %i samples, %.1fHz, %s ~ %s",
 		//                _sid.c_str(), _rec->sampleCount(),
 		//                _rec->samplingFrequency(), _rec->startTime().iso().c_str(),
 		//                _rec->endTime().iso().c_str());
 
 		if ( _rec->streamID() != _sid ) {
-			SEISCOMP_WARNING("%s: received record with invalid stream id "
+			SEISCOMP_WARNING("%s: Received record with invalid stream id "
 			                 "while reading file: %s",
 			                 _sid.c_str(), _file.c_str());
 			continue;
@@ -179,7 +179,7 @@ bool SDSCollector::setSource(const char *source) {
 				_archiveYears.emplace_back(make_pair(year, dir));
 			}
 			else {
-				SEISCOMP_WARNING("invalid archive directory: %s",
+				SEISCOMP_WARNING("Invalid archive directory: %s",
 				                 dir.string().c_str());
 				continue;
 			}
@@ -346,7 +346,7 @@ Core::Time SDSCollector::chunkMTime(const std::string &chunk) {
 		canonicalPath = fs::canonical(_basePath / SC_FS_PATH(chunk));
 	}
 	catch ( ... ) {
-		SEISCOMP_WARNING("could not resolve canonical path of file: %s",
+		SEISCOMP_WARNING("Could not resolve canonical path of file: %s",
 		                 chunk.c_str());
 		return t;
 	}
@@ -357,11 +357,11 @@ Core::Time SDSCollector::chunkMTime(const std::string &chunk) {
 			t = mtime;
 		}
 		else {
-			SEISCOMP_WARNING("could not read mtime of file: %s", chunk.c_str());
+			SEISCOMP_WARNING("Could not read mtime of file: %s", chunk.c_str());
 		}
 	}
 	catch ( ... ) {
-		SEISCOMP_WARNING("could not read mtime of file: %s", chunk.c_str());
+		SEISCOMP_WARNING("Could not read mtime of file: %s", chunk.c_str());
 		return t;
 	}
 
@@ -443,7 +443,7 @@ void SDSCollector::scanFiles(WaveformIDs &wids, const fs::path &dir) {
 
 			DataModel::WaveformStreamID wfid;
 			if ( !wfID(wfid, idDate.streamID) ) {
-				SEISCOMP_WARNING("invalid file name: %s",
+				SEISCOMP_WARNING("Invalid file name: %s",
 				                 SC_FS_FILE_PATH(path).c_str());
 				continue;
 			}

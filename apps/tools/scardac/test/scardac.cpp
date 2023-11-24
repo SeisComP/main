@@ -144,12 +144,14 @@ void copy(const string &src, const string &dst, bool contentOnly = false,
 		           ": Source does not exist");
 
 		if ( fs::is_directory(from) ) {
-			if ( !contentOnly && SC_FS_FILE_NAME(from) != SC_FS_FILE_NAME(to) )
+			if ( !contentOnly && SC_FS_FILE_NAME(from) != SC_FS_FILE_NAME(to) ) {
 				to = to / SC_FS_FILE_PATH(from);
+			}
 
-			if ( !fs::exists(to) )
+			if ( !fs::exists(to) ) {
 				createPathToDst ? fs::create_directories(to) :
 				                  fs::create_directory(to);
+			}
 
 			fs::directory_iterator end_it;
 			for ( fs::directory_iterator it(from); it != end_it; ++it ) {
@@ -178,8 +180,10 @@ DEFINE_SMARTPOINTER(TestSCARDAC);
 DataAvailability::SCARDAC *createApp(const vector<string> &args) {
 	char **argv = new char*[args.size()];
 	for ( size_t i = 0; i < args.size(); ++i ) {
-		argv[i] = new char[args[i].size() + 1];
-		strcpy(argv[i], args[i].c_str());
+		size_t size = args[i].size() + 1;
+		argv[i] = new char[size];
+		memset(argv[i], 0, size);
+		strncpy(argv[i], args[i].c_str(), size);
 	}
 
 	auto *app = new DataAvailability::SCARDAC(args.size(), argv);
@@ -345,7 +349,7 @@ BOOST_AUTO_TEST_CASE(basic) {
 	reader = runApp(dbURI, {appName, "--deep-scan"});
 	checkEqual(reader, da, ctx);
 
-	ctx = "rescan: empty archive, wfid ignored ";
+	ctx = "rescan: empty archive, stream ignored ";
 	BOOST_TEST_MESSAGE(ctx);
 	ASSERT_MSG(fs::remove(SC_FS_PATH(mseedFile)),
 	           "Could not remove: " << mseedFile);
@@ -356,7 +360,7 @@ BOOST_AUTO_TEST_CASE(basic) {
 	});
 	checkObjectCount(reader, ctx, 1, 1, 1);
 
-	ctx = "rescan: empty archive, wfid ignored (2) ";
+	ctx = "rescan: empty archive, stream ignored (2) ";
 	BOOST_TEST_MESSAGE(ctx);
 	reader = runApp(dbURI, {
 	        appName, "--deep-scan",
@@ -364,13 +368,77 @@ BOOST_AUTO_TEST_CASE(basic) {
 	});
 	checkObjectCount(reader, ctx, 1, 1, 1);
 
-	ctx = "rescan: empty archive, wfid matched ";
+	ctx = "rescan: empty archive, stream matched ";
 	BOOST_TEST_MESSAGE(ctx);
 	reader = runApp(dbURI, {
 	        appName, "--deep-scan",
 	        "--include", "AM.*.SHZ"
 	});
 	checkObjectCount(reader, ctx);
+}
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+
+//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+BOOST_AUTO_TEST_CASE(nslc) {
+	auto mseedFile = archiveDir + "/2019/AM/R0F05/SHZ.D/AM.R0F05.00.SHZ.D.2019.214";
+	auto nslcFile = archiveDir + "/nslc.txt";
+
+	Core::Time updated;
+	auto mtime = boost::filesystem::last_write_time(mseedFile);
+	if ( mtime >= 0 ) {
+		updated = mtime;
+	}
+
+	DataModel::DatabaseReaderPtr reader;
+
+	BOOST_TEST_MESSAGE("initial scan");
+
+	// run scardac, measure execution time window
+	Core::TimeWindow tw;
+	tw.setStartTime(Core::Time::UTC());
+	reader = runApp(dbURI, {appName, "--nslc", nslcFile});
+	tw.setEndTime(Core::Time::UTC());
+
+	DataModel::DataAvailabilityPtr da = reader->loadDataAvailability();
+	BOOST_ASSERT_MSG(da, "Could not load data availability");
+
+	// extent
+	BOOST_ASSERT_MSG(da->dataExtentCount(), "No extent found");
+	auto *ext = da->dataExtent(0);
+	reader->load(ext);
+	BOOST_CHECK_EQUAL(ext->dataAttributeExtentCount(), 1);
+	BOOST_CHECK_EQUAL(ext->dataSegmentCount(), 1);
+	auto &wfid = ext->waveformID();
+	BOOST_CHECK_EQUAL(wfid.networkCode(), "AM");
+	BOOST_CHECK_EQUAL(wfid.stationCode(), "R0F05");
+	BOOST_CHECK_EQUAL(wfid.locationCode(), "00");
+	BOOST_CHECK_EQUAL(wfid.channelCode(), "SHZ");
+	BOOST_CHECK_EQUAL(ext->start().iso(), "2019-08-02T17:59:58.217999Z");
+	BOOST_CHECK_EQUAL(ext->end().iso(), "2019-08-02T18:01:04.837999Z");
+	BOOST_CHECK_EQUAL(ext->updated().iso(), updated.iso());
+	BOOST_CHECK_MESSAGE(tw.contains(ext->lastScan()),
+	                    "last scan time not in execution time window");
+	BOOST_CHECK_MESSAGE(!ext->segmentOverflow(), "unexpected segment overflow");
+
+	// attribute extent
+	auto *attExt = ext->dataAttributeExtent(0);
+	BOOST_CHECK_EQUAL(attExt->start().iso(), ext->start().iso());
+	BOOST_CHECK_EQUAL(attExt->end().iso(), ext->end().iso());
+	BOOST_CHECK_EQUAL(attExt->sampleRate(), 50.0);
+	BOOST_CHECK_EQUAL(attExt->quality(), "D");
+	BOOST_CHECK_EQUAL(attExt->updated().iso(), ext->updated().iso());
+	BOOST_CHECK_EQUAL(attExt->segmentCount(), ext->dataSegmentCount());
+
+	// segment
+	auto *seg = ext->dataSegment(0);
+	BOOST_CHECK_EQUAL(seg->start().iso(), ext->start().iso());
+	BOOST_CHECK_EQUAL(seg->end().iso(), ext->end().iso());
+	BOOST_CHECK_EQUAL(seg->sampleRate(), attExt->sampleRate());
+	BOOST_CHECK_EQUAL(seg->quality(), attExt->quality());
+	BOOST_CHECK_EQUAL(seg->updated().iso(), ext->updated().iso());
+	BOOST_CHECK(!seg->outOfOrder());
 }
 //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

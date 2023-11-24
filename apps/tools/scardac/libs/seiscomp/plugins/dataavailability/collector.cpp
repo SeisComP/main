@@ -138,7 +138,7 @@ Collector* Collector::Open(const char *url) {
 		source = url;
 	}
 
-	SEISCOMP_DEBUG("trying to open data availability collector %s://%s",
+	SEISCOMP_DEBUG("Trying to open data availability collector %s://%s",
 	               service.c_str(), source.c_str());
 
 	auto *dac = Create(service.c_str());
@@ -150,7 +150,7 @@ Collector* Collector::Open(const char *url) {
 			}
 		}
 		catch ( CollectorException &e ) {
-			SEISCOMP_ERROR("data availability collector exception: %s", e.what());
+			SEISCOMP_ERROR("Data availability collector exception: %s", e.what());
 			delete dac;
 			dac = nullptr;
 		}

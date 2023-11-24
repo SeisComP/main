@@ -103,7 +103,7 @@ class SDSCollector : public Collector {
 
 		/**
 		 * @brief Scan an archive recursively for available WaveformIDs.
-		 * @param wids The collected waveform ids.
+		 * @param wids The collected waveform IDs.
 		 * @param dir Current directory path.
 		 * @param depth Remaining directory depth. If 0 the current directory
 		 * is scanned for files.
@@ -114,7 +114,7 @@ class SDSCollector : public Collector {
 
 		/**
 		 * @brief Scan a directory for available WaveformIDs.
-		 * @param wids The collected waveform ids.
+		 * @param wids The collected waveform IDs.
 		 * @param dir The directory path in which to search files.
 		 */
 		virtual void scanFiles(WaveformIDs &wids,

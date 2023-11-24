@@ -67,7 +67,8 @@ Definitions
   - calculate the ``updated`` time stamp of a `DataSegment`,
     `DataAttributeExtent` and `DataExtent`
 * ``Scan window`` -- time window limiting the synchronization of the archive
-  with the database configured via `filter.time.[start|end]` or `--start|--end`.
+  with the database configured via :confval:`filter.time.start` and
+  :confval:`filter.time.end` respectively :option:`--start` and :option:`--end`.
   The scan window is useful to
 
   - reduce the scan time of larger archives. Depending on the size and storage
@@ -77,9 +78,11 @@ Definitions
     archive have been deleted or moved to a different location
 * ``Modification window`` -- the mtime of a chunk is compared with this time
   window to decide whether it needs to be read or not. It is configured via
-  `mtime.[start|end]` or `--updated-[since|until]`. If no lower bound is
-  defined then the ``lastScan`` time stored in the `DataExtent` is used instead.
-  The mtime check may be disabled, `mtime.ignore = true` or `--deep-scan`.
+  :confval:`mtime.start` and :confval:`mtime.end` repectively
+  :option:`--modified-since` and :option:`--modified-until`. If no lower bound
+  is defined then the ``lastScan`` time stored in the `DataExtent` is used
+  instead.  The mtime check may be disabled using :confval:`mtime.ignore` or
+  :option:`--deep-scan`.
   **Note:** Chunks in front or right after a chunk gap are read in any case
   regardless of the mtime settings.
 
@@ -87,11 +90,14 @@ Workflow
 --------
 
 #. Read existing `DataExtents` from database.
-#. Scan the archive for waveform ids.
-#. Identify extents to add, update or remove respecting `scan window` and
-   `filter.wfid.[include|exclude]` resp. `--include|--exclude` options.
-#. Subsequently process the `DataExtents` using ``threads`` number of parallel
-   threads. For each `DataExtent`:
+#. Collect a list of available stream IDs either by
+
+   * scanning the archive for available IDs or
+   * reading an ID file defined by :confval:`nslcFile`.
+#. Identify extents to add, update or remove respecting `scan window`,
+   :confval:`filter.nslc.include` and :confval:`filter.nslc.exclude`.
+#. Subsequently process the `DataExtents` using :confval:`threads` number of
+   parallel threads. For each `DataExtent`:
 
    #. Collect all available chunks within `scan window`.
    #. If the `DataExtent` is new (no database entry yet), store a new and
@@ -109,7 +115,8 @@ Workflow
         and a possible `chunk gap`. If necessary, read the chunk and
 
         - create chunk segments by analyzing the chunk records for
-          gaps/overlaps defined by `jitter`, sampling rate or quality changes
+          gaps/overlaps defined by :confval:`jitter`, sampling rate or quality
+          changes
         - merge chunk segments with database segments and update the in-memory
           segment lists.
 
