@@ -10,10 +10,13 @@
 			</parameter>
 			<parameter name="magnitudes" type="list:string" default="MLv,mb,mB,Mwp">
 				<description>
-					List of magnitude types to be calculated when
-					computing magnitudes. This list can be altered interactively so
-					this reflects only the default unless computeMagnitudesSilently
-					is set to true.
+					List of magnitude types to be calculated when computing
+					magnitudes. This list can be altered interactively so it
+					reflects only the default unless computeMagnitudesSilently
+					is set to true. The configured types should include all
+					types which are also computed by scmag in order to allow
+					their processing in scolv. Otherwise scmag may add
+					magnitudes to origins without interaction in scolv.
 				</description>
 			</parameter>
 			<parameter name="visibleMagnitudes" type="list:string" default="M,ML,MLv,mb,mB,Mwp,Mjma,Ms_20,Ms(BB)">
