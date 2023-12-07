@@ -599,19 +599,29 @@ void App::done() {
 	Core::Time until = Core::Time::GMT();
 	until += 10.0;
 
-//	// Request shutdown of clients
-//	for ( QLClients::iterator it = _clients.begin();
-//	      it != _clients.end(); ++it )
-//		(*it)->abort();
+	// Flush delayed events
+	for ( auto &it : _eventDelayBuffer ) {
+		auto item = it.second;
+		auto ep = item.ep;
+		auto event = item.event;
+		auto config = item.config;
+		auto &routing = config->routingTable;
+
+		Notifiers journals;
+		// No event routing, forward event attributes
+		syncEvent(ep.get(), event, &routing,
+		          journals, config->syncPreferred);
+		sendJournals(journals);
+	}
 
 	// Disconnect from messaging
 	Client::Application::done();
 
 	// Wait for threads to terminate
 	if ( _ep.empty() ) {
-		for ( QLClients::iterator it = _clients.begin();
-		      it != _clients.end(); ++it )
-			(*it)->join(until);
+		for ( auto client : _clients ) {
+			client->join(until);
+		}
 	}
 
 	SEISCOMP_INFO("application finished");
@@ -764,13 +774,41 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 
 	if ( !_test ) {
 		if ( sendNotifiers(notifiers, routing) ) {
-			if ( config->syncEventAttributes ){
-				Notifiers journals;
-				// No event routing, forward event attributes
-				for ( size_t i = 0; i < ep->eventCount(); ++i )
-					syncEvent(ep.get(), ep->event(i), &routing,
-					          journals, config->syncPreferred);
-				sendJournals(journals);
+			if ( config->syncEventAttributes ) {
+				if ( config->syncEventTimeout > 0 ) {
+					for ( size_t i = 0; i < ep->eventCount(); ++i ) {
+						auto event = ep->event(i);
+						auto itp = _eventDelayBuffer.insert({
+							event->publicID(), {
+								ep, event, config,
+								// Add one to incorporate the current
+								// running ticker.
+								config->syncEventTimeout + 1
+							}
+						});
+
+						if ( !itp.second ) {
+							// Element exists already, update the contents
+							itp.first->second.ep = ep;
+							itp.first->second.event = event;
+							SEISCOMP_INFO("%s: updated delay buffer",
+							              event->publicID(), config->syncEventTimeout);
+						}
+						else {
+							SEISCOMP_INFO("%s: synchronization delayed for %ds",
+							              event->publicID(), config->syncEventTimeout);
+						}
+					}
+				}
+				else {
+					Notifiers journals;
+					// No event routing, forward event attributes
+					for ( size_t i = 0; i < ep->eventCount(); ++i ) {
+						syncEvent(ep.get(), ep->event(i), &routing,
+						          journals, config->syncPreferred);
+					}
+					sendJournals(journals);
+				}
 			}
 			client->setLastUpdate(msg->timestamp);
 			writeLastUpdates();
@@ -845,6 +883,32 @@ void App::handleTimeout() {
 			_waitForEventIDOriginID = string();
 			// Just wake up the event queue
 			sendNotification(Client::Notification(-1));
+		}
+
+		return;
+	}
+
+	for ( auto it = _eventDelayBuffer.begin(); it != _eventDelayBuffer.end(); ) {
+		auto &item = it->second;
+		--item.timeout;
+		if ( item.timeout <= 0 ) {
+			auto ep = item.ep;
+			auto event = item.event;
+			auto config = item.config;
+			auto &routing = config->routingTable;
+
+			Notifiers journals;
+			SEISCOMP_DEBUG("%s: synchronize delayed event",
+			               event->publicID());
+			// No event routing, forward event attributes
+			syncEvent(ep.get(), event, &routing,
+			          journals, config->syncPreferred);
+			sendJournals(journals);
+
+			it = _eventDelayBuffer.erase(it);
+		}
+		else {
+			++it;
 		}
 	}
 }
