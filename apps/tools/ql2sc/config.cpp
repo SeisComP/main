@@ -126,8 +126,8 @@ bool Config::init() {
 		try { cfg.syncPreferred = app->configGetBool(prefix + "syncPreferred"); }
 		catch ( ... ) { cfg.syncPreferred = false; }
 
-		try { cfg.syncEventTimeout = app->configGetInt(prefix + "syncEventTimeout"); }
-		catch ( ... ) { cfg.syncEventTimeout = 0; }
+		try { cfg.syncEventDelay = app->configGetInt(prefix + "syncEventDelay"); }
+		catch ( ... ) { cfg.syncEventDelay = 0; }
 
 		// data options
 		bool isSet;
