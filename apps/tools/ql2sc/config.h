@@ -40,7 +40,7 @@ struct HostConfig {
 	RoutingTable routingTable;
 	bool         syncEventAttributes;
 	bool         syncPreferred;
-	int          syncEventTimeout{0};
+	int          syncEventDelay{0};
 
 };
 

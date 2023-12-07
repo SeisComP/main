@@ -87,7 +87,7 @@
 						a particular magnitude type.
 						</description>
 					</parameter>
-					<parameter name="syncEventTimeout" type="int" default="0">
+					<parameter name="syncEventDelay" type="int" default="0">
 						<description>
 						Delays the synchronization of event attributes in seconds
 						if set to a value greater than zero.

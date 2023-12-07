@@ -775,7 +775,7 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 	if ( !_test ) {
 		if ( sendNotifiers(notifiers, routing) ) {
 			if ( config->syncEventAttributes ) {
-				if ( config->syncEventTimeout > 0 ) {
+				if ( config->syncEventDelay > 0 ) {
 					for ( size_t i = 0; i < ep->eventCount(); ++i ) {
 						auto event = ep->event(i);
 						auto itp = _eventDelayBuffer.insert({
@@ -783,7 +783,7 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 								ep, event, config,
 								// Add one to incorporate the current
 								// running ticker.
-								config->syncEventTimeout + 1
+								config->syncEventDelay + 1
 							}
 						});
 
@@ -792,11 +792,11 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 							itp.first->second.ep = ep;
 							itp.first->second.event = event;
 							SEISCOMP_INFO("%s: updated delay buffer",
-							              event->publicID(), config->syncEventTimeout);
+							              event->publicID(), config->syncEventDelay);
 						}
 						else {
 							SEISCOMP_INFO("%s: synchronization delayed for %ds",
-							              event->publicID(), config->syncEventTimeout);
+							              event->publicID(), config->syncEventDelay);
 						}
 					}
 				}
