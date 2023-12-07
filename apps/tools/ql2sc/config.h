@@ -40,6 +40,8 @@ struct HostConfig {
 	RoutingTable routingTable;
 	bool         syncEventAttributes;
 	bool         syncPreferred;
+	int          syncEventTimeout{0};
+
 };
 
 typedef std::vector<HostConfig> HostConfigs;

@@ -64,17 +64,17 @@ class App : public Client::Application {
 		typedef DataModel::Diff2::LogNode LogNode;
 		typedef DataModel::Diff2::LogNodePtr LogNodePtr;
 
-		virtual void createCommandLineDescription();
+		void createCommandLineDescription() override;
 
-		virtual bool init();
-		virtual bool run();
-		virtual void done();
+		bool init() override;
+		bool run() override;
+		void done() override;
 
-		virtual bool dispatchNotification(int type, BaseObject *obj);
-		virtual void addObject(const std::string& parentID, DataModel::Object *obj);
-		virtual void updateObject(const std::string& parentID, DataModel::Object *obj);
-		virtual void removeObject(const std::string& parentID, DataModel::Object *obj);
-		virtual void handleTimeout();
+		bool dispatchNotification(int type, BaseObject *obj) override;
+		void addObject(const std::string& parentID, DataModel::Object *obj) override;
+		void updateObject(const std::string& parentID, DataModel::Object *obj) override;
+		void removeObject(const std::string& parentID, DataModel::Object *obj) override;
+		void handleTimeout() override;
 
 		bool dispatchResponse(QLClient *client, const IO::QuakeLink::Response *response);
 
@@ -102,11 +102,21 @@ class App : public Client::Application {
 		                               const std::string &originID);
 
 	private:
+		struct EventDelayItem {
+			DataModel::EventParametersPtr ep;
+			DataModel::Event *event; // Pointer from ep
+			const HostConfig *config;
+			int timeout;
+		};
+
+		using EventDelayBuffer = std::map<std::string, EventDelayItem>;
+
 		Config                   _config;
 		QLClients                _clients;
 		NoCache                  _cache;
 		boost::mutex             _clientPublishMutex;
 		std::string              _lastUpdateFile;
+		EventDelayBuffer         _eventDelayBuffer;
 		std::string              _waitForEventIDOriginID;
 		std::string              _waitForEventIDResult;
 		int                      _waitForEventIDTimeout;
