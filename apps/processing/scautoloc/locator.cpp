@@ -60,20 +60,38 @@ MySensorLocationDelegate::getSensorLocation(Seiscomp::DataModel::Pick *pick) con
 }
 
 Locator::Locator()
+	: _scconfig(nullptr)
 {
+	_minDepth = 5;
+	_locatorCallCounter = 0;
 }
+
+
+void Locator::setSeiscompConfig(const Seiscomp::Config::Config *scconfig)
+{
+	_scconfig = scconfig;
+}
+
 
 bool Locator::init()
 {
+	if ( !_scconfig) {
+		SEISCOMP_ERROR("_scconfig is NULL in Locator::init()");
+		return false;
+	}
+
 	const std::string locator = "LOCSAT";
 	_sc3locator =
 		Seiscomp::Seismology::LocatorInterface::Create(locator.c_str());
-	if (!_sc3locator) {
+	if ( !_sc3locator) {
 		SEISCOMP_ERROR_S("Could not create "+locator+" instance");
 		exit(-1);
 	}
+
+	if ( !_sc3locator->init(*_scconfig))
+		return false;
+
 	_sc3locator->useFixedDepth(false);
-	_locatorCallCounter = 0;
 	_minDepth = 5;
 	setFixedDepth(_minDepth, false);
 
@@ -83,10 +101,12 @@ bool Locator::init()
 	return true;
 }
 
+
 Locator::~Locator()
 {
 	SEISCOMP_INFO("Locator instance called %ld times", _locatorCallCounter);
 }
+
 
 void Locator::setStation(const Autoloc::Station *station) {
 	sensorLocationDelegate->setStation(station);

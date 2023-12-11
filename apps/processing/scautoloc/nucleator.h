@@ -36,6 +36,9 @@ class Nucleator
 	public:
 		virtual bool init() = 0;
 		virtual void setStation(const Station *station);
+
+		virtual void setSeiscompConfig(const Seiscomp::Config::Config*) = 0;
+
 	public:
 		virtual bool feed(const Pick *pick) = 0;
 		const OriginVector &newOrigins() {
@@ -112,6 +115,8 @@ class GridSearch : public Nucleator
 
 		void setLocatorProfile(const std::string &profile);
 
+		void setSeiscompConfig(const Seiscomp::Config::Config*);
+
 	public:
 		// The Nucleator reads Pick's and Amplitude's. Only picks
 		// with associated amplitude can be fed into the Nucleator.
@@ -142,6 +147,8 @@ class GridSearch : public Nucleator
 		Locator _relocator;
 
 		bool _abort;
+
+		const Seiscomp::Config::Config *_scconfig;
 
 	public: // FIXME
 		Config  _config;
