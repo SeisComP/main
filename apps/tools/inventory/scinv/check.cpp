@@ -349,16 +349,15 @@ bool Check::check() {
 				}
 
 				map<string, int> streamMap;
-				set<string>streamSet;
+				set<string> streamSet;
 				map<string, set<Seiscomp::Core::Time>> startTimes;
 				for ( size_t c = 0; c < loc->streamCount(); ++c ) {
 					Stream *cha = loc->stream(c);
 					string group = cha->code().substr(0,2);
-					string sensor = cha->code().substr(1,1);
 
 					// collect the channels
-
 					streamSet.insert(cha->code());
+					/*
 					auto it = streamMap.find(group);
 					if ( it == streamMap.end() ) {
 						streamMap.insert(pair<string,int>(group,0));
@@ -366,14 +365,11 @@ bool Check::check() {
 					else {
 						it->second++;
 					}
+					*/
+					++streamMap[group];
+
 					// collect the channel epochs
-					auto itStart = startTimes.find(group);
-					if ( itStart == startTimes.end() ) {
-						startTimes.insert({group, {cha->start()}});
-					}
-					else {
-						itStart->second.insert(cha->start());
-					}
+					startTimes[group].insert(cha->start());
 
 					checkEpoch(cha);
 					checkOverlap(channelEpochs[cha->code()], cha);
@@ -446,38 +442,56 @@ bool Check::check() {
 				}
 
 				// check number of channels and orthogonality
-				for ( const auto &item : streamMap ) {
-					// continue only if stream group has 3 components
-					int cnt = 0;
+				for ( auto &item : streamMap ) {
+					// do not continue only if stream group has only 1 component
 					auto group = item.first;
+					item.second = 0;
 					for ( const auto &str : streamSet ) {
 						if ( (str.size() >= 2) && (str.substr(0, 2) == group) ) {
-							++cnt;
+							++item.second;
 						}
 					}
-					if ( cnt == 1 ) {
+					if ( item.second <= 1 ) {
 						continue;
 					}
 
 					// limit the check to some sensor types
 					auto sensor = group.substr(1,1);
-					if ( sensor.compare("G") == 0 || sensor.compare("H") == 0
-					     || sensor.compare("L") == 0
-					     || sensor.compare("N") == 0 ) {
+					if ( sensor.compare("G") != 0 && sensor.compare("H") != 0
+					     && sensor.compare("L") != 0
+					     && sensor.compare("N") != 0 ) {
+						continue;
+					}
 
-						auto starts = startTimes.find(group);
-						if ( starts == startTimes.end() ) {
+					auto starts = startTimes.find(group);
+					if ( starts == startTimes.end() ) {
+						continue;
+					}
+
+					for ( const auto &start : starts->second ) {
+						const int countStream = DataModel::numberOfComponents(loc, group.c_str(), start);
+
+						// check if there are exactly 3 components
+						if ( (countStream == 2) ||  (countStream >= 3) ) {
+							log(LogHandler::Information,
+							    (string(loc->className()) + " " + id(loc) + "."
+							     + group + "?\n  found " + std::to_string(countStream)
+							     + " but not exactly 3 components in " + toString(start)).c_str(),
+							    loc, nullptr);
+						}
+
+						// Do not check orthogonality for less than 3 streams
+						if ( countStream < 3) {
 							continue;
 						}
-						for ( const auto &start : starts->second ) {
-							DataModel::ThreeComponents tc;
-							if ( !DataModel::getThreeComponents(tc, loc, group.c_str(), start) ) {
-								log(LogHandler::Warning,
-								    (string(loc->className()) + " " + id(loc) + "." + group + "?\n "
-								     "streams are not orthogonal for " + toString(start) +
-								     " - may not be considered for data processing").c_str(),
-								    loc, nullptr);
-							}
+
+						DataModel::ThreeComponents tc;
+						if ( !DataModel::getThreeComponents(tc, loc, group.c_str(), start) ) {
+							log(LogHandler::Warning,
+							    (string(loc->className()) + " " + id(loc) + "." + group + "?\n"
+							     "  streams are not orthogonal in " + toString(start) +
+							     " - may not be considered for data processing").c_str(),
+							    loc, nullptr);
 						}
 					}
 				}
