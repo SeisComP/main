@@ -262,8 +262,8 @@ results.
                  , elevation < -12000               , !,
                  , has no sensor location           , W,
 
-   sensorLocation, coordinates far away from station, W,``--distance`` overrides default threshold (10 km)
-                 , elevation far away from station  , W,``--max-elevation-difference`` overrides default threshold (500 m)
+   sensorLocation, coordinates far away from station, W, :option:`--distance` overrides default threshold (10 km)
+                 , elevation far away from station  , W, :option:`--max-elevation-difference` overrides default threshold (500 m)
                  , epoch outside network epochs     , C,
                  , epoch outside station epochs     , C,
                  , empty or no start time           , W, sensorLocation is ignored
@@ -289,6 +289,8 @@ results.
                  , missing azimuth                  ,  , empty value is handled by SeisComP inventory reader
                  , missing dip                      ,  , empty value is handled by SeisComP inventory reader
                  , empty sensor ID                  , I,
-                 , large depth                      , W,``--max-sensor-depth`` overrides default threshold (500 m)
+                 , large depth                      , W, :option:`--max-sensor-depth` overrides default threshold (500 m)
+                 , 2 or more than 3 streams exist   , I,
+                 , 3C streams are not orthogonal    , W, differences <= 1 degree are tolerated, applies to seismic sensors with codes G, H, L, N
 
    sensor        , referenced sensor not available  , R,
