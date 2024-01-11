@@ -471,17 +471,17 @@ bool Check::check() {
 					for ( const auto &start : starts->second ) {
 						const int countStream = DataModel::numberOfComponents(loc, group.c_str(), start);
 
+						// Do not report 1-C stream groups
+						if ( countStream == 1 ) {
+							continue;
+						}
 						// check if there are exactly 3 components
-						if ( (countStream == 2) ||  (countStream >= 3) ) {
+						if ( countStream !=  3 ) {
 							log(LogHandler::Information,
 							    (string(loc->className()) + " " + id(loc) + "."
 							     + group + "?\n  found " + std::to_string(countStream)
-							     + " but not exactly 3 components in " + toString(start)).c_str(),
+							     + " but not 3 components in " + toString(start)).c_str(),
 							    loc, nullptr);
-						}
-
-						// Do not check orthogonality for less than 3 streams
-						if ( countStream < 3) {
 							continue;
 						}
 
