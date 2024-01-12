@@ -60,21 +60,46 @@ class MagToolApp : public Seiscomp::Client::Application {
 
 		void createCommandLineDescription() {
 			commandline().addOption("Messaging", "test", "Test mode, no messages are sent");
-			commandline().addOption("Messaging", "interval", "Sets the message send interval,"
-			                                                 " 0 sends messages immediatly", &_interval, true);
-			commandline().addOption("Generic", "expiry,x", "Time span in hours after which objects expire", &_fExpiry, true);
+			commandline().addOption("Messaging", "interval",
+			                        "Sets the message send interval, 0 sends "
+			                        "messages immediatly", &_interval, true);
+			commandline().addOption("Generic", "expiry,x",
+			                        "Time span in hours after which objects expire",
+			                        &_fExpiry, true);
 
 			commandline().addGroup("Input");
-			commandline().addOption("Input", "ep", "Event parameters XML file for offline processing of all contained origins. This option implies the computation of all station and network magnitudes not having an evaluation status set.",
+			commandline().addOption("Input", "ep",
+			                        "Event parameters XML file to be read and "
+			                        "processed. This implies offline mode and "
+			                        "only processes all origins contained in "
+			                        "that file. It computes station magnitudes "
+			                        "for all picks associated with an origin "
+			                        "where amplitudes are available and the "
+			                        "corresponding network magnitudes. Station "
+			                        "and network magnitudes having the "
+			                        "evaluation status set are ignored. Use "
+			                        "--reprocess to include those magnitudes. "
+			                        "It outputs an XML text adding the station "
+			                        "and network magnitudes to the input XML file.",
 			                        &_epFile);
-			commandline().addOption("Input", "reprocess", "Reprocess also station and network magnitudes with an evaluation status. Only used with --ep.");
+			commandline().addOption("Input", "reprocess",
+			                        "Reprocess also station and network magnitudes "
+			                        "with an evaluation status. Only used with --ep.");
 
 			commandline().addGroup("Process");
-			commandline().addOption("Process", "warning", "Output a warning for standard deviations of network magnitudes exceeding the provided value.",
+			commandline().addOption("Process", "warning",
+			                        "Output a warning for standard deviations of "
+			                        "network magnitudes exceeding the provided value.",
 			                        &_warningLevel);
 			commandline().addGroup("Reprocess");
-			commandline().addOption("Reprocess", "static", "Do not create new station or new network magnitudes just update them. Considers the associated amplitudes. Weights of station magnitudes will be changed according to the accumulation function of the network magnitude.");
-			commandline().addOption("Reprocess", "keep-weights", "Reuse the original weights in combintation with --static.");
+			commandline().addOption("Reprocess", "static",
+			                        "Do not create new station or new network "
+			                        "magnitudes just update them. Considers the "
+			                        "associated amplitudes. Weights of station "
+			                        "magnitudes will be changed according to the "
+			                        "accumulation function of the network magnitude.");
+			commandline().addOption("Reprocess", "keep-weights",
+			                        "Reuse the original weights in combintation with --static.");
 		}
 
 		bool validateParameters() {

@@ -21,7 +21,7 @@
 				General parameters for computing magnitudes. Others are configured
 				by global binding parameters for specific magnitude types.
 				</description>
-				<parameter name="average" type="list:string" default="default">
+				<parameter name="average" type="list:string" default="default" values="default,mean,median,trimmedMean(25),trimmedMedian(25),medianTrimmedMean(0.5)">
 					<description>
 						The methods for computing the network magnitude
 						from station magnitudes. Exactly one method per
@@ -31,12 +31,8 @@
 						&quot;magnitudes.average = default, MLv:median&quot;
 
 						default: Compute the mean if less than 4 contributed
-						station magnitudes exist. Otherwise apply a trimmed mean
-						of 25%.
-
-						Options are &quot;default&quot;, &quot;mean&quot;,
-						&quot;median&quot;, &quot;trimmedMean&quot; and
-						&quot;medianTrimmedMean&quot;.
+						station magnitudes exist. Otherwise apply trimmedMean(25),
+						trimmed mean with 25%.
 					</description>
 				</parameter>
 			</group>
@@ -153,14 +149,14 @@
 			</group>
 
 			<group name="Input">
-				<option long-flag="ep" argument="file">
+				<option long-flag="ep" argument="file" type="string">
 					<description>
 					Defines an event parameters XML file to be read and processed. This
 					implies offline mode and only processes all origins contained
 					in that file. It computes station magnitudes for all picks associated
 					with an origin where amplitudes are available and the corresponding
 					network magnitudes. Station and network magnitudes having the
-					evaluation status set are ignored. Use the --force to include those
+					evaluation status set are ignored. Use --reprocess to include those
 					magnitudes. It outputs an XML text adding the station-
 					and network magnitudes to the input XML file.
 					</description>
@@ -184,7 +180,7 @@
 					be created in this mode, it only updates values and weights.
 					The method to accumulate the station magnitudes to form the network
 					magnitude will be read from the existing object and replicated.
-					If it cannot be interpreted then the configured default for this
+					If it cannot be interpreted, then the configured default for this
 					magnitude type will be used instead. Weights of station magnitudes
 					will be changed according to the accumulation method of the
 					network magnitude.
