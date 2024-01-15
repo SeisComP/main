@@ -7,7 +7,7 @@ SET(EXPORTER_STAXML_SOURCES
 	importer.cpp
 	exporter.cpp
 	../convert2fdsnxml.cpp
-	../convert2sc3.cpp
+	../convert2sc.cpp
 	${LIBSTAXML_SOURCES}
 )
 

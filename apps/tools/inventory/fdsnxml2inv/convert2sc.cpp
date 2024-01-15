@@ -13,7 +13,7 @@
 
 
 #define SEISCOMP_COMPONENT STAXML
-#include "convert2sc3.h"
+#include "convert2sc.h"
 
 #include <fdsnxml/fdsnstationxml.h>
 #include <fdsnxml/network.h>
@@ -1474,7 +1474,7 @@ void populateComments(const T1 *sx, T2 sc) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Convert2SC3::Convert2SC3(DataModel::Inventory *inv)
+Convert2SC::Convert2SC(DataModel::Inventory *inv)
 : _inv(inv)
 , _logStages(false) {
 	if ( !_inv ) return;
@@ -1541,7 +1541,7 @@ void add(DataModel::Inventory *inv,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 template <>
-void Convert2SC3::addRespToInv<DataModel::ResponsePAZ>(DataModel::ResponsePAZ *o) {
+void Convert2SC::addRespToInv<DataModel::ResponsePAZ>(DataModel::ResponsePAZ *o) {
 	add(_inv, _respPAZLookup, o);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1551,7 +1551,7 @@ void Convert2SC3::addRespToInv<DataModel::ResponsePAZ>(DataModel::ResponsePAZ *o
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 template <>
-void Convert2SC3::addRespToInv<DataModel::ResponseFAP>(DataModel::ResponseFAP *o) {
+void Convert2SC::addRespToInv<DataModel::ResponseFAP>(DataModel::ResponseFAP *o) {
 	add(_inv, _respFAPLookup, o);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1561,7 +1561,7 @@ void Convert2SC3::addRespToInv<DataModel::ResponseFAP>(DataModel::ResponseFAP *o
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 template <>
-void Convert2SC3::addRespToInv<DataModel::ResponsePolynomial>(DataModel::ResponsePolynomial *o) {
+void Convert2SC::addRespToInv<DataModel::ResponsePolynomial>(DataModel::ResponsePolynomial *o) {
 	add(_inv, _respPolyLookup, o);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1571,7 +1571,7 @@ void Convert2SC3::addRespToInv<DataModel::ResponsePolynomial>(DataModel::Respons
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 template <>
-void Convert2SC3::addRespToInv<DataModel::ResponseFIR>(DataModel::ResponseFIR *o) {
+void Convert2SC::addRespToInv<DataModel::ResponseFIR>(DataModel::ResponseFIR *o) {
 	add(_inv, _respFIRLookup, o);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1581,7 +1581,7 @@ void Convert2SC3::addRespToInv<DataModel::ResponseFIR>(DataModel::ResponseFIR *o
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 template <>
-void Convert2SC3::addRespToInv<DataModel::ResponseIIR>(DataModel::ResponseIIR *o) {
+void Convert2SC::addRespToInv<DataModel::ResponseIIR>(DataModel::ResponseIIR *o) {
 	add(_inv, _respIIRLookup, o);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1590,7 +1590,7 @@ void Convert2SC3::addRespToInv<DataModel::ResponseIIR>(DataModel::ResponseIIR *o
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-const Convert2SC3::TupleSet &Convert2SC3::visitedStations() const {
+const Convert2SC::TupleSet &Convert2SC::visitedStations() const {
 	return _visitedStations;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1599,7 +1599,7 @@ const Convert2SC3::TupleSet &Convert2SC3::visitedStations() const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-const Convert2SC3::NetworkSet &Convert2SC3::touchedNetworks() const {
+const Convert2SC::NetworkSet &Convert2SC::touchedNetworks() const {
 	return _touchedNetworks;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1608,7 +1608,7 @@ const Convert2SC3::NetworkSet &Convert2SC3::touchedNetworks() const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-const Convert2SC3::StationSet &Convert2SC3::touchedStations() const {
+const Convert2SC::StationSet &Convert2SC::touchedStations() const {
 	return _touchedStations;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1617,7 +1617,7 @@ const Convert2SC3::StationSet &Convert2SC3::touchedStations() const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Convert2SC3::setLogStages(bool state) {
+void Convert2SC::setLogStages(bool state) {
 	_logStages = state;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1626,7 +1626,7 @@ void Convert2SC3::setLogStages(bool state) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Convert2SC3::push(const FDSNXML::FDSNStationXML *msg) {
+bool Convert2SC::push(const FDSNXML::FDSNStationXML *msg) {
 	if ( _inv == NULL ) return false;
 
 	// Process networks. All networks are then under our control and
@@ -1736,7 +1736,7 @@ bool Convert2SC3::push(const FDSNXML::FDSNStationXML *msg) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Convert2SC3::cleanUp() {
+void Convert2SC::cleanUp() {
 	SEISCOMP_INFO("Clean up inventory");
 
 	for ( size_t n = 0; n < _inv->networkCount(); ) {
@@ -1907,7 +1907,7 @@ void Convert2SC3::cleanUp() {
 // yet been created because this epoch comes from a station without a
 // network tag in the message.
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Convert2SC3::process(DataModel::Network *sc_net,
+bool Convert2SC::process(DataModel::Network *sc_net,
                           const FDSNXML::Station *sta) {
 	typedef map<LocationElevation, EpochEntry> EpochLocationMap;
 	typedef map<string, EpochLocationMap> EpochCodeMap;
@@ -2039,6 +2039,19 @@ bool Convert2SC3::process(DataModel::Network *sc_net,
 
 		EpochEntry &entry = epochMap[locationCode][loc_loc];
 		entry.epochs.push_back(ChannelEpoch(cha->code(),cha));
+
+		std::cerr << "\"" << locationCode << "\": "
+		          << cha->code() << " " << cha->startDate().iso() << " ~ ";
+
+		try {
+			std::cerr << cha->endDate().iso();
+		}
+		catch ( ... ) {
+			std::cerr << "--";
+		}
+		std::cerr << " "
+		          << loc_loc.first.first << " " << loc_loc.first.second << " " << loc_loc.second
+		          << std::endl;
 	}
 
 	// After collecting all channel epoch, check for overlapping
@@ -2264,7 +2277,7 @@ bool Convert2SC3::process(DataModel::Network *sc_net,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Convert2SC3::process(DataModel::SensorLocation *sc_loc,
+bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
                           const FDSNXML::Channel *cha) {
 	bool newInstance = false;
 	bool needUpdate = false;
@@ -2928,7 +2941,7 @@ bool Convert2SC3::process(DataModel::SensorLocation *sc_loc,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Convert2SC3::process(DataModel::Datalogger *sc_dl, DataModel::Stream *sc_stream,
+bool Convert2SC::process(DataModel::Datalogger *sc_dl, DataModel::Stream *sc_stream,
                           const FDSNXML::Channel *epoch) {
 	//updateDataloggerCalibration(sc_dl, sc_stream, epoch);
 	return true;
@@ -2939,7 +2952,7 @@ bool Convert2SC3::process(DataModel::Datalogger *sc_dl, DataModel::Stream *sc_st
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Convert2SC3::process(DataModel::Sensor *, DataModel::Stream *,
+bool Convert2SC::process(DataModel::Sensor *, DataModel::Stream *,
                           const FDSNXML::Channel *,
                           const FDSNXML::ResponseStage *) {
 	/*
@@ -2957,7 +2970,7 @@ bool Convert2SC3::process(DataModel::Sensor *, DataModel::Stream *,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 DataModel::Datalogger *
-Convert2SC3::updateDatalogger(const std::string &name,
+Convert2SC::updateDatalogger(const std::string &name,
                               const FDSNXML::Channel *epoch) {
 	DataModel::DataloggerPtr sc_dl = DataModel::Datalogger::Create();
 	//sc_dl->setName(sc_dl->publicID());
@@ -3012,7 +3025,7 @@ Convert2SC3::updateDatalogger(const std::string &name,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 DataModel::DataloggerCalibration *
-Convert2SC3::updateDataloggerCalibration(DataModel::Datalogger *sc_dl,
+Convert2SC::updateDataloggerCalibration(DataModel::Datalogger *sc_dl,
                                          DataModel::Stream *sc_stream,
                                          const FDSNXML::Channel *epoch) {
 	bool newInstance = false;
@@ -3071,7 +3084,7 @@ Convert2SC3::updateDataloggerCalibration(DataModel::Datalogger *sc_dl,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 DataModel::Sensor *
-Convert2SC3::updateSensor(const std::string &name,
+Convert2SC::updateSensor(const std::string &name,
                           const FDSNXML::Channel *epoch,
                           const FDSNXML::ResponseStage *resp,
                           ResponseType stageType,
@@ -3237,7 +3250,7 @@ Convert2SC3::updateSensor(const std::string &name,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 DataModel::SensorCalibration *
-Convert2SC3::updateSensorCalibration(DataModel::Sensor *sc_sens, DataModel::Stream *sc_stream,
+Convert2SC::updateSensorCalibration(DataModel::Sensor *sc_sens, DataModel::Stream *sc_stream,
                                      const FDSNXML::Channel *epoch,
                                      const FDSNXML::ResponseStage *resp) {
 	bool newInstance = false;
@@ -3287,7 +3300,7 @@ Convert2SC3::updateSensorCalibration(DataModel::Sensor *sc_sens, DataModel::Stre
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 DataModel::Datalogger *
-Convert2SC3::pushDatalogger(DataModel::Datalogger *dl) {
+Convert2SC::pushDatalogger(DataModel::Datalogger *dl) {
 	ObjectLookup::iterator it = _dataloggerLookup.find(dl->name());
 	if ( it != _dataloggerLookup.end() ) {
 		DataModel::Datalogger *cdl = (DataModel::Datalogger*)it->second;
@@ -3312,7 +3325,7 @@ Convert2SC3::pushDatalogger(DataModel::Datalogger *dl) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-DataModel::Sensor *Convert2SC3::pushSensor(DataModel::Sensor *sens) {
+DataModel::Sensor *Convert2SC::pushSensor(DataModel::Sensor *sens) {
 	ObjectLookup::iterator it = _sensorLookup.find(sens->name());
 	if ( it != _sensorLookup.end() ) {
 		DataModel::Sensor *csens = (DataModel::Sensor*)it->second;
