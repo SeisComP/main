@@ -2,7 +2,7 @@ INCLUDE_DIRECTORIES(.)
 
 SET(TEST_NAME test_fdsnxml2inv)
 AUX_SOURCE_DIRECTORY(../fdsnxml LIBSTAXML_SOURCES)
-ADD_EXECUTABLE(${TEST_NAME} test_fdsnxml2inv.cpp ../convert2fdsnxml.cpp ../convert2sc3.cpp ${LIBSTAXML_SOURCES})
+ADD_EXECUTABLE(${TEST_NAME} test_fdsnxml2inv.cpp ../convert2fdsnxml.cpp ../convert2sc.cpp ${LIBSTAXML_SOURCES})
 SC_LINK_LIBRARIES_INTERNAL(${TEST_NAME} core unittest)
 ADD_TEST(
 	NAME ${TEST_NAME}

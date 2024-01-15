@@ -17,7 +17,7 @@
 #include <seiscomp/datamodel/inventory.h>
 #include <fdsnxml/xml.h>
 #include <fdsnxml/fdsnstationxml.h>
-#include "convert2sc3.h"
+#include "convert2sc.h"
 
 
 using namespace Seiscomp;
@@ -44,7 +44,7 @@ class ImporterFDSNStaXML : public Importer {
 
 			DataModel::Inventory *inv = new DataModel::Inventory;
 
-			Convert2SC3 cnv(inv);
+			Convert2SC cnv(inv);
 			cnv.push(msg.get());
 
 			// Clean up the inventory after pushing all messages

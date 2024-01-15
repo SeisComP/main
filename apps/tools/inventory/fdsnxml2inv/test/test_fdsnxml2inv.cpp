@@ -28,7 +28,7 @@
 #include "../fdsnxml/xml.h"
 #include "../fdsnxml/fdsnstationxml.h"
 #include "../convert2fdsnxml.h"
-#include "../convert2sc3.h"
+#include "../convert2sc.h"
 
 using namespace std;
 using namespace Seiscomp;
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(CheckConvert2SCXML) {
 	FDSNXML::FDSNStationXMLPtr msg = FDSNXML::FDSNStationXML::Cast(obj);
 	BOOST_REQUIRE(msg);
 
-	Convert2SC3 cnv(inv.get());
+	Convert2SC cnv(inv.get());
 	cnv.push(msg.get());
 	cnv.cleanUp();
 

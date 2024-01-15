@@ -14,7 +14,7 @@
 #define SEISCOMP_COMPONENT STAXML
 
 #include "convert2fdsnxml.h"
-#include "convert2sc3.h"
+#include "convert2sc.h"
 
 #include <fdsnxml/xml.h>
 #include <fdsnxml/fdsnstationxml.h>
@@ -132,7 +132,7 @@ class SyncStationXML : public Client::Application {
 				inv = new DataModel::Inventory;
 			}
 
-			Convert2SC3 cnv(inv.get());
+			Convert2SC cnv(inv.get());
 			cnv.setLogStages(commandline().hasOption("log-stages"));
 
 			_activeConverter = &cnv;

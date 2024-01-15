@@ -76,7 +76,7 @@ MAKEENUM(ResponseType,
 //! \brief Converter class for FDSNXML -> SC3 that works on an
 //! \brief inventory and merges all changes of pushed FDSNXML
 //! \brief messages into it.
-class Convert2SC3 : public Converter {
+class Convert2SC : public Converter {
 	// ------------------------------------------------------------------
 	//  Public datatypes
 	// ------------------------------------------------------------------
@@ -101,7 +101,7 @@ class Convert2SC3 : public Converter {
 	// ------------------------------------------------------------------
 	public:
 		//! C'tor
-		Convert2SC3(DataModel::Inventory *inv);
+		Convert2SC(DataModel::Inventory *inv);
 
 
 	// ------------------------------------------------------------------

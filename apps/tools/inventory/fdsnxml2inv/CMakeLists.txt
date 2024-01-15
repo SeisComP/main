@@ -10,7 +10,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 SET(${PACKAGE_NAME}_SOURCES
 	${DATAMODEL_GENERATED_SOURCES}
 	convert2fdsnxml.cpp
-	convert2sc3.cpp
+	convert2sc.cpp
 	main.cpp
 )
 
