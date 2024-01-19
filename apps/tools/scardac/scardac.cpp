@@ -1478,7 +1478,7 @@ bool SCARDAC::run() {
 			else {
 				SEISCOMP_DEBUG("Stream ID filtered: %s",
 				               it->first.c_str());
-				wids.erase(it);
+				it = wids.erase(it);
 			}
 		}
 	}
