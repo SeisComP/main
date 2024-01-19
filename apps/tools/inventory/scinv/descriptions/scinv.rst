@@ -244,53 +244,54 @@ results.
    :widths: 10, 30, 5, 65
    :header: Object, Check description, Alert, Comments
    :align: left
+   :delim: ;
 
-   network       , start time after end time        , !,
-                 , network without station          , W,
-                 , empty start time                 ,  , handled by SeisComP inventory reader: network is ignored
-                 , empty station                    , W,
-                 , empty code                       , W,
+   network       ; start time after end time        ; !;
+                 ; network without station          ; W;
+                 ; empty start time                 ;  ; handled by SeisComP inventory reader: network is ignored
+                 ; empty station                    ; W;
+                 ; empty code                       ; W;
 
-   station       , start time after end time        , !,
-                 , empty or no start time           , W, station is ignored
-                 , start time after end time        , !,
-                 , empty code                       , W,
-                 , empty latitude                   , W,
-                 , empty longitude                  , W,
-                 , empty elevation                  , W,
-                 , elevation >   8900               , !,
-                 , elevation < -12000               , !,
-                 , has no sensor location           , W,
+   station       ; start time after end time        ; !;
+                 ; empty or no start time           ; W; station is ignored
+                 ; start time after end time        ; !;
+                 ; empty code                       ; W;
+                 ; empty latitude                   ; W;
+                 ; empty longitude                  ; W;
+                 ; empty elevation                  ; W;
+                 ; elevation >   8900               ; !;
+                 ; elevation < -12000               ; !;
+                 ; has no sensor location           ; W;
 
-   sensorLocation, coordinates far away from station, W, :option:`--distance` overrides default threshold (10 km)
-                 , elevation far away from station  , W, :option:`--max-elevation-difference` overrides default threshold (500 m)
-                 , epoch outside network epochs     , C,
-                 , epoch outside station epochs     , C,
-                 , empty or no start time           , W, sensorLocation is ignored
-                 , empty latitude                   , W,
-                 , empty longitude                  , W,
-                 , elevation >   8900               , !,
-                 , elevation < -12000               , !,
-                 , empty or no elevation            , W,
-                 , has no channel/stream            , W,
+   sensorLocation; coordinates far away from station; W; :option:`--distance` overrides default threshold (10 km)
+                 ; elevation far away from station  ; W; :option:`--max-elevation-difference` overrides default threshold (500 m)
+                 ; epoch outside network epochs     ; C;
+                 ; epoch outside station epochs     ; C;
+                 ; empty or no start time           ; W; sensorLocation is ignored
+                 ; empty latitude                   ; W;
+                 ; empty longitude                  ; W;
+                 ; elevation >   8900               ; !;
+                 ; elevation < -12000               ; !;
+                 ; empty or no elevation            ; W;
+                 ; has no channel/stream            ; W;
 
-   stream        , empty or no start time           ,  , handled by SeisComP inventory reader: stream is ignored
-                 , empty azimuth                    , C,
-                 , epoch outside sensorLocation     , C,
-                 , epoch outside station            , C,
-                 , epoch outside network            , C,
-                 , start time after end time        , C,
-                 , missing gain value               , W, empty value is handled by SeisComP inventory reader
-                 , gain value = 0                   , W,
-                 , missing gain unit                , W, empty value is handled by SeisComP inventory reader
-                 , missing gain frequency           ,  , empty value is handled by SeisComP inventory reader
-                 , missing sampling rate            ,  , empty value is handled by SeisComP inventory reader
-                 , missing depth                    , W, empty value is handled by SeisComP inventory reader
-                 , missing azimuth                  ,  , empty value is handled by SeisComP inventory reader
-                 , missing dip                      ,  , empty value is handled by SeisComP inventory reader
-                 , empty sensor ID                  , I,
-                 , large depth                      , W, :option:`--max-sensor-depth` overrides default threshold (500 m)
-                 , 2 or more than 3 streams exist   , I,
-                 , 3C streams are not orthogonal    , W, differences <= 1 degree are tolerated, applies to seismic sensors with codes G, H, L, N
+   stream        ; empty or no start time           ;  ; handled by SeisComP inventory reader: stream is ignored
+                 ; empty azimuth                    ; C;
+                 ; epoch outside sensorLocation     ; C;
+                 ; epoch outside station            ; C;
+                 ; epoch outside network            ; C;
+                 ; start time after end time        ; C;
+                 ; missing gain value               ; W; empty value is handled by SeisComP inventory reader
+                 ; gain value = 0                   ; W;
+                 ; missing gain unit                ; W; empty value is handled by SeisComP inventory reader
+                 ; missing gain frequency           ;  ; empty value is handled by SeisComP inventory reader
+                 ; missing sampling rate            ;  ; empty value is handled by SeisComP inventory reader
+                 ; missing depth                    ; W; empty value is handled by SeisComP inventory reader
+                 ; missing azimuth                  ;  ; empty value is handled by SeisComP inventory reader
+                 ; missing dip                      ;  ; empty value is handled by SeisComP inventory reader
+                 ; empty sensor ID                  ; I;
+                 ; large depth                      ; W; :option:`--max-sensor-depth` overrides default threshold (500 m)
+                 ; 2 or more than 3 streams exist   ; I;
+                 ; 3C streams are not orthogonal    ; W; differences <= 1 degree are tolerated, applies to seismic sensors with codes G, H, L, N
 
-   sensor        , referenced sensor not available  , R,
+   sensor        ; referenced sensor not available  ; R;
