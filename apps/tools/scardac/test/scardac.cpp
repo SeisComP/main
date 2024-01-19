@@ -735,4 +735,32 @@ BOOST_AUTO_TEST_CASE(timewindow) {
 
 
 //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+BOOST_AUTO_TEST_CASE(streamfilter) {
+	BOOST_TEST_MESSAGE("initial scan");
+
+	// run scardac
+	DataModel::DatabaseReaderPtr reader;
+	reader = runApp(dbURI, {appName, "--exclude", "AA.*"});
+
+	DataModel::DataAvailabilityPtr da = reader->loadDataAvailability();
+	BOOST_ASSERT_MSG(da, "Could not load data availability");
+
+	// extent
+	BOOST_ASSERT_MSG(da->dataExtentCount(), "No extent found");
+	auto *ext = da->dataExtent(0);
+	reader->load(ext);
+	BOOST_CHECK_EQUAL(ext->dataAttributeExtentCount(), 1);
+	BOOST_CHECK_EQUAL(ext->dataSegmentCount(), 1);
+	auto &wfid = ext->waveformID();
+	BOOST_CHECK_EQUAL(wfid.networkCode(), "AM");
+	BOOST_CHECK_EQUAL(wfid.stationCode(), "R0F05");
+	BOOST_CHECK_EQUAL(wfid.locationCode(), "00");
+	BOOST_CHECK_EQUAL(wfid.channelCode(), "SHZ");
+}
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+
+
+//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 BOOST_AUTO_TEST_SUITE_END()
