@@ -33,8 +33,8 @@
 				<description>
 				Maximum number of segments per stream. If the limit is reached
 				no more segments are added to the database and the corresponding
-				extent is flagged as too fragmented. Use a negative value to
-				disable any limit.
+				extent is flagged as too fragmented. Set this parameter to 0 to
+				disable any limits.
 				</description>
 			</parameter>
 			<parameter name="nslcFile" type="string">
