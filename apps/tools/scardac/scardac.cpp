@@ -328,7 +328,8 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 		      it != segments.cend() && !_app->_exitRequested; ++it ) {
 
 			// check segment overflow
-			if ( !_segmentOverflow && _segCount > _app->_maxSegments ) {
+			if ( _app->_maxSegments && !_segmentOverflow &&
+			     _segCount > _app->_maxSegments ) {
 				_segmentOverflow = true;
 				SEISCOMP_WARNING("[%i] %s: Segment overflow detected, new "
 				                 "segments will no longer be added to the "
