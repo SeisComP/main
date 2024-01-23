@@ -292,6 +292,6 @@ results.
                  ; empty sensor ID                  ; I;
                  ; large depth                      ; W; :option:`--max-sensor-depth` overrides default threshold (500 m)
                  ; 2 or more than 3 streams exist   ; I;
-                 ; 3C streams are not orthogonal    ; W; differences <= 1 degree are tolerated, applies to seismic sensors with codes G, H, L, N
+                 ; 3C streams are not orthogonal    ; W; differences <= 5 degree are tolerated, applies to seismic sensors with codes G, H, L, N
 
    sensor        ; referenced sensor not available  ; R;
