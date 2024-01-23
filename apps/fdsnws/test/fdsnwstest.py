@@ -23,9 +23,9 @@ from queue import Queue
 
 from seiscomp.fdsnws.utils import py3bstr  # pylint: disable=C0413
 
+
 ###############################################################################
 class FDSNWSTest(object):
-
     # --------------------------------------------------------------------------
     def __init__(self, port=9980):
         self.port = port

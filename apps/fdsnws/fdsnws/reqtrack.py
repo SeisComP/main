@@ -6,6 +6,7 @@ import seiscomp.datamodel
 def callFromThread(f):
     def wrap(*args, **kwargs):
         reactor.callFromThread(f, *args, **kwargs)
+
     return wrap
 
 
@@ -15,13 +16,23 @@ def enableNotifier(f):
         seiscomp.datamodel.Notifier.SetEnabled(True)
         f(*args, **kwargs)
         seiscomp.datamodel.Notifier.SetEnabled(saveState)
+
     return wrap
 
 
 class RequestTrackerDB(object):
-
-    def __init__(self, appName, msgConn, req_id, req_type, user, header, label,
-                 user_ip, client_ip):
+    def __init__(
+        self,
+        appName,
+        msgConn,
+        req_id,
+        req_type,
+        user,
+        header,
+        label,
+        user_ip,
+        client_ip,
+    ):
         self.msgConn = msgConn
         self.arclinkRequest = seiscomp.datamodel.ArclinkRequest.Create()
         self.arclinkRequest.setCreated(seiscomp.core.Time.GMT())
@@ -36,7 +47,7 @@ class RequestTrackerDB(object):
         self.arclinkRequest.setLabel(label)
         self.arclinkRequest.setHeader(header)
 
-        self.averageTimeWindow = seiscomp.core.TimeSpan(0.)
+        self.averageTimeWindow = seiscomp.core.TimeSpan(0.0)
         self.totalLineCount = 0
         self.okLineCount = 0
 
@@ -48,9 +59,23 @@ class RequestTrackerDB(object):
         if msg:
             self.msgConn.send("LOGGING", msg)
 
-    def line_status(self, start_time, end_time, network, station, channel,
-                    location, restricted, net_class, shared, constraints,
-                    volume, status, size, message):
+    def line_status(
+        self,
+        start_time,
+        end_time,
+        network,
+        station,
+        channel,
+        location,
+        restricted,
+        net_class,
+        shared,
+        constraints,
+        volume,
+        status,
+        size,
+        message,
+    ):
         if network is None or network == "":
             network = "."
         if station is None or station == "":
@@ -69,13 +94,16 @@ class RequestTrackerDB(object):
         if isinstance(constraints, list):
             constr = " ".join(constraints)
         else:
-            constr = " ".join([a+"="+b for (a, b) in constraints.items()])
+            constr = " ".join([a + "=" + b for (a, b) in constraints.items()])
 
         arclinkRequestLine = seiscomp.datamodel.ArclinkRequestLine()
         arclinkRequestLine.setStart(start_time)
         arclinkRequestLine.setEnd(end_time)
-        arclinkRequestLine.setStreamID(seiscomp.datamodel.WaveformStreamID(
-            network[:8], station[:8], location[:8], channel[:8], ""))
+        arclinkRequestLine.setStreamID(
+            seiscomp.datamodel.WaveformStreamID(
+                network[:8], station[:8], location[:8], channel[:8], ""
+            )
+        )
         arclinkRequestLine.setConstraints(constr)
         if isinstance(restricted, bool):
             arclinkRequestLine.setRestricted(restricted)

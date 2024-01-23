@@ -47,44 +47,45 @@ VERSION = "1.2.4"
 
 
 class _EventRequestOptions(RequestOptions):
-
-    Exporters = {'xml': 'qml1.2',
-                 'qml': 'qml1.2',
-                 'qml-rt': 'qml1.2rt',
-                 'sc3ml': 'trunk',
-                 'csv': 'csv'}
-    VText = ['text']
-    VOrderBy = ['time', 'time-asc', 'magnitude', 'magnitude-asc']
+    Exporters = {
+        "xml": "qml1.2",
+        "qml": "qml1.2",
+        "qml-rt": "qml1.2rt",
+        "sc3ml": "trunk",
+        "csv": "csv",
+    }
+    VText = ["text"]
+    VOrderBy = ["time", "time-asc", "magnitude", "magnitude-asc"]
     OutputFormats = list(Exporters) + VText
 
-    PMinDepth = ['mindepth']
-    PMaxDepth = ['maxdepth']
-    PMinMag = ['minmagnitude', 'minmag']
-    PMaxMag = ['maxmagnitude', 'maxmag']
-    PMagType = ['magnitudetype', 'magtype']
-    PEventType = ['eventtype']
+    PMinDepth = ["mindepth"]
+    PMaxDepth = ["maxdepth"]
+    PMinMag = ["minmagnitude", "minmag"]
+    PMaxMag = ["maxmagnitude", "maxmag"]
+    PMagType = ["magnitudetype", "magtype"]
+    PEventType = ["eventtype"]
 
-    PAllOrigins = ['includeallorigins', 'allorigins']
-    PAllMags = ['includeallmagnitudes', 'allmagnitudes', 'allmags']
-    PArrivals = ['includearrivals', 'allarrivals']
+    PAllOrigins = ["includeallorigins", "allorigins"]
+    PAllMags = ["includeallmagnitudes", "allmagnitudes", "allmags"]
+    PArrivals = ["includearrivals", "allarrivals"]
 
-    PEventID = ['eventid']
+    PEventID = ["eventid"]
 
-    PLimit = ['limit']
-    POffset = ['offset']
-    POrderBy = ['orderby']
+    PLimit = ["limit"]
+    POffset = ["offset"]
+    POrderBy = ["orderby"]
 
-    PContributor = ['contributor']
-    PCatalog = ['catalog']
-    PUpdateAfter = ['updateafter']
+    PContributor = ["contributor"]
+    PCatalog = ["catalog"]
+    PUpdateAfter = ["updateafter"]
 
     # non standard parameters
-    PPicks = ['includepicks', 'picks']
-    PFM = ['includefocalmechanism', 'focalmechanism', 'fm']
-    PAllFMs = ['includeallfocalmechanisms', 'allfocalmechanisms', 'allfms']
-    PStaMTs = ['includestationmts', 'stationmts', 'stamts']
-    PComments = ['includecomments', 'comments']
-    PFormatted = ['formatted']
+    PPicks = ["includepicks", "picks"]
+    PFM = ["includefocalmechanism", "focalmechanism", "fm"]
+    PAllFMs = ["includeallfocalmechanisms", "allfocalmechanisms", "allfms"]
+    PStaMTs = ["includestationmts", "stationmts", "stamts"]
+    PComments = ["includecomments", "comments"]
+    PFormatted = ["formatted"]
 
     # SeisComP knows more event types than QuakeML. Types unknown to QuakeML
     # are mapped during the SeisComP to QuakeML conversion. Since the FDNSWS
@@ -97,55 +98,76 @@ class _EventRequestOptions(RequestOptions):
         seiscomp.datamodel.OTHER_EVENT: [
             seiscomp.datamodel.DUPLICATE,
             seiscomp.datamodel.NOT_LOCATABLE,
-            seiscomp.datamodel.OUTSIDE_OF_NETWORK_INTEREST
-        ]
+            seiscomp.datamodel.OUTSIDE_OF_NETWORK_INTEREST,
+        ],
     }
 
-    GETParams = RequestOptions.GETParams + RequestOptions.GeoParams + \
-        RequestOptions.OutputParams + PMinDepth + PMaxDepth + PMinMag + \
-        PMaxMag + PMagType + PEventType + PAllOrigins + PAllMags + \
-        PArrivals + PEventID + PLimit + POffset + POrderBy + PContributor + \
-        PCatalog + PUpdateAfter + PPicks + PFM + PAllFMs + PStaMTs + \
-        PComments + PFormatted
+    GETParams = (
+        RequestOptions.GETParams
+        + RequestOptions.GeoParams
+        + RequestOptions.OutputParams
+        + PMinDepth
+        + PMaxDepth
+        + PMinMag
+        + PMaxMag
+        + PMagType
+        + PEventType
+        + PAllOrigins
+        + PAllMags
+        + PArrivals
+        + PEventID
+        + PLimit
+        + POffset
+        + POrderBy
+        + PContributor
+        + PCatalog
+        + PUpdateAfter
+        + PPicks
+        + PFM
+        + PAllFMs
+        + PStaMTs
+        + PComments
+        + PFormatted
+    )
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     class Depth:
         def __init__(self):
             self.min = None
             self.max = None
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     class Magnitude:
         def __init__(self):
             self.min = None
             self.max = None
             self.type = None
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def __init__(self):
         RequestOptions.__init__(self)
-        self.service = 'fdsnws-event'
+        self.service = "fdsnws-event"
 
         self.depth = None
         self.mag = None
         self.eventTypes = set()  # SeisComP numeric event type ids, -1 is used
-                                 # for empty event types
+        # for empty event types
 
         self.allOrigins = None
         self.allMags = None
         self.arrivals = None
 
-        self.limit = None   # event limit, if defined: min 1
-        self.offset = None   # start at specific event count position,
+        self.limit = None  # event limit, if defined: min 1
+        self.offset = None  # start at specific event count position,
         # the spec uses a weird offset definition
         # where an offset of '1' returns the first
         # element, not the second one
-        self.orderBy = None   # [time, time-asc, magnitude, magnitude-asc]
-        self.catalogs = []     # not supported
-        self.contributors = []     # mapped to agency id
+        self.orderBy = None  # [time, time-asc, magnitude, magnitude-asc]
+        self.catalogs = []  # not supported
+        self.contributors = []  # mapped to agency id
         self.updatedAfter = None
 
-        self.eventIDs = []     # specific event filter may not be
+        self.eventIDs = []  # specific event filter may not be
         # combined with above filter criteria
 
         # non standard parameters
@@ -156,7 +178,7 @@ class _EventRequestOptions(RequestOptions):
         self.allFMs = None
         self.staMTs = None
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def parse(self):
         self.parseTime()
         self.parseGeo()
@@ -167,8 +189,7 @@ class _EventRequestOptions(RequestOptions):
         d.min = self.parseFloat(self.PMinDepth)
         d.max = self.parseFloat(self.PMaxDepth)
         if d.min is not None and d.max is not None and d.min > d.max:
-            raise ValueError("%s exceeds %s" % (
-                self.PMinDepth[0], self.PMaxDepth[0]))
+            raise ValueError("%s exceeds %s" % (self.PMinDepth[0], self.PMaxDepth[0]))
         if d.min is not None or d.max:
             self.depth = d
 
@@ -177,8 +198,7 @@ class _EventRequestOptions(RequestOptions):
         m.min = self.parseFloat(self.PMinMag)
         m.max = self.parseFloat(self.PMaxMag)
         if m.min is not None and m.max is not None and m.min > m.max:
-            raise ValueError("%s exceeds %s" % (
-                self.PMinMag[0], self.PMaxMag[0]))
+            raise ValueError("%s exceeds %s" % (self.PMinMag[0], self.PMaxMag[0]))
         key, m.type = self.getFirstValue(self.PMagType)
         if m.min is not None or m.max is not None or m.type is not None:
             self.mag = m
@@ -189,7 +209,7 @@ class _EventRequestOptions(RequestOptions):
                 continue
 
             t = eType.lower()
-            if t == 'unknown':
+            if t == "unknown":
                 self.eventTypes.add(-1)
             else:
                 try:
@@ -204,8 +224,7 @@ class _EventRequestOptions(RequestOptions):
                     if scType in self.ExtraEventTypes:
                         self.eventTypes.update(self.ExtraEventTypes[scType])
                 except ValueError:
-                    raise ValueError("'%s' is not a valid QuakeML event type" \
-                                     % t)
+                    raise ValueError("'%s' is not a valid QuakeML event type" % t)
 
         # output components
         self.allOrigins = self.parseBool(self.PAllOrigins)
@@ -238,18 +257,36 @@ class _EventRequestOptions(RequestOptions):
         self.updatedAfter = self.parseTimeStr(self.PUpdateAfter)
 
         # eventID(s)
-        filterParams = self.time or self.geo or self.depth or self.mag or \
-            self.limit is not None or self.offset is not None or \
-            self.orderBy or self.catalogs or self.contributors or \
-            self.updatedAfter
+        filterParams = (
+            self.time
+            or self.geo
+            or self.depth
+            or self.mag
+            or self.limit is not None
+            or self.offset is not None
+            or self.orderBy
+            or self.catalogs
+            or self.contributors
+            or self.updatedAfter
+        )
         self.eventIDs = self.getValues(self.PEventID)
         # eventID, MUST NOT be combined with above parameters
         if filterParams and self.eventIDs:
-            raise ValueError("invalid mixture of parameters, the parameter " \
-                "'%s' may only be combined with: %s, %s, %s, %s, %s, %s, %s, %s" % (
-                    self.PEventID[0], self.PAllOrigins[0], self.PAllMags[0],
-                    self.PArrivals[0], self.PPicks[0], self.PFM[0],
-                    self.PAllFMs[0], self.PStaMTs[0], self.PComments[0]))
+            raise ValueError(
+                "invalid mixture of parameters, the parameter "
+                "'%s' may only be combined with: %s, %s, %s, %s, %s, %s, %s, %s"
+                % (
+                    self.PEventID[0],
+                    self.PAllOrigins[0],
+                    self.PAllMags[0],
+                    self.PArrivals[0],
+                    self.PPicks[0],
+                    self.PFM[0],
+                    self.PAllFMs[0],
+                    self.PStaMTs[0],
+                    self.PComments[0],
+                )
+            )
 
         # format XML
         self.formatted = self.parseBool(self.PFormatted)
@@ -259,10 +296,16 @@ class _EventRequestOptions(RequestOptions):
 class FDSNEvent(BaseResource):
     isLeaf = True
 
-    #---------------------------------------------------------------------------
-    def __init__(self, hideAuthor=False, hideComments=False,
-                 evaluationMode=None, eventTypeWhitelist=None,
-                 eventTypeBlacklist=None, formatList=None):
+    # ---------------------------------------------------------------------------
+    def __init__(
+        self,
+        hideAuthor=False,
+        hideComments=False,
+        evaluationMode=None,
+        eventTypeWhitelist=None,
+        eventTypeBlacklist=None,
+        formatList=None,
+    ):
         BaseResource.__init__(self, VERSION)
         self._hideAuthor = hideAuthor
         self._hideComments = hideComments
@@ -271,15 +314,17 @@ class FDSNEvent(BaseResource):
         self._eventTypeBlacklist = eventTypeBlacklist
         self._formatList = formatList
 
-    #---------------------------------------------------------------------------
-    def render_OPTIONS(self, req): #pylint: disable=R0201
-        req.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
-        req.setHeader('Access-Control-Allow-Headers',
-                      'Accept, Content-Type, X-Requested-With, Origin')
-        req.setHeader('Content-Type', 'text/plain')
+    # ---------------------------------------------------------------------------
+    def render_OPTIONS(self, req):  # pylint: disable=R0201
+        req.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS")
+        req.setHeader(
+            "Access-Control-Allow-Headers",
+            "Accept, Content-Type, X-Requested-With, Origin",
+        )
+        req.setHeader("Content-Type", "text/plain")
         return ""
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def render_GET(self, req):
         # Parse and validate GET parameters
         ro = _EventRequestOptions()
@@ -316,8 +361,10 @@ class FDSNEvent(BaseResource):
             if exp:
                 exp.setFormattedOutput(bool(ro.formatted))
             else:
-                msg = "output format '%s' not available, export module '%s' could " \
-                      "not be loaded." % (ro.format, ro.Exporters[ro.format])
+                msg = (
+                    "output format '%s' not available, export module '%s' could "
+                    "not be loaded." % (ro.format, ro.Exporters[ro.format])
+                )
                 return self.renderErrorPage(req, http.BAD_REQUEST, msg, ro)
 
         # Create database query
@@ -336,7 +383,7 @@ class FDSNEvent(BaseResource):
         # The request is handled by the deferred object
         return server.NOT_DONE_YET
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     @staticmethod
     def _removeAuthor(obj):
         try:
@@ -346,7 +393,7 @@ class FDSNEvent(BaseResource):
         except ValueError:
             pass
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def _loadComments(self, dbq, obj):
         cnt = dbq.loadComments(obj)
         if self._hideAuthor:
@@ -354,10 +401,10 @@ class FDSNEvent(BaseResource):
                 self._removeAuthor(obj.comment(iComment))
         return cnt
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def _processRequestExp(self, req, ro, dbq, exp, ep):
         objCount = ep.eventCount()
-        maxObj = Application.Instance()._queryObjects #pylint: disable=W0212
+        maxObj = Application.Instance()._queryObjects  # pylint: disable=W0212
 
         if not self.checkObjects(req, objCount, maxObj):
             return False
@@ -368,7 +415,7 @@ class FDSNEvent(BaseResource):
 
         # add related information
         for iEvent in range(ep.eventCount()):
-            if req._disconnected: #pylint: disable=W0212
+            if req._disconnected:  # pylint: disable=W0212
                 return False
             e = ep.event(iEvent)
             if self._hideAuthor:
@@ -404,7 +451,8 @@ class FDSNEvent(BaseResource):
             # focalMechanism references: either none, preferred only or all
             if ro.fm or ro.allFMs:
                 dbIter = dbq.getObjects(
-                    e, seiscomp.datamodel.FocalMechanismReference.TypeInfo())
+                    e, seiscomp.datamodel.FocalMechanismReference.TypeInfo()
+                )
                 for obj in dbIter:
                     fmRef = seiscomp.datamodel.FocalMechanismReference.Cast(obj)
                     if fmRef is None:
@@ -423,7 +471,7 @@ class FDSNEvent(BaseResource):
             # focal mechanisms: process before origins to add derived origin to
             # originID list since it may be missing from origin reference list
             for iFMRef in range(e.focalMechanismReferenceCount()):
-                if req._disconnected: #pylint: disable=W0212
+                if req._disconnected:  # pylint: disable=W0212
                     return False
                 fmID = e.focalMechanismReference(iFMRef).focalMechanismID()
                 obj = dbq.getObject(seiscomp.datamodel.FocalMechanism.TypeInfo(), fmID)
@@ -462,19 +510,20 @@ class FDSNEvent(BaseResource):
                     objCount += dbq.loadDataUseds(mt)
                     objCount += dbq.loadMomentTensorPhaseSettings(mt)
                     if ro.staMTs:
-                        objCount += dbq.loadMomentTensorStationContributions(
-                            mt)
+                        objCount += dbq.loadMomentTensorStationContributions(mt)
                         for iStaMT in range(mt.momentTensorStationContributionCount()):
                             objCount += dbq.load(
-                                mt.momentTensorStationContribution(iStaMT))
+                                mt.momentTensorStationContribution(iStaMT)
+                            )
 
                     if not self.checkObjects(req, objCount, maxObj):
                         return False
 
             # find ID of origin containing preferred Magnitude
             if e.preferredMagnitudeID():
-                obj = dbq.getObject(seiscomp.datamodel.Magnitude.TypeInfo(),
-                                    e.preferredMagnitudeID())
+                obj = dbq.getObject(
+                    seiscomp.datamodel.Magnitude.TypeInfo(), e.preferredMagnitudeID()
+                )
                 m = seiscomp.datamodel.Magnitude.Cast(obj)
                 if m is not None:
                     oID = dbq.parentPublicID(m)
@@ -483,7 +532,7 @@ class FDSNEvent(BaseResource):
 
             # origins
             for oID in sorted(originIDs):
-                if req._disconnected: #pylint: disable=W0212
+                if req._disconnected:  # pylint: disable=W0212
                     return False
                 obj = dbq.getObject(seiscomp.datamodel.Origin.TypeInfo(), oID)
                 o = seiscomp.datamodel.Origin.Cast(obj)
@@ -563,19 +612,23 @@ class FDSNEvent(BaseResource):
         sink = utils.Sink(req)
         if not exp.write(sink, ep):
             return False
-        seiscomp.logging.debug("%s: returned %i events and %i origins " \
-            "(total objects/bytes: %i/%i)" % (
-                ro.service, ep.eventCount(), ep.originCount(), objCount, sink.written))
+        seiscomp.logging.debug(
+            "%s: returned %i events and %i origins "
+            "(total objects/bytes: %i/%i)"
+            % (ro.service, ep.eventCount(), ep.originCount(), objCount, sink.written)
+        )
         utils.accessLog(req, ro, http.OK, sink.written, None)
         return True
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def _processRequestText(self, req, ro, dbq, ep):
         lineCount = 0
 
-        line = "#EventID|Time|Latitude|Longitude|Depth/km|Author|Catalog|" \
-               "Contributor|ContributorID|MagType|Magnitude|MagAuthor|" \
-               "EventLocationName|EventType\n"
+        line = (
+            "#EventID|Time|Latitude|Longitude|Depth/km|Author|Catalog|"
+            "Contributor|ContributorID|MagType|Magnitude|MagAuthor|"
+            "EventLocationName|EventType\n"
+        )
         df = "%FT%T.%f"
         utils.writeTS(req, line)
         byteCount = len(line)
@@ -586,47 +639,50 @@ class FDSNEvent(BaseResource):
             eID = e.publicID()
 
             # query for preferred origin
-            obj = dbq.getObject(seiscomp.datamodel.Origin.TypeInfo(),
-                                e.preferredOriginID())
+            obj = dbq.getObject(
+                seiscomp.datamodel.Origin.TypeInfo(), e.preferredOriginID()
+            )
             o = seiscomp.datamodel.Origin.Cast(obj)
             if o is None:
                 seiscomp.logging.warning(
-                    "preferred origin of event '%s' not found: %s" % (
-                        eID, e.preferredOriginID()))
+                    "preferred origin of event '%s' not found: %s"
+                    % (eID, e.preferredOriginID())
+                )
                 continue
 
             # depth
             try:
                 depth = str(o.depth().value())
             except ValueError:
-                depth = ''
+                depth = ""
 
             # author
             if self._hideAuthor:
-                author = ''
+                author = ""
             else:
                 try:
                     author = o.creationInfo().author()
                 except ValueError:
-                    author = ''
+                    author = ""
 
             # contributor
             try:
                 contrib = e.creationInfo().agencyID()
             except ValueError:
-                contrib = ''
+                contrib = ""
 
             # query for preferred magnitude (if any)
-            mType, mVal, mAuthor = '', '', ''
+            mType, mVal, mAuthor = "", "", ""
             if e.preferredMagnitudeID():
-                obj = dbq.getObject(seiscomp.datamodel.Magnitude.TypeInfo(),
-                                    e.preferredMagnitudeID())
+                obj = dbq.getObject(
+                    seiscomp.datamodel.Magnitude.TypeInfo(), e.preferredMagnitudeID()
+                )
                 m = seiscomp.datamodel.Magnitude.Cast(obj)
                 if m is not None:
                     mType = m.type()
                     mVal = str(m.magnitude().value())
                     if self._hideAuthor:
-                        mAuthor = ''
+                        mAuthor = ""
                     else:
                         try:
                             mAuthor = m.creationInfo().author()
@@ -635,7 +691,7 @@ class FDSNEvent(BaseResource):
 
             # event description
             dbq.loadEventDescriptions(e)
-            region = ''
+            region = ""
             for i in range(e.eventDescriptionCount()):
                 ed = e.eventDescription(i)
                 if ed.type() == seiscomp.datamodel.REGION_NAME:
@@ -646,28 +702,41 @@ class FDSNEvent(BaseResource):
             try:
                 eType = seiscomp.datamodel.QMLTypeMapper.EventTypeToString(e.type())
             except ValueError:
-                eType = ''
+                eType = ""
 
-            if req._disconnected: #pylint: disable=W0212
+            if req._disconnected:  # pylint: disable=W0212
                 return False
             line = "%s|%s|%f|%f|%s|%s||%s|%s|%s|%s|%s|%s|%s\n" % (
-                eID, o.time().value().toString(df), o.latitude().value(),
-                o.longitude().value(), depth, author, contrib, eID, mType,
-                mVal, mAuthor, region, eType)
+                eID,
+                o.time().value().toString(df),
+                o.latitude().value(),
+                o.longitude().value(),
+                depth,
+                author,
+                contrib,
+                eID,
+                mType,
+                mVal,
+                mAuthor,
+                region,
+                eType,
+            )
             lineBin = utils.py3bstr(line)
             utils.writeTSBin(req, lineBin)
             lineCount += 1
             byteCount += len(lineBin)
 
         # write response
-        seiscomp.logging.debug("%s: returned %i events (total bytes: %i) " % (
-            ro.service, lineCount, byteCount))
+        seiscomp.logging.debug(
+            "%s: returned %i events (total bytes: %i) "
+            % (ro.service, lineCount, byteCount)
+        )
         utils.accessLog(req, ro, http.OK, byteCount, None)
         return True
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def _processRequest(self, req, ro, dbq, exp):
-        if req._disconnected: #pylint: disable=W0212
+        if req._disconnected:  # pylint: disable=W0212
             return False
 
         seiscomp.datamodel.PublicObject.SetRegistrationEnabled(False)
@@ -687,20 +756,21 @@ class FDSNEvent(BaseResource):
                         eType = e.type()
                     except ValueError:
                         pass
-                    if self._eventTypeWhitelist and \
-                       not eType in self._eventTypeWhitelist:
+                    if (
+                        self._eventTypeWhitelist
+                        and not eType in self._eventTypeWhitelist
+                    ):
                         continue
-                    if self._eventTypeBlacklist and \
-                       eType in self._eventTypeBlacklist:
+                    if self._eventTypeBlacklist and eType in self._eventTypeBlacklist:
                         continue
 
                 if self._evaluationMode is not None:
-                    obj = dbq.getObject(seiscomp.datamodel.Origin.TypeInfo(),
-                                        e.preferredOriginID())
+                    obj = dbq.getObject(
+                        seiscomp.datamodel.Origin.TypeInfo(), e.preferredOriginID()
+                    )
                     o = seiscomp.datamodel.Origin.Cast(obj)
                     try:
-                        if o is None or \
-                           o.evaluationMode() != self._evaluationMode:
+                        if o is None or o.evaluationMode() != self._evaluationMode:
                             continue
                     except ValueError:
                         continue
@@ -716,17 +786,17 @@ class FDSNEvent(BaseResource):
 
         seiscomp.logging.debug("events found: %i" % ep.eventCount())
 
-        if ro.format == 'csv' or not exp:
-            req.setHeader('Content-Type', 'text/plain')
+        if ro.format == "csv" or not exp:
+            req.setHeader("Content-Type", "text/plain")
         else:
-            req.setHeader('Content-Type', 'application/xml')
+            req.setHeader("Content-Type", "application/xml")
 
         if exp:
             return self._processRequestExp(req, ro, dbq, exp, ep)
 
         return self._processRequestText(req, ro, dbq, ep)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def _findEvents(self, ep, ro, dbq):
         db = Application.Instance().database()
 
@@ -736,13 +806,13 @@ class FDSNEvent(BaseResource):
         def _time(time):
             return db.timeToString(time)
 
-        orderByMag = ro.orderBy and ro.orderBy.startswith('magnitude')
+        orderByMag = ro.orderBy and ro.orderBy.startswith("magnitude")
         reqMag = ro.mag or orderByMag
         reqMagType = ro.mag and ro.mag.type
         reqDist = ro.geo and ro.geo.bCircle
-        colPID = _T('publicID')
-        colTime = _T('time_value')
-        colMag = _T('magnitude_value')
+        colPID = _T("publicID")
+        colTime = _T("time_value")
+        colMag = _T("magnitude_value")
         if orderByMag:
             colOrderBy = "m.%s" % colMag
         else:
@@ -750,7 +820,7 @@ class FDSNEvent(BaseResource):
 
         bBox = None
         if ro.geo:
-            colLat, colLon = _T('latitude_value'), _T('longitude_value')
+            colLat, colLon = _T("latitude_value"), _T("longitude_value")
             if ro.geo.bBox:
                 bBox = ro.geo.bBox
             else:
@@ -758,18 +828,22 @@ class FDSNEvent(BaseResource):
 
         # SELECT --------------------------------
         q = "SELECT DISTINCT pe.%s AS %s, e.*, %s AS colOrderBy" % (
-            colPID, colPID, colOrderBy)
+            colPID,
+            colPID,
+            colOrderBy,
+        )
         if reqDist:  # Great circle distance calculated by Haversine formula
             c = ro.geo.bCircle
-            q += ", DEGREES(ACOS(" \
-                 "COS(RADIANS(o.%s)) * COS(RADIANS(%s)) * " \
-                 "COS(RADIANS(o.%s) - RADIANS(%s)) + SIN(RADIANS(o.%s)) * " \
-                 "SIN(RADIANS(%s)))) AS distance" % (
-                     colLat, c.lat, colLon, c.lon, colLat, c.lat)
+            q += (
+                ", DEGREES(ACOS("
+                "COS(RADIANS(o.%s)) * COS(RADIANS(%s)) * "
+                "COS(RADIANS(o.%s) - RADIANS(%s)) + SIN(RADIANS(o.%s)) * "
+                "SIN(RADIANS(%s)))) AS distance"
+                % (colLat, c.lat, colLon, c.lon, colLat, c.lat)
+            )
 
         # FROM ----------------------------------
-        q += " FROM Event AS e, PublicObject AS pe" \
-             ", Origin AS o, PublicObject AS po"
+        q += " FROM Event AS e, PublicObject AS pe" ", Origin AS o, PublicObject AS po"
         if reqMag:
             q += ", Magnitude AS m"
             if not reqMagType:
@@ -787,8 +861,9 @@ class FDSNEvent(BaseResource):
             types = self._eventTypeWhitelist.intersection(ro.eventTypes)
             if not types:
                 seiscomp.logging.debug(
-                    'all requested event types filtered by configured event '
-                    'type white list')
+                    "all requested event types filtered by configured event "
+                    "type white list"
+                )
                 return
         elif self._eventTypeWhitelist:
             types = self._eventTypeWhitelist
@@ -798,10 +873,12 @@ class FDSNEvent(BaseResource):
             allowNull = -1 in types
             types = [x for x in types if x >= 0]
 
-            etqIn = "e.%s IN ('%s')" % (_T('type'), "', '".join(
-                seiscomp.datamodel.EEventTypeNames.name(x) for x in types))
+            etqIn = "e.%s IN ('%s')" % (
+                _T("type"),
+                "', '".join(seiscomp.datamodel.EEventTypeNames.name(x) for x in types),
+            )
             if allowNull:
-                etqNull = "e.%s is NULL" % _T('type')
+                etqNull = "e.%s is NULL" % _T("type")
                 if types:
                     q += " AND (%s OR %s)" % (etqNull, etqIn)
                 else:
@@ -814,10 +891,12 @@ class FDSNEvent(BaseResource):
             allowNull = -1 not in self._eventTypeBlacklist
             types = [x for x in self._eventTypeBlacklist if x >= 0]
 
-            etqNotIn = "e.%s NOT IN ('%s')" % (_T('type'), "', '".join(
-                seiscomp.datamodel.EEventTypeNames.name(x) for x in types))
+            etqNotIn = "e.%s NOT IN ('%s')" % (
+                _T("type"),
+                "', '".join(seiscomp.datamodel.EEventTypeNames.name(x) for x in types),
+            )
             if allowNull:
-                etqNull = "e.%s is NULL" % _T('type')
+                etqNull = "e.%s is NULL" % _T("type")
                 if types:
                     q += " AND (%s OR %s)" % (etqNull, etqNotIn)
                 else:
@@ -828,33 +907,50 @@ class FDSNEvent(BaseResource):
         # event agency id filter
         if ro.contributors:
             q += " AND e.%s AND upper(e.%s) IN('%s')" % (
-                _T('creationinfo_used'), _T('creationinfo_agencyid'),
-                "', '".join(ro.contributors).upper())
+                _T("creationinfo_used"),
+                _T("creationinfo_agencyid"),
+                "', '".join(ro.contributors).upper(),
+            )
 
         # origin information filter
         q += " AND o._oid = po._oid AND po.%s = e.%s" % (
-            colPID, _T('preferredOriginID'))
+            colPID,
+            _T("preferredOriginID"),
+        )
 
         # evaluation mode config parameter
         if self._evaluationMode is not None:
-            colEvalMode = _T('evaluationMode')
+            colEvalMode = _T("evaluationMode")
             q += " AND o.%s = '%s'" % (
-                colEvalMode, seiscomp.datamodel.EEvaluationModeNames.name(
-                    self._evaluationMode))
+                colEvalMode,
+                seiscomp.datamodel.EEvaluationModeNames.name(self._evaluationMode),
+            )
 
         # time
         if ro.time:
-            colTimeMS = _T('time_value_ms')
+            colTimeMS = _T("time_value_ms")
             if ro.time.start is not None:
                 t = _time(ro.time.start)
                 ms = ro.time.start.microseconds()
                 q += " AND (o.%s > '%s' OR (o.%s = '%s' AND o.%s >= %i))" % (
-                    colTime, t, colTime, t, colTimeMS, ms)
+                    colTime,
+                    t,
+                    colTime,
+                    t,
+                    colTimeMS,
+                    ms,
+                )
             if ro.time.end is not None:
                 t = _time(ro.time.end)
                 ms = ro.time.end.microseconds()
                 q += " AND (o.%s < '%s' OR (o.%s = '%s' AND o.%s <= %i))" % (
-                    colTime, t, colTime, t, colTimeMS, ms)
+                    colTime,
+                    t,
+                    colTime,
+                    t,
+                    colTimeMS,
+                    ms,
+                )
 
         # bounding box
         if bBox:
@@ -864,7 +960,11 @@ class FDSNEvent(BaseResource):
                 q += " AND o.%s <= %s" % (colLat, bBox.maxLat)
             if bBox.dateLineCrossing():
                 q += " AND (o.%s >= %s OR o.%s <= %s)" % (
-                    colLon, bBox.minLon, colLon, bBox.maxLon)
+                    colLon,
+                    bBox.minLon,
+                    colLon,
+                    bBox.maxLon,
+                )
             else:
                 if bBox.minLon is not None:
                     q += " AND o.%s >= %s" % (colLon, bBox.minLon)
@@ -874,7 +974,7 @@ class FDSNEvent(BaseResource):
         # depth
         if ro.depth:
             q += " AND o.%s" % _T("depth_used")
-            colDepth = _T('depth_value')
+            colDepth = _T("depth_value")
             if ro.depth.min is not None:
                 q += " AND o.%s >= %s" % (colDepth, ro.depth.min)
             if ro.depth.max is not None:
@@ -884,10 +984,10 @@ class FDSNEvent(BaseResource):
         if ro.updatedAfter:
             t = _time(ro.updatedAfter)
             ms = ro.updatedAfter.microseconds()
-            colCTime = _T('creationinfo_creationtime')
-            colCTimeMS = _T('creationinfo_creationtime_ms')
-            colMTime = _T('creationinfo_modificationtime')
-            colMTimeMS = _T('creationinfo_modificationtime_ms')
+            colCTime = _T("creationinfo_creationtime")
+            colCTimeMS = _T("creationinfo_creationtime_ms")
+            colMTime = _T("creationinfo_modificationtime")
+            colMTimeMS = _T("creationinfo_modificationtime_ms")
             tFilter = "(o.%s > '%s' OR (o.%s = '%s' AND o.%s > %i))"
 
             q += " AND ("
@@ -905,35 +1005,45 @@ class FDSNEvent(BaseResource):
             # join magnitude table on preferred magnitude id of event
             if not reqMagType:
                 q += " AND m._oid = pm._oid AND pm.%s = e.%s" % (
-                    colPID, _T('preferredMagnitudeID'))
+                    colPID,
+                    _T("preferredMagnitudeID"),
+                )
 
             # magnitude type filter:
             # Specific mag type is searched in magnitudes of preferred origin or
             # in derived origin of moment tensors of preferred focal mechanism.
             else:
                 q += " AND m.%s = '%s' AND m._parent_oid " % (
-                    _T('type'), dbq.toString(ro.mag.type))
+                    _T("type"),
+                    dbq.toString(ro.mag.type),
+                )
 
                 # For performance reasons the query is split in two parts
                 # combined with a UNION statement. The subsequent ORDER BY,
                 # LIMIT/OFFSET or distance subquery is carried out on the entire
                 # UNION result set.
-                q += "= po._oid UNION " + q + "IN (" \
-                         "SELECT pdo._oid " \
-                         "FROM " \
-                             "PublicObject pfm, " \
-                             "MomentTensor mt, " \
-                             "PublicObject pdo " \
-                         "WHERE " \
-                             "pfm.%s = e.%s AND " \
-                             "mt._parent_oid = pfm._oid AND " \
-                             "pdo.%s = mt.%s)" % (
-                                 colPID, _T('preferredFocalMechanismID'),
-                                 colPID, _T('derivedOriginID'))
+                q += (
+                    "= po._oid UNION " + q + "IN ("
+                    "SELECT pdo._oid "
+                    "FROM "
+                    "PublicObject pfm, "
+                    "MomentTensor mt, "
+                    "PublicObject pdo "
+                    "WHERE "
+                    "pfm.%s = e.%s AND "
+                    "mt._parent_oid = pfm._oid AND "
+                    "pdo.%s = mt.%s)"
+                    % (
+                        colPID,
+                        _T("preferredFocalMechanismID"),
+                        colPID,
+                        _T("derivedOriginID"),
+                    )
+                )
 
         # ORDER BY ------------------------------
         q += " ORDER BY colOrderBy "
-        if ro.orderBy and ro.orderBy.endswith('-asc'):
+        if ro.orderBy and ro.orderBy.endswith("-asc"):
             q += "ASC"
         else:
             q += "DESC"

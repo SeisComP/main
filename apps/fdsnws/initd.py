@@ -15,14 +15,15 @@ class Module(seiscomp.kernel.Module):
 
     def reload(self):
         if not self.isRunning():
-            self.env.log('{} is not running'.format(self.name))
+            self.env.log("{} is not running".format(self.name))
             return 1
 
-        self.env.log('reloading {}'.format(self.name))
+        self.env.log("reloading {}".format(self.name))
 
         lockfile = self.env.lockFile(self.name)
-        reloadfile = os.path.join(os.path.dirname(lockfile),
-                                  '{}.reload'.format(self.name))
+        reloadfile = os.path.join(
+            os.path.dirname(lockfile), "{}.reload".format(self.name)
+        )
 
         # Open pid file
         with open(lockfile, "r") as f:
@@ -30,11 +31,10 @@ class Module(seiscomp.kernel.Module):
             pid = int(f.readline())
 
             # touch reload file
-            open(reloadfile, 'a').close()
+            open(reloadfile, "a").close()
 
             if not os.path.isfile(reloadfile):
-                self.env.log('could not touch reload file: {}' \
-                             .format(reloadfile))
+                self.env.log("could not touch reload file: {}".format(reloadfile))
                 return 1
 
             # Send SIGHUP
@@ -46,9 +46,10 @@ class Module(seiscomp.kernel.Module):
                 if not os.path.isfile(reloadfile):
                     return 0
 
-            self.env.log('timeout exceeded')
+            self.env.log("timeout exceeded")
 
         return 1
+
 
 # Uncomment for authbind (running service on privileged ports)
 #  def _run(self):

@@ -15,7 +15,6 @@ from seiscomp.fdsnws import event, station, dataselect, availability
 
 ###############################################################################
 class TestStatic(FDSNWSTest):
-
     # --------------------------------------------------------------------------
     def test(self):
         print("Testing static files")

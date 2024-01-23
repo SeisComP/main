@@ -1,5 +1,6 @@
 from fdsnwstest import FDSNWSTest
 
+
 ###############################################################################
 class TestStationBase(FDSNWSTest):
     CT_TXT = "text/plain"

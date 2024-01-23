@@ -15,11 +15,16 @@ import seiscomp.mseedlite
 
 
 if hasattr(datetime.timedelta, "total_seconds"):
+
     def _total_seconds(td):
         return td.total_seconds()
+
 else:
+
     def _total_seconds(td):
-        return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) // 10**6
+        return (
+            td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6
+        ) // 10**6
 
 
 class SDS(object):
@@ -32,9 +37,19 @@ class SDS(object):
 
     def __getMSName(self, reqDate, net, sta, loc, cha):
         for root in self.sdsRoot:
-            yield '%s/%d/%s/%s/%s.D/%s.%s.%s.%s.D.%d.%s' % \
-                (root, reqDate.year, net, sta, cha, net, sta, loc, cha,
-                 reqDate.year, reqDate.strftime('%j'))
+            yield "%s/%d/%s/%s/%s.D/%s.%s.%s.%s.D.%d.%s" % (
+                root,
+                reqDate.year,
+                net,
+                sta,
+                cha,
+                net,
+                sta,
+                loc,
+                cha,
+                reqDate.year,
+                reqDate.strftime("%j"),
+            )
 
     @staticmethod
     def __time2recno(msFile, reclen, timeStart, recStart, timeEnd, recEnd, searchTime):
@@ -52,8 +67,9 @@ class SDS(object):
         r1 = recStart
         t2 = timeEnd
         r2 = recEnd
-        rn = int(r1 + (r2 - r1) * _total_seconds(searchTime - t1) /
-                 _total_seconds(t2 - t1))
+        rn = int(
+            r1 + (r2 - r1) * _total_seconds(searchTime - t1) / _total_seconds(t2 - t1)
+        )
 
         if rn < recStart:
             rn = recStart
@@ -72,8 +88,12 @@ class SDS(object):
                 if t1 == t2:
                     break
 
-                rn = int(r1 + (r2 - r1) * _total_seconds(searchTime -
-                                                         t1) / _total_seconds(t2 - t1))
+                rn = int(
+                    r1
+                    + (r2 - r1)
+                    * _total_seconds(searchTime - t1)
+                    / _total_seconds(t2 - t1)
+                )
 
                 if rn < recStart:
                     rn = recStart
@@ -91,8 +111,12 @@ class SDS(object):
                 if t1 == t2:
                     break
 
-                rn = int(r2 - (r2 - r1) * _total_seconds(t2 -
-                                                         searchTime) / _total_seconds(t2 - t1))
+                rn = int(
+                    r2
+                    - (r2 - r1)
+                    * _total_seconds(t2 - searchTime)
+                    / _total_seconds(t2 - t1)
+                )
 
                 if rn < recStart:
                     rn = recStart
@@ -126,18 +150,24 @@ class SDS(object):
             return
 
         if timeStart >= timeEnd:
-            seiscomp.logging.error("%s: overlap detected (start=%s, end=%s)" % (
-                msFile.name, timeStart, timeEnd))
+            seiscomp.logging.error(
+                "%s: overlap detected (start=%s, end=%s)"
+                % (msFile.name, timeStart, timeEnd)
+            )
             return
 
         (lower, _) = self.__time2recno(
-            msFile, reclen, timeStart, recStart, timeEnd, recEnd, startt)
+            msFile, reclen, timeStart, recStart, timeEnd, recEnd, startt
+        )
         (upper, _) = self.__time2recno(
-            msFile, reclen, startt, lower, timeEnd, recEnd, endt)
+            msFile, reclen, startt, lower, timeEnd, recEnd, endt
+        )
 
         if upper < lower:
-            seiscomp.logging.error("%s: overlap detected (lower=%d, upper=%d)" % (
-                msFile.name, lower, upper))
+            seiscomp.logging.error(
+                "%s: overlap detected (lower=%d, upper=%d)"
+                % (msFile.name, lower, upper)
+            )
             upper = lower
 
         msFile.seek(lower * reclen)
@@ -158,7 +188,7 @@ class SDS(object):
 
             if check:
                 while offset < len(data):
-                    rec = seiscomp.mseedlite.Record(data[offset:offset+reclen])
+                    rec = seiscomp.mseedlite.Record(data[offset : offset + reclen])
 
                     if rec.begin_time >= endt:
                         return
@@ -188,15 +218,15 @@ class SDS(object):
 
     def __getDayRaw(self, day, startt, endt, net, sta, loc, cha, bufferSize):
         # Take into account the case of empty location
-        if loc == '--':
-            loc = ''
+        if loc == "--":
+            loc = ""
 
         for dataFile in self.__getMSName(day, net, sta, loc, cha):
             if not os.path.exists(dataFile):
                 continue
 
             try:
-                with open(dataFile, 'rb') as msFile:
+                with open(dataFile, "rb") as msFile:
                     for buf in self.__getWaveform(startt, endt, msFile, bufferSize):
                         yield buf
 
@@ -204,12 +234,15 @@ class SDS(object):
                 seiscomp.logging.error("%s: %s" % (dataFile, str(e)))
 
     def getRawBytes(self, startt, endt, net, sta, loc, cha, bufferSize):
-        day = datetime.datetime(startt.year, startt.month,
-                                startt.day) - datetime.timedelta(days=1)
+        day = datetime.datetime(
+            startt.year, startt.month, startt.day
+        ) - datetime.timedelta(days=1)
         endDay = datetime.datetime(endt.year, endt.month, endt.day)
 
         while day <= endDay:
-            for buf in self.__getDayRaw(day, startt, endt, net, sta, loc, cha, bufferSize):
+            for buf in self.__getDayRaw(
+                day, startt, endt, net, sta, loc, cha, bufferSize
+            ):
                 yield buf
 
             day += datetime.timedelta(days=1)
