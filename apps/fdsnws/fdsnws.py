@@ -16,8 +16,6 @@
 # Email:   herrnkind@gempa.de
 ###############################################################################
 
-from __future__ import absolute_import, division, print_function
-
 import base64
 import fnmatch
 import os
@@ -1258,13 +1256,8 @@ configuration read:
         invFilter = []
         includeRuleDefined = False
         try:
-            # pylint: disable=C0415
-            if sys.version_info[0] < 3:
-                from ConfigParser import ConfigParser
-                from ConfigParser import Error as CPError
-            else:
-                from configparser import ConfigParser
-                from configparser import Error as CPError
+            from configparser import ConfigParser
+            from configparser import Error as CPError
         except ImportError:
             seiscomp.logging.error("could not load 'ConfigParser' Python module")
             return False
@@ -1274,10 +1267,7 @@ configuration read:
         try:
             seiscomp.logging.notice("reading inventory filter file: %s" % fileName)
             fp = open(fileName, 'r')
-            if sys.version_info < (3, 2):
-                cp.readfp(fp) # pylint: disable=W1505
-            else:
-                cp.read_file(fp, fileName)
+            cp.read_file(fp, fileName)
 
             if len(cp.sections()) == 0:
                 return True

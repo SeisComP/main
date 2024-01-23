@@ -12,7 +12,6 @@
 # Email:   herrnkind@gempa.de
 ###############################################################################
 
-from __future__ import absolute_import, division, print_function
 from functools import cmp_to_key
 
 from collections import OrderedDict

@@ -7,17 +7,12 @@
 # Email:   herrnkind@gempa.de
 ################################################################################
 
-from __future__ import absolute_import, division, print_function
-
 import os
 import sys
 import time
 import threading
 
-if sys.version_info[0] < 3:
-    from Queue import Queue # pylint: disable=E0401
-else:
-    from queue import Queue
+from queue import Queue
 
 #-------------------------------------------------------------------------------
 

@@ -7,8 +7,6 @@
 # Email:   javier@gfz-potsdam.de
 ################################################################################
 
-from __future__ import absolute_import, division, print_function
-
 import datetime
 import os
 
