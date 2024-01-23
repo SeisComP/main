@@ -189,7 +189,7 @@ class _EventRequestOptions(RequestOptions):
         d.min = self.parseFloat(self.PMinDepth)
         d.max = self.parseFloat(self.PMaxDepth)
         if d.min is not None and d.max is not None and d.min > d.max:
-            raise ValueError("%s exceeds %s" % (self.PMinDepth[0], self.PMaxDepth[0]))
+            raise ValueError(f"{self.PMinDepth[0]} exceeds {self.PMaxDepth[0]}")
         if d.min is not None or d.max:
             self.depth = d
 
@@ -198,7 +198,7 @@ class _EventRequestOptions(RequestOptions):
         m.min = self.parseFloat(self.PMinMag)
         m.max = self.parseFloat(self.PMaxMag)
         if m.min is not None and m.max is not None and m.min > m.max:
-            raise ValueError("%s exceeds %s" % (self.PMinMag[0], self.PMaxMag[0]))
+            raise ValueError(f"{self.PMinMag[0]} exceeds {self.PMaxMag[0]}")
         key, m.type = self.getFirstValue(self.PMagType)
         if m.min is not None or m.max is not None or m.type is not None:
             self.mag = m
@@ -224,7 +224,7 @@ class _EventRequestOptions(RequestOptions):
                     if scType in self.ExtraEventTypes:
                         self.eventTypes.update(self.ExtraEventTypes[scType])
                 except ValueError:
-                    raise ValueError("'%s' is not a valid QuakeML event type" % t)
+                    raise ValueError(f"'{t}' is not a valid QuakeML event type")
 
         # output components
         self.allOrigins = self.parseBool(self.PAllOrigins)
@@ -350,7 +350,7 @@ class FDSNEvent(BaseResource):
             return self.renderErrorPage(req, http.BAD_REQUEST, msg, ro)
 
         if self._formatList is not None and ro.format not in self._formatList:
-            msg = "output format '%s' not available" % ro.format
+            msg = f"output format '{ro.format}' not available"
             return self.renderErrorPage(req, http.BAD_REQUEST, msg, ro)
 
         # Exporter, 'None' is used for text output
@@ -814,9 +814,9 @@ class FDSNEvent(BaseResource):
         colTime = _T("time_value")
         colMag = _T("magnitude_value")
         if orderByMag:
-            colOrderBy = "m.%s" % colMag
+            colOrderBy = f"m.{colMag}"
         else:
-            colOrderBy = "o.%s" % colTime
+            colOrderBy = f"o.{colTime}"
 
         bBox = None
         if ro.geo:
@@ -827,11 +827,7 @@ class FDSNEvent(BaseResource):
                 bBox = ro.geo.bCircle.calculateBBox()
 
         # SELECT --------------------------------
-        q = "SELECT DISTINCT pe.%s AS %s, e.*, %s AS colOrderBy" % (
-            colPID,
-            colPID,
-            colOrderBy,
-        )
+        q = f"SELECT DISTINCT pe.{colPID} AS {colPID}, e.*, {colOrderBy} AS colOrderBy"
         if reqDist:  # Great circle distance calculated by Haversine formula
             c = ro.geo.bCircle
             q += (
@@ -878,13 +874,13 @@ class FDSNEvent(BaseResource):
                 "', '".join(seiscomp.datamodel.EEventTypeNames.name(x) for x in types),
             )
             if allowNull:
-                etqNull = "e.%s is NULL" % _T("type")
+                etqNull = f"e.{_T('type')} is NULL"
                 if types:
-                    q += " AND (%s OR %s)" % (etqNull, etqIn)
+                    q += f" AND ({etqNull} OR {etqIn})"
                 else:
-                    q += " AND %s" % etqNull
+                    q += f" AND {etqNull}"
             else:
-                q += " AND %s" % etqIn
+                q += f" AND {etqIn}"
 
         # event type black list filter, defined in configuration
         if self._eventTypeBlacklist:
@@ -896,13 +892,13 @@ class FDSNEvent(BaseResource):
                 "', '".join(seiscomp.datamodel.EEventTypeNames.name(x) for x in types),
             )
             if allowNull:
-                etqNull = "e.%s is NULL" % _T("type")
+                etqNull = f"e.{_T('type')} is NULL"
                 if types:
-                    q += " AND (%s OR %s)" % (etqNull, etqNotIn)
+                    q += f" AND ({etqNull} OR {etqNotIn})"
                 else:
-                    q += " AND %s" % etqNull
+                    q += f" AND {etqNull}"
             else:
-                q += " AND %s" % etqNotIn
+                q += f" AND {etqNotIn}"
 
         # event agency id filter
         if ro.contributors:
@@ -913,10 +909,7 @@ class FDSNEvent(BaseResource):
             )
 
         # origin information filter
-        q += " AND o._oid = po._oid AND po.%s = e.%s" % (
-            colPID,
-            _T("preferredOriginID"),
-        )
+        q += f" AND o._oid = po._oid AND po.{colPID} = e.{_T('preferredOriginID')}"
 
         # evaluation mode config parameter
         if self._evaluationMode is not None:
@@ -955,9 +948,9 @@ class FDSNEvent(BaseResource):
         # bounding box
         if bBox:
             if bBox.minLat is not None:
-                q += " AND o.%s >= %s" % (colLat, bBox.minLat)
+                q += f" AND o.{colLat} >= {bBox.minLat}"
             if bBox.maxLat is not None:
-                q += " AND o.%s <= %s" % (colLat, bBox.maxLat)
+                q += f" AND o.{colLat} <= {bBox.maxLat}"
             if bBox.dateLineCrossing():
                 q += " AND (o.%s >= %s OR o.%s <= %s)" % (
                     colLon,
@@ -967,18 +960,18 @@ class FDSNEvent(BaseResource):
                 )
             else:
                 if bBox.minLon is not None:
-                    q += " AND o.%s >= %s" % (colLon, bBox.minLon)
+                    q += f" AND o.{colLon} >= {bBox.minLon}"
                 if bBox.maxLon is not None:
-                    q += " AND o.%s <= %s" % (colLon, bBox.maxLon)
+                    q += f" AND o.{colLon} <= {bBox.maxLon}"
 
         # depth
         if ro.depth:
-            q += " AND o.%s" % _T("depth_used")
+            q += f" AND o.{_T('depth_used')}"
             colDepth = _T("depth_value")
             if ro.depth.min is not None:
-                q += " AND o.%s >= %s" % (colDepth, ro.depth.min)
+                q += f" AND o.{colDepth} >= {ro.depth.min}"
             if ro.depth.max is not None:
-                q += " AND o.%s <= %s" % (colDepth, ro.depth.max)
+                q += f" AND o.{colDepth} <= {ro.depth.max}"
 
         # updated after
         if ro.updatedAfter:
@@ -991,15 +984,15 @@ class FDSNEvent(BaseResource):
             tFilter = "(o.%s > '%s' OR (o.%s = '%s' AND o.%s > %i))"
 
             q += " AND ("
-            q += tFilter % (colCTime, t, colCTime, t, colCTimeMS, ms) + " OR "
-            q += tFilter % (colMTime, t, colMTime, t, colMTimeMS, ms) + ")"
+            q += f"{tFilter % (colCTime, t, colCTime, t, colCTimeMS, ms)} OR "
+            q += f"{tFilter % (colMTime, t, colMTime, t, colMTimeMS, ms)})"
 
         # magnitude information filter
         if reqMag:
             if ro.mag and ro.mag.min is not None:
-                q += " AND m.%s >= %s" % (colMag, ro.mag.min)
+                q += f" AND m.{colMag} >= {ro.mag.min}"
             if ro.mag and ro.mag.max is not None:
-                q += " AND m.%s <= %s" % (colMag, ro.mag.max)
+                q += f" AND m.{colMag} <= {ro.mag.max}"
 
             # default case, no magnitude type filter:
             # join magnitude table on preferred magnitude id of event
@@ -1050,14 +1043,14 @@ class FDSNEvent(BaseResource):
 
         # SUBQUERY distance (optional) ----------
         if reqDist:
-            q = "SELECT * FROM (%s) AS subquery WHERE distance " % q
+            q = f"SELECT * FROM ({q}) AS subquery WHERE distance "
             c = ro.geo.bCircle
             if c.minRad is not None:
-                q += ">= %s" % c.minRad
+                q += f">= {c.minRad}"
             if c.maxRad is not None:
                 if c.minRad is not None:
                     q += " AND distance "
-                q += "<= %s" % c.maxRad
+                q += f"<= {c.maxRad}"
 
         # LIMIT/OFFSET --------------------------
         if ro.limit is not None or ro.offset is not None:
@@ -1071,7 +1064,7 @@ class FDSNEvent(BaseResource):
             if ro.offset is not None:
                 q += " OFFSET %i" % ro.offset
 
-        seiscomp.logging.debug("event query: %s" % q)
+        seiscomp.logging.debug(f"event query: {q}")
 
         for e in dbq.getObjectIterator(q, seiscomp.datamodel.Event.TypeInfo()):
             ep.add(seiscomp.datamodel.Event.Cast(e))

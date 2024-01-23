@@ -18,7 +18,7 @@ class TestStationConditionalRequests(TestStationBase):
             try:
                 _ = stringToDatetime(dateString)
             except ValueError as e:
-                raise ValueError("Invalid date string: {!r}".format(dateString)) from e
+                raise ValueError(f"Invalid date string: {dateString!r}") from e
             return True
 
         def createQueryString(
@@ -50,7 +50,7 @@ class TestStationConditionalRequests(TestStationBase):
             dataFile=None,
             retCode=200,
             respHeaders=None,
-            **kwargs
+            **kwargs,
         ):
             # pylint: disable=R0913
             return [
@@ -86,7 +86,7 @@ class TestStationConditionalRequests(TestStationBase):
                 epoch,
                 respHeaders=respHeaders,
                 dataFile=self._dataFile(1),
-                **sncl
+                **sncl,
             )
         )
         tests.extend(
@@ -96,7 +96,7 @@ class TestStationConditionalRequests(TestStationBase):
                 epoch,
                 respHeaders=respHeaders,
                 dataFile=self._dataFile(2),
-                **sncl
+                **sncl,
             )
         )
 
@@ -220,7 +220,7 @@ class TestStationConditionalRequests(TestStationBase):
             )
 
     def _dataFile(self, i):
-        return "{}/results/station-conditional-{}.txt".format(self.rootdir, i)
+        return f"{self.rootdir}/results/station-conditional-{i}.txt"
 
 
 # ------------------------------------------------------------------------------

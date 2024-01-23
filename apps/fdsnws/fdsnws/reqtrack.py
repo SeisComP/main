@@ -94,7 +94,7 @@ class RequestTrackerDB(object):
         if isinstance(constraints, list):
             constr = " ".join(constraints)
         else:
-            constr = " ".join([a + "=" + b for (a, b) in constraints.items()])
+            constr = " ".join([f"{a}={b}" for (a, b) in constraints.items()])
 
         arclinkRequestLine = seiscomp.datamodel.ArclinkRequestLine()
         arclinkRequestLine.setStart(start_time)

@@ -31,7 +31,7 @@ try:
     from twisted.python import log, failure
     from zope.interface import implementer
 except ImportError as e:
-    sys.exit("%s\nIs python twisted installed?" % str(e))
+    sys.exit(f"{str(e)}\nIs python twisted installed?")
 
 import seiscomp.core
 import seiscomp.datamodel
@@ -79,10 +79,10 @@ def logSC3(entry):
         msg = entry["message"]
         if isError:
             for l in msg:
-                seiscomp.logging.error("[reactor] %s" % l)
+                seiscomp.logging.error(f"[reactor] {l}")
         else:
             for l in msg:
-                seiscomp.logging.info("[reactor] %s" % l)
+                seiscomp.logging.info(f"[reactor] {l}")
     except Exception:
         pass
 
@@ -140,12 +140,12 @@ class UserDB(object):
     def __expireUsers(self):
         for name, (_, _, expires) in list(self.__users.items()):
             if time.time() > expires:
-                seiscomp.logging.info("de-registering %s" % name)
+                seiscomp.logging.info(f"de-registering {name}")
                 del self.__users[name]
 
     # -------------------------------------------------------------------------
     def blacklistUser(self, name):
-        seiscomp.logging.info("blacklisting %s" % name)
+        seiscomp.logging.info(f"blacklisting {name}")
         self.__blacklist.add(name)
 
     # -------------------------------------------------------------------------
@@ -155,7 +155,7 @@ class UserDB(object):
 
         except KeyError:
             bl = " (blacklisted)" if name in self.__blacklist else ""
-            seiscomp.logging.notice("registering %s%s %s" % (name, bl, data))
+            seiscomp.logging.notice(f"registering {name}{bl} {data}")
             password = base64.urlsafe_b64encode(os.urandom(12))
 
         attributes["blacklisted"] = name in self.__blacklist
@@ -255,7 +255,7 @@ class Access(object):
         try:
             # B2ACCESS
             for memberof in user["memberof"].split(";"):
-                matchers.append((self.__matchAttribute, "group:" + memberof))
+                matchers.append((self.__matchAttribute, f"group:{memberof}"))
 
         except KeyError:
             pass
@@ -319,7 +319,7 @@ class DataAvailabilityCache(object):
                 (oid, (e, res)) for (e, oid, res) in self._extentsSorted
             )
 
-        seiscomp.logging.info("loaded %i extents" % len(self._extents))
+        seiscomp.logging.info(f"loaded {len(self._extents)} extents")
 
     # -------------------------------------------------------------------------
     def validUntil(self):
@@ -327,7 +327,7 @@ class DataAvailabilityCache(object):
 
     # -------------------------------------------------------------------------
     def extent(self, net, sta, loc, cha):
-        wid = "%s.%s.%s.%s" % (net, sta, loc, cha)
+        wid = f"{net}.{sta}.{loc}.{cha}"
         if wid in self._extents:
             return self._extents[wid][0]
 
@@ -603,7 +603,7 @@ class FDSNWS(seiscomp.client.Application):
             ):
                 self._evaluationMode = seiscomp.datamodel.AUTOMATIC
             else:
-                print("invalid evaluation mode string: %s" % name, file=sys.stderr)
+                print(f"invalid evaluation mode string: {name}", file=sys.stderr)
                 return False
         except Exception:
             pass
@@ -614,7 +614,7 @@ class FDSNWS(seiscomp.client.Application):
                     self._eventTypeWhitelist = self._parseEventTypes(strings)
                 except Exception as e:
                     print(
-                        "error parsing eventType.whitelist: %s" % str(e),
+                        f"error parsing eventType.whitelist: {str(e)}",
                         file=sys.stderr,
                     )
                     return False
@@ -641,7 +641,7 @@ class FDSNWS(seiscomp.client.Application):
                             )
                 except Exception as e:
                     print(
-                        "error parsing eventType.blacklist: %s" % str(e),
+                        f"error parsing eventType.blacklist: {str(e)}",
                         file=sys.stderr,
                     )
                     return False
@@ -807,7 +807,7 @@ Execute on command line with debug output
                 if name in typeMap:
                     types.add(typeMap[name])
                 else:
-                    raise Exception("event type name '%s' not supported" % name)
+                    raise Exception(f"event type name '{name}' not supported")
 
         return types
 
@@ -849,83 +849,48 @@ Execute on command line with debug output
         if self._dataSelectFilter is not None:
             dataSelectFilterStr = self._dataSelectFilter
         seiscomp.logging.debug(
-            """
+            f"""
 configuration read:
   serve
-    dataselect             : {}
-    event                  : {}
-    station                : {}
-    availability           : {}
-  listenAddress            : {}
-  port                     : {}
-  connections              : {}
-  htpasswd                 : {}
-  accessLog                : {}
-  CORS origins             : {}
-  queryObjects             : {}
-  realtimeGap              : {}
-  samples (M)              : {}
-  recordBulkSize           : {}
-  allowRestricted          : {}
-  handleConditionalRequests: {}
-  useArclinkAccess         : {}
-  hideAuthor               : {}
-  hideComments             : {}
-  evaluationMode           : {}
+    dataselect             : {self._serveDataSelect}
+    event                  : {self._serveEvent}
+    station                : {self._serveStation}
+    availability           : {self._serveAvailability}
+  listenAddress            : {self._listenAddress}
+  port                     : {self._port}
+  connections              : {self._connections}
+  htpasswd                 : {self._htpasswd}
+  accessLog                : {self._accessLogFile}
+  CORS origins             : {self._corsOrigins}
+  queryObjects             : {self._queryObjects}
+  realtimeGap              : {self._realtimeGap}
+  samples (M)              : {self._samplesM}
+  recordBulkSize           : {self._recordBulkSize}
+  allowRestricted          : {self._allowRestricted}
+  handleConditionalRequests: {self._handleConditionalRequests}
+  useArclinkAccess         : {self._useArclinkAccess}
+  hideAuthor               : {self._hideAuthor}
+  hideComments             : {self._hideComments}
+  evaluationMode           : {modeStr}
   data availability
-    enabled                : {}
-    cache duration         : {}
-    repo name              : {}
-    dcc name               : {}
+    enabled                : {self._daEnabled}
+    cache duration         : {self._daCacheDuration}
+    repo name              : {self._daRepositoryName}
+    dcc name               : {self._daDCCName}
   eventType
-    whitelist              : {}
-    blacklist              : {}
+    whitelist              : {whitelistStr}
+    blacklist              : {blacklistStr}
   inventory filter
-    station                : {}
-    dataSelect             : {}
-    debug enabled          : {}
+    station                : {stationFilterStr}
+    dataSelect             : {dataSelectFilterStr}
+    debug enabled          : {self._debugFilter}
   trackdb
-    enabled                : {}
-    defaultUser            : {}
+    enabled                : {self._trackdbEnabled}
+    defaultUser            : {self._trackdbDefaultUser}
   auth
-    enabled                : {}
-    gnupgHome              : {}
-  requestLog               : {}""".format(
-                self._serveDataSelect,
-                self._serveEvent,
-                self._serveStation,
-                self._serveAvailability,
-                self._listenAddress,
-                self._port,
-                self._connections,
-                self._htpasswd,
-                self._accessLogFile,
-                self._corsOrigins,
-                self._queryObjects,
-                self._realtimeGap,
-                self._samplesM,
-                self._recordBulkSize,
-                self._allowRestricted,
-                self._handleConditionalRequests,
-                self._useArclinkAccess,
-                self._hideAuthor,
-                self._hideComments,
-                modeStr,
-                self._daEnabled,
-                self._daCacheDuration,
-                self._daRepositoryName,
-                self._daDCCName,
-                whitelistStr,
-                blacklistStr,
-                stationFilterStr,
-                dataSelectFilterStr,
-                self._debugFilter,
-                self._trackdbEnabled,
-                self._trackdbDefaultUser,
-                self._authEnabled,
-                self._authGnupgHome,
-                self._requestLogFile,
-            )
+    enabled                : {self._authEnabled}
+    gnupgHome              : {self._authGnupgHome}
+  requestLog               : {self._requestLogFile}"""
         )
 
         if (
@@ -1246,12 +1211,12 @@ configuration read:
                     seiscomp.system.Environment.Instance().installDir(),
                     "var",
                     "run",
-                    "{}.reload".format(self.name()),
+                    f"{self.name()}.reload",
                 )
                 if os.path.isfile(reloadfile):
                     os.remove(reloadfile)
             except Exception as e:
-                seiscomp.logging.warning("error processing reload file: {}".format(e))
+                seiscomp.logging.warning(f"error processing reload file: {e}")
 
             seiscomp.logging.info("reload successful")
 
@@ -1369,7 +1334,7 @@ configuration read:
         cp = ConfigParser()
 
         try:
-            seiscomp.logging.notice("reading inventory filter file: %s" % fileName)
+            seiscomp.logging.notice(f"reading inventory filter file: {fileName}")
             fp = open(fileName, "r")
             cp.read_file(fp, fileName)
 
@@ -1415,7 +1380,7 @@ configuration read:
 
         except Exception as e:
             seiscomp.logging.error(
-                "could not read inventory filter file %s: %s" % (fileName, str(e))
+                f"could not read inventory filter file {fileName}: {str(e)}"
             )
             return False
 
@@ -1441,7 +1406,7 @@ configuration read:
             iSta = 0
             while iSta < net.stationCount():
                 sta = net.station(iSta)
-                staCode = "%s.%s" % (net.code(), sta.code())
+                staCode = f"{net.code()}.{sta.code()}"
 
                 try:
                     staRestricted = sta.restricted()
@@ -1456,13 +1421,13 @@ configuration read:
                 iLoc = 0
                 while iLoc < sta.sensorLocationCount():
                     loc = sta.sensorLocation(iLoc)
-                    locCode = "%s.%s" % (staCode, loc.code())
+                    locCode = f"{staCode}.{loc.code()}"
 
                     # channels
                     iCha = 0
                     while iCha < loc.streamCount():
                         cha = loc.stream(iCha)
-                        code = "%s.%s" % (locCode, cha.code())
+                        code = f"{locCode}.{cha.code()}"
 
                         # evaluate rules until matching code is found
                         match = False
@@ -1523,16 +1488,16 @@ configuration read:
                             delCha += 1
                             reason = "no matching include rule"
                             if match:
-                                reason = "'%s'" % rule.name
+                                reason = f"'{rule.name}'"
                             if self._debugFilter:
-                                debugLines.append("%s [-]: %s" % (code, reason))
+                                debugLines.append(f"{code} [-]: {reason}")
                         else:
                             iCha += 1
                             reason = "no matching exclude rule"
                             if match:
-                                reason = "'%s'" % rule.name
+                                reason = f"'{rule.name}'"
                             if self._debugFilter:
-                                debugLines.append("%s [+]: %s" % (code, reason))
+                                debugLines.append(f"{code} [+]: {reason}")
 
                     # remove empty sensor locations
                     if loc.streamCount() == 0:

@@ -18,10 +18,10 @@ class TestEvent(FDSNWSTest):
     def test(self):
         print("Testing event service")
 
-        query = "{}/event/1/query".format(self.url)
+        query = f"{self.url}/event/1/query"
         ctTXT = "text/plain"
         ctXML = "application/xml"
-        resFile = self.rootdir + "/results/event-"
+        resFile = f"{self.rootdir}/results/event-"
 
         i = 1
         tests = [
@@ -46,11 +46,11 @@ class TestEvent(FDSNWSTest):
         ]
         for q, ct, concurrent in tests:
             self.testHTTP(
-                "{}{}".format(query, q),
+                f"{query}{q}",
                 ct,
                 [],
                 concurrent,
-                dataFile="{}{}.txt".format(resFile, i),
+                dataFile=f"{resFile}{i}.txt",
                 testID=i,
             )
             i += 1

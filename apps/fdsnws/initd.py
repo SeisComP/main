@@ -15,15 +15,13 @@ class Module(seiscomp.kernel.Module):
 
     def reload(self):
         if not self.isRunning():
-            self.env.log("{} is not running".format(self.name))
+            self.env.log(f"{self.name} is not running")
             return 1
 
-        self.env.log("reloading {}".format(self.name))
+        self.env.log(f"reloading {self.name}")
 
         lockfile = self.env.lockFile(self.name)
-        reloadfile = os.path.join(
-            os.path.dirname(lockfile), "{}.reload".format(self.name)
-        )
+        reloadfile = os.path.join(os.path.dirname(lockfile), f"{self.name}.reload")
 
         # Open pid file
         with open(lockfile, "r") as f:
@@ -34,7 +32,7 @@ class Module(seiscomp.kernel.Module):
             open(reloadfile, "a").close()
 
             if not os.path.isfile(reloadfile):
-                self.env.log("could not touch reload file: {}".format(reloadfile))
+                self.env.log(f"could not touch reload file: {reloadfile}")
                 return 1
 
             # Send SIGHUP

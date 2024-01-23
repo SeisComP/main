@@ -151,8 +151,7 @@ class SDS(object):
 
         if timeStart >= timeEnd:
             seiscomp.logging.error(
-                "%s: overlap detected (start=%s, end=%s)"
-                % (msFile.name, timeStart, timeEnd)
+                f"{msFile.name}: overlap detected (start={timeStart}, end={timeEnd})"
             )
             return
 
@@ -231,7 +230,7 @@ class SDS(object):
                         yield buf
 
             except seiscomp.mseedlite.MSeedError as e:
-                seiscomp.logging.error("%s: %s" % (dataFile, str(e)))
+                seiscomp.logging.error(f"{dataFile}: {str(e)}")
 
     def getRawBytes(self, startt, endt, net, sta, loc, cha, bufferSize):
         day = datetime.datetime(

@@ -56,7 +56,7 @@ def writeTSBin(req, data):
 # -------------------------------------------------------------------------------
 # Finish requests deferred to threads
 def onFinish(result, req):
-    seiscomp.logging.debug("finish value = %s" % str(result))
+    seiscomp.logging.debug(f"finish value = {str(result)}")
     if isinstance(result, Failure):
         err = result.value
         if isinstance(err, defer.CancelledError):
@@ -164,11 +164,7 @@ class AccessLogEntry:
         # The host name of the client is resolved in the __str__ method by the
         # logging thread so that a long running DNS reverse lookup may not slow
         # down the request
-        self.msgPrefix = "%s|%s|%s|" % (
-            service,
-            py3ustr(req.getRequestHostname()),
-            accessTime,
-        )
+        self.msgPrefix = f"{service}|{py3ustr(req.getRequestHostname())}|{accessTime}|"
 
         xff = req.requestHeaders.getRawHeaders("x-forwarded-for")
         if xff:

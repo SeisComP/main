@@ -29,10 +29,10 @@ class FDSNWSTest(object):
     # --------------------------------------------------------------------------
     def __init__(self, port=9980):
         self.port = port
-        self.url = "http://localhost:{}/fdsnws".format(self.port)
+        self.url = f"http://localhost:{self.port}/fdsnws"
         self.service = None
         self.rootdir = os.environ.get("SEISCOMP_ROOT")
-        self.sharedir = "{}/share/fdsnws".format(self.rootdir)
+        self.sharedir = f"{self.rootdir}/share/fdsnws"
 
     # --------------------------------------------------------------------------
     def __call__(self):
@@ -52,7 +52,7 @@ class FDSNWSTest(object):
 
     # --------------------------------------------------------------------------
     def _waitForSocket(self, timeout=10):
-        print("waiting for port {} to become ready ".format(self.port), end="")
+        print(f"waiting for port {self.port} to become ready ", end="")
         maxTime = datetime.now() + timedelta(timeout)
         while self.service is not None and self.service.poll() is None:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -93,7 +93,7 @@ class FDSNWSTest(object):
         if self.service.poll() is not None:
             print("warning: FDSNWS service terminated ahead of time", file=sys.stdout)
             return
-        print("stopping FDSNWS service (PID: {}): ".format(self.service.pid), end="")
+        print(f"stopping FDSNWS service (PID: {self.service.pid}): ", end="")
         maxTime = datetime.now() + timedelta(timeout)
 
         self.service.terminate()
@@ -115,16 +115,16 @@ class FDSNWSTest(object):
     def command(self):
         return [
             sys.executable,
-            "{}/../../fdsnws.py".format(self.rootdir),
+            f"{self.rootdir}/../../fdsnws.py",
             "--debug",
             "--plugins=dbsqlite3,fdsnxml",
-            "--database=sqlite3://{}/seiscomp3.sqlite3".format(self.rootdir),
+            f"--database=sqlite3://{self.rootdir}/seiscomp3.sqlite3",
             "--serveAvailability=true",
             "--dataAvailability.enable=true",
             "--agencyID=Test",
-            "--record-url=sdsarchive://{}/sds".format(self.rootdir),
-            "--htpasswd={}/fdsnws.htpasswd".format(self.rootdir),
-            "--stationFilter={}/stationFilter.cfg".format(self.rootdir),
+            f"--record-url=sdsarchive://{self.rootdir}/sds",
+            f"--htpasswd={self.rootdir}/fdsnws.htpasswd",
+            f"--stationFilter={self.rootdir}/stationFilter.cfg",
             "--port=9980",
         ]
 
@@ -214,9 +214,9 @@ class FDSNWSTest(object):
             )
 
         if iGot < lenGot:
-            return (lenGot, "read {} more bytes than expected".format(lenGot - iGot))
+            return (lenGot, f"read {lenGot - iGot} more bytes than expected")
         if iGot > lenGot:
-            return (lenGot, "read {} fewer bytes than expected".format(iGot - lenGot))
+            return (lenGot, f"read {iGot - lenGot} fewer bytes than expected")
 
         # should not happen
         return (None, None)
@@ -292,8 +292,8 @@ class FDSNWSTest(object):
         # pylint: disable=R0913
         if not silent:
             if testID is not None:
-                print("#{} ".format(testID), end="")
-            print("{}: ".format(url), end="")
+                print(f"#{testID} ", end="")
+            print(f"{url}: ", end="")
         stream = dataFile is not None
         dAuth = requests.auth.HTTPDigestAuth("sysop", "sysop") if auth else None
         if postData is None:
@@ -305,9 +305,7 @@ class FDSNWSTest(object):
 
         if r.status_code != retCode:
             raise ValueError(
-                'Invalid status code, expected "{}", got "{}"'.format(
-                    retCode, r.status_code
-                )
+                f'Invalid status code, expected "{retCode}", got "{r.status_code}"'
             )
 
         if contentType is not None and contentType != r.headers["content-type"]:
@@ -321,7 +319,7 @@ class FDSNWSTest(object):
             # validate response headers
             for k, v in respHeaders.items():
                 if k not in r.headers:
-                    raise ValueError("Missing response header field: {!r}".format(k))
+                    raise ValueError(f"Missing response header field: {k!r}")
                 if callable(v) and v(r.headers[k]):
                     continue
                 if v != r.headers[k]:
@@ -342,9 +340,7 @@ class FDSNWSTest(object):
             if diffContent:
                 errPos, errMsg = self.diff(expected, r.content, ignoreRanges)
                 if errPos is not None:
-                    raise ValueError(
-                        "Unexpected content at byte {}: {}".format(errPos, errMsg)
-                    )
+                    raise ValueError(f"Unexpected content at byte {errPos}: {errMsg}")
             else:
                 if len(expected) != len(r.content):
                     raise ValueError(
@@ -376,8 +372,8 @@ class FDSNWSTest(object):
     ):
         # pylint: disable=R0913
         if testID is not None:
-            print("#{} ".format(testID), end="")
-        print("concurrent [{}/{}] {}: ".format(repetitions, numThreads, url), end="")
+            print(f"#{testID} ", end="")
+        print(f"concurrent [{repetitions}/{numThreads}] {url}: ", end="")
         sys.stdout.flush()
 
         def doWork():
@@ -404,7 +400,7 @@ class FDSNWSTest(object):
                     print(".", end="")
                     sys.stdout.flush()
                 except ValueError as e:
-                    errors.append("error in job #{}: {}".format(i, str(e)))
+                    errors.append(f"error in job #{i}: {str(e)}")
                 finally:
                     q.task_done()
 
@@ -431,9 +427,7 @@ class FDSNWSTest(object):
             t.join()
 
         if errors:
-            raise ValueError(
-                "{} errors occured, first one is: {}".format(len(errors), errors[0])
-            )
+            raise ValueError(f"{len(errors)} errors occured, first one is: {errors[0]}")
 
         print(" OK")
         sys.stdout.flush()

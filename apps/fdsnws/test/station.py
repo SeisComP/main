@@ -7,7 +7,7 @@ class TestStationBase(FDSNWSTest):
     CT_XML = "application/xml"
 
     def query(self):
-        return "{}/station/1/query".format(self.url)
+        return f"{self.url}/station/1/query"
 
 
 # vim: ts=4 et tw=88
