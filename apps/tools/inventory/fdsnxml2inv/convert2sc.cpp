@@ -2039,19 +2039,6 @@ bool Convert2SC::process(DataModel::Network *sc_net,
 
 		EpochEntry &entry = epochMap[locationCode][loc_loc];
 		entry.epochs.push_back(ChannelEpoch(cha->code(),cha));
-
-		std::cerr << "\"" << locationCode << "\": "
-		          << cha->code() << " " << cha->startDate().iso() << " ~ ";
-
-		try {
-			std::cerr << cha->endDate().iso();
-		}
-		catch ( ... ) {
-			std::cerr << "--";
-		}
-		std::cerr << " "
-		          << loc_loc.first.first << " " << loc_loc.first.second << " " << loc_loc.second
-		          << std::endl;
 	}
 
 	// After collecting all channel epoch, check for overlapping
