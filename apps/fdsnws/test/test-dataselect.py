@@ -18,15 +18,13 @@ class TestDataSelect(FDSNWSTest):
     def test(self):
         print("Testing dataselect service")
 
-        query = "{}/dataselect/1/query".format(self.url)
+        query = f"{self.url}/dataselect/1/query"
         ctTXT = "text/plain"
         ctMSeed = "application/vnd.fdsn.mseed"
-        resFile = self.rootdir + "/results/dataselect-{}.mseed"
+        resFile = f"{self.rootdir}/results/dataselect-{{}}.mseed"
 
         i = 1
-        self.testHTTP(
-            "{}{}".format(query, "?station=R0F05"), ctTXT, retCode=403, testID=i
-        )
+        self.testHTTP(f"{query}?station=R0F05", ctTXT, retCode=403, testID=i)
         i += 1
         tests = [
             ("?channel=EHZ", False),
@@ -39,7 +37,7 @@ class TestDataSelect(FDSNWSTest):
         ]
         for q, concurrent in tests:
             self.testHTTP(
-                "{}{}".format(query, q),
+                f"{query}{q}",
                 ctMSeed,
                 [],
                 concurrent,

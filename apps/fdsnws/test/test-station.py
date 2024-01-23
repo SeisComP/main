@@ -19,7 +19,7 @@ class TestStation(TestStationBase):
         print("Testing station service")
 
         query = self.query()
-        resFile = self.rootdir + "/results/station-"
+        resFile = f"{self.rootdir}/results/station-"
 
         i = 1
         tests = [
@@ -44,11 +44,11 @@ class TestStation(TestStationBase):
         ]
         for q, ct, ignoreRanges, concurrent in tests:
             self.testHTTP(
-                "{}{}".format(query, q),
+                f"{query}{q}",
                 ct,
                 ignoreRanges,
                 concurrent,
-                dataFile="{}{}.txt".format(resFile, i),
+                dataFile=f"{resFile}{i}.txt",
                 testID=i,
             )
             i += 1
@@ -66,7 +66,7 @@ class TestStation(TestStationBase):
                     ct,
                     ignoreRanges,
                     concurrent,
-                    dataFile="{}{}.txt".format(resFile, i),
+                    dataFile=f"{resFile}{i}.txt",
                     testID=i,
                     postData=f,
                 )

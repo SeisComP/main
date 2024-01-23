@@ -45,7 +45,7 @@ class Tracker(object):
             "userEmail": None,
             "auth": not not userName,
             "userLocation": {},
-            "created": datetime.datetime.utcnow().isoformat() + "Z",
+            "created": f"{datetime.datetime.utcnow().isoformat()}Z",
         }
 
         if geoip:
@@ -102,7 +102,7 @@ class Tracker(object):
     def volume_status(self, volume, status, size, message):
         self.__data["status"] = status
         self.__data["bytes"] = size
-        self.__data["finished"] = datetime.datetime.utcnow().isoformat() + "Z"
+        self.__data["finished"] = f"{datetime.datetime.utcnow().isoformat()}Z"
 
     def request_status(self, status, message):
         with mutex:

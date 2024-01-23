@@ -21,89 +21,85 @@ class TestStatic(FDSNWSTest):
 
         ctTXT = "text/plain"
         ctXML = "application/xml"
-        share = self.sharedir + "/"
+        share = f"{self.sharedir}/"
 
         # main url
         self.testHTTP(self.url)
 
         # event
-        self.testHTTP("{}/event".format(self.url))
-        self.testHTTP("{}/event/1".format(self.url), dataFile=share + "event.html")
-        self.testHTTP("{}/event/1/version".format(self.url), ctTXT, data=event.VERSION)
+        self.testHTTP(f"{self.url}/event")
+        self.testHTTP(f"{self.url}/event/1", dataFile=f"{share}event.html")
+        self.testHTTP(f"{self.url}/event/1/version", ctTXT, data=event.VERSION)
         self.testHTTP(
-            "{}/event/1/application.wadl".format(self.url),
+            f"{self.url}/event/1/application.wadl",
             ctXML,
-            dataFile=share + "event.wadl",
+            dataFile=f"{share}event.wadl",
         )
         self.testHTTP(
-            "{}/event/1/catalogs".format(self.url),
+            f"{self.url}/event/1/catalogs",
             ctXML,
-            dataFile=share + "catalogs.xml",
+            dataFile=f"{share}catalogs.xml",
         )
         self.testHTTP(
-            "{}/event/1/contributors".format(self.url),
+            f"{self.url}/event/1/contributors",
             ctXML,
-            dataFile=share + "contributors.xml",
+            dataFile=f"{share}contributors.xml",
         )
         self.testHTTP(
-            "{}/event/1/builder".format(self.url), dataFile=share + "event-builder.html"
+            f"{self.url}/event/1/builder", dataFile=f"{share}event-builder.html"
         )
 
         # station
-        self.testHTTP("{}/station".format(self.url))
-        self.testHTTP("{}/station/1".format(self.url), dataFile=share + "station.html")
+        self.testHTTP(f"{self.url}/station")
+        self.testHTTP(f"{self.url}/station/1", dataFile=f"{share}station.html")
+        self.testHTTP(f"{self.url}/station/1/version", ctTXT, data=station.VERSION)
         self.testHTTP(
-            "{}/station/1/version".format(self.url), ctTXT, data=station.VERSION
-        )
-        self.testHTTP(
-            "{}/station/1/application.wadl".format(self.url),
+            f"{self.url}/station/1/application.wadl",
             ctXML,
         )  # dataFile=share+'station.wadl')
         self.testHTTP(
-            "{}/station/1/builder".format(self.url),
-            dataFile=share + "station-builder.html",
+            f"{self.url}/station/1/builder",
+            dataFile=f"{share}station-builder.html",
         )
 
         # dataselect
-        self.testHTTP("{}/dataselect".format(self.url))
+        self.testHTTP(f"{self.url}/dataselect")
+        self.testHTTP(f"{self.url}/dataselect/1", dataFile=f"{share}dataselect.html")
         self.testHTTP(
-            "{}/dataselect/1".format(self.url), dataFile=share + "dataselect.html"
+            f"{self.url}/dataselect/1/version", ctTXT, data=dataselect.VERSION
         )
         self.testHTTP(
-            "{}/dataselect/1/version".format(self.url), ctTXT, data=dataselect.VERSION
-        )
-        self.testHTTP(
-            "{}/dataselect/1/application.wadl".format(self.url),
+            f"{self.url}/dataselect/1/application.wadl",
             ctXML,
-            dataFile=share + "dataselect.wadl",
+            dataFile=f"{share}dataselect.wadl",
         )
         self.testHTTP(
-            "{}/dataselect/1/builder".format(self.url),
-            dataFile=share + "dataselect-builder.html",
+            f"{self.url}/dataselect/1/builder",
+            dataFile=f"{share}dataselect-builder.html",
         )
 
         # availability
-        self.testHTTP("{}/availability".format(self.url))
+        self.testHTTP(f"{self.url}/availability")
         self.testHTTP(
-            "{}/availability/1".format(self.url), dataFile=share + "availability.html"
+            f"{self.url}/availability/1", dataFile=f"{share}availability.html"
         )
         self.testHTTP(
-            "{}/availability/1/version".format(self.url),
+            f"{self.url}/availability/1/version",
             ctTXT,
             data=availability.VERSION,
         )
         self.testHTTP(
-            "{}/availability/1/application.wadl".format(self.url),
+            f"{self.url}/availability/1/application.wadl",
             ctXML,
-            dataFile=share + "availability.wadl",
+            dataFile=f"{share}availability.wadl",
         )
         self.testHTTP(
-            "{}/availability/1/builder-query".format(self.url),
-            dataFile=share + "availability-builder-query.html",
+            f"{self.url}/availability/1/builder-query",
+            dataFile=f"{share}availability-builder-query.html",
         )
         self.testHTTP(
-            "{}/availability/1/builder-extent".format(self.url),
-            dataFile=share + "availability-builder-extent.html",
+            f"{self.url}/availability/1/builder-extent",
+            dataFile=f"{share}availability-builder-extent.html",
         )
 
 

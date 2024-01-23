@@ -581,7 +581,7 @@ class FDSNStation(BaseResource):
                 start, end = self._formatEpoch(net)
                 lines.append(
                     (
-                        "%s %s" % (net.code(), start),
+                        f"{net.code()} {start}",
                         "%s|%s|%s|%s|%i\n"
                         % (
                             net.code(),
@@ -638,7 +638,7 @@ class FDSNStation(BaseResource):
                     start, end = self._formatEpoch(sta)
                     lines.append(
                         (
-                            "%s.%s %s" % (net.code(), sta.code(), start),
+                            f"{net.code()}.{sta.code()} {start}",
                             "%s|%s|%s|%s|%s|%s|%s|%s\n"
                             % (
                                 net.code(),
@@ -788,8 +788,7 @@ class FDSNStation(BaseResource):
         dataBin = utils.py3bstr(data)
         utils.writeTSBin(req, dataBin)
         seiscomp.logging.debug(
-            "%s: returned %i lines (total bytes: %i)"
-            % (ro.service, len(lines), len(dataBin))
+            f"{ro.service}: returned {len(lines)} lines (total bytes: {len(dataBin)})"
         )
         utils.accessLog(req, ro, http.OK, len(dataBin), None)
         return True
@@ -907,7 +906,7 @@ class FDSNStation(BaseResource):
                     # collect response ids
                     filterStr = ""
                     try:
-                        filterStr = decimation.analogueFilterChain().content() + " "
+                        filterStr = f"{decimation.analogueFilterChain().content()} "
                     except ValueError:
                         pass
                     try:

@@ -63,14 +63,14 @@ class Log:
         self._fd = None
 
         try:
-            pattern = self._filePath + ".%i"
+            pattern = f"{self._filePath}.%i"
             for i in range(self._archiveSize, 1, -1):
                 src = pattern % (i - 1)
                 if os.path.isfile(src):
                     os.rename(pattern % (i - 1), pattern % i)
             os.rename(self._filePath, pattern % 1)
         except Exception as e:
-            print("failed to rotate access log: %s\n" % str(e), file=sys.stderr)
+            print(f"failed to rotate access log: {str(e)}\n", file=sys.stderr)
 
         self._fd = open(self._filePath, "w")
 
@@ -92,11 +92,11 @@ class Log:
             ):
                 self._rotate()
 
-            self._fd.write("%s\n" % msg)
+            self._fd.write(f"{msg}\n")
             self._fd.flush()
             self._lastLogTime = now
         except Exception as e:
-            print("access log: %s\n" % str(e), file=sys.stderr)
+            print(f"access log: {str(e)}\n", file=sys.stderr)
 
 
 # vim: ts=4 et

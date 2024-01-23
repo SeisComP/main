@@ -333,7 +333,7 @@ class RequestOptions:
         b.minLat = self.parseFloat(self.PMinLat, -90, 90)
         b.maxLat = self.parseFloat(self.PMaxLat, -90, 90)
         if b.minLat is not None and b.maxLat is not None and b.minLat > b.maxLat:
-            raise ValueError("%s exceeds %s" % (self.PMinLat[0], self.PMaxLat[0]))
+            raise ValueError(f"{self.PMinLat[0]} exceeds {self.PMaxLat[0]}")
 
         b.minLon = self.parseFloat(self.PMinLon, -180, 180)
         b.maxLon = self.parseFloat(self.PMaxLon, -180, 180)
@@ -353,7 +353,7 @@ class RequestOptions:
         c.minRad = self.parseFloat(self.PMinRadius, 0, 180)
         c.maxRad = self.parseFloat(self.PMaxRadius, 0, 180)
         if c.minRad is not None and c.maxRad is not None and c.minRad > c.maxRad:
-            raise ValueError("%s exceeds %s" % (self.PMinRadius[0], self.PMaxRadius[0]))
+            raise ValueError(f"{self.PMinRadius[0]} exceeds {self.PMaxRadius[0]}")
 
         hasBCircleRadParam = c.minRad is not None or c.maxRad is not None
         hasBCircleParam = c.lat is not None or c.lon is not None or hasBCircleRadParam
@@ -385,14 +385,12 @@ class RequestOptions:
                 minStr = str(minValue)
             if maxValue is not None:
                 maxStr = str(maxValue)
-            raise ValueError(
-                "parameter not in domain [%s,%s]: %s" % (minStr, maxStr, key)
-            )
+            raise ValueError(f"parameter not in domain [{minStr},{maxStr}]: {key}")
 
     # ---------------------------------------------------------------------------
     @staticmethod
     def raiseValueError(key):
-        raise ValueError("invalid value in parameter: %s" % key)
+        raise ValueError(f"invalid value in parameter: {key}")
 
     # ---------------------------------------------------------------------------
     def getFirstValue(self, keys):
@@ -437,7 +435,7 @@ class RequestOptions:
         try:
             i = int(value)
         except ValueError:
-            raise ValueError("invalid integer value in parameter: %s" % key)
+            raise ValueError(f"invalid integer value in parameter: {key}")
         self._assertValueRange(key, i, minValue, maxValue)
         return i
 
@@ -457,7 +455,7 @@ class RequestOptions:
         try:
             f = float(value)
         except ValueError:
-            raise ValueError("invalid float value in parameter: %s" % key)
+            raise ValueError(f"invalid float value in parameter: {key}")
         self._assertValueRange(key, f, minValue, maxValue)
         return f
 
@@ -474,7 +472,7 @@ class RequestOptions:
         if value in self.BooleanFalseValues:
             return False
 
-        raise ValueError("invalid boolean value in parameter: %s" % key)
+        raise ValueError(f"invalid boolean value in parameter: {key}")
 
     # ---------------------------------------------------------------------------
     def parseTimeStr(self, keys):
@@ -491,7 +489,7 @@ class RequestOptions:
                 break
 
         if not timeValid:
-            raise ValueError("invalid date format in parameter: %s" % key)
+            raise ValueError(f"invalid date format in parameter: {key}")
 
         return time
 
@@ -512,7 +510,7 @@ class RequestOptions:
                 if (useExtChars and self.ChannelExtChars(v)) or (
                     not useExtChars and self.ChannelChars(v)
                 ):
-                    raise ValueError("invalid characters in parameter: " "%s" % keys[0])
+                    raise ValueError(f"invalid characters in parameter: {keys[0]}")
                 values.append(v)
 
         return values
@@ -524,7 +522,7 @@ class RequestOptions:
             for k, v in args.items():
                 k = py3ustr(k.lower())
                 if k not in self.GETParams:
-                    raise ValueError("invalid param: %s" % k)
+                    raise ValueError(f"invalid param: {k}")
 
                 self._args[k] = py3ustrlist(v)
 

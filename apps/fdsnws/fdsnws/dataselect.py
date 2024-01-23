@@ -168,7 +168,7 @@ class _MyRecordStream(object):
 
                         except Exception as e:
                             seiscomp.logging.error(
-                                "could not override network code: %s" % str(e)
+                                f"could not override network code: {str(e)}"
                             )
 
             else:
@@ -190,7 +190,7 @@ class _MyRecordStream(object):
                             rec = rsInput.next()
 
                         except Exception as e:
-                            seiscomp.logging.error("%s" % str(e))
+                            seiscomp.logging.error(f"{str(e)}")
                             eof = True
                             break
 
@@ -212,7 +212,7 @@ class _MyRecordStream(object):
 
                             except Exception as e:
                                 seiscomp.logging.error(
-                                    "could not override network " "code: %s" % str(e)
+                                    f"could not override network code: {str(e)}"
                                 )
 
             for tracker in self.__trackerList:
@@ -284,7 +284,7 @@ class _WaveformProducer(object):
         if self.written == 0:
             self.req.setHeader("Content-Type", "application/vnd.fdsn.mseed")
             self.req.setHeader(
-                "Content-Disposition", "attachment; " "filename=%s" % self.fileName
+                "Content-Disposition", f"attachment; filename={self.fileName}"
             )
 
         self.req.write(data)
@@ -606,14 +606,14 @@ class FDSNDataSelect(BaseResource):
             else:
                 userID = app._trackdbDefaultUser
 
-            reqID = "ws" + str(int(round(time.time() * 1000) - 1420070400000))
+            reqID = f"ws{str(int(round(time.time() * 1000) - 1420070400000))}"
             tracker = RequestTrackerDB(
                 clientID,
                 app.connection(),
                 reqID,
                 "WAVEFORM",
                 userID,
-                "REQUEST WAVEFORM " + reqID,
+                f"REQUEST WAVEFORM {reqID}",
                 "fdsnws",
                 userIP,
                 req.getClientIP(),

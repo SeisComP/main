@@ -336,9 +336,7 @@ class _Availability(BaseResource):
         req.setHeader("Content-Type", contentType)
         req.setHeader(
             "Content-Disposition",
-            "inline; filename=fdsnws-ext-availability_{0}.{1}".format(
-                Time.GMT().iso(), extension
-            ),
+            f"inline; filename=fdsnws-ext-availability_{Time.GMT().iso()}.{extension}",
         )
 
         d = deferToThread(self._processRequest, req, ro, dac)
@@ -353,7 +351,7 @@ class _Availability(BaseResource):
     @staticmethod
     def _formatTime(time, ms=False):
         if ms:
-            return "{0}.{1:06d}Z".format(time.toString("%FT%T"), time.microseconds())
+            return f"{time.toString('%FT%T')}.{time.microseconds():06d}Z"
         return time.toString("%FT%TZ")
 
     # --------------------------------------------------------------------------
@@ -367,7 +365,7 @@ class _Availability(BaseResource):
         if ro.format == ro.VFormatRequest:
             return self._writeFormatRequest(req, lines, ro)
 
-        raise Exception("unknown reponse format: %s" % ro.format)
+        raise Exception(f"unknown reponse format: {ro.format}")
 
     # --------------------------------------------------------------------------
     def _writeFormatText(self, req, lines, ro):
@@ -507,7 +505,7 @@ class _Availability(BaseResource):
             fieldName += "|TimeSpans|Restriction"
 
         header = "#dataset: GeoCSV 2.0\n" "#delimiter: |\n"
-        header += "{0}\n{1}\n{2}\n".format(fieldUnit, fieldType, fieldName)
+        header += f"{fieldUnit}\n{fieldType}\n{fieldName}\n"
 
         first = True
         for line in lines:
@@ -525,16 +523,16 @@ class _Availability(BaseResource):
                 wid.channelCode(),
             )
             if not ro.mergeQuality:
-                data += "|" + e.quality()
+                data += f"|{e.quality()}"
             if not ro.mergeSampleRate:
-                data += "|{0:.1f}".format(e.sampleRate())
+                data += f"|{e.sampleRate():.1f}"
             data += time.format(
                 self._formatTime(e.start(), True), self._formatTime(e.end(), True)
             )
             if ro.showLatestUpdate:
-                data += "|" + self._formatTime(e.updated())
+                data += f"|{self._formatTime(e.updated())}"
             if isExtentReq:
-                data += "|{0:d}".format(e.segmentCount())
+                data += f"|{e.segmentCount():d}"
                 data += "|RESTRICTED" if line[2] else "|OPEN"
             data += "\n"
 
@@ -1339,9 +1337,7 @@ class FDSNAvailabilityQuery(_Availability):
             if ro.time:
                 if ro.time.start is not None:
                     if ro.time.start.microseconds() == 0:
-                        q += "AND {0} >= '{1}' ".format(
-                            _T("end"), db.timeToString(ro.time.start)
-                        )
+                        q += f"AND {_T('end')} >= '{db.timeToString(ro.time.start)}' "
                     else:
                         q += (
                             "AND ({0} > '{1}' OR ("
@@ -1353,9 +1349,7 @@ class FDSNAvailabilityQuery(_Availability):
                         )
                 if ro.time.end is not None:
                     if ro.time.end.microseconds() == 0:
-                        q += "AND {0} < '{1}' ".format(
-                            _T("start"), db.timeToString(ro.time.end)
-                        )
+                        q += f"AND {_T('start')} < '{db.timeToString(ro.time.end)}' "
                     else:
                         q += (
                             "AND ({0} < '{1}' OR ("
@@ -1369,7 +1363,7 @@ class FDSNAvailabilityQuery(_Availability):
                 q += "AND {0} IN ('{1}') ".format(
                     _T("quality"), "', '".join(ro.quality)
                 )
-            q += "ORDER BY _parent_oid, {0}, {1}".format(_T("start"), _T("start_ms"))
+            q += f"ORDER BY _parent_oid, {_T('start')}, {_T('start_ms')}"
 
             segIt = dba.getObjectIterator(q, datamodel.DataSegment.TypeInfo())
             if segIt is None or not segIt.valid():

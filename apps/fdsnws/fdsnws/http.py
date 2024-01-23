@@ -131,7 +131,7 @@ class WADLFilter(static.Data):
             valid = True
             if "<param" in lineStripped:
                 for f in paramNameFilterList:
-                    if 'name="{}"'.format(f) in lineStripped:
+                    if f'name="{f}"' in lineStripped:
                         valid = False
                         if lineStripped[-2:] != "/>":
                             removeParam = True
@@ -279,12 +279,12 @@ class AuthResource(BaseResource):
 
         except OSError as e:
             msg = "gpg decrypt error"
-            seiscomp.logging.warning("%s: %s" % (msg, str(e)))
+            seiscomp.logging.warning(f"{msg}: {str(e)}")
             return self.renderErrorPage(request, http.INTERNAL_SERVER_ERROR, msg)
 
         except Exception as e:
             msg = "invalid token"
-            seiscomp.logging.warning("%s: %s" % (msg, str(e)))
+            seiscomp.logging.warning(f"{msg}: {str(e)}")
             return self.renderErrorPage(request, http.BAD_REQUEST, msg)
 
         if verified.trust_level is None or verified.trust_level < verified.TRUST_FULLY:
@@ -301,7 +301,7 @@ class AuthResource(BaseResource):
 
         except Exception as e:
             msg = "token has invalid validity"
-            seiscomp.logging.warning("%s: %s" % (msg, str(e)))
+            seiscomp.logging.warning(f"{msg}: {str(e)}")
             return self.renderErrorPage(request, http.BAD_REQUEST, msg)
 
         if lifetime <= 0:
@@ -329,9 +329,9 @@ class Site(server.Site):
     # ---------------------------------------------------------------------------
     def getResourceFor(self, request):
         seiscomp.logging.debug(
-            "request (%s): %s" % (request.getClientIP(), py3ustr(request.uri))
+            f"request ({request.getClientIP()}): {py3ustr(request.uri)}"
         )
-        request.setHeader("Server", "SeisComP-FDSNWS/%s" % VERSION)
+        request.setHeader("Server", f"SeisComP-FDSNWS/{VERSION}")
         request.setHeader("Access-Control-Allow-Headers", "Authorization")
         request.setHeader("Access-Control-Expose-Headers", "WWW-Authenticate")
 
