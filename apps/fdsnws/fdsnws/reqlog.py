@@ -8,7 +8,7 @@ import logging.handlers
 import threading
 
 
-from .utils import py3bstr
+from .utils import b_str
 
 mutex = threading.Lock()
 
@@ -33,10 +33,10 @@ class Tracker(object):
 
         if userName:
             userID = int(
-                hashlib.md5(py3bstr(userSalt + userName.lower())).hexdigest()[:8], 16
+                hashlib.md5(b_str(userSalt + userName.lower())).hexdigest()[:8], 16
             )
         else:
-            userID = int(hashlib.md5(py3bstr(userSalt + userIP)).hexdigest()[:8], 16)
+            userID = int(hashlib.md5(b_str(userSalt + userIP)).hexdigest()[:8], 16)
 
         self.__data = {
             "service": service,

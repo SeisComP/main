@@ -721,7 +721,7 @@ class FDSNEvent(BaseResource):
                 region,
                 eType,
             )
-            lineBin = utils.py3bstr(line)
+            lineBin = utils.b_str(line)
             utils.writeTSBin(req, lineBin)
             lineCount += 1
             byteCount += len(lineBin)

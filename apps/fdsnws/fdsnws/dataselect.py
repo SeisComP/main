@@ -372,7 +372,7 @@ class FDSNDataSelectRealm(object):
                     self.__inv,
                     self.__bufferSize,
                     self.__access,
-                    {"mail": utils.py3ustr(avatarId), "blacklisted": False},
+                    {"mail": utils.u_str(avatarId), "blacklisted": False},
                 ),
                 lambda: None,
             )

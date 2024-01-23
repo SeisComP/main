@@ -18,18 +18,17 @@ import seiscomp.core
 import seiscomp.io
 from seiscomp.client import Application
 
+
 # -------------------------------------------------------------------------------
 # Converts a unicode string to a byte string
-b_str = lambda s: s.encode("utf-8", "replace")
+def b_str(unicode_string):
+    return unicode_string.encode("utf-8", "replace")
 
 
 # -------------------------------------------------------------------------------
 # Converts a byte string to a unicode string
-u_str = lambda s: s.decode("utf-8", "replace")
-
-py3bstr = b_str
-py3ustr = u_str
-py3ustrlist = lambda l: [u_str(x) for x in l]
+def u_str(byte_string):
+    return byte_string.decode("utf-8", "replace")
 
 
 # -------------------------------------------------------------------------------
@@ -44,7 +43,7 @@ def isRestricted(obj):
 # -------------------------------------------------------------------------------
 # Thread-safe write of string data using reactor main thread
 def writeTS(req, data):
-    reactor.callFromThread(req.write, py3bstr(data))
+    reactor.callFromThread(req.write, b_str(data))
 
 
 # -------------------------------------------------------------------------------
@@ -63,11 +62,8 @@ def onFinish(result, req):
             seiscomp.logging.error("request canceled")
             return
         seiscomp.logging.error(
-            "%s %s"
-            % (
-                result.getErrorMessage(),
-                traceback.format_tb(result.getTracebackObject()),
-            )
+            f"{result.getErrorMessage()} "
+            f"{traceback.format_tb(result.getTracebackObject())}"
         )
     else:
         if result:
@@ -83,11 +79,8 @@ def onFinish(result, req):
 def onCancel(failure, req):
     if failure:
         seiscomp.logging.error(
-            "%s %s"
-            % (
-                failure.getErrorMessage(),
-                traceback.format_tb(failure.getTracebackObject()),
-            )
+            f"{failure.getErrorMessage()} "
+            f"{traceback.format_tb(failure.getTracebackObject())}"
         )
     else:
         seiscomp.logging.error("request canceled")
@@ -164,7 +157,7 @@ class AccessLogEntry:
         # The host name of the client is resolved in the __str__ method by the
         # logging thread so that a long running DNS reverse lookup may not slow
         # down the request
-        self.msgPrefix = f"{service}|{py3ustr(req.getRequestHostname())}|{accessTime}|"
+        self.msgPrefix = f"{service}|{u_str(req.getRequestHostname())}|{accessTime}|"
 
         xff = req.requestHeaders.getRawHeaders("x-forwarded-for")
         if xff:
@@ -173,18 +166,9 @@ class AccessLogEntry:
             self.userIP = req.getClientIP()
 
         self.clientIP = req.getClientIP()
-        self.msgSuffix = "|%s|%i|%i|%s|%s|%i|%s|%s|%s|%s|%s||" % (
-            self.clientIP,
-            length,
-            procTime,
-            err,
-            agent,
-            code,
-            user,
-            net,
-            sta,
-            loc,
-            cha,
+        self.msgSuffix = (
+            f"|{self.clientIP}|{length}|{procTime}|{err}|{agent}|{code}|{user}|{net}"
+            f"|{sta}|{loc}|{cha}||"
         )
 
     def __str__(self):
