@@ -14,7 +14,6 @@ from fdsnwstest import FDSNWSTest
 
 ###############################################################################
 class TestDataSelect(FDSNWSTest):
-
     # --------------------------------------------------------------------------
     def test(self):
         print("Testing dataselect service")

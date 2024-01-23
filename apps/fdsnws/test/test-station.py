@@ -14,7 +14,6 @@ from station import TestStationBase
 
 ###############################################################################
 class TestStation(TestStationBase):
-
     # --------------------------------------------------------------------------
     def test(self):
         print("Testing station service")

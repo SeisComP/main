@@ -14,7 +14,6 @@ from fdsnwstest import FDSNWSTest
 
 ###############################################################################
 class TestEvent(FDSNWSTest):
-
     # --------------------------------------------------------------------------
     def test(self):
         print("Testing event service")

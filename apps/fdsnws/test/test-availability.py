@@ -14,7 +14,6 @@ from fdsnwstest import FDSNWSTest
 
 ###############################################################################
 class TestAvailability(FDSNWSTest):
-
     # --------------------------------------------------------------------------
     def test(self):
         print("Testing availability service")
