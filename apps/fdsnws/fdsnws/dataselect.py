@@ -14,11 +14,10 @@
 # Email:   herrnkind@gempa.de
 ################################################################################
 
-from __future__ import absolute_import, division, print_function
-
 import sys
 import time
 import dateutil.parser
+from io import BytesIO
 
 from twisted.cred import portal
 from twisted.web import http, resource, server
@@ -39,11 +38,6 @@ from . import utils
 
 from .reqtrack import RequestTrackerDB
 from .fastsds import SDS
-
-if sys.version_info[0] < 3:
-    from cStringIO import StringIO as BytesIO
-else:
-    from io import BytesIO
 
 VERSION = "1.1.1"
 

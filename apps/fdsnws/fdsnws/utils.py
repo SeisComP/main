@@ -7,10 +7,7 @@
 # Email:   herrnkind@gempa.de
 ################################################################################
 
-from __future__ import absolute_import, division, print_function
-
 import socket
-import sys
 import traceback
 
 from twisted.internet import reactor, defer
@@ -21,33 +18,21 @@ import seiscomp.core
 import seiscomp.io
 from seiscomp.client import Application
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Converts a unicode string to a byte string
-b_str = lambda s: s.encode('utf-8', 'replace')
+b_str = lambda s: s.encode("utf-8", "replace")
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Converts a byte string to a unicode string
-u_str = lambda s: s.decode('utf-8', 'replace')
+u_str = lambda s: s.decode("utf-8", "replace")
+
+py3bstr = b_str
+py3ustr = u_str
+py3ustrlist = lambda l: [u_str(x) for x in l]
 
 
-#-------------------------------------------------------------------------------
-# Python version depended string conversion
-if sys.version_info[0] < 3:
-    py2bstr = b_str
-    py2ustr = u_str
-    py3bstr = str
-    py3ustr = str
-    py3ustrlist = lambda l: l
-else:
-    py2bstr = str
-    py2ustr = str
-    py3bstr = b_str
-    py3ustr = u_str
-    py3ustrlist = lambda l: [u_str(x) for x in l]
-
-
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Tests if a SC3 inventory object is restricted
 def isRestricted(obj):
     try:
@@ -56,19 +41,19 @@ def isRestricted(obj):
         return False
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Thread-safe write of string data using reactor main thread
 def writeTS(req, data):
     reactor.callFromThread(req.write, py3bstr(data))
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Thread-safe write of binary data using reactor main thread
 def writeTSBin(req, data):
     reactor.callFromThread(req.write, data)
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Finish requests deferred to threads
 def onFinish(result, req):
     seiscomp.logging.debug("finish value = %s" % str(result))
@@ -77,8 +62,13 @@ def onFinish(result, req):
         if isinstance(err, defer.CancelledError):
             seiscomp.logging.error("request canceled")
             return
-        seiscomp.logging.error("%s %s" % (
-            result.getErrorMessage(), traceback.format_tb(result.getTracebackObject())))
+        seiscomp.logging.error(
+            "%s %s"
+            % (
+                result.getErrorMessage(),
+                traceback.format_tb(result.getTracebackObject()),
+            )
+        )
     else:
         if result:
             seiscomp.logging.debug("request successfully served")
@@ -88,29 +78,34 @@ def onFinish(result, req):
     reactor.callFromThread(req.finish)
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Handle connection errors
 def onCancel(failure, req):
     if failure:
-        seiscomp.logging.error("%s %s" % (
-            failure.getErrorMessage(), traceback.format_tb(failure.getTracebackObject())))
+        seiscomp.logging.error(
+            "%s %s"
+            % (
+                failure.getErrorMessage(),
+                traceback.format_tb(failure.getTracebackObject()),
+            )
+        )
     else:
         seiscomp.logging.error("request canceled")
     req.cancel()
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Handle premature connection reset
 def onResponseFailure(_, call):
     seiscomp.logging.error("response canceled")
     call.cancel()
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Renders error page if the result set exceeds the configured maximum number
 # objects
 def accessLog(req, ro, code, length, err):
-    logger = Application.Instance()._accessLog # pylint: disable=W0212
+    logger = Application.Instance()._accessLog  # pylint: disable=W0212
     if logger is None:
         return
 
@@ -125,7 +120,7 @@ class Sink(seiscomp.io.ExportSink):
         self.written = 0
 
     def write(self, data):
-        if self.request._disconnected: #pylint: disable=W0212
+        if self.request._disconnected:  # pylint: disable=W0212
             return -1
         writeTSBin(self.request, data)
         self.written += len(data)
@@ -140,7 +135,7 @@ class AccessLogEntry:
         if agent is None:
             agent = ""
         else:
-            agent = agent[:100].replace('|', ' ')
+            agent = agent[:100].replace("|", " ")
 
         if err is None:
             err = ""
@@ -170,7 +165,10 @@ class AccessLogEntry:
         # logging thread so that a long running DNS reverse lookup may not slow
         # down the request
         self.msgPrefix = "%s|%s|%s|" % (
-            service, py3ustr(req.getRequestHostname()), accessTime)
+            service,
+            py3ustr(req.getRequestHostname()),
+            accessTime,
+        )
 
         xff = req.requestHeaders.getRawHeaders("x-forwarded-for")
         if xff:
@@ -180,7 +178,18 @@ class AccessLogEntry:
 
         self.clientIP = req.getClientIP()
         self.msgSuffix = "|%s|%i|%i|%s|%s|%i|%s|%s|%s|%s|%s||" % (
-            self.clientIP, length, procTime, err, agent, code, user, net, sta, loc, cha)
+            self.clientIP,
+            length,
+            procTime,
+            err,
+            agent,
+            code,
+            user,
+            net,
+            sta,
+            loc,
+            cha,
+        )
 
     def __str__(self):
         try:

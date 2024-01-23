@@ -19,10 +19,7 @@ from datetime import datetime, timedelta
 
 import requests
 
-if sys.version_info[0] < 3:
-    from Queue import Queue  # pylint: disable=E0401
-else:
-    from queue import Queue
+from queue import Queue
 
 from seiscomp.fdsnws.utils import py3bstr  # pylint: disable=C0413
 
