@@ -785,7 +785,7 @@ class FDSNStation(BaseResource):
                 "Last-Modified", http.datetimeToString(self._timeInventoryLoaded)
             )
 
-        dataBin = utils.py3bstr(data)
+        dataBin = utils.b_str(data)
         utils.writeTSBin(req, dataBin)
         seiscomp.logging.debug(
             f"{ro.service}: returned {len(lines)} lines (total bytes: {len(dataBin)})"

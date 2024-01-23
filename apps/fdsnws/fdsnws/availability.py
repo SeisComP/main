@@ -201,15 +201,15 @@ class _AvailabilityExtentRequestOptions(_AvailabilityRequestOptions):
     # --------------------------------------------------------------------------
     def attributeExtentIter(self, ext):
         for i in range(ext.dataAttributeExtentCount()):
-            e = ext.dataAttributeExtent(i)
+            attExt = ext.dataAttributeExtent(i)
 
-            if self.time and not self.time.match(e.start(), e.end()):
+            if self.time and not self.time.match(attExt.start(), attExt.end()):
                 continue
 
-            if self.quality and e.quality() not in self.quality:
+            if self.quality and attExt.quality() not in self.quality:
                 continue
 
-            yield e
+            yield attExt
 
 
 ###############################################################################
@@ -301,8 +301,8 @@ class _Availability(BaseResource):
             # the GET operation supports exactly one stream filter
             ro.streams.append(ro)
         except ValueError as e:
-            logging.warning(str(e))
-            return self.renderErrorPage(req, http.BAD_REQUEST, str(e), ro)
+            logging.warning(e)
+            return self.renderErrorPage(req, http.BAD_REQUEST, e, ro)
 
         return self._prepareRequest(req, ro)
 
@@ -314,8 +314,8 @@ class _Availability(BaseResource):
             ro.parsePOST(req.content)
             ro.parse()
         except ValueError as e:
-            logging.warning(str(e))
-            return self.renderErrorPage(req, http.BAD_REQUEST, str(e), ro)
+            logging.warning(e)
+            return self.renderErrorPage(req, http.BAD_REQUEST, e, ro)
 
         return self._prepareRequest(req, ro)
 
@@ -365,11 +365,11 @@ class _Availability(BaseResource):
         if ro.format == ro.VFormatRequest:
             return self._writeFormatRequest(req, lines, ro)
 
-        raise Exception(f"unknown reponse format: {ro.format}")
+        raise ValueError(f"unknown reponse format: {ro.format}")
 
     # --------------------------------------------------------------------------
     def _writeFormatText(self, req, lines, ro):
-        byteCount = 0
+        charCount = 0
         lineCount = 0
 
         # the extent service uses a different update column name and alignment
@@ -402,7 +402,7 @@ class _Availability(BaseResource):
             if first:
                 first = False
                 utils.writeTS(req, header)
-                byteCount += len(header)
+                charCount += len(header)
 
             wid = line[0].waveformID()
             e = line[1]
@@ -425,14 +425,14 @@ class _Availability(BaseResource):
             data += "\n"
 
             utils.writeTS(req, data)
-            byteCount += len(data)
+            charCount += len(data)
             lineCount += 1
 
-        return byteCount, lineCount
+        return charCount, lineCount
 
     # --------------------------------------------------------------------------
     def _writeFormatRequest(self, req, lines, ro):
-        byteCount = 0
+        charCount = 0
         lineCount = 0
 
         for line in lines:
@@ -449,24 +449,20 @@ class _Availability(BaseResource):
                 if ro.time.end and ro.time.end < end:
                     end = ro.time.end
 
-            data = "{0} {1} {2} {3} {4} {5}\n".format(
-                wid.networkCode(),
-                wid.stationCode(),
-                loc,
-                wid.channelCode(),
-                self._formatTime(start, True),
-                self._formatTime(end, True),
+            data = (
+                f"{wid.networkCode()} {wid.stationCode()} {loc} {wid.channelCode()} "
+                f"{self._formatTime(start, True)} {self._formatTime(end, True)}\n"
             )
 
             utils.writeTS(req, data)
-            byteCount += len(data)
+            charCount += len(data)
             lineCount += 1
 
-        return byteCount, lineCount
+        return charCount, lineCount
 
     # --------------------------------------------------------------------------
     def _writeFormatGeoCSV(self, req, lines, ro):
-        byteCount = 0
+        charCount = 0
         lineCount = 0
 
         # the extent service uses a different update column name and alignment
@@ -504,15 +500,17 @@ class _Availability(BaseResource):
             fieldType += "|integer|string"
             fieldName += "|TimeSpans|Restriction"
 
-        header = "#dataset: GeoCSV 2.0\n" "#delimiter: |\n"
-        header += f"{fieldUnit}\n{fieldType}\n{fieldName}\n"
+        header = (
+            "#dataset: GeoCSV 2.0\n#delimiter: |\n"
+            f"{fieldUnit}\n{fieldType}\n{fieldName}\n"
+        )
 
         first = True
         for line in lines:
             if first:
                 first = False
                 utils.writeTS(req, header)
-                byteCount += len(header)
+                charCount += len(header)
 
             wid = line[0].waveformID()
             e = line[1]
@@ -537,18 +535,17 @@ class _Availability(BaseResource):
             data += "\n"
 
             utils.writeTS(req, data)
-            byteCount += len(data)
+            charCount += len(data)
             lineCount += 1
 
-        return byteCount, lineCount
+        return charCount, lineCount
 
     # --------------------------------------------------------------------------
     def _writeFormatJSON(self, req, lines, ro):
         header = (
-            "{{"
-            '"created":"{0}",'
+            f'{{"created":"{self._formatTime(Time.GMT())}",'
             '"version": 1.0,'
-            '"datasources":['.format(self._formatTime(Time.GMT()))
+            '"datasources":['
         )
         footer = "]}"
 
@@ -563,7 +560,7 @@ class FDSNAvailabilityExtentRealm(object):
         self.__access = access
 
     # --------------------------------------------------------------------------
-    def requestAvatar(self, avatarId, mind, *interfaces):
+    def requestAvatar(self, avatarId, _mind, *interfaces):
         if resource.IResource in interfaces:
             user = {"mail": avatarId, "blacklisted": False}
             return (
@@ -584,7 +581,7 @@ class FDSNAvailabilityExtentAuthRealm(object):
         self.__userdb = userdb
 
     # --------------------------------------------------------------------------
-    def requestAvatar(self, avatarId, mind, *interfaces):
+    def requestAvatar(self, avatarId, _mind, *interfaces):
         if resource.IResource in interfaces:
             user = self.__userdb.getAttributes(avatarId)
             return (
@@ -615,30 +612,31 @@ class FDSNAvailabilityExtent(_Availability):
         merged = None
         cloned = False
 
-        # Create a copy of the extent only if more than 1 element is found. The
-        # number of elements is not known in advance since attributeExtents
-        # might only be an iterator.
-        for e in attributeExtents:
+        # Create a copy of the extent only if more than 1 element is found. The number
+        # of elements is not known in advance since attributeExtents might only be an
+        # iterator.
+        for attExt in attributeExtents:
             if merged is None:
-                merged = e
-            else:
-                if not cloned:
-                    merged = datamodel.DataAttributeExtent(merged)
-                    cloned = True
+                merged = attExt
+                continue
 
-                if e.start() < merged.start():
-                    merged.setStart(e.start())
-                if e.end() > merged.end():
-                    merged.setEnd(e.end())
-                if e.updated() > merged.updated():
-                    merged.setUpdated(e.updated())
-                merged.setSegmentCount(merged.segmentCount() + e.segmentCount())
+            if not cloned:
+                merged = datamodel.DataAttributeExtent(merged)
+                cloned = True
+
+            if attExt.start() < merged.start():
+                merged.setStart(attExt.start())
+            if attExt.end() > merged.end():
+                merged.setEnd(attExt.end())
+            if attExt.updated() > merged.updated():
+                merged.setUpdated(attExt.updated())
+            merged.setSegmentCount(merged.segmentCount() + attExt.segmentCount())
 
         return merged
 
     # --------------------------------------------------------------------------
     def _writeJSONChannels(self, req, header, footer, lines, ro):
-        byteCount = 0
+        charCount = 0
 
         nslc = (
             "{{"
@@ -655,7 +653,7 @@ class FDSNAvailabilityExtent(_Availability):
         )
 
         utils.writeTS(req, header)
-        byteCount += len(header)
+        charCount += len(header)
 
         data = None
         for line in lines:
@@ -681,19 +679,19 @@ class FDSNAvailabilityExtent(_Availability):
             )
 
             utils.writeTS(req, data)
-            byteCount += len(data)
+            charCount += len(data)
 
         utils.writeTS(req, footer)
-        byteCount += len(footer)
+        charCount += len(footer)
 
-        return byteCount, len(lines)
+        return charCount, len(lines)
 
     # --------------------------------------------------------------------------
     def _processRequest(self, req, ro, dac):
-        if req._disconnected:
+        if req._disconnected:  # pylint: disable=W0212
             return False
 
-        # tuples: wid, attribute extent, restricted status
+        # tuples: extent, attribute extent, restricted status
         lines = []
 
         mergeAll = ro.mergeQuality and ro.mergeSampleRate
@@ -701,40 +699,43 @@ class FDSNAvailabilityExtent(_Availability):
 
         # iterate extents
         for ext, _, restricted in ro.extentIter(dac, self.user, self.access):
-            if req._disconnected:
+            if req._disconnected:  # pylint: disable=W0212
                 return False
 
             # iterate attribute extents and merge them if requested
             if mergeNone:
-                for e in ro.attributeExtentIter(ext):
-                    lines.append((ext, e, restricted))
-            elif mergeAll:
-                e = self._mergeExtents(ro.attributeExtentIter(ext))
-                if e is not None:
-                    lines.append((ext, e, restricted))
-            elif ro.mergeQuality:
-                eDict = {}  # key=sampleRate
-                for e in ro.attributeExtentIter(ext):
-                    if e.sampleRate() in eDict:
-                        eDict[e.sampleRate()].append(e)
+                for attExt in ro.attributeExtentIter(ext):
+                    lines.append((ext, attExt, restricted))
+                continue
+
+            if mergeAll:
+                attExt = self._mergeExtents(ro.attributeExtentIter(ext))
+                if attExt is not None:
+                    lines.append((ext, attExt, restricted))
+                continue
+
+            attExtDict = {}
+            if ro.mergeQuality:
+                # key=sampleRate
+                for attExt in ro.attributeExtentIter(ext):
+                    if attExt.sampleRate() in attExtDict:
+                        attExtDict[attExt.sampleRate()].append(attExt)
                     else:
-                        eDict[e.sampleRate()] = [e]
-                for k in eDict:
-                    e = self._mergeExtents(eDict[k])
-                    lines.append((ext, e, restricted))
+                        attExtDict[attExt.sampleRate()] = [attExt]
+            # ro.mergeSampleRate
             else:
-                eDict = {}  # key=quality
-                for e in ro.attributeExtentIter(ext):
-                    if e.quality() in eDict:
-                        eDict[e.quality()].append(e)
+                # key=quality
+                for attExt in ro.attributeExtentIter(ext):
+                    if attExt.quality() in attExtDict:
+                        attExtDict[attExt.quality()].append(attExt)
                     else:
-                        eDict[e.quality()] = [e]
-                for k in eDict:
-                    e = self._mergeExtents(eDict[k])
-                    lines.append((ext, e, restricted))
+                        attExtDict[attExt.quality()] = [attExt]
+
+            for attExtents in attExtDict.values():
+                lines.append((ext, self._mergeExtents(attExtents), restricted))
 
         # Return 204 if no matching availability information was found
-        if len(lines) == 0:
+        if not lines:
             msg = "no matching availabilty information found"
             self.writeErrorPage(req, http.NO_CONTENT, msg, ro)
             return True
@@ -746,13 +747,12 @@ class FDSNAvailabilityExtent(_Availability):
         if ro.limit:
             del lines[ro.limit :]
 
-        byteCount, extCount = self._writeLines(req, lines, ro)
+        charCount, extCount = self._writeLines(req, lines, ro)
 
         logging.debug(
-            "%s: returned %i extents (total bytes: %i)"
-            % (ro.service, extCount, byteCount)
+            "%s: returned %i extents (characters: %i)", ro.service, extCount, charCount
         )
-        utils.accessLog(req, ro, http.OK, byteCount, None)
+        utils.accessLog(req, ro, http.OK, charCount, None)
         return True
 
     # --------------------------------------------------------------------------
@@ -835,7 +835,7 @@ class FDSNAvailabilityQueryRealm(object):
         self.__access = access
 
     # --------------------------------------------------------------------------
-    def requestAvatar(self, avatarId, mind, *interfaces):
+    def requestAvatar(self, avatarId, _mind, *interfaces):
         if resource.IResource in interfaces:
             user = {"mail": avatarId, "blacklisted": False}
             return (
@@ -856,7 +856,7 @@ class FDSNAvailabilityQueryAuthRealm(object):
         self.__userdb = userdb
 
     # --------------------------------------------------------------------------
-    def requestAvatar(self, avatarId, mind, *interfaces):
+    def requestAvatar(self, avatarId, _mind, *interfaces):
         if resource.IResource in interfaces:
             user = self.__userdb.getAttributes(avatarId)
             return (
@@ -883,7 +883,7 @@ class FDSNAvailabilityQuery(_Availability):
 
     # --------------------------------------------------------------------------
     def _writeJSONChannels(self, req, header, footer, lines, ro):
-        byteCount = 0
+        charCount = 0
         lineCount = 0
 
         nslc = (
@@ -906,7 +906,7 @@ class FDSNAvailabilityQuery(_Availability):
 
         def writeSegments(segments):
             first = True
-            byteCount = 0
+            charCount = 0
 
             for s in segments:
                 if first:
@@ -919,61 +919,61 @@ class FDSNAvailabilityQuery(_Availability):
                     self._formatTime(s.start(), True), self._formatTime(s.end(), True)
                 )
                 utils.writeTS(req, data)
-                byteCount += len(data)
+                charCount += len(data)
 
-            return byteCount
+            return charCount
 
-        ext = None
+        prevExt = None
 
         # merge of quality and sample rate: all timespans of one stream are
         # grouped into one channel
         if ro.mergeQuality and ro.mergeSampleRate:
             lastUpdate = None
             segments = None
-            for line in lines:
-                s = line[1]
+            for ext, attExt, _restricted in lines:
                 lineCount += 1
 
-                if line[0] is not ext:
-                    if ext is not None:
-                        if byteCount == 0:
-                            utils.writeTS(req, header)
-                            byteCount += len(header)
-                            data = ""
-                        else:
-                            data = "]},"
+                if ext is prevExt:
+                    if attExt.updated() > lastUpdate:
+                        lastUpdate = attExt.updated()
+                    segments.append(attExt)
+                    continue
 
-                        wid = ext.waveformID()
-                        data += nslc.format(
-                            wid.networkCode(),
-                            wid.stationCode(),
-                            wid.locationCode(),
-                            wid.channelCode(),
-                        )
-                        if ro.showLatestUpdate:
-                            data += updated.format(self._formatTime(lastUpdate))
-                        utils.writeTS(req, data)
-                        byteCount += len(data)
-                        byteCount += writeSegments(segments)
+                if prevExt is not None:
+                    if charCount == 0:
+                        utils.writeTS(req, header)
+                        charCount += len(header)
+                        data = ""
+                    else:
+                        data = "]},"
 
-                    ext = line[0]
-                    lastUpdate = s.updated()
-                    segments = [s]
-                else:
-                    if s.updated() > lastUpdate:
-                        lastUpdate = s.updated()
-                    segments.append(s)
+                    wid = prevExt.waveformID()
+                    data += nslc.format(
+                        wid.networkCode(),
+                        wid.stationCode(),
+                        wid.locationCode(),
+                        wid.channelCode(),
+                    )
+                    if ro.showLatestUpdate:
+                        data += updated.format(self._formatTime(lastUpdate))
+                    utils.writeTS(req, data)
+                    charCount += len(data)
+                    charCount += writeSegments(segments)
+
+                prevExt = ext
+                lastUpdate = attExt.updated()
+                segments = [attExt]
 
             # handle last extent
-            if ext is not None:
-                if byteCount == 0:
+            if prevExt is not None:
+                if charCount == 0:
                     utils.writeTS(req, header)
-                    byteCount += len(header)
+                    charCount += len(header)
                     data = ""
                 else:
                     data = "]},"
 
-                wid = ext.waveformID()
+                wid = prevExt.waveformID()
                 data += nslc.format(
                     wid.networkCode(),
                     wid.stationCode(),
@@ -983,32 +983,39 @@ class FDSNAvailabilityQuery(_Availability):
                 if ro.showLatestUpdate:
                     data += updated.format(self._formatTime(lastUpdate))
                 utils.writeTS(req, data)
-                byteCount += len(data)
-                byteCount += writeSegments(segments)
+                charCount += len(data)
+                charCount += writeSegments(segments)
 
                 data = "]}"
                 utils.writeTS(req, data)
-                byteCount += len(data)
+                charCount += len(data)
                 utils.writeTS(req, footer)
-                byteCount += len(footer)
+                charCount += len(footer)
 
-        # merge of quality: all timespans of one stream are grouped by
-        # sample rate
+        # merge of quality: all timespans of one stream are grouped by sample rate
         elif ro.mergeQuality:
-            segGroups = None
-            for line in lines:
-                s = line[1]
+            segGroups = OrderedDict()
+            for ext, attExt, _restricted in lines:
                 lineCount += 1
 
-                if line[0] is not ext:
-                    if ext is not None:
-                        wid = ext.waveformID()
+                if ext is prevExt:
+                    if attExt.sampleRate() in segGroups:
+                        segGroup = segGroups[attExt.sampleRate()]
+                        if attExt.updated() > segGroup.updated:
+                            segGroup.updated = attExt.updated()
+                        segGroup.segments.append(attExt)
+                        continue
+
+                else:
+                    if prevExt is not None:
+                        wid = prevExt.waveformID()
                         for sr, sg in segGroups.items():
-                            if req._disconnected:
+                            if req._disconnected:  # pylint: disable=W0212
                                 return False
-                            if byteCount == 0:
+
+                            if charCount == 0:
                                 utils.writeTS(req, header)
-                                byteCount += len(header)
+                                charCount += len(header)
                                 data = ""
                             else:
                                 data = "]},"
@@ -1023,30 +1030,24 @@ class FDSNAvailabilityQuery(_Availability):
                             if ro.showLatestUpdate:
                                 data += updated.format(self._formatTime(sg.updated))
                             utils.writeTS(req, data)
-                            byteCount += len(data)
-                            byteCount += writeSegments(sg.segments)
+                            charCount += len(data)
+                            charCount += writeSegments(sg.segments)
 
-                    ext = line[0]
+                    prevExt = ext
                     segGroups = OrderedDict()
-                    segGroups[s.sampleRate()] = SegGroup([s], s.updated())
-                else:
-                    if s.sampleRate() in segGroups:
-                        segGroup = segGroups[s.sampleRate()]
-                        if s.updated() > segGroup.updated:
-                            segGroup.updated = s.updated()
-                        segGroup.segments.append(s)
-                    else:
-                        segGroups[s.sampleRate()] = SegGroup([s], s.updated())
+
+                segGroups[attExt.sampleRate()] = SegGroup([attExt], attExt.updated())
 
             # handle last extent
-            if ext is not None:
-                wid = ext.waveformID()
+            if prevExt is not None:
+                wid = prevExt.waveformID()
                 for sr, sg in segGroups.items():
-                    if req._disconnected:
+                    if req._disconnected:  # pylint: disable=W0212
                         return False
-                    if byteCount == 0:
+
+                    if charCount == 0:
                         utils.writeTS(req, header)
-                        byteCount += len(header)
+                        charCount += len(header)
                         data = ""
                     else:
                         data = "]},"
@@ -1061,32 +1062,40 @@ class FDSNAvailabilityQuery(_Availability):
                     if ro.showLatestUpdate:
                         data += updated.format(self._formatTime(sg.updated))
                     utils.writeTS(req, data)
-                    byteCount += len(data)
-                    byteCount += writeSegments(sg.segments)
+                    charCount += len(data)
+                    charCount += writeSegments(sg.segments)
 
                 data = "]}"
                 utils.writeTS(req, data)
-                byteCount += len(data)
+                charCount += len(data)
                 utils.writeTS(req, footer)
-                byteCount += len(footer)
+                charCount += len(footer)
 
         # merge of sample rate: all timespans of one stream are grouped by
         # quality
         elif ro.mergeSampleRate:
-            segGroups = None
-            for line in lines:
-                s = line[1]
+            segGroups = OrderedDict()
+            for ext, attExt, _restricted in lines:
                 lineCount += 1
 
-                if line[0] is not ext:
-                    if ext is not None:
-                        wid = ext.waveformID()
+                if ext is prevExt:
+                    if attExt.quality() in segGroups:
+                        segGroup = segGroups[attExt.quality()]
+                        if attExt.updated() > segGroup.updated:
+                            segGroup.updated = attExt.updated()
+                        segGroup.segments.append(attExt)
+                        continue
+
+                else:
+                    if prevExt is not None:
+                        wid = prevExt.waveformID()
                         for q, sg in segGroups.items():
-                            if req._disconnected:
+                            if req._disconnected:  # pylint: disable=W0212
                                 return False
-                            if byteCount == 0:
+
+                            if charCount == 0:
                                 utils.writeTS(req, header)
-                                byteCount += len(header)
+                                charCount += len(header)
                                 data = ""
                             else:
                                 data = "]},"
@@ -1101,30 +1110,24 @@ class FDSNAvailabilityQuery(_Availability):
                             if ro.showLatestUpdate:
                                 data += updated.format(self._formatTime(sg.updated))
                             utils.writeTS(req, data)
-                            byteCount += len(data)
-                            byteCount += writeSegments(sg.segments)
+                            charCount += len(data)
+                            charCount += writeSegments(sg.segments)
 
-                    ext = line[0]
+                    prevExt = ext
                     segGroups = OrderedDict()
-                    segGroups[s.quality()] = SegGroup([s], s.updated())
-                else:
-                    if s.quality() in segGroups:
-                        segGroup = segGroups[s.quality()]
-                        if s.updated() > segGroup.updated:
-                            segGroup.updated = s.updated()
-                        segGroup.segments.append(s)
-                    else:
-                        segGroups[s.quality()] = SegGroup([s], s.updated())
+
+                segGroups[attExt.quality()] = SegGroup([attExt], attExt.updated())
 
             # handle last extent
-            if ext is not None:
-                wid = ext.waveformID()
+            if prevExt is not None:
+                wid = prevExt.waveformID()
                 for q, sg in segGroups.items():
-                    if req._disconnected:
+                    if req._disconnected:  # pylint: disable=W0212
                         return False
-                    if byteCount == 0:
+
+                    if charCount == 0:
                         utils.writeTS(req, header)
-                        byteCount += len(header)
+                        charCount += len(header)
                         data = ""
                     else:
                         data = "]},"
@@ -1139,32 +1142,41 @@ class FDSNAvailabilityQuery(_Availability):
                     if ro.showLatestUpdate:
                         data += updated.format(self._formatTime(sg.updated))
                     utils.writeTS(req, data)
-                    byteCount += len(data)
-                    byteCount += writeSegments(sg.segments)
+                    charCount += len(data)
+                    charCount += writeSegments(sg.segments)
 
                 data = "]}"
                 utils.writeTS(req, data)
-                byteCount += len(data)
+                charCount += len(data)
                 utils.writeTS(req, footer)
-                byteCount += len(footer)
+                charCount += len(footer)
 
-        # no merge: all timespans of one stream are grouped by tuple of
-        # quality and sampleRate
+        # no merge: all timespans of one stream are grouped by tuple of quality and
+        # sampleRate
         else:
-            segGroups = None
-            for line in lines:
-                s = line[1]
+            segGroups = OrderedDict()
+            for ext, attExt, _restricted in lines:
                 lineCount += 1
+                t = (attExt.quality(), attExt.sampleRate())
 
-                if line[0] is not ext:
-                    if ext is not None:
-                        wid = ext.waveformID()
+                if ext is prevExt:
+                    if t in segGroups:
+                        segGroup = segGroups[t]
+                        if attExt.updated() > segGroup.updated:
+                            segGroup.updated = attExt.updated()
+                        segGroup.segments.append(attExt)
+                        continue
+
+                else:
+                    if prevExt is not None:
+                        wid = prevExt.waveformID()
                         for (q, sr), sg in segGroups.items():
-                            if req._disconnected:
+                            if req._disconnected:  # pylint: disable=W0212
                                 return False
-                            if byteCount == 0:
+
+                            if charCount == 0:
                                 utils.writeTS(req, header)
-                                byteCount += len(header)
+                                charCount += len(header)
                                 data = ""
                             else:
                                 data = "]},"
@@ -1180,33 +1192,24 @@ class FDSNAvailabilityQuery(_Availability):
                             if ro.showLatestUpdate:
                                 data += updated.format(self._formatTime(sg.updated))
                             utils.writeTS(req, data)
-                            byteCount += len(data)
-                            byteCount += writeSegments(sg.segments)
+                            charCount += len(data)
+                            charCount += writeSegments(sg.segments)
 
-                    ext = line[0]
+                    prevExt = ext
                     segGroups = OrderedDict()
-                    segGroups[(s.quality(), s.sampleRate())] = SegGroup(
-                        [s], s.updated()
-                    )
-                else:
-                    t = (s.quality(), s.sampleRate())
-                    if t in segGroups:
-                        segGroup = segGroups[t]
-                        if s.updated() > segGroup.updated:
-                            segGroup.updated = s.updated()
-                        segGroup.segments.append(s)
-                    else:
-                        segGroups[t] = SegGroup([s], s.updated())
+
+                segGroups[t] = SegGroup([attExt], attExt.updated())
 
             # handle last extent
-            if ext is not None:
-                wid = ext.waveformID()
+            if prevExt is not None:
+                wid = prevExt.waveformID()
                 for (q, sr), sg in segGroups.items():
-                    if req._disconnected:
+                    if req._disconnected:  # pylint: disable=W0212
                         return False
-                    if byteCount == 0:
+
+                    if charCount == 0:
                         utils.writeTS(req, header)
-                        byteCount += len(header)
+                        charCount += len(header)
                         data = ""
                     else:
                         data = "]},"
@@ -1222,33 +1225,33 @@ class FDSNAvailabilityQuery(_Availability):
                     if ro.showLatestUpdate:
                         data += updated.format(self._formatTime(sg.updated))
                     utils.writeTS(req, data)
-                    byteCount += len(data)
-                    byteCount += writeSegments(sg.segments)
+                    charCount += len(data)
+                    charCount += writeSegments(sg.segments)
 
                 data = "]}"
                 utils.writeTS(req, data)
-                byteCount += len(data)
+                charCount += len(data)
                 utils.writeTS(req, footer)
-                byteCount += len(footer)
+                charCount += len(footer)
 
-        return byteCount, lineCount
+        return charCount, lineCount
 
     # --------------------------------------------------------------------------
     def _processRequest(self, req, ro, dac):
-        if req._disconnected:
+        if req._disconnected:  # pylint: disable=W0212
             return False
 
         # tuples: wid, segment, restricted status
         lines = []
 
-        byteCount = 0
+        charCount = 0
 
         # iterate extents and create IN clauses of parent_oids in bunches
         # of 1000 because the query size is limited
         parentOIDs, idList, tooLarge = [], [], []
         i = 0
         for ext, objID, _ in ro.extentIter(dac, self.user, self.access):
-            if req._disconnected:
+            if req._disconnected:  # pylint: disable=W0212
                 return False
 
             if ro.excludeTooLarge:
@@ -1270,20 +1273,16 @@ class FDSNAvailabilityQuery(_Availability):
 
         if not ro.excludeTooLarge and tooLarge:
             extents = ", ".join(
-                "{0}.{1}.{2}.{3}".format(
-                    e.waveformID().networkCode(),
-                    e.waveformID().stationCode(),
-                    e.waveformID().locationCode(),
-                    e.waveformID().channelCode(),
-                )
+                f"{e.waveformID().networkCode()}.{e.waveformID().stationCode()}."
+                f"{e.waveformID().locationCode()}.{e.waveformID().channelCode()}"
                 for e in tooLarge
             )
 
             msg = (
-                "Unable to process request due to database limitations. "
-                "Some selections have too many segments to process. "
-                "Rejected extents: {{{0}}}. This limitation may be "
-                "resolved in a future version of this webservice.".format(extents)
+                "Unable to process request due to database limitations. Some "
+                "selections have too many segments to process. Rejected extents: "
+                f"{{{extents}}}. This limitation may be resolved in a future version "
+                "of this webservice."
             )
             self.writeErrorPage(req, http.REQUEST_ENTITY_TOO_LARGE, msg, ro)
             return False
@@ -1302,7 +1301,7 @@ class FDSNAvailabilityQuery(_Availability):
 
         lines = self._lineIter(db, parentOIDs, req, ro, dac.extentsOID())
 
-        byteCount, segCount = self._writeLines(req, lines, ro)
+        charCount, segCount = self._writeLines(req, lines, ro)
 
         # Return 204 if no matching availability information was found
         if segCount <= 0:
@@ -1311,10 +1310,9 @@ class FDSNAvailabilityQuery(_Availability):
             return True
 
         logging.debug(
-            "%s: returned %i segments (total bytes: %i)"
-            % (ro.service, segCount, byteCount)
+            "%s: returned %i segments (characters: %i)", ro.service, segCount, charCount
         )
-        utils.accessLog(req, ro, http.OK, byteCount, None)
+        utils.accessLog(req, ro, http.OK, charCount, None)
 
         return True
 
@@ -1327,13 +1325,12 @@ class FDSNAvailabilityQuery(_Availability):
         dba = datamodel.DatabaseArchive(db)
 
         for idList in parentOIDs:
-            if req._disconnected:
+            if req._disconnected:  # pylint: disable=W0212
                 return
 
             # build SQL query
-            q = "SELECT * from DataSegment " "WHERE _parent_oid IN ({0}) ".format(
-                ",".join(str(x) for x in idList)
-            )
+            idStr = ",".join(str(x) for x in idList)
+            q = f"SELECT * from DataSegment WHERE _parent_oid IN ({idStr}) "
             if ro.time:
                 if ro.time.start is not None:
                     if ro.time.start.microseconds() == 0:
@@ -1341,11 +1338,8 @@ class FDSNAvailabilityQuery(_Availability):
                     else:
                         q += (
                             "AND ({0} > '{1}' OR ("
-                            "{0} = '{1}' AND end_ms >= {2})) ".format(
-                                _T("end"),
-                                db.timeToString(ro.time.start),
-                                ro.time.start.microseconds(),
-                            )
+                            f"{_T('end')} = '{db.timeToString(ro.time.start)}' AND "
+                            f"end_ms >= {ro.time.start.microseconds()})) "
                         )
                 if ro.time.end is not None:
                     if ro.time.end.microseconds() == 0:
@@ -1353,16 +1347,12 @@ class FDSNAvailabilityQuery(_Availability):
                     else:
                         q += (
                             "AND ({0} < '{1}' OR ("
-                            "{0} = '{1}' AND start_ms < {2})) ".format(
-                                _T("start"),
-                                db.timeToString(ro.time.end),
-                                ro.time.end.microseconds(),
-                            )
+                            f"{_T('start')} = '{db.timeToString(ro.time.end)}' AND "
+                            "start_ms < {ro.time.end.microseconds()})) "
                         )
             if ro.quality:
-                q += "AND {0} IN ('{1}') ".format(
-                    _T("quality"), "', '".join(ro.quality)
-                )
+                qualities = "', '".join(ro.quality)
+                q += f"AND {_T('quality')} IN ('{qualities}') "
             q += f"ORDER BY _parent_oid, {_T('start')}, {_T('start_ms')}"
 
             segIt = dba.getObjectIterator(q, datamodel.DataSegment.TypeInfo())
@@ -1383,7 +1373,7 @@ class FDSNAvailabilityQuery(_Availability):
             ext = None
             lines = 0
             while (
-                not req._disconnected
+                not req._disconnected  # pylint: disable=W0212
                 and (seg is None or segIt.next())
                 and (not ro.limit or lines < ro.limit)
             ):
@@ -1420,6 +1410,7 @@ class FDSNAvailabilityQuery(_Availability):
                     seg.setEnd(s.end())
                     if s.updated() > seg.updated():
                         seg.setUpdated(s.updated())
+
                 # merge was not possible, yield previous segment
                 else:
                     yield (ext, seg, restricted)

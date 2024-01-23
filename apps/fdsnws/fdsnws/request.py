@@ -17,7 +17,7 @@ from seiscomp.core import Time
 import seiscomp.logging
 import seiscomp.math
 
-from .utils import py3ustr, py3ustrlist
+from .utils import u_str
 
 
 class RequestOptions:
@@ -361,7 +361,7 @@ class RequestOptions:
         # bounding box and bounding circle may not be combined
         if hasBBoxParam and hasBCircleParam:
             raise ValueError(
-                "bounding box and bounding circle parameters " "may not be combined"
+                "bounding box and bounding circle parameters may not be combined"
             )
         if hasBBoxParam:
             self.geo = RequestOptions.Geo()
@@ -412,8 +412,9 @@ class RequestOptions:
     def getListValues(self, keys, lower=False):
         values = set()
         for key in keys:
-            if not key in self._args:
+            if key not in self._args:
                 continue
+
             for vList in self._args[key]:
                 for v in vList.split(","):
                     if v is None:
@@ -434,8 +435,9 @@ class RequestOptions:
 
         try:
             i = int(value)
-        except ValueError:
-            raise ValueError(f"invalid integer value in parameter: {key}")
+        except ValueError as e:
+            raise ValueError(f"invalid integer value in parameter: {key}") from e
+
         self._assertValueRange(key, i, minValue, maxValue)
         return i
 
@@ -448,14 +450,15 @@ class RequestOptions:
 
         if self.FloatChars(value):
             raise ValueError(
-                "invalid characters in float parameter: %s "
-                "(scientific notation forbidden by spec)" % key
+                f"invalid characters in float parameter: {key} (scientific notation "
+                "forbidden by spec)"
             )
 
         try:
             f = float(value)
-        except ValueError:
-            raise ValueError(f"invalid float value in parameter: {key}")
+        except ValueError as e:
+            raise ValueError(f"invalid float value in parameter: {key}") from e
+
         self._assertValueRange(key, f, minValue, maxValue)
         return f
 
@@ -520,11 +523,11 @@ class RequestOptions:
         # transform keys to lower case
         if args is not None:
             for k, v in args.items():
-                k = py3ustr(k.lower())
+                k = u_str(k.lower())
                 if k not in self.GETParams:
                     raise ValueError(f"invalid param: {k}")
 
-                self._args[k] = py3ustrlist(v)
+                self._args[k] = [u_str(x) for x in v]
 
     # ---------------------------------------------------------------------------
     def parsePOST(self, content):
@@ -532,7 +535,7 @@ class RequestOptions:
 
         for line in content:
             nLine += 1
-            line = py3ustr(line.strip())
+            line = u_str(line.strip())
 
             # ignore empty and comment lines
             if len(line) == 0 or line[0] == "#":
@@ -559,27 +562,25 @@ class RequestOptions:
                 for p in self.TimeParams:
                     if p == key:
                         raise ValueError(
-                            "time parameter in line %i not "
-                            "allowed in POST request" % nLine
+                            f"time parameter in line {nLine} not allowed in POST "
+                            "request"
                         )
 
                 # stream parameters not allowed in POST header
                 for p in self.StreamParams:
                     if p == key:
                         raise ValueError(
-                            "stream parameter in line %i not "
-                            "allowed in POST request" % nLine
+                            f"stream parameter in line {nLine} not allowed in POST "
+                            "request"
                         )
 
-                raise ValueError("invalid parameter in line %i" % nLine)
+                raise ValueError(f"invalid parameter in line {nLine}")
 
             # stream parameters
             toks = line.split()
             nToks = len(toks)
             if nToks not in (5, 6):
-                raise ValueError(
-                    "invalid number of stream components " "in line %i" % nLine
-                )
+                raise ValueError("invalid number of stream components in line {nLine}")
 
             ro = RequestOptions()
 
@@ -619,19 +620,12 @@ class RequestOptions:
                 logEnd = ro.time.end.iso()
 
             seiscomp.logging.debug(
-                "ro: %s.%s.%s.%s %s %s"
-                % (
-                    ro.channel.net,
-                    ro.channel.sta,
-                    ro.channel.loc,
-                    ro.channel.cha,
-                    ro.time.start.iso(),
-                    logEnd,
-                )
+                f"ro: {ro.channel.net}.{ro.channel.sta}.{ro.channel.loc}."
+                f"{ro.channel.cha} {ro.time.start.iso()} {logEnd}"
             )
             self.streams.append(ro)
 
-        if len(self.streams) == 0:
+        if not self.streams:
             raise ValueError("at least one stream line is required")
 
 

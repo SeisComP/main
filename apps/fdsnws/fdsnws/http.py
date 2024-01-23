@@ -20,7 +20,7 @@ import seiscomp.core
 import seiscomp.logging
 
 from . import gnupg
-from .utils import accessLog, b_str, u_str, py3ustr, py3bstr, writeTSBin
+from .utils import accessLog, b_str, u_str, u_str, b_str, writeTSBin
 
 VERSION = "1.2.4"
 
@@ -66,19 +66,19 @@ Service Version:
             reference = b"%s/" % request.path.rpartition(b"/")[0]
 
             codeStr = http.RESPONSES[code]
-            date = py3bstr(seiscomp.core.Time.GMT().toString("%FT%T.%f"))
+            date = b_str(seiscomp.core.Time.GMT().toString("%FT%T.%f"))
             response = resp % (
                 code,
                 codeStr,
-                py3bstr(msg),
+                b_str(msg),
                 reference,
                 request.uri,
                 date,
-                py3bstr(version),
+                b_str(version),
             )
             if not noContent:
                 seiscomp.logging.warning(
-                    "responding with error: %i (%s)" % (code, py3ustr(codeStr))
+                    "responding with error: %i (%s)" % (code, u_str(codeStr))
                 )
 
         accessLog(request, ro, code, len(response), msg)
@@ -112,7 +112,7 @@ class ServiceVersion(resource.Resource):
     # ---------------------------------------------------------------------------
     def render(self, request):
         request.setHeader("content-type", "text/plain")
-        return py3bstr(self.version)
+        return b_str(self.version)
 
 
 ################################################################################
@@ -140,7 +140,7 @@ class WADLFilter(static.Data):
             if valid:
                 data += line
 
-        static.Data.__init__(self, py3bstr(data), "application/xml")
+        static.Data.__init__(self, b_str(data), "application/xml")
 
 
 ################################################################################
@@ -293,7 +293,7 @@ class AuthResource(BaseResource):
             return self.renderErrorPage(request, http.BAD_REQUEST, msg)
 
         try:
-            attributes = json.loads(py3ustr(verified.data))
+            attributes = json.loads(u_str(verified.data))
             td = dateutil.parser.parse(
                 attributes["valid_until"]
             ) - datetime.datetime.now(dateutil.tz.tzutc())
@@ -314,7 +314,7 @@ class AuthResource(BaseResource):
             userid,
             attributes,
             time.time() + min(lifetime, 24 * 3600),
-            py3ustr(verified.data),
+            u_str(verified.data),
         )
         accessLog(request, None, http.OK, len(userid) + len(password) + 1, None)
         return userid + b":" + password
@@ -329,7 +329,7 @@ class Site(server.Site):
     # ---------------------------------------------------------------------------
     def getResourceFor(self, request):
         seiscomp.logging.debug(
-            f"request ({request.getClientIP()}): {py3ustr(request.uri)}"
+            f"request ({request.getClientIP()}): {u_str(request.uri)}"
         )
         request.setHeader("Server", f"SeisComP-FDSNWS/{VERSION}")
         request.setHeader("Access-Control-Allow-Headers", "Authorization")

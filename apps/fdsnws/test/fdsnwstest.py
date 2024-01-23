@@ -21,7 +21,7 @@ import requests
 
 from queue import Queue
 
-from seiscomp.fdsnws.utils import py3bstr  # pylint: disable=C0413
+from seiscomp.fdsnws.utils import b_str  # pylint: disable=C0413
 
 
 ###############################################################################
@@ -331,7 +331,7 @@ class FDSNWSTest(object):
 
         expected = None
         if data is not None:
-            expected = py3bstr(data)
+            expected = b_str(data)
         elif dataFile is not None:
             with open(dataFile, "rb") as f:
                 expected = f.read()

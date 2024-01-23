@@ -41,7 +41,7 @@ import seiscomp.client
 import seiscomp.system
 
 
-from seiscomp.fdsnws.utils import isRestricted, py3ustr, py3bstr
+from seiscomp.fdsnws.utils import isRestricted, u_str, b_str
 from seiscomp.fdsnws.dataselect import (
     FDSNDataSelect,
     FDSNDataSelectRealm,
@@ -181,7 +181,7 @@ class UserDB(object):
         seiscomp.logging.info("known users:")
 
         for name, user in list(self.__users.items()):
-            seiscomp.logging.info(" %s %s %d" % (py3ustr(name), user[1], user[2]))
+            seiscomp.logging.info(" %s %s %d" % (u_str(name), user[1], user[2]))
 
 
 ###############################################################################
@@ -1539,7 +1539,7 @@ configuration read:
     def _getAuthSessionWrapper(self, realm, msg):
         p = portal.Portal(realm, [self._checker])
         f = guard.DigestCredentialFactory("MD5", msg)
-        f.digest = credentials.DigestCredentialFactory("MD5", py3bstr(msg))
+        f.digest = credentials.DigestCredentialFactory("MD5", b_str(msg))
         return HTTPAuthSessionWrapper(p, [f])
 
 
