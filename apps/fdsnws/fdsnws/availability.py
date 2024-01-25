@@ -1400,28 +1400,25 @@ class FDSNAvailabilityQuery(_Availability):
 
                 # merge test
                 diff = float(s.start() - seg.end())
-                if (
-                    e is ext
-                    and (ro.mergeQuality or s.quality() == seg.quality())
-                    and (ro.mergeSampleRate or s.sampleRate() == seg.sampleRate())
-                    and (
-                        (ro.mergeGaps is None and diff <= jitter)
-                        or (ro.mergeGaps is not None and diff <= ro.mergeGaps)
-                    )
-                    and (-diff <= jitter or ro.mergeOverlap)
-                ):
+                mQuality = ro.mergeQuality or s.quality() == seg.quality()
+                mSampleRate = ro.mergeSampleRate or s.sampleRate() == seg.sampleRate()
+                mGaps = (ro.mergeGaps is None and diff <= jitter) or (
+                    ro.mergeGaps is not None and diff <= ro.mergeGaps
+                )
+                mOverlap = -diff <= jitter or ro.mergeOverlap
+                if e is ext and mQuality and mSampleRate and mGaps and mOverlap:
                     seg.setEnd(s.end())
                     if s.updated() > seg.updated():
                         seg.setUpdated(s.updated())
+                    continue
 
                 # merge was not possible, yield previous segment
-                else:
-                    yield (ext, seg, restricted)
-                    lines += 1
-                    seg = s
-                    ext = e
-                    if seg.sampleRate() != s.sampleRate():
-                        jitter = 1 / (2 * s.sampleRate())
+                yield (ext, seg, restricted)
+                lines += 1
+                seg = s
+                ext = e
+                if seg.sampleRate() != s.sampleRate():
+                    jitter = 1 / (2 * s.sampleRate())
 
             if seg is not None and (not ro.limit or lines < ro.limit):
                 yield (ext, seg, restricted)
