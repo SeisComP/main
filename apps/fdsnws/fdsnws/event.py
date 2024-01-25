@@ -41,7 +41,7 @@ from . import utils
 
 DBMaxUInt = 18446744073709551615  # 2^64 - 1
 
-VERSION = "1.2.4"
+VERSION = "1.2.5"
 
 ################################################################################
 
@@ -706,20 +706,10 @@ class FDSNEvent(BaseResource):
 
             if req._disconnected:  # pylint: disable=W0212
                 return False
-            line = "%s|%s|%f|%f|%s|%s||%s|%s|%s|%s|%s|%s|%s\n" % (
-                eID,
-                o.time().value().toString(df),
-                o.latitude().value(),
-                o.longitude().value(),
-                depth,
-                author,
-                contrib,
-                eID,
-                mType,
-                mVal,
-                mAuthor,
-                region,
-                eType,
+            line = (
+                f"{eID}|{o.time().value().toString(df)}|{o.latitude().value()}|"
+                f"{o.longitude().value()}|{depth}|{author}||{contrib}|{eID}|"
+                f"{mType}|{mVal}|{mAuthor}|{region}|{eType}\n"
             )
             lineBin = utils.b_str(line)
             utils.writeTSBin(req, lineBin)

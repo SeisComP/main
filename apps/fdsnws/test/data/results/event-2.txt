@@ -1,3 +1,3 @@
 #EventID|Time|Latitude|Longitude|Depth/km|Author|Catalog|Contributor|ContributorID|MagType|Magnitude|MagAuthor|EventLocationName|EventType
-gfz2021meng|2021-06-23T05:39:42.26|-22.619000|171.769000|30.2|||GFZ|gfz2021meng|Mw|5.39||Südöstlich der Loyalitätsinseln|
-rs2019qsodmc|2019-08-25T17:28:52.37413|-7.916882|159.243103|63.71457291|scolv@user||gempa|rs2019qsodmc|M|5.283150143|scmag@mars|Solomon Islands|earthquake
+gfz2021meng|2021-06-23T05:39:42.26|-22.619|171.769|30.2|||GFZ|gfz2021meng|Mw|5.39||Südöstlich der Loyalitätsinseln|
+rs2019qsodmc|2019-08-25T17:28:52.37413|-7.916882038|159.243103|63.71457291|scolv@user||gempa|rs2019qsodmc|M|5.283150143|scmag@mars|Solomon Islands|earthquake
