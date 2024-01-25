@@ -118,7 +118,7 @@ class FDSNWSTest(object):
             f"{self.rootdir}/../../fdsnws.py",
             "--debug",
             "--plugins=dbsqlite3,fdsnxml",
-            f"--database=sqlite3://{self.rootdir}/seiscomp3.sqlite3",
+            f"--database=sqlite3://{self.rootdir}/seiscomp.sqlite3",
             "--serveAvailability=true",
             "--dataAvailability.enable=true",
             "--agencyID=Test",
