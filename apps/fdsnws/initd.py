@@ -7,7 +7,7 @@ import seiscomp.kernel
 
 class Module(seiscomp.kernel.Module):
     def __init__(self, env):
-        seiscomp.kernel.Module.__init__(self, env, env.moduleName(__file__))
+        super().__init__(env, env.moduleName(__file__))
 
     def supportsAliases(self):
         # The default handler does not support aliases
@@ -24,19 +24,20 @@ class Module(seiscomp.kernel.Module):
         reloadfile = os.path.join(os.path.dirname(lockfile), f"{self.name}.reload")
 
         # Open pid file
-        with open(lockfile, "r") as f:
+        with open(lockfile, "r", encoding="utf-8") as f:
             # Try to read the pid
             pid = int(f.readline())
 
             # touch reload file
-            open(reloadfile, "a").close()
+            with open(reloadfile, "a", encoding="utf-8") as _:
+                pass
 
             if not os.path.isfile(reloadfile):
                 self.env.log(f"could not touch reload file: {reloadfile}")
                 return 1
 
             # Send SIGHUP
-            subprocess.call("kill -s HUP %d" % pid, shell=True)
+            subprocess.call(f"kill -s HUP {pid}", shell=True)
 
             # wait for reload file to disappear
             for _ in range(0, int(self.reloadTimeout * 5)):

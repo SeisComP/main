@@ -108,13 +108,15 @@ def accessLog(req, ro, code, length, err):
 ################################################################################
 class Sink(seiscomp.io.ExportSink):
     def __init__(self, request):
-        seiscomp.io.ExportSink.__init__(self)
+        super().__init__()
+
         self.request = request
         self.written = 0
 
     def write(self, data):
         if self.request._disconnected:  # pylint: disable=W0212
             return -1
+
         writeTSBin(self.request, data)
         self.written += len(data)
         return len(data)

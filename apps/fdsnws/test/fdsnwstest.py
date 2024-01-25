@@ -17,15 +17,15 @@ import traceback
 from threading import Thread
 from datetime import datetime, timedelta
 
-import requests
-
 from queue import Queue
+
+import requests
 
 from seiscomp.fdsnws.utils import b_str  # pylint: disable=C0413
 
 
 ###############################################################################
-class FDSNWSTest(object):
+class FDSNWSTest:
     # --------------------------------------------------------------------------
     def __init__(self, port=9980):
         self.port = port
@@ -66,21 +66,23 @@ class FDSNWSTest(object):
             if datetime.now() > maxTime:
                 print(" TIMEOUT EXCEEDED")
                 return False
+
             time.sleep(0.2)
             print(".", end="")
 
         print(" SERVICE TERMINATED")
+        return False
 
     # --------------------------------------------------------------------------
     def _startService(self):
         cmd = self.command()
         print("starting FDSNWS service:", " ".join(cmd))
         try:
-            fdOut = open("fdsnws.stdout", "w")
-            fdErr = open("fdsnws.stderr", "w")
-            self.service = subprocess.Popen(cmd, stdout=fdOut, stderr=fdErr)
+            with open("fdsnws.stdout", "w", encoding="utf-8") as fdOut:
+                with open("fdsnws.stderr", "w", encoding="utf-8") as fdErr:
+                    self.service = subprocess.Popen(cmd, stdout=fdOut, stderr=fdErr)
         except Exception as e:
-            print("failed to start FDSNWS service:", str(e))
+            print(f"failed to start FDSNWS service: {e}")
             return False
 
         if not self._waitForSocket():
@@ -94,6 +96,7 @@ class FDSNWSTest(object):
         if self.service.poll() is not None:
             print("warning: FDSNWS service terminated ahead of time", file=sys.stdout)
             return
+
         print(f"stopping FDSNWS service (PID: {self.service.pid}): ", end="")
         maxTime = datetime.now() + timedelta(timeout)
 
@@ -134,6 +137,7 @@ class FDSNWSTest(object):
     def diff(expected, got, ignoreRanges):
         if expected == got:
             return (None, None)
+
         lenExp = minLen = maxLen = len(expected)
         lenGot = len(got)
         if ignoreRanges:
@@ -145,14 +149,10 @@ class FDSNWSTest(object):
 
         if lenGot == 0 and minLen <= 0:
             return (None, None)
+
         if lenGot < minLen or lenGot > maxLen:
-            return (
-                min(lenExp, lenGot),
-                "read {} bytes, expected {}".format(
-                    lenGot,
-                    minLen if minLen == maxLen else "{}-{}".format(minLen, maxLen),
-                ),
-            )
+            exp = minLen if minLen == maxLen else f"{minLen}-{maxLen}"
+            return (min(lenExp, lenGot), f"read {lenGot} bytes, expected {exp}")
 
         # offset between got and expected index may result from variable length
         # result data, e.g. microseconds of time stamps
@@ -208,14 +208,13 @@ class FDSNWSTest(object):
 
             return (
                 iGot,
-                "... [ {} ] != [ {} ] ...".format(
-                    got[max(0, iGot - 10) : min(lenGot, iGot + 11)],
-                    expected[max(0, iExp - 10) : min(lenExp, iExp + 11)],
-                ),
+                f"... [ {got[max(0, iGot - 10) : min(lenGot, iGot + 11)]} ] "
+                f"!= [ {expected[max(0, iExp - 10) : min(lenExp, iExp + 11)]} ] ...",
             )
 
         if iGot < lenGot:
             return (lenGot, f"read {lenGot - iGot} more bytes than expected")
+
         if iGot > lenGot:
             return (lenGot, f"read {iGot - lenGot} fewer bytes than expected")
 
@@ -298,22 +297,28 @@ class FDSNWSTest(object):
         stream = dataFile is not None
         dAuth = requests.auth.HTTPDigestAuth("sysop", "sysop") if auth else None
         if postData is None:
-            r = requests.get(url, stream=stream, auth=dAuth, headers=reqHeaders)
+            r = requests.get(
+                url, stream=stream, auth=dAuth, headers=reqHeaders, timeout=10
+            )
         else:
             r = requests.post(
-                url, data=postData, stream=stream, auth=dAuth, headers=reqHeaders
+                url,
+                data=postData,
+                stream=stream,
+                auth=dAuth,
+                headers=reqHeaders,
+                timeout=10,
             )
 
         if r.status_code != retCode:
             raise ValueError(
-                f'Invalid status code, expected "{retCode}", got "{r.status_code}"'
+                f"Invalid status code, expected {retCode}, got {r.status_code}"
             )
 
         if contentType is not None and contentType != r.headers["content-type"]:
             raise ValueError(
-                'Invalid content type, expected "{}", got "{}"'.format(
-                    contentType, r.headers["content-type"]
-                )
+                f"Invalid content type, expected {contentType}, got "
+                f"{r.headers['content-type']}"
             )
 
         if respHeaders is not None:
@@ -321,13 +326,14 @@ class FDSNWSTest(object):
             for k, v in respHeaders.items():
                 if k not in r.headers:
                     raise ValueError(f"Missing response header field: {k!r}")
+
                 if callable(v) and v(r.headers[k]):
                     continue
+
                 if v != r.headers[k]:
                     raise ValueError(
-                        "Invalid response header field value: {!r} != {!r}".format(
-                            v, r.headers[k]
-                        )
+                        "Invalid response header field value: "
+                        f"{v!r} != {r.headers[k]!r}"
                     )
 
         expected = None
@@ -345,8 +351,8 @@ class FDSNWSTest(object):
             else:
                 if len(expected) != len(r.content):
                     raise ValueError(
-                        "Unexpected content length, expected {}, "
-                        "got {}".format(len(expected), len(r.content))
+                        f"Unexpected content length, expected {len(expected)}, "
+                        f"got {len(r.content)}"
                     )
 
         if not silent:

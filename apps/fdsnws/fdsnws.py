@@ -90,9 +90,6 @@ def logSC3(entry):
 ###############################################################################
 # Make CORS work with queryauth
 class HTTPAuthSessionWrapper(guard.HTTPAuthSessionWrapper):
-    def __init__(self, *args, **kwargs):
-        guard.HTTPAuthSessionWrapper.__init__(self, *args, **kwargs)
-
     def render(self, request):
         if request.method == b"OPTIONS":
             request.setHeader(b"Allow", b"GET,HEAD,POST,OPTIONS")
@@ -103,7 +100,7 @@ class HTTPAuthSessionWrapper(guard.HTTPAuthSessionWrapper):
 
 ###############################################################################
 @implementer(checkers.ICredentialsChecker)
-class UsernamePasswordChecker(object):
+class UsernamePasswordChecker:
     credentialInterfaces = (
         credentials.IUsernamePassword,
         credentials.IUsernameHashedPassword,
@@ -129,7 +126,7 @@ class UsernamePasswordChecker(object):
 
 
 ###############################################################################
-class UserDB(object):
+class UserDB:
     # -------------------------------------------------------------------------
     def __init__(self):
         self.__users = {}
@@ -185,7 +182,7 @@ class UserDB(object):
 
 
 ###############################################################################
-class Access(object):
+class Access:
     # -------------------------------------------------------------------------
     def __init__(self):
         self.__access = {}
@@ -277,7 +274,7 @@ class Access(object):
 
 
 ###############################################################################
-class DataAvailabilityCache(object):
+class DataAvailabilityCache:
     # -------------------------------------------------------------------------
     def __init__(self, app, da, validUntil):
         self._da = da
@@ -353,7 +350,8 @@ class DataAvailabilityCache(object):
 class FDSNWS(seiscomp.client.Application):
     # -------------------------------------------------------------------------
     def __init__(self, argc, argv):
-        seiscomp.client.Application.__init__(self, argc, argv)
+        super().__init__(argc, argv)
+
         self.setMessagingEnabled(True)
         self.setDatabaseEnabled(True, True)
         self.setRecordStreamEnabled(True)
@@ -430,6 +428,7 @@ class FDSNWS(seiscomp.client.Application):
             self._listenAddress = self.configGetString("listenAddress")
         except Exception:
             pass
+
         try:
             self._port = self.configGetInt("port")
         except Exception:
@@ -533,14 +532,17 @@ class FDSNWS(seiscomp.client.Application):
             self._serveDataSelect = self.configGetBool("serveDataSelect")
         except Exception:
             pass
+
         try:
             self._serveEvent = self.configGetBool("serveEvent")
         except Exception:
             pass
+
         try:
             self._serveStation = self.configGetBool("serveStation")
         except Exception:
             pass
+
         try:
             self._serveAvailability = self.configGetBool("serveAvailability")
         except Exception:
@@ -551,16 +553,19 @@ class FDSNWS(seiscomp.client.Application):
             self._daEnabled = self.configGetBool("dataAvailability.enable")
         except Exception:
             pass
+
         try:
             self._daCacheDuration = self.configGetInt("dataAvailability.cacheDuration")
         except Exception:
             pass
+
         try:
             self._daRepositoryName = self.configGetString(
                 "dataAvailability.repositoryName"
             )
         except Exception:
             pass
+
         try:
             self._daDCCName = self.configGetString("dataAvailability.dccName")
         except Exception:
@@ -573,11 +578,13 @@ class FDSNWS(seiscomp.client.Application):
                 file=sys.stderr,
             )
             return False
+
         if not bool(re.match(r"^[a-zA-Z0-9_\ -]*$", self._daRepositoryName)):
             print(
                 "invalid characters in dataAvailability.repositoryName", file=sys.stderr
             )
             return False
+
         if not bool(re.match(r"^[a-zA-Z0-9_\ -]*$", self._daDCCName)):
             print("invalid characters in dataAvailability.dccName", file=sys.stderr)
             return False
@@ -587,10 +594,12 @@ class FDSNWS(seiscomp.client.Application):
             self._hideAuthor = self.configGetBool("hideAuthor")
         except Exception:
             pass
+
         try:
             self._hideComments = self.configGetBool("hideComments")
         except Exception:
             pass
+
         try:
             name = self.configGetString("evaluationMode")
             if name.lower() == seiscomp.datamodel.EEvaluationModeNames.name(
@@ -604,8 +613,10 @@ class FDSNWS(seiscomp.client.Application):
             else:
                 print(f"invalid evaluation mode string: {name}", file=sys.stderr)
                 return False
+
         except Exception:
             pass
+
         try:
             strings = self.configGetStrings("eventType.whitelist")
             if len(strings) > 1 or strings[0]:
@@ -616,6 +627,7 @@ class FDSNWS(seiscomp.client.Application):
                     return False
         except Exception:
             pass
+
         try:
             strings = self.configGetStrings("eventType.blacklist")
             if len(strings) > 1 or strings[0]:
@@ -638,8 +650,10 @@ class FDSNWS(seiscomp.client.Application):
                 except Exception as e:
                     print(f"error parsing eventType.blacklist: {e}", file=sys.stderr)
                     return False
+
         except Exception:
             pass
+
         try:
             strings = self.configGetStrings("eventFormats")
             if len(strings) > 1 or strings[0]:

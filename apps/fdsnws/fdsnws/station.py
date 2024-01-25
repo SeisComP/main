@@ -77,7 +77,8 @@ class _StationRequestOptions(RequestOptions):
 
     # ---------------------------------------------------------------------------
     def __init__(self):
-        RequestOptions.__init__(self)
+        super().__init__()
+
         self.service = "fdsnws-station"
 
         self.includeSta = True
@@ -263,7 +264,8 @@ class FDSNStation(BaseResource):
         conditionalRequestsEnabled,
         timeInventoryLoaded,
     ):
-        BaseResource.__init__(self, VERSION)
+        super().__init__(VERSION)
+
         self._inv = inv
         self._allowRestricted = restricted
         self._maxObj = maxObj
@@ -302,8 +304,8 @@ class FDSNStation(BaseResource):
             # the GET operation supports exactly one stream filter
             ro.streams.append(ro)
         except ValueError as e:
-            seiscomp.logging.warning(str(e))
-            return self.renderErrorPage(req, http.BAD_REQUEST, str(e), ro)
+            seiscomp.logging.warning(e)
+            return self.renderErrorPage(req, http.BAD_REQUEST, e, ro)
 
         return self._prepareRequest(req, ro)
 
@@ -315,8 +317,8 @@ class FDSNStation(BaseResource):
             ro.parsePOST(req.content)
             ro.parse()
         except ValueError as e:
-            seiscomp.logging.warning(str(e))
-            return self.renderErrorPage(req, http.BAD_REQUEST, str(e), ro)
+            seiscomp.logging.warning(e)
+            return self.renderErrorPage(req, http.BAD_REQUEST, e, ro)
 
         return self._prepareRequest(req, ro)
 
@@ -353,8 +355,8 @@ class FDSNStation(BaseResource):
             exp = Exporter.Create(ro.Exporters[ro.format])
             if exp is None:
                 msg = (
-                    "output format '%s' no available, export module '%s' "
-                    "could not be loaded." % (ro.format, ro.Exporters[ro.format])
+                    f"output format '{ro.format}' no available, export module "
+                    f"'{ro.Exporters[ro.format]}' could not be loaded."
                 )
                 return self.renderErrorPage(req, http.BAD_REQUEST, msg, ro)
 
@@ -497,22 +499,10 @@ class FDSNStation(BaseResource):
             return False
 
         seiscomp.logging.debug(
-            "%s: returned %iNet, %iSta, %iLoc, %iCha, %iDL, %iDec, %iSen, "
-            "%iRes, %iDAExt (total objects/bytes: %i/%i)"
-            % (
-                ro.service,
-                newInv.networkCount(),
-                staCount,
-                locCount,
-                chaCount,
-                newInv.dataloggerCount(),
-                decCount,
-                newInv.sensorCount(),
-                resCount,
-                extCount,
-                objCount,
-                sink.written,
-            )
+            f"{ro.service}: returned {newInv.networkCount()}Net, {staCount}Sta, "
+            f"{locCount}Loc, {chaCount}Cha, {newInv.dataloggerCount()}DL, "
+            f"{decCount}Dec, {newInv.sensorCount()}Sen, {resCount}Res, {extCount}DAExt "
+            f"(total objects/bytes: {objCount}/{sink.written})"
         )
         utils.accessLog(req, ro, http.OK, sink.written, None)
         return True
@@ -582,14 +572,8 @@ class FDSNStation(BaseResource):
                 lines.append(
                     (
                         f"{net.code()} {start}",
-                        "%s|%s|%s|%s|%i\n"
-                        % (
-                            net.code(),
-                            net.description(),
-                            start,
-                            end,
-                            net.stationCount(),
-                        ),
+                        f"{net.code()}|{net.description()}|{start}|{end}|"
+                        f"{net.stationCount()}\n",
                     )
                 )
 
@@ -639,17 +623,8 @@ class FDSNStation(BaseResource):
                     lines.append(
                         (
                             f"{net.code()}.{sta.code()} {start}",
-                            "%s|%s|%s|%s|%s|%s|%s|%s\n"
-                            % (
-                                net.code(),
-                                sta.code(),
-                                lat,
-                                lon,
-                                elev,
-                                desc,
-                                start,
-                                end,
-                            ),
+                            f"{net.code()}|{sta.code()}|{lat}|{lon}|{elev}|{desc}|"
+                            f"{start}|{end}\n",
                         )
                     )
 
@@ -737,35 +712,12 @@ class FDSNStation(BaseResource):
                             start, end = self._formatEpoch(stream)
                             lines.append(
                                 (
-                                    "%s.%s.%s.%s %s"
-                                    % (
-                                        net.code(),
-                                        sta.code(),
-                                        loc.code(),
-                                        stream.code(),
-                                        start,
-                                    ),
-                                    "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|"
-                                    "%s|%s|%s|%s|%s|%s\n"
-                                    % (
-                                        net.code(),
-                                        sta.code(),
-                                        loc.code(),
-                                        stream.code(),
-                                        lat,
-                                        lon,
-                                        elev,
-                                        depth,
-                                        azi,
-                                        dip,
-                                        desc,
-                                        scale,
-                                        scaleFreq,
-                                        scaleUnit,
-                                        sr,
-                                        start,
-                                        end,
-                                    ),
+                                    f"{net.code()}.{sta.code()}.{loc.code()}."
+                                    f"{stream.code()} {start}",
+                                    f"{net.code()}|{sta.code()}|{loc.code()}|"
+                                    f"{stream.code()}|{lat}|{lon}|{elev}|{depth}|{azi}|"
+                                    f"{dip}|{desc}|{scale}|{scaleFreq}|{scaleUnit}|"
+                                    f"{sr}|{start}|{end}\n",
                                 )
                             )
 
