@@ -30,8 +30,8 @@ try:
     from twisted.web import guard, static
     from twisted.python import log, failure
     from zope.interface import implementer
-except ImportError as e:
-    sys.exit(f"{str(e)}\nIs python twisted installed?")
+except ImportError as importErr:
+    sys.exit(f"{importErr}\nIs python twisted installed?")
 
 import seiscomp.core
 import seiscomp.datamodel
@@ -78,11 +78,11 @@ def logSC3(entry):
         isError = entry["isError"]
         msg = entry["message"]
         if isError:
-            for l in msg:
-                seiscomp.logging.error(f"[reactor] {l}")
+            for line in msg:
+                seiscomp.logging.error(f"[reactor] {line}")
         else:
-            for l in msg:
-                seiscomp.logging.info(f"[reactor] {l}")
+            for line in msg:
+                seiscomp.logging.info(f"[reactor] {line}")
     except Exception:
         pass
 
@@ -181,7 +181,7 @@ class UserDB(object):
         seiscomp.logging.info("known users:")
 
         for name, user in list(self.__users.items()):
-            seiscomp.logging.info(" %s %s %d" % (u_str(name), user[1], user[2]))
+            seiscomp.logging.info(f" {u_str(name)} {user[1]} {user[2]}")
 
 
 ###############################################################################
@@ -289,15 +289,14 @@ class DataAvailabilityCache(object):
         for i in range(self._da.dataExtentCount()):
             ext = self._da.dataExtent(i)
             wid = ext.waveformID()
-            sid = "%s.%s.%s.%s" % (
-                wid.networkCode(),
-                wid.stationCode(),
-                wid.locationCode(),
-                wid.channelCode(),
+            sid = (
+                f"{wid.networkCode()}.{wid.stationCode()}.{wid.locationCode()}."
+                f"{wid.channelCode()}"
             )
             restricted = app._openStreams is None or sid not in app._openStreams
             if restricted and not app._allowRestricted:
                 continue
+
             self._extents[sid] = (ext, restricted)
             # seiscomp.logging.debug("%s: %s ~ %s" % (sid, ext.start().iso(),
             #                               ext.end().iso()))
@@ -613,10 +612,7 @@ class FDSNWS(seiscomp.client.Application):
                 try:
                     self._eventTypeWhitelist = self._parseEventTypes(strings)
                 except Exception as e:
-                    print(
-                        f"error parsing eventType.whitelist: {str(e)}",
-                        file=sys.stderr,
-                    )
+                    print(f"error parsing eventType.whitelist: {e}", file=sys.stderr)
                     return False
         except Exception:
             pass
@@ -634,16 +630,13 @@ class FDSNWS(seiscomp.client.Application):
                         if overlapCount > 0:
                             self._eventTypeWhitelist = diff
                             print(
-                                "warning: found %i overlapping event "
-                                "types in white and black list, black "
-                                "list takes precedence" % overlapCount,
+                                f"warning: found {overlapCount} overlapping event "
+                                "types in white and black list, black list takes "
+                                "precedence",
                                 file=sys.stderr,
                             )
                 except Exception as e:
-                    print(
-                        f"error parsing eventType.blacklist: {str(e)}",
-                        file=sys.stderr,
-                    )
+                    print(f"error parsing eventType.blacklist: {e}", file=sys.stderr)
                     return False
         except Exception:
             pass
@@ -770,7 +763,7 @@ Execute on command line with debug output
             return True
 
         sys.exit(0)
-        return True
+        return True  # pylint: disable=unreachable
 
     # -------------------------------------------------------------------------
     def getDACache(self):
@@ -807,7 +800,7 @@ Execute on command line with debug output
                 if name in typeMap:
                     types.add(typeMap[name])
                 else:
-                    raise Exception(f"event type name '{name}' not supported")
+                    raise ValueError(f"event type name '{name}' not supported")
 
         return types
 
@@ -1104,25 +1097,30 @@ configuration read:
             # create a set of waveformIDs which represent open channels
             if self._serveDataSelect:
                 openStreams = set()
+
                 for iNet in range(dataSelectInv.networkCount()):
                     net = dataSelectInv.network(iNet)
                     if isRestricted(net):
                         continue
+
                     for iSta in range(net.stationCount()):
                         sta = net.station(iSta)
                         if isRestricted(sta):
                             continue
+
                         for iLoc in range(sta.sensorLocationCount()):
                             loc = sta.sensorLocation(iLoc)
+
                             for iCha in range(loc.streamCount()):
                                 cha = loc.stream(iCha)
                                 if isRestricted(cha):
                                     continue
+
                                 openStreams.add(
-                                    "{0}.{1}.{2}.{3}".format(
-                                        net.code(), sta.code(), loc.code(), cha.code()
-                                    )
+                                    f"{net.code()}.{sta.code()}.{loc.code()}."
+                                    f"{cha.code()}"
                                 )
+
                 self._openStreams = openStreams
             else:
                 self._openStreams = None
@@ -1141,7 +1139,7 @@ configuration read:
                 realm = FDSNAvailabilityQueryAuthRealm(self._access, self._userdb)
             else:
                 realm = FDSNAvailabilityQueryRealm(self._access)
-            msg = "authorization for restricted availability segment data " "required"
+            msg = "authorization for restricted availability segment data required"
             authSession = self._getAuthSessionWrapper(realm, msg)
             availability1.putChild(b"queryauth", authSession)
 
@@ -1153,7 +1151,7 @@ configuration read:
                 realm = FDSNAvailabilityExtentAuthRealm(self._access, self._userdb)
             else:
                 realm = FDSNAvailabilityExtentRealm(self._access)
-            msg = "authorization for restricted availability extent data " "required"
+            msg = "authorization for restricted availability extent data required"
             authSession = self._getAuthSessionWrapper(realm, msg)
             availability1.putChild(b"extentauth", authSession)
 
@@ -1215,6 +1213,7 @@ configuration read:
                 )
                 if os.path.isfile(reloadfile):
                     os.remove(reloadfile)
+
             except Exception as e:
                 seiscomp.logging.warning(f"error processing reload file: {e}")
 
@@ -1271,7 +1270,7 @@ configuration read:
             reactor.run()
             retn = True
         except Exception as e:
-            seiscomp.logging.error(str(e))
+            seiscomp.logging.error(e)
 
         return retn
 
@@ -1335,8 +1334,8 @@ configuration read:
 
         try:
             seiscomp.logging.notice(f"reading inventory filter file: {fileName}")
-            fp = open(fileName, "r")
-            cp.read_file(fp, fileName)
+            with open(fileName, "r", encoding="utf-8") as fp:
+                cp.read_file(fp, fileName)
 
             if len(cp.sections()) == 0:
                 return True
@@ -1348,8 +1347,8 @@ configuration read:
                     code = cp.get(sectionName, "code")
                 except CPError:
                     seiscomp.logging.error(
-                        "missing 'code' attribute in section {} of inventory "
-                        "filter file {}".format(sectionName, fileName)
+                        f"missing 'code' attribute in section {sectionName} of "
+                        f"inventory filter file {fileName}"
                     )
                     return False
 
@@ -1380,7 +1379,7 @@ configuration read:
 
         except Exception as e:
             seiscomp.logging.error(
-                f"could not read inventory filter file {fileName}: {str(e)}"
+                f"could not read inventory filter file {fileName}: {e}"
             )
             return False
 
@@ -1522,15 +1521,16 @@ configuration read:
 
         if serviceName:
             serviceName += ": "
+
         seiscomp.logging.debug(
-            "%sremoved %i networks, %i stations, %i locations, %i streams"
-            % (serviceName, delNet, delSta, delLoc, delCha)
+            f"{serviceName}removed {delNet} networks, {delSta} stations, "
+            f"{delLoc} locations, {delCha} streams"
         )
         if self._debugFilter:
             debugLines.sort()
+            lines = "\n".join(debugLines)
             seiscomp.logging.notice(
-                "%sfilter decisions based on file %s:\n%s"
-                % (serviceName, fileName, str("\n".join(debugLines)))
+                f"{serviceName}filter decisions based on file {fileName}:\n{lines}"
             )
 
         return True

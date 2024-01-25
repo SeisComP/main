@@ -14,10 +14,11 @@
 # Email:   herrnkind@gempa.de
 ################################################################################
 
-import sys
 import time
-import dateutil.parser
+
 from io import BytesIO
+
+import dateutil.parser
 
 from twisted.cred import portal
 from twisted.web import http, resource, server
@@ -25,12 +26,11 @@ from twisted.internet import interfaces, reactor
 
 from zope.interface import implementer
 
-import seiscomp.logging
+from seiscomp import logging, mseedlite
+
 from seiscomp.client import Application
 from seiscomp.core import Array, Record, Time
 from seiscomp.io import RecordInput, RecordStream
-
-from seiscomp import mseedlite
 
 from .http import HTTP, BaseResource
 from .request import RequestOptions
@@ -167,15 +167,13 @@ class _MyRecordStream(object):
                             yield self.__override_network(data, net)
 
                         except Exception as e:
-                            seiscomp.logging.error(
-                                f"could not override network code: {str(e)}"
-                            )
+                            logging.error(f"could not override network code: {e}")
 
             else:
                 rs = RecordStream.Open(self.__url)
 
                 if rs is None:
-                    seiscomp.logging.error("could not open record stream")
+                    logging.error("could not open record stream")
                     break
 
                 rs.addStream(archNet, sta, loc, cha, startt, endt)
@@ -190,7 +188,7 @@ class _MyRecordStream(object):
                             rec = rsInput.next()
 
                         except Exception as e:
-                            seiscomp.logging.error(f"{str(e)}")
+                            logging.error(e)
                             eof = True
                             break
 
@@ -211,9 +209,7 @@ class _MyRecordStream(object):
                                 yield self.__override_network(data, net)
 
                             except Exception as e:
-                                seiscomp.logging.error(
-                                    f"could not override network code: {str(e)}"
-                                )
+                                logging.error(f"could not override network code: {e}")
 
             for tracker in self.__trackerList:
                 net_class = "t" if net[0] in "0123456789XYZ" else "p"
@@ -308,8 +304,8 @@ class _WaveformProducer(object):
                 tracker.request_status("END", "")
 
         else:
-            seiscomp.logging.debug(
-                "%s: returned %i bytes of mseed data" % (self.ro.service, self.written)
+            logging.debug(
+                f"{self.ro.service}: returned {self.written} bytes of mseed data"
             )
             utils.accessLog(self.req, self.ro, http.OK, self.written, None)
 
@@ -340,9 +336,9 @@ class _WaveformProducer(object):
     def stopProducing(self):
         self.stopped = True
 
-        seiscomp.logging.debug(
-            "%s: returned %i bytes of mseed data (not completed)"
-            % (self.ro.service, self.written)
+        logging.debug(
+            f"{self.ro.service}: returned {self.written} bytes of mseed data (not "
+            "completed)"
         )
         utils.accessLog(self.req, self.ro, http.OK, self.written, "not completed")
 
@@ -441,8 +437,8 @@ class FDSNDataSelect(BaseResource):
             # the GET operation supports exactly one stream filter
             ro.streams.append(ro)
         except ValueError as e:
-            seiscomp.logging.warning(str(e))
-            return self.renderErrorPage(req, http.BAD_REQUEST, str(e), ro)
+            logging.warning(e)
+            return self.renderErrorPage(req, http.BAD_REQUEST, e, ro)
 
         return self._processRequest(req, ro)
 
@@ -455,8 +451,8 @@ class FDSNDataSelect(BaseResource):
             ro.parsePOST(req.content)
             ro.parse()
         except ValueError as e:
-            seiscomp.logging.warning(str(e))
-            return self.renderErrorPage(req, http.BAD_REQUEST, str(e), ro)
+            logging.warning(e)
+            return self.renderErrorPage(req, http.BAD_REQUEST, e, ro)
 
         return self._processRequest(req, ro)
 
@@ -565,7 +561,7 @@ class FDSNDataSelect(BaseResource):
     def _processRequest(self, req, ro):
         # pylint: disable=W0212
 
-        if ro.quality != "B" and ro.quality != "M":
+        if ro.quality not in ("B", "M"):
             msg = "quality other than 'B' or 'M' not supported"
             return self.renderErrorPage(req, http.BAD_REQUEST, msg, ro)
 
@@ -639,11 +635,13 @@ class FDSNDataSelect(BaseResource):
                 if not trackerList and netRestricted and not self.__user:
                     forbidden = forbidden or (forbidden is None)
                     continue
+
                 for sta in self._stationIter(net, s):
                     staRestricted = utils.isRestricted(sta)
                     if not trackerList and staRestricted and not self.__user:
                         forbidden = forbidden or (forbidden is None)
                         continue
+
                     for loc in self._locationIter(sta, s):
                         for cha, aux in self._streamIter(loc, s):
                             start_time = max(cha.start(), s.time.start)
@@ -653,11 +651,12 @@ class FDSNDataSelect(BaseResource):
                             except ValueError:
                                 end_time = s.time.end
 
-                            if (
+                            streamRestricted = (
                                 netRestricted
                                 or staRestricted
                                 or utils.isRestricted(cha)
-                            ) and (
+                            )
+                            if streamRestricted and (
                                 not self.__user
                                 or (
                                     self.__access
@@ -711,17 +710,11 @@ class FDSNDataSelect(BaseResource):
                                     n = cha.sampleRateNumerator()
                                     d = cha.sampleRateDenominator()
                                 except ValueError:
-                                    msg = (
-                                        "skipping stream without sampling "
-                                        "rate definition: %s.%s.%s.%s"
-                                        % (
-                                            net.code(),
-                                            sta.code(),
-                                            loc.code(),
-                                            cha.code(),
-                                        )
+                                    logging.warning(
+                                        "skipping stream without sampling rate "
+                                        f"definition: {net.code()}.{sta.code()}."
+                                        f"{loc.code()}.{cha.code()}"
                                     )
-                                    seiscomp.logging.warning(msg)
                                     continue
 
                                 # calculate number of samples for requested
@@ -730,23 +723,16 @@ class FDSNDataSelect(BaseResource):
                                 samples += int(diffSec * n / d)
                                 if samples > maxSamples:
                                     msg = (
-                                        "maximum number of %sM samples "
-                                        "exceeded" % str(app._samplesM)
+                                        f"maximum number of {app._samplesM}M samples "
+                                        "exceeded"
                                     )
                                     return self.renderErrorPage(
                                         req, http.REQUEST_ENTITY_TOO_LARGE, msg, ro
                                     )
 
-                            seiscomp.logging.debug(
-                                "adding stream: %s.%s.%s.%s %s - %s"
-                                % (
-                                    net.code(),
-                                    sta.code(),
-                                    loc.code(),
-                                    cha.code(),
-                                    start_time.iso(),
-                                    end_time.iso(),
-                                )
+                            logging.debug(
+                                f"adding stream: {net.code()}.{sta.code()}.{loc.code()}"
+                                f".{cha.code()} {start_time.iso()} - {end_time.iso()}"
                             )
                             rs.addStream(
                                 net.code(),
@@ -776,15 +762,16 @@ class FDSNDataSelect(BaseResource):
             return self.renderErrorPage(req, http.NO_CONTENT, msg, ro)
 
         if auxStreamsFound:
-            seiscomp.logging.info(
-                "the request contains at least one auxiliary stream which "
-                "are deprecated{}".format(
-                    ""
-                    if maxSamples is None
-                    else " and whose samples are not included in the maximum "
-                    " sample per request limit"
-                )
+            msg = (
+                "the request contains at least one auxiliary stream which are "
+                "deprecated"
             )
+            if maxSamples is not None:
+                msg += (
+                    " and whose samples are not included in the maximum sample per "
+                    "request limit"
+                )
+            logging.info(msg)
 
         # Build output filename
         fileName = (
