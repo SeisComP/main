@@ -33,6 +33,7 @@ class FDSNWSTest(object):
         self.service = None
         self.rootdir = os.environ.get("SEISCOMP_ROOT")
         self.sharedir = f"{self.rootdir}/share/fdsnws"
+        self.extraArgs = []
 
     # --------------------------------------------------------------------------
     def __call__(self):
@@ -125,8 +126,8 @@ class FDSNWSTest(object):
             f"--record-url=sdsarchive://{self.rootdir}/sds",
             f"--htpasswd={self.rootdir}/fdsnws.htpasswd",
             f"--stationFilter={self.rootdir}/stationFilter.cfg",
-            "--port=9980",
-        ]
+            f"--port={self.port}",
+        ] + self.extraArgs
 
     # --------------------------------------------------------------------------
     @staticmethod

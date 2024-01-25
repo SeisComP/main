@@ -39,7 +39,7 @@ from . import utils
 from .reqtrack import RequestTrackerDB
 from .fastsds import SDS
 
-VERSION = "1.1.1"
+VERSION = "1.1.2"
 
 ################################################################################
 
@@ -399,7 +399,7 @@ class FDSNDataSelectAuthRealm(object):
                     self.__inv,
                     self.__bufferSize,
                     self.__access,
-                    self.__userdb.getAttributes(avatarId),
+                    self.__userdb.getAttributes(utils.u_str(avatarId)),
                 ),
                 lambda: None,
             )
