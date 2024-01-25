@@ -85,7 +85,7 @@ class _AvailabilityRequestOptions(RequestOptions):
 
     # --------------------------------------------------------------------------
     def __init__(self):
-        RequestOptions.__init__(self)
+        super().__init__()
 
         self.service = "availability-base"
         self.quality = None
@@ -196,7 +196,7 @@ class _AvailabilityRequestOptions(RequestOptions):
 class _AvailabilityExtentRequestOptions(_AvailabilityRequestOptions):
     # --------------------------------------------------------------------------
     def __init__(self):
-        _AvailabilityRequestOptions.__init__(self)
+        super().__init__()
         self.service = "availability-extent"
 
         self.showLatestUpdate = True
@@ -240,7 +240,7 @@ class _AvailabilityQueryRequestOptions(_AvailabilityRequestOptions):
 
     # --------------------------------------------------------------------------
     def __init__(self):
-        _AvailabilityRequestOptions.__init__(self)
+        super().__init__()
         self.service = "availability-query"
 
         self.orderBy = None
@@ -279,7 +279,8 @@ class _Availability(BaseResource):
 
     # --------------------------------------------------------------------------
     def __init__(self, access=None, user=None):
-        BaseResource.__init__(self, VERSION)
+        super().__init__(VERSION)
+
         self.access = access
         self.user = user
 
@@ -557,7 +558,7 @@ class _Availability(BaseResource):
 
 ###############################################################################
 @implementer(portal.IRealm)
-class FDSNAvailabilityExtentRealm(object):
+class FDSNAvailabilityExtentRealm:
     # --------------------------------------------------------------------------
     def __init__(self, access):
         self.__access = access
@@ -577,7 +578,7 @@ class FDSNAvailabilityExtentRealm(object):
 
 ###############################################################################
 @implementer(portal.IRealm)
-class FDSNAvailabilityExtentAuthRealm(object):
+class FDSNAvailabilityExtentAuthRealm:
     # --------------------------------------------------------------------------
     def __init__(self, access, userdb):
         self.__access = access
@@ -599,10 +600,6 @@ class FDSNAvailabilityExtentAuthRealm(object):
 ###############################################################################
 class FDSNAvailabilityExtent(_Availability):
     isLeaf = True
-
-    # --------------------------------------------------------------------------
-    def __init__(self, access=None, user=None):
-        _Availability.__init__(self, access, user)
 
     # --------------------------------------------------------------------------
     @staticmethod
@@ -832,7 +829,7 @@ class FDSNAvailabilityExtent(_Availability):
 
 ###############################################################################
 @implementer(portal.IRealm)
-class FDSNAvailabilityQueryRealm(object):
+class FDSNAvailabilityQueryRealm:
     # --------------------------------------------------------------------------
     def __init__(self, access):
         self.__access = access
@@ -852,7 +849,7 @@ class FDSNAvailabilityQueryRealm(object):
 
 ###############################################################################
 @implementer(portal.IRealm)
-class FDSNAvailabilityQueryAuthRealm(object):
+class FDSNAvailabilityQueryAuthRealm:
     # --------------------------------------------------------------------------
     def __init__(self, access, userdb):
         self.__access = access
@@ -874,10 +871,6 @@ class FDSNAvailabilityQueryAuthRealm(object):
 ###############################################################################
 class FDSNAvailabilityQuery(_Availability):
     isLeaf = True
-
-    # --------------------------------------------------------------------------
-    def __init__(self, access=None, user=None):
-        _Availability.__init__(self, access, user)
 
     # --------------------------------------------------------------------------
     @staticmethod

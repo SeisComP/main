@@ -20,7 +20,7 @@ import seiscomp.core
 import seiscomp.logging
 
 from . import gnupg
-from .utils import accessLog, b_str, u_str, u_str, b_str, writeTSBin
+from .utils import accessLog, b_str, u_str, writeTSBin
 
 VERSION = "1.2.4"
 
@@ -78,7 +78,7 @@ Service Version:
             )
             if not noContent:
                 seiscomp.logging.warning(
-                    "responding with error: %i (%s)" % (code, u_str(codeStr))
+                    f"responding with error: {code} ({u_str(codeStr)})"
                 )
 
         accessLog(request, ro, code, len(response), msg)
@@ -105,7 +105,8 @@ class ServiceVersion(resource.Resource):
 
     # ---------------------------------------------------------------------------
     def __init__(self, version):
-        resource.Resource.__init__(self)
+        super().__init__()
+
         self.version = version
         self.type = "text/plain"
 
@@ -121,33 +122,35 @@ class WADLFilter(static.Data):
     def __init__(self, path, paramNameFilterList):
         data = ""
         removeParam = False
-        for line in open(path):
-            lineStripped = line.strip().replace(" ", "")
-            if removeParam:
-                if "</param>" in lineStripped:
-                    removeParam = False
-                continue
+        with open(path, "r", encoding="utf-8") as fp:
+            for line in fp:
+                lineStripped = line.strip().replace(" ", "")
+                if removeParam:
+                    if "</param>" in lineStripped:
+                        removeParam = False
+                    continue
 
-            valid = True
-            if "<param" in lineStripped:
-                for f in paramNameFilterList:
-                    if f'name="{f}"' in lineStripped:
-                        valid = False
-                        if lineStripped[-2:] != "/>":
-                            removeParam = True
-                        break
+                valid = True
+                if "<param" in lineStripped:
+                    for f in paramNameFilterList:
+                        if f'name="{f}"' in lineStripped:
+                            valid = False
+                            if lineStripped[-2:] != "/>":
+                                removeParam = True
+                            break
 
-            if valid:
-                data += line
+                if valid:
+                    data += line
 
-        static.Data.__init__(self, b_str(data), "application/xml")
+        super().__init__(b_str(data), "application/xml")
 
 
 ################################################################################
 class BaseResource(resource.Resource):
     # ---------------------------------------------------------------------------
     def __init__(self, version=VERSION):
-        resource.Resource.__init__(self)
+        super().__init__()
+
         self.version = version
 
     # ---------------------------------------------------------------------------
@@ -173,7 +176,7 @@ class BaseResource(resource.Resource):
 
         msg = (
             "The result set of your request exceeds the configured maximum "
-            "number of objects (%i). Refine your request parameters." % maxObj
+            f"number of objects ({maxObj}). Refine your request parameters."
         )
         self.writeErrorPage(request, http.REQUEST_ENTITY_TOO_LARGE, msg)
         return False
@@ -184,15 +187,11 @@ class NoResource(BaseResource):
     isLeaf = True
 
     # ---------------------------------------------------------------------------
-    def __init__(self, version=VERSION):
-        BaseResource.__init__(self, version)
-
-    # ---------------------------------------------------------------------------
     def render(self, request):
         return HTTP.renderNotFound(request, self.version)
 
     # ---------------------------------------------------------------------------
-    def getChild(self, path, request):
+    def getChild(self, _path, _request):
         return self
 
 
@@ -215,10 +214,6 @@ class ListingResource(BaseResource):
 </body>"""
 
     # ---------------------------------------------------------------------------
-    def __init__(self, version=VERSION):
-        BaseResource.__init__(self, version)
-
-    # ---------------------------------------------------------------------------
     def render(self, request):
         lis = ""
         if request.path[-1:] != b"/":
@@ -230,13 +225,15 @@ class ListingResource(BaseResource):
             if hasattr(v, "hideInListing") and v.hideInListing:
                 continue
             name = u_str(k)
-            lis += '<li><a href="{0}/">{0}/</a></li>\n'.format(name)
+            lis += f'<li><a href="{name}/">{name}/</a></li>\n'
+
         return b_str(ListingResource.html % (u_str(request.path), lis))
 
     # ---------------------------------------------------------------------------
-    def getChild(self, path, request):
+    def getChild(self, path, _request):
         if not path:
             return self
+
         return NoResource(self.version)
 
 
@@ -244,7 +241,8 @@ class ListingResource(BaseResource):
 class DirectoryResource(static.File):
     # ---------------------------------------------------------------------------
     def __init__(self, fileName, version=VERSION):
-        static.File.__init__(self, fileName)
+        super().__init__(fileName)
+
         self.version = version
         self.childNotFound = NoResource(self.version)
 
@@ -252,12 +250,14 @@ class DirectoryResource(static.File):
     def render(self, request):
         if request.path[-1:] != b"/":
             return util.redirectTo(request.path + b"/", request)
+
         return static.File.render(self, request)
 
     # ---------------------------------------------------------------------------
-    def getChild(self, path, request):
+    def getChild(self, path, _request):
         if not path:
             return self
+
         return NoResource(self.version)
 
 
@@ -266,7 +266,8 @@ class AuthResource(BaseResource):
     isLeaf = True
 
     def __init__(self, version, gnupghome, userdb):
-        BaseResource.__init__(self, version)
+        super().__init__(version)
+
         self.__gpg = gnupg.GPG(gnupghome=gnupghome)
         self.__userdb = userdb
 
@@ -279,12 +280,12 @@ class AuthResource(BaseResource):
 
         except OSError as e:
             msg = "gpg decrypt error"
-            seiscomp.logging.warning(f"{msg}: {str(e)}")
+            seiscomp.logging.warning(f"{msg}: {e}")
             return self.renderErrorPage(request, http.INTERNAL_SERVER_ERROR, msg)
 
         except Exception as e:
             msg = "invalid token"
-            seiscomp.logging.warning(f"{msg}: {str(e)}")
+            seiscomp.logging.warning(f"{msg}: {e}")
             return self.renderErrorPage(request, http.BAD_REQUEST, msg)
 
         if verified.trust_level is None or verified.trust_level < verified.TRUST_FULLY:
@@ -301,7 +302,7 @@ class AuthResource(BaseResource):
 
         except Exception as e:
             msg = "token has invalid validity"
-            seiscomp.logging.warning(f"{msg}: {str(e)}")
+            seiscomp.logging.warning(f"{msg}: {e}")
             return self.renderErrorPage(request, http.BAD_REQUEST, msg)
 
         if lifetime <= 0:
@@ -323,7 +324,8 @@ class AuthResource(BaseResource):
 ################################################################################
 class Site(server.Site):
     def __init__(self, res, corsOrigins):
-        server.Site.__init__(self, res)
+        super().__init__(res)
+
         self._corsOrigins = corsOrigins
 
     # ---------------------------------------------------------------------------

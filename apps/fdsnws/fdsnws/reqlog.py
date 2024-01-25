@@ -15,16 +15,16 @@ mutex = threading.Lock()
 
 class MyFileHandler(logging.handlers.TimedRotatingFileHandler):
     def __init__(self, filename):
-        super(MyFileHandler, self).__init__(filename, when="midnight", utc=True)
+        super().__init__(filename, when="midnight", utc=True)
 
     def rotate(self, source, dest):
-        super(MyFileHandler, self).rotate(source, dest)
+        super().rotate(source, dest)
 
         if os.path.exists(dest):
             subprocess.Popen(["bzip2", dest])
 
 
-class Tracker(object):
+class Tracker:
     def __init__(self, logger, geoip, service, userName, userIP, clientID, userSalt):
         self.__logger = logger
         self.__userName = userName
@@ -43,7 +43,7 @@ class Tracker(object):
             "userID": userID,
             "clientID": clientID,
             "userEmail": None,
-            "auth": not not userName,
+            "auth": bool(userName),
             "userLocation": {},
             "created": f"{datetime.datetime.utcnow().isoformat()}Z",
         }
@@ -111,7 +111,7 @@ class Tracker(object):
                 self.__logged = True
 
 
-class RequestLog(object):
+class RequestLog:
     def __init__(self, filename, userSalt):
         self.__logger = logging.getLogger("seiscomp.fdsnws.reqlog")
         self.__logger.addHandler(MyFileHandler(filename))

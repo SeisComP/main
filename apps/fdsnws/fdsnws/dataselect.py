@@ -59,7 +59,8 @@ class _DataSelectRequestOptions(RequestOptions):
 
     # ---------------------------------------------------------------------------
     def __init__(self):
-        RequestOptions.__init__(self)
+        super().__init__()
+
         self.service = "fdsnws-dataselect"
 
         self.quality = self.QualityValues[0]
@@ -109,7 +110,7 @@ class _DataSelectRequestOptions(RequestOptions):
 
 
 ################################################################################
-class _MyRecordStream(object):
+class _MyRecordStream:
     def __init__(self, url, trackerList, bufferSize):
         self.__url = url
         self.__trackerList = trackerList
@@ -253,7 +254,7 @@ class _MyRecordStream(object):
 
 ################################################################################
 @implementer(interfaces.IPushProducer)
-class _WaveformProducer(object):
+class _WaveformProducer:
     def __init__(self, req, ro, rs, fileName, trackerList):
         self.req = req
         self.ro = ro
@@ -352,7 +353,7 @@ class _WaveformProducer(object):
 
 ################################################################################
 @implementer(portal.IRealm)
-class FDSNDataSelectRealm(object):
+class FDSNDataSelectRealm:
     # ---------------------------------------------------------------------------
     def __init__(self, inv, bufferSize, access):
         self.__inv = inv
@@ -378,7 +379,7 @@ class FDSNDataSelectRealm(object):
 
 ################################################################################
 @implementer(portal.IRealm)
-class FDSNDataSelectAuthRealm(object):
+class FDSNDataSelectAuthRealm:
     # ---------------------------------------------------------------------------
     def __init__(self, inv, bufferSize, access, userdb):
         self.__inv = inv
@@ -409,7 +410,8 @@ class FDSNDataSelect(BaseResource):
 
     # ---------------------------------------------------------------------------
     def __init__(self, inv, bufferSize, access=None, user=None):
-        BaseResource.__init__(self, VERSION)
+        super().__init__(VERSION)
+
         self._rsURL = Application.Instance().recordStreamURL()
         self.__inv = inv
         self.__access = access

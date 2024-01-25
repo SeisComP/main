@@ -37,8 +37,7 @@ class Log:
         self._lastLogTime = None
         self._fd = None
 
-        if self._archiveSize < 0:
-            self._archiveSize = 0
+        self._archiveSize = max(self._archiveSize, 0)
 
         # worker thread, responsible for writing messages to file
         t = threading.Thread(target=_worker, args=(self,))
@@ -70,9 +69,9 @@ class Log:
                     os.rename(pattern % (i - 1), pattern % i)
             os.rename(self._filePath, pattern % 1)
         except Exception as e:
-            print(f"failed to rotate access log: {str(e)}\n", file=sys.stderr)
+            print(f"failed to rotate access log: {e}", file=sys.stderr)
 
-        self._fd = open(self._filePath, "w")
+        self._fd = open(self._filePath, "w", encoding="utf-8")
 
     # ---------------------------------------------------------------------------
     def _write(self, msg):
@@ -81,7 +80,7 @@ class Log:
             if self._fd is None:
                 if self._basePath and not os.path.exists(self._basePath):
                     os.makedirs(self._basePath)
-                self._fd = open(self._filePath, "a")
+                self._fd = open(self._filePath, "a", encoding="utf-8")
             elif (
                 self._archiveSize > 0
                 and self._lastLogTime is not None
@@ -92,11 +91,11 @@ class Log:
             ):
                 self._rotate()
 
-            self._fd.write(f"{msg}\n")
+            print(msg, file=self._fd)
             self._fd.flush()
             self._lastLogTime = now
         except Exception as e:
-            print(f"access log: {str(e)}\n", file=sys.stderr)
+            print(f"access log: {e}", file=sys.stderr)
 
 
 # vim: ts=4 et

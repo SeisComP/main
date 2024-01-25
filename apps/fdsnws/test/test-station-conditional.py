@@ -10,8 +10,9 @@ from station import TestStationBase
 
 ###############################################################################
 class TestStationConditionalRequests(TestStationBase):
-    def command(self):
-        return super().command() + ["--handleConditionalRequests=true"]
+    def __init__(self, port=9980):
+        super().__init__(port)
+        self.extraArgs.append("--handleConditionalRequests=true")
 
     def test(self):
         def validateDateString(dateString):
@@ -40,7 +41,7 @@ class TestStationConditionalRequests(TestStationBase):
             )
 
         def createQueryStrings(respFormat, levels, **kwargs):
-            return [createQueryString(respFormat, l, **kwargs) for l in levels]
+            return [createQueryString(respFormat, level, **kwargs) for level in levels]
 
         def createTestCases(
             respFormat,
