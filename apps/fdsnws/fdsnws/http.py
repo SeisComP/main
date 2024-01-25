@@ -311,7 +311,7 @@ class AuthResource(BaseResource):
 
         userid = base64.urlsafe_b64encode(hashlib.sha256(verified.data).digest()[:18])
         password = self.__userdb.addUser(
-            userid,
+            u_str(userid),
             attributes,
             time.time() + min(lifetime, 24 * 3600),
             u_str(verified.data),

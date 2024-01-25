@@ -33,7 +33,7 @@ from . import utils
 
 
 DBMaxUInt = 18446744073709551615  # 2^64 - 1
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 
 
 ###############################################################################
@@ -158,13 +158,16 @@ class _AvailabilityRequestOptions(RequestOptions):
             if restricted:
                 if not user:
                     continue
+
                 if access:
                     startTime = ext.start()
-                    if ro.time.start() > startTime:
-                        startTime = ro.time.start()
                     endTime = ext.end()
-                    if ro.time.end() < ext.end():
-                        endTime = ro.time.end()
+                    if self.time:
+                        if self.time.start() and self.time.start() > startTime:
+                            startTime = self.time.start()
+                        if self.time.end() and self.time.end() < ext.end():
+                            endTime = self.time.end()
+
                     if not access.authorize(
                         user, net, sta, loc, cha, startTime, endTime
                     ):
@@ -562,7 +565,7 @@ class FDSNAvailabilityExtentRealm(object):
     # --------------------------------------------------------------------------
     def requestAvatar(self, avatarId, _mind, *interfaces):
         if resource.IResource in interfaces:
-            user = {"mail": avatarId, "blacklisted": False}
+            user = {"mail": utils.u_str(avatarId), "blacklisted": False}
             return (
                 resource.IResource,
                 FDSNAvailabilityExtent(self.__access, user),
@@ -583,7 +586,7 @@ class FDSNAvailabilityExtentAuthRealm(object):
     # --------------------------------------------------------------------------
     def requestAvatar(self, avatarId, _mind, *interfaces):
         if resource.IResource in interfaces:
-            user = self.__userdb.getAttributes(avatarId)
+            user = self.__userdb.getAttributes(utils.u_str(avatarId))
             return (
                 resource.IResource,
                 FDSNAvailabilityExtent(self.__access, user),
@@ -837,7 +840,7 @@ class FDSNAvailabilityQueryRealm(object):
     # --------------------------------------------------------------------------
     def requestAvatar(self, avatarId, _mind, *interfaces):
         if resource.IResource in interfaces:
-            user = {"mail": avatarId, "blacklisted": False}
+            user = {"mail": utils.u_str(avatarId), "blacklisted": False}
             return (
                 resource.IResource,
                 FDSNAvailabilityQuery(self.__access, user),
@@ -858,7 +861,7 @@ class FDSNAvailabilityQueryAuthRealm(object):
     # --------------------------------------------------------------------------
     def requestAvatar(self, avatarId, _mind, *interfaces):
         if resource.IResource in interfaces:
-            user = self.__userdb.getAttributes(avatarId)
+            user = self.__userdb.getAttributes(utils.u_str(avatarId))
             return (
                 resource.IResource,
                 FDSNAvailabilityQuery(self.__access, user),

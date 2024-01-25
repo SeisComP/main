@@ -14,6 +14,10 @@ from fdsnwstest import FDSNWSTest
 
 ###############################################################################
 class TestAvailability(FDSNWSTest):
+    def __init__(self, port=9980):
+        super().__init__(port)
+        self.extraArgs.append("--useArclinkAccess=true")
+
     # --------------------------------------------------------------------------
     def test(self):
         print("Testing availability service")
