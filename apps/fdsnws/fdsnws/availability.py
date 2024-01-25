@@ -750,7 +750,7 @@ class FDSNAvailabilityExtent(_Availability):
         charCount, extCount = self._writeLines(req, lines, ro)
 
         logging.debug(
-            "%s: returned %i extents (characters: %i)", ro.service, extCount, charCount
+            f"{ro.service}: returned {extCount} extents (characters: {charCount})"
         )
         utils.accessLog(req, ro, http.OK, charCount, None)
         return True
@@ -1310,7 +1310,7 @@ class FDSNAvailabilityQuery(_Availability):
             return True
 
         logging.debug(
-            "%s: returned %i segments (characters: %i)", ro.service, segCount, charCount
+            f"{ro.service}: returned {segCount} segments (characters: {charCount})"
         )
         utils.accessLog(req, ro, http.OK, charCount, None)
 
@@ -1385,7 +1385,7 @@ class FDSNAvailabilityQuery(_Availability):
                 try:
                     e, restricted = oIDs[segIt.parentOid()]
                 except KeyError:
-                    logging.warning("parent object id not found: %i", segIt.parentOid())
+                    logging.warning(f"parent object id not found: {segIt.parentOid()}")
                     continue
 
                 # first segment, no merge test required
