@@ -189,7 +189,7 @@ class _MyRecordStream:
                             rec = rsInput.next()
 
                         except Exception as e:
-                            logging.error(e)
+                            logging.error(str(e))
                             eof = True
                             break
 
@@ -439,8 +439,8 @@ class FDSNDataSelect(BaseResource):
             # the GET operation supports exactly one stream filter
             ro.streams.append(ro)
         except ValueError as e:
-            logging.warning(e)
-            return self.renderErrorPage(req, http.BAD_REQUEST, e, ro)
+            logging.warning(str(e))
+            return self.renderErrorPage(req, http.BAD_REQUEST, str(e), ro)
 
         return self._processRequest(req, ro)
 
@@ -453,8 +453,8 @@ class FDSNDataSelect(BaseResource):
             ro.parsePOST(req.content)
             ro.parse()
         except ValueError as e:
-            logging.warning(e)
-            return self.renderErrorPage(req, http.BAD_REQUEST, e, ro)
+            logging.warning(str(e))
+            return self.renderErrorPage(req, http.BAD_REQUEST, str(e), ro)
 
         return self._processRequest(req, ro)
 

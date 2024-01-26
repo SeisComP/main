@@ -1284,7 +1284,7 @@ configuration read:
             reactor.run()
             retn = True
         except Exception as e:
-            seiscomp.logging.error(e)
+            seiscomp.logging.error(str(e))
 
         return retn
 
