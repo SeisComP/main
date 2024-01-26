@@ -49,7 +49,6 @@ class App : public Kicker<MainWindow> {
 		}
 
 	protected:
-
 		void printUsage() const override {
 			cout << "Usage:" << endl
 			     << "  " << name() << " [options] [miniSEED file]"
