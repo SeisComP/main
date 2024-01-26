@@ -305,8 +305,8 @@ class _Availability(BaseResource):
             # the GET operation supports exactly one stream filter
             ro.streams.append(ro)
         except ValueError as e:
-            logging.warning(e)
-            return self.renderErrorPage(req, http.BAD_REQUEST, e, ro)
+            logging.warning(str(e))
+            return self.renderErrorPage(req, http.BAD_REQUEST, str(e), ro)
 
         return self._prepareRequest(req, ro)
 
@@ -318,8 +318,8 @@ class _Availability(BaseResource):
             ro.parsePOST(req.content)
             ro.parse()
         except ValueError as e:
-            logging.warning(e)
-            return self.renderErrorPage(req, http.BAD_REQUEST, e, ro)
+            logging.warning(str(e))
+            return self.renderErrorPage(req, http.BAD_REQUEST, str(e), ro)
 
         return self._prepareRequest(req, ro)
 
