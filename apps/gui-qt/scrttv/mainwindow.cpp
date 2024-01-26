@@ -1283,6 +1283,11 @@ MainWindow::~MainWindow() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::start() {
+	if ( !Settings::global.showPicks ) {
+		_ui.actionViewPicks->setEnabled(false);
+		_ui.actionViewArrivals->setEnabled(false);
+	}
+
 	if ( Settings::global.disableTimeWindowRequest ) {
 		_ui.actionReload->setEnabled(false);
 		_ui.actionSwitchToRealtime->setEnabled(false);
