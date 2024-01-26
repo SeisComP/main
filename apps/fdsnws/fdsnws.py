@@ -40,6 +40,7 @@ import seiscomp.logging
 import seiscomp.client
 import seiscomp.system
 
+from seiscomp.math import KM_OF_DEGREE
 
 from seiscomp.fdsnws.utils import isRestricted, u_str, b_str
 from seiscomp.fdsnws.dataselect import (
@@ -392,6 +393,7 @@ class FDSNWS(seiscomp.client.Application):
         self._eventTypeBlacklist = None
         self._eventFormats = None
         self._stationFilter = None
+        self._invCoordinatePrecision = None
         self._dataSelectFilter = None
         self._debugFilter = False
 
@@ -669,6 +671,24 @@ class FDSNWS(seiscomp.client.Application):
         except Exception:
             pass
 
+        # precision of inventory locations in number of decimal places
+        try:
+            precision = self.configGetString("inventoryCoordinatePrecision")
+            try:
+                self._invCoordinatePrecision = int(precision)
+                if self._invCoordinatePrecision < 0:
+                    raise ValueError
+            except ValueError:
+                print(
+                    "invalid value in inventoryCoorinatePrecision, expected number of "
+                    "decimal places of geo coordinate",
+                    file=sys.stderr,
+                )
+                return False
+
+        except Exception:
+            pass
+
         # dataSelect filter
         try:
             self._dataSelectFilter = (
@@ -855,6 +875,15 @@ Execute on command line with debug output
         dataSelectFilterStr = "<None>"
         if self._dataSelectFilter is not None:
             dataSelectFilterStr = self._dataSelectFilter
+
+        if self._invCoordinatePrecision is not None:
+            invCoordinatePrecisionStr = (
+                f"{self._invCoordinatePrecision} decimal places (≅"
+                f"{int(KM_OF_DEGREE * 1000 / 10**self._invCoordinatePrecision)}m)"
+            )
+        else:
+            invCoordinatePrecisionStr = "unlimited"
+
         seiscomp.logging.debug(
             f"""
 configuration read:
@@ -891,6 +920,7 @@ configuration read:
     station                : {stationFilterStr}
     dataSelect             : {dataSelectFilterStr}
     debug enabled          : {self._debugFilter}
+    coordinate precision   : {invCoordinatePrecisionStr}
   trackdb
     enabled                : {self._trackdbEnabled}
     defaultUser            : {self._trackdbDefaultUser}
@@ -937,6 +967,10 @@ configuration read:
                 retn = self._filterInventory(stationInv, self._stationFilter)
             else:
                 retn = self._filterInventory(dataSelectInv, self._dataSelectFilter)
+
+            self._obfuscateInventory(stationInv)
+            if stationInv != dataSelectInv:
+                self._obfuscateInventory(dataSelectInv)
 
             self.__timeInventoryLoaded = seiscomp.core.Time.GMT()
 
@@ -1548,6 +1582,28 @@ configuration read:
             )
 
         return True
+
+    # -------------------------------------------------------------------------
+    def _obfuscateInventory(self, inv):  # networks
+        if self._invCoordinatePrecision is None:
+            return
+
+        for iNet in range(inv.networkCount()):
+            net = inv.network(iNet)
+
+            # stations
+            for iSta in range(net.stationCount()):
+                sta = net.station(iSta)
+                sta.setLatitude(round(sta.latitude(), self._invCoordinatePrecision))
+                sta.setLongitude(round(sta.longitude(), self._invCoordinatePrecision))
+
+                # sensor locations
+                for iLoc in range(sta.sensorLocationCount()):
+                    loc = sta.sensorLocation(iLoc)
+                    loc.setLatitude(round(loc.latitude(), self._invCoordinatePrecision))
+                    loc.setLongitude(
+                        round(loc.longitude(), self._invCoordinatePrecision)
+                    )
 
     # -------------------------------------------------------------------------
     def _getAuthSessionWrapper(self, realm, msg):
