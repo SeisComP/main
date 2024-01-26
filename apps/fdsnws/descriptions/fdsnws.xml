@@ -211,6 +211,13 @@
 				why a stream was added/removed by a inventory filter.
 				</description>
 			</parameter>
+			<parameter name="inventoryCoordinatePrecision" type="int">
+				<description>
+				Number of decimal places used for station and sensor location
+				coordinates. If specified, the coordinates are obfuscated
+				when the inventory is read on service startup or reload.
+				</description>
+			</parameter>
 			<parameter name="fileNamePrefix" type="string" default="fdsnws">
 				<description>
 				Define the prefix for the default filenames if downloading and
