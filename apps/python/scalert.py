@@ -347,6 +347,10 @@ class ObjectAlert(seiscomp.client.Application):
                 sys.stderr.write(i)
             return False
 
+    def done(self):
+        self._cache = None
+        seiscomp.client.Application.done(self)
+
 
     def runPickScript(self, pickObjectList):
         if not self._pickScript:
