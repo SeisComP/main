@@ -110,7 +110,7 @@ class ObjectAlert(seiscomp.client.Application):
             self._agencyIDs = []
             for item in agencyIDs:
                 item = item.strip()
-                if item not in self._agencyIDs:
+                if item and item not in self._agencyIDs:
                     self._agencyIDs.append(item)
         except:
             pass
@@ -313,7 +313,7 @@ class ObjectAlert(seiscomp.client.Application):
                 "A new event is declared when I see it the first time")
 
         seiscomp.logging.info("Filtering:")
-        if " ".join(self._agencyIDs):
+        if self._agencyIDs:
             seiscomp.logging.info(" + agencyIDs filter for events and picks: %s" % (" ".join(self._agencyIDs)))
         else:
             seiscomp.logging.info(" + agencyIDs: no filter is applied")
