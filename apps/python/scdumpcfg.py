@@ -67,9 +67,6 @@ class DumpCfg(seiscomp.client.Application):
 
     def createCommandLineDescription(self):
         self.commandline().addGroup("Dump")
-        self.commandline().addStringOption(
-            "Dump", "param,P", "Specify parameter name to filter for."
-        )
         self.commandline().addOption(
             "Dump", "bindings,B", "Dump bindings instead of module configuration."
         )
@@ -77,6 +74,12 @@ class DumpCfg(seiscomp.client.Application):
             "Dump",
             "allow-global,G",
             "Print global bindings if no module binding is avaible.",
+        )
+        self.commandline().addStringOption(
+            "Dump",
+            "param,P",
+            "Specify the parameter name(s) to filter for. Use comma sepration for "
+            "multiple parameters.",
         )
         self.commandline().addOption(
             "Dump", "cfg", "Print output in .cfg format. Does not work along with -B."
@@ -96,7 +99,8 @@ class DumpCfg(seiscomp.client.Application):
         self.dumpBindings = self.commandline().hasOption("bindings")
 
         try:
-            self.param = self.commandline().optionString("param")
+            param = self.commandline().optionString("param")
+            self.param = param.split(",")
         except:
             self.param = None
 
@@ -159,8 +163,11 @@ Dump scautopick module configuration including global parameters
 Dump global bindings configuration considerd by scmv
   {os.path.basename(__file__)} scmv -d localhost -BG
 
-Dump the list of stream configured with scautopick bindings
+Dump the list of streams configured with scautopick bindings
   {os.path.basename(__file__)} scautopick -d localhost -B --nslc
+
+Dump specific parameters configured with scautopick bindings
+  {os.path.basename(__file__)} scautopick -B -d localhost -P spicker.AIC.minSNR,spicker.AIC.minCnt
 """,
             file=sys.stderr,
         )
@@ -170,13 +177,15 @@ Dump the list of stream configured with scautopick bindings
         if self.nslc:
             nslc = set()
 
+        print(self.param)
         if self.dumpBindings == False:
             symtab = cfg.symbolTable()
             names = cfg.names()
             count = 0
             for name in names:
-                if self.param and self.param != name:
+                if self.param and name not in self.param:
                     continue
+
                 sym = symtab.get(name)
                 if self.formatCfg:
                     if sym.comment:
@@ -262,7 +271,7 @@ Dump the list of stream configured with scautopick bindings
                         nslc.add(stream)
                     count = 0
                     for param_name in sorted(params.keys()):
-                        if self.param and self.param != param_name:
+                        if self.param and param_name not in self.param:
                             continue
                         out += f"  {param_name}: {params[param_name]}\n"
                         count = count + 1

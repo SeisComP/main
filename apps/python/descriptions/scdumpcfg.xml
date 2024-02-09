@@ -41,11 +41,6 @@
 			</group>
 
 			<group name="Dump">
-				<option flag="P" long-flag="param" argument="arg">
-					<description>
-					Specify parameter name to filter for.
-					</description>
-				</option>
 				<option flag="B" long-flag="bindings" argument="arg">
 					<description>
 					Dump bindings instead of module configuration.
@@ -53,7 +48,13 @@
 				</option>
 				<option flag="G" long-flag="allow-global" argument="arg">
 					<description>
-					Print global bindings if no module binding is avaible.
+					Print global bindings if no module binding is available.
+					</description>
+				</option>
+				<option flag="P" long-flag="param" argument="arg">
+					<description>
+					Specify the parameter name(s) to filter for. Use comma
+					separation of multiple parameters.
 					</description>
 				</option>
 				<option long-flag="cfg">
@@ -63,9 +64,9 @@
 				</option>
 				<option long-flag="nslc">
 					<description>
-					Print the list of channels which have bindings of the given module.
-					Requires to set -B. Can be used by other modules, e.g., invextr,
-					scart, scmssort, scevtstreams.
+					Print the list of channels which have bindings of the given
+					module. Requires to set -B. Can be used by other modules,
+					e.g., invextr, scart, scmssort, scevtstreams.
 					</description>
 				</option>
 			</group>
