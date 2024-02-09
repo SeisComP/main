@@ -740,7 +740,7 @@ class DispatchTool : public Seiscomp::Client::Application {
 
 			unsigned int totalCount = ObjectCounter(doc.get()).count();
 
-			SEISCOMP_INFO("Time needed to parse XML: %s", Core::Time(timer.elapsed()).toString("%T.%f"));
+			SEISCOMP_INFO("Time needed to parse XML: %s", Core::Time(timer.elapsed()).toString("%T.%f").c_str());
 			SEISCOMP_INFO("Document object type: %s", doc->className());
 			SEISCOMP_INFO("Total number of objects: %d", totalCount);
 
@@ -764,7 +764,7 @@ class DispatchTool : public Seiscomp::Client::Application {
 			SEISCOMP_INFO("While dispatching %d/%d objects %d errors occured", 
 			              dispatcher->count(), totalCount, dispatcher->errors());
 			SEISCOMP_INFO("Time needed to dispatch %d objects: %s",
-			              dispatcher->count(), Core::Time(timer.elapsed()).toString("%T.%f"));
+			              dispatcher->count(), Core::Time(timer.elapsed()).toString("%T.%f").c_str());
 
 			delete dispatcher;
 
