@@ -58,7 +58,10 @@ def readXML(self):
                 if evt.creationInfo().modificationTime() < self._modifiedAfterTime:
                     continue
             except ValueError:
-                if evt.creationInfo().creationTime() < self._modifiedAfterTime:
+                try:
+                    if evt.creationInfo().creationTime() < self._modifiedAfterTime:
+                        continue
+                except ValueError:
                     continue
 
         prefOrgID = evt.preferredOriginID()
@@ -269,7 +272,10 @@ Print IDs of all events in XML file
                     if evt.creationInfo().modificationTime() < self._modifiedAfterTime:
                         continue
                 except ValueError:
-                    if evt.creationInfo().creationTime() < self._modifiedAfterTime:
+                    try:
+                        if evt.creationInfo().creationTime() < self._modifiedAfterTime:
+                            continue
+                    except ValueError:
                         continue
 
             outputString = evt.publicID()
