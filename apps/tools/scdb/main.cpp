@@ -305,15 +305,27 @@ class DBTool : public Seiscomp::Client::Application {
 			cout << "Parsing file '" << filename << "'..." << endl;
 		
 			Util::StopWatch timer;
-			DataModel::ObjectPtr doc;
-			ar >> doc;
+			Core::BaseObjectPtr obj;
+			ar >> obj;
 			ar.close();
-		
-			if ( doc == NULL ) {
+
+			if ( !obj ) {
+				cout << "Error: no valid entry found in file '" << filename << "'" << endl;
+				return false;
+			}
+
+			auto msg = Core::Message::Cast(obj);
+			if ( msg ) {
+				handleMessage(msg);
+				return true;
+			}
+
+			DataModel::ObjectPtr doc = DataModel::Object::Cast(obj);
+			if ( !doc ) {
 				cout << "Error: no valid object found in file '" << filename << "'" << endl;
 				return false;
 			}
-		
+
 			ObjectWriter writer(*query(), !_remove, _importBatchSize, ObjectCounter(doc.get()).count(), 78);
 		
 			cout << "Time needed to parse XML: " << Core::Time(timer.elapsed()).toString("%T.%f") << endl;
