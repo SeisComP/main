@@ -53,20 +53,17 @@
 			<group name="Dispatch">
 				<option flag="e" long-flag="no-events">
 					<description>
-					Do not send any event object. This is a wrapper to setting a
-					routing table without EVENT objects.
+					Do not send any event object which are ignored when reading
+					event parameters.
 					</description>
 				</option>
 				<option flag="i" long-flag="input" argument="arg">
 					<description>
-					File to dispatch to messaging.
+					File from which the content is dispatched to the messaging.
 					</description>
 				</option>
-				<option flag="O" long-flag="operation" argument="arg" default="merge">
+				<option flag="O" long-flag="operation" argument="arg" default="merge" values="add,update,remove,merge,merge-without-remove">
 					<description>
-					Operation to use: add, update, remove, merge (default) or
-					merge-without-remove.
-
 					Merge and merge-without-remove require a database
 					connection. Both will read the object corresponding to the
 					sent object from the database and calculate the differences.
@@ -89,12 +86,12 @@
 					Print routing table.
 					</description>
 				</option>
-				<option long-flag="routingtable" argument="arg">
+				<option long-flag="routingtable" argument="arg" default="Amplitude:AMPLITUDE,Event:EVENT,FocalMechanism:FOCMECH,Magnitude:MAGNITUDE, Origin:LOCATION,Pick:PICK,StationMagnitude:MAGNITUDE">
 					<description>
 					Specify routing table as comma separated list of object:group
 					pairs, e.g. &quot;Origin:LOCATION,Event:EVENT&quot;. When an
 					object should be routed to a group and no table entry for 
-					that perticular class type is available, all parent objects
+					that particular class type is available, all parent objects
 					are checked for valid routing entries and the first found is
 					used. E.g. if only &quot;Origin:LOCATION&quot; is specified
 					but the input file contains also Arrivals which are child
