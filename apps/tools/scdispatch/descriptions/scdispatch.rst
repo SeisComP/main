@@ -28,7 +28,7 @@ scdispatch can work in two modes applying different
   synchronize event information from one system with another.
 
 
-.. _scdispatch-operations::
+.. _scdispatch-operations:
 
 Operations
 ----------
