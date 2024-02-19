@@ -91,7 +91,8 @@ public:
     //! \brief Copy constructor.
     //!
     //! Copy constructor.
-    GridProfileGeoTess(const GridProfileGeoTess &other);
+    // GridProfileGeoTess(const GridProfileGeoTess &other);
+    // GridProfile *clone() { return new GridProfileGeoTess(*this); }
 
     //! \brief Destructor.
     //!

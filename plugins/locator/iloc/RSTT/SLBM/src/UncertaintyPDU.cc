@@ -234,7 +234,6 @@ namespace slbm {
 
     UncertaintyPDU* UncertaintyPDU::getUncertainty(ifstream& input, const string& phase)
     {
-        // cout << __FILE__ << ":" << __LINE__ << " UncertaintyPDU::getUncertainty(ifstream& input, '"<<phase<<"')" << endl;
         UncertaintyPDU* u = new UncertaintyPDU(phase);
         u->readFile(input);
         if (u->getPathUncDistanceBins().size() == 0)
@@ -273,7 +272,6 @@ namespace slbm {
     {
         string fname = "UncertaintyPDU_" + getPhase(phase) + ".txt";
         fname = CPPUtils::insertPathSeparator(modelPath, fname);
-        // cout << __FILE__ << ":" << __LINE__ << " UncertaintyPDU::getUncertainty('"<<modelPath<<"', "<<phase<<")" << endl;
 
         // ifstream fin;
         // fin.open(fname.c_str());
@@ -292,7 +290,6 @@ namespace slbm {
 
     void UncertaintyPDU::readFile(const string& filename)
     {
-        // cout << __FILE__ << ":" << __LINE__ << " UncertaintyPDU::readFile('"<<filename<<"')" << endl;
         // ifstream fin;
 
         // //open the file.  Return an error if cannot open the file.
@@ -312,7 +309,6 @@ namespace slbm {
 
     void UncertaintyPDU::readFile(ifstream& fin)
     {
-        // cout << __FILE__ << ":" << __LINE__ << " UncertaintyPDU::readFile(ifstream& fin)" << endl;
         // pathUncDistanceBins.clear(); // nBins
         // pathUncCrustError.clear();   // nVertices
         // pathUncRandomError.clear();  // nBins x nVertices (optional)

@@ -98,6 +98,16 @@ public:
     //! @param earthRadius the constant radius of the earth in km.
     SlbmInterface(const double& earthRadius);
 
+    //! \brief Copy constructor.
+    //!
+    //! Copy constructor.
+    // SlbmInterface(const SlbmInterface &other);
+
+    //! \brief Copy SlbmInterface object and associated Grid.
+    //!
+    //! Copy SlbmInterface object and associated Grid.
+    // SlbmInterface *clone() { return new SlbmInterface(*this); }
+
     //! \brief Destructor.
     //!
     //! Destructor.  Deletes the GreatCircle object
@@ -113,7 +123,6 @@ public:
 
     bool operator == (SlbmInterface &other) { return isEqual(&other); };
     bool operator != (SlbmInterface &other) { return !(*this == other); };
-
 
     //! \brief Check if two models are equal
     //!
@@ -356,7 +365,7 @@ public:
     //! \brief Retrieve the phase specified in last call to createGreatCircle().
     //!
     //! Retrieve the phase specified in last call to createGreatCircle().
-    string getPhase() { return greatCircle->getPhaseString(); };
+    string getPhase() { return sphase; };
 
     //! \brief Retrieve the source-receiver separation, in radians.
     //!
@@ -507,38 +516,38 @@ public:
     ////! @param dtt_dlon the derivative of travel time wrt to source longitude.
     //void get_dtt_dlon_fast(double& dtt_dlon);
 
-//	//! \brief Retrieve the derivative of horizontal slowness wrt to source-receiver distance,
-//	//! in seconds/radian^2.
-//	//!
-//	//! Retrieve the derivative of horizontal slowness wrt to source-receiver distance,
-//	//! in seconds/radian^2.
-//	void get_dsh_ddist(double& dsh_ddist);
-//	double get_dsh_ddist() { double x; get_dsh_ddist(x); return x; };
+//    //! \brief Retrieve the derivative of horizontal slowness wrt to source-receiver distance,
+//    //! in seconds/radian^2.
+//    //!
+//    //! Retrieve the derivative of horizontal slowness wrt to source-receiver distance,
+//    //! in seconds/radian^2.
+//    void get_dsh_ddist(double& dsh_ddist);
+//    double get_dsh_ddist() { double x; get_dsh_ddist(x); return x; };
 //
-//	//! \brief Retrieve the derivative of horizontal slowness wrt to source latitude,
-//	//! in seconds/radian^2.
-//	//!
-//	//! Retrieve the derivative of horizontal slowness wrt to source latitude,
-//	//! in seconds/radian^2.
-//	//! @param dsh_dlat the derivative of horizontal slowness wrt to source latitude.
-//	void get_dsh_dlat(double& dsh_dlat);
+//    //! \brief Retrieve the derivative of horizontal slowness wrt to source latitude,
+//    //! in seconds/radian^2.
+//    //!
+//    //! Retrieve the derivative of horizontal slowness wrt to source latitude,
+//    //! in seconds/radian^2.
+//    //! @param dsh_dlat the derivative of horizontal slowness wrt to source latitude.
+//    void get_dsh_dlat(double& dsh_dlat);
 //
-//	//! \brief Retrieve the derivative of horizontal slowness wrt to source longitude,
-//	//! in seconds/radian^2.
-//	//!
-//	//! Retrieve the derivative of horizontal slowness wrt to source longitude,
-//	//! in seconds/radian^2.
-//	//! @param dsh_dlon the derivative of horizontal slowness wrt to source longitude.
-//	void get_dsh_dlon(double& dsh_dlon);
+//    //! \brief Retrieve the derivative of horizontal slowness wrt to source longitude,
+//    //! in seconds/radian^2.
+//    //!
+//    //! Retrieve the derivative of horizontal slowness wrt to source longitude,
+//    //! in seconds/radian^2.
+//    //! @param dsh_dlon the derivative of horizontal slowness wrt to source longitude.
+//    void get_dsh_dlon(double& dsh_dlon);
 //
-//	//! \brief Retrieve the derivative of horizontal slowness wrt to source depth,
-//	//! in seconds/radian-km.
-//	//!
-//	//! Retrieve the derivative of horizontal slowness wrt to source depth,
-//	//! in seconds/radian-km.
-//	//! @param dsh_ddepth the derivative of horizontal slowness wrt to source depth.
-//	void get_dsh_ddepth(double& dsh_ddepth);
-//	double get_dsh_ddepth() { double x; get_dsh_ddepth(x); return x; }
+//    //! \brief Retrieve the derivative of horizontal slowness wrt to source depth,
+//    //! in seconds/radian-km.
+//    //!
+//    //! Retrieve the derivative of horizontal slowness wrt to source depth,
+//    //! in seconds/radian-km.
+//    //! @param dsh_ddepth the derivative of horizontal slowness wrt to source depth.
+//    void get_dsh_ddepth(double& dsh_ddepth);
+//    double get_dsh_ddepth() { double x; get_dsh_ddepth(x); return x; }
 
     //! \brief Retrieve the weight assigned to each grid node that
     //! was touched by the GreatCircle.
@@ -1794,6 +1803,11 @@ public:
 
     //! \brief getter for read-only attributes property
     //! getter for read-only attributes property
+    int getPhaseInt() { return iphase; }
+    string getPhaseString() { return sphase; }
+
+    //! \brief getter for read-only attributes property
+    //! getter for read-only attributes property
     double getSrcLat() { return srcLat; }
 
     //! \brief getter for read-only attributes property
@@ -1816,6 +1830,69 @@ public:
     //! getter for read-only attributes property
     double getRcvDep() { return rcvDep; }
 
+    /*
+    void DEBUG()
+    {
+        // check SlbmInterface memory
+        DEBUG_MSG(__FILE__, __FUNCTION__, this, "");
+        cout << "SlbmInterface.grid        = " << grid << endl;
+        cout << "SlbmInterface.greatCircle = " << greatCircle << endl;
+        cout << "SlbmInterface.valid       = " << &valid << endl;
+        cout << "SlbmInterface.CH_MAX      = " << &CH_MAX << endl;
+        cout << "SlbmInterface.srcLat      = " << &srcLat << endl;
+        cout << "SlbmInterface.srcLon      = " << &srcLon << endl;
+        cout << "SlbmInterface.srcDep      = " << &srcDep << endl;
+        cout << "SlbmInterface.rcvLat      = " << &rcvLat << endl;
+        cout << "SlbmInterface.rcvLon      = " << &rcvLon << endl;
+        cout << "SlbmInterface.rcvDep      = " << &rcvDep << endl;
+        cout << endl;
+
+        // check grid memory
+        cout << "grid.modelPath             = " << grid->getModelPath() << endl;
+        cout << "grid.profiles              = " << &(grid->getProfiles()) << endl;
+        cout << "grid.getNActiveNodes()     = " << grid->getNActiveNodes() << endl;
+        cout << "grid.model                 = " << grid->getModel() << endl;
+        cout << "grid.position              = " << grid->getPosition() << endl;
+        cout << "grid.polygon               = " << grid->getPolygon() << endl;
+        cout << "grid.sources               = " << grid->getSources() << endl;
+        cout << "grid.receivers             = " << grid->getReceivers() << endl;
+        cout << "grid.getNCrustalProfiles() = " << grid->getNCrustalProfiles() << endl;
+        cout << "grid.piu                   = " << &(grid->getUncertaintyPIU()) << endl;
+        cout << "grid.pdu                   = " << &(grid->getUncertaintyPDU()) << endl;
+        cout << "grid.outputDirectory       = " << &(grid->getOutputDirectory()) << endl;
+        cout << endl;
+
+        // check piu memory
+        auto *piu = &grid->getUncertaintyPIU();
+        for (int i=0; i<piu->size(); i++)
+        {
+            cout << "piu["<<i<<"]    = " << &(*piu)[i] << endl;
+            for (int j=0; j<(*piu)[i].size(); j++)
+                cout << "piu["<<i<<"]["<<j<<"] = " << (*piu)[i][j] << endl;
+        }
+        cout << endl;
+
+        // check pdu memory
+        auto *pdu = &grid->getUncertaintyPDU();
+        for (int i=0; i<pdu->size(); i++)
+            cout << "pdu["<<i<<"]    = " << &(*pdu)[i] << endl;
+        cout << endl;
+
+        // check model memory
+        GeoTessModelSLBM *model = grid->getModel();
+        cout << "model.fileFormatVer         = " << model->getFileFormatVersion() << endl;
+        cout << "model.averageMantleVelocity = [" << model->getAverageMantleVelocity(0) << "," << model->getAverageMantleVelocity(1) << "]" << endl;
+        cout << "model.piu                   = " << &(model->getPIU()) << endl;
+        cout << "model.pdu                   = " << &(model->getPDU()) << endl;
+        cout << "model.grid                  = " << &(model->getGrid()) << endl;
+        cout << "model.reuseGridMap          = " << model->getReuseGridMapSize() << endl;
+        cout << "model.profiles              = " << model->getProfiles() << endl;
+        cout << "model.metaData              = " << &(model->getMetaData()) << endl;
+        cout << "model.pointMap              = " << model->getPointMap() << endl;
+        cout << endl;
+
+    }
+    */
 
 protected:
 
@@ -1845,12 +1922,15 @@ protected:
     //! ttZplus and ttHZplus equal to NA_VALUE.
     void clearGreatCircles();
 
+
 private:
 
     // copies of the source and receiver locations that were
     // passed to createGreatCircle the last time it was called.
     // Used to compute distance in instances when createGreateCircle
     // fails. Units are radians.
+    string sphase;
+    int iphase;
     double srcLat, srcLon, srcDep, rcvLat, rcvLon, rcvDep;
 };
 
@@ -1869,8 +1949,9 @@ inline void SlbmInterface::createGreatCircle(
                     const double& receiverLon,
                     const double& receiverDepth)
 {
-    int iphase = (p=="Pn" ? Pn : (p=="Sn" ? Sn : (p=="Pg" ? Pg : (p=="Lg" ? Lg : -1))));
-    if (iphase == -1)
+    int ip = (p=="Pn" ? Pn : (p=="Sn" ? Sn : (p=="Pg" ? Pg : (p=="Lg" ? Lg : -1))));
+    iphase = ip;
+    if (ip == -1)
     {
         ostringstream os;
         os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
@@ -1881,7 +1962,7 @@ inline void SlbmInterface::createGreatCircle(
     }
 
     createGreatCircle(
-    iphase,
+    ip,
     sourceLat,
     sourceLon,
     sourceDepth,
@@ -1943,92 +2024,92 @@ inline void SlbmInterface::get_dtt_ddepth(double& value)
 
 //inline void SlbmInterface::get_dtt_dlat_fast(double& value)
 //{
-//	if (!isValid())
-//	{
-//		value = NA_VALUE;
-//		ostringstream os;
-//		os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
-//		  os << endl << "ERROR in SlbmInterface::get_dtt_dlat" << endl
-//			<< "GreatCircle is invalid." << endl
-//			  << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-//		throw SLBMException(os.str(),113);
-//	}
-//	greatCircle->get_dtt_dlat_fast(value);
+//    if (!isValid())
+//    {
+//        value = NA_VALUE;
+//        ostringstream os;
+//        os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
+//          os << endl << "ERROR in SlbmInterface::get_dtt_dlat" << endl
+//            << "GreatCircle is invalid." << endl
+//              << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+//        throw SLBMException(os.str(),113);
+//    }
+//    greatCircle->get_dtt_dlat_fast(value);
 //}
 //
 //inline void SlbmInterface::get_dtt_dlon_fast(double& value)
 //{
-//	if (!isValid())
-//	{
-//		value = NA_VALUE;
-//		ostringstream os;
-//		os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
-//		  os << endl << "ERROR in SlbmInterface::get_dtt_dlon" << endl
-//			<< "GreatCircle is invalid." << endl
-//			  << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-//		throw SLBMException(os.str(),113);
-//	}
-//	greatCircle->get_dtt_dlon_fast(value);
+//    if (!isValid())
+//    {
+//        value = NA_VALUE;
+//        ostringstream os;
+//        os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
+//          os << endl << "ERROR in SlbmInterface::get_dtt_dlon" << endl
+//            << "GreatCircle is invalid." << endl
+//              << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+//        throw SLBMException(os.str(),113);
+//    }
+//    greatCircle->get_dtt_dlon_fast(value);
 //}
 //
 //inline void SlbmInterface::get_dsh_ddist(double& value)
 //{
-//	if (!isValid())
-//	{
-//		value = NA_VALUE;
-//		ostringstream os;
-//		os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
-//		  os << endl << "ERROR in SlbmInterface::get_dsh_ddist" << endl
-//			<< "GreatCircle is invalid." << endl
-//			  << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-//		throw SLBMException(os.str(),113);
-//	}
-//	greatCircle->get_dsh_ddist(value);
+//    if (!isValid())
+//    {
+//        value = NA_VALUE;
+//        ostringstream os;
+//        os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
+//          os << endl << "ERROR in SlbmInterface::get_dsh_ddist" << endl
+//            << "GreatCircle is invalid." << endl
+//              << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+//        throw SLBMException(os.str(),113);
+//    }
+//    greatCircle->get_dsh_ddist(value);
 //}
 //
 //inline void SlbmInterface::get_dsh_dlat(double& value)
 //{
-//	if (!isValid())
-//	{
-//		value = NA_VALUE;
-//		ostringstream os;
-//		os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
-//		  os << endl << "ERROR in SlbmInterface::get_dsh_dlat" << endl
-//			<< "GreatCircle is invalid." << endl
-//			  << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-//		throw SLBMException(os.str(),113);
-//	}
-//	greatCircle->get_dsh_dlat(value);
+//    if (!isValid())
+//    {
+//        value = NA_VALUE;
+//        ostringstream os;
+//        os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
+//          os << endl << "ERROR in SlbmInterface::get_dsh_dlat" << endl
+//            << "GreatCircle is invalid." << endl
+//              << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+//        throw SLBMException(os.str(),113);
+//    }
+//    greatCircle->get_dsh_dlat(value);
 //}
 //
 //inline void SlbmInterface::get_dsh_dlon(double& value)
 //{
-//	if (!isValid())
-//	{
-//		value = NA_VALUE;
-//		ostringstream os;
-//		os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
-//		  os << endl << "ERROR in SlbmInterface::get_dsh_dlon" << endl
-//			<< "GreatCircle is invalid." << endl
-//			  << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-//		throw SLBMException(os.str(),113);
-//	}
-//	greatCircle->get_dsh_dlon(value);
+//    if (!isValid())
+//    {
+//        value = NA_VALUE;
+//        ostringstream os;
+//        os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
+//          os << endl << "ERROR in SlbmInterface::get_dsh_dlon" << endl
+//            << "GreatCircle is invalid." << endl
+//              << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+//        throw SLBMException(os.str(),113);
+//    }
+//    greatCircle->get_dsh_dlon(value);
 //}
 //
 //inline void SlbmInterface::get_dsh_ddepth(double& value)
 //{
-//	if (!isValid())
-//	{
-//		value = NA_VALUE;
-//		ostringstream os;
-//		os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
-//		  os << endl << "ERROR in SlbmInterface::get_dsh_ddepth" << endl
-//			<< "GreatCircle is invalid." << endl
-//			  << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-//		throw SLBMException(os.str(),113);
-//	}
-//	greatCircle->get_dsh_ddepth(value);
+//    if (!isValid())
+//    {
+//        value = NA_VALUE;
+//        ostringstream os;
+//        os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
+//          os << endl << "ERROR in SlbmInterface::get_dsh_ddepth" << endl
+//            << "GreatCircle is invalid." << endl
+//              << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+//        throw SLBMException(os.str(),113);
+//    }
+//    greatCircle->get_dsh_ddepth(value);
 //}
 
 inline void SlbmInterface::getSlowness(double& value)
@@ -2722,21 +2803,21 @@ inline void SlbmInterface::getNHeadWavePoints(int& nHeadWavePoints)
 
 //inline void SlbmInterface::getMaxInterpotionNodes(int& maxNodes)
 //{
-//	if (!greatCircle)
-//	{
-//		nHeadWavePoints = -1;
-//		ostringstream os;
-//		os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
-//		  os << endl << "ERROR in SlbmInterface::getMaxInterpotionNodes" << endl
-//			<< "Grid is invalid.  Has the earth model been loaded with call to loadVelocityModel()?" << endl
-//			<< "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
-//		throw SLBMException(os.str(),113);
-//	}
+//    if (!greatCircle)
+//    {
+//        nHeadWavePoints = -1;
+//        ostringstream os;
+//        os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(9);
+//          os << endl << "ERROR in SlbmInterface::getMaxInterpotionNodes" << endl
+//            << "Grid is invalid.  Has the earth model been loaded with call to loadVelocityModel()?" << endl
+//            << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
+//        throw SLBMException(os.str(),113);
+//    }
 //
-//	maxNodes = 1;
-//	for (int i=0; i<greatCircle->getNProfiles(); i++)
-//		if (greatCircle->profiles[i]->getNodes().size() > maxNodes)
-//			maxNodes = greatCircle->profiles[i]->getNodes().size();
+//    maxNodes = 1;
+//    for (int i=0; i<greatCircle->getNProfiles(); i++)
+//        if (greatCircle->profiles[i]->getNodes().size() > maxNodes)
+//            maxNodes = greatCircle->profiles[i]->getNodes().size();
 //}
 
 inline void SlbmInterface::getSlownessUncertainty( const int& phase, const double& distance, double& uncert )
@@ -2783,7 +2864,7 @@ inline void SlbmInterface::getSlownessUncertainty(double& slownessUncertainty)
         greatCircle->getDistance(), slownessUncertainty);
 }
 
-inline 	string SlbmInterface::getUncertaintyTable(const int& phase, const int& attribute)
+inline     string SlbmInterface::getUncertaintyTable(const int& phase, const int& attribute)
 {
     if (!grid)
     {
@@ -2806,7 +2887,7 @@ inline 	string SlbmInterface::getUncertaintyTable(const int& phase, const int& a
     return grid->getUncertainty()[phase][attribute]->toStringTable();
 }
 
-inline 	string SlbmInterface::getUncertaintyFileFormat(const int& phase, const int& attribute)
+inline     string SlbmInterface::getUncertaintyFileFormat(const int& phase, const int& attribute)
 {
     if (!grid)
     {
@@ -2827,7 +2908,7 @@ inline 	string SlbmInterface::getUncertaintyFileFormat(const int& phase, const i
     return grid->getUncertainty()[phase][attribute]->toStringFile();
 }
 
-inline 	void SlbmInterface::getZhaoParameters(double& Vm, double& Gm, double& H, double& C, double& Cm, int& udSign)
+inline     void SlbmInterface::getZhaoParameters(double& Vm, double& Gm, double& H, double& C, double& Cm, int& udSign)
 {
     if (!greatCircle)
     {
@@ -2841,7 +2922,7 @@ inline 	void SlbmInterface::getZhaoParameters(double& Vm, double& Gm, double& H,
     greatCircle->getZhaoParameters(Vm, Gm, H, C, Cm, udSign);
 }
 
-inline 	void SlbmInterface::getPgLgComponents(double& tTotal,
+inline     void SlbmInterface::getPgLgComponents(double& tTotal,
                                               double& tTaup, double& tHeadwave,
                                               double& pTaup, double& pHeadwave,
                                               double& trTaup, double& trHeadwave)
@@ -2860,7 +2941,7 @@ inline 	void SlbmInterface::getPgLgComponents(double& tTotal,
 }
 
 
-inline 	void SlbmInterface::getNodeNeighbors(const int& nid, int neighbors[], int& nNeighbors)
+inline     void SlbmInterface::getNodeNeighbors(const int& nid, int neighbors[], int& nNeighbors)
 {
     if (!grid)
     {
@@ -2874,7 +2955,7 @@ inline 	void SlbmInterface::getNodeNeighbors(const int& nid, int neighbors[], in
     grid->getNodeNeighbors(nid, neighbors, nNeighbors);
 }
 
-inline 	void SlbmInterface::getActiveNodeNeighbors(const int& nid, int neighbors[], int& nNeighbors)
+inline     void SlbmInterface::getActiveNodeNeighbors(const int& nid, int neighbors[], int& nNeighbors)
 {
     if (!grid)
     {
@@ -2888,7 +2969,7 @@ inline 	void SlbmInterface::getActiveNodeNeighbors(const int& nid, int neighbors
     grid->getActiveNodeNeighbors(nid, neighbors, nNeighbors);
 }
 
-inline 	void SlbmInterface::getNodeNeighbors(const int& nid, vector<int>& neighbors)
+inline     void SlbmInterface::getNodeNeighbors(const int& nid, vector<int>& neighbors)
 {
     if (!grid)
     {
@@ -2902,7 +2983,7 @@ inline 	void SlbmInterface::getNodeNeighbors(const int& nid, vector<int>& neighb
     grid->getNodeNeighbors(nid, neighbors);
 }
 
-inline 	void SlbmInterface::getActiveNodeNeighbors(const int& nid, vector<int>& neighbors)
+inline     void SlbmInterface::getActiveNodeNeighbors(const int& nid, vector<int>& neighbors)
 {
     if (!grid)
     {
@@ -2946,7 +3027,7 @@ inline  void SlbmInterface::getNodeNeighborInfo(const int nid,
     grid->getNodeNeighborInfo(nid, neighbors, distance, azimuth);
 }
 
-inline 	void SlbmInterface::getActiveNodeNeighborInfo(const int& nid, int neighbors[],
+inline     void SlbmInterface::getActiveNodeNeighborInfo(const int& nid, int neighbors[],
             double distance[], double azimuth[], int& nNeighbors)
 {
     if (!grid)
@@ -2961,7 +3042,7 @@ inline 	void SlbmInterface::getActiveNodeNeighborInfo(const int& nid, int neighb
     grid->getActiveNodeNeighborInfo(nid, neighbors, distance, azimuth, nNeighbors);
 }
 
-inline 	void SlbmInterface::getActiveNodeNeighborInfo(const int& nid,
+inline     void SlbmInterface::getActiveNodeNeighborInfo(const int& nid,
             vector<int>& neighbors, vector<double>& distance, vector<double>& azimuth)
 {
     if (!grid)
@@ -2976,7 +3057,7 @@ inline 	void SlbmInterface::getActiveNodeNeighborInfo(const int& nid,
     grid->getActiveNodeNeighborInfo(nid, neighbors, distance, azimuth);
 }
 
-inline 	void SlbmInterface::getNodeSeparation(const int& node1, const int& node2, double& distance)
+inline     void SlbmInterface::getNodeSeparation(const int& node1, const int& node2, double& distance)
 {
     if (!grid)
     {
@@ -2990,7 +3071,7 @@ inline 	void SlbmInterface::getNodeSeparation(const int& node1, const int& node2
     grid->getNodeSeparation(node1, node2, distance);
 }
 
-inline 	void SlbmInterface::getNodeAzimuth(const int& node1, const int& node2, double& azimuth)
+inline     void SlbmInterface::getNodeAzimuth(const int& node1, const int& node2, double& azimuth)
 {
     if (!grid)
     {
@@ -3225,14 +3306,14 @@ inline string SlbmInterface::getClassCount()
 {
     ostringstream os;
     os << "Class counts:" << endl;
-    os << "GreatCircle         = " << GreatCircle::getClassCount()	<< endl;
-    os << "GridProfile         = " << GridProfile::getClassCount()	<< endl;
-    os << "GeoStack            = " << GeoStack::getClassCount()	<< endl;
-    os << "InterpolatedProfile = " << InterpolatedProfile::getClassCount()	<< endl;
-    os << "CrustalProfile      = " << CrustalProfile::getClassCount()	<< endl;
-    os << "LayerProfile        = " << LayerProfile::getClassCount()	<< endl;
-    os << "QueryProfile        = " << QueryProfile::getClassCount()	<< endl;
-    os << "Location            = " << Location::getClassCount()	<< endl;
+    os << "GreatCircle         = " << GreatCircle::getClassCount()    << endl;
+    os << "GridProfile         = " << GridProfile::getClassCount()    << endl;
+    os << "GeoStack            = " << GeoStack::getClassCount()    << endl;
+    os << "InterpolatedProfile = " << InterpolatedProfile::getClassCount()    << endl;
+    os << "CrustalProfile      = " << CrustalProfile::getClassCount()    << endl;
+    os << "LayerProfile        = " << LayerProfile::getClassCount()    << endl;
+    os << "QueryProfile        = " << QueryProfile::getClassCount()    << endl;
+    os << "Location            = " << Location::getClassCount()    << endl;
     return os.str();
 }
 
@@ -3465,7 +3546,6 @@ inline string SlbmInterface::getInterpolatorType()
     }
     return grid->getInterpolatorType();
 }
-
 
 
 } // end slbm namespace

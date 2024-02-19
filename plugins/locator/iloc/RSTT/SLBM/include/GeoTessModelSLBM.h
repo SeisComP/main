@@ -282,6 +282,11 @@ public:
     virtual bool operator != (const GeoTessModelSLBM& other) const { return !(*this == other); } ;
 
     /**
+     * Copy constructor
+     */
+    // GeoTessModelSLBM(const GeoTessModelSLBM &other);
+
+    /**
      * Destructor.
      */
     virtual ~GeoTessModelSLBM();

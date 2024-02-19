@@ -292,9 +292,9 @@ void CrustalProfile::xtCrust(
             //// Reduce the rayParameter and start all over.
             //if (pv/radius[layid[j+1]] > 1.0)
             //{
-            //	rayParameter = radius[layid[j+1]]/velocity[layid[j]] * (1 - 1e-14);
-            //	done = false;
-            //	break;
+            //    rayParameter = radius[layid[j+1]]/velocity[layid[j]] * (1 - 1e-14);
+            //    done = false;
+            //    break;
             //}
 
             // if sin(i) > 1.0, then ray does not reach the moho.
@@ -395,9 +395,9 @@ void CrustalProfile::xtCrust(
             //// Reduce the rayParameter and start all over.
             //if (pv/r[j] > 1.0)
             //{
-            //	rayParameter = r[j]/velocity[layid[j]] * (1 - 1e-14);
-            //	done = false;
-            //	break;
+            //    rayParameter = r[j]/velocity[layid[j]] * (1 - 1e-14);
+            //    done = false;
+            //    break;
             //}
 
             // if sin(i) > 1.0, then ray does not reach the moho.
@@ -692,9 +692,9 @@ string CrustalProfile::toString()
         {
             //double thick;
             //if (i==MIDDLE_CRUST_N || i==MIDDLE_CRUST_G)
-            //	thick = getInterfaceRadius(i)-getInterfaceRadius(LOWER_CRUST);
+            //    thick = getInterfaceRadius(i)-getInterfaceRadius(LOWER_CRUST);
             //else
-            //	thick = getInterfaceRadius(i)-getInterfaceRadius(i+1);
+            //    thick = getInterfaceRadius(i)-getInterfaceRadius(i+1);
             os << " " << setprecision(4) << setw(w) << getInterfaceRadius(i)-getInterfaceRadius(j);
         }
 

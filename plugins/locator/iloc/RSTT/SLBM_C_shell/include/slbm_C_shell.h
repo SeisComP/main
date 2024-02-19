@@ -151,7 +151,7 @@ extern "C"
 // places.
 //
 
-//static const char* SlbmVersion = "3.2.0";
+//static const char* SlbmVersion = "3.2.1";
 
 //! \brief Convenience constant for P wave index.
 //!

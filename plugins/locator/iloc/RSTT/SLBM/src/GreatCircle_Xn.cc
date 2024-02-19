@@ -78,10 +78,13 @@ GreatCircle_Xn::~GreatCircle_Xn()
 //! \brief Copy constructor.
 //! 
 //! Copy constructor.
-GreatCircle_Xn::GreatCircle_Xn(const GreatCircle_Xn &other)
-: GreatCircle(other), ch_max(other.ch_max), cmin(other.cmin)
-{
-}
+// GreatCircle_Xn::GreatCircle_Xn(const GreatCircle_Xn &other) :
+//     GreatCircle(other), ch_max(other.ch_max), Vm(other.Vm), Gm(other.Gm),
+//     H(other.H), rMoho(other.rMoho), rZm(other.rZm), udSign(other.udSign),
+//     V0(other.V0), c(other.c), cm(other.cm), zm(other.zm), zhao_r(other.zhao_r),
+//     cz(other.cz), cmz(other.cmz), cmin(other.cmin)
+// {
+// }
 
 //! \brief Equal operator.
 //! 
@@ -519,11 +522,11 @@ void GreatCircle_Xn::computeTravelTimeMantle()
             //double dh = (h3-zm)/nh;
             //for (int i=0; i<=nh; ++i)
             //{
-            //	h2 = zm + dh*i;
-            //	udSign = 1;
-            //	cout << h2 << "  " << func(h2);
-            //	udSign = -1;
-            //	cout << " " << func(h2) << endl;
+            //    h2 = zm + dh*i;
+            //    udSign = 1;
+            //    cout << h2 << "  " << func(h2);
+            //    udSign = -1;
+            //    cout << " " << func(h2) << endl;
             //}
 
             ostringstream os;

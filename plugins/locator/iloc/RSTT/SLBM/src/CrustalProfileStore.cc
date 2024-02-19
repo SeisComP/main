@@ -55,6 +55,17 @@ CrustalProfileStore::CrustalProfileStore(Grid& _grid, const int& _maxSize)
 {
 }  // END CrustalProfileStore Default Constructor
 
+// CrustalProfileStore::CrustalProfileStore(const CrustalProfileStore &other) :
+//     grid(other.grid), maxSize(other.maxSize), priority(other.priority),
+//     locString(other.locString)
+// Grid& grid;
+// int maxSize;
+// map<string, CrustalProfile*> profiles;
+// list<string> priority;
+// list<CrustalProfile*> pool;
+// string locString;
+//{
+//}
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
 //

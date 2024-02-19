@@ -48,7 +48,7 @@ namespace slbm {
 //! \brief Software Version Number
 //!
 //! Software Version Number
-static const char* SlbmVersion = "3.2.0";
+static const char* SlbmVersion = "3.2.1";
 
 // version 3.0.3 4/22/2014  sballar
 // fixed bug in GridGeoTess::getActiveNodeNeighbors that caused the

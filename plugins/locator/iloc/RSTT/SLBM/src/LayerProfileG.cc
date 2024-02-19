@@ -55,7 +55,7 @@ LayerProfileG::LayerProfileG(GreatCircle* greatCircle,
 }
 
 LayerProfileG::LayerProfileG(const LayerProfileG &other) 
-    : LayerProfile(other),	gradient(other.gradient)
+    : LayerProfile(other),    gradient(other.gradient)
 {
 }
 

@@ -48,6 +48,7 @@ using namespace std;
 // **** _LOCAL INCLUDES_ *******************************************************
 
 #include "SLBMGlobals.h"
+#include "Grid.h"
 #include "GridProfile.h"
 #include "InterpolatedProfile.h"
 #include "LayerProfile.h"
@@ -94,15 +95,31 @@ public:
     //! Default constructor.
     GridSLBM();
 
+    //! \brief Copy constructor.
+    //!
+    //! Copy constructor.
+    // GridSLBM(const GridSLBM &other);
+
+    //! \brief Virtual copy constructor.
+    //!
+    //! Virtual copy constructor.
+    // Grid *clone() { return new GridSLBM(*this); }
+
+
     //! \brief Destructor.
     //!
     //! Destructor.
     ~GridSLBM();
+    
+    //! \brief Returns the class name.
+    //!
+    //! Returns the class name.
+    static string class_name() { return "GridSLBM"; };
 
-    /**
-     * Returns the class name.
-     */
-    static  string				class_name() { return "GridSLBM"; };
+    //! \brief Returns the type of Grid.
+    //!
+    //! Returns the type of Grid (Grid, GridSLBM, or GridGeotess).
+    string getGridType() { return class_name(); };
 
     //! \brief Clears and releases all memory held by this GridSLBM object.
     //!
@@ -214,6 +231,8 @@ public:
     void setInterpolatorType(const string& interpolatorType);
 
     string getInterpolatorType() { return "linear"; }
+
+    GeoTessPosition* getPosition() { return NULL; }
 
 private:
 

@@ -469,7 +469,7 @@ int	GeoTessPosition::getIndexOfClosestVertex() const
 string GeoTessPosition::toString()
 {
 	char s[300];
-	sprintf(s, "Triangle %7d layer %2d  lat, lon, depth: %1.6f, %1.6f, %1.3f",
+	snprintf(s, sizeof(s), "Triangle %7d layer %2d  lat, lon, depth: %1.6f, %1.6f, %1.3f",
 			triangle[tessid], layerId,
 			GeoTessUtils::getLatDegrees(unitVector),
 			GeoTessUtils::getLonDegrees(unitVector), getDepth());
@@ -482,7 +482,7 @@ string GeoTessPosition::toString()
 	for (int i = 0; i < (int) v.size(); ++i)
 	{
 		string lls = GeoTessUtils::getLatLonString(grid.getVertex(v[i]));
-		sprintf(s, "%6d %s %10.6f %7.3f", v[i], lls.c_str(),
+		snprintf(s, sizeof(s), "%6d %s %10.6f %7.3f", v[i], lls.c_str(),
 				c[i], CPPUtils::toDegrees(GeoTessUtils::angle(unitVector,
 						grid.getVertex(v[i]))));
 		os << s << endl;

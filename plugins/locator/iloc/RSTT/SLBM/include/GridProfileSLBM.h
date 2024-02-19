@@ -88,7 +88,8 @@ public:
     //! \brief Copy constructor.
     //!
     //! Copy constructor.
-    GridProfileSLBM(const GridProfileSLBM &other);
+    // GridProfileSLBM(const GridProfileSLBM &other);
+    // GridProfile *clone() { return new GridProfileSLBM(*this); }
 
     //! \brief Destructor.
     //!
@@ -128,7 +129,7 @@ public:
     //! @param gradients a 2-element vector specifying the P and S velocity
     //! gradients in the mantle, in 1/sec.
     void setData(double* depths, double* pvelocities,
-        double* svelocities,	double* gradients);
+        double* svelocities,    double* gradients);
 
     //! \brief Set the layer depths to specified values.
     //!

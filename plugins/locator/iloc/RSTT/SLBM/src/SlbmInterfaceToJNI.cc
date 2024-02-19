@@ -61,8 +61,8 @@ SlbmInterfaceToJNI::SlbmInterfaceToJNI(const double& earthRadius)
 
 SlbmInterfaceToJNI::~SlbmInterfaceToJNI()
 {
-//	if (queryProfile) delete queryProfile;
-//	if (gridProfile) delete gridProfile;
+//    if (queryProfile) delete queryProfile;
+//    if (gridProfile) delete gridProfile;
 }  // END SlbmInterfaceToJNI Destructor
 
 } // end slbm namespace

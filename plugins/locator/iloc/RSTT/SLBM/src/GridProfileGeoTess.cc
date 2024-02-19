@@ -62,11 +62,11 @@ GridProfileGeoTess::GridProfileGeoTess(Grid& g, const int& nodeId, Location& loc
 {
 }
 
-GridProfileGeoTess::GridProfileGeoTess(const GridProfileGeoTess &other)
-: GridProfile(other.getNodeId(), other.getLat(), other.getLon(), -other.getDepth()),
-        model(other.model), gtProfiles(other.gtProfiles)
-{
-}
+// GridProfileGeoTess::GridProfileGeoTess(const GridProfileGeoTess &other)
+// : GridProfile(other.getNodeId(), other.getLat(), other.getLon(), -other.getDepth()),
+//         model(other.model), gtProfiles(other.gtProfiles)
+// {
+// }
 
 GridProfileGeoTess::~GridProfileGeoTess()
 {
@@ -131,16 +131,16 @@ void GridProfileGeoTess::setDepths(const vector<double>& depths)
     vector<vector<float> > radii;
     depthsToRadii(depths, radii);
 
-//	cout << setprecision(3);
-//	for (int k=NLAYERS; k > 0; --k)
-//	{
-//		cout << setw(3) << k << setw(3) << NLAYERS-k  <<
-//				setw(9) << depths[NLAYERS-k]  <<
-//				setw(9) << radii[k][0] <<
-//				setw(9) << radii[k][1]  <<
-//				setw(9) << radii[k][1]-radii[k][0] << endl;
-//	}
-//	cout << endl;
+//    cout << setprecision(3);
+//    for (int k=NLAYERS; k > 0; --k)
+//    {
+//        cout << setw(3) << k << setw(3) << NLAYERS-k  <<
+//                setw(9) << depths[NLAYERS-k]  <<
+//                setw(9) << radii[k][0] <<
+//                setw(9) << radii[k][1]  <<
+//                setw(9) << radii[k][1]-radii[k][0] << endl;
+//    }
+//    cout << endl;
 
     gtProfiles[0]->setRadii(radii[0]);
     for (int k=1; k<=NLAYERS; ++k)

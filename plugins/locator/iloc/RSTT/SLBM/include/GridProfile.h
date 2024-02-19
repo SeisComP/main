@@ -78,6 +78,11 @@ public:
 
     GridProfile(const int& i, Location& location);
 
+    //! \brief Virtual copy constructor.
+    //!
+    //! Virtual copy constructor.
+    // virtual GridProfile *clone() = 0;
+
     //! \brief Destructor.
     //!
     //! Destructor.
@@ -126,7 +131,7 @@ public:
     //! @param gradients a 2-element vector specifying the P and S velocity
     //! gradients in the mantle, in 1/sec.
     virtual void setData(double* depths, double* pvelocities,
-        double* svelocities,	double* gradients) = ABSTRACT;
+        double* svelocities,    double* gradients) = ABSTRACT;
 
     //! \brief Set the layer depths to specified values.
     //!

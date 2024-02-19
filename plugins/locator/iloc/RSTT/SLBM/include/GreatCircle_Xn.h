@@ -118,7 +118,8 @@ public:
     //! \brief Copy constructor.
     //!
     //! Copy constructor.
-    GreatCircle_Xn(const GreatCircle_Xn &other);
+    // GreatCircle_Xn(const GreatCircle_Xn &other);
+    // GreatCircle *clone() { return new GreatCircle_Xn(*this); }
 
     //! \brief Equal operator.
     //!
@@ -215,7 +216,7 @@ private:
     double brent(const double ax, const double bx, const double cx,
         const double tol, double &xmin);
 
-    void SWAP(double &a, double &b)	{double dum=a; a=b; b=dum;}
+    void SWAP(double &a, double &b)    {double dum=a; a=b; b=dum;}
 
     double SIGN(const double &a, const double &b)
         {return b >= 0 ? (a >= 0 ? a : -a) : (a >= 0 ? -a : a);};

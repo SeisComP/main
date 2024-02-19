@@ -376,7 +376,7 @@ class UTIL_EXP DataBuffer
     int              dbDataPos;
 
     //! The current size of the data container.
-    int	             dbSize;
+    int                 dbSize;
 
     //! \brief A boolean, that if true, maintains 4 and 8 byte alignment in
     //! support of double alignment compilation.

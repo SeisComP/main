@@ -133,7 +133,7 @@ public:
     //! @param svelocities the S velocities stored in this GeoStack, in km/sec.
     //! @param gradients a 2-element vector specifying the P and S velocity
     //! gradients in the mantle, in 1/sec.
-    void setData(double* depths, double* pvelocities, double* svelocities,	double* gradients);
+    void setData(double* depths, double* pvelocities, double* svelocities,    double* gradients);
 
     //! \brief Set the layer depths to specified values.
     //!
@@ -258,7 +258,7 @@ inline void GeoStack::getData(double* d, double* pv, double* sv, double* g)
 }
 
 inline void GeoStack::setData(double* depths, double* pvelocities,
-                              double* svelocities,	double* gradients)
+                              double* svelocities,    double* gradients)
 {
     for (int i=0; i<NLAYERS; i++)
     {

@@ -1,0 +1,52 @@
+ChangeLog
+=========
+
+sciLoc4.2 - 2024-02-15
+======================
+- RSTT3.2.1; bugfix release
+- modifications in Makefiles to support latest gcc.
+- modifications in Makefiles to address Apple silicon compile and link issues.
+
+
+sciLoc4.1 - 2023-05-21
+======================
+- updated the default depth grid from the rebuilt ISC bulletin, 1964-2020.
+- updated the station lists.
+- modified Makefiles to support Apple M1 and M2 processors
+
+
+sciLoc4.0 - 2021-10-10
+======================
+- Incorporated the RSTT3.2 model, TT predictions and path-dependent uncertainties.
+- Harmonized auxdata directory with standalone iLoc distribution. The standalone
+  iLoc and the SeisComp plugin sciLoc now read the same auxdata directory.
+- Moved the RSTT model to the auxdata/RSTTmodels directory.
+- Separated model-specific and phase-specific paramaters into
+  Global1DModelPhaseList.txt and IASPEIPhaseMap.txt files.
+- Local velocity model, LocalVmodel in iLocConfig struct now understood as a full pathname
+
+
+sciLoc3.2 - 2021-08-01
+======================
+- Ellipticity corrections: instead of P and S, Pup and Sup is now used for Pg,
+  Pb and Sg, Lg, Sb, respectively
+- Incorrect indices were used in getting travel time table values for exact
+  depth values when only residuals were calculated.
+
+
+sciLoc3.1 - 2020-11-27
+======================
+- upgraded to RSTT3.1, an updated global upper mantle and crust tomography model.
+- uses the RSTT path-dependent uncertainty (model and pick) estimates to construct
+  the data covariance matrix and decide if a phase is to be used in the location.
+- RSTT does not provide travel-time predictions for direct phases for sources
+  below the crust. In that case sciLoc reverts to the default 1D (ak135 or iasp91)
+  travel-time predictions in order to avoid losing picks from local networks.
+- Disabled the feature of fixing the origin time if the number of phases was
+  less than the number of model parameters as this led to horribly wrong locations.
+
+Istvan Bondar
+ibondar2014@gmail.com
+
+
+

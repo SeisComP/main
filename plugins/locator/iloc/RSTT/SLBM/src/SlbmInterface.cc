@@ -57,16 +57,27 @@ SlbmInterface::SlbmInterface() :
     grid(NULL), 
     greatCircle(NULL),
     valid(false),
+    sphase(""), iphase(-1),
     srcLat(NaN_DOUBLE), srcLon(NaN_DOUBLE), srcDep(NaN_DOUBLE),
     rcvLat(NaN_DOUBLE), rcvLon(NaN_DOUBLE), rcvDep(NaN_DOUBLE)
 {
-    // cout << "Created SlbmInterface" << endl;
+    // DEBUG_MSG(__FILE__, __FUNCTION__, this, "Created SlbmInterface.");
 }  // END SlbmInterface Default Constructor
+
+// SlbmInterface::SlbmInterface(const SlbmInterface &other) :
+//     grid(other.grid->clone()), greatCircle(other.greatCircle->clone()),
+//     valid(other.valid), sphase(other.sphase), iphase(other.iphase),
+//     srcLat(other.srcLat), srcLon(other.srcLon), srcDep(other.srcDep),
+//     rcvLat(other.rcvLat), rcvLon(other.rcvLon), rcvDep(other.rcvDep)
+// {
+//     // DEBUG_MSG(__FILE__, __FUNCTION__, this, "Copied SlbmInterface.");
+// }
 
 SlbmInterface::SlbmInterface(const double& earthRadius) : 
     grid(NULL), 
     greatCircle(NULL), 
     valid(false),
+    sphase(""), iphase(-1),
     srcLat(NaN_DOUBLE), srcLon(NaN_DOUBLE), srcDep(NaN_DOUBLE),
     rcvLat(NaN_DOUBLE), rcvLon(NaN_DOUBLE), rcvDep(NaN_DOUBLE)
 {
@@ -75,40 +86,47 @@ SlbmInterface::SlbmInterface(const double& earthRadius) :
 
 SlbmInterface::~SlbmInterface()
 {
-    // cout << "SlbmInterface deleted." << endl;
+    // DEBUG_MSG(__FILE__, __FUNCTION__, this, "Deleting SlbmInterface...");
     clear();
-    if (grid) delete grid;
+    if (grid)
+        delete grid;
 
     valid = false;
+    // DEBUG_MSG(__FILE__, __FUNCTION__, this, "Deleted SlbmInterface.");
 }  // END SlbmInterface Destructor
 
 void SlbmInterface::clear()
 {
-    // cout << "SlbmInterface cleared." << endl;
+    // DEBUG_MSG(__FILE__, __FUNCTION__, this, "Clearing SlbmInterface...");
     clearGreatCircles();
-    if (grid) 
+    if (grid)
         grid->clearCrustalProfiles();
+
+    // crustalProfiles will accumulate for every cloned SlbmInterface, but
+    // that's not a big deal, and profiles need to be periodically cleared for
+    // performance, anyways. Calls to clear() should be controlled by the
+    // non-cloned SlbmInterface.
     valid = false;
+    // DEBUG_MSG(__FILE__, __FUNCTION__, this, "SlbmInterface cleared.");
 }
 
 void SlbmInterface::clearGreatCircles()
 {
-    if (greatCircle) 
+    if (greatCircle)
     {
         delete greatCircle;
         greatCircle = NULL;
     }
+    sphase=""; iphase=-1;
     srcLat=srcLon=srcDep=rcvLat=rcvLon=rcvDep=NaN_DOUBLE;
 }
 
 void  SlbmInterface::loadVelocityModel(const string& modelFileName)
 {
     if (grid)
-    {
         delete grid;
-        grid = NULL;
-    }
 
+    grid = NULL;
     grid = Grid::getGrid(modelFileName);
 }
 
@@ -157,6 +175,7 @@ void  SlbmInterface::loadVelocityModelBinary(util::DataBuffer& buffer)
         delete grid;
 
     grid = Grid::getGrid(buffer);
+
 }
 
 void SlbmInterface::saveVelocityModelBinary(util::DataBuffer& buffer)
@@ -199,6 +218,8 @@ void SlbmInterface::createGreatCircle(
     clearGreatCircles();
 
     // save copies of source and receiver position (radians)
+    sphase = (phase==Pn ? "Pn" : (phase==Sn ? "Sn" : (phase==Pg ? "Pg" : (phase==Lg ? "Lg" : "unknown phase"))));
+    iphase = phase;
     srcLat = sourceLat;
     srcLon = sourceLon;
     srcDep = sourceDepth;

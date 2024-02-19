@@ -98,18 +98,18 @@ typedef unsigned char uByte;
 #if defined WIN32 || defined _WIN32
 	#if defined _M_X64 || defined _M_AMD64
 		#define LONG_INT long
-		#define LONG_INT_F "%ld"
+		#define LONG_INT_F "%20ld"
 	#else
 		#define LONG_INT long long
-		#define LONG_INT_F "%lld"
+		#define LONG_INT_F "%20lld"
 	#endif
 #else
 	#if defined __amd64__ || defined __amd64 || defined __x86_64__ || defined __x86_64
 		#define LONG_INT long
-		#define LONG_INT_F "%ld"
+		#define LONG_INT_F "%20ld"
 	#else
 		#define LONG_INT long long
-		#define LONG_INT_F "%lld"
+		#define LONG_INT_F "%20lld"
 	#endif
 #endif
 

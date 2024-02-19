@@ -97,6 +97,12 @@ public:
     //! Default constructor.
     Grid();
 
+    //! \brief Virtual copy constructor.
+    //!
+    //! Virtual copy constructor.
+    // Grid(const Grid &other);
+    // virtual Grid *clone() = 0;
+
     //! \brief Destructor.
     //!
     //! Destructor.
@@ -118,10 +124,15 @@ public:
     //! Inequality operator
     virtual bool operator != (const Grid& other) {return !(*this == other);};
 
-    /**
-     * Returns the class name.
-     */
-    static string class_name() {return "Grid"; };
+    //! \brief Returns the class name.
+    //!
+    //! Returns the class name.
+    static string class_name() { return "Grid"; };
+
+    //! \brief Returns the type of Grid.
+    //!
+    //! Returns the type of Grid (Grid, GridSLBM, or GridGeotess).
+    virtual string getGridType() { return class_name(); };
 
     //! \brief Clears and releases all memory held by this Grid object.
     //!
@@ -242,7 +253,7 @@ public:
     //! @param lon the geographic longitude in radians.
     //! @param depth the depth of the source or receiver, in km.
     //CrustalProfile* getCrustalProfile(const int& phase,
-    //	const double& lat, const double& lon, const double& depth);
+    // const double& lat, const double& lon, const double& depth);
 
     virtual CrustalProfile* getReceiverProfile(const int& phase,
             const double& lat, const double& lon, const double& depth);
@@ -480,11 +491,21 @@ public:
 
     virtual string getInterpolatorType() = ABSTRACT;
 
-    const string getOutputDirectory() { return outputDirectory; }
+    string& getOutputDirectory() { return outputDirectory; }
 
     void specifyOutputDirectory(const string& outputDir);
 
     virtual GeoTessModelSLBM* getModel() { return model; }
+
+    virtual GeoTessPolygon *getPolygon() { return polygon; }
+
+    virtual vector<GridProfile*>& getProfiles() { return profiles; }
+
+    virtual GeoTessPosition* getPosition() = ABSTRACT;
+
+    CrustalProfileStore* getSources() { return sources; }
+    CrustalProfileStore* getReceivers() { return receivers; }
+
 
 protected:
 
@@ -516,7 +537,7 @@ protected:
     void reaDataBuffererFromFile(util::DataBuffer& buffer, string dirname,
             string fileName);
 
-private:
+// private:
 
     string outputDirectory;
 
@@ -536,7 +557,7 @@ inline GridProfile* Grid::getProfile(const int& n)
     return profiles[n];
 }
 
-inline 	LayerProfile* Grid::getLayerProfile(GreatCircle* gc,
+inline LayerProfile* Grid::getLayerProfile(GreatCircle* gc,
         Location& location)
 {
     if (gc->getPhase()/2 == 0)
@@ -547,18 +568,18 @@ inline 	LayerProfile* Grid::getLayerProfile(GreatCircle* gc,
         return new LayerProfile(gc, location);
 }
 
-inline 	QueryProfile* Grid::getQueryProfile(Location& location)
+inline QueryProfile* Grid::getQueryProfile(Location& location)
 {
     return new QueryProfile(*this, location);
 }
 
-inline 	CrustalProfile* Grid::getSourceProfile(const int& phase,
+inline CrustalProfile* Grid::getSourceProfile(const int& phase,
         const double& lat, const double& lon, const double& depth)
 {
     return sources->getCrustalProfile(phase, lat, lon, depth);
 }
 
-inline 	CrustalProfile* Grid::getReceiverProfile(const int& phase,
+inline CrustalProfile* Grid::getReceiverProfile(const int& phase,
         const double& lat, const double& lon, const double& depth)
 {
     return receivers->getCrustalProfile(phase, lat, lon, depth);

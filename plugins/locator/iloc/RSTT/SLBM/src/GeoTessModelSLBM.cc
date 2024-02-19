@@ -43,6 +43,7 @@
 
 // **** _LOCAL INCLUDES_ *******************************************************
 
+#include "CPPUtils.h"
 #include "CpuTimer.h"
 #include "GeoTessData.h"
 #include "GeoTessProfile.h"
@@ -94,10 +95,61 @@ GeoTessModelSLBM::GeoTessModelSLBM(GeoTessGrid* grid, GeoTessMetaData* metaData)
     init();
 }
 
+// GeoTessModelSLBM::GeoTessModelSLBM(const GeoTessModelSLBM &other)
+// // static map<string, GeoTessGrid*> reuseGridMap;
+// {
+//     // GeoTessMetaData* metaData;
+//     ostringstream desc;
+//     desc << "(Copy) " << (other.metaData)->getDescription();
+//     metaData = new GeoTessMetaData(*other.metaData);
+//     metaData->setDescription(desc.str());
+//     metaData->checkComplete();
+//     metaData->addReference();
+
+//     // GeoTessGrid* grid;
+//     grid = new GeoTessGrid(*other.grid);
+//     grid->addReference();
+
+//     // GeoTessProfile*** profiles;
+//     profiles = CPPUtils::new2DArray<GeoTessProfile*>(metaData->getNVertices(), metaData->getNLayers());
+//     for (int i = 0; i < metaData->getNVertices(); ++i)
+//         for (int j = 0; j < metaData->getNLayers(); ++j)
+//             profiles[i][j] = other.profiles[i][j]->copy();
+
+//     // GeoTessPointMap* pointMap;
+//     pointMap = new GeoTessPointMap(*other.pointMap);
+
+//     // double averageMantleVelocity[2];
+//     for (int i=0; i<2; i++)
+//         averageMantleVelocity[i] = other.averageMantleVelocity[i];
+
+//     // int fileFormatVer;
+//     fileFormatVer = other.fileFormatVer;
+
+//     // vector<vector<UncertaintyPIU*> > piu;
+//     piu.resize(other.piu.size());
+//     for (int i=0; i<piu.size(); i++)
+//     {
+//         piu[i].resize(other.piu[i].size());
+//         for (int j=0; j<piu[i].size(); j++)
+//             if (other.piu[i][j] != NULL)
+//                piu[i][j] = new UncertaintyPIU(*other.piu[i][j]);
+//     }
+
+//     // vector<UncertaintyPDU*> pdu;
+//     pdu.resize(other.pdu.size());
+//     for (int i=0; i<pdu.size(); i++)
+//         if (other.pdu[i] != NULL)
+//             pdu[i] = new UncertaintyPDU(*other.pdu[i]);
+
+// }
+
 /**
  * Destructor.
  */
-GeoTessModelSLBM::~GeoTessModelSLBM()  { }
+GeoTessModelSLBM::~GeoTessModelSLBM()
+{
+}
 
 bool GeoTessModelSLBM::operator == (const GeoTessModelSLBM& other) const
 {
