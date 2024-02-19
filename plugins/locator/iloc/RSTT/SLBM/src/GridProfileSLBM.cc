@@ -66,15 +66,15 @@ GridProfileSLBM::GridProfileSLBM(Grid& g,
     else waterThick = 0;
 }
 
-GridProfileSLBM::GridProfileSLBM(const GridProfileSLBM &other)
-: GridProfile(other.getNodeId(), other.getLat(), other.getLon(),
-        -other.getDepth()),
-  grid(other.grid),
-    geoStack(other.geoStack),
-    waterThick(other.waterThick)
-{
-    geoStack->incRefCount();
-}
+// GridProfileSLBM::GridProfileSLBM(const GridProfileSLBM &other)
+// : GridProfile(other.getNodeId(), other.getLat(), other.getLon(),
+//         -other.getDepth()),
+//   grid(other.grid),
+//     geoStack(other.geoStack),
+//     waterThick(other.waterThick)
+// {
+//     geoStack->incRefCount();
+// }
 
 GridProfileSLBM::~GridProfileSLBM()
 {
@@ -124,7 +124,7 @@ void GridProfileSLBM::setData(double* depths,
             << getLatDegrees() << ", " << getLonDegrees() << endl
             << geoStack->toString() << endl
             << "Version " << SlbmVersion << "  File " << __FILE__
-            << " line " << __LINE__ << endl	<< endl;
+            << " line " << __LINE__ << endl    << endl;
 
         //throw SLBMException(os.str());
         cout << os.str();

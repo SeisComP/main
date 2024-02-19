@@ -610,7 +610,7 @@ inline bool IFStreamAscii::readByte(byte& b)
 
   // attempt to scan token into b ... if unable issue error and return false
 
-  if (sscanf(sb.c_str(), "%hhd", &b) != 1)
+  if (sscanf(sb.c_str(), "%4hhd", &b) != 1)
   {
     ostringstream os;
 		os << endl << "ERROR in IFStreamAscii::readByte" << endl
@@ -647,7 +647,7 @@ inline bool IFStreamAscii::readShort(short& s)
 
   // attempt to scan token into s ... if unable issue error and return false
 
-  if (sscanf(ss.c_str(), "%hd", &s) != 1)
+  if (sscanf(ss.c_str(), "%6hd", &s) != 1)
   {
     ostringstream os;
 		os << endl << "ERROR in IFStreamAscii::readShort" << endl

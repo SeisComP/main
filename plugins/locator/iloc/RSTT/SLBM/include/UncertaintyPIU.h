@@ -390,26 +390,26 @@ public:
     //! Reads the uncertainty object from the input DataBuffer.
     void deserialize(util::DataBuffer& buffer);
 
-    //	/**
-    //	 * Retrieve reference count;
-    //	 */
-    //	int getReferenceCount() { return refCount; }
+    //    /**
+    //     * Retrieve reference count;
+    //     */
+    //    int getReferenceCount() { return refCount; }
     //
-    //	/**
-    //	 * Add reference count;
-    //	 */
-    //	void addReference() { ++refCount; }
+    //    /**
+    //     * Add reference count;
+    //     */
+    //    void addReference() { ++refCount; }
     //
-    //	/**
-    //	 * Remove reference count.
-    //	 * @return the reference count after decrement.
-    //	 */
-    //	int removeReference();
+    //    /**
+    //     * Remove reference count.
+    //     * @return the reference count after decrement.
+    //     */
+    //    int removeReference();
     //
-    //	/**
-    //	 * Returns true if reference count is zero.
-    //	 */
-    //	bool isNotReferenced() { return (refCount == 0); }
+    //    /**
+    //     * Returns true if reference count is zero.
+    //     */
+    //    bool isNotReferenced() { return (refCount == 0); }
 
 private:
 

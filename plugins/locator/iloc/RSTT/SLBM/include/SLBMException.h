@@ -68,4 +68,20 @@ class SLBM_EXP_IMP SLBMException
 
 } // end slbm namespace
 
+// debug message function
+/*
+inline void DEBUG_MSG(string FILE, string FUNCTION, string s)
+{
+    FILE = FILE.substr(FILE.rfind("/") + 1, -1);  // remove path from __FILE__
+    FILE = FILE.substr(0, FILE.rfind("."));      // remove extension from __FILE))
+    cout << FILE << "::" << FUNCTION << "() " << s << endl;
+}
+template <typename thisObj>
+inline void DEBUG_MSG(string FILE, string FUNCTION, thisObj const &THIS, string s)
+{
+    cout << THIS << " ";
+    DEBUG_MSG(FILE, FUNCTION, s);
+}
+*/
+
 #endif

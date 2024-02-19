@@ -148,7 +148,8 @@ public:
     //! \brief Copy constructor.
     //!
     //! Copy constructor.
-    GreatCircle(const GreatCircle &other);
+    // GreatCircle(const GreatCircle &other);
+    // virtual GreatCircle *clone() = 0;
 
     //! \brief Equal operator.
     //!
@@ -232,6 +233,7 @@ public:
     //! from source to receiver.  The actual spacing can be retrieved
     //! with a call to getActualPathIncrement().
     LayerProfile* getProfile(const int& i);
+    vector<LayerProfile*> getProfiles() { return profiles; };
 
     //! \brief Retrieve the number of LayerProfile object positioned along
     //! the head wave interface.
@@ -1156,7 +1158,7 @@ inline size_t GreatCircle::memSize()
     //+ sizeof(sourceIndex)
     //+ sizeof(receiverIndex);
     //for (int i=0; i<(int)profiles.size(); i++)
-    //	if (profiles[i]) n += profiles[i]->memSize();
+    //    if (profiles[i]) n += profiles[i]->memSize();
 
     size_t n =
     sizeof(&grid) // Grid&
@@ -1277,37 +1279,37 @@ inline void GreatCircle::get_dtt_dlon(double& dtt_dlon)
 
 //inline void GreatCircle::get_dtt_dlat_fast(double& dtt_dlat)
 //{
-//	dtt_dlat = (get_ttHplus() - getTravelTime())/DEL_DISTANCE*cos(getEsaz()+PI);
+//    dtt_dlat = (get_ttHplus() - getTravelTime())/DEL_DISTANCE*cos(getEsaz()+PI);
 //}
 //
 //inline void GreatCircle::get_dtt_dlon_fast(double& dtt_dlon)
 //{
-//	dtt_dlon = (get_ttHplus() - getTravelTime())/DEL_DISTANCE*sin(getEsaz()+PI);
+//    dtt_dlon = (get_ttHplus() - getTravelTime())/DEL_DISTANCE*sin(getEsaz()+PI);
 //}
 //
 
 //inline void GreatCircle::get_dsh_ddist(double& dsh_ddist)
 //{
-//	dsh_ddist = (get_ttHminus() - 2*getTravelTime() + get_ttHplus())
-//			/DEL_DISTANCE/DEL_DISTANCE;
+//    dsh_ddist = (get_ttHminus() - 2*getTravelTime() + get_ttHplus())
+//            /DEL_DISTANCE/DEL_DISTANCE;
 //}
 //
 //inline void GreatCircle::get_dsh_dlat(double& dsh_dlat)
 //{
-//	dsh_dlat = (get_ttNorth() - 2*getTravelTime() + get_ttSouth())
-//			/DEL_DISTANCE/DEL_DISTANCE;
+//    dsh_dlat = (get_ttNorth() - 2*getTravelTime() + get_ttSouth())
+//            /DEL_DISTANCE/DEL_DISTANCE;
 //}
 //
 //inline void GreatCircle::get_dsh_dlon(double& dsh_dlon)
 //{
-//	dsh_dlon = (get_ttEast() - 2*getTravelTime() + get_ttWest())
-//			/DEL_DISTANCE/DEL_DISTANCE;
+//    dsh_dlon = (get_ttEast() - 2*getTravelTime() + get_ttWest())
+//            /DEL_DISTANCE/DEL_DISTANCE;
 //}
 //
 //inline void GreatCircle::get_dsh_ddepth(double& dsh_ddepth)
 //{
-//	dsh_ddepth = (get_ttHZplus() - get_ttZplus()- get_ttHplus()
-//		+ getTravelTime()) /DEL_DEPTH/DEL_DISTANCE;
+//    dsh_ddepth = (get_ttHZplus() - get_ttZplus()- get_ttHplus()
+//        + getTravelTime()) /DEL_DEPTH/DEL_DISTANCE;
 //}
 
 } // end slbm namespace

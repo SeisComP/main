@@ -24,6 +24,8 @@
 #include "GeoTessGrid.h"
 #include "CPPUtils.h"
 #include "GeoTessProfile.h"
+#include "UncertaintyPIU.h"
+#include "UncertaintyPDU.h"
 
 
 namespace slbm {
@@ -32,6 +34,21 @@ GridGeoTess::GridGeoTess() : Grid(), model(NULL), position(NULL)
 {
 }  // END GridGeoTess Default Constructor
 
+// GridGeoTess::GridGeoTess(const GridGeoTess &other) : Grid(other), model(other.model)
+// {
+//     // GeoTessModelSLBM* model;
+//     model = new GeoTessModelSLBM(*other.model);
+
+//     // GeoTessPosition* position;
+//     string interpolatorType = (other.position)->getInterpolatorType().toString();
+//     if (interpolatorType == "LINEAR")
+//         position = model->getPosition(GeoTessInterpolatorType::LINEAR);
+//     else if (interpolatorType == "NATURAL_NEIGHBOR")
+//         position = model->getPosition(GeoTessInterpolatorType::NATURAL_NEIGHBOR);
+//     else if (interpolatorType == "CUBIC_SPLINE")
+//         position = model->getPosition(GeoTessInterpolatorType::CUBIC_SPLINE);
+    
+// }  // END copy constructor
 
 GridGeoTess::~GridGeoTess()
 {
@@ -524,8 +541,9 @@ void GridGeoTess::saveVelocityModel(const string& destination, const int& format
                 if (piu[i][j])
                     piu[i][j]->writeFile(destination);
 
-        for (int i=0; i<(int)pdu.size(); ++i)
-            pdu[i]->writeFile(destination);
+        if (model->isPathDepUncModel())
+            for (int i=0; i<(int)pdu.size(); ++i)
+                pdu[i]->writeFile(destination);
     }
     else if (format == 2)
     {

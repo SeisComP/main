@@ -87,6 +87,52 @@ Grid::Grid() : polygon(NULL)
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
 //
+// Copy constructor
+//
+// *****************************************************************************
+// Grid::Grid(const Grid &other) :
+//     modelPath(other.modelPath), activeNodes(other.activeNodes),
+//     polygon(NULL), model(other.model),
+//     outputDirectory(other.outputDirectory)
+// {
+
+//     sources = new CrustalProfileStore(*this, 10);
+//     receivers = new CrustalProfileStore(*this, 1000);
+//     // sources = new CrustalProfileStore(*other.sources);
+//     // receivers = new CrustalProfileStore(*other.receivers);
+
+//     // vector<GridProfile*> profiles;
+//     for (int i=0; i<other.profiles.size(); ++i)
+//         profiles.push_back(other.profiles[i]->clone());
+
+//     // GeoTessPolygon* polygon;
+//     if (other.polygon) {
+//         vector<double*> points;
+//         (other.polygon)->getPoints(points, true);
+//         polygon = new GeoTessPolygon(points);
+//     }
+
+//     // vector<vector<UncertaintyPIU*> > piu;
+//     piu.resize(other.piu.size());
+//     for (int i=0; i<piu.size(); i++)
+//     {
+//         piu[i].resize(other.piu[i].size());
+//         for (int j=0; j<piu[i].size(); j++)
+//             if (other.piu[i][j] != NULL)
+//                piu[i][j] = new UncertaintyPIU(*other.piu[i][j]);
+//     }
+
+//     // vector<UncertaintyPDU*> pdu;
+//     pdu.resize(other.pdu.size());
+//     for (int i=0; i<pdu.size(); i++)
+//         if (other.pdu[i] != NULL)
+//             pdu[i] = new UncertaintyPDU(*other.pdu[i]);
+
+// }
+
+
+// **** _FUNCTION DESCRIPTION_ *************************************************
+//
 // Grid Destructor
 //
 // *****************************************************************************
@@ -110,6 +156,7 @@ Grid::~Grid()
 
     for (int i = 0; i < (int)pdu.size(); ++i)
         delete pdu[i];
+
 }
 
 void Grid::clear()
@@ -119,7 +166,6 @@ void Grid::clear()
     profiles.clear();
 
     clearCrustalProfiles();
-
 }
 
 Grid* Grid::getGrid(const string& modelname)
@@ -456,9 +502,9 @@ void Grid::initializeActiveNodes(double activeNodeLatMin, double activeNodeLonMi
     {
         profiles[*m]->setActiveNodeId(activeNodes.size());
         activeNodes.push_back(*m);
-//		cout << "Grid::initializeActiveNodes() marginal node  " << setw(6) <<
-//				*m << "  " << setw(10) << profiles[*m]->getLatDegrees() << " "
-//				<< setw(10) << profiles[*m]->getLonDegrees() << " " << endl;
+//        cout << "Grid::initializeActiveNodes() marginal node  " << setw(6) <<
+//                *m << "  " << setw(10) << profiles[*m]->getLatDegrees() << " "
+//                << setw(10) << profiles[*m]->getLonDegrees() << " " << endl;
     }
 }
 

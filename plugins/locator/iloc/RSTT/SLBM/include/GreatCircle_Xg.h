@@ -113,7 +113,8 @@ public:
     //! \brief Copy constructor.
     //!
     //! Copy constructor.
-    GreatCircle_Xg(const GreatCircle_Xg &other);
+    // GreatCircle_Xg(const GreatCircle_Xg &other);
+    // GreatCircle *clone() { return new GreatCircle_Xg(*this); }
 
     //! \brief Equal operator.
     //!

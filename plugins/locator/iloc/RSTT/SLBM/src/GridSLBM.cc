@@ -86,6 +86,54 @@ GridSLBM::GridSLBM() : Grid()
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
 //
+// Copy Constructor
+//
+// *****************************************************************************
+// GridSLBM::GridSLBM(const GridSLBM &other)
+// {
+//     // ---- GridSLBM ----
+//     // string tessId;
+//     // vector<GeoStack*> geoStacks;
+//     // vector<Triangle*> triangles;
+//     // vector<Triangle*> specialTriangles;
+//     // double cos_min;
+//     // double V0[2];
+//     // ---- Grid ----
+//     // string modelPath;
+//     // vector<GridProfile*> profiles;
+//     // vector<int> activeNodes;
+//     // GeoTessModelSLBM* model;
+//     // GeoTessPolygon* polygon;
+//     // CrustalProfileStore* sources;
+//     // CrustalProfileStore* receivers;
+//     // vector<vector<UncertaintyPIU*> > piu;
+//     // vector<UncertaintyPDU*> pdu;
+//     // string outputDirectory;
+//     tessId           = other.tessId;
+//     geoStacks        = other.geoStacks;
+//     triangles        = other.triangles;
+//     specialTriangles = other.specialTriangles;
+//     cos_min          = other.cos_min;
+//     for (int i=0; i<2; i++)
+//         V0[i] = other.V0[i];
+//     modelPath = other.modelPath;
+//     profiles = other.profiles;
+//     activeNodes = other.activeNodes;
+//     model = NULL;
+//     polygon = other.polygon;
+//     sources = other.sources;
+//     receivers = other.receivers;
+//     piu = other.piu;
+//     pdu = other.pdu;
+//     outputDirectory = other.outputDirectory;
+// }
+// GridSLBM::GridSLBM(const GridSLBM &other)
+// {
+// }
+
+
+// **** _FUNCTION DESCRIPTION_ *************************************************
+//
 // Grid Destructor
 //
 // *****************************************************************************
@@ -581,7 +629,7 @@ void GridSLBM::readGeoStacks(util::DataBuffer& buffer)
     V0[SWAVE] = buffer.readFloat();
 
     //cout << endl << "Mantle velocities: " << V0[PWAVE] << ", "
-    //	<< V0[SWAVE] << endl;
+    //    << V0[SWAVE] << endl;
 
     double depth[NLAYERS], vp[NLAYERS], vs[NLAYERS], g[2];
 
@@ -693,7 +741,7 @@ void GridSLBM::readTessellationData(util::DataBuffer& buffer, int nNodes,
                     << "Node lat, lon = " << lat << ", " << lon << endl
                     << geoStacks[stackId[i]]->toString() << endl
                     << "Version " << SlbmVersion << "  File " << __FILE__
-                    << " line " << __LINE__ << endl	<< endl;
+                    << " line " << __LINE__ << endl << endl;
 
             throw SLBMException(os.str(),504);
         }
@@ -774,25 +822,25 @@ void GridSLBM::defineTessAdjacency(int nNodes,
         }
     }
 
-    //	// 5/3/2013: test the triangle neighbors
-    //	for (int i=0; i<triangles.size(); ++i)
-    //	{
-    //		for (int j=0; j<3; ++j)
-    //		{
-    //			Triangle* neighbor = triangles[i]->getNeighbor(j);
-    //			if (neighbor == NULL)
-    //			{
-    //				ostringstream os;
-    //				os << endl << "ERROR in GridSLBM::defineTessAdjacency" << endl
-    //						<< "neighbor is NULL" << endl
-    //						<< "Version " << SlbmVersion << "  File " << __FILE__
-    //						<< " line " << __LINE__ << endl	<< endl;
+    //    // 5/3/2013: test the triangle neighbors
+    //    for (int i=0; i<triangles.size(); ++i)
+    //    {
+    //        for (int j=0; j<3; ++j)
+    //        {
+    //            Triangle* neighbor = triangles[i]->getNeighbor(j);
+    //            if (neighbor == NULL)
+    //            {
+    //                ostringstream os;
+    //                os << endl << "ERROR in GridSLBM::defineTessAdjacency" << endl
+    //                        << "neighbor is NULL" << endl
+    //                        << "Version " << SlbmVersion << "  File " << __FILE__
+    //                        << " line " << __LINE__ << endl << endl;
     //
-    //				throw SLBMException(os.str(),504);
-    //			}
+    //                throw SLBMException(os.str(),504);
+    //            }
     //
-    //		}
-    //	}
+    //        }
+    //    }
 
     // define the special triangles.  after a successful triangle walk,
     // the first special triangle will be set to the triangle just found
@@ -971,7 +1019,7 @@ void GridSLBM::saveSlbmDirectory(const string& directoryName)
                             << "depths[" << i-1 << "] = " << setw(11) << depths[i-1] << endl
                             << "depths[" << i   << "] = " << setw(11) << depths[i] << endl
                             << "Version " << SlbmVersion << "  File " << __FILE__
-                            << " line " << __LINE__ << endl	<< endl;
+                            << " line " << __LINE__ << endl << endl;
 
                     throw SLBMException(os.str(), 999);
                 }
@@ -1144,7 +1192,7 @@ void GridSLBM::saveSlbmFile(const string& filename)
                             << "depths[" << i-1 << "] = " << setw(11) << depths[i-1] << endl
                             << "depths[" << i   << "] = " << setw(11) << depths[i] << endl
                             << "Version " << SlbmVersion << "  File " << __FILE__
-                            << " line " << __LINE__ << endl	<< endl;
+                            << " line " << __LINE__ << endl << endl;
 
                     throw SLBMException(os.str(), 999);
                 }

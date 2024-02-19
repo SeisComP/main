@@ -61,19 +61,37 @@ class SLBM_EXP_IMP GridGeoTess: public Grid
 {
 public:
 
+    //! \brief Constructor.
+    //!
+    //! Constructor.
     GridGeoTess();
+
+    //! \brief Copy constructor.
+    //!
+    //! Copy constructor.
+    // GridGeoTess(const GridGeoTess &other);
+
+    //! \brief Virtual copy constructor.
+    //!
+    //! Virtual copy constructor.
+    // Grid *clone() { return new GridGeoTess(*this); }
 
     //! \brief Destructor.
     //!
     //! Destructor.
     virtual ~GridGeoTess();
 
-    /**
-     * Returns the class name.
-     */
-    static  string				class_name() { return "GridGeoTess"; };
+    //! \brief Returns the class name.
+    //!
+    //! Returns the class name.
+    static string class_name() { return "GridGeoTess"; };
 
-    GeoTessModelSLBM*	loadModel(const string& filename, const string& relGridPath = "");
+    //! \brief Returns the type of Grid.
+    //!
+    //! Returns the type of Grid (Grid, GridSLBM, or GridGeotess).
+    string getGridType() { return class_name(); };
+
+    GeoTessModelSLBM* loadModel(const string& filename, const string& relGridPath = "");
 
     //! \brief Clears and releases all memory held by this GridSLBM object.
     //!
@@ -158,19 +176,19 @@ public:
             vector<GridProfile*>& neighbors, vector<int>& nodeIds,
             vector<double>& coefficients);
 
-//	//! \brief Specify the latitude, longitude range that will define
-//	//! which grid nodes are also active nodes.
-//	//!
-//	//! Specify the latitude, longitude range that will define
-//	//! which grid nodes are also active nodes.  Active nodes are defined
-//	//! as follows:  Each triangle in the tessellation is visited.  If any
-//	//! one of the three nodes which define the triangle is located within
-//	//! the specified latitude, longitude range, then all three of the
-//	//! nodes are active nodes.
-//	void initializeActiveNodes(double activeNodeLatMin,
-//			double activeNodeLonMin,
-//			double activeNodeLatMax,
-//			double activeNodeLonMax);
+//    //! \brief Specify the latitude, longitude range that will define
+//    //! which grid nodes are also active nodes.
+//    //!
+//    //! Specify the latitude, longitude range that will define
+//    //! which grid nodes are also active nodes.  Active nodes are defined
+//    //! as follows:  Each triangle in the tessellation is visited.  If any
+//    //! one of the three nodes which define the triangle is located within
+//    //! the specified latitude, longitude range, then all three of the
+//    //! nodes are active nodes.
+//    void initializeActiveNodes(double activeNodeLatMin,
+//            double activeNodeLonMin,
+//            double activeNodeLatMax,
+//            double activeNodeLonMax);
 
     //! \brief Retrieve the grid node id of the nodes that are direct neighbors
     //! of the specified grid node.
@@ -277,6 +295,8 @@ public:
     void setInterpolatorType(const string& interpolatorType);
 
     string getInterpolatorType() { return position->getInterpolatorType().toString(); }
+
+    GeoTessPosition* getPosition() { return position; }
 
 private:
 

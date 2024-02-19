@@ -121,7 +121,6 @@ GreatCircle::GreatCircle(
 
     // create the CrustalProfile objects at each end of the great circle.
     receiver = grid.getReceiverProfile(phase, latReceiver, lonReceiver, depthReceiver);
-
     source = grid.getSourceProfile(phase, latSource, lonSource, depthSource);
 
     // find the distance from source to receiver in radians
@@ -140,7 +139,7 @@ GreatCircle::GreatCircle(
         // find number of increments of size actual_path_increment that will fit in that
         // distance (minimum of one).
         n = (int)ceil(distance/PATH_INCREMENT);
-        if (n <= 0)	n=1;
+        if (n <= 0)    n=1;
 
         // calculate a new increment size such that n of them will exactly
         // fit between source and receiver pierce points.
@@ -158,8 +157,6 @@ GreatCircle::GreatCircle(
 
     profiles.resize(n, NULL);
 
-    //cout << "GreatCircle::GreatCircle() PATH_INCREMENT, actual_path_increment =  "
-    //	<< PATH_INCREMENT << ",  " << actual_path_increment << "  " << n << endl;
 }
 
 GreatCircle::~GreatCircle()
@@ -172,60 +169,52 @@ GreatCircle::~GreatCircle()
 
     // delete all the LayerProfile objects.
     for (int i=0; i<(int)profiles.size(); i++)
-        if (profiles[i]) delete profiles[i];
+    {
+        if (profiles[i])
+        {
+            delete profiles[i];
+        }
+    }
 }
+
 
 //! \brief Copy constructor.
 //!
 //! Copy constructor.
-GreatCircle::GreatCircle(const GreatCircle &other)
-: grid(other.grid),
-    phase(other.phase),
-    latSource(other.latSource),
-    lonSource(other.lonSource),
-    depthSource(other.depthSource),
-    latReceiver(other.latReceiver),
-    lonReceiver(other.lonReceiver),
-    depthReceiver(other.depthReceiver),
-    headWaveInterface(other.headWaveInterface),
-    source(other.source),
-    receiver(other.receiver),
-    profiles(other.profiles),
-    tTotal(other.tTotal),
-    actual_path_increment(other.actual_path_increment),
-    distance(other.distance),
-    esaz(other.esaz),
-    rayParameter(other.rayParameter),
-    xSource(other.xSource),
-    zSource(other.zSource),
-    sSource(other.sSource),
-    tSource(other.tSource),
-    xReceiver(other.xReceiver),
-    zReceiver(other.zReceiver),
-    sReceiver(other.sReceiver),
-    tReceiver(other.tReceiver),
-    xHorizontal(other.xHorizontal),
-    tHorizontal(other.tHorizontal),
-    tGamma(other.tGamma),
-    sourceRayParameter(other.sourceRayParameter),
-    receiverRayParameter(other.receiverRayParameter),
-    turningRadius(other.turningRadius),
-    sourceIndex(other.sourceIndex),
-    receiverIndex(other.receiverIndex),
-    ttHminus(other.ttHminus),
-    ttHplus(other.ttHplus),
-    //ttZplus(other.ttZplus),
-    ttHZplus(other.ttHZplus),
-    ttEast(other.ttEast),
-    ttWest(other.ttWest),
-    ttEastZ(other.ttEastZ),
-    ttNorth(other.ttNorth),
-    ttSouth(other.ttSouth),
-    ttNorthZ(other.ttNorthZ)
+// GreatCircle::GreatCircle(const GreatCircle &other) :
+//     grid(other.grid), phase(other.phase),
+//     latSource(other.latSource), lonSource(other.lonSource), depthSource(other.depthSource),
+//     latReceiver(other.latReceiver), lonReceiver(other.lonReceiver), depthReceiver(other.depthReceiver),
+//     headWaveInterface(other.headWaveInterface), location(other.location), solutionMethod(other.solutionMethod),
+//     tTotal(other.tTotal), actual_path_increment(other.actual_path_increment), distance(other.distance),
+//     esaz(other.esaz), rayParameter(other.rayParameter),
+//     xSource(other.xSource), zSource(other.zSource), sSource(other.sSource), tSource(other.tSource),
+//     xReceiver(other.xReceiver), zReceiver(other.zReceiver), sReceiver(other.sReceiver), tReceiver(other.tReceiver),
+//     xHorizontal(other.xHorizontal), tHorizontal(other.tHorizontal), tGamma(other.tGamma),
+//     sourceRayParameter(other.sourceRayParameter), receiverRayParameter(other.receiverRayParameter),
+//     turningRadius(other.turningRadius), sourceIndex(other.sourceIndex), receiverIndex(other.receiverIndex),
+//     ttHminus(other.ttHminus), ttHplus(other.ttHplus), ttHZplus(other.ttHZplus),
+//     ttEast(other.ttEast), ttWest(other.ttWest), ttEastZ(other.ttEastZ), ttNorth(other.ttNorth), ttSouth(other.ttSouth), ttNorthZ(other.ttNorthZ)
+//     // profiles(other.profiles)
+//     // CrustalProfile* source;
+//     // CrustalProfile* receiver;
+//     // double vtp[3];
+//     // vector<LayerProfile*> profiles;
+// {
+//     source = new CrustalProfile(*other.source);
+//     receiver = new CrustalProfile(*other.receiver);
 
- {
-    ++greatCircleClassCount;
-}
+//     for (int i=0; i<3; i++)
+//         vtp[i] = other.vtp[i];
+
+//     profiles.reserve(other.profiles.size());
+//     for (int i=0; i<(int)other.profiles.size(); ++i)
+//         if (other.profiles[i])
+//             profiles[i] = new LayerProfile(*other.profiles[i]);
+
+//     ++greatCircleClassCount;
+// }
+
 
 //! \brief Equal operator.
 //!
@@ -285,7 +274,7 @@ LayerProfile* GreatCircle::getProfile(const int& i)
               os << endl << "ERROR in GreatCircle::getProfile" << endl
                 << "Unable to interpolate a LayerProfile along head wave interface." << endl
                 << "lat, lon (deg) = " << location.getLatDegrees() << ", " << location.getLonDegrees()
-                << "is outside of model range."	<< endl
+                << "is outside of model range."    << endl
                   << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
             throw SLBMException(os.str(),600);
         }
@@ -387,7 +376,7 @@ void GreatCircle::getNodeInfo(
         ostringstream os;
         os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(4);
         os << endl << "ERROR in GreatCircle::getNodeInfo" << endl
-                << "npoints = " << npoints << " is greater than maxpoints = " << maxpoints	<< endl
+                << "npoints = " << npoints << " is greater than maxpoints = " << maxpoints    << endl
                 << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
         throw SLBMException(os.str(),600);
     }
@@ -416,7 +405,7 @@ void GreatCircle::getNodeInfo(
         ostringstream os;
         os << setiosflags(ios::fixed) << setiosflags(ios::showpoint) << setprecision(4);
         os << endl << "ERROR in GreatCircle::getNodeInfo" << endl
-                << "nnodes = " << requiredSize << " is greater than maxnodes = " << maxnodes	<< endl
+                << "nnodes = " << requiredSize << " is greater than maxnodes = " << maxnodes    << endl
                 << "Version " << SlbmVersion << "  File " << __FILE__ << " line " << __LINE__ << endl << endl;
         throw SLBMException(os.str(),600);
     }
@@ -893,84 +882,84 @@ void GreatCircle::get_dtt_ddepth(double& dtt_ddepth)
 
 //void GreatCircle::get_dsh_dlat(double& dsh_dlat)
 //{
-//	double azim, tt0, ttplus, slow, slowPlus;
+//    double azim, tt0, ttplus, slow, slowPlus;
 //
-//	// find position small distance north of current point.
-//	Location pointNorth;
-//	getSourceProfile()->getLocation().move_north(DEL_DISTANCE, pointNorth);
+//    // find position small distance north of current point.
+//    Location pointNorth;
+//    getSourceProfile()->getLocation().move_north(DEL_DISTANCE, pointNorth);
 //
-//	GreatCircle* gc = GreatCircleFactory::create(
-//			getPhase(), &grid,
-//			pointNorth.getLat(), pointNorth.getLon(),
-//			getSourceProfile()->getLocation().getDepth(),
-//			getReceiverProfile()->getLocation().getLat(),
-//			getReceiverProfile()->getLocation().getLon(),
-//			getReceiverProfile()->getLocation().getDepth(),
-//			1e30);
+//    GreatCircle* gc = GreatCircleFactory::create(
+//            getPhase(), &grid,
+//            pointNorth.getLat(), pointNorth.getLon(),
+//            getSourceProfile()->getLocation().getDepth(),
+//            getReceiverProfile()->getLocation().getLat(),
+//            getReceiverProfile()->getLocation().getLon(),
+//            getReceiverProfile()->getLocation().getDepth(),
+//            1e30);
 //
-//	gc->get_dtt_ddist(slowPlus);
+//    gc->get_dtt_ddist(slowPlus);
 //
-//	get_dtt_ddist(slow);
+//    get_dtt_ddist(slow);
 //
-//	dsh_dlat = (slowPlus - slow)/DEL_DISTANCE;
+//    dsh_dlat = (slowPlus - slow)/DEL_DISTANCE;
 //
-//	delete gc;
+//    delete gc;
 //
-//	//get_dsh_ddist(dsh_dlat);
-//	//dsh_dlat *= cos(getEsaz()+PI);
+//    //get_dsh_ddist(dsh_dlat);
+//    //dsh_dlat *= cos(getEsaz()+PI);
 //
 //}
 //
 //void GreatCircle::get_dsh_dlon(double& dsh_dlon)
 //{
-//	double azim, tt0, ttplus, slow, slowPlus;
+//    double azim, tt0, ttplus, slow, slowPlus;
 //
-//	// find position small distance east of current point.
-//	Location pointEast;
-//	getSourceProfile()->getLocation().move(PI/2, DEL_DISTANCE, pointEast);
+//    // find position small distance east of current point.
+//    Location pointEast;
+//    getSourceProfile()->getLocation().move(PI/2, DEL_DISTANCE, pointEast);
 //
-//	GreatCircle* gc = GreatCircleFactory::create(
-//			getPhase(), &grid,
-//			pointEast.getLat(), pointEast.getLon(),
-//			getSourceProfile()->getLocation().getDepth(),
-//			getReceiverProfile()->getLocation().getLat(),
-//			getReceiverProfile()->getLocation().getLon(),
-//			getReceiverProfile()->getLocation().getDepth(),
-//			1e30);
+//    GreatCircle* gc = GreatCircleFactory::create(
+//            getPhase(), &grid,
+//            pointEast.getLat(), pointEast.getLon(),
+//            getSourceProfile()->getLocation().getDepth(),
+//            getReceiverProfile()->getLocation().getLat(),
+//            getReceiverProfile()->getLocation().getLon(),
+//            getReceiverProfile()->getLocation().getDepth(),
+//            1e30);
 //
-//	gc->get_dtt_ddist(slowPlus);
+//    gc->get_dtt_ddist(slowPlus);
 //
-//	get_dtt_ddist(slow);
+//    get_dtt_ddist(slow);
 //
-//	dsh_dlon = (slowPlus - slow)/DEL_DISTANCE;
+//    dsh_dlon = (slowPlus - slow)/DEL_DISTANCE;
 //
-//	delete gc;
+//    delete gc;
 //
-//	//get_dsh_ddist(dsh_dlon);
-//	//dsh_dlon *= sin(getEsaz()+PI);
+//    //get_dsh_ddist(dsh_dlon);
+//    //dsh_dlon *= sin(getEsaz()+PI);
 //}
 //
 //void GreatCircle::get_dsh_ddepth(double& dsh_ddepth)
 //{
-//	double slow, slowPlus;
+//    double slow, slowPlus;
 //
-//	GreatCircle* gc = GreatCircleFactory::create(
-//			getPhase(), &grid,
-//			getSourceProfile()->getLocation().getLat(),
-//			getSourceProfile()->getLocation().getLon(),
-//			(getSourceProfile()->getLocation().getDepth()+DEL_DEPTH),
-//			getReceiverProfile()->getLocation().getLat(),
-//			getReceiverProfile()->getLocation().getLon(),
-//			getReceiverProfile()->getLocation().getDepth(),
-//			1e30);
+//    GreatCircle* gc = GreatCircleFactory::create(
+//            getPhase(), &grid,
+//            getSourceProfile()->getLocation().getLat(),
+//            getSourceProfile()->getLocation().getLon(),
+//            (getSourceProfile()->getLocation().getDepth()+DEL_DEPTH),
+//            getReceiverProfile()->getLocation().getLat(),
+//            getReceiverProfile()->getLocation().getLon(),
+//            getReceiverProfile()->getLocation().getDepth(),
+//            1e30);
 //
-//	gc->get_dtt_ddist(slowPlus);
+//    gc->get_dtt_ddist(slowPlus);
 //
-//	get_dtt_ddist(slow);
+//    get_dtt_ddist(slow);
 //
-//	dsh_ddepth = (slowPlus - slow)/DEL_DEPTH;
+//    dsh_ddepth = (slowPlus - slow)/DEL_DEPTH;
 //
-//	delete gc;
+//    delete gc;
 //}
 
 } // end slbm namespace

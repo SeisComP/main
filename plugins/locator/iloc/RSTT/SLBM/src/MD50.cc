@@ -37,8 +37,8 @@
 
 // **** _SYSTEM INCLUDES_ ******************************************************
 
-#include <cstdio> 		/* for sprintf() */
-#include <cstring>		/* for memcpy() */
+#include <cstdio>         /* for sprintf() */
+#include <cstring>        /* for memcpy() */
 
 // **** _LOCAL INCLUDES_ *******************************************************
 

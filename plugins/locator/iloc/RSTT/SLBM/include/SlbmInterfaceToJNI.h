@@ -288,18 +288,18 @@ inline void SlbmInterfaceToJNI::getGridGradient(double* gradient)
 
 //inline void SlbmInterfaceToJNI::setGridDepths(const vector<double>& depth)
 //{
-//	gridProfile->setDepths(depth);
+//    gridProfile->setDepths(depth);
 //}
 //
 //inline void SlbmInterfaceToJNI::setGridVelocity(const int& waveType,
-//											  const vector<double>& velocity)
+//                                              const vector<double>& velocity)
 //{
-//	gridProfile->setVelocity(waveType, velocity);
+//    gridProfile->setVelocity(waveType, velocity);
 //}
 //
 //inline void SlbmInterfaceToJNI::setGridGradient(const vector<double>& gradient)
 //{
-//	gridProfile->setGradient(gradient);
+//    gridProfile->setGradient(gradient);
 //}
 
 inline void SlbmInterfaceToJNI::createQueryProfile(const double &lat, const double &lon)

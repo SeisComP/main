@@ -69,10 +69,8 @@ LayerProfile::LayerProfile(GreatCircle* greatCircle,
         velocity);
 }
 
-LayerProfile::LayerProfile(const LayerProfile &other) 
-    : InterpolatedProfile(other),
-    radius(other.radius), 
-    velocity(other.velocity)
+LayerProfile::LayerProfile(const LayerProfile &other):
+    InterpolatedProfile(other), radius(other.radius),  velocity(other.velocity)
 {
     ++layerProfileClassCount;
 }

@@ -123,7 +123,7 @@ void GridProfile::depthsToRadii(double depths[NLAYERS], vector<vector<float> >& 
                         << "radiusBottom = " << setw(11) << radii[k][0] << endl
                         << "radiusTop    = " << setw(11) << radii[k][1] << endl
                         << "Version " << SlbmVersion << "  File " << __FILE__
-                        << " line " << __LINE__ << endl	<< endl;
+                        << " line " << __LINE__ << endl    << endl;
 
                 throw SLBMException(os.str(),504);
             }
@@ -153,7 +153,7 @@ void GridProfile::depthsToRadii(const vector<double>& depths, vector<vector<floa
                         << "radiusBottom = " << setw(11) << radii[k][0] << endl
                         << "radiusTop    = " << setw(11) << radii[k][1] << endl
                         << "Version " << SlbmVersion << "  File " << __FILE__
-                        << " line " << __LINE__ << endl	<< endl;
+                        << " line " << __LINE__ << endl    << endl;
 
                 throw SLBMException(os.str(),504);
             }

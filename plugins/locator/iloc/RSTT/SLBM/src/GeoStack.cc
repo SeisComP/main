@@ -227,7 +227,7 @@ bool GeoStack::thicknessTest()
                         << "depths[" << i-1 << "] = " << setw(11) << depth[i-1] << endl
                         << "depths[" << i   << "] = " << setw(11) << depth[i] << endl
                         << "Version " << SlbmVersion << "  File " << __FILE__
-                        << " line " << __LINE__ << endl	<< endl;
+                        << " line " << __LINE__ << endl    << endl;
 
                 throw SLBMException(os.str(), 999);
             }

@@ -111,6 +111,7 @@ public:
 
     //! Constructor.
     CrustalProfileStore(Grid& grid, const int& maxSize);
+    // CrustalProfileStore(const CrustalProfileStore &other);
 
     //! Destructor.
     ~CrustalProfileStore();
