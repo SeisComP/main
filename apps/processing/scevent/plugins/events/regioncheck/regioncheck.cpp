@@ -163,23 +163,26 @@ bool RegionCheckProcessor::setup(const Config::Config &config) {
 					string featureName = (*it)->name();
 					Core::trim(featureName);
 
-					if ( regionName != featureName ) continue;
+					if ( regionName != featureName ) {
+						continue;
+					}
 
 					if ( foundRegion ) {
-						SEISCOMP_ERROR(" + evrc: multiple definition of region '%s' in .bna file. "
-						               "Check the parameter regions or the .bna files in the BNA directories!",
+						SEISCOMP_ERROR(" + evrc: found multiple definition of region '%s' "
+						               "Check the parameter 'rc.regions' and the "
+						               "GeoJSON/BNA files in spatial/vector",
 						               featureName.c_str());
 						return false;
 					}
 
 					if ( !(*it)->closedPolygon() ) {
-						SEISCOMP_ERROR(" + evrc: region '%s' unused. Polygon is not closed. "
-						               "Check the .bna files in the BNA directories!",
+						SEISCOMP_ERROR(" + evrc: ignoring region '%s'. Polygon is not closed. "
+						               "Check the GeoJSON/BNA files in spatial/vector!",
 						               featureName.c_str());
-						return false;
+						continue;
 					}
 
-					SEISCOMP_DEBUG(" + evrc: add %s region '%s'",
+					SEISCOMP_DEBUG(" + evrc: adding %s region '%s'",
 					               positiveRegion ? "positive":"negative",
 					               featureName.c_str());
 					_regions.push_back(RegionCheck(*it, positiveRegion));
@@ -193,9 +196,8 @@ bool RegionCheckProcessor::setup(const Config::Config &config) {
 				}
 
 				if ( !foundRegion ) {
-					SEISCOMP_ERROR(" + evrc: region '%s' has not been found",
+					SEISCOMP_ERROR(" + evrc: ignoring region '%s' - configured but not found",
 					               regionName.c_str());
-					return false;
 				}
 			}
 		}
@@ -298,12 +300,12 @@ bool RegionCheckProcessor::process(Event *event, const Journal &journal) {
 		if ( _regions[i].first ) {
 			isInsideRegion = _regions[i].first->contains(location);
 
-			// check also values in BNA header
+			// check also values in BNA/GeoJSON header
 			if ( _readEventTypeFromBNA && isInsideRegion ) {
 				double value;
 				if ( getBnaAttributes(value, _regions[i].first->attributes(), "minDepth") ) {
 					if ( !depth ) {
-						SEISCOMP_WARNING(" + evrc: origin contains no depth information but BNA has minDepth - do not consider");
+						SEISCOMP_WARNING(" + evrc: origin contains no depth information but polygon has minDepth - do not consider");
 						return false;
 					}
 					else if ( *depth < value ) {
@@ -321,7 +323,7 @@ bool RegionCheckProcessor::process(Event *event, const Journal &journal) {
 
 				if ( getBnaAttributes(value, _regions[i].first->attributes(), "maxDepth") ) {
 					if ( !depth ) {
-						SEISCOMP_WARNING(" + evrc: origin contains no depth information but BNA has maxDepth - do not consider");
+						SEISCOMP_WARNING(" + evrc: origin contains no depth information but polygon has maxDepth - do not consider");
 						return false;
 					}
 					else if ( *depth > value ) {
@@ -372,7 +374,7 @@ bool RegionCheckProcessor::process(Event *event, const Journal &journal) {
 								eventType = tmp;
 							}
 							else {
-								SEISCOMP_ERROR("  + evrc: cannot set event type from BNA, check BNA header");
+								SEISCOMP_ERROR("  + evrc: cannot set event type. Check the region polygon!");
 								_setType = false;
 							}
 						}
@@ -399,7 +401,7 @@ bool RegionCheckProcessor::process(Event *event, const Journal &journal) {
 						eventType = tmp;
 					}
 					else {
-						SEISCOMP_ERROR("  + evrc: cannot set event type from BNA, check BNA header");
+						SEISCOMP_ERROR("  + evrc: cannot set event type. Check the region polygon!");
 						_setType = false;
 						break;
 					}
