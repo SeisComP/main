@@ -557,6 +557,15 @@ MainFrame::MainFrame(){
 	try { amplitudeConfig.postOffset = Core::TimeSpan(SCApp->configGetInt("amplitudePicker.postOffset")); }
 	catch ( ... ) { amplitudeConfig.postOffset = Core::TimeSpan(300.0); }
 
+	try { amplitudeConfig.defaultNoiseBegin = SCApp->configGetDouble("amplitudePicker.defaultNoiseBegin"); }
+	catch ( ... ) {}
+	try { amplitudeConfig.defaultNoiseEnd = SCApp->configGetDouble("amplitudePicker.defaultNoiseEnd"); }
+	catch ( ... ) {}
+	try { amplitudeConfig.defaultSignalBegin = SCApp->configGetDouble("amplitudePicker.defaultSignalBegin"); }
+	catch ( ... ) {}
+	try { amplitudeConfig.defaultSignalEnd = SCApp->configGetDouble("amplitudePicker.defaultSignalEnd"); }
+	catch ( ... ) {}
+
 	try {
 		std::vector<std::string> filters = SCApp->configGetStrings("amplitudePicker.filters");
 

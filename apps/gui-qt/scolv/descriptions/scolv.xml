@@ -731,6 +731,34 @@
 						amplitude time window.
 					</description>
 				</parameter>
+				<parameter name="defaultNoiseBegin" type="double" unit="s" default="-30">
+					<description>
+						In case the amplitude time window cannot be computed due
+						to errors, e.g. computing travel times, this default noise
+						window start time will be used instead.
+					</description>
+				</parameter>
+				<parameter name="defaultNoiseEnd" type="double" unit="s" default="0">
+					<description>
+						In case the amplitude time window cannot be computed due
+						to errors, e.g. computing travel times, this default noise
+						window end time will be used instead.
+					</description>
+				</parameter>
+				<parameter name="defaultSignalBegin" type="double" unit="s" default="0">
+					<description>
+						In case the amplitude time window cannot be computed due
+						to errors, e.g. computing travel times, this default signal
+						window start time will be used instead.
+					</description>
+				</parameter>
+				<parameter name="defaultSignalEnd" type="double" unit="s" default="30">
+					<description>
+						In case the amplitude time window cannot be computed due
+						to errors, e.g. computing travel times, this default signal
+						window end time will be used instead.
+					</description>
+				</parameter>
 				<parameter name="filters" type="list:string">
 					<description>
 						A list of filters used for the amplitude picker. Format:
