@@ -282,8 +282,8 @@ results.
                  ; epoch outside network            ; C;
                  ; start time after end time        ; C;
                  ; missing gain value               ; W; empty value is handled by SeisComP inventory reader
-                 ; gain value = 0                   ; W; value
-                 ; gain < 0 and dip < 0             ; W; may result in unexpected behavior, consider positive values for both
+                 ; gain value = 0                   ; W;
+                 ; gain < 0 and dip > 0             ; W; may result in unexpected behavior, consider positive gain and negative dip
                  ; missing gain unit                ; W; empty value is handled by SeisComP inventory reader
                  ; missing gain frequency           ;  ; empty value is handled by SeisComP inventory reader
                  ; missing sampling rate            ;  ; empty value is handled by SeisComP inventory reader

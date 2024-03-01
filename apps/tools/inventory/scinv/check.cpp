@@ -392,10 +392,10 @@ bool Check::check() {
 
 					try {
 						cha->dip();
-						if ( cha->gain() < 0.0 && cha->dip() < 0.0 ) {
+						if ( cha->gain() < 0.0 && cha->dip() > 0.0 ) {
 							log(LogHandler::Information,
 							    (string(cha->className()) + " " + nslc(cha) + "\n  "
-							     "gain and dip are negative, consider positive values for both").c_str(),
+							     "negative gain and positive dip, consider positive gain and negative dip").c_str(),
 							    cha, nullptr);
 						}
 					}
