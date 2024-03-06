@@ -158,6 +158,7 @@ class AmpTool : public Seiscomp::Client::StreamApplication {
 		bool                       _reprocessAmplitudes;
 		bool                       _forceReprocessing{false};
 		bool                       _picks{false};
+		bool                       _replaceWaveformIDWithBindings{false};
 		std::string                _epFile;
 		EventParametersPtr         _ep;
 

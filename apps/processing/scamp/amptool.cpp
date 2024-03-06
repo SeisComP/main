@@ -195,6 +195,9 @@ bool AmpTool::initConfiguration() {
 	try { _minWeight = configGetDouble("amptool.minimumPickWeight"); }
 	catch ( ... ) {}
 
+	try { _replaceWaveformIDWithBindings = configGetBool("amptool.streamFromBindings"); }
+	catch ( ... ) {}
+
 	try { _initialAcquisitionTimeout = configGetDouble("amptool.initialAcquisitionTimeout"); }
 	catch ( ... ) {}
 
@@ -205,6 +208,7 @@ bool AmpTool::initConfiguration() {
 	_reprocessAmplitudes = commandline().hasOption("reprocess");
 	_picks = commandline().hasOption("picks");
 	_forceReprocessing = commandline().hasOption("force");
+
 
 	return true;
 }
@@ -349,7 +353,6 @@ bool AmpTool::run() {
 				pick->waveformID().stationCode();
 				pick->waveformID().locationCode();
 				pick->waveformID().channelCode();
-
 				pick->time().value();
 			}
 			catch ( ... ) {
@@ -980,12 +983,38 @@ int AmpTool::addProcessor(Processing::AmplitudeProcessor *proc,
 
 	std::string streamIDs[3];
 	WaveformStreamID cwids[3];
+	WaveformStreamID wid = pick->waveformID();
+
+	// Adjust waveformID with bindings
+	if ( _replaceWaveformIDWithBindings && params ) {
+		string tmp;
+		if ( params->getString(tmp, "detecLocid") ) {
+			wid.setLocationCode(tmp);
+		}
+		if ( params->getString(tmp, "detecStream") ) {
+			wid.setChannelCode(tmp);
+		}
+	}
 
 	Client::Inventory *inv = Client::Inventory::Instance();
 	DataModel::ThreeComponents tc;
 	if ( inv ) {
 		try {
-			tc = inv->getThreeComponents(pick);
+			DataModel::SensorLocation *loc = inv->getSensorLocation(
+				wid.networkCode(), wid.stationCode(),
+				wid.locationCode(), pick->time().value()
+			);
+
+			if ( !loc ) {
+				throw Core::ValueException("sensor location not found");
+			}
+
+			if ( wid.channelCode().size() >= 3 ) {
+				DataModel::getThreeComponents(tc, loc, wid.channelCode().substr(0, wid.channelCode().size()-1).c_str(), pick->time().value());
+			}
+			else {
+				DataModel::getThreeComponents(tc, loc, wid.channelCode().c_str(), pick->time().value());
+			}
 		}
 		catch ( ... ) {}
 	}
@@ -993,7 +1022,8 @@ int AmpTool::addProcessor(Processing::AmplitudeProcessor *proc,
 	DataModel::SensorLocation *receiver = NULL;
 
 	for ( int i = 0; i < componentCount; ++i ) {
-		cwids[i] = pick->waveformID();
+		cwids[i] = wid;
+
 		if ( tc.comps[components[i]] == NULL ) {
 			SEISCOMP_LOG(_errorChannel, "%s: no inventory information found for %s (%d) -> ignoring Arrival %s",
 			             proc->type().c_str(),
@@ -1043,10 +1073,10 @@ int AmpTool::addProcessor(Processing::AmplitudeProcessor *proc,
 	if ( !proc->setup(
 		Settings(
 			configModuleName(),
-			pick->waveformID().networkCode(),
-			pick->waveformID().stationCode(),
-			pick->waveformID().locationCode(),
-			pick->waveformID().channelCode().substr(0,2),
+			wid.networkCode(),
+			wid.stationCode(),
+			wid.locationCode(),
+			wid.channelCode().substr(0,2),
 			&configuration(), params)) ) {
 		_report << "     - " << proc->type().c_str() << " [setup failed]" << std::endl;
 		return -1;
@@ -1056,9 +1086,9 @@ int AmpTool::addProcessor(Processing::AmplitudeProcessor *proc,
 		proc->setEnvironment(origin, receiver, pick);
 	}
 	else {
-		const std::string &n = pick->waveformID().networkCode();
-		const std::string &s = pick->waveformID().stationCode();
-		const std::string &l = pick->waveformID().locationCode();
+		const std::string &n = wid.networkCode();
+		const std::string &s = wid.stationCode();
+		const std::string &l = wid.locationCode();
 		proc->setEnvironment(
 			nullptr, // No hypocenter information
 			Client::Inventory::Instance()->getSensorLocation(
