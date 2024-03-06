@@ -2246,7 +2246,9 @@ void MainWindow::openAcquisition() {
 			latDelta += 360.;
 		}
 		try {
-			regionRect.setRect(lonMin, latMin, latDelta, latMax-latMin);
+			if ( latMin != -90.0 || latMax != 90.0 || lonMin != -180.0 || lonMax != 180.0 ) {
+				regionRect.setRect(lonMin, latMin, latDelta, latMax-latMin);
+			}
 		}
 		catch ( ... ) {
 		}
