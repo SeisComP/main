@@ -899,10 +899,10 @@ void Worker::syncExtent() {
 	              _T("sampleRate") << ", " <<
 	              _T("quality") << ", " <<
 	              "MAX(" << _T("updated") << ") AS " << _T("updated") << ", "
-	              "COUNT(*) AS segmentCount "
+	              "COUNT(*) AS " << _T("segmentCount") << " "
 	       "FROM DataSegment "
 	       "WHERE _parent_oid = " << _extentOID << " "
-	       "GROUP BY sampleRate, quality";
+	       "GROUP BY " << _T("sampleRate") << ", " << _T("quality");
 
 	for ( auto it = _db->getObjectIterator(
 	          oss.str(), DataAttributeExtent::TypeInfo()); *it; ++it ) {
