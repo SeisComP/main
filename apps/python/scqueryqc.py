@@ -18,8 +18,8 @@
 ############################################################################
 
 import os
-import re
 import sys
+import re
 import seiscomp.core
 import seiscomp.client
 import seiscomp.io
@@ -257,12 +257,22 @@ Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from \
         # write parameters
         for parameter in self._parameter.split(","):
             for stream in streams:
+                start = seiscomp.core.Time.FromString(self._start)
+                if start is None:
+                    seiscomp.logging.error(f"Wrong 'start' format '{self._start}'")
+                    return False
+
+                end = seiscomp.core.Time.FromString(self._end)
+                if end is None:
+                    seiscomp.logging.error(f"Wrong 'end' format '{self._end}'")
+                    return False
+
                 (net, sta, loc, cha) = stream.split(".")
                 it = self.query().getWaveformQuality(
                     seiscomp.datamodel.WaveformStreamID(net, sta, loc, cha, ""),
                     parameter,
-                    seiscomp.core.Time.FromString(self._start, "%Y-%m-%d %H:%M:%S"),
-                    seiscomp.core.Time.FromString(self._end, "%Y-%m-%d %H:%M:%S"),
+                    start,
+                    end,
                 )
 
                 while it.get():

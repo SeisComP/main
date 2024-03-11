@@ -13,8 +13,6 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
-from __future__ import print_function
-
 from getopt import gnu_getopt, GetoptError
 from collections import namedtuple
 
@@ -149,13 +147,13 @@ class Archive:
                 else:
                     end_day = t_end[7]
 
-                files = glob.glob(directory + "*.%03d" % start_day)
+                files = glob.glob(f"{directory}*.{start_day :03d}")
 
                 # Find first day with data
                 while not files and start_day <= end_day:
                     start_day += 1
                     begin = seiscomp.core.Time.FromYearDay(year, start_day)
-                    files = glob.glob(directory + "*.%03d" % start_day)
+                    files = glob.glob(f"{directory}*.{start_day :03d}")
 
                 if not files:
                     t = time.gmtime(begin.seconds() - 86400)
@@ -457,14 +455,8 @@ class RecordRenamer:
     def printRules(self):
         for r in self.renameRules:
             print(
-                "Renaming %s to %s.%s.%s.%s"
-                % (
-                    (r.pattern.pattern if r.pattern is not None else "*.*.*.*"),
-                    r.newNet,
-                    r.newSta,
-                    r.newLoc,
-                    r.newCha,
-                ),
+                f"Renaming {(r.pattern.pattern if r.pattern is not None else '*.*.*.*')} "
+                f"to {r.newNet}.{r.newSta}.{r.newLoc}.{r.newCha}",
                 file=sys.stderr,
             )
 
@@ -627,32 +619,7 @@ def checkFilePrint(fileName, streamDict):
 
 
 def str2time(timeString):
-    """
-    Liberally accept many time string formats and convert them to a
-    seiscomp.core.Time
-    """
-
-    timeString = timeString.strip()
-    for c in ["-", "/", ":", "T", "Z"]:
-        timeString = timeString.replace(c, " ")
-
-    toks = timeString.split()
-
-    assert 3 <= len(toks) <= 6
-
-    toks.extend((6 - len(toks)) * ["0"])
-    toks = " ".join(toks)
-    formatString = "%Y %m %d %H %M %S"
-    if toks.find(".") != -1:
-        formatString += ".%f"
-
-    t = seiscomp.core.Time()
-    t.fromString(toks, formatString)
-
-    if not t.fromString(toks, formatString):
-        raise ValueError()
-
-    return t
+    return seiscomp.core.Time.FromString(timeString)
 
 
 def time2str(scTime):
@@ -789,9 +756,8 @@ def readStreamTimeList(listFile):
             )
             return []
 
-        try:
-            tMin = str2time(toks[0])
-        except Exception:
+        tMin = str2time(toks[0])
+        if not tMin:
             f.close()
             print(
                 f"{listFile}:{lineNumber}: error: invalid time format (tmin)",
@@ -799,9 +765,8 @@ def readStreamTimeList(listFile):
             )
             return []
 
-        try:
-            tMax = str2time(toks[1])
-        except Exception:
+        tMax = str2time(toks[1])
+        if not tMax:
             f.close()
             print(
                 f"{listFile}:{lineNumber}: error: invalid time format (tMax)",
@@ -826,12 +791,12 @@ def readStreamTimeList(listFile):
     return streams
 
 
-usage_info = """
+usage_info = f"""
 Usage:
-  scart -I [RecordStream] [options] [archive]
-  scart -I [RecordStream] [options] --stdout
-  scart -d [options] [archive]
-  scart --check [options] [archive]
+  {os.path.basename(__file__)} -I [RecordStream] [options] [archive]
+  {os.path.basename(__file__)} -I [RecordStream] [options] --stdout
+  {os.path.basename(__file__)} -d [options] [archive]
+  {os.path.basename(__file__)} --check [options] [archive]
 
 Import miniSEED waveforms or dump records from an SDS structure, sort them,
 modify the time and replay them. Also check files and archives.
@@ -848,7 +813,9 @@ Mode:
                    $SEISCOMP_ROOT/var/lib/archive is scanned. Checks are only
                    complete for files containing exactly one stream. More
                    complete checks are made with scmssort.
-  -d, --dump       Export (dump) mode. Read from SDS archive.
+  -d, --dump       Export (dump) mode. Read from SDS archive. The base directory of the
+                   SDS archive is the last argument to {os.path.basename(__file__)} or
+                   $SEISCOMP_ROOT/var/lib/archive/ if not given.
   -I arg           Import mode (default): Specify the recordstream URL to read the data
                    from for archiving. When using any other recordstream than file, a
                    stream list file is needed. Specifying - implies file://- (stdin).
@@ -897,7 +864,7 @@ Processing:
   -t, --time-window t1~t2
                     Import, dump mode: UTC time window filter to be applied to
                     the data streams. Format: "StartTime~EndTime". Example:
-                    "2022-12-20 12:00:00~2022-12-23 14:00:10".
+                    2022-12-20T12:00:00~2022-12-23T14:00:10.
 
 Output:
   -o, --output arg  Import mode: Write data to given file instead of creating
@@ -918,19 +885,20 @@ Output:
 
 Examples:
 Read from /archive, create a miniSEED file where records are sorted by end time
-  scart -dsv -t '2022-03-28 15:48~2022-03-28 16:18' /archive > sorted.mseed
+  {os.path.basename(__file__)} -dsE -t 2022-03-28T15:48~2022-03-28T16:18 /archive > sorted.mseed
 
 Import miniSEED data from file [your file], create a SDS archive
-  scart -I file.mseed $SEISCOMP_ROOT/var/lib/archive
+  {os.path.basename(__file__)} -I file.mseed $SEISCOMP_ROOT/var/lib/archive
 
 Import miniSEED data into a SDS archive, check all modified files for errors
-  scart -I file.mseed --with-filecheck $SEISCOMP_ROOT/var/lib/archive
+  {os.path.basename(__file__)} -I file.mseed --with-filecheck $SEISCOMP_ROOT/var/lib/archive
 
 Import miniSEED data from FDSNWS into a SDS archive for specific time range and streams
-  scart -I fdsnws://geofon.gfz-potsdam.de -t '2022-03-28 15:48~2022-03-28 16:18' --nslc list.file $SEISCOMP_ROOT/var/lib/archive
+  {os.path.basename(__file__)} -I fdsnws://geofon.gfz-potsdam.de \
+-t 2022-03-28T15:48~2022-03-28T16:18 --nslc list.file $SEISCOMP_ROOT/var/lib/archive
 
-Check an archive for files with out-of order records
-  scart --check /archive
+Check an archive for files with out-of-order records
+  {os.path.basename(__file__)} --check /archive
 """
 
 
@@ -1003,13 +971,12 @@ def main():
 
     for flag, arg in opts:
         if flag in ["-t", "--time-window"]:
-            try:
-                tmin, tmax = list(map(str2time, arg.split("~")))
-            except Exception:
+            tmin, tmax = list(map(str2time, arg.split("~")))
+            if tmin is None or tmax is None:
                 print(f"error: {arg}", file=sys.stderr)
                 print(
                     "       Provide correct time interval: -t 'startTime~endtime'\n"
-                    "       with valid time format, e.g.: 'YYYY-MM-DD hh:mm:ss'",
+                    "       with valid time format, e.g.: 'YYYY-MM-DD hh:mm:ss' or YYYY-MM-DDThh:mm:ss",
                     file=sys.stderr,
                 )
 

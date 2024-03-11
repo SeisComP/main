@@ -13,14 +13,13 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
-from __future__ import (absolute_import, division, print_function, unicode_literals)
-
 import sys
 import io
 from seiscomp.legacy.fseed import *
 from seiscomp.legacy.db.seiscomp3 import sc3wrap
 from seiscomp.legacy.db.seiscomp3.inventory import Inventory
-import seiscomp.datamodel, seiscomp.io
+import seiscomp.datamodel
+import seiscomp.io
 
 ORGANIZATION = "EIDA"
 
@@ -31,7 +30,7 @@ def iterinv(obj):
 
 def main():
     if len(sys.argv) < 1 or len(sys.argv) > 3:
-        sys.stderr.write("Usage inv2dlsv [in_xml [out_dataless]]\n")
+        print("Usage inv2dlsv [in_xml [out_dataless]]", file=sys.stderr)
         return 1
 
     if len(sys.argv) > 1:
@@ -47,7 +46,7 @@ def main():
     sc3wrap.dbQuery = None
 
     ar = seiscomp.io.XMLArchive()
-    if ar.open(inFile) == False:
+    if not ar.open(inFile):
         raise IOError(inFile + ": unable to open")
 
     obj = ar.readObject()
@@ -69,12 +68,20 @@ def main():
             for loc in iterinv(sta.sensorLocation):
                 for strm in iterinv(loc.stream):
                     try:
-                        vol.add_chan(net.code, sta.code, loc.code,
-                                     strm.code, strm.start, strm.end)
+                        vol.add_chan(
+                            net.code,
+                            sta.code,
+                            loc.code,
+                            strm.code,
+                            strm.start,
+                            strm.end,
+                        )
 
-                    except SEEDError as e:
-                        sys.stderr.write("Error (%s,%s,%s,%s): %s\n" % (
-                            net.code, sta.code, loc.code, strm.code, str(e)))
+                    except SEEDError as exc:
+                        print(
+                            f"Error ({net.code},{sta.code},{loc.code},{strm.code}): {str(exc)}",
+                            file=sys.stderr,
+                        )
 
     if not out or out == "-":
         output = io.BytesIO()
@@ -94,5 +101,5 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except Exception as e:
-        sys.stderr.write("Error: %s" % str(e))
+        print(f"Error: {str(e)}", file=sys.stderr)
         sys.exit(1)
