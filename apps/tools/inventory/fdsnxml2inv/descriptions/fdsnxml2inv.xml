@@ -3,7 +3,7 @@
 	<module name="fdsnxml2inv" category="Inventory">
 		<description>
 			Convert station inventory between FDSN StationXML format and 
-			SeisComP inventory XML.
+			SeisComP XML.
 		</description>
 
 		<configuration>
