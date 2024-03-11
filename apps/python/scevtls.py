@@ -22,19 +22,6 @@ import seiscomp.datamodel
 import seiscomp.logging
 
 
-def _parseTime(timestring):
-    t = seiscomp.core.Time()
-    if t.fromString(timestring, "%F %T"):
-        return t
-    if t.fromString(timestring, "%FT%T"):
-        return t
-    if t.fromString(timestring, "%FT%TZ"):
-        return t
-    if t.fromString(timestring, "%F"):
-        return t
-    return None
-
-
 def readXML(self):
     ar = seiscomp.io.XMLArchive()
     if not ar.open(self._inputFile):
@@ -121,10 +108,10 @@ class EventList(seiscomp.client.Application):
         )
         self.commandline().addGroup("Events")
         self.commandline().addStringOption(
-            "Events", "begin", "Specify the lower bound of the " "time interval."
+            "Events", "begin", "Specify the lower bound of the time interval."
         )
         self.commandline().addStringOption(
-            "Events", "end", "Specify the upper bound of the " "time interval."
+            "Events", "end", "Specify the upper bound of the time interval."
         )
         self.commandline().addStringOption(
             "Events",
@@ -136,7 +123,7 @@ class EventList(seiscomp.client.Application):
         self.commandline().addStringOption(
             "Events",
             "modified-after",
-            "Select events modified after the " "specified time.",
+            "Select events modified after the specified time.",
         )
 
         self.commandline().addStringOption(
@@ -149,12 +136,12 @@ class EventList(seiscomp.client.Application):
         self.commandline().addStringOption(
             "Output",
             "delimiter,D",
-            "Specify the delimiter of the " "resulting event IDs. " "Default: '\\n')",
+            "Specify the delimiter of the resulting event IDs. Default: '\\n')",
         )
         self.commandline().addOption(
             "Output",
             "preferred-origin,p",
-            "Print the ID of the preferred origin " "along with the event ID.",
+            "Print the ID of the preferred origin along with the event ID.",
         )
         return True
 
@@ -188,7 +175,7 @@ class EventList(seiscomp.client.Application):
             except RuntimeError:
                 start = "1900-01-01T00:00:00Z"
 
-            self._startTime = _parseTime(start)
+            self._startTime = seiscomp.core.Time.FromString(start)
             if self._startTime is None:
                 seiscomp.logging.error(f"Wrong 'begin' format '{start}'")
                 return False
@@ -201,25 +188,25 @@ class EventList(seiscomp.client.Application):
             except RuntimeError:
                 pass
 
-            self._endTime = _parseTime(end)
+            self._endTime = seiscomp.core.Time.FromString(end)
             if self._endTime is None:
                 seiscomp.logging.error(f"Wrong 'end' format '{end}'")
                 return False
             seiscomp.logging.debug(f"Setting end to {self._endTime.toString('%FT%TZ')}")
         else:
             seiscomp.logging.debug(
-                "Time window set by hours option: ignoring " "all other time parameters"
+                "Time window set by hours option: ignoring all other time parameters"
             )
             secs = self.hours * 3600
             maxSecs = 596523 * 3600
             if secs > maxSecs:
                 seiscomp.logging.error(
-                    "Maximum hours exceeeded. Maximum is %i" % (maxSecs / 3600)
+                    f"Maximum hours exceeeded. Maximum is {int(maxSecs / 3600)}"
                 )
                 return False
 
             self._startTime = seiscomp.core.Time.UTC() - seiscomp.core.TimeSpan(secs)
-            self._endTime = _parseTime(end)
+            self._endTime = seiscomp.core.Time.FromString(end)
 
         try:
             self._delimiter = self.commandline().optionString("delimiter")
@@ -228,15 +215,14 @@ class EventList(seiscomp.client.Application):
 
         try:
             modifiedAfter = self.commandline().optionString("modified-after")
-            self._modifiedAfterTime = _parseTime(modifiedAfter)
+            self._modifiedAfterTime = seiscomp.core.Time.FromString(modifiedAfter)
             if self._modifiedAfterTime is None:
                 seiscomp.logging.error(
                     f"Wrong 'modified-after' format '{modifiedAfter}'"
                 )
                 return False
             seiscomp.logging.debug(
-                "Setting 'modified-after' time to %s"
-                % self._modifiedAfterTime.toString("%FT%TZ")
+                f"Setting 'modified-after' time to {self._modifiedAfterTime.toString('%FT%TZ')}"
             )
         except RuntimeError:
             pass
@@ -279,7 +265,8 @@ List event IDs available in a given time range and print to stdout."""
         print(
             f"""Examples:
 Print all event IDs from year 2022 and thereafter
-  {os.path.basename(__file__)} -d mysql://sysop:sysop@localhost/seiscomp --begin "2022-01-01 00:00:00"
+  {os.path.basename(__file__)} -d mysql://sysop:sysop@localhost/seiscomp \
+--begin "2022-01-01 00:00:00"
 
 Print all event IDs with event type 'quarry blast'
   {os.path.basename(__file__)} -d mysql://sysop:sysop@localhost/seiscomp --event-type 'quarry blast'

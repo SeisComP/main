@@ -4,10 +4,11 @@ this problem and removes processed objects from the database older than a
 configurable time span. The time comparison considers the object time, not the
 time of their creation.
 
-This clean-up procedure is based on
+The parameters which scdbstrip removes are
 
-* Events, event parameters,
-* waveform quality control, QC, parameters.
+* Event parameters including events, origins, magnitudes, amplitudes, arrivals, picks,
+  focal mechanisms, moment tensors
+* Waveform quality control (QC) parameters.
 
 scdbstrip will remove all events with an origin time and QC parameters older or
 younger than specified. Default is 'older'. It will also remove all associated
@@ -19,13 +20,13 @@ often it runs the less objects it has to remove and the faster it will unlock
 the database again. The timing and the parameters to be removed is controlled
 by module configuration or command-line options.
 
-
 .. hint::
 
-   For removing specific parameters and not all in a time range, use
-   :ref:`scdispatch` along with XML files created by :ref:`scxmldump` and
-   :ref:`scqueryqc` for event parameters and waveform QC parameters,
-   respectively.
+   * For removing specific parameters and not all in a time range, use
+     :ref:`scdispatch` along with XML files created by :ref:`scxmldump` and
+     :ref:`scqueryqc` for event parameters and waveform QC parameters,
+     respectively.
+   * For removing data availability parameters use :ref:`scardac`.
 
 
 Known Issues
@@ -102,24 +103,24 @@ Examples
 
   .. code-block:: sh
 
-     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --datetime "2000-01-01 12:00:00"
+     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --datetime 2000-01-01T12:00:00
 
 * Remove event and waveform quality parameters after 2000-01-01 12:00:00
 
   .. code-block:: sh
 
-     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --datetime "2000-01-01 12:00:00" -i
+     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --datetime 2000-01-01T12:00:00 -i
 
 * Remove event and waveform quality parameters between 2000-01-01 12:00:00 ~ 2000-01-01 14:00:00
 
   .. code-block:: sh
 
-     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --time-window "2000-01-01 12:00:00~2000-01-01 14:00:00"
+     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --time-window 2000-01-01T12:00:00~2000-01-01T14:00:00
 
 * Remove event and waveform quality parameters before 2000-01-01 12:00:00 and after 2000-01-01 14:00:00
 
   .. code-block:: sh
 
-     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --time-window "2000-01-01 12:00:00~2000-01-01 14:00:00" -i
+     scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --time-window 2000-01-01T12:00:00~2000-01-01T14:00:00 -i
 
 

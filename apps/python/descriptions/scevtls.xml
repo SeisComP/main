@@ -44,14 +44,14 @@
 			<group name="Events">
 				<option long-flag="begin" argument="time">
 					<description>
-					Specify the lower bound of the time interval. Format is
-					&quot;2012-01-01 00:00:00&quot;.
+					Specify the lower bound of the time interval. Format:
+					2012-01-01T00:00:00.
 					</description>
 				</option>
 				<option long-flag="end" argument="time">
 					<description>
-					Specify the upper bound of the time interval. Format is
-					&quot;2012-01-01 00:00:00&quot;.
+					Specify the upper bound of the time interval. Format:
+					2012-01-01T00:00:00.
 					</description>
 				</option>
 				<option long-flag="hours" argument="arg">

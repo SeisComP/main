@@ -9,7 +9,7 @@ efficiently.
 
 Applications to miniSEED records:
 
-* Sort records by time, e.g. for playbacks.
+* Sort records by time, e.g., for playbacks.
 * Remove duplicate records from files and clean waveform archives.
 * Filter data records, i.e. keep or remove them, based on
 
@@ -40,7 +40,7 @@ Examples
 
    .. code-block:: sh
 
-      cat *.mseed | scmssort -vuiE -t '2020-03-28 15:48~2020-03-28 16:18' > sorted.mseed
+      cat *.mseed | scmssort -vuiE -t 2020-03-28T15:48~2020-03-28T16:18 > sorted.mseed
 
 #. Remove streams listed by stream code and sort records by end time. Also ignore
    duplicated or empty records. Stream lists can be generated, e.g., by :ref:`scinv`.
@@ -54,5 +54,5 @@ Examples
 
    .. code-block:: sh
 
-      echo CX.PB01..BH? | scmssort -vuE -t '2007-03-28 15:48~2007-03-28 16:18' -l - test.mseed > sorted.mseed
-      scmssort -vuiE -t '2007-03-28 15:48~2007-03-28 16:18' -l stream-list.txt test.mseed > sorted.mseed
+      echo CX.PB01..BH? | scmssort -vuE -t 2007-03-28T15:48~2007-03-28T16:18 -l - test.mseed > sorted.mseed
+      scmssort -vuiE -t 2007-03-28T15:48~2007-03-28T16:18 -l stream-list.txt test.mseed > sorted.mseed

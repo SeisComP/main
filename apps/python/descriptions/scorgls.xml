@@ -50,13 +50,13 @@
 				<option long-flag="begin" argument="time">
 					<description>
 					The lower bound of the time interval. Format:
-					&quot;2012-01-01 00:00:00&quot;.
+					012-01-01T00:00:00.
 					</description>
 				</option>
 				<option long-flag="end" argument="time">
 					<description>
 					The upper bound of the time interval. Format:
-					&quot;2012-01-01 00:00:00&quot;.
+					2012-01-01T00:00:00.
 					</description>
 				</option>
 			</group>

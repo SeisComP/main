@@ -21,7 +21,6 @@ import seiscomp.logging
 
 
 class SendOrigin(seiscomp.client.Application):
-
     def __init__(self, argc, argv):
         seiscomp.client.Application.__init__(self, argc, argv)
         self.setDatabaseEnabled(False, False)
@@ -36,8 +35,10 @@ class SendOrigin(seiscomp.client.Application):
             cstr = self.commandline().optionString("coord")
             tstr = self.commandline().optionString("time")
         except:
-            sys.stderr.write(
-                "Must specify origin using '--coord lat,lon,dep --time time'\n")
+            print(
+                "Must specify origin using '--coord lat,lon,dep --time time'",
+                file=sys.stderr,
+            )
             return False
 
         self.origin = seiscomp.datamodel.Origin.Create()
@@ -52,8 +53,11 @@ class SendOrigin(seiscomp.client.Application):
         self.origin.setLatitude(seiscomp.datamodel.RealQuantity(lat))
         self.origin.setDepth(seiscomp.datamodel.RealQuantity(dep))
 
-        time = seiscomp.core.Time()
-        time.fromString(tstr.replace("/", "-") + ":0:0", "%F %T")
+        time = seiscomp.core.Time.FromString(tstr)
+        if time is None:
+            seiscomp.logging.error(f"Wrong time format: '{tstr}'")
+            return False
+
         self.origin.setTime(seiscomp.datamodel.TimeQuantity(time))
 
         return True
@@ -61,30 +65,41 @@ class SendOrigin(seiscomp.client.Application):
     def createCommandLineDescription(self):
         try:
             self.commandline().addGroup("Parameters")
-            self.commandline().addStringOption("Parameters",
-                                               "coord",
-                                               "Latitude,longitude,depth of origin")
-            self.commandline().addStringOption("Parameters",
-                                               "time", "time of origin")
+            self.commandline().addStringOption(
+                "Parameters", "coord", "Latitude,longitude,depth of origin"
+            )
+            self.commandline().addStringOption("Parameters", "time", "time of origin")
         except:
             seiscomp.logging.warning("caught unexpected error %s" % sys.exc_info())
 
     def printUsage(self):
-        print('''Usage:
+        print(
+            """Usage:
   scsendorigin [options]
 
-Create an artificial origin and send to the messaging''')
+Create an artificial origin and send to the messaging"""
+        )
 
         seiscomp.client.Application.printUsage(self)
 
-        print('''Examples:
+        print(
+            """Examples:
 Send an artificial origin with hypocenter parameters to the messaging
   scsendorigin --time "2022-05-01 10:00:00" --coord 52,12,10
-''')
+"""
+        )
 
     def run(self):
         msg = seiscomp.datamodel.ArtificialOriginMessage(self.origin)
         self.connection().send(msg)
+        seiscomp.logging.debug(
+            f"""Origin sent with
+  lat:   {self.origin.latitude().value()}
+  lon:   {self.origin.longitude().value()}
+  depth: {self.origin.depth().value()}
+  time:  {self.origin.time().value().iso()}"""
+        )
+
         return True
 
 
