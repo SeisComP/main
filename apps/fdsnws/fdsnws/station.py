@@ -35,7 +35,7 @@ from .http import BaseResource
 from .request import RequestOptions
 from . import utils
 
-VERSION = "1.1.4"
+VERSION = "1.1.5"
 
 ################################################################################
 
@@ -291,7 +291,7 @@ class FDSNStation(BaseResource):
             "Access-Control-Allow-Headers",
             "Accept, Content-Type, X-Requested-With, Origin",
         )
-        req.setHeader("Content-Type", "text/plain")
+        req.setHeader("Content-Type", "text/plain; charset=utf-8")
         return ""
 
     # ---------------------------------------------------------------------------
@@ -349,7 +349,7 @@ class FDSNStation(BaseResource):
             if ro.includeRes:
                 msg = "response level output not available in text format"
                 return self.renderErrorPage(req, http.BAD_REQUEST, msg, ro)
-            req.setHeader("Content-Type", "text/plain")
+            req.setHeader("Content-Type", "text/plain; charset=utf-8")
             d = deferToThread(self._processRequestText, req, ro, dac)
         else:
             exp = Exporter.Create(ro.Exporters[ro.format])
@@ -360,7 +360,7 @@ class FDSNStation(BaseResource):
                 )
                 return self.renderErrorPage(req, http.BAD_REQUEST, msg, ro)
 
-            req.setHeader("Content-Type", "application/xml")
+            req.setHeader("Content-Type", "application/xml; charset=utf-8")
             exp.setFormattedOutput(bool(ro.formatted))
             d = deferToThread(self._processRequestExp, req, ro, exp, dac)
 

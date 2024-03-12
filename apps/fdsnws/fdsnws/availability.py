@@ -33,7 +33,7 @@ from . import utils
 
 
 DBMaxUInt = 18446744073709551615  # 2^64 - 1
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 
 
 ###############################################################################
@@ -291,7 +291,7 @@ class _Availability(BaseResource):
             "Access-Control-Allow-Headers",
             "Accept, Content-Type, X-Requested-With, Origin",
         )
-        req.setHeader("Content-Type", "text/plain")
+        req.setHeader("Content-Type", "text/plain; charset=utf-8")
         return ""
 
     # --------------------------------------------------------------------------
@@ -328,13 +328,13 @@ class _Availability(BaseResource):
         dac = Application.Instance().getDACache()
 
         if ro.format == ro.VFormatJSON:
-            contentType = "application/json"
+            contentType = "application/json; charset=utf-8"
             extension = "json"
         elif ro.format == ro.VFormatGeoCSV:
-            contentType = "text/csv"
+            contentType = "text/csv; charset=utf-8"
             extension = "csv"
         else:
-            contentType = "text/plain"
+            contentType = "text/plain; charset=utf-8"
             extension = "txt"
 
         req.setHeader("Content-Type", contentType)

@@ -19,8 +19,8 @@ class TestEvent(FDSNWSTest):
         print("Testing event service")
 
         query = f"{self.url}/event/1/query"
-        ctTXT = "text/plain"
-        ctXML = "application/xml"
+        ctTXT = "text/plain; charset=utf-8"
+        ctXML = "application/xml; charset=utf-8"
         resFile = f"{self.rootdir}/results/event-"
 
         i = 1
