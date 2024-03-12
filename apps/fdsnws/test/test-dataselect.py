@@ -19,7 +19,7 @@ class TestDataSelect(FDSNWSTest):
         print("Testing dataselect service")
 
         query = f"{self.url}/dataselect/1/query"
-        ctTXT = "text/plain"
+        ctTXT = "text/plain; charset=utf-8"
         ctMSeed = "application/vnd.fdsn.mseed"
         resFile = f"{self.rootdir}/results/dataselect-{{}}.mseed"
 

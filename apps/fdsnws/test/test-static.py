@@ -19,8 +19,8 @@ class TestStatic(FDSNWSTest):
     def test(self):
         print("Testing static files")
 
-        ctTXT = "text/plain"
-        ctXML = "application/xml"
+        ctTXT = "text/plain; charset=utf-8"
+        ctXML = "application/xml; charset=utf-8"
         share = f"{self.sharedir}/"
 
         # main url

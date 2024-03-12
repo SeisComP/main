@@ -61,7 +61,7 @@ Service Version:
         if code == http.NO_CONTENT:
             response = b""
         else:
-            request.setHeader("Content-Type", "text/plain")
+            request.setHeader("Content-Type", "text/plain; charset=utf-8")
 
             reference = b"%s/" % request.path.rpartition(b"/")[0]
 
@@ -95,7 +95,7 @@ Service Version:
     def renderNotModified(request, ro=None):
         code = http.NOT_MODIFIED
         request.setResponseCode(code)
-        request.responseHeaders.removeHeader("content-type")
+        request.responseHeaders.removeHeader("Content-Type")
         accessLog(request, ro, code, 0, None)
 
 
@@ -112,7 +112,7 @@ class ServiceVersion(resource.Resource):
 
     # ---------------------------------------------------------------------------
     def render(self, request):
-        request.setHeader("content-type", "text/plain")
+        request.setHeader("Content-Type", "text/plain; charset=utf-8")
         return b_str(self.version)
 
 
@@ -142,7 +142,7 @@ class WADLFilter(static.Data):
                 if valid:
                     data += line
 
-        super().__init__(b_str(data), "application/xml")
+        super().__init__(b_str(data), "application/xml; charset=utf-8")
 
 
 ################################################################################
@@ -273,7 +273,7 @@ class AuthResource(BaseResource):
 
     # ---------------------------------------------------------------------------
     def render_POST(self, request):
-        request.setHeader("Content-Type", "text/plain")
+        request.setHeader("Content-Type", "text/plain; charset=utf-8")
 
         try:
             verified = self.__gpg.decrypt(request.content.getvalue())
