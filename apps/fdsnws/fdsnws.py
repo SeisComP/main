@@ -770,8 +770,8 @@ class FDSNWS(seiscomp.client.Application):
 
     def printUsage(self):
         print(
-            """Usage:
-  fdsnws [options]
+            f"""Usage:
+  {os.path.basename(__file__)} [options]
 
 Provide FDSN Web Services"""
         )
@@ -779,9 +779,9 @@ Provide FDSN Web Services"""
         seiscomp.client.Application.printUsage(self)
 
         print(
-            """Examples:
+            f"""Examples:
 Execute on command line with debug output
-  fdsnws --debug
+  {os.path.basename(__file__)} --debug
 """
         )
 
