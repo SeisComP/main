@@ -94,20 +94,20 @@ The created XML files can be used in multiple ways, e.g.:
 Examples
 ========
 
-#. Convert the Seismic Handler file `shm.evt` and writes SC3ML into the file
-   `sc3.xml`. The database connection to read inventory and configuration
+#. Convert the Seismic Handler file `shm.evt` and writes SCML into the file
+   `sc.xml`. The database connection to read inventory and configuration
    information is fetched from the default messaging connection.
 
    .. code-block:: sh
 
-      sh2proc shm.evt > sc3.xml
+      sh2proc shm.evt > sc.xml
 
 #. Read Seismic Handler data from `stdin`. Inventory and configuration information
    is provided through files.
 
    .. code-block:: sh
 
-      cat shm.evt | sh2proc --inventory-db=inventory.xml --config-db=config.xml > sc3.xml
+      cat shm.evt | sh2proc --inventory-db=inventory.xml --config-db=config.xml > sc.xml
 
 shm.evt file format
 ===================
