@@ -61,6 +61,7 @@ class ObjectAlert(seiscomp.client.Application):
         self._newWhenFirstSeen = False
         self._oldEvents = []
         self._agencyIDs = []
+        self._authors = []
         self._phaseHints = []
         self._phaseStreams = []
         self._phaseNumber = 1
@@ -115,7 +116,21 @@ class ObjectAlert(seiscomp.client.Application):
         except:
             pass
 
+        try:
+            self._authors = [self.configGetString("author")]
+        except:
+            pass
 
+        try:
+            authors = self.configGetStrings("authors")
+            self._authors = []
+            for item in authors:
+                item = item.strip()
+                if item not in self._authors:
+                    self._authors.append(item)
+        except:
+            pass
+ 
         self._phaseHints = ['P','S']
         try:
             phaseHints = self.configGetStrings("constraints.phaseHints")
@@ -318,6 +333,11 @@ class ObjectAlert(seiscomp.client.Application):
         else:
             seiscomp.logging.info(" + agencyIDs: no filter is applied")
 
+        if " ".join(self._authors):
+            seiscomp.logging.info(" + Authors filter for events and picks: %s" % (" ".join(self._authors)))
+        else:
+            seiscomp.logging.info(" + authors: no filter is applied")
+ 
         if " ".join(self._phaseHints):
             seiscomp.logging.info(" + phase hint filter for picks: '%s'" % (" ".join(self._phaseHints)))
         else:
@@ -469,6 +489,7 @@ class ObjectAlert(seiscomp.client.Application):
                 self._cache.feed(obj)
                 seiscomp.logging.debug("got new pick '%s'" % obj.publicID())
                 agencyID = obj.creationInfo().agencyID()
+                authors = org.creationInfo().author()
                 phaseHint = obj.phaseHint().code()
                 if  self._phaseStreams:
                     waveformID = "%s.%s.%s.%s" % (
@@ -534,9 +555,11 @@ class ObjectAlert(seiscomp.client.Application):
                 org = self._cache.get(
                     seiscomp.datamodel.Origin, obj.preferredOriginID())
                 agencyID = org.creationInfo().agencyID()
+                authors = org.creationInfo().author()
                 seiscomp.logging.debug("got new event '%s'" % obj.publicID())
                 if not self._agencyIDs or agencyID in self._agencyIDs:
-                    self.notifyEvent(obj, True)
+                    if not self._authors or authors in self._authors:
+                        self.notifyEvent(obj, True)
                 return
         except:
             info = traceback.format_exception(*sys.exc_info())
@@ -550,9 +573,11 @@ class ObjectAlert(seiscomp.client.Application):
                 org = self._cache.get(
                     seiscomp.datamodel.Origin, obj.preferredOriginID())
                 agencyID = org.creationInfo().agencyID()
+                author = org.creationInfo().author()
                 seiscomp.logging.debug("update event '%s'" % obj.publicID())
                 if not self._agencyIDs or agencyID in self._agencyIDs:
-                    self.notifyEvent(obj, False)
+                    if not self._authors or author in self._authors:
+                        self.notifyEvent(obj, False)
         except:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:

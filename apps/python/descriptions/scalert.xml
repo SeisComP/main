@@ -19,6 +19,14 @@
 				empty list (=""): all agencies are allowed
 				</description>
 			</parameter>
+                        <parameter name="authors" type="list:string" default="">
+                                <description>
+                                List of authors to consider picks and origins. The author
+                                is extracted from the pick or the preferred origin of the event
+                                and compared with the configured authors.
+                                empty list (=""): all authors are allowed
+                                </description>
+                        </parameter>
 			<group name="poi">
 				<parameter name="message" type="string">
 					<description>
