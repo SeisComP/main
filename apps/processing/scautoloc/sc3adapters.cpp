@@ -138,6 +138,8 @@ Seiscomp::DataModel::Origin *Autoloc::convertToSC3(const Autoloc::Origin* origin
 		sc3arr->setAzimuth(arr.azimuth);
 		sc3arr->setTimeResidual( arr.residual);
 		sc3arr->setTimeUsed(arr.excluded == Arrival::NotExcluded);
+		sc3arr->setBackazimuthUsed(arr.excluded == Arrival::NotExcluded);
+		sc3arr->setHorizontalSlownessUsed(arr.excluded == Arrival::NotExcluded);
 		sc3arr->setWeight(arr.excluded == Arrival::NotExcluded ? 1. : 0.);
 		sc3arr->setPhase(phase);
 
