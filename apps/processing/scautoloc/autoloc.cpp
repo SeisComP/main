@@ -930,8 +930,8 @@ OriginPtr Autoloc3::_xxlPreliminaryOrigin(const Pick *newPick)
 			double delta, az, baz;
 			Arrival arr(pick);
 			delazi(origin.get(), arr.pick->station(), delta, az, baz);
-                	arr.distance = delta;
-                	arr.azimuth = az;
+			arr.distance = delta;
+			arr.azimuth = az;
 			arr.excluded = Arrival::NotExcluded;
 			origin->arrivals.push_back(arr);
 		}
@@ -1528,42 +1528,45 @@ void Autoloc3::_ensureConsistentArrivals(Origin *origin)
 }
 
 
-void Autoloc3::_ensureAcceptableRMS(Origin *origin, bool keepDepth)
-{
+void Autoloc3::_ensureAcceptableRMS(Origin *origin, bool keepDepth) {
 	int minPhaseCount = 20; // TODO: make this configurable
 
-	if (origin->definingPhaseCount() < minPhaseCount)
+	if (origin->definingPhaseCount() < minPhaseCount) {
 		return;
+	}
 
-	if (origin->rms() <= _config.maxRMS)
+	if (origin->rms() <= _config.maxRMS) {
 		return;
+	}
 
 	SEISCOMP_DEBUG("_ensureAcceptableRMS rms loop begin");
 
-	while (origin->rms() > _config.maxRMS) {
+	while ( origin->rms() > _config.maxRMS ) {
 		SEISCOMP_DEBUG("_ensureAcceptableRMS rms loop %.2f > %.2f", origin->rms(), 0.9*_config.maxRMS);
 
 		int definingPhaseCount = origin->definingPhaseCount();
 
-		if (definingPhaseCount < minPhaseCount)
+		if ( definingPhaseCount < minPhaseCount ) {
 			break;
+		}
 
-		if (definingPhaseCount < 50) { // TODO: make this configurable
+		if ( definingPhaseCount < 50 ) { // TODO: make this configurable
 			// instead of giving up, try to enhance origin
 			// This is rather costly, so we do it only up
 			// to 50 defining picks, as then usually the
 			// solution is so consolidated that switching
 			// to removal of the pick with largest residual
 			// is a safe bet.
-			if ( ! _enhanceScore(origin, 1))
+			if ( !_enhanceScore(origin, 1) ) {
 				break;
+			}
 		}
 		else {
 			int worst = arrivalWithLargestResidual(origin);
 			origin->arrivals[worst].excluded = Arrival::LargeResidual;
 			_relocator.useFixedDepth(keepDepth ? true : false);
 			OriginPtr relo = _relocator.relocate(origin);
-			if ( ! relo) {
+			if ( !relo ) {
 				SEISCOMP_WARNING("Relocation failed in _ensureAcceptableRMS for origin %ld", origin->id);
 				break;
 			}
@@ -1575,16 +1578,14 @@ void Autoloc3::_ensureAcceptableRMS(Origin *origin, bool keepDepth)
 }
 
 
-void Autoloc3::_updateScore(Origin *origin)
-{
+void Autoloc3::_updateScore(Origin *origin) {
 	origin->score = _score(origin);
 }
 
 
-bool Autoloc3::_rework(Origin *origin)
-{
+bool Autoloc3::_rework(Origin *origin) {
 	// This is the minimum requirement
-	if (origin->definingPhaseCount() < _config.minPhaseCount) {
+	if ( origin->definingPhaseCount() < _config.minPhaseCount ) {
 		return false;
 	}
 
@@ -1613,18 +1614,21 @@ bool Autoloc3::_rework(Origin *origin)
 			enforceDefaultDepth = true;
 			SEISCOMP_INFO("Enforcing default depth due to epicenter-station geometry");
 		}
-		else
+		else {
 			SEISCOMP_INFO("Not fixing depth");
+		}
 	}
 
 	// The _enhance_score() call is slow for origins with many phases, while
 	// the improvement becomes less. So at some point, we don't want to
 	// call _enhance_score() too often or not at all.
-	if (origin->definingPhaseCount() < 30) // TODO: make this configurable
+	if ( origin->definingPhaseCount() < 30 ) {// TODO: make this configurable
 		_enhanceScore(origin);
+	}
 
-	if (enforceDefaultDepth)
+	if ( enforceDefaultDepth ) {
 		_relocator.setFixedDepth(_config.defaultDepth);
+	}
 
 	bool keepDepth = adoptManualDepth || enforceDefaultDepth;
 
@@ -1639,24 +1643,25 @@ bool Autoloc3::_rework(Origin *origin)
 		int imax=-1;
 		// find the farthest used station
 		for (int i=0; i<arrivalCount; i++) {
-
 			Arrival &arr = origin->arrivals[i];
-			if (arr.excluded)
+			if ( arr.excluded ) {
 				continue;
-			if (arr.distance > dmax) {
+			}
+			if ( arr.distance > dmax ) {
 				dmax = arr.distance;
 				imax = i;
 			}
 		}
 
 		Arrival &arr = origin->arrivals[imax];
-		if (arr.distance < _config.maxStaDist)
+		if (arr.distance < _config.maxStaDist) {
 			break;
+		}
 		arr.excluded = Arrival::StationDistance;
 
 		// relocate once
 		OriginPtr relo = _relocator.relocate(origin);
-		if ( ! relo) {
+		if ( !relo ) {
 			SEISCOMP_WARNING("A relocation failed in _rework for origin %ld", origin->id);
 			break;
 		}
@@ -1666,7 +1671,6 @@ bool Autoloc3::_rework(Origin *origin)
 
 	_ensureAcceptableRMS(origin, keepDepth);
 	_addMorePicks(origin, keepDepth);
-
 
 	_trimResiduals(origin); // again!
 	_removeWorstOutliers(origin);
@@ -1693,26 +1697,30 @@ bool Autoloc3::_excludePKP(Origin *origin)
 	bool relocate = false;
 	int arrivalCount = origin->arrivals.size();
 	for (int i=0; i<arrivalCount; i++) {
-
 		Arrival &arr = origin->arrivals[i];
-		if (arr.excluded)       continue;
-		if (arr.distance  < 105)   continue;
+		if ( arr.excluded ) {
+			continue;
+		}
+		if ( arr.distance  < 105 ) {
+			continue;
+		}
 		// TODO: how about PKiKP?
 		if (arr.phase == "P" || arr.phase == "PKP" /* || arr.phase == "PKiKP" */ ) {
 			// for times > 960, we expect P to be PKP
-			if (arr.pick->time - origin->time > 960) {
+			if ( arr.pick->time - origin->time > 960 ) {
 				arr.excluded = Arrival::UnusedPhase;
 				relocate = true;
 			}
 		}
 	}
 
-	if ( ! relocate)
+	if ( !relocate ) {
 		return false;
+	}
 
 	// relocate once
 	OriginPtr relo = _relocator.relocate(origin);
-	if ( ! relo) {
+	if ( !relo ) {
 		SEISCOMP_WARNING("A relocation failed in _excludePKP for origin %ld", origin->id);
 		return false;
 	}
@@ -1735,16 +1743,19 @@ bool Autoloc3::_excludeDistantStations(Origin *origin)
 		// ignore excluded arrivals except those that were previously
 		// excluded because of the distance criterion, because the
 		// latter may no longer hold (i.e. more distant stations)
-		if (arr.excluded && arr.excluded != Arrival::StationDistance)
+		if ( arr.excluded && arr.excluded != Arrival::StationDistance ) {
 			continue;
+		}
 		// ignore PKP, *may* be a bit risky -> checks required!
-		if (arr.distance > 110)
+		if ( arr.distance > 110 ) {
 			continue;
+		}
 		distance.push_back(arr.distance);
 	}
 	int distanceCount = distance.size();
-	if (distanceCount < 4)
+	if ( distanceCount < 4 ) {
 		return false;
+	}
 
 	sort(distance.begin(), distance.end());
 
@@ -1753,8 +1764,9 @@ bool Autoloc3::_excludeDistantStations(Origin *origin)
 	double maxDistance=distance[distanceCount-nx];
 
 	for (int i=distanceCount-nx+1; i<distanceCount; i++) {
-		if(distance[i] > q*maxDistance)
+		if ( distance[i] > q*maxDistance ) {
 			break;
+		}
 		maxDistance = distance[i];
 	}
 
@@ -1762,16 +1774,18 @@ bool Autoloc3::_excludeDistantStations(Origin *origin)
 	for (int i=0; i<arrivalCount; i++) {
 
 		Arrival &arr = origin->arrivals[i];
-		if (arr.excluded) continue;
+		if ( arr.excluded ) {
+			continue;
+		}
 		if (arr.distance > maxDistance) {
 			arr.excluded = Arrival::StationDistance;
 			excludedCount++;
 			SEISCOMP_DEBUG("_excludeDistantStations origin %ld exc %s", origin->id, arr.pick->id.c_str());
 		}
 	}
-	if (excludedCount) {
+	if ( excludedCount ) {
 		OriginPtr relo = _relocator.relocate(origin);
-		if (relo) {
+		if ( relo ) {
 			origin->updateFrom(relo.get());
 			return true;
 		}
@@ -2888,8 +2902,10 @@ bool Autoloc3::_depthIsResolvable(Origin *origin)
 		return true;
 	}
 
-	if (origin->dep != relo->dep)
-		SEISCOMP_INFO("Origin %ld: changed depth from %.1f to default of %.1f   score: %.1f -> %.1f", origin->id, origin->dep, relo->dep, score1, score2);
+	if (origin->dep != relo->dep) {
+		SEISCOMP_INFO("Origin %ld: changed depth from %.1f to default of %.1f   score: %.1f -> %.1f",
+		              origin->id, origin->dep, relo->dep, score1, score2);
+	}
 	origin->updateFrom(relo.get());
 	origin->depthType = Origin::DepthDefault;
 	_updateScore(origin); // why here?
