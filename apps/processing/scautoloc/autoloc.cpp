@@ -92,7 +92,7 @@ bool Autoloc3::init()
 	_relocator.setMinimumDepth(_config.minimumDepth);
 
 	if ( ! _config.staConfFile.empty()) {
-		SEISCOMP_DEBUG_S("Reading station config from file '"+ _config.staConfFile +"'");
+		SEISCOMP_DEBUG_S("Reading station config from file " + _config.staConfFile);
 
 		if ( ! _stationConfig.read(_config.staConfFile) )
 		    return false;

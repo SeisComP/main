@@ -75,13 +75,6 @@ App::App(int argc, char **argv)
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-App::~App() {}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
 void App::printUsage() const {
 	cout << "Usage:"  << endl << "  scautoloc [options]" << endl << endl
 	     << "Associator of P-phase picks for locating seismic events." << endl;
@@ -236,13 +229,18 @@ void App::createCommandLineDescription() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::validateParameters() {
+	if ( !Client::Application::validateParameters() ) {
+		return false;
+	}
+
 	if ( commandline().hasOption("offline") ) {
 		_config.offline = true;
 		_config.playback = true;
 		_config.test = true;
 	}
-	else
+	else {
 		_config.offline = false;
+	}
 
 	if ( !_inputEPFile.empty() ) {
 		_config.playback = true;
@@ -291,16 +289,18 @@ bool App::validateParameters() {
 	if ( commandline().hasOption("try-default-depth") )
 		_config.tryDefaultDepth = true;
 
-	if ( commandline().hasOption("adopt-manual-depth") )
+	if ( commandline().hasOption("adopt-manual-depth") ) {
 		_config.adoptManualDepth = true;
+	}
 
-	_config.maxResidualKeep = 3*_config.maxResidualUse;
+	_config.maxResidualKeep = 3 * _config.maxResidualUse;
 
 	if ( !_config.pickLogFile.empty() ) {
 		_config.pickLogEnable = true;
 	}
 
-	return Client::Application::validateParameters();
+	// return Client::Application::validateParameters();
+	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -524,7 +524,7 @@ bool App::initConfiguration() {
 	std::string ntp = "global";
 	try { ntp = configGetString("autoloc.networkType"); }
 	catch ( ... ) {}
-	if      ( ntp == "global" ) {
+	if ( ntp == "global" ) {
 		_config.networkType = ::Autoloc::GlobalNetwork;
 	}
 	else if ( ntp == "regional" ) {
@@ -547,8 +547,9 @@ bool App::initConfiguration() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::init() {
-
-	if ( ! Client::Application::init() ) return false;
+	if ( ! Client::Application::init() ) {
+		return false;
+	}
 
 	_inputPicks = addInputObjectLog("pick");
 	_inputAmps = addInputObjectLog("amplitude");
@@ -562,11 +563,13 @@ bool App::init() {
 	SEISCOMP_INFO("Starting Autoloc");
 	setConfig(_config);
 	dumpConfig();
-	if ( ! setGridFile(_gridConfigFile) )
+	if ( !setGridFile(_gridConfigFile) ) {
 		return false;
+	}
 
-	if ( ! initInventory() )
+	if ( !initInventory() ) {
 		return false;
+	}
 
 	if ( !_config.pickLogFile.empty() ) {
 		setPickLogFilePrefix(_config.pickLogFile);
@@ -820,7 +823,7 @@ bool App::runFromXMLFile(const char *fname)
 	if ( _objects.empty() )
 		return false;
 
-	if (_playbackSpeed > 0) {
+	if ( _playbackSpeed > 0 ) {
 		SEISCOMP_DEBUG("playback speed factor %g", _playbackSpeed);
 	}
 

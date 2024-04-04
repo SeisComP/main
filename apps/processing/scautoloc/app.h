@@ -38,7 +38,7 @@ class App : public Client::Application,
             protected ::Autoloc::Autoloc3 {
 	public:
 		App(int argc, char **argv);
-		~App();
+		~App() override = default;
 
 
 	public:
@@ -88,8 +88,9 @@ class App : public Client::Application,
 		std::string _inputFileXML; // for XML playback
 		std::string _inputEPFile; // for offline processing
 		std::string _stationLocationFile;
-		std::string _gridConfigFile;
-		std::string _amplTypeAbs, _amplTypeSNR;
+		std::string _gridConfigFile{"@DATADIR@/scautoloc/grid.conf"};
+		std::string _amplTypeAbs{"mb"};
+		std::string _amplTypeSNR{"snr"};
 
 		std::queue<DataModel::PublicObjectPtr> _objects; // for XML playback
 		double _playbackSpeed;
