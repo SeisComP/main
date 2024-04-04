@@ -49,28 +49,28 @@ class App : public Client::Application,
 
 
 	protected:
-		void createCommandLineDescription();
-		bool validateParameters();
-		bool initConfiguration();
+		void createCommandLineDescription() override;
+		bool validateParameters() override;
+		bool initConfiguration() override;
 		bool initInventory();
 		// initialize one station at runtime
 		bool initOneStation(const DataModel::WaveformStreamID&, const Core::Time&);
 
 		void readHistoricEvents();
 
-		bool init();
-		bool run();
-		void done();
+		bool init() override;
+		bool run() override;
+		void done() override;
 
-		void handleMessage(Core::Message* msg);
-		void handleTimeout();
-		void handleAutoShutdown();
+		void handleMessage(Core::Message* msg) override;
+		void handleTimeout() override;
+		void handleAutoShutdown() override;
 
-		void addObject(const std::string& parentID, DataModel::Object *o);
-		void removeObject(const std::string& parentID, DataModel::Object *o);
-		void updateObject(const std::string& parentID, DataModel::Object *o);
+		void addObject(const std::string& parentID, DataModel::Object *o) override;
+		void removeObject(const std::string& parentID, DataModel::Object *o) override;
+		void updateObject(const std::string& parentID, DataModel::Object *o) override;
 
-		virtual bool _report(const ::Autoloc::Origin *origin);
+		bool _report(const ::Autoloc::Origin *origin) override;
 //		bool runFromPickFile();
 		bool runFromXMLFile(const char *fname);
 		bool runFromEPFile(const char *fname);
