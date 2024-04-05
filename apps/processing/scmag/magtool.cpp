@@ -256,6 +256,15 @@ void MagTool::setSummaryMagnitudeType(const std::string &type) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MagTool::setSummaryMagnitudeSingleton(bool singleton) {
+	_summaryMagnitudeSingleton = singleton;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MagTool::setSummaryMagnitudeBlacklist(const std::vector<std::string> &list) {
 	std::copy(list.begin(), list.end(), std::inserter(_summaryMagnitudeBlacklist, _summaryMagnitudeBlacklist.end()));
 }
@@ -364,29 +373,35 @@ bool MagTool::init(const MagnitudeTypes &mags, const Core::TimeSpan &expiry,
 
 					sumMagTypes += " * ";
 					sumMagTypes += proc->typeMw();
-					if ( isTypeEnabledForSummaryMagnitude(proc->typeMw()) )
+					if ( isTypeEnabledForSummaryMagnitude(proc->typeMw()) ) {
 						sumMagTypes += ": OK";
-					else
+					}
+					else {
 						sumMagTypes += ": Disabled";
+					}
 					sumMagTypes += '\n';
 
 				}
 			}
 
 			AverageMethods::iterator am_it = _magnitudeAverageMethods.find(*it);
-			if ( am_it == _magnitudeAverageMethods.end() )
+			if ( am_it == _magnitudeAverageMethods.end() ) {
 				logMagAverageTypes += "default";
-			else
+			}
+			else {
 				logMagAverageTypes += averageMethodToString(am_it->second);
+			}
 
 			logMagAverageTypes += "\n";
 
 			sumMagTypes += " * ";
 			sumMagTypes += *it;
-			if ( isTypeEnabledForSummaryMagnitude(*it) )
+			if ( isTypeEnabledForSummaryMagnitude(*it) ) {
 				sumMagTypes += ": OK";
-			else
+			}
+			else {
 				sumMagTypes += ": Disabled";
+			}
 			sumMagTypes += '\n';
 
 			++it;
@@ -395,17 +410,21 @@ bool MagTool::init(const MagnitudeTypes &mags, const Core::TimeSpan &expiry,
 		logMagTypes += '\n';
 	}
 
-	SEISCOMP_INFO("Magnitudes to calculate:\n%s", logMagTypes.c_str());
-	SEISCOMP_INFO("Average methods:\n%s", logMagAverageTypes.c_str());
-	SEISCOMP_INFO("Summary magnitude enabled = %s", _summaryMagnitudeEnabled?"yes":"no");
-	SEISCOMP_INFO("Summary magnitudes:\n%s", sumMagTypes.c_str());
-	SEISCOMP_INFO("Using default summary coefficients: a = %.2f, b = %.2f",
-	              *_defaultCoefficients.a, *_defaultCoefficients.b);
-
-	for ( auto &it : _magnitudeCoefficients ) {
-		SEISCOMP_INFO("Using '%s' summary coefficients: a = %s, b = %s",
-		              it.first.c_str(), it.second.a?toString(*it.second.a).c_str():"[default]",
-		              it.second.b?toString(*it.second.b).c_str():"[default]");
+	SEISCOMP_INFO("Magnitude types to calculate:\n%s", logMagTypes.c_str());
+	SEISCOMP_INFO("Magnitude types - averaging methods:\n%s", logMagAverageTypes.c_str());
+	SEISCOMP_INFO("Summary magnitude enabled:                         %s",
+	              _summaryMagnitudeEnabled?"yes":"no");
+	if ( _summaryMagnitudeEnabled ) {
+		SEISCOMP_INFO("Summary magnitude from only one network magnitude: %s",
+		              _summaryMagnitudeSingleton?"yes":"no");
+		SEISCOMP_INFO("Summary magnitude - default coefficients:          a = %.2f, b = %.2f",
+		              *_defaultCoefficients.a, *_defaultCoefficients.b);
+		SEISCOMP_INFO("Summary magnitude calculated from:\n%s", sumMagTypes.c_str());
+		for ( auto &it : _magnitudeCoefficients ) {
+			SEISCOMP_INFO("Summary magnitude uses '%s' with coefficients: a = %s, b = %s",
+			              it.first.c_str(), it.second.a?toString(*it.second.a).c_str():"[default]",
+			              it.second.b?toString(*it.second.b).c_str():"[default]");
+		}
 	}
 
 	// Fill the origin cache
@@ -967,15 +986,20 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool MagTool::computeSummaryMagnitude(DataModel::Origin *origin) {
 	if ( !_summaryMagnitudeEnabled ) {
+		SEISCOMP_DEBUG("Skipping summary magnitude: calculation is disabled by "
+		               "configuration");
 		return false;
 	}
 
 	if ( _summaryMagnitudeType.empty() ) {
+		SEISCOMP_DEBUG("Skipping summary magnitude: empty type (name)");
 		return false;
 	}
 
-	double value = 0.0, totalWeight = 0.0;
+	double value = 0.0;
+	double totalWeight = 0.0;
 	int count = 0;
+	int networkMagnitudeCount = 0;
 
 	for ( size_t i = 0; i < origin->magnitudeCount(); ++i ) {
 		NetMag *nmag = origin->magnitude(i);
@@ -1002,6 +1026,8 @@ bool MagTool::computeSummaryMagnitude(DataModel::Origin *origin) {
 		catch ( ... ) {}
 
 		if ( n < _summaryMagnitudeMinStationCount ) {
+			SEISCOMP_DEBUG("Summary magnitude: Skipping '%s' with only %ld "
+			               "station magnitude(s)", type.c_str(), n);
 			continue;
 		}
 
@@ -1023,6 +1049,8 @@ bool MagTool::computeSummaryMagnitude(DataModel::Origin *origin) {
 			continue;
 		}
 
+		networkMagnitudeCount += 1;
+
 		totalWeight += weight;
 		value += weight*nmag->magnitude().value();
 		// The total count is currently the maximum count for any individual magnitude.
@@ -1030,8 +1058,15 @@ bool MagTool::computeSummaryMagnitude(DataModel::Origin *origin) {
 		count = n > count ? n : count;
 	}
 
+	if ( !_summaryMagnitudeSingleton && networkMagnitudeCount < 2 ) {
+		SEISCOMP_DEBUG("Summary magnitude skipped: only %ld network magnitude(s) "
+		               "available", networkMagnitudeCount);
+		return false;
+	}
+
 	// No magnitudes available
 	if ( totalWeight == 0 ) {
+		SEISCOMP_DEBUG("Summary magnitude skipped: total weight = 0");
 		return false;
 	}
 
@@ -1049,7 +1084,7 @@ bool MagTool::computeSummaryMagnitude(DataModel::Origin *origin) {
 			// Check for changes otherwise discard the update
 			if ( fabs(mag->magnitude().value() - value) < 0.0001 &&
 			     mag->stationCount() == count ) {
-				SEISCOMP_DEBUG("Skipping summary magnitude update, nothing changed");
+				SEISCOMP_DEBUG("Summary magnitude update skipped: nothing changed");
 				return false;
 			}
 		}
