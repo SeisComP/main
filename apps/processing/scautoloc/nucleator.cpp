@@ -694,7 +694,7 @@ bool GridSearch::_readGrid(const std::string &gridfile)
 		SEISCOMP_DEBUG_S("Reading grid file for nucleator: " + gridfile);
 	}
 	else {
-		SEISCOMP_ERROR_S("Failed to read grid file nucleator: " + gridfile);
+		SEISCOMP_ERROR_S("Failed to read grid file for nucleator: " + gridfile);
 		return false;
 	}
 

@@ -77,34 +77,23 @@ class GridSearch : public Nucleator
 
 	public:
 		// Configuration parameters controlling the behaviour of the Nucleator
-		class Config {
-		public:
+		struct Config {
 			// minimum number of stations for new origin
-			int nmin;
+			int nmin{5};
 		
 			// maximum distance of stations contributing to new origin
-			double dmax;
+			double dmax{180.0};
 
 			// configurable multiplier, 0 means it is ignored
-			double maxRadiusFactor;
+			double maxRadiusFactor{1.0};
 	
 			// minimum cumulative amplitude of all picks
-			double amin;
-			int aminskip; // skip this many largest amplitudes
+			double amin{5.0 * nmin};
+			int aminskip{1}; // skip this many largest amplitudes
 		
-			std::string amplitudeType;
+			std::string amplitudeType{"snr"}; // XXX not yet used
 		
-			int verbosity;
-		
-			Config() {
-				nmin = 5;
-				dmax = 180;
-				maxRadiusFactor = 1;
-				amin = 5*nmin;
-				aminskip = 1;
-				amplitudeType = "snr"; // XXX not yet used
-				verbosity = 0;
-			}
+			int verbosity{0};
 		};
 
 	public:
@@ -148,7 +137,7 @@ class GridSearch : public Nucleator
 
 		bool _abort;
 
-		const Seiscomp::Config::Config *_scconfig;
+		const Seiscomp::Config::Config *_scconfig{nullptr};
 
 	public: // FIXME
 		Config  _config;

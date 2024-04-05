@@ -33,15 +33,10 @@ typedef enum { GlobalNetwork, RegionalNetwork, LocalNetwork } NetworkType;
 
 class StationConfig {
 	public:
-		class Entry {
-			public:
-				float maxNucDist, maxLocDist;
-				int usage;
-
-			Entry() {
-				maxNucDist = maxLocDist = 0;
-				usage = 0;
-			}
+		struct Entry {
+			float maxNucDist{0.0};
+			float maxLocDist{0.0};
+			int usage{0};
 		};
 
 		StationConfig();
