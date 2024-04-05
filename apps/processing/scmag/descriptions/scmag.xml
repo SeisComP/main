@@ -68,6 +68,14 @@
 					higher, at least 4 is recommended.
 					</description>
 				</parameter>
+				<parameter name="singleton" type="boolean" default="true">
+					<description>
+					Allow computing the summary magnitude even if only one single
+					network magnitude meeting the other criteria is available.
+					Unselecting this parameter will suppress computing summary
+					magnitudes if only one network magnitude is available.
+					</description>
+				</parameter>
 				<parameter name="blacklist" type="list:string" default="">
 					<description>
 					Define the magnitude types to be excluded from the summary
