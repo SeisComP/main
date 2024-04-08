@@ -92,7 +92,7 @@
 					Maximum epicntral distance to stations for accepting picks.
 					</description>
 				</parameter>
-				<parameter name="minStaCountIgnorePKP" type="integer" default="30">
+				<parameter name="minStaCountIgnorePKP" type="integer" default="15">
 					<description>
 					If the station count for stations at &lt; 105 degrees distance
 					exceeds this number, no picks at &gt; 105 degrees will be
