@@ -33,15 +33,10 @@ typedef enum { GlobalNetwork, RegionalNetwork, LocalNetwork } NetworkType;
 
 class StationConfig {
 	public:
-		class Entry {
-			public:
-				float maxNucDist, maxLocDist;
-				int usage;
-
-			Entry() {
-				maxNucDist = maxLocDist = 0;
-				usage = 0;
-			}
+		struct Entry {
+			float maxNucDist{0.0};
+			float maxLocDist{0.0};
+			int usage{0};
 		};
 
 		StationConfig();
@@ -64,9 +59,9 @@ class Autoloc3 {
 		virtual ~Autoloc3();
 
 	public:
-		class Config {
+		struct Config {
 		public:
-			Config();
+			// Config();
 
 			// White list of allowed pick authors.
 			// Also defines priority in descending order.
@@ -75,22 +70,22 @@ class Autoloc3 {
 			// During cleanup() all objects older than maxAge
 			// (in hours) are removed.
 			// If this parameter is <= 0, cleanup() is disabled.
-			double maxAge;
+			double maxAge{6.0 * 3600.0};   // unit: s
 
 			// time span within which we search for picks which may indicate extraordinary activity
-			double dynamicPickThresholdInterval;
+			double dynamicPickThresholdInterval{3600.0};   // unit: s
 
 			// typically good RMS in our network
-			double goodRMS;
+			double goodRMS{1.5};   // unit: s
 
 			// maximum RMS of all used picks
-			double maxRMS;
+			double maxRMS{3.5};   // unit: s
 
 			// maximum residual of any pick to be used for location
-			double maxResidualUse;
+			double maxResidualUse{7.0};   // unit: s
 
 			// maximum residual of any pick to be kept associated
-			double maxResidualKeep;
+			double maxResidualKeep{21.0};   // unit: s
 
 			// NOTE: maxRMS < maxResidualUse < maxResidualKeep
 			// typically:
@@ -99,102 +94,102 @@ class Autoloc3 {
 
 
 			// Use this depth if there is no depth resolution
-			double defaultDepth;           // default 10 km
-			double defaultDepthStickiness; // 0...1 default 0.5
+			double defaultDepth{10.0};           // unit: km
+			double defaultDepthStickiness{0.5};  // 0...1
 
 			// Try to relocate an origin using the configured default depth.
 			// If the resulting origin is "not much worse" than the free-depth
 			// origin, fix the depth at the default depth.
-			bool tryDefaultDepth;         // default true
+			bool tryDefaultDepth{true};         // default true
 
-			bool adoptManualDepth;
+			bool adoptManualDepth{false};
 
 			// Minimum depth in case there is depth resolution
-			double minimumDepth;          // default 5 km
+			double minimumDepth{5.0};          // uni: 5 km
 
-			// maximum depth of origin, checked before sending, default is 1000
-			double maxDepth;
+			// maximum depth of origin, checked before sending
+			double maxDepth{1000.0};
 
 			// Max. secondary azimuthal gap
-			double maxAziGapSecondary;
+			double maxAziGapSecondary{360.0};
 
 			// Maximum distance of stations used in computing
 			// the azimuthal gap
-			double maxAziGapDist;
+			// double maxAziGapDist; unused
 
 			// Max. distance of stations to be used
-			double maxStaDist;
+			double maxStaDist{180.0};
 
 			// Default max. distance of stations to be used in
 			// the nucleator
 			// May be overridden by individual values per station.
-			double defaultMaxNucDist;
+			double defaultMaxNucDist{180.0};
 
 			// Minimum signal-to-noise ratio for a pick to
 			// be processed
-			double minPickSNR;              // default 3
+			double minPickSNR{3.0};
 
 			// Unless we have a clear definition of "affinity",
 			// do not change this!
-			double minPickAffinity;         // default 0.05
+			double minPickAffinity{0.05};
 
 			// Minimum number of picks for a normal origin
 			// to be reported
-			int minPhaseCount;           // default  6
+			int minPhaseCount{6};
 
 			// Minimum score for an origin to be reported;
 			// this seems to be a more reliable criterion
 			// than number of phases.
-			double minScore;
+			double minScore{8.0};
 
 			// Minimum station count for which we ignore PKP phases
 			// XXX not yet used
-			int minStaCountIgnorePKP;  // default 20
+			int minStaCountIgnorePKP{15};
 
 			// if a pick can be associated to an origin with at
 			// least this high a score, bypass the nucleator,
 			// which will improve speed
-			double minScoreBypassNucleator;
+			double minScoreBypassNucleator{40.0};
 
 			// Maximum allowes "probability" for an origin to be a
 			// fake event. Value between 0 and 1
-			double maxAllowedFakeProbability;
+			double maxAllowedFakeProbability{0.2};
 
 			// EXPERIMENTAL!!!
-			double distSlope;
+			double distSlope{1.0}; // TODO: Make this configurable after testing
 
 			// EXPERIMENTAL!!!
-			double maxRadiusFactor;
+			double maxRadiusFactor{1.0};
 
 			// EXPERIMENTAL!!!
-			NetworkType networkType;
+			NetworkType networkType{Autoloc::GlobalNetwork};
 
-			double cleanupInterval;
+			double cleanupInterval{3600.0};
 
-			double publicationIntervalTimeSlope;
-			double publicationIntervalTimeIntercept;
-			int    publicationIntervalPickCount;
+			double publicationIntervalTimeSlope{0.5};
+			double publicationIntervalTimeIntercept{0.0};
+			int    publicationIntervalPickCount{20};
 			// XXX maybe score interval instead?
 
 			// If true, offline mode is selected. In offline mode,
 			// no database is accessed, and station locations are
 			// read from a plain text file.
-			bool offline;
+			bool offline{false};
 
 			// If true, test mode is selected. In test mode, no
 			// origins are sent. This is not the same as offline
 			// mode. Test mode is like normal online mode except
 			// no origins are sent (only logging output is
 			// produced).
-			bool test;
+			bool test{false};
 
 			// If true, playback mode is selected. In playback mode,
 			// origins are sent immediately without delay.
-			bool playback;
+			bool playback{false};
 
 			// If true then manual picks are being used as automatics
 			// picks are
-			bool useManualPicks;
+			bool useManualPicks{false};
 
 			// The pick log file
 			bool        pickLogEnable{false};
@@ -205,36 +200,36 @@ class Autoloc3 {
 			std::string locatorProfile{"iasp91"};
 
 			// The station configuration file
-			std::string staConfFile;
+			std::string staConfFile{"@DATADIR@/scautoloc/station.conf"};
 
 			// misc. experimental options
-			bool aggressivePKP;
-			bool reportAllPhases;
+			bool aggressivePKP{true};
+			bool reportAllPhases{true};
 			bool useManualOrigins{false};
 			bool allowRejectedPicks{false};
 			bool adoptManualOriginsFixedDepth;
-			bool useImportedOrigins;
+			bool useImportedOrigins{false};
 
 			// enable the XXL feature
 			bool xxlEnabled{false};
 
 			// minimum absolute amplitude to flag a pick as XXL
-			double xxlMinAmplitude;            // default  10000 nm/s
+			double xxlMinAmplitude{1000.0};     // default unit: nm/s
 
 			// minimum SNR to flag a pick as XXL
-			double xxlMinSNR;            // default  8
+			double xxlMinSNR{8.0};
 
 			// ignore all picks within this time window
 			// length (in sec) following an XXL pick
-			double xxlDeadTime;		// default 60 s
+			double xxlDeadTime{120.0};
 
 			// Minimum number of picks for an XXL origin
 			// to be reported
-			unsigned int xxlMinPhaseCount; // default 4 picks
-			double xxlMaxStaDist;          // default 10 degrees
-			double xxlMaxDepth;            // default 100 km
+			unsigned int xxlMinPhaseCount{4};   // default 4 picks
+			double xxlMaxStaDist{10.0};         // unit: degrees
+			double xxlMaxDepth{100};            // unit: km
 
-			const Seiscomp::Config::Config* scconfig;
+			const Seiscomp::Config::Config* scconfig{nullptr};
 
 		public:
 			void dump() const;

@@ -589,16 +589,19 @@ bool GridSearch::feed(const Pick *pick)
 		if (pickSetOriginMap.find(pickSet) != pickSetOriginMap.end()) {
 			double score1 = originScore(pickSetOriginMap[pickSet].get());
 			double score2 = originScore(origin);
-			if (score2<=score1)
+			if ( score2 <= score1 ) {
 				continue;
+			}
 		}
 
 		double score = originScore(origin);
-		if (score < 0.6*maxScore)
+		if ( score < 0.6*maxScore ) {
 			continue;
+		}
 
-		if (score > maxScore)
+		if ( score > maxScore ) {
 			maxScore = score;
+		}
 
 /*
 		_relocator.useFixedDepth(true);
@@ -623,8 +626,9 @@ bool GridSearch::feed(const Pick *pick)
 	     it = pickSetOriginMap.begin(); it != pickSetOriginMap.end(); ++it) {
 
 		Origin *origin = (*it).second.get();
-		if (originScore(origin) < 0.6*maxScore)
+		if (originScore(origin) < 0.6*maxScore) {
 			continue;
+		}
 
 // XXX XXX XXX XXX XXX
 // Hier nur jene Origins aus Gridsearch zulassen, die nicht mehrheitlich aus assoziierten Picks bestehen.
@@ -633,17 +637,19 @@ bool GridSearch::feed(const Pick *pick)
 		_relocator.useFixedDepth(true); // XXX vorher true
 //SEISCOMP_DEBUG("RELOCATE nucleator.cpp 724");
 		OriginPtr relo = _relocator.relocate(origin);
-		if ( ! relo)
+		if ( !relo ) {
 			continue;
+		}
 
 		// see if the new pick is within the maximum allowed nucleation distance
 		int index = relo->findArrival(pick);
-		if (index==-1) {
+		if ( index==-1 ) {
 			SEISCOMP_ERROR("pick unexpectedly not found in GridSearch::feed()");
 			continue;
 		}
-		if (relo->arrivals[index].distance > pick->station()->maxNucDist)
+		if ( relo->arrivals[index].distance > pick->station()->maxNucDist ) {
 			continue;
+		}
 
 		tempOrigins.push_back(relo);
 	}
@@ -667,12 +673,13 @@ bool GridSearch::feed(const Pick *pick)
 	// improvement.
 
 	OriginPtr best = bestOrigin(tempOrigins);
-	if (best) {
+	if ( best ) {
 		_relocator.useFixedDepth(false);
 //SEISCOMP_DEBUG("RELOCATE nucleator.cpp 762");
 		OriginPtr relo = _relocator.relocate(best.get());
-		if (relo)
+		if ( relo ) {
 			_newOrigins.push_back(relo);
+		}
 	}
 
 	return _newOrigins.size() > 0;
@@ -683,10 +690,11 @@ bool GridSearch::_readGrid(const std::string &gridfile)
 {
 	ifstream ifile(gridfile.c_str());
 
-	if ( ifile.good() )
-		SEISCOMP_DEBUG_S("Reading gridfile " + gridfile);
+	if ( ifile.good() ) {
+		SEISCOMP_DEBUG_S("Reading grid file for nucleator: " + gridfile);
+	}
 	else {
-		SEISCOMP_ERROR_S("Failed to read gridfile " + gridfile);
+		SEISCOMP_ERROR_S("Failed to read grid file for nucleator: " + gridfile);
 		return false;
 	}
 
