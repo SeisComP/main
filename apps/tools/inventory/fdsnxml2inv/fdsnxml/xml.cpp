@@ -415,7 +415,7 @@ struct PoleAndZeroHandler : public IO::XML::TypedClassHandler<PoleAndZero> {
 		addProperty("Real", "http://www.fdsn.org/xml/station/1", Mandatory, Element, "Real");
 		// Element
 		addProperty("Imaginary", "http://www.fdsn.org/xml/station/1", Mandatory, Element, "Imaginary");
-		addProperty("number", "", Mandatory, Attribute, "number");
+		addProperty("number", "", Optional, Attribute, "number");
 	}
 };
 
@@ -510,7 +510,7 @@ struct PolynomialCoefficientHandler : public IO::XML::TypedClassHandler<Polynomi
 		addProperty("plusError", "", Optional, Attribute, "upperUncertainty");
 		addProperty("minusError", "", Optional, Attribute, "lowerUncertainty");
 		addProperty("measurementMethod", "", Optional, Attribute, "measurementMethod");
-		addProperty("number", "", Mandatory, Attribute, "number");
+		addProperty("number", "", Optional, Attribute, "number");
 	}
 };
 
