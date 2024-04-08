@@ -784,7 +784,9 @@ bool App::runFromXMLFile(const char *fname)
 	SEISCOMP_INFO("  number of amplitudes: %ld", (long int)ep->amplitudeCount());
 	SEISCOMP_INFO("  number of origins:    %ld", (long int)ep->originCount());
 
-	typedef std::pair<Core::Time,DataModel::PublicObjectPtr> TimeObject;
+	// Tuple to be used in DSU sorting. The second member is used to place picks
+	// before amplitudes with identical creation times.
+	typedef std::tuple<Core::Time, int, DataModel::PublicObjectPtr> TimeObject;
 	typedef std::vector<TimeObject> TimeObjectVector;
 
 	// retrieval of relevant objects from event parameters
@@ -795,26 +797,26 @@ bool App::runFromXMLFile(const char *fname)
 		ep->removePick(0);
 		DataModel::PublicObjectPtr o(pick);
 		Core::Time t = pick->creationInfo().creationTime();
-		objs.push_back(TimeObject(t,o));
+		objs.push_back(TimeObject(t, 0, o));
 	}
 	while (ep->amplitudeCount() > 0) {
 		DataModel::AmplitudePtr amplitude = ep->amplitude(0);
 		ep->removeAmplitude(0);
 		DataModel::PublicObjectPtr o(amplitude);
 		Core::Time t = amplitude->creationInfo().creationTime();
-		objs.push_back(TimeObject(t,o));
+		t += Core::TimeSpan(0.00001);
+		objs.push_back(TimeObject(t, 1, o));
 	}
 	while (ep->originCount() > 0) {
 		DataModel::OriginPtr origin = ep->origin(0);
 		ep->removeOrigin(0);
 		DataModel::PublicObjectPtr o(origin);
 		Core::Time t = origin->creationInfo().creationTime();
-		objs.push_back(TimeObject(t,o));
+		objs.push_back(TimeObject(t, 2, o));
 	}
 	std::sort(objs.begin(),objs.end());
-	for (TimeObjectVector::iterator
-	     it = objs.begin(); it != objs.end(); ++it) {
-		_objects.push(it->second);
+	for ( TimeObject &obj : objs ) {
+		_objects.push(std::get<2>(obj));
 	}
 
 	if ( _objects.empty() )
@@ -859,7 +861,9 @@ bool App::runFromEPFile(const char *fname) {
 	     << _ep->pickCount() << " pick(s), "
 	     << _ep->amplitudeCount() << " amplitudes(s)"<< endl;
 
-	typedef std::pair<Core::Time,DataModel::PublicObjectPtr> TimeObject;
+	// Tuple to be used in DSU sorting. The second member is used to place picks
+	// before amplitudes with identical creation times.
+	typedef std::tuple<Core::Time, int, DataModel::PublicObjectPtr> TimeObject;
 	typedef std::vector<TimeObject> TimeObjectVector;
 
 	// retrieval of relevant objects from event parameters
@@ -897,7 +901,7 @@ bool App::runFromEPFile(const char *fname) {
 		}
 
 		if ( add ) {
-			objs.push_back(TimeObject(t, pick));
+			objs.push_back(TimeObject(t, 0, pick));
 		}
 	}
 
@@ -905,7 +909,8 @@ bool App::runFromEPFile(const char *fname) {
 		DataModel::AmplitudePtr amplitude = _ep->amplitude(i);
 		try {
 			Core::Time t = amplitude->creationInfo().creationTime();
-			objs.push_back(TimeObject(t, amplitude));
+		t += Core::TimeSpan(0.00001);
+			objs.push_back(TimeObject(t, 1, amplitude));
 		}
 		catch ( ... ) {
 			SEISCOMP_WARNING("Ignore amplitude %s: no creation time set",
@@ -917,7 +922,7 @@ bool App::runFromEPFile(const char *fname) {
 		DataModel::OriginPtr origin = _ep->origin(i);
 		try {
 			Core::Time t = origin->creationInfo().creationTime();
-			objs.push_back(TimeObject(t, origin));
+			objs.push_back(TimeObject(t, 2, origin));
 		}
 		catch ( ... ) {
 			SEISCOMP_WARNING("Ignore origin %s: no creation time set",
@@ -926,9 +931,8 @@ bool App::runFromEPFile(const char *fname) {
 	}
 
 	std::sort(objs.begin(), objs.end());
-	for (TimeObjectVector::iterator
-	     it = objs.begin(); it != objs.end(); ++it) {
-		_objects.push(it->second);
+	for ( TimeObject &obj : objs ) {
+		_objects.push(std::get<2>(obj));
 	}
 
 	while ( !_objects.empty() && !isExitRequested() ) {
