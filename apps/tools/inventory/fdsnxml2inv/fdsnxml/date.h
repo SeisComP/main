@@ -12,6 +12,7 @@
 
 #include <seiscomp/core/datetime.h>
 #include <seiscomp/core/baseobject.h>
+#include <seiscomp/core/strings.h>
 #include <cstdlib>
 
 
@@ -44,10 +45,7 @@ inline bool fromString(DateTime& date, const std::string& str) {
 		//return Core::Time(2037,12,31);
 		return false;
 
-	if ( date.fromString(str.c_str(), "%FT%T.%f") )
-		return true;
-
-	return date.fromString(str.c_str(), "%FT%T");
+	return Core::fromString(static_cast<Core::Time&>(date), str);
 }
 
 
