@@ -117,11 +117,6 @@ class ObjectAlert(seiscomp.client.Application):
             pass
 
         try:
-            self._authors = [self.configGetString("author")]
-        except:
-            pass
-
-        try:
             authors = self.configGetStrings("authors")
             self._authors = []
             for item in authors:
@@ -576,7 +571,7 @@ class ObjectAlert(seiscomp.client.Application):
                 author = org.creationInfo().author()
                 seiscomp.logging.debug("update event '%s'" % obj.publicID())
                 if not self._agencyIDs or agencyID in self._agencyIDs:
-                    if not self._authors or author in self._authors:
+                    if not self._authors or authosr in self._authors:
                         self.notifyEvent(obj, False)
         except:
             info = traceback.format_exception(*sys.exc_info())
