@@ -64,6 +64,14 @@ def readXML(self):
                 except ValueError:
                     continue
 
+        if self._eventType:
+            try:
+                eventType = seiscomp.datamodel.EEventTypeNames_name(evt.type())
+                if eventType != self._eventType:
+                    continue
+            except ValueError:
+                continue
+
         prefOrgID = evt.preferredOriginID()
 
         # filter by origin time
@@ -101,6 +109,7 @@ class EventList(seiscomp.client.Application):
         self._modifiedAfterTime = None
         self._preferredOrigin = False
         self._inputFile = None
+        self._eventType = None
 
     def createCommandLineDescription(self):
         self.commandline().addGroup("Input")
@@ -128,6 +137,12 @@ class EventList(seiscomp.client.Application):
             "Events",
             "modified-after",
             "Select events modified after the " "specified time.",
+        )
+
+        self.commandline().addStringOption(
+            "Events",
+            "event-type",
+            "Select events whith specified " "event type.",
         )
 
         self.commandline().addGroup("Output")
@@ -231,6 +246,24 @@ class EventList(seiscomp.client.Application):
         except RuntimeError:
             pass
 
+        try:
+            self._eventType = self.commandline().optionString("event-type")
+        except RuntimeError:
+            pass
+
+        if self._eventType:
+            flagEvent = False
+            for i in range(seiscomp.datamodel.EEventTypeQuantity):
+                if self._eventType == seiscomp.datamodel.EEventTypeNames.name(i):
+                    flagEvent = True
+                    break
+
+            if not flagEvent:
+                seiscomp.logging.error(
+                    f"'{self._eventType}' is not a valid SeisComP event type"
+                )
+                return False
+
         return True
 
     def printUsage(self):
@@ -247,6 +280,9 @@ List event IDs available in a given time range and print to stdout."""
             f"""Examples:
 Print all event IDs from year 2022 and thereafter
   {os.path.basename(__file__)} -d mysql://sysop:sysop@localhost/seiscomp --begin "2022-01-01 00:00:00"
+
+Print all event IDs with event type 'quarry blast'
+  {os.path.basename(__file__)} -d mysql://sysop:sysop@localhost/seiscomp --event-type 'quarry blast'
 
 Print IDs of all events in XML file
   {os.path.basename(__file__)} -i events.xml
@@ -277,6 +313,14 @@ Print IDs of all events in XML file
                             continue
                     except ValueError:
                         continue
+
+            if self._eventType:
+                try:
+                    eventType = seiscomp.datamodel.EEventTypeNames_name(evt.type())
+                    if eventType != self._eventType:
+                        continue
+                except ValueError:
+                    continue
 
             outputString = evt.publicID()
             if self._preferredOrigin:
