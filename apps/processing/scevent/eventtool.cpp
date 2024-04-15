@@ -1040,8 +1040,13 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 	OriginPtr org = Origin::Cast(object);
 	if ( org ) {
 		logObject(_inputOrigin, Core::Time::GMT());
-		if ( !org->registered() )
+		if ( !org->registered() ) {
 			org = Origin::Find(org->publicID());
+			if ( !org ) {
+				SEISCOMP_WARNING("Unexpected behaviour: origin update does not have an registered counterpart");
+				return;
+			}
+		}
 		_updates.insert(TodoEntry(org));
 		_realUpdates.insert(TodoEntry(org));
 		SEISCOMP_DEBUG("* queued updated origin %s (%d/%lu)",
@@ -1054,8 +1059,13 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 	FocalMechanismPtr fm = FocalMechanism::Cast(object);
 	if ( fm ) {
 		logObject(_inputFocalMechanism, Core::Time::GMT());
-		if ( !fm->registered() )
+		if ( !fm->registered() ) {
 			fm = FocalMechanism::Find(fm->publicID());
+			if ( !fm ) {
+				SEISCOMP_WARNING("Unexpected behaviour: fm update does not have an registered counterpart");
+				return;
+			}
+		}
 		_updates.insert(TodoEntry(fm));
 		_realUpdates.insert(TodoEntry(fm));
 		SEISCOMP_DEBUG("* queued updated focal mechanism %s",
@@ -1067,8 +1077,14 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 	MagnitudePtr mag = Magnitude::Cast(object);
 	if ( mag ) {
 		logObject(_inputMagnitude, Core::Time::GMT());
-		if ( !mag->registered() )
+		if ( !mag->registered() ) {
 			mag = Magnitude::Find(mag->publicID());
+			if ( !mag ) {
+				SEISCOMP_WARNING("Unexpected behaviour: magnitude update does not have an registered counterpart");
+				return;
+			}
+		}
+
 		try {
 			SEISCOMP_LOG(_infoChannel, "Received updated magnitude %s (%s %.2f)",
 			             mag->publicID().c_str(), mag->type().c_str(), mag->magnitude().value());
@@ -1079,16 +1095,23 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 		}
 
 		org = _cache.get<Origin>(parentID);
-		if ( org )
+		if ( org ) {
 			_updates.insert(TodoEntry(org, mag));
+		}
+
 		return;
 	}
 
 	EventPtr evt = Event::Cast(object);
 	if ( evt ) {
 		logObject(_inputEvent, Core::Time::GMT());
-		if ( !evt->registered() )
+		if ( !evt->registered() ) {
 			evt = Event::Find(evt->publicID());
+			if ( !evt ) {
+				SEISCOMP_WARNING("Unexpected behaviour: event update does not have an registered counterpart");
+				return;
+			}
+		}
 		SEISCOMP_LOG(_infoChannel, "Received updated event %s", evt->publicID().c_str());
 		EventInformationPtr info = cachedEvent(evt->publicID());
 		if ( !info ) {
@@ -1107,8 +1130,9 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 		return;
 	}
 
-	if ( object->parent() == _ep.get() || object->parent() == _journal.get() )
+	if ( object->parent() == _ep.get() || object->parent() == _journal.get() ) {
 		object->detach();
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1170,6 +1194,14 @@ void EventTool::removeObject(const string &parentID, Object* object) {
 			updatePreferredOrigin(info.get());
 			Notifier::Disable();
 		}
+
+		return;
+	}
+
+	PublicObject *po = PublicObject::Cast(object);
+	if ( po ) {
+		SEISCOMP_DEBUG("[notifier] %s removed from %s", po->publicID(),
+		               parentID);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1979,6 +2011,9 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 	if ( info ) {
 		// Found an event => so associate the origin
 		Notifier::Enable();
+
+		refreshEventCache(info);
+
 		if ( !info->associate(origin) ) {
 			SEISCOMP_ERROR("Association of origin %s to event %s failed",
 			               origin->publicID().c_str(), info->event->publicID().c_str());
@@ -4202,7 +4237,7 @@ void EventTool::removedFromCache(Seiscomp::DataModel::PublicObject *po) {
 		// be removed from the cache which leads to crashes. We clean up
 		// the removed events after the work has been done.
 		it->second->aboutToBeRemoved = true;
-		SEISCOMP_DEBUG("... mark event %s to be removed from cache", po->publicID().c_str());
+		SEISCOMP_DEBUG("... mark event %s to be removed from cache", po->publicID());
 	}
 
 	// Only allow to detach objects from the EP instance if it hasn't been read
