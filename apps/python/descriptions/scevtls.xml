@@ -62,7 +62,14 @@
 				</option>
 				<option long-flag="modified-after" argument="time">
 					<description>
-					Print IDs or events modified after the specified time.
+					Print IDs of events modified after the specified time.
+					</description>
+				</option>
+				<option long-flag="event-type" argument="arg">
+					<description>
+					The event type for filtering events.
+					Use quotes for types with more than one word.
+					Example: "mining explosion".
 					</description>
 				</option>
 			</group>
