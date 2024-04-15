@@ -21,7 +21,10 @@
     <height>16</height>
    </size>
   </property>
-  <widget class="QWidget" name="centralwidget" >
+  <widget class="QScrollArea" name="centralwidget" >
+   <property name="widgetResizable">
+    <bool>true</bool>
+   </property>
    <layout class="QHBoxLayout" >
     <property name="margin" >
      <number>9</number>
