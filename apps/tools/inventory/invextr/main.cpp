@@ -15,6 +15,7 @@
 #include <seiscomp/client/application.h>
 #include <seiscomp/io/archive/xmlarchive.h>
 #include <seiscomp/geo/boundingbox.h>
+#include <seiscomp/core/strings.h>
 
 #include <iostream>
 #include <iomanip>
@@ -52,6 +53,10 @@ class InventoryExtractor : public Client::Application {
 		void createCommandLineDescription() override {
 			Client::Application::createCommandLineDescription();
 			commandline().addGroup("Extract");
+			commandline().addOption("Extract", "begin",
+			                        "Begin time to consider streams.", &_begin);
+			commandline().addOption("Extract", "end",
+			                        "End time to consider streams.", &_end);
 			commandline().addOption("Extract", "chans",
 			                        "A comma separated list of channel id's to "
 			                        "extract which can contain wildcards. "
@@ -68,7 +73,8 @@ class InventoryExtractor : public Client::Application {
 			commandline().addOption("Extract", "rm",
 			                        "Remove the given channels instead of "
 			                        "extracting them.");
-			commandline().addOption("Extract", "formatted,f", "Enable formatted XML output.");
+			commandline().addOption("Extract", "formatted,f",
+			                        "Enable formatted XML output.");
 		}
 
 
@@ -102,6 +108,14 @@ class InventoryExtractor : public Client::Application {
 
 
 		bool run() override {
+			OPT(Seiscomp::Core::Time) begin;
+			if ( !_begin.empty() ) {
+				begin = Seiscomp::Core::Time::FromString(_begin);
+			}
+			OPT(Seiscomp::Core::Time) end = Seiscomp::Core::Time::GMT();
+			if ( !_end.empty() ) {
+				end = Seiscomp::Core::Time::FromString(_end);
+			}
 			vector<string> chanIDs;
 			if ( !_nslc.empty() ) {
 				ifstream file(_nslc);
@@ -209,6 +223,20 @@ class InventoryExtractor : public Client::Application {
 								continue;
 							}
 
+							try {
+								if ( begin >= cha->end() ) {
+									loc->removeStream(c);
+									continue;
+								}
+							} catch ( ... ) { }
+
+							try {
+								if ( end <= cha->start() ) {
+									loc->removeStream(c);
+									continue;
+								}
+							} catch ( ... ) { }
+
 							// Keep track of used sensors and dataloggers
 							if ( !cha->sensor().empty() ) {
 								usedSensors.insert(cha->sensor());
@@ -226,6 +254,20 @@ class InventoryExtractor : public Client::Application {
 							continue;
 						}
 
+						try {
+							if ( begin >= loc->end() ) {
+								sta->removeSensorLocation(l);
+								continue;
+							}
+						} catch ( ... ) { }
+
+						try {
+							if ( end <= loc->start() ) {
+								sta->removeSensorLocation(l);
+								continue;
+							}
+						} catch ( ... ) { }
+
 						++l;
 					}
 
@@ -234,6 +276,21 @@ class InventoryExtractor : public Client::Application {
 						continue;
 					}
 
+					try {
+						if ( begin >= sta->end() ) {
+							net->removeStation(s);
+							continue;
+						}
+					} catch ( ... ) { }
+
+					try {
+						if ( end <= sta->start() ) {
+							net->removeStation(s);
+							continue;
+						}
+					} catch ( ... ) { }
+
+
 					++s;
 				}
 
@@ -241,6 +298,20 @@ class InventoryExtractor : public Client::Application {
 					inv->removeNetwork(n);
 					continue;
 				}
+
+				try {
+					if ( begin >= net->end() ) {
+						inv->removeNetwork(n);
+						continue;
+					}
+				} catch ( ... ) { }
+
+				try {
+					if ( end <= net->start() ) {
+						inv->removeNetwork(n);
+						continue;
+					}
+				} catch ( ... ) { }
 
 				++n;
 			}
@@ -354,6 +425,8 @@ class InventoryExtractor : public Client::Application {
 
 	private:
 		string              _nslc;
+		string              _begin;
+		string              _end;
 		string              _chanIDs{"*.*.*.*"};
 		bool                _remove{false};
 		string              _region;
