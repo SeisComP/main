@@ -166,7 +166,16 @@ IMPLEMENT_SC_CLASS_DERIVED(
 );
 
 
+bool isRejected(Magnitude *mag) {
+	try {
+		return mag->evaluationStatus() == REJECTED;
+	}
+	catch (Core::ValueException &) {}
+
+	return false;
 }
+
+} // ns anonymous
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -2553,7 +2562,10 @@ Magnitude *EventTool::preferredMagnitude(Origin *origin) {
 	double mbval = 0.0;
 	for ( size_t i = 0; i < origin->magnitudeCount(); ++i ) {
 		Magnitude *mag = origin->magnitude(i);
-		if ( isAgencyIDBlocked(objectAgencyID(mag)) ) continue;
+		if ( isAgencyIDBlocked(objectAgencyID(mag)) || isRejected(mag) ) {
+			continue;
+		}
+
 		if ( mag->type() == "mb" ) {
 			if ( mag->magnitude().value() > mbval ) {
 				mbval = mag->magnitude().value();
@@ -2565,7 +2577,18 @@ Magnitude *EventTool::preferredMagnitude(Origin *origin) {
 	for ( size_t i = 0; i < origin->magnitudeCount(); ++i ) {
 		try {
 			Magnitude *mag = origin->magnitude(i);
-			if ( isAgencyIDBlocked(objectAgencyID(mag)) ) continue;
+			if ( isAgencyIDBlocked(objectAgencyID(mag)) ) {
+				SEISCOMP_DEBUG("...... ignoring %s magnitude %s: agency '%s' is blocked",
+				               mag->type().c_str(), mag->publicID().c_str(),
+				               mag->creationInfo().agencyID().c_str());
+				continue;
+			}
+
+			if ( isRejected(mag) ) {
+				SEISCOMP_DEBUG("...... ignoring %s magnitude %s: evaluation status is 'rejected'",
+				               mag->type().c_str(), mag->publicID().c_str());
+				continue;
+			}
 
 			int priority = goodness(mag, mbcount, mbval, _config);
 			if ( priority <= 0 ) {
@@ -2637,7 +2660,9 @@ Magnitude *EventTool::preferredMagnitude(Origin *origin) {
 
 		for ( size_t i = 0; i < origin->magnitudeCount(); ++i ) {
 			Magnitude *mag = origin->magnitude(i);
-			if ( isAgencyIDBlocked(objectAgencyID(mag)) ) continue;
+			if ( isAgencyIDBlocked(objectAgencyID(mag)) || isRejected(mag) ) {
+				continue;
+			}
 
 			int prio = magnitudePriority(mag->type(), _config);
 			if ( (stationCount(mag) > fallbackCount)
@@ -2797,6 +2822,13 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 				continue;
 			}
 
+			if ( isRejected(momentMag.get()) ) {
+				SEISCOMP_LOG(_infoChannel,
+				             "Moment magnitude with id '%s' of status REJECTED",
+				             mt->momentMagnitudeID().c_str());
+				continue;
+			}
+
 			mag = momentMag.get();
 			SEISCOMP_DEBUG("... found preferred Mw %s", mag->publicID().c_str());
 
@@ -2812,6 +2844,13 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		for ( size_t i = 0; i < origin->magnitudeCount(); ++i ) {
 			Magnitude *nm = origin->magnitude(i);
 			if ( nm->type() == info->constraints.preferredMagnitudeType ) {
+				if ( isRejected(momentMag.get()) ) {
+					SEISCOMP_LOG(_infoChannel,
+					             "Found magnitude '%s' with requested type but "
+					             "of status REJECTED",
+					             nm->publicID().c_str());
+					continue;
+				}
 				SEISCOMP_DEBUG("... found magnitude %s with requested type",
 				               nm->publicID().c_str());
 				mag = nm;

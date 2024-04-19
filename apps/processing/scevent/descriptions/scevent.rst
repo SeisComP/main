@@ -122,6 +122,8 @@ of the preferred origin. The ranking is mainly controlled by
 :confval:`eventAssociation.magTypes` and :confval:`eventAssociation.minimumMagnitudes`
 and related configuration parameters.
 
+Magnitudes where the evaluation mode is 'rejected' are ignored.
+
 
 .. _scevent-preffm:
 
