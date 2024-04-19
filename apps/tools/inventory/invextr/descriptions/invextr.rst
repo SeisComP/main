@@ -4,6 +4,7 @@ invextr reads and modifies inventory XML provided as file or on stdin:
 
   * channel IDs
   * geographic region
+  * time
 
 * Clean inventories from unused objects such as data loggers, sensors or
   instrument responses.
