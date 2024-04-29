@@ -30,6 +30,8 @@
 #include <seiscomp/math/mean.h>
 #include <seiscomp/seismology/ttt/locsat.h>
 
+#include <cmath>
+
 #include "amplitude.h"
 #include "regions.h"
 #include "version.h"
@@ -797,6 +799,8 @@ bool MNAmplitude::computeAmplitude(const Seiscomp::DoubleArray &dataArray,
 		               abs(amplitudeResponse), abs(sensorResponse), scale,
 		               amplitude->value * scale);
 	}
+
+	amplitude->value = std::abs(amplitude->value);
 
 	return true;
 }

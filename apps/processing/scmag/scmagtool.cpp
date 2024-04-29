@@ -237,6 +237,10 @@ class MagToolApp : public Seiscomp::Client::Application {
 			} catch ( ... ) {}
 
 			try {
+				_magtool.setSummaryMagnitudeSingleton(configGetBool("summaryMagnitude.singleton"));
+			} catch ( ... ) {}
+
+			try {
 				_magtool.setSummaryMagnitudeBlacklist(configGetStrings("summaryMagnitude.blacklist"));
 			} catch ( ... ) {}
 

@@ -84,6 +84,7 @@ class MagTool {
 
 	public:
 		void setSummaryMagnitudeEnabled(bool);
+		void setSummaryMagnitudeSingleton(bool);
 		void setSummaryMagnitudeType(const std::string &type);
 
 		// This is the minimum station magnitude required for any
@@ -204,10 +205,11 @@ class MagTool {
 		ParameterMap       _parameters;
 		Core::TimeSpan     _cacheSize;
 
-		double             _minimumArrivalWeight;
-		bool               _summaryMagnitudeEnabled;
-		int                _summaryMagnitudeMinStationCount;
-		std::string        _summaryMagnitudeType;
+		double             _minimumArrivalWeight{0.5};
+		bool               _summaryMagnitudeEnabled{true};
+		bool               _summaryMagnitudeSingleton{true};
+		int                _summaryMagnitudeMinStationCount{1};
+		std::string        _summaryMagnitudeType{"M"};
 		TypeList           _summaryMagnitudeBlacklist;
 		TypeList           _summaryMagnitudeWhitelist;
 
@@ -215,9 +217,9 @@ class MagTool {
 		Coefficients       _magnitudeCoefficients;
 		AverageMethods     _magnitudeAverageMethods;
 
-		bool               _allowReprocessing;
-		bool               _staticUpdate;
-		bool               _keepWeights;
+		bool               _allowReprocessing{false};
+		bool               _staticUpdate{false};
+		bool               _keepWeights{false};
 		double             _warningLevel;
 		size_t             _dbAccesses;
 

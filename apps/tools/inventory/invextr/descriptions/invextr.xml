@@ -38,6 +38,18 @@
 			</group>
 
 			<group name="Extract">
+				<option flag="" long-flag="begin" argument="arg">
+					<description>
+						Begin time to consider streams. Streams ending at or
+						before that time will be ignored.
+					</description>
+				</option>
+				<option flag="" long-flag="end" argument="arg">
+					<description>
+						End time to consider streams. Streams starting after
+						that time will be ignored.
+					</description>
+				</option>
 				<option flag="" long-flag="chans" argument="arg">
 					<description>
 						A comma separated list of channel IDs to extract

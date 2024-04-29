@@ -390,6 +390,32 @@ bool Check::check() {
 						    cha, nullptr);
 					}
 
+					try {
+						cha->dip();
+						if ( cha->gain() < 0.0 && cha->dip() > 0.0 ) {
+							log(LogHandler::Information,
+							    (string(cha->className()) + " " + nslc(cha) + "\n  "
+							     "negative gain and positive dip, consider positive gain and negative dip").c_str(),
+							    cha, nullptr);
+						}
+					}
+					catch ( Seiscomp::Core::ValueException &e ) {
+						log(LogHandler::Warning,
+						    (string(cha->className()) + " " + nslc(cha) + "\n  "
+						     + e.what()).c_str(),
+						    cha, nullptr);
+					}
+
+					try {
+						cha->azimuth();
+					}
+					catch ( Seiscomp::Core::ValueException &e ) {
+						log(LogHandler::Warning,
+						    (string(cha->className()) + " " + nslc(cha) + "\n  "
+						     + e.what()).c_str(),
+						    cha, nullptr);
+					}
+
 					if ( cha->gainUnit().empty() ) {
 						log(LogHandler::Warning,
 						    (string(cha->className()) + " " + nslc(cha) + "\n  "

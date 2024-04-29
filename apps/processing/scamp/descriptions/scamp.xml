@@ -8,13 +8,26 @@
 			</parameter>
 			<group name="amptool">
 				<parameter name="minimumPickWeight" type="double" default="0.5">
-					<description>The minimum arrival weight within an origin to compute amplitudes for the associated pick.</description>
+					<description>
+					The minimum arrival weight within an origin to compute amplitudes for the associated pick.
+					</description>
+				</parameter>
+				<parameter name="streamFromBindings" type="boolean" default="false">
+					<description>
+					If enabled then global bindings will be used to replace
+					location code and channel code of a pick with the configured
+					values of detecLocid and detecStream for amplitude computation.
+					</description>
 				</parameter>
 				<parameter name="initialAcquisitionTimeout" type="double" default="30" unit="s">
-					<description>Timeout in seconds of the first data packet of waveform data acquisition.</description>
+					<description>
+					Timeout in seconds of the first data packet of waveform data acquisition.
+					</description>
 				</parameter>
 				<parameter name="runningAcquisitionTimeout" type="double" default="2" unit="s">
-					<description>Timeout in seconds of any subsequent data packet of waveform data acquisition.</description>
+					<description>
+					Timeout in seconds of any subsequent data packet of waveform data acquisition.
+					</description>
 				</parameter>
 			</group>
 		</configuration>

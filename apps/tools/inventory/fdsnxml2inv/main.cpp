@@ -58,6 +58,7 @@ class SyncStationXML : public Client::Application {
 			setMessagingEnabled(false);
 			setDatabaseEnabled(false, false);
 			setLoggingToStdErr(true);
+			setDaemonEnabled(false);
 
 			_convertBack = false;
 			_activeConverter = NULL;
@@ -78,16 +79,19 @@ class SyncStationXML : public Client::Application {
 			commandline().addGroup("Convert");
 
 			commandline().addOption("Convert", "relaxed-ns-check",
-			                        "Enable relaxed XML namespace checks. This will "
-			                        "accept also tags within a different namespace than "
-			                        "defined in the supported schema.");
+			                        "Enable relaxed XML namespace checks. This "
+			                        "will accept also tags within a different "
+			                        "namespace than defined in the supported "
+			                        "schema.");
 			commandline().addOption("Convert", "to-staxml",
-			                        "Convert from SeisComPML to StationXML expecting SeisComPML as input");
+			                        "Convert from SeisComPML to StationXML "
+			                        "expecting SeisComPML as input.");
 			commandline().addOption("Convert", "formatted,f",
-			                        "Enable formatted output");
+			                        "Enable formatted XML output.");
 			commandline().addOption("Convert", "log-stages",
-			                        "Add more output to stderr for all channel response stages when converting "
-			                        "from StationXML");
+			                        "Add more output to stderr for all channel "
+			                        "response stages when converting from "
+			                        "StationXML.");
 		}
 
 		bool validateParameters() {
@@ -101,9 +105,17 @@ class SyncStationXML : public Client::Application {
 
 			const vector<string> &args = commandline().unrecognizedOptions();
 			if ( args.size() < 1 ) {
-				cerr << "Usage: fdsnxml2inv [options] input [output=stdout]" << endl;
+				cout << "Must provide exactly one input file" << endl;
+				printUsage();
 				return false;
 			}
+			if ( args.size() > 2 ) {
+				cout << "You must provide exactly one input and you may provide "
+				        "one output file" << endl;
+				printUsage();
+				return false;
+			}
+
 
 			_inputFile = args[0];
 
@@ -114,6 +126,22 @@ class SyncStationXML : public Client::Application {
 
 			return true;
 		}
+
+		void printUsage() const {
+			cout << "Usage:"  << endl << "  fdsnxml2inv [options] input [output=stdout]"
+			     << endl << endl
+			     << "Convert station inventory between FDSN StationXML format "
+			        "and SeisComP XML." << endl;
+
+			Seiscomp::Client::Application::printUsage();
+
+			cout << "Examples:" << endl;
+			cout << "Convert FDSN StationXML to SCML" << endl
+			     << "  fdnsxml2inv fdsn-station.xml inventory.xml" << endl;
+			cout  << endl << "Convert SCML to FDSN StationXML" << endl
+			     << "  fdnsxml2inv --to-staxml inventory.xml fdsn-station.xml" << endl;
+		}
+
 
 		void exit(int returnCode) {
 			Client::Application::exit(returnCode);

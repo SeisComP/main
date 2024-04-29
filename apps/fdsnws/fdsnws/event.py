@@ -41,7 +41,7 @@ from . import utils
 
 DBMaxUInt = 18446744073709551615  # 2^64 - 1
 
-VERSION = "1.2.5"
+VERSION = "1.2.6"
 
 ################################################################################
 
@@ -312,7 +312,7 @@ class FDSNEvent(BaseResource):
             "Access-Control-Allow-Headers",
             "Accept, Content-Type, X-Requested-With, Origin",
         )
-        req.setHeader("Content-Type", "text/plain")
+        req.setHeader("Content-Type", "text/plain; charset=utf-8")
         return ""
 
     # ---------------------------------------------------------------------------
@@ -762,9 +762,9 @@ class FDSNEvent(BaseResource):
         seiscomp.logging.debug(f"events found: {ep.eventCount()}")
 
         if ro.format == "csv" or not exp:
-            req.setHeader("Content-Type", "text/plain")
+            req.setHeader("Content-Type", "text/plain; charset=utf-8")
         else:
-            req.setHeader("Content-Type", "application/xml")
+            req.setHeader("Content-Type", "application/xml; charset=utf-8")
 
         if exp:
             return self._processRequestExp(req, ro, dbq, exp, ep)

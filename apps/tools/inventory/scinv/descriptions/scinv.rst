@@ -172,7 +172,7 @@ an XML file or the complete inventory pool.
              epoch 2010-03-25
 
 The default level of information printed is *chan*. Available levels are *net*,
-*sta*, *chan* and *resp*. The output level is controlled by :option:`--level``.
+*sta*, *chan* and *resp*. The output level is controlled by :option:`--level`.
 
 For checking the available networks and stations in the inventory pool, calling
 
@@ -263,8 +263,8 @@ results.
                  ; elevation < -12000               ; !;
                  ; has no sensor location           ; W;
 
-   sensorLocation; coordinates far away from station; W; :option:`--distance` overrides default threshold (10 km)
-                 ; elevation far away from station  ; W; :option:`--max-elevation-difference` overrides default threshold (500 m)
+   sensorLocation; coordinates far away from station; W; :option:`--distance` and :confval:`check.maxDistance` override default threshold (10 km)
+                 ; elevation far away from station  ; W; :option:`--max-elevation-difference` and :confval:`check.maxElevationDifference` override default threshold (500 m)
                  ; epoch outside network epochs     ; C;
                  ; epoch outside station epochs     ; C;
                  ; empty or no start time           ; W; sensorLocation is ignored
@@ -283,14 +283,17 @@ results.
                  ; start time after end time        ; C;
                  ; missing gain value               ; W; empty value is handled by SeisComP inventory reader
                  ; gain value = 0                   ; W;
+                 ; gain < 0 and dip > 0             ; W; may result in unexpected behavior, consider positive gain and negative dip
                  ; missing gain unit                ; W; empty value is handled by SeisComP inventory reader
                  ; missing gain frequency           ;  ; empty value is handled by SeisComP inventory reader
                  ; missing sampling rate            ;  ; empty value is handled by SeisComP inventory reader
                  ; missing depth                    ; W; empty value is handled by SeisComP inventory reader
-                 ; missing azimuth                  ;  ; empty value is handled by SeisComP inventory reader
-                 ; missing dip                      ;  ; empty value is handled by SeisComP inventory reader
+                 ; missing azimuth                  ; W;
+                 ; missing dip                      ; W;
+                 ; empty azimuth                    ;  ; handled by SeisComP inventory reader
+                 ; empty dip                        ;  ; handled by SeisComP inventory reader
                  ; empty sensor ID                  ; I;
-                 ; large depth                      ; W; :option:`--max-sensor-depth` overrides default threshold (500 m)
+                 ; large depth                      ; W; :option:`--max-sensor-depth` and :confval:`check.maxSensorDepth` override default threshold (500 m)
                  ; 2 or more than 3 streams exist   ; I;
                  ; 3C streams are not orthogonal    ; W; differences <= 5 degree are tolerated, applies to seismic sensors with codes G, H, L, N
 

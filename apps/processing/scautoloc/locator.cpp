@@ -139,7 +139,7 @@ Origin *Locator::relocate(const Origin *origin)
 // vvvvvvvvvvvvvvvvv
 // FIXME: This is still needed, but it would be better to get rid of it!
 	// if the origin to relocate has a fixed depth, keep it fixed!
-	if (hasFixedDepth(origin)) {
+	if ( hasFixedDepth(origin) ) {
 		setFixedDepth(origin->dep);
 	}
 // ^^^^^^^^^^^^^^^^

@@ -39,7 +39,7 @@ from . import utils
 from .reqtrack import RequestTrackerDB
 from .fastsds import SDS
 
-VERSION = "1.1.2"
+VERSION = "1.1.3"
 
 ################################################################################
 
@@ -425,7 +425,7 @@ class FDSNDataSelect(BaseResource):
             "Access-Control-Allow-Headers",
             "Accept, Content-Type, X-Requested-With, Origin",
         )
-        req.setHeader("Content-Type", "text/plain")
+        req.setHeader("Content-Type", "text/plain; charset=utf-8")
         return ""
 
     # ---------------------------------------------------------------------------

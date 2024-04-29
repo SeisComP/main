@@ -23,9 +23,9 @@ class TestAvailability(FDSNWSTest):
         print("Testing availability service")
 
         query = f"{self.url}/availability/1/"
-        ctTXT = "text/plain"
-        ctCSV = "text/csv"
-        ctJSON = "application/json"
+        ctTXT = "text/plain; charset=utf-8"
+        ctCSV = "text/csv; charset=utf-8"
+        ctJSON = "application/json; charset=utf-8"
         resFile = f"{self.rootdir}/results/availability-{{}}.txt"
 
         i = 1

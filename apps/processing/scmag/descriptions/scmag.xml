@@ -3,7 +3,7 @@
 	<module name="scmag" category="Processing">
 		<description>Calculates magnitudes of different types.</description>
 		<configuration>
-			<parameter name="magnitudes" type="list:string" default="MLv, mb, mB, Mwp">
+			<parameter name="magnitudes" type="list:string" default="MLv,mb,mB,Mwp">
 				<description>
 				The magnitude types to be calculated. Station magnitudes are
 				computed from their amplitudes, network magnitudes from their
@@ -57,7 +57,7 @@
 				<parameter name="type" type="string" default="M">
 					<description>Define the type/name of the summary magnitude.</description>
 				</parameter>
-				<parameter name="minStationCount" type="int" default="4">
+				<parameter name="minStationCount" type="int" default="1">
 					<description>
 					This is the minimum station magnitude required for any
 					magnitude to contribute to the summary magnitude at all. If
@@ -66,6 +66,14 @@
 					in no summary magnitude at all. For this reason, the default
 					here is 1 but in a purely automatic	system it should be
 					higher, at least 4 is recommended.
+					</description>
+				</parameter>
+				<parameter name="singleton" type="boolean" default="true">
+					<description>
+					Allow computing the summary magnitude even if only one single
+					network magnitude meeting the other criteria is available.
+					Unselecting this parameter will suppress computing summary
+					magnitudes if only one network magnitude is available.
 					</description>
 				</parameter>
 				<parameter name="blacklist" type="list:string" default="">

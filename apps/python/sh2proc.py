@@ -18,36 +18,37 @@
 ############################################################################
 
 
-import seiscomp.client, seiscomp.core, seiscomp.datamodel, seiscomp.io, seiscomp.logging, seiscomp.math
-from time import strptime
+# from time import strptime
 import sys
 import traceback
+import seiscomp.client
+import seiscomp.core
+import seiscomp.datamodel
+import seiscomp.io
+import seiscomp.logging
+import seiscomp.math
 
-TimeFormats = [
-    '%d-%b-%Y_%H:%M:%S.%f',
-    '%d-%b-%Y_%H:%M:%S'
-]
+
+TimeFormats = ["%d-%b-%Y_%H:%M:%S.%f", "%d-%b-%Y_%H:%M:%S"]
 
 
 # SC3 has more event types available in the datamodel
 EventTypes = {
-    'teleseismic quake': seiscomp.datamodel.EARTHQUAKE,
-    'local quake': seiscomp.datamodel.EARTHQUAKE,
-    'regional quake': seiscomp.datamodel.EARTHQUAKE,
-    'quarry blast': seiscomp.datamodel.QUARRY_BLAST,
-    'nuclear explosion': seiscomp.datamodel.NUCLEAR_EXPLOSION,
-    'mining event': seiscomp.datamodel.MINING_EXPLOSION
+    "teleseismic quake": seiscomp.datamodel.EARTHQUAKE,
+    "local quake": seiscomp.datamodel.EARTHQUAKE,
+    "regional quake": seiscomp.datamodel.EARTHQUAKE,
+    "quarry blast": seiscomp.datamodel.QUARRY_BLAST,
+    "nuclear explosion": seiscomp.datamodel.NUCLEAR_EXPLOSION,
+    "mining event": seiscomp.datamodel.MINING_EXPLOSION,
 }
 
 
 def wfs2Str(wfsID):
-    return '%s.%s.%s.%s' % (wfsID.networkCode(), wfsID.stationCode(),
-                            wfsID.locationCode(), wfsID.channelCode())
+    return f"{wfsID.networkCode()}.{wfsID.stationCode()}.{wfsID.locationCode()}.{wfsID.channelCode()}"
 
 
 ###############################################################################
 class SH2Proc(seiscomp.client.Application):
-
     ###########################################################################
     def __init__(self):
         seiscomp.client.Application.__init__(self, len(sys.argv), sys.argv)
@@ -57,7 +58,8 @@ class SH2Proc(seiscomp.client.Application):
         self.setLoadConfigModuleEnabled(True)
         self.setDaemonEnabled(False)
 
-        self.inputFile = '-'
+        self.inputFile = "-"
+        self.streams = None
 
     ###########################################################################
     def initConfiguration(self):
@@ -67,7 +69,7 @@ class SH2Proc(seiscomp.client.Application):
         # If the database connection is passed via command line or configuration
         # file then messaging is disabled. Messaging is only used to get
         # the configured database connection URI.
-        if self.databaseURI() != '':
+        if self.databaseURI() != "":
             self.setMessagingEnabled(False)
         else:
             # A database connection is not required if the inventory is loaded
@@ -80,30 +82,33 @@ class SH2Proc(seiscomp.client.Application):
 
     ##########################################################################
     def printUsage(self):
-
-        print('''Usage:
+        print(
+            """Usage:
   sh2proc [options]
 
-Convert Seismic Handler event data to SeisComP XML format''')
+Convert Seismic Handler event data to SeisComP XML format"""
+        )
 
         seiscomp.client.Application.printUsage(self)
 
-        print('''Examples:
+        print(
+            """Examples:
 Convert the Seismic Handler file shm.evt to SCML. Receive the database
 connection to read inventory and configuration information from messaging
   sh2proc shm.evt
 
 Read Seismic Handler data from stdin. Provide inventory and configuration in XML
   cat shm.evt | sh2proc --inventory-db=inventory.xml --config-db=config.xml
-''')
-    
+"""
+        )
+
     ##########################################################################
     def validateParameters(self):
         if not seiscomp.client.Application.validateParameters(self):
             return False
 
         for opt in self.commandline().unrecognizedOptions():
-            if len(opt) > 1 and opt.startswith('-'):
+            if len(opt) > 1 and opt.startswith("-"):
                 continue
 
             self.inputFile = opt
@@ -121,47 +126,52 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
         # try to load streams by detecLocid and detecStream
         mod = self.configModule()
         if mod is not None and mod.configStationCount() > 0:
-            seiscomp.logging.info('loading streams using detecLocid and detecStream')
+            seiscomp.logging.info("loading streams using detecLocid and detecStream")
             for i in range(mod.configStationCount()):
                 cfg = mod.configStation(i)
                 net = cfg.networkCode()
                 sta = cfg.stationCode()
                 if sta in self.streams:
                     seiscomp.logging.warning(
-                            'ambiguous stream id found for station %s.%s' % (net, sta))
+                        f"ambiguous stream id found for station {net}.{sta}"
+                    )
                     continue
 
                 setup = seiscomp.datamodel.findSetup(cfg, self.name(), True)
                 if not setup:
                     seiscomp.logging.warning(
-                            'could not find station setup for %s.%s' % (net, sta))
+                        f"could not find station setup for {net}.{sta}"
+                    )
                     continue
 
                 params = seiscomp.datamodel.ParameterSet.Find(setup.parameterSetID())
                 if not params:
                     seiscomp.logging.warning(
-                            'could not find station parameters for %s.%s' % (net, sta))
+                        f"could not find station parameters for {net}.{sta}"
+                    )
                     continue
 
-                detecLocid = ''
+                detecLocid = ""
                 detecStream = None
 
                 for j in range(params.parameterCount()):
                     param = params.parameter(j)
-                    if param.name() == 'detecStream':
+                    if param.name() == "detecStream":
                         detecStream = param.value()
-                    elif param.name() == 'detecLocid':
+                    elif param.name() == "detecLocid":
                         detecLocid = param.value()
 
                 if detecStream is None:
                     seiscomp.logging.warning(
-                            'could not find detecStream for %s.%s' % (net, sta))
+                        f"could not find detecStream for {net}.{sta}"
+                    )
                     continue
 
                 loc = inv.getSensorLocation(net, sta, detecLocid, now)
                 if loc is None:
                     seiscomp.logging.warning(
-                            'could not find preferred location for %s.%s' % (net, sta))
+                        f"could not find preferred location for {net}.{sta}"
+                    )
                     continue
 
                 components = {}
@@ -169,22 +179,29 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
                 seiscomp.datamodel.getThreeComponents(tc, loc, detecStream[:2], now)
                 if tc.vertical():
                     cha = tc.vertical()
-                    wfsID = seiscomp.datamodel.WaveformStreamID(net, sta, loc.code(),
-                                                       cha.code(), '')
+                    wfsID = seiscomp.datamodel.WaveformStreamID(
+                        net, sta, loc.code(), cha.code(), ""
+                    )
                     components[cha.code()[-1]] = wfsID
-                    seiscomp.logging.debug('add stream %s (vertical)' % wfs2Str(wfsID))
+                    seiscomp.logging.debug(f"add stream {wfs2Str(wfsID)} (vertical)")
                 if tc.firstHorizontal():
                     cha = tc.firstHorizontal()
-                    wfsID = seiscomp.datamodel.WaveformStreamID(net, sta, loc.code(),
-                                                       cha.code(), '')
+                    wfsID = seiscomp.datamodel.WaveformStreamID(
+                        net, sta, loc.code(), cha.code(), ""
+                    )
                     components[cha.code()[-1]] = wfsID
-                    seiscomp.logging.debug('add stream %s (first horizontal)' % wfs2Str(wfsID))
+                    seiscomp.logging.debug(
+                        f"add stream {wfs2Str(wfsID)} (first horizontal)"
+                    )
                 if tc.secondHorizontal():
                     cha = tc.secondHorizontal()
-                    wfsID = seiscomp.datamodel.WaveformStreamID(net, sta, loc.code(),
-                                                       cha.code(), '')
+                    wfsID = seiscomp.datamodel.WaveformStreamID(
+                        net, sta, loc.code(), cha.code(), ""
+                    )
                     components[cha.code()[-1]] = wfsID
-                    seiscomp.logging.debug('add stream %s (second horizontal)' % wfs2Str(wfsID))
+                    seiscomp.logging.debug(
+                        f"add stream {wfs2Str(wfsID)} (second horizontal)"
+                    )
                 if len(components) > 0:
                     self.streams[sta] = components
 
@@ -192,12 +209,15 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
 
         # fallback loading streams from inventory
         seiscomp.logging.warning(
-                'no configuration module available, loading streams '
-                'from inventory and selecting first available stream '
-                'matching epoch')
+            "no configuration module available, loading streams "
+            "from inventory and selecting first available stream "
+            "matching epoch"
+        )
         for iNet in range(inv.inventory().networkCount()):
             net = inv.inventory().network(iNet)
-            seiscomp.logging.debug('network %s: loaded %i stations' % (net.code(), net.stationCount()))
+            seiscomp.logging.debug(
+                f"network {net.code()}: loaded {net.stationCount()} stations"
+            )
             for iSta in range(net.stationCount()):
                 sta = net.station(iSta)
                 try:
@@ -219,8 +239,9 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
                     for iCha in range(loc.streamCount()):
                         cha = loc.stream(iCha)
 
-                        wfsID = seiscomp.datamodel.WaveformStreamID(net.code(),
-                                                           sta.code(), loc.code(), cha.code(), '')
+                        wfsID = seiscomp.datamodel.WaveformStreamID(
+                            net.code(), sta.code(), loc.code(), cha.code(), ""
+                        )
                         comp = cha.code()[2]
                         if sta.code() not in self.streams:
                             components = {}
@@ -232,17 +253,20 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
                             # location codes match first item in station
                             # specific steam list
                             oldWfsID = list(self.streams[sta.code()].values())[0]
-                            if net.code() != oldWfsID.networkCode() or \
-                               loc.code() != oldWfsID.locationCode() or \
-                               cha.code()[:2] != oldWfsID.channelCode()[:2]:
+                            if (
+                                net.code() != oldWfsID.networkCode()
+                                or loc.code() != oldWfsID.locationCode()
+                                or cha.code()[:2] != oldWfsID.channelCode()[:2]
+                            ):
                                 seiscomp.logging.warning(
-                                        'ambiguous stream id found for station %s, ignoring %s'
-                                        % (sta.code(), wfs2Str(wfsID)))
+                                    f"ambiguous stream id found for station\
+                                        {sta.code()}, ignoring {wfs2Str(wfsID)}"
+                                )
                                 continue
 
                             self.streams[sta.code()][comp] = wfsID
 
-                        seiscomp.logging.debug('add stream %s' % wfs2Str(wfsID))
+                        seiscomp.logging.debug(f"add stream {wfs2Str(wfsID)}")
 
     ###########################################################################
     def parseTime(self, timeStr):
@@ -254,20 +278,20 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
 
     ###########################################################################
     def parseMagType(self, value):
-        if value == 'm':
-            return 'M'
-        elif value == 'ml':
-            return 'ML'
-        elif value == 'mb':
-            return 'mb'
-        elif value == 'ms':
-            return 'Ms(BB)'
-        elif value == 'mw':
-            return 'Mw'
-        elif value == 'bb':
-            return 'mB'
+        if value == "m":
+            return "M"
+        if value == "ml":
+            return "ML"
+        if value == "mb":
+            return "mb"
+        if value == "ms":
+            return "Ms(BB)"
+        if value == "mw":
+            return "Mw"
+        if value == "bb":
+            return "mB"
 
-        return ''
+        return ""
 
     ###########################################################################
     def sh2proc(self, file):
@@ -292,6 +316,8 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
         compCode = None
         stationMagBB = None
 
+        ampPeriod = None
+        ampBBPeriod = None
         amplitudeDisp = None
         amplitudeVel = None
         amplitudeSNR = None
@@ -302,13 +328,17 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
         magnitudeMS = None
         magnitudeBB = None
 
+        # To avoid undefined warning
+        arrival = None
+        phase = None
+
         km2degFac = 1.0 / seiscomp.math.deg2km(1.0)
 
         # read file line by line, split key and value at colon
         iLine = 0
         for line in file:
             iLine += 1
-            a = line.split(':', 1)
+            a = line.split(":", 1)
             key = a[0].strip()
             keyLower = key.lower()
             value = None
@@ -318,25 +348,28 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
                 continue
 
             # end of phase
-            elif keyLower == '--- end of phase ---':
+            if keyLower == "--- end of phase ---":
                 if pick is None:
-                    seiscomp.logging.warning(
-                            'Line %i: found empty phase block' % iLine)
+                    seiscomp.logging.warning(f"Line {iLine}: found empty phase block")
                     continue
 
                 if staCode is None or compCode is None:
                     seiscomp.logging.warning(
-                            'Line %i: end of phase, stream code incomplete' % iLine)
+                        f"Line {iLine}: end of phase, stream code incomplete"
+                    )
                     continue
 
                 if not staCode in self.streams:
                     seiscomp.logging.warning(
-                            'Line %i: end of phase, station code %s not found in inventory' % (iLine, staCode))
+                        f"Line {iLine}: end of phase, station code {staCode} not found in inventory"
+                    )
                     continue
 
                 if not compCode in self.streams[staCode]:
                     seiscomp.logging.warning(
-                            'Line %i: end of phase, component %s of station %s not found in inventory' % (iLine, compCode, staCode))
+                        f"Line {iLine}: end of phase, component\
+                            {compCode} of station {staCode} not found in inventory"
+                    )
                     continue
 
                 streamID = self.streams[staCode][compCode]
@@ -361,49 +394,53 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
                 if stationMagBB is not None:
                     stationMagBB.setWaveformID(streamID)
                     origin.add(stationMagBB)
-                    stationMagContrib = seiscomp.datamodel.StationMagnitudeContribution()
-                    stationMagContrib.setStationMagnitudeID(
-                        stationMagBB.publicID())
+                    stationMagContrib = (
+                        seiscomp.datamodel.StationMagnitudeContribution()
+                    )
+                    stationMagContrib.setStationMagnitudeID(stationMagBB.publicID())
                     if magnitudeBB is None:
                         magnitudeBB = seiscomp.datamodel.Magnitude.Create()
                     magnitudeBB.add(stationMagContrib)
 
                 if stationMag is not None:
-                    if stationMag.type() in ['mb', 'ML'] and amplitudeDisp is not None:
+                    if stationMag.type() in ["mb", "ML"] and amplitudeDisp is not None:
                         amplitudeDisp.setPickID(pick.publicID())
                         amplitudeDisp.setWaveformID(streamID)
                         amplitudeDisp.setPeriod(
-                            seiscomp.datamodel.RealQuantity(ampPeriod))
+                            seiscomp.datamodel.RealQuantity(ampPeriod)
+                        )
                         amplitudeDisp.setType(stationMag.type())
                         ep.add(amplitudeDisp)
 
-                    if stationMag.type() in ['Ms(BB)'] and amplitudeVel is not None:
+                    if stationMag.type() in ["Ms(BB)"] and amplitudeVel is not None:
                         amplitudeVel.setPickID(pick.publicID())
                         amplitudeVel.setWaveformID(streamID)
                         amplitudeVel.setPeriod(
-                            seiscomp.datamodel.RealQuantity(ampPeriod))
+                            seiscomp.datamodel.RealQuantity(ampPeriod)
+                        )
                         amplitudeVel.setType(stationMag.type())
                         ep.add(amplitudeVel)
 
                     stationMag.setWaveformID(streamID)
                     origin.add(stationMag)
 
-                    stationMagContrib = seiscomp.datamodel.StationMagnitudeContribution()
-                    stationMagContrib.setStationMagnitudeID(
-                        stationMag.publicID())
+                    stationMagContrib = (
+                        seiscomp.datamodel.StationMagnitudeContribution()
+                    )
+                    stationMagContrib.setStationMagnitudeID(stationMag.publicID())
 
                     magType = stationMag.type()
-                    if magType == 'ML':
+                    if magType == "ML":
                         if magnitudeML is None:
                             magnitudeML = seiscomp.datamodel.Magnitude.Create()
                         magnitudeML.add(stationMagContrib)
 
-                    elif magType == 'Ms(BB)':
+                    elif magType == "Ms(BB)":
                         if magnitudeMS is None:
                             magnitudeMS = seiscomp.datamodel.Magnitude.Create()
                         magnitudeMS.add(stationMagContrib)
 
-                    elif magType == 'mb':
+                    elif magType == "mb":
                         if magnitudeMB is None:
                             magnitudeMB = seiscomp.datamodel.Magnitude.Create()
                         magnitudeMB.add(stationMagContrib)
@@ -413,15 +450,18 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
                 compCode = None
                 stationMag = None
                 stationMagBB = None
+                ampPeriod = None
+                ampBBPeriod = None
                 amplitudeDisp = None
                 amplitudeVel = None
                 amplitudeSNR = None
                 amplitudeBB = None
+
                 continue
 
             # empty key
-            elif len(a) == 1:
-                seiscomp.logging.warning('Line %i: key without value' % iLine)
+            if len(a) == 1:
+                seiscomp.logging.warning(f"Line {iLine}: key without value")
                 continue
 
             value = a[1].strip()
@@ -434,262 +474,294 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
                 # station parameters
 
                 # station code
-                if keyLower == 'station code':
+                if keyLower == "station code":
                     staCode = value
 
                 # pick time
-                elif keyLower == 'onset time':
+                elif keyLower == "onset time":
                     pick.setTime(seiscomp.datamodel.TimeQuantity(self.parseTime(value)))
 
                 # pick onset type
-                elif keyLower == 'onset type':
+                elif keyLower == "onset type":
                     found = False
-                    for onset in [seiscomp.datamodel.EMERGENT, seiscomp.datamodel.IMPULSIVE,
-                                  seiscomp.datamodel.QUESTIONABLE]:
+                    for onset in [
+                        seiscomp.datamodel.EMERGENT,
+                        seiscomp.datamodel.IMPULSIVE,
+                        seiscomp.datamodel.QUESTIONABLE,
+                    ]:
                         if value == seiscomp.datamodel.EPickOnsetNames_name(onset):
                             pick.setOnset(onset)
                             found = True
                             break
                     if not found:
-                        raise Exception('Unsupported onset value')
+                        raise Exception("Unsupported onset value")
 
                 # phase code
-                elif keyLower == 'phase name':
+                elif keyLower == "phase name":
                     phase = seiscomp.datamodel.Phase()
                     phase.setCode(value)
                     pick.setPhaseHint(phase)
 
                 # event type
-                elif keyLower == 'event type':
+                elif keyLower == "event type":
                     evttype = EventTypes[value]
                     event.setType(evttype)
                     originComments[key] = value
 
                 # filter ID
-                elif keyLower == 'applied filter':
+                elif keyLower == "applied filter":
                     pick.setFilterID(value)
 
                 # channel code, prepended by configured Channel prefix if only
                 # one character is found
-                elif keyLower == 'component':
+                elif keyLower == "component":
                     compCode = value
 
                 # pick evaluation mode
-                elif keyLower == 'pick type':
+                elif keyLower == "pick type":
                     found = False
-                    for mode in [seiscomp.datamodel.AUTOMATIC, seiscomp.datamodel.MANUAL]:
+                    for mode in [
+                        seiscomp.datamodel.AUTOMATIC,
+                        seiscomp.datamodel.MANUAL,
+                    ]:
                         if value == seiscomp.datamodel.EEvaluationModeNames_name(mode):
                             pick.setEvaluationMode(mode)
                             found = True
                             break
                     if not found:
-                        raise Exception('Unsupported evaluation mode value')
+                        raise Exception("Unsupported evaluation mode value")
 
                 # pick author
-                elif keyLower == 'analyst':
+                elif keyLower == "analyst":
                     creationInfo = seiscomp.datamodel.CreationInfo()
                     creationInfo.setAuthor(value)
                     pick.setCreationInfo(creationInfo)
 
                 # pick polarity
                 # isn't tested
-                elif keyLower == 'sign':
-                    if value == 'positive':
-                        sign = '0'  # positive
-                    elif value == 'negative':
-                        sign = '1'  # negative
+                elif keyLower == "sign":
+                    if value == "positive":
+                        sign = "0"  # positive
+                    elif value == "negative":
+                        sign = "1"  # negative
                     else:
-                        sign = '2'  # unknown
+                        sign = "2"  # unknown
                     pick.setPolarity(float(sign))
 
                 # arrival weight
-                elif keyLower == 'weight':
+                elif keyLower == "weight":
                     arrival.setWeight(float(value))
 
                 # arrival azimuth
-                elif keyLower == 'theo. azimuth (deg)':
+                elif keyLower == "theo. azimuth (deg)":
                     arrival.setAzimuth(float(value))
 
                 # pick theo backazimuth
-                elif keyLower == 'theo. backazimuth (deg)':
-                    if pick.slownessMethodID() == 'corrected':
-                        seiscomp.logging.debug('Line %i: ignoring parameter: %s' % (iLine, key))
+                elif keyLower == "theo. backazimuth (deg)":
+                    if pick.slownessMethodID() == "corrected":
+                        seiscomp.logging.debug(
+                            f"Line {iLine}: ignoring parameter: {key}"
+                        )
                     else:
                         pick.setBackazimuth(
-                            seiscomp.datamodel.RealQuantity(float(value)))
-                        pick.setSlownessMethodID('theoretical')
+                            seiscomp.datamodel.RealQuantity(float(value))
+                        )
+                        pick.setSlownessMethodID("theoretical")
 
                 # pick beam slowness
-                elif keyLower == 'beam-slowness (sec/deg)':
-                    if pick.slownessMethodID() == 'corrected':
-                        seiscomp.logging.debug('Line %i: ignoring parameter: %s' % (iLine, key))
+                elif keyLower == "beam-slowness (sec/deg)":
+                    if pick.slownessMethodID() == "corrected":
+                        seiscomp.logging.debug(
+                            f"Line {iLine}: ignoring parameter: {key}"
+                        )
                     else:
                         pick.setHorizontalSlowness(
-                            seiscomp.datamodel.RealQuantity(float(value)))
-                        pick.setSlownessMethodID('Array Beam')
+                            seiscomp.datamodel.RealQuantity(float(value))
+                        )
+                        pick.setSlownessMethodID("Array Beam")
 
                 # pick beam backazimuth
-                elif keyLower == 'beam-azimuth (deg)':
-                    if pick.slownessMethodID() == 'corrected':
-                        seiscomp.logging.debug('Line %i: ignoring parameter: %s' % (iLine, key))
+                elif keyLower == "beam-azimuth (deg)":
+                    if pick.slownessMethodID() == "corrected":
+                        seiscomp.logging.debug(
+                            f"Line {iLine}: ignoring parameter: {key}"
+                        )
                     else:
                         pick.setBackazimuth(
-                            seiscomp.datamodel.RealQuantity(float(value)))
+                            seiscomp.datamodel.RealQuantity(float(value))
+                        )
 
                 # pick epi slowness
-                elif keyLower == 'epi-slowness (sec/deg)':
+                elif keyLower == "epi-slowness (sec/deg)":
                     pick.setHorizontalSlowness(
-                        seiscomp.datamodel.RealQuantity(float(value)))
-                    pick.setSlownessMethodID('corrected')
+                        seiscomp.datamodel.RealQuantity(float(value))
+                    )
+                    pick.setSlownessMethodID("corrected")
 
                 # pick epi backazimuth
-                elif keyLower == 'epi-azimuth (deg)':
+                elif keyLower == "epi-azimuth (deg)":
                     pick.setBackazimuth(seiscomp.datamodel.RealQuantity(float(value)))
 
                 # arrival distance degree
-                elif keyLower == 'distance (deg)':
+                elif keyLower == "distance (deg)":
                     arrival.setDistance(float(value))
 
                 # arrival distance km, recalculates for degree
-                elif keyLower == 'distance (km)':
+                elif keyLower == "distance (km)":
                     if isinstance(arrival.distance(), float):
-                        seiscomp.logging.debug('Line %i: ignoring parameter: %s' % (iLine-1, 'distance (deg)'))
+                        seiscomp.logging.debug(
+                            f"Line {iLine - 1}: ignoring parameter: distance (deg)"
+                        )
                     arrival.setDistance(float(value) * km2degFac)
 
                 # arrival time residual
-                elif keyLower == 'residual time':
+                elif keyLower == "residual time":
                     arrival.setTimeResidual(float(value))
 
                 # amplitude snr
-                elif keyLower == 'signal/noise':
+                elif keyLower == "signal/noise":
                     amplitudeSNR = seiscomp.datamodel.Amplitude.Create()
-                    amplitudeSNR.setType('SNR')
+                    amplitudeSNR.setType("SNR")
                     amplitudeSNR.setAmplitude(
-                        seiscomp.datamodel.RealQuantity(float(value)))
+                        seiscomp.datamodel.RealQuantity(float(value))
+                    )
 
                 # amplitude period
-                elif keyLower.startswith('period'):
+                elif keyLower.startswith("period"):
                     ampPeriod = float(value)
 
                 # amplitude value for displacement
-                elif keyLower == 'amplitude (nm)':
+                elif keyLower == "amplitude (nm)":
                     amplitudeDisp = seiscomp.datamodel.Amplitude.Create()
                     amplitudeDisp.setAmplitude(
-                        seiscomp.datamodel.RealQuantity(float(value)))
-                    amplitudeDisp.setUnit('nm')
+                        seiscomp.datamodel.RealQuantity(float(value))
+                    )
+                    amplitudeDisp.setUnit("nm")
 
                 # amplitude value for velocity
-                elif keyLower.startswith('vel. amplitude'):
+                elif keyLower.startswith("vel. amplitude"):
                     amplitudeVel = seiscomp.datamodel.Amplitude.Create()
                     amplitudeVel.setAmplitude(
-                        seiscomp.datamodel.RealQuantity(float(value)))
-                    amplitudeVel.setUnit('nm/s')
+                        seiscomp.datamodel.RealQuantity(float(value))
+                    )
+                    amplitudeVel.setUnit("nm/s")
 
-                elif keyLower == 'bb amplitude (nm/sec)':
+                elif keyLower == "bb amplitude (nm/sec)":
                     amplitudeBB = seiscomp.datamodel.Amplitude.Create()
                     amplitudeBB.setAmplitude(
-                        seiscomp.datamodel.RealQuantity(float(value)))
-                    amplitudeBB.setType('mB')
-                    amplitudeBB.setUnit('nm/s')
+                        seiscomp.datamodel.RealQuantity(float(value))
+                    )
+                    amplitudeBB.setType("mB")
+                    amplitudeBB.setUnit("nm/s")
                     amplitudeBB.setPeriod(seiscomp.datamodel.RealQuantity(ampBBPeriod))
 
-                elif keyLower == 'bb period (sec)':
+                elif keyLower == "bb period (sec)":
                     ampBBPeriod = float(value)
 
-                elif keyLower == 'broadband magnitude':
-                    magType = self.parseMagType('bb')
+                elif keyLower == "broadband magnitude":
+                    magType = self.parseMagType("bb")
                     stationMagBB = seiscomp.datamodel.StationMagnitude.Create()
                     stationMagBB.setMagnitude(
-                        seiscomp.datamodel.RealQuantity(float(value)))
+                        seiscomp.datamodel.RealQuantity(float(value))
+                    )
                     stationMagBB.setType(magType)
                     stationMagBB.setAmplitudeID(amplitudeBB.publicID())
 
                 # ignored
-                elif keyLower == 'quality number':
-                    seiscomp.logging.debug('Line %i: ignoring parameter: %s' % (iLine, key))
+                elif keyLower == "quality number":
+                    seiscomp.logging.debug(f"Line {iLine}: ignoring parameter: {key}")
 
                 # station magnitude value and type
-                elif keyLower.startswith('magnitude '):
+                elif keyLower.startswith("magnitude "):
                     magType = self.parseMagType(key[10:])
                     stationMag = seiscomp.datamodel.StationMagnitude.Create()
                     stationMag.setMagnitude(
-                        seiscomp.datamodel.RealQuantity(float(value)))
+                        seiscomp.datamodel.RealQuantity(float(value))
+                    )
 
                     if len(magType) > 0:
                         stationMag.setType(magType)
-                    if magType == 'mb':
+                    if magType == "mb":
                         stationMag.setAmplitudeID(amplitudeDisp.publicID())
 
-                    elif magType == 'MS(BB)':
+                    elif magType == "MS(BB)":
                         stationMag.setAmplitudeID(amplitudeVel.publicID())
                     else:
-                        seiscomp.logging.debug('Line %i: Magnitude Type not known %s.' % (iLine, magType))
+                        seiscomp.logging.debug(
+                            f"Line {iLine}: Magnitude Type not known {magType}."
+                        )
 
                 ###############################################################
                 # origin parameters
 
                 # event ID, added as origin comment later on
-                elif keyLower == 'event id':
+                elif keyLower == "event id":
                     originComments[key] = value
 
                 # magnitude value and type
-                elif keyLower == 'mean bb magnitude':
-                    magType = self.parseMagType('bb')
+                elif keyLower == "mean bb magnitude":
+                    magType = self.parseMagType("bb")
                     if magnitudeBB is None:
                         magnitudeBB = seiscomp.datamodel.Magnitude.Create()
                     magnitudeBB.setMagnitude(
-                        seiscomp.datamodel.RealQuantity(float(value)))
+                        seiscomp.datamodel.RealQuantity(float(value))
+                    )
                     magnitudeBB.setType(magType)
 
-                elif keyLower.startswith('mean magnitude '):
+                elif keyLower.startswith("mean magnitude "):
                     magType = self.parseMagType(key[15:])
 
-                    if magType == 'ML':
+                    if magType == "ML":
                         if magnitudeML is None:
                             magnitudeML = seiscomp.datamodel.Magnitude.Create()
                         magnitudeML.setMagnitude(
-                            seiscomp.datamodel.RealQuantity(float(value)))
+                            seiscomp.datamodel.RealQuantity(float(value))
+                        )
                         magnitudeML.setType(magType)
 
-                    elif magType == 'Ms(BB)':
+                    elif magType == "Ms(BB)":
                         if magnitudeMS is None:
                             magnitudeMS = seiscomp.datamodel.Magnitude.Create()
                         magnitudeMS.setMagnitude(
-                            seiscomp.datamodel.RealQuantity(float(value)))
+                            seiscomp.datamodel.RealQuantity(float(value))
+                        )
                         magnitudeMS.setType(magType)
 
-                    elif magType == 'mb':
+                    elif magType == "mb":
                         if magnitudeMB is None:
                             magnitudeMB = seiscomp.datamodel.Magnitude.Create()
                         magnitudeMB.setMagnitude(
-                            seiscomp.datamodel.RealQuantity(float(value)))
+                            seiscomp.datamodel.RealQuantity(float(value))
+                        )
                         magnitudeMB.setType(magType)
 
                     else:
-                        seiscomp.logging.warning('Line %i: Magnitude type %s not defined yet.' % (iLine, magType))
+                        seiscomp.logging.warning(
+                            f"Line {iLine}: Magnitude type {magType} not defined yet."
+                        )
 
                 # latitude
-                elif keyLower == 'latitude':
+                elif keyLower == "latitude":
                     origin.latitude().setValue(float(value))
                     latFound = True
-                elif keyLower == 'error in latitude (km)':
+                elif keyLower == "error in latitude (km)":
                     origin.latitude().setUncertainty(float(value))
 
                 # longitude
-                elif keyLower == 'longitude':
+                elif keyLower == "longitude":
                     origin.longitude().setValue(float(value))
                     lonFound = True
-                elif keyLower == 'error in longitude (km)':
+                elif keyLower == "error in longitude (km)":
                     origin.longitude().setUncertainty(float(value))
 
                 # depth
-                elif keyLower == 'depth (km)':
+                elif keyLower == "depth (km)":
                     origin.setDepth(seiscomp.datamodel.RealQuantity(float(value)))
                     if depthError is not None:
                         origin.depth().setUncertainty(depthError)
-                elif keyLower == 'depth type':
-                    seiscomp.logging.debug('Line %i: ignoring parameter: %s' % (iLine, key))
-                elif keyLower == 'error in depth (km)':
+                elif keyLower == "depth type":
+                    seiscomp.logging.debug(f"Line {iLine}: ignoring parameter: {key}")
+                elif keyLower == "error in depth (km)":
                     depthError = float(value)
                     try:
                         origin.depth().setUncertainty(depthError)
@@ -697,120 +769,126 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
                         pass
 
                 # time
-                elif keyLower == 'origin time':
+                elif keyLower == "origin time":
                     origin.time().setValue(self.parseTime(value))
-                elif keyLower == 'error in origin time':
+                elif keyLower == "error in origin time":
                     origin.time().setUncertainty(float(value))
 
                 # location method
-                elif keyLower == 'location method':
+                elif keyLower == "location method":
                     origin.setMethodID(str(value))
 
                 # region table, added as origin comment later on
-                elif keyLower == 'region table':
+                elif keyLower == "region table":
                     originComments[key] = value
 
                 # region table, added as origin comment later on
-                elif keyLower == 'region id':
+                elif keyLower == "region id":
                     originComments[key] = value
 
                 # source region, added as origin comment later on
-                elif keyLower == 'source region':
+                elif keyLower == "source region":
                     originComments[key] = value
 
                 # used station count
-                elif keyLower == 'no. of stations used':
+                elif keyLower == "no. of stations used":
                     if originQuality is None:
                         originQuality = seiscomp.datamodel.OriginQuality()
                     originQuality.setUsedStationCount(int(value))
 
                 # ignored
-                elif keyLower == 'reference location name':
-                    seiscomp.logging.debug('Line %i: ignoring parameter: %s' % (iLine, key))
+                elif keyLower == "reference location name":
+                    seiscomp.logging.debug(f"Line {iLine}: ignoring parameter: {key}")
 
                 # confidence ellipsoid major axis
-                elif keyLower == 'error ellipse major':
+                elif keyLower == "error ellipse major":
                     if originCE is None:
                         originCE = seiscomp.datamodel.ConfidenceEllipsoid()
                     originCE.setSemiMajorAxisLength(float(value))
 
                 # confidence ellipsoid minor axis
-                elif keyLower == 'error ellipse minor':
+                elif keyLower == "error ellipse minor":
                     if originCE is None:
                         originCE = seiscomp.datamodel.ConfidenceEllipsoid()
                     originCE.setSemiMinorAxisLength(float(value))
 
                 # confidence ellipsoid rotation
-                elif keyLower == 'error ellipse strike':
+                elif keyLower == "error ellipse strike":
                     if originCE is None:
                         originCE = seiscomp.datamodel.ConfidenceEllipsoid()
                     originCE.setMajorAxisRotation(float(value))
 
                 # azimuthal gap
-                elif keyLower == 'max azimuthal gap (deg)':
+                elif keyLower == "max azimuthal gap (deg)":
                     if originQuality is None:
                         originQuality = seiscomp.datamodel.OriginQuality()
                     originQuality.setAzimuthalGap(float(value))
 
                 # creation info author
-                elif keyLower == 'author':
+                elif keyLower == "author":
                     origin.creationInfo().setAuthor(value)
 
                 # creation info agency
-                elif keyLower == 'source of information':
+                elif keyLower == "source of information":
                     origin.creationInfo().setAgencyID(value)
 
                 # earth model id
-                elif keyLower == 'velocity model':
+                elif keyLower == "velocity model":
                     origin.setEarthModelID(value)
 
                 # standard error
-                elif keyLower == 'rms of residuals (sec)':
+                elif keyLower == "rms of residuals (sec)":
                     if originQuality is None:
                         originQuality = seiscomp.datamodel.OriginQuality()
                     originQuality.setStandardError(float(value))
 
                 # ignored
-                elif keyLower == 'phase flags':
-                    seiscomp.logging.debug('Line %i: ignoring parameter: %s' % (iLine, key))
+                elif keyLower == "phase flags":
+                    seiscomp.logging.debug(f"Line {iLine}: ignoring parameter: {key}")
 
                 # ignored
-                elif keyLower == 'location input params':
-                    seiscomp.logging.debug('Line %i: ignoring parameter: %s' % (iLine, key))
+                elif keyLower == "location input params":
+                    seiscomp.logging.debug(f"Line {iLine}: ignoring parameter: {key}")
 
                 # missing keys
-                elif keyLower == 'ampl&period source':
-                    seiscomp.logging.debug('Line %i: ignoring parameter: %s' % (iLine, key))
+                elif keyLower == "ampl&period source":
+                    seiscomp.logging.debug(f"Line {iLine}: ignoring parameter: {key}")
 
-                elif keyLower == 'location quality':
-                    seiscomp.logging.debug('Line %i: ignoring parameter: %s' % (iLine, key))
+                elif keyLower == "location quality":
+                    seiscomp.logging.debug(f"Line {iLine}: ignoring parameter: {key}")
 
-                elif keyLower == 'reference latitude':
-                    seiscomp.logging.debug('Line %i: ignoring parameter: %s' % (iLine, key))
+                elif keyLower == "reference latitude":
+                    seiscomp.logging.debug(f"Line {iLine}: ignoring parameter: {key}")
 
-                elif keyLower == 'reference longitude':
-                    seiscomp.logging.debug('Line %i: ignoring parameter: %s' % (iLine, key))
+                elif keyLower == "reference longitude":
+                    seiscomp.logging.debug(f"Line {iLine}: ignoring parameter: {key}")
 
-                elif keyLower.startswith('amplitude time'):
-                    seiscomp.logging.debug('Line %i: ignoring parameter: %s' % (iLine, key))
+                elif keyLower.startswith("amplitude time"):
+                    seiscomp.logging.debug(f"Line {iLine}: ignoring parameter: {key}")
 
                 # unknown key
                 else:
-                    seiscomp.logging.warning('Line %i: ignoring unknown parameter: %s' % (iLine, key))
+                    seiscomp.logging.warning(
+                        "Line {iLine}: ignoring unknown parameter: {key}"
+                    )
 
-            except ValueError as ve:
-                seiscomp.logging.warning('Line %i: can not parse %s value' % (iLine, key))
+            except ValueError:
+                seiscomp.logging.warning(f"Line {iLine}: can not parse {key} value")
             except Exception:
-                seiscomp.logging.error('Line %i: %s' % (iLine, str(traceback.format_exc())))
+                seiscomp.logging.error("Line {iLine}: {str(traceback.format_exc())}")
                 return None
 
         # check
         if not latFound:
-            seiscomp.logging.warning('could not add origin, missing latitude parameter')
+            seiscomp.logging.warning("could not add origin, missing latitude parameter")
         elif not lonFound:
-            seiscomp.logging.warning('could not add origin, missing longitude parameter')
+            seiscomp.logging.warning(
+                "could not add origin, missing longitude parameter"
+            )
         elif not origin.time().value().valid():
-            seiscomp.logging.warning('could not add origin, missing origin time parameter')
+            seiscomp.logging.warning(
+                "could not add origin, missing origin time parameter"
+            )
         else:
             if magnitudeMB is not None:
                 origin.add(magnitudeMB)
@@ -845,7 +923,7 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
         self.loadStreams()
 
         try:
-            if self.inputFile == '-':
+            if self.inputFile == "-":
                 f = sys.stdin
             else:
                 f = open(self.inputFile)
@@ -858,7 +936,7 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
             return False
 
         ar = seiscomp.io.XMLArchive()
-        ar.create('-')
+        ar.create("-")
         ar.setFormattedOutput(True)
         ar.writeObject(ep)
         ar.close()
@@ -877,7 +955,7 @@ def main():
     return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())
 
 

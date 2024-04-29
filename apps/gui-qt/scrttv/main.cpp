@@ -79,14 +79,13 @@ class App : public Kicker<MainWindow> {
 		}
 
 		bool validateParameters() override {
-			if ( !Kicker<Seiscomp::Applications::TraceView::MainWindow>::validateParameters() )
+			if ( !Kicker<Seiscomp::Applications::TraceView::MainWindow>::validateParameters() ) {
 				return false;
+			}
 
-			vector<string> unnamedOptions;
-			unnamedOptions = commandline().unrecognizedOptions();
 			bool hasPositionals = false;
-			for ( size_t i = 0; i < unnamedOptions.size(); ++i ) {
-				if ( unnamedOptions[i].substr(0,1) != "-" ) {
+			for ( const auto & opt : commandline().unrecognizedOptions() ) {
+				if ( !opt.empty() && (opt.at(0) != '-' || opt.length() == 1 ) ) {
 					hasPositionals = true;
 					break;
 				}

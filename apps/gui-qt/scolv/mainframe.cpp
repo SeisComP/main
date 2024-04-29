@@ -557,6 +557,15 @@ MainFrame::MainFrame(){
 	try { amplitudeConfig.postOffset = Core::TimeSpan(SCApp->configGetInt("amplitudePicker.postOffset")); }
 	catch ( ... ) { amplitudeConfig.postOffset = Core::TimeSpan(300.0); }
 
+	try { amplitudeConfig.defaultNoiseBegin = SCApp->configGetDouble("amplitudePicker.defaultNoiseBegin"); }
+	catch ( ... ) {}
+	try { amplitudeConfig.defaultNoiseEnd = SCApp->configGetDouble("amplitudePicker.defaultNoiseEnd"); }
+	catch ( ... ) {}
+	try { amplitudeConfig.defaultSignalBegin = SCApp->configGetDouble("amplitudePicker.defaultSignalBegin"); }
+	catch ( ... ) {}
+	try { amplitudeConfig.defaultSignalEnd = SCApp->configGetDouble("amplitudePicker.defaultSignalEnd"); }
+	catch ( ... ) {}
+
 	try {
 		std::vector<std::string> filters = SCApp->configGetStrings("amplitudePicker.filters");
 
@@ -910,6 +919,11 @@ MainFrame::MainFrame(){
 
 #ifdef WITH_SMALL_SUMMARY
 	_ui.frameSummary->setVisible(_ui.actionShowSummary->isChecked());
+
+	_ui.mainSplitter->restoreGeometry(
+	            SCApp->settings().value("mainSplitter/geometry").toByteArray());
+	_ui.mainSplitter->restoreState(
+	            SCApp->settings().value("mainSplitter/windowState").toByteArray());
 #endif
 
 	try {
@@ -928,7 +942,14 @@ MainFrame::MainFrame(){
 
 MainFrame::~MainFrame() {
 	SCApp->settings().beginGroup(objectName());
+
+	SCApp->settings().setValue("mainSplitter/geometry",
+	                           _ui.mainSplitter->saveGeometry());
+	SCApp->settings().setValue("mainSplitter/windowState",
+	                           _ui.mainSplitter->saveState());
+
 	SCApp->settings().setValue("showSummary", _ui.actionShowSummary->isChecked());
+
 	SCApp->settings().endGroup();
 }
 

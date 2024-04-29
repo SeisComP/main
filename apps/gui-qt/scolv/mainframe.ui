@@ -30,39 +30,42 @@
      <number>6</number>
     </property>
     <item>
-     <widget class="QFrame" name="frameSummary" >
-      <property name="frameShape" >
-       <enum>QFrame::StyledPanel</enum>
+     <widget class="QSplitter" name="mainSplitter">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
       </property>
-      <property name="frameShadow" >
-       <enum>QFrame::Raised</enum>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QTabWidget" name="tabWidget" >
-      <property name="sizePolicy" >
-       <sizepolicy>
-        <hsizetype>7</hsizetype>
-        <vsizetype>7</vsizetype>
-        <horstretch>1</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <widget class="QWidget" name="tabLocation" >
-       <attribute name="title" >
-        <string>Location</string>
-       </attribute>
+      <widget class="QFrame" name="frameSummary" >
+       <property name="frameShape" >
+        <enum>QFrame::StyledPanel</enum>
+       </property>
+       <property name="frameShadow" >
+        <enum>QFrame::Raised</enum>
+       </property>
       </widget>
-      <widget class="QWidget" name="tabMagnitudes" >
-       <attribute name="title" >
-        <string>Magnitudes</string>
-       </attribute>
-      </widget>
-      <widget class="QWidget" name="tabEventList" >
-       <attribute name="title" >
-        <string>Events</string>
-       </attribute>
+      <widget class="QTabWidget" name="tabWidget" >
+       <property name="sizePolicy" >
+        <sizepolicy>
+         <hsizetype>7</hsizetype>
+         <vsizetype>7</vsizetype>
+         <horstretch>1</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <widget class="QWidget" name="tabLocation" >
+        <attribute name="title" >
+         <string>Location</string>
+        </attribute>
+       </widget>
+       <widget class="QWidget" name="tabMagnitudes" >
+        <attribute name="title" >
+         <string>Magnitudes</string>
+        </attribute>
+       </widget>
+       <widget class="QWidget" name="tabEventList" >
+        <attribute name="title" >
+         <string>Events</string>
+        </attribute>
+       </widget>
       </widget>
      </widget>
     </item>

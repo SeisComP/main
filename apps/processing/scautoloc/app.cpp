@@ -75,13 +75,6 @@ App::App(int argc, char **argv)
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-App::~App() {}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
 void App::printUsage() const {
 	cout << "Usage:"  << endl << "  scautoloc [options]" << endl << endl
 	     << "Associator of P-phase picks for locating seismic events." << endl;
@@ -236,13 +229,18 @@ void App::createCommandLineDescription() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::validateParameters() {
+	if ( !Client::Application::validateParameters() ) {
+		return false;
+	}
+
 	if ( commandline().hasOption("offline") ) {
 		_config.offline = true;
 		_config.playback = true;
 		_config.test = true;
 	}
-	else
+	else {
 		_config.offline = false;
+	}
 
 	if ( !_inputEPFile.empty() ) {
 		_config.playback = true;
@@ -291,16 +289,18 @@ bool App::validateParameters() {
 	if ( commandline().hasOption("try-default-depth") )
 		_config.tryDefaultDepth = true;
 
-	if ( commandline().hasOption("adopt-manual-depth") )
+	if ( commandline().hasOption("adopt-manual-depth") ) {
 		_config.adoptManualDepth = true;
+	}
 
-	_config.maxResidualKeep = 3*_config.maxResidualUse;
+	_config.maxResidualKeep = 3 * _config.maxResidualUse;
 
 	if ( !_config.pickLogFile.empty() ) {
 		_config.pickLogEnable = true;
 	}
 
-	return Client::Application::validateParameters();
+	// return Client::Application::validateParameters();
+	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -524,7 +524,7 @@ bool App::initConfiguration() {
 	std::string ntp = "global";
 	try { ntp = configGetString("autoloc.networkType"); }
 	catch ( ... ) {}
-	if      ( ntp == "global" ) {
+	if ( ntp == "global" ) {
 		_config.networkType = ::Autoloc::GlobalNetwork;
 	}
 	else if ( ntp == "regional" ) {
@@ -547,8 +547,9 @@ bool App::initConfiguration() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::init() {
-
-	if ( ! Client::Application::init() ) return false;
+	if ( ! Client::Application::init() ) {
+		return false;
+	}
 
 	_inputPicks = addInputObjectLog("pick");
 	_inputAmps = addInputObjectLog("amplitude");
@@ -562,11 +563,13 @@ bool App::init() {
 	SEISCOMP_INFO("Starting Autoloc");
 	setConfig(_config);
 	dumpConfig();
-	if ( ! setGridFile(_gridConfigFile) )
+	if ( !setGridFile(_gridConfigFile) ) {
 		return false;
+	}
 
-	if ( ! initInventory() )
+	if ( !initInventory() ) {
 		return false;
+	}
 
 	if ( !_config.pickLogFile.empty() ) {
 		setPickLogFilePrefix(_config.pickLogFile);
@@ -784,7 +787,9 @@ bool App::runFromXMLFile(const char *fname)
 	SEISCOMP_INFO("  number of amplitudes: %ld", (long int)ep->amplitudeCount());
 	SEISCOMP_INFO("  number of origins:    %ld", (long int)ep->originCount());
 
-	typedef std::pair<Core::Time,DataModel::PublicObjectPtr> TimeObject;
+	// Tuple to be used in DSU sorting. The second member is used to place picks
+	// before amplitudes with identical creation times.
+	typedef std::tuple<Core::Time, int, DataModel::PublicObjectPtr> TimeObject;
 	typedef std::vector<TimeObject> TimeObjectVector;
 
 	// retrieval of relevant objects from event parameters
@@ -795,32 +800,32 @@ bool App::runFromXMLFile(const char *fname)
 		ep->removePick(0);
 		DataModel::PublicObjectPtr o(pick);
 		Core::Time t = pick->creationInfo().creationTime();
-		objs.push_back(TimeObject(t,o));
+		objs.push_back(TimeObject(t, 0, o));
 	}
 	while (ep->amplitudeCount() > 0) {
 		DataModel::AmplitudePtr amplitude = ep->amplitude(0);
 		ep->removeAmplitude(0);
 		DataModel::PublicObjectPtr o(amplitude);
 		Core::Time t = amplitude->creationInfo().creationTime();
-		objs.push_back(TimeObject(t,o));
+		t += Core::TimeSpan(0.00001);
+		objs.push_back(TimeObject(t, 1, o));
 	}
 	while (ep->originCount() > 0) {
 		DataModel::OriginPtr origin = ep->origin(0);
 		ep->removeOrigin(0);
 		DataModel::PublicObjectPtr o(origin);
 		Core::Time t = origin->creationInfo().creationTime();
-		objs.push_back(TimeObject(t,o));
+		objs.push_back(TimeObject(t, 2, o));
 	}
 	std::sort(objs.begin(),objs.end());
-	for (TimeObjectVector::iterator
-	     it = objs.begin(); it != objs.end(); ++it) {
-		_objects.push(it->second);
+	for ( TimeObject &obj : objs ) {
+		_objects.push(std::get<2>(obj));
 	}
 
 	if ( _objects.empty() )
 		return false;
 
-	if (_playbackSpeed > 0) {
+	if ( _playbackSpeed > 0 ) {
 		SEISCOMP_DEBUG("playback speed factor %g", _playbackSpeed);
 	}
 
@@ -859,7 +864,9 @@ bool App::runFromEPFile(const char *fname) {
 	     << _ep->pickCount() << " pick(s), "
 	     << _ep->amplitudeCount() << " amplitudes(s)"<< endl;
 
-	typedef std::pair<Core::Time,DataModel::PublicObjectPtr> TimeObject;
+	// Tuple to be used in DSU sorting. The second member is used to place picks
+	// before amplitudes with identical creation times.
+	typedef std::tuple<Core::Time, int, DataModel::PublicObjectPtr> TimeObject;
 	typedef std::vector<TimeObject> TimeObjectVector;
 
 	// retrieval of relevant objects from event parameters
@@ -897,7 +904,7 @@ bool App::runFromEPFile(const char *fname) {
 		}
 
 		if ( add ) {
-			objs.push_back(TimeObject(t, pick));
+			objs.push_back(TimeObject(t, 0, pick));
 		}
 	}
 
@@ -905,7 +912,8 @@ bool App::runFromEPFile(const char *fname) {
 		DataModel::AmplitudePtr amplitude = _ep->amplitude(i);
 		try {
 			Core::Time t = amplitude->creationInfo().creationTime();
-			objs.push_back(TimeObject(t, amplitude));
+		t += Core::TimeSpan(0.00001);
+			objs.push_back(TimeObject(t, 1, amplitude));
 		}
 		catch ( ... ) {
 			SEISCOMP_WARNING("Ignore amplitude %s: no creation time set",
@@ -917,7 +925,7 @@ bool App::runFromEPFile(const char *fname) {
 		DataModel::OriginPtr origin = _ep->origin(i);
 		try {
 			Core::Time t = origin->creationInfo().creationTime();
-			objs.push_back(TimeObject(t, origin));
+			objs.push_back(TimeObject(t, 2, origin));
 		}
 		catch ( ... ) {
 			SEISCOMP_WARNING("Ignore origin %s: no creation time set",
@@ -926,9 +934,8 @@ bool App::runFromEPFile(const char *fname) {
 	}
 
 	std::sort(objs.begin(), objs.end());
-	for (TimeObjectVector::iterator
-	     it = objs.begin(); it != objs.end(); ++it) {
-		_objects.push(it->second);
+	for ( TimeObject &obj : objs ) {
+		_objects.push(std::get<2>(obj));
 	}
 
 	while ( !_objects.empty() && !isExitRequested() ) {

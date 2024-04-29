@@ -17,19 +17,20 @@
 #  Email: roessler@gempa.de                                                #
 ############################################################################
 
-from __future__ import absolute_import, division, print_function
-
-import sys
+import os
 import re
+import sys
 import seiscomp.core
 import seiscomp.client
 import seiscomp.io
 import seiscomp.datamodel
 
-qcParamsDefault = "latency,delay,timing,offset,rms,availability,"\
-                  "'gaps count','gaps interval','gaps length',"\
-                  "'overlaps count','overlaps interval','overlaps length',"\
-                  "'spikes count','spikes interval','spikes amplitude'"
+qcParamsDefault = (
+    "latency,delay,timing,offset,rms,availability,"
+    "'gaps count','gaps interval','gaps length',"
+    "'overlaps count','overlaps interval','overlaps length',"
+    "'spikes count','spikes interval','spikes amplitude'"
+)
 
 
 def getStreamsFromInventory(self):
@@ -59,8 +60,15 @@ def getStreamsFromInventory(self):
                     location = station.sensorLocation(iloc)
                     for istr in range(location.streamCount()):
                         stream = location.stream(istr)
-                        streamID = network.code() + "." + station.code() \
-                            + "." + location.code() + "." + stream.code()
+                        streamID = (
+                            network.code()
+                            + "."
+                            + station.code()
+                            + "."
+                            + location.code()
+                            + "."
+                            + stream.code()
+                        )
                         streamList.add(streamID)
 
         return list(streamList)
@@ -70,7 +78,6 @@ def getStreamsFromInventory(self):
 
 
 class WfqQuery(seiscomp.client.Application):
-
     def __init__(self, argc, argv):
         seiscomp.client.Application.__init__(self, argc, argv)
 
@@ -81,7 +88,7 @@ class WfqQuery(seiscomp.client.Application):
 
         self._streams = False
         self._fromInventory = False
-        self._outfile = '-'
+        self._outfile = "-"
         self._parameter = qcParamsDefault
         self._start = "1900-01-01T00:00:00Z"
         self._end = str(seiscomp.core.Time.GMT())
@@ -89,49 +96,66 @@ class WfqQuery(seiscomp.client.Application):
 
     def createCommandLineDescription(self):
         self.commandline().addGroup("Output")
-        self.commandline().addStringOption("Output", "output,o",
-                                           "output file name for XML. Writes "
-                                           "to stdout if not given.")
-        self.commandline().addOption("Output", "formatted,f",
-                                     "write formatted XML")
+        self.commandline().addStringOption(
+            "Output",
+            "output,o",
+            "output file name for XML. Writes to stdout if not given.",
+        )
+        self.commandline().addOption("Output", "formatted,f", "write formatted XML")
 
         self.commandline().addGroup("Query")
         self.commandline().addStringOption(
-            "Query", "begin,b", "Begin time of query: 'YYYY-MM-DD hh:mm:ss'")
+            "Query", "begin,b", "Begin time of query: 'YYYY-MM-DD hh:mm:ss'"
+        )
         self.commandline().addStringOption(
-            "Query", "end,e", "End time of query: 'YYYY-MM-DD hh:mm:ss'")
+            "Query", "end,e", "End time of query: 'YYYY-MM-DD hh:mm:ss'"
+        )
         self.commandline().addStringOption(
-            "Query", "stream-id,i",
+            "Query",
+            "stream-id,i",
             "Waveform stream ID to search for QC parameters: net.sta.loc.cha -"
             " [networkCode].[stationCode].[sensorLocationCode].[channelCode]. "
             "Provide a single ID or a comma-separated list. Overrides "
-            "--streams-from-inventory")
+            "--streams-from-inventory",
+        )
         self.commandline().addStringOption(
-            "Query", "parameter,p",
+            "Query",
+            "parameter,p",
             "QC parameter to output: (e.g. delay, rms, 'gaps count' ...). "
             "Provide a single parameter or a comma-separated list. Defaults "
-            "apply if parameter is not given.")
-        self.commandline().addOption("Query", "streams-from-inventory",
-                                     "Read streams from inventory. Superseded"
-                                     " by stream-id.")
-
+            "apply if parameter is not given.",
+        )
+        self.commandline().addOption(
+            "Query",
+            "streams-from-inventory",
+            "Read streams from inventory. Superseded by stream-id.",
+        )
 
         return True
 
     def printUsage(self):
-        print('''Usage:
-  scqueryqc [options]
+        print(
+            """Usage:
+  {os.path.basename(__file__)} [options]
 
-Query a database for waveform quality control (QC) parameters.''', file=sys.stderr)
+Query a database for waveform quality control (QC) parameters.""",
+            file=sys.stderr,
+        )
 
         seiscomp.client.Application.printUsage(self)
 
-        print('''Default QC parameters: {}
-              '''.format(qcParamsDefault), file=sys.stderr)
-        print('''Examples:
-Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from '2021-11-20 00:00:00' until current
-  scqueryqc -d localhost -b '2021-11-20 00:00:00' -p rms,delay -i AU.AS18..SHZ,AU.AS19..SHZ
-              ''', file=sys.stderr)
+        print(
+            f"""Default QC parameters: {qcParamsDefault}\n""",
+            file=sys.stderr,
+        )
+        print(
+            f"""Examples:
+Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from \
+'2021-11-20 00:00:00' until current
+  {os.path.basename(__file__)} -d localhost -b '2021-11-20 00:00:00' -p rms,delay \
+-i AU.AS18..SHZ,AU.AS19..SHZ""",
+            file=sys.stderr,
+        )
 
     def validateParameters(self):
         if not seiscomp.client.Application.validateParameters(self):
@@ -143,32 +167,37 @@ Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from '2
             pass
 
         try:
-            self._fromInventory =  self.commandline().hasOption("streams-from-inventory")
+            self._fromInventory = self.commandline().hasOption("streams-from-inventory")
         except RuntimeError:
             pass
 
         if not self._streams and not self._fromInventory:
-            print("Provide streamID(s): --stream-id or --streams-from-inventory",
-                  file=sys.stderr)
+            print(
+                "Provide streamID(s): --stream-id or --streams-from-inventory",
+                file=sys.stderr,
+            )
             return False
 
         try:
             self._outfile = self.commandline().optionString("output")
         except RuntimeError:
-            print("No output file name given: Sending to stdout",
-                  file=sys.stderr)
+            print("No output file name given: Sending to stdout", file=sys.stderr)
 
         try:
             self._start = self.commandline().optionString("begin")
         except RuntimeError:
-            print("No begin time given, considering: {}".format(self._start),
-                  file=sys.stderr)
+            print(
+                f"No begin time given, considering: {self._start}",
+                file=sys.stderr,
+            )
 
         try:
             self._end = self.commandline().optionString("end")
         except RuntimeError:
-            print("No end time given, considering 'now': {}".format(self._end),
-                  file=sys.stderr)
+            print(
+                f"No end time given, considering 'now': {self._end}",
+                file=sys.stderr,
+            )
 
         try:
             self._parameter = self.commandline().optionString("parameter")
@@ -201,26 +230,26 @@ Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from '2
 
         for stream in streams:
             if re.search("[*?]", stream):
-                print("Wildcards in streamID are not supported: {}\n"
-                      .format(stream), file=sys.stderr)
+                print(
+                    f"Wildcards in streamID are not supported: {stream}\n",
+                    file=sys.stderr,
+                )
                 return False
 
         print("Request:", file=sys.stderr)
-        print("  streams:           {}".format(str(streams)), file=sys.stderr)
-        print("  number of streams: {}".format(len(streams)), file=sys.stderr)
-        print("  begin time:        {}".format(str(self._start)), file=sys.stderr)
-        print("  end time:          {}".format(str(self._end)), file=sys.stderr)
-        print("  parameters:        {}".format(str(self._parameter)),
-              file=sys.stderr)
+        print(f"  streams:           {str(streams)}", file=sys.stderr)
+        print(f"  number of streams: {len(streams)}", file=sys.stderr)
+        print(f"  begin time:        {str(self._start)}", file=sys.stderr)
+        print(f"  end time:          {str(self._end)}", file=sys.stderr)
+        print(f"  parameters:        {str(self._parameter)}", file=sys.stderr)
         print("Output:", file=sys.stderr)
-        print("  file:              {}".format(self._outfile), file=sys.stderr)
-        print("  formatted XML:     {}".format(self._formatted), file=sys.stderr)
+        print(f"  file:              {self._outfile}", file=sys.stderr)
+        print(f"  formatted XML:     {self._formatted}", file=sys.stderr)
 
         # create archive
         xarc = seiscomp.io.XMLArchive()
         if not xarc.create(self._outfile, True, True):
-            print("Unable to write XML to {}!\n".format(self._outfile),
-                  file=sys.stderr)
+            print(f"Unable to write XML to {self._outfile}!\n", file=sys.stderr)
             return False
         xarc.setFormattedOutput(self._formatted)
         qc = seiscomp.datamodel.QualityControl()
@@ -229,11 +258,12 @@ Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from '2
         for parameter in self._parameter.split(","):
             for stream in streams:
                 (net, sta, loc, cha) = stream.split(".")
-                it = self.query().getWaveformQuality(seiscomp.datamodel.WaveformStreamID(net, sta, loc, cha, ""),
-                                                     parameter,
-                                                     seiscomp.core.Time.FromString(
-                                                         self._start, "%Y-%m-%d %H:%M:%S"),
-                                                     seiscomp.core.Time.FromString(self._end, "%Y-%m-%d %H:%M:%S"))
+                it = self.query().getWaveformQuality(
+                    seiscomp.datamodel.WaveformStreamID(net, sta, loc, cha, ""),
+                    parameter,
+                    seiscomp.core.Time.FromString(self._start, "%Y-%m-%d %H:%M:%S"),
+                    seiscomp.core.Time.FromString(self._end, "%Y-%m-%d %H:%M:%S"),
+                )
 
                 while it.get():
                     try:

@@ -1,16 +1,19 @@
 scqueryqc queries a database for waveform quality control (QC) parameters. The
-QC parameters must be provided, e.g. by :ref:`scqc`.
+QC parameters can be provided and written to the database, e.g., by :ref:`scqc`.
 
 .. warning ::
 
    Writing QC parameters to the database by :ref:`scqc` will result in a rapidly
-   growing database and is therefore not recommended in permanent application!
+   growing database and is therefore not recommended in permanent application without
+   regularly stripping these parameters from the  database!
 
 The database query is done for
 
 * One or multiple streams,
 * One or multiple QC parameters. All QC parameters can be requested. Defaults
-  apply. For reading the defaults use ::
+  apply. For reading the defaults use
+
+  .. code-block:: sh
 
      scqueryqc -h
 
@@ -27,7 +30,7 @@ database.
 #. Compute the QC parameters in real time using :ref:`scqc` and save them in the
    |scname| database. Saving the QC parameters in the database requires to
    adjust the scqc module configuration parameters
-   ``plugins.*.archive.interval`` for each plugin.
+   :confval:`plugins.$name.archive.interval` for each plugin.
 #. Regularly use scqueryqc for some time span to read the QC parameters from the
    database. Save them in a XML files.
 
@@ -49,9 +52,9 @@ database.
 
         scdispatch -H [host] -O remove --routingtable QualityControl:QC -i [XML file]
 
-   * Alternatively, use :ref:`scdbstrip` with the command-line option ``-Q`` and
-     remove **all** QC parameters in the time span. Use the same period for
-     which the QC parameters were retrieved:
+   * Alternatively, use :ref:`scdbstrip` with the command-line option
+     :option:`--qc-only` and remove **all** QC parameters in the time span. Use the same
+     period for which the QC parameters were retrieved:
 
      .. code-block:: sh
 
@@ -59,8 +62,9 @@ database.
 
      .. note ::
 
-        Considering an end time by ``--date-time`` has the advantage that no QC
-        parameters are removed which were measured after scqueryqc was applied.
+        Considering an end time by :option:`--date-time` has the advantage that no QC
+        parameters are removed which were measured after scqueryqc was applied with the
+        same end time value.
 
 Examples
 --------

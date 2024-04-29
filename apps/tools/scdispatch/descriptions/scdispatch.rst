@@ -10,13 +10,13 @@ Modes
 -----
 
 scdispatch can work in two modes applying different
-:ref:`operations <scdispatch-operations>:
+:ref:`operations <scdispatch-operations>`:
 
 * *Without database check:* One of the :ref:`operations <scdispatch-operations>`
   *add*, *update* or *remove* is selected along with the option :option:`-O`. In
-  that case all objects in the SCML are encapsulated in a notifier with that
-  specific operation and sent to the messaging. No check is performed if the
-  object is already in the database or not.
+  that case all objects in the :term:`SCML` are encapsulated in a notifier with
+  that specific operation and sent to the messaging. No check is performed if
+  the object is already in the database or not.
 * *With database check:* The option :option:`-O` is not given or the
   option is used along with one of the :ref:`operations <scdispatch-operations>`
   *merge* or *merge-without-remove*. scdispatch first tries to load the corresponding
@@ -28,7 +28,7 @@ scdispatch can work in two modes applying different
   synchronize event information from one system with another.
 
 
-.. _scdispatch-operations::
+.. _scdispatch-operations:
 
 Operations
 ----------

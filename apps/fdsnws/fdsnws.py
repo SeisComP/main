@@ -770,8 +770,8 @@ class FDSNWS(seiscomp.client.Application):
 
     def printUsage(self):
         print(
-            """Usage:
-  fdsnws [options]
+            f"""Usage:
+  {os.path.basename(__file__)} [options]
 
 Provide FDSN Web Services"""
         )
@@ -779,9 +779,9 @@ Provide FDSN Web Services"""
         seiscomp.client.Application.printUsage(self)
 
         print(
-            """Examples:
+            f"""Examples:
 Execute on command line with debug output
-  fdsnws --debug
+  {os.path.basename(__file__)} --debug
 """
         )
 
@@ -996,8 +996,8 @@ configuration read:
         # Overwrite/set mime type of *.wadl and *.xml documents. Instead of
         # using the official types defined in /etc/mime.types 'application/xml'
         # is used as enforced by the FDSNWS spec.
-        static.File.contentTypes[".wadl"] = "application/xml"
-        static.File.contentTypes[".xml"] = "application/xml"
+        static.File.contentTypes[".wadl"] = "application/xml; charset=utf-8"
+        static.File.contentTypes[".xml"] = "application/xml; charset=utf-8"
 
         # create resource tree /fdsnws/...
         root = ListingResource()
