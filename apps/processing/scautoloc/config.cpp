@@ -24,11 +24,17 @@ using namespace std;
 namespace Autoloc {
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 StationConfig::StationConfig() {
 	string defaultkey = "* *";
 	_entry[defaultkey] = Entry();
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool StationConfig::read(const std::string &fname) {
 	string line;
 	string defaultkey = "* *";
@@ -43,23 +49,27 @@ bool StationConfig::read(const std::string &fname) {
 	Entry entry;
 	while( !ifile.eof() ) {
 		getline(ifile, line);
-		line.erase(0,line.find_first_not_of(" \n\r\t"));
-		if (line[0] == '#') {
+		line.erase(0, line.find_first_not_of(" \n\r\t"));
+		if ( line[0] == '#' ) {
 			continue;
 		}
-		char net[10],sta[10];
+		char net[10], sta[10];
 		int n = sscanf(line.c_str(), "%8s %8s %d %f", net, sta, &entry.usage, &entry.maxNucDist);
-		if (n!=4) {
+		if ( n != 4 ) {
 			break;
 		}
-		string key = string(net)+string(" ")+string(sta);
+		string key = string(net) + string(" ") + string(sta);
 		_entry[key] = entry;
 	}
 
 	return true;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 const StationConfig::Entry&
 StationConfig::get(const string &net, const string &sta) const {
 	vector<string> patterns;
@@ -68,8 +78,7 @@ StationConfig::get(const string &net, const string &sta) const {
 	patterns.push_back("* " + sta);
 	patterns.push_back("* *");
 
-	for ( auto it = patterns.begin(); it != patterns.end(); ++it ) {
-		const string &pattern = *it;
+	for ( const string& pattern : patterns ) {
 		auto mit = _entry.find(pattern);
 		if ( mit == _entry.end() ) {
 			continue;
@@ -82,12 +91,14 @@ StationConfig::get(const string &net, const string &sta) const {
 		return e;
 	}
 
-// This should never be executed:
-//	string defaultkey = "* *";
-//	return _entry[defaultkey];
 	return _entry.begin()->second;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Autoloc3::Config::dump() const {
 	SEISCOMP_INFO("Configuration:");
 	SEISCOMP_INFO("  locator");
@@ -109,8 +120,9 @@ void Autoloc3::Config::dump() const {
 	SEISCOMP_INFO("    minScore                         %.1f",   minScore);
 	SEISCOMP_INFO("    minPickSNR                       %.1f",   minPickSNR);
 	SEISCOMP_INFO("    goodRMS                          %.1f s", goodRMS);
-	SEISCOMP_INFO("    useManualOrigins                 %s",     useManualOrigins ? "true":"false");
 	SEISCOMP_INFO("    useManualPicks                   %s",     useManualPicks ? "true":"false");
+	SEISCOMP_INFO("    useManualOrigins                 %s",     useManualOrigins ? "true":"false");
+	SEISCOMP_INFO("    useImportedOrigins               %s",     useImportedOrigins ? "true":"false");
 	SEISCOMP_INFO("    publicationIntervalTimeSlope     %.2f",   publicationIntervalTimeSlope);
 	SEISCOMP_INFO("    publicationIntervalTimeIntercept %.1f",   publicationIntervalTimeIntercept);
 	SEISCOMP_INFO("    publicationIntervalPickCount     %d",     publicationIntervalPickCount);
@@ -133,7 +145,8 @@ void Autoloc3::Config::dump() const {
 	SEISCOMP_INFO("  xxl.maxStationDistance           %.1f deg", xxlMaxStaDist);
 	SEISCOMP_INFO("  xxl.maxDepth                      %g km",  xxlMaxDepth);
 	SEISCOMP_INFO("  xxl.deadTime                      %g s",  xxlDeadTime);
-//	SEISCOMP_INFO("maxRadiusFactor                  %g", 	 maxRadiusFactor);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 }  // namespace Autoloc

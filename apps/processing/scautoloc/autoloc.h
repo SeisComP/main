@@ -52,9 +52,6 @@ class StationConfig {
 class Autoloc3 {
 
 	public:
-		typedef std::vector<std::string> StringList;
-
-	public:
 		Autoloc3();
 		virtual ~Autoloc3();
 
@@ -65,7 +62,7 @@ class Autoloc3 {
 
 			// White list of allowed pick authors.
 			// Also defines priority in descending order.
-			StringList authors;
+			std::vector<std::string> authors;
 
 			// During cleanup() all objects older than maxAge
 			// (in hours) are removed.
@@ -135,7 +132,7 @@ class Autoloc3 {
 
 			// Minimum number of picks for a normal origin
 			// to be reported
-			int minPhaseCount{6};
+			size_t minPhaseCount{6};
 
 			// Minimum score for an origin to be reported;
 			// this seems to be a more reliable criterion
@@ -143,8 +140,7 @@ class Autoloc3 {
 			double minScore{8.0};
 
 			// Minimum station count for which we ignore PKP phases
-			// XXX not yet used
-			int minStaCountIgnorePKP{15};
+			size_t minStaCountIgnorePKP{15};
 
 			// if a pick can be associated to an origin with at
 			// least this high a score, bypass the nucleator,
@@ -156,7 +152,7 @@ class Autoloc3 {
 			double maxAllowedFakeProbability{0.2};
 
 			// EXPERIMENTAL!!!
-			double distSlope{1.0}; // TODO: Make this configurable after testing
+			double distSlope{1.0};
 
 			// EXPERIMENTAL!!!
 			double maxRadiusFactor{1.0};
@@ -168,8 +164,7 @@ class Autoloc3 {
 
 			double publicationIntervalTimeSlope{0.5};
 			double publicationIntervalTimeIntercept{0.0};
-			int    publicationIntervalPickCount{20};
-			// XXX maybe score interval instead?
+			size_t publicationIntervalPickCount{20};
 
 			// If true, offline mode is selected. In offline mode,
 			// no database is accessed, and station locations are
@@ -225,7 +220,7 @@ class Autoloc3 {
 
 			// Minimum number of picks for an XXL origin
 			// to be reported
-			unsigned int xxlMinPhaseCount{4};   // default 4 picks
+			size_t xxlMinPhaseCount{4};   // default 4 picks
 			double xxlMaxStaDist{10.0};         // unit: degrees
 			double xxlMaxDepth{100};            // unit: km
 
@@ -294,10 +289,8 @@ class Autoloc3 {
 		bool sync(const Time &t);
 
 	protected:
-		// !!!!!!!!!!!!!!!!!!!!!!!
 		// This must be reimplemented in a subclass to properly
 		// print/send/etc. the origin
-		// !!!!!!!!!!!!!!!!!!!!!!!
 		virtual bool _report(const Origin *);
 
 	protected:
@@ -330,18 +323,17 @@ class Autoloc3 {
 		// and relocating.
 		//
 		// Returns true if the score could be enhanced.
-		bool _enhanceScore(Origin *, int maxloops=0);
+		bool _enhanceScore(Origin *, size_t maxloops=0);
 
 		// Rename P <-> PKP accoring to distance/traveltime
 		// FIXME: This is a hack we would want to avoid.
 		void _rename_P_PKP(Origin *);
 
-		// Really big outliers, where the assiciation obviously
-		// went wrong and which are excluded from the location
-		// anyway, are removed.
+		// Large outliers, resulting in an obviously wrong
+		// association, are excluded from the location.
 		//
 		// Returns number of removed outliers.
-		int _removeWorstOutliers(Origin *);
+		size_t _removeOutliers(Origin *);
 
 		// Try all that can be done to improve the origin:
 		//
@@ -510,8 +502,8 @@ class Autoloc3 {
 		Time     _nextCleanup;
 
 	protected:
-		typedef std::map<std::string, PickCPtr> PickMap;
-		PickMap  _pick;
+		typedef std::map<std::string, PickCPtr> PickPool;
+		PickPool pickPool;
 		std::string   _pickLogFilePrefix;
 		std::string   _pickLogFileName;
 		std::ofstream _pickLogFile;

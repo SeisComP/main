@@ -25,6 +25,8 @@
 
 namespace Autoloc {
 
+void delazi(double lat1, double lon1, double lat2, double lon2, double &delta, double &az1, double &az2);
+void delazi(const Hypocenter *hypo, const Station *station, double &delta, double &az1, double &az2);
 double distance(const Station* s1, const Station* s2);
 std::string printDetailed(const Origin*);
 std::string printOneliner(const Origin*);
@@ -44,15 +46,6 @@ int numberOfDefiningPhases(const Origin &origin);
 
 typedef Seiscomp::TravelTime TravelTime;
 bool travelTimeP (double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta, TravelTime&);
-
-// 1st arrival P incl. Pdiff up to 130 deg, no PKP
-bool travelTimeP1(double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta, TravelTime&);
-
-// 1st arrival PK* incl. PKP*, PKiKP
-bool travelTimePK(double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta, TravelTime&);
-
-
-TravelTime travelTimePP(double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta);
 
 std::string time2str(const Time &t);
 

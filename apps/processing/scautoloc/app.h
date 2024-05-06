@@ -34,19 +34,17 @@ namespace Applications {
 namespace Autoloc {
 
 
-class App : public Client::Application,
-            protected ::Autoloc::Autoloc3 {
+class App : public Client::Application, protected ::Autoloc::Autoloc3
+{
 	public:
 		App(int argc, char **argv);
 		~App() override = default;
-
 
 	public:
 		bool feed(DataModel::Pick*);
 		bool feed(DataModel::Amplitude*);
 		bool feed(DataModel::Origin*);
 		virtual void printUsage() const override;
-
 
 	protected:
 		void createCommandLineDescription() override;
@@ -67,8 +65,6 @@ class App : public Client::Application,
 		void handleAutoShutdown() override;
 
 		void addObject(const std::string& parentID, DataModel::Object *o) override;
-		void removeObject(const std::string& parentID, DataModel::Object *o) override;
-		void updateObject(const std::string& parentID, DataModel::Object *o) override;
 
 		bool _report(const ::Autoloc::Origin *origin) override;
 //		bool runFromPickFile();
@@ -80,24 +76,26 @@ class App : public Client::Application,
 		void timeStamp() const;
 
 	protected:
-//		DataModel::Origin *convertToSC3  (const ::Autoloc::Origin* origin, bool allPhases=true);
-		::Autoloc::Origin *convertFromSC3(const DataModel::Origin* sc3origin);
-		::Autoloc::Pick   *convertFromSC3(const DataModel::Pick*   sc3pick);
+//		DataModel::Origin *convertToSC  (const ::Autoloc::Origin* origin, bool allPhases=true);
+		::Autoloc::Origin *convertFromSC(const DataModel::Origin* scorigin);
+		::Autoloc::Pick   *convertFromSC(const DataModel::Pick*   scpick);
 
 	private:
 		std::string _inputFileXML; // for XML playback
-		std::string _inputEPFile; // for offline processing
+		std::string _inputEPFile;  // for offline processing
 		std::string _stationLocationFile;
 		std::string _gridConfigFile{"@DATADIR@/scautoloc/grid.conf"};
 		std::string _amplTypeAbs{"mb"};
 		std::string _amplTypeSNR{"snr"};
 
-		std::queue<DataModel::PublicObjectPtr> _objects; // for XML playback
+		// sorted objects for playback
+		std::queue<DataModel::PublicObjectPtr> _objects;
+
 		double _playbackSpeed;
 		Core::Time playbackStartTime;
 		Core::Time objectsStartTime;
 		Core::Time syncTime;
-		unsigned int objectCount;
+		size_t objectCount;
 
 		DataModel::EventParametersPtr _ep;
 		DataModel::InventoryPtr inventory;
@@ -106,10 +104,10 @@ class App : public Client::Application,
 		int _keepEventsTimeSpan;
 		int _wakeUpTimout;
 
-		ObjectLog   *_inputPicks;
-		ObjectLog   *_inputAmps;
-		ObjectLog   *_inputOrgs;
-		ObjectLog   *_outputOrgs;
+		ObjectLog *_inputPicks;
+		ObjectLog *_inputAmps;
+		ObjectLog *_inputOrgs;
+		ObjectLog *_outputOrgs;
 };
 
 
