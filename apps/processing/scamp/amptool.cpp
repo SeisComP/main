@@ -735,7 +735,8 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 
 			double weight = Private::arrivalWeight(arr);
 
-			if ( Private::shortPhaseName(arr->phase().code()) != 'P' || weight < _minWeight ) {
+			if ( Private::shortPhaseName(arr->phase().code()) != 'P' || weight < _minWeight ||
+			     !arr->timeUsed() ) {
 				SEISCOMP_INFO("Ignoring pick '%s' weight=%.1f phase=%s",
 				              pickID.c_str(), weight, arr->phase().code().c_str());
 				continue;
