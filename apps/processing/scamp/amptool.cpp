@@ -754,6 +754,18 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 			wfid.setChannelCode(wfid.channelCode().substr(0,2));
 
 			string streamID = Private::toStreamID(wfid);
+
+			double distance;
+			try {
+				distance = Private::arrivalDistance(arr);
+			}
+			catch ( Core::ValueException& ) {
+				SEISCOMP_LOG(_errorChannel, "Arrival.distance not set for %s pick %s: skip it",
+				                 streamID.c_str(), pickID.c_str());
+				_report << "   - " << pickID << " [Arrival.distance not set]" << std::endl;
+				continue;
+			}
+
 			PickStreamEntry &e = pickStreamMap[streamID];
 
 			// When there is already a pick registered for this stream which has
@@ -763,7 +775,7 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 			}
 
 			e.first = pick;
-			e.second = Private::arrivalDistance(arr);
+			e.second = distance;
 		}
 	}
 	else if ( pick ) {
