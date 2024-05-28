@@ -22,6 +22,9 @@
    </size>
   </property>
   <widget class="QScrollArea" name="centralwidget" >
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
    <property name="widgetResizable">
     <bool>true</bool>
    </property>
