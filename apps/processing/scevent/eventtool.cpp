@@ -2844,7 +2844,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		for ( size_t i = 0; i < origin->magnitudeCount(); ++i ) {
 			Magnitude *nm = origin->magnitude(i);
 			if ( nm->type() == info->constraints.preferredMagnitudeType ) {
-				if ( isRejected(momentMag.get()) ) {
+				if ( isRejected(nm) ) {
 					SEISCOMP_LOG(_infoChannel,
 					             "Found magnitude '%s' with requested type but "
 					             "of status REJECTED",
