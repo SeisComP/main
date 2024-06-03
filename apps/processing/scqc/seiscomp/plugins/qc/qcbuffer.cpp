@@ -78,15 +78,19 @@ void QcBuffer::push_back(const QcParameter *qcp) {
 	BufferBase::push_back(qcp);
 
 	// buffer size is 'unlimited'
-	if ( _maxBufferSize == -1 ) return;
+	if ( _maxBufferSize == -1 ) {
+		return;
+	}
 
 	iterator it = begin();
 	while ( it != end()  ) {
 		double diff = (double)(back()->recordEndTime - (*it)->recordEndTime);
-		if ( fabs(diff) > _maxBufferSize*1.10 )
+		if ( fabs(diff) > _maxBufferSize * 1.10 ) {
 			it = erase(it);
-		else
+		}
+		else {
 			++it;
+		}
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -139,22 +143,25 @@ const QcBuffer* QcBuffer::qcParameter(const Core::Time &startTime,
 //! return list of qcParameters for the last n seconds in buffer
 QcBuffer *QcBuffer::qcParameter(const Core::TimeSpan &lastNSeconds) const {
 	QcBuffer *qcb = new QcBuffer();
-	
-	if ( empty() ) return qcb;
+
+	if ( empty() ) {
+		return qcb;
+	}
 
 	const_reverse_iterator from = rbegin();
 	const_reverse_iterator to = rbegin();
 
-	for ( const_reverse_iterator it = rbegin(); it != rend(); ++it ) {
+	for ( auto it = rbegin(); it != rend(); ++it ) {
 		if ( !(*it) ) continue;
 
-		Core::TimeSpan diff = back()->recordEndTime - (*it)->recordStartTime;
+		auto diff = back()->recordEndTime - (*it)->recordStartTime;
 
 		from = it;
 		++from;
 
-		if ( diff > lastNSeconds )
+		if ( diff > lastNSeconds ) {
 			break;
+		}
 	}
 
 	if ( from != to ) {
@@ -190,7 +197,9 @@ const Core::Time &QcBuffer::endTime() const {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Core::TimeSpan QcBuffer::length() const {
 	//! TODO iterate thru' entries -- do not account for 'buffer gaps'
-	if ( empty() ) return Core::TimeSpan(0.0);
+	if ( empty() ) {
+		return Core::TimeSpan(0.0);
+	}
 
 	return Core::TimeSpan(back()->recordEndTime - front()->recordStartTime);
 }

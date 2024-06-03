@@ -87,22 +87,28 @@ class SC_QCPLUGIN_API QcIndexMap {
 		size_t size() const {
 			return _indexMap.size();
 		}
-	
+
 	private:
 		std::map<std::string, Core::Time> _indexMap;
 };
 
 
 DEFINE_SMARTPOINTER(QcMessenger);
-
 class SC_QCPLUGIN_API QcMessenger : public Core::BaseObject {
 	public:
 		//! Initializing Constructor
-		QcMessenger(QcApp* app);
-		
-		//! Attach object to message and schedule sending 
+		QcMessenger(QcApp *app);
+
+	public:
+		/**
+		 * @brief Sets the test mode with respect to sending messages.
+		 * @param enable If false then no messages will be sent.
+		 */
+		void setTestMode(bool enable);
+
+		//! Attach object to message and schedule sending
 		//! (if notifier is true send as notifier message; as data message otherwise)
-		bool attachObject(DataModel::Object* obj, bool notifier, Operation operation=OP_UNDEFINED);
+		bool attachObject(DataModel::Object *obj, bool notifier, Operation operation=OP_UNDEFINED);
 
 		//! Scheduler for sending messages (called periodically by application)
 		void scheduler();
@@ -113,13 +119,14 @@ class SC_QCPLUGIN_API QcMessenger : public Core::BaseObject {
 		void flushMessages();
 
 	private:
-		QcIndexMap _qcIndex;
-		NotifierMessagePtr _notifierMsg;
-		DataMessagePtr _dataMsg;
-		QcApp* _app;
-		Core::TimeSpan _sendInterval;
-		int _maxSize;
-		Util::StopWatch _timer;
+		QcIndexMap          _qcIndex;
+		NotifierMessagePtr  _notifierMsg;
+		DataMessagePtr      _dataMsg;
+		QcApp              *_app;
+		Core::TimeSpan      _sendInterval{1.0};
+		int                 _maxSize{500};
+		bool                _testMode{false};
+		Util::StopWatch     _timer;
 
 };
 

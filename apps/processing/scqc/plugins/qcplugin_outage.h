@@ -12,8 +12,9 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_QC_QCOUTAGE_H__
-#define SEISCOMP_QC_QCOUTAGE_H__
+#ifndef SEISCOMP_QC_QCOUTAGE_H
+#define SEISCOMP_QC_QCOUTAGE_H
+
 
 #include <map>
 
@@ -27,25 +28,26 @@ namespace Qc {
 
 
 DEFINE_SMARTPOINTER(QcPluginOutage);
-
 class QcPluginOutage : public QcPlugin {
 	DECLARE_SC_CLASS(QcPluginOutage);
 
-public:
-	QcPluginOutage();
-	bool init(QcApp* app, QcConfig *cfg, std::string streamID);
-	std::string registeredName() const override;
-	std::vector<std::string> parameterNames() const override;
-	void update() override;
-	void timeoutTask() override {};
+	public:
+		QcPluginOutage();
+		bool init(QcApp* app, QcConfig *cfg, std::string streamID);
+		void update() override;
 
-private:
-	std::map<std::string, Core::Time> _recent;
+	private:
+		bool fillUp(const Processing::QcParameter *qcp);
 
-	bool fillUp(const Processing::QcParameter *qcp);
+	private:
+		std::map<std::string, Core::Time> _recent;
+
 };
 
+
 }
 }
 }
+
+
 #endif
