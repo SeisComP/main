@@ -75,18 +75,40 @@ bool QcBuffer::recentlyUsed() const {
 //! push QcParameter at back of buffer and remove elements (from whole buffer),
 //! older than _maxBufferSize [sec]
 void QcBuffer::push_back(const QcParameter *qcp) {
-	BufferBase::push_back(qcp);
+	if ( empty() ) {
+		BufferBase::push_back(qcp);
+		return;
+	}
+
+	if ( qcp->recordEndTime >= back()->recordEndTime ) {
+		// Sorted insert
+		BufferBase::push_back(qcp);
+	}
+	else {
+		if ( qcp->recordEndTime < front()->recordEndTime ) {
+			BufferBase::push_front(qcp);
+		}
+		else {
+			auto rit = rbegin();
+			--rit;
+			while ( rit != rend() ) {
+				if ( qcp->recordEndTime >= (*rit)->recordEndTime ) {
+					BufferBase::insert(rit.base(), qcp);
+					break;
+				}
+			}
+		}
+	}
 
 	// buffer size is 'unlimited'
-	if ( _maxBufferSize == -1 ) return;
+	if ( _maxBufferSize == -1 ) {
+		return;
+	}
 
-	iterator it = begin();
-	while ( it != end()  ) {
-		double diff = (double)(back()->recordEndTime - (*it)->recordEndTime);
-		if ( fabs(diff) > _maxBufferSize*1.10 )
-			it = erase(it);
-		else
-			++it;
+	Core::TimeSpan maxSpan = _maxBufferSize * 1.1;
+	auto it = begin();
+	while ( (it != end()) && (back()->recordEndTime - (*it)->recordEndTime > maxSpan) ) {
+		it = erase(it);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
