@@ -1296,20 +1296,22 @@ AmpTool::createAmplitude(const Seiscomp::Processing::AmplitudeProcessor *proc,
 		DataModel::TimeWindow(res.time.reference, res.time.begin, res.time.end)
 	);
 
-	if ( res.component <= WaveformProcessor::SecondHorizontal )
+	if ( res.component <= WaveformProcessor::SecondHorizontal ) {
 		amp->setWaveformID(
 			WaveformStreamID(
 				res.record->networkCode(), res.record->stationCode(),
 				res.record->locationCode(), proc->streamConfig((WaveformProcessor::Component)res.component).code(), ""
 			)
 		);
-	else
+	}
+	else {
 		amp->setWaveformID(
 			WaveformStreamID(
 				res.record->networkCode(), res.record->stationCode(),
 				res.record->locationCode(), res.record->channelCode().substr(0,2), ""
 			)
 		);
+	}
 
 	amp->setPickID(proc->referencingPickID());
 
