@@ -84,7 +84,7 @@ void QcPluginGap::generateReport(const QcBuffer* buf) const {
 	obj1->setValue(mean[0]);
 	obj1->setLowerUncertainty(stdDev[0]);
 	obj1->setUpperUncertainty(stdDev[0]);
-	obj1->setWindowLength((double)buf->length());
+	obj1->setWindowLength(static_cast<double>(buf->length()));
 	pushObject(Object::Cast(obj1));
 
 	auto obj2 = new WaveformQuality();
@@ -98,7 +98,7 @@ void QcPluginGap::generateReport(const QcBuffer* buf) const {
 	obj2->setValue(mean[1]);
 	obj2->setLowerUncertainty(stdDev[1]);
 	obj2->setUpperUncertainty(stdDev[1]);
-	obj2->setWindowLength((double)buf->length());
+	obj2->setWindowLength(static_cast<double>(buf->length()));
 	pushObject(Object::Cast(obj2));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -146,7 +146,7 @@ void QcPluginGap::generateAlert(const QcBuffer *shortBuffer, const QcBuffer *lon
 		obj1->setValue(sta[0]);
 		obj1->setLowerUncertainty(staStdDev[0]);
 		obj1->setUpperUncertainty(staStdDev[0]);
-		obj1->setWindowLength((double)shortBuffer->length());
+		obj1->setWindowLength(static_cast<double>(shortBuffer->length()));
 
 		pushObject(Object::Cast(obj1));
 	}
@@ -163,7 +163,7 @@ void QcPluginGap::generateAlert(const QcBuffer *shortBuffer, const QcBuffer *lon
 		obj2->setValue(sta[1]);
 		obj2->setLowerUncertainty(staStdDev[1]);
 		obj2->setUpperUncertainty(staStdDev[1]);
-		obj2->setWindowLength((double)shortBuffer->length());
+		obj2->setWindowLength(static_cast<double>(shortBuffer->length()));
 
 		pushObject(Object::Cast(obj2));
 	}
@@ -200,7 +200,7 @@ vector<double> QcPluginGap::_mean(const QcBuffer* buf) const {
 		double diff = boost::any_cast<double>((*p)->parameter);
 
 		if ( count != 0 ) {
-			iSum += (double)((*p)->recordStartTime - lastGapTime);
+			iSum += static_cast<double>((*p)->recordStartTime - lastGapTime);
 		}
 
 		lSum += diff;
@@ -213,7 +213,7 @@ vector<double> QcPluginGap::_mean(const QcBuffer* buf) const {
 			returnVector[0] = iSum / (count -1);
 		}
 		returnVector[1] = lSum / count;
-		returnVector[2] = (double)count;
+		returnVector[2] = static_cast<double>(count);
 	}
 
 	return returnVector;
@@ -242,7 +242,7 @@ vector<double> QcPluginGap::_stdDev(const QcBuffer* buf, double iMean, double lM
 		double diff = boost::any_cast<double>((*p)->parameter);
 
 		if ( count != 0.0 ) {
-			iSum += pow((double)(((*p)->recordStartTime - lastGapTime)) - iMean, 2);
+			iSum += pow(static_cast<double>(((*p)->recordStartTime - lastGapTime)) - iMean, 2);
 		}
 
 		lSum += pow(diff - lMean, 2);

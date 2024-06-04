@@ -21,29 +21,28 @@
 
 using namespace Seiscomp::Processing;
 
+
 namespace Seiscomp {
 namespace Applications {
 namespace Qc {
 
-typedef std::list<QcParameterCPtr> BufferBase;
 
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+using BufferBase = std::list<QcParameterCPtr>;
+
+
 DEFINE_SMARTPOINTER(QcBuffer);
-
 class SC_QCPLUGIN_API QcBuffer : public Core::BaseObject, public BufferBase {
 	public:
 		QcBuffer();
 		QcBuffer(double maxBufferSize);
-		
+
 		mutable Core::Time lastEvalTime;
 
 		void push_back(const QcParameter *qcp);
+		void push_back(const std::string *streamID, const QcParameter *qcp);
 
-		/*
-		const QcParameter* qcParameter(const Core::Time &time) const;
-		const QcBuffer* qcParameter(const Core::Time &startTime, const Core::Time &endTime) const;
-		*/
-		QcBuffer *qcParameter(const Core::TimeSpan &lastNSeconds) const;
+		//! Return a list of qcParameters for the most recent time span.
+		QcBuffer *qcParameter(const Core::TimeSpan &timeSpan) const;
 
 		void info() const;
 		void dump() const;
@@ -54,17 +53,10 @@ class SC_QCPLUGIN_API QcBuffer : public Core::BaseObject, public BufferBase {
 		const Core::Time& endTime() const;
 		Core::TimeSpan length() const;
 
-	protected:
-	
-
 	private:
 		double _maxBufferSize;
-		bool _recentlyUsed;
-
-
+		bool   _recentlyUsed;
 };
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
 
 
 }

@@ -239,7 +239,7 @@ vector<double> QcPluginOverlap::_stdDev(const QcBuffer *buf, double iMean, doubl
 		double diff = boost::any_cast<double>((*p)->parameter);
 
 		if ( count != 0.0 ) {
-			iSum += pow((double)(((*p)->recordStartTime - lastOverlapTime)) - iMean, 2);
+			iSum += pow(static_cast<double>(((*p)->recordStartTime - lastOverlapTime)) - iMean, 2);
 		}
 
 		lSum += pow(diff - lMean, 2);

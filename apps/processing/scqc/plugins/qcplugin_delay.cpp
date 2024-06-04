@@ -76,7 +76,7 @@ void QcPluginDelay::timeoutTask() {
 
 	qcp->recordStartTime = _lastRecordEndTime;
 	qcp->parameter = static_cast<double>(qcp->recordEndTime - qcp->recordStartTime);
-	_qcBuffer->push_back(qcp);
+	_qcBuffer->push_back(&_streamID, qcp);
 
 	sendMessages(Core::Time());
 }

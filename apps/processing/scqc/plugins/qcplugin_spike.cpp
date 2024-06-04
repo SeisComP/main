@@ -204,7 +204,7 @@ std::vector<double> QcPluginSpike::_mean(const QcBuffer * buf) const {
 			}
 
 			if ( count != 0.0 ) {
-				iSum += (double)(s->first - lastSpikeTime);
+				iSum += static_cast<double>(s->first - lastSpikeTime);
 			}
 
 			aSum += s->second;
@@ -218,7 +218,7 @@ std::vector<double> QcPluginSpike::_mean(const QcBuffer * buf) const {
 			returnVector[0] = iSum / (count -1);
 		}
 		returnVector[1] = aSum / count;
-		returnVector[2] = (double)count;
+		returnVector[2] = static_cast<double>(count);
 	}
 
 	return returnVector;
@@ -248,7 +248,7 @@ std::vector<double> QcPluginSpike::_stdDev(const QcBuffer *buf, double iMean, do
 
 		for (Spikes::iterator s = spikes.begin(); s != spikes.end(); s++) {
 			if (count != 0.0)
-				iSum += pow((double)((s->first - lastSpikeTime)) - iMean, 2);
+				iSum += pow(static_cast<double>((s->first - lastSpikeTime)) - iMean, 2);
 
 			aSum += pow(s->second - aMean, 2);
 			count++;

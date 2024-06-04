@@ -302,7 +302,7 @@ void QcPlugin::update() {
 	QcParameter *qcp = _qcProcessor->getState();
 
 	if ( _qcProcessor->isValid() ) {
-		_qcBuffer->push_back(qcp);
+		_qcBuffer->push_back(&_streamID, qcp);
 	}
 
 	sendMessages(qcp->recordEndTime);
@@ -346,6 +346,8 @@ void QcPlugin::sendMessages(const Core::Time &rectime) {
 				generateReport(archiveBuffer.get());
 				sendObjects(true); // as notifier msg
 				_lastArchiveTime = rectime;
+				SEISCOMP_DEBUG("ARCHIVE(%s): %s, %d values",
+				               registeredName(), _streamID, _qcBuffer->size());
 			}
 		}
 	}
@@ -358,6 +360,8 @@ void QcPlugin::sendMessages(const Core::Time &rectime) {
 			generateReport(reportBuffer.get());
 			sendObjects(false);
 			_lastReportTime = rectime;
+			SEISCOMP_DEBUG("REPORT(%s): %s, %d values",
+			               registeredName(), _streamID, _qcBuffer->size());
 		}
 	}
 
@@ -367,10 +371,14 @@ void QcPlugin::sendMessages(const Core::Time &rectime) {
 		diff = rectime - _lastAlertTime;
 		if ( ( diff > Core::TimeSpan(_qcConfig->alertInterval()) && (int)_qcBuffer->length() >= _qcConfig->alertBuffer() ) || rectime == Core::Time()) {
 			QcBufferCPtr alertBuffer = _qcBuffer->qcParameter(_qcConfig->alertBuffer());
-			if (alertBuffer->empty()) return;
+			if ( alertBuffer->empty() ) {
+				return;
+			}
 			generateAlert(alertBuffer.get(), _qcBuffer.get());
 			sendObjects(false);
 			_lastAlertTime = rectime;
+			SEISCOMP_DEBUG("ALERT(%s): %s, %d values",
+			               registeredName(), _streamID, _qcBuffer->size());
 		}
 	}
 }

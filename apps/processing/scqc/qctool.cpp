@@ -104,9 +104,9 @@ void QcTool::createCommandLineDescription() {
 	commandline().addGroup("Archive-Processing");
 	commandline().addOption("Archive-Processing", "archive", "Processing of archived data.");
 	commandline().addOption("Archive-Processing", "auto-time", "Automatic determination of start time for each stream from last db entries.\nend-time is set to future.");
-	commandline().addOption("Archive-Processing", "begin-time", "Begin time of record acquisition.\n[e.g.: \"2008-11-11 10:33:50\"]", (string*)NULL);
-	commandline().addOption("Archive-Processing", "end-time", "End time of record acquisition. If unset, current Time is used.", (string*)NULL);
-	commandline().addOption("Archive-Processing", "stream-mask", "Use this regexp for stream selection.\n[e.g. \"^GE.*BHZ$\"]", (string*)NULL);
+	commandline().addOption("Archive-Processing", "begin-time", "Begin time of record acquisition.\n[e.g.: \"2008-11-11 10:33:50\"]", (string*)nullptr);
+	commandline().addOption("Archive-Processing", "end-time", "End time of record acquisition. If unset, current Time is used.", (string*)nullptr);
+	commandline().addOption("Archive-Processing", "stream-mask", "Use this regexp for stream selection.\n[e.g. \"^GE.*BHZ$\"]", (string*)nullptr);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -317,21 +317,21 @@ bool QcTool::init() {
 								else
 									groupCode = cha;
 
-								if ( sloc != NULL ) {
+								if ( sloc ) {
 									DataModel::ThreeComponents tc;
 
 									if ( DataModel::getThreeComponents(tc, sloc, groupCode.c_str(), Core::Time::GMT()) ) {
-										if ( tc.comps[DataModel::ThreeComponents::Vertical] != NULL )
+										if ( tc.comps[DataModel::ThreeComponents::Vertical] )
 											addStream(net, sta, loc, tc.comps[DataModel::ThreeComponents::Vertical]->code());
 										else
 											addStream(net, sta, loc, isFixedChannel ? cha : groupCode + 'Z');
 
-										if ( tc.comps[DataModel::ThreeComponents::FirstHorizontal] != NULL )
+										if ( tc.comps[DataModel::ThreeComponents::FirstHorizontal] )
 											addStream(net, sta, loc, tc.comps[DataModel::ThreeComponents::FirstHorizontal]->code());
 										else
 											addStream(net, sta, loc, groupCode+'N');
 
-										if ( tc.comps[DataModel::ThreeComponents::SecondHorizontal] != NULL )
+										if ( tc.comps[DataModel::ThreeComponents::SecondHorizontal] )
 											addStream(net, sta, loc, tc.comps[DataModel::ThreeComponents::SecondHorizontal]->code());
 										else
 											addStream(net, sta, loc, groupCode+'E');
@@ -351,9 +351,9 @@ bool QcTool::init() {
 							else {
 								// Only vertical
 								if ( !isFixedChannel ) {
-									if ( sloc != NULL ) {
+									if ( sloc ) {
 										DataModel::Stream *stream = DataModel::getVerticalComponent(sloc, cha.c_str(), Core::Time::GMT());
-										if ( stream != NULL )
+										if ( stream )
 											addStream(net, sta, loc, stream->code());
 										else
 											addStream(net, sta, loc, cha+'Z');
@@ -402,7 +402,7 @@ bool QcTool::init() {
 
 									string streamID = net + "." + sta + "." + loc + "." + cha;
 									if (!boost::regex_match(streamID, what, streamMask)) {
-	// 				SEISCOMP_DEBUG("ignoring: %s", streamID.c_str());
+										SEISCOMP_DEBUG("ignoring: %s", streamID.c_str());
 										continue;
 									}
 									addStream(net, sta, loc, cha);

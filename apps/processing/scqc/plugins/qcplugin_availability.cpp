@@ -98,8 +98,8 @@ void QcPluginAvailability::timeoutTask() {
 	}
 
 	qcp->recordStartTime = _lastRecordEndTime;
-	qcp->parameter = (double)(qcp->recordEndTime - qcp->recordStartTime);
-	_qcBuffer->push_back(qcp);
+	qcp->parameter = static_cast<double>(qcp->recordEndTime - qcp->recordStartTime);
+	_qcBuffer->push_back(&_streamID, qcp);
 
 	Core::Time t;
 	sendMessages(t);
