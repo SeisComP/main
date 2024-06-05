@@ -37,5 +37,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../common/libs)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../common/libs)
 
 SET(INIT_TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/../common/apps/templates/initd.py)
+SET(INIT_ND_NB_TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/../common/apps/templates/init-nodaemon-nobindings.py)
 
 SUBDIRS(apps plugins)
