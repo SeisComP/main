@@ -910,12 +910,16 @@ MainFrame::MainFrame(){
 	connect(_ui.actionShowStationAnnotations, SIGNAL(toggled(bool)), _originLocator, SLOT(drawStationAnnotations(bool)));
 	connect(_ui.actionShowStations, SIGNAL(toggled(bool)), _magnitudes, SLOT(drawStations(bool)));
 	connect(_ui.actionShowStationAnnotations, SIGNAL(toggled(bool)), _magnitudes, SLOT(drawStationAnnotations(bool)));
+	connect(_ui.actionShowStations, SIGNAL(toggled(bool)), _eventEdit, SLOT(drawStations(bool)));
+	connect(_ui.actionShowStationAnnotations, SIGNAL(toggled(bool)), _eventEdit, SLOT(drawStationAnnotations(bool)));
 	connect(_ui.actionShowEventList, SIGNAL(triggered(bool)), this, SLOT(showEventList()));
 
 	_originLocator->drawStations(_ui.actionShowStations->isChecked());
 	_originLocator->drawStationAnnotations(_ui.actionShowStationAnnotations->isChecked());
 	_magnitudes->drawStations(_ui.actionShowStations->isChecked());
 	_magnitudes->drawStationAnnotations(_ui.actionShowStationAnnotations->isChecked());
+	_eventEdit->drawStations(_ui.actionShowStations->isChecked());
+	_eventEdit->drawStationAnnotations(_ui.actionShowStationAnnotations->isChecked());
 
 #ifdef WITH_SMALL_SUMMARY
 	_ui.frameSummary->setVisible(_ui.actionShowSummary->isChecked());
@@ -1554,7 +1558,7 @@ SEISCOMP_DEBUG("EventParametersPtr _createEventParametersForPublication(%s)",eve
 						ep->add(derivedOrigin.get());
 					}
 				}
-				
+
 			}
 
 		}
