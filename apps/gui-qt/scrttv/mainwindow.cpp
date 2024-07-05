@@ -1857,9 +1857,11 @@ void MainWindow::setupItem(const Record*, Gui::RecordViewItem *item) {
 
 	item->setContextMenuPolicy(Qt::CustomContextMenu);
 
-	applySpectrogramSettings(static_cast<TraceWidget*>(item->widget()));
+	if ( SCApp->nonInteractive() ) {
+		return;
+	}
 
-	if ( SCApp->nonInteractive() ) return;
+	applySpectrogramSettings(static_cast<TraceWidget*>(item->widget()));
 
 	item->setDraggingEnabled(true);
 	connect(item, SIGNAL(customContextMenuRequested(const QPoint &)),
