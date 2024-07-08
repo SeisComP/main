@@ -18,11 +18,17 @@
 #include <seiscomp/qc/qcprocessor_mean.h>
 #include "qcplugin_offset.h"
 
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 namespace Seiscomp {
 namespace Applications {
 namespace Qc {
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 using namespace std;
 using namespace Seiscomp::Processing;
 
@@ -32,25 +38,26 @@ using namespace Seiscomp::Processing;
 IMPLEMENT_SC_CLASS_DERIVED(QcPluginOffset, QcPlugin, "QcPluginOffset");
 ADD_SC_PLUGIN("Qc Parameter Offset", "GFZ Potsdam <seiscomp-devel@gfz-potsdam.de>", 0, 1, 0)
 REGISTER_QCPLUGIN(QcPluginOffset, REGISTERED_NAME);
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 QcPluginOffset::QcPluginOffset(): QcPlugin() {
-    _qcProcessor = new QcProcessorMean();
-    _qcProcessor->subscribe(this);
+	_qcProcessor = new QcProcessorMean();
+	_qcProcessor->subscribe(this);
 
-    _name = REGISTERED_NAME;
-    _parameterNames.push_back("offset");
+	_name = REGISTERED_NAME;
+	_parameterNames.push_back("offset");
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-string QcPluginOffset::registeredName() const {
-    return _name;
-}
 
-vector<string> QcPluginOffset::parameterNames() const {
-    return _parameterNames;
-}
 
-}
-}
-}
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+}
+}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

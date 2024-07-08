@@ -75,19 +75,7 @@ bool QcBuffer::recentlyUsed() const {
 //! push QcParameter at back of buffer and remove elements (from whole buffer),
 //! older than _maxBufferSize [sec]
 void QcBuffer::push_back(const QcParameter *qcp) {
-	BufferBase::push_back(qcp);
-
-	// buffer size is 'unlimited'
-	if ( _maxBufferSize == -1 ) return;
-
-	iterator it = begin();
-	while ( it != end()  ) {
-		double diff = (double)(back()->recordEndTime - (*it)->recordEndTime);
-		if ( fabs(diff) > _maxBufferSize*1.10 )
-			it = erase(it);
-		else
-			++it;
-	}
+	push_back(nullptr, qcp);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -95,66 +83,75 @@ void QcBuffer::push_back(const QcParameter *qcp) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-//! return qcParameter at specific time
-/*
-const QcParameter* QcBuffer::qcParameter(const Core::Time &time) const {
-	for ( const_iterator it = begin(); it != end(); ++it ) {
-		if ( (*it)->recordStartTime >= time && (*it)->recordEndTime < time )
-		return (*it).get();
+void QcBuffer::push_back(const std::string *streamID, const QcParameter *qcp) {
+	static std::string undefined = "<>";
+	if ( empty() ) {
+		BufferBase::push_back(qcp);
+		return;
 	}
 
-	return NULL;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+	if ( qcp->recordEndTime >= back()->recordEndTime ) {
+		// Sorted insert
+		BufferBase::push_back(qcp);
+	}
+	else {
+		SEISCOMP_INFO("%s: parameter out-of-order: %s < %s",
+		              streamID ? *streamID : undefined,
+		              qcp->recordEndTime.iso(), back()->recordEndTime.iso());
 
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-//! return list of qcParameters for time range
-const QcBuffer* QcBuffer::qcParameter(const Core::Time &startTime,
-                                      const Core::Time &endTime) const {
-	QcBuffer *qcb = new QcBuffer();
-
-	if (empty()) return qcb;
-
-	int count = 0;
-
-	for ( const_iterator it = begin(); it != end(); ++it ) {
-		if ( (*it)->recordStartTime >= startTime && (*it)->recordEndTime <= endTime ) {
-			qcb->push_back((*it).get());
-			count++;
+		if ( qcp->recordEndTime < front()->recordEndTime ) {
+			BufferBase::push_front(qcp);
+		}
+		else {
+			auto rit = rbegin();
+			--rit;
+			while ( rit != rend() ) {
+				if ( qcp->recordEndTime >= (*rit)->recordEndTime ) {
+					BufferBase::insert(rit.base(), qcp);
+					break;
+				}
+			}
 		}
 	}
 
-	return qcb;
+	// buffer size is 'unlimited'
+	if ( _maxBufferSize == -1 ) {
+		return;
+	}
+
+	Core::TimeSpan maxSpan = _maxBufferSize * 1.1;
+	auto it = begin();
+	while ( (it != end()) && (back()->recordEndTime - (*it)->recordEndTime > maxSpan) ) {
+		it = erase(it);
+	}
 }
-*/
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-//! return list of qcParameters for the last n seconds in buffer
-QcBuffer *QcBuffer::qcParameter(const Core::TimeSpan &lastNSeconds) const {
+QcBuffer *QcBuffer::qcParameter(const Core::TimeSpan &timeSpan) const {
 	QcBuffer *qcb = new QcBuffer();
-	
-	if ( empty() ) return qcb;
+
+	if ( empty() ) {
+		return qcb;
+	}
 
 	const_reverse_iterator from = rbegin();
 	const_reverse_iterator to = rbegin();
 
-	for ( const_reverse_iterator it = rbegin(); it != rend(); ++it ) {
+	for ( auto it = rbegin(); it != rend(); ++it ) {
 		if ( !(*it) ) continue;
 
-		Core::TimeSpan diff = back()->recordEndTime - (*it)->recordStartTime;
+		auto diff = back()->recordEndTime - (*it)->recordStartTime;
 
 		from = it;
 		++from;
 
-		if ( diff > lastNSeconds )
+		if ( diff > timeSpan ) {
 			break;
+		}
 	}
 
 	if ( from != to ) {
@@ -190,7 +187,9 @@ const Core::Time &QcBuffer::endTime() const {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Core::TimeSpan QcBuffer::length() const {
 	//! TODO iterate thru' entries -- do not account for 'buffer gaps'
-	if ( empty() ) return Core::TimeSpan(0.0);
+	if ( empty() ) {
+		return Core::TimeSpan(0.0);
+	}
 
 	return Core::TimeSpan(back()->recordEndTime - front()->recordStartTime);
 }

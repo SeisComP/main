@@ -15,10 +15,17 @@
 #include <seiscomp/qc/qcprocessor_timing.h>
 #include "qcplugin_timing.h"
 
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 namespace Seiscomp {
 namespace Applications {
 namespace Qc {
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 using namespace std;
 using namespace Seiscomp::Processing;
 
@@ -28,26 +35,26 @@ using namespace Seiscomp::Processing;
 IMPLEMENT_SC_CLASS_DERIVED(QcPluginTiming, QcPlugin, "QcPluginTiming");
 ADD_SC_PLUGIN("Qc Parameter Timing", "GFZ Potsdam <seiscomp-devel@gfz-potsdam.de>", 0, 1, 0)
 REGISTER_QCPLUGIN(QcPluginTiming, REGISTERED_NAME);
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 QcPluginTiming::QcPluginTiming(): QcPlugin() {
-    _qcProcessor = new QcProcessorTiming();
-    _qcProcessor->subscribe(this);
+	_qcProcessor = new QcProcessorTiming();
+	_qcProcessor->subscribe(this);
 
-    _name = REGISTERED_NAME;
-    _parameterNames.push_back("timing quality");
+	_name = REGISTERED_NAME;
+	_parameterNames.push_back("timing quality");
 }
-
-string QcPluginTiming::registeredName() const {
-    return _name;
-}
-
-vector<string> QcPluginTiming::parameterNames() const {
-    return _parameterNames;
-}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 }
 }
 }
-
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

@@ -13,8 +13,6 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
-from __future__ import absolute_import, division, print_function
-
 import sys
 import re
 
@@ -227,11 +225,11 @@ class EventStreams(client.Application):
 
         try:
             self.eventID = self.commandline().optionString("event")
-        except BaseException:
+        except BaseException as exc:
             if not self.inputFile:
                 raise ValueError(
-                    "An eventID is mandatory if no input file is " "specified"
-                )
+                    "An eventID is mandatory if no input file is specified"
+                ) from exc
 
         try:
             self.margin = self.commandline().optionString("margin").split(",")

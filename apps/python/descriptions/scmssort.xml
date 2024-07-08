@@ -55,7 +55,7 @@
 
 						Example:
 
-						'2020-03-28 15:48~2020-03-28 16:18'
+						2020-03-28T15:48~2020-03-28T16:18
 					</description>
 				</option>
 				<option flag="u" long-flag="uniqueness">
