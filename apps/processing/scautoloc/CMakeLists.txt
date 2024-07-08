@@ -9,6 +9,7 @@ SET(
 		datamodel.cpp
 		locator.cpp
 		nucleator.cpp
+		scutil.cpp
 		util.cpp
 		sc3adapters.cpp
 		main.cpp
@@ -22,6 +23,7 @@ SET(
 		datamodel.h
 		locator.h
 		nucleator.h
+		scutil.h
 		util.h
 		sc3adapters.h
 )

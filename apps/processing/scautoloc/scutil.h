@@ -12,18 +12,17 @@
  ***************************************************************************/
 
 
+#ifndef SEISCOMP_AUTOLOC_SCUTIL_H_INCLUDED
+#define SEISCOMP_AUTOLOC_SCUTIL_H_INCLUDED
 
-
-#include <string>
-#include <vector>
-#include <seiscomp/core/datetime.h>
 #include <seiscomp/datamodel/origin.h>
 
-#include "datamodel.h"
+namespace Seiscomp {
 
-Seiscomp::Core::Time sctime(const Autoloc::Time &time);
+	void logObjectCounts();
 
-Seiscomp::DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases=true);
-// Origin *convertFromSC(const Seiscomp::DataModel::Origin* scorigin);
+	bool manual(const DataModel::Origin *origin);
 
-Autoloc::Pick *convertFromSC(const Seiscomp::DataModel::Pick *scpick);
+} // namespace Seiscomp
+
+#endif

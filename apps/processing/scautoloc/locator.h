@@ -19,9 +19,9 @@
 #include <string>
 #include <map>
 
-#include <seiscomp/config/config.h>
 #include <seiscomp/seismology/locator/locsat.h>
 #include "datamodel.h"
+
 
 namespace Autoloc {
 
@@ -46,7 +46,7 @@ class Locator {
 
 		// Configuration
 		void setProfile(const std::string &name) {
-			_sc3locator->setProfile(name);
+			_sclocator->setProfile(name);
 		}
 
 		void setSeiscompConfig(const Seiscomp::Config::Config*);
@@ -58,11 +58,11 @@ class Locator {
 		void setMinimumDepth(double);
 
 		void setFixedDepth(double depth, bool use=true) {
-			_sc3locator->setFixedDepth(depth, use);
+			_sclocator->setFixedDepth(depth, use);
 		}
 
 		void useFixedDepth(bool use=true) {
-			_sc3locator->useFixedDepth(use);
+			_sclocator->useFixedDepth(use);
 		}
 
 	public:
@@ -70,11 +70,11 @@ class Locator {
 
 
 	private:
-		// this is the SC3-level relocate
-		Origin *_sc3relocate(const Origin *origin);
+		// this is the SC-level relocate
+		Origin *_screlocate(const Origin *origin);
 
 	private:
-		Seiscomp::Seismology::LocatorInterfacePtr _sc3locator;
+		Seiscomp::Seismology::LocatorInterfacePtr _sclocator;
 		const Seiscomp::Config::Config *_scconfig;
 
 		MySensorLocationDelegatePtr sensorLocationDelegate;
