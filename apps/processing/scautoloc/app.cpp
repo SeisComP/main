@@ -25,14 +25,15 @@
 #include <seiscomp/core/datamessage.h>
 #include <seiscomp/io/archive/xmlarchive.h>
 #include <algorithm>
+#include <list>
 
 #include "app.h"
 #include "datamodel.h"
 #include "sc3adapters.h"
+#include "scutil.h"
 #include "util.h"
 
 
-using namespace std;
 using namespace Seiscomp::Client;
 using namespace Seiscomp::Math;
 
@@ -42,8 +43,6 @@ namespace Seiscomp {
 namespace Applications {
 
 namespace Autoloc {
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
 
 
 
@@ -71,20 +70,25 @@ App::App(int argc, char **argv)
 
 	_playbackSpeed = 1;
 }
-
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::printUsage() const {
-	cout << "Usage:"  << endl << "  scautoloc [options]" << endl << endl
-	     << "Associator of P-phase picks for locating seismic events." << endl;
+	std::cout << "Usage:"  << std::endl << "  scautoloc [options]" << std::endl << std::endl
+	     << "Associator of P-phase picks for locating seismic events." << std::endl;
 
 	Seiscomp::Client::Application::printUsage();
 
-	cout << "Examples:" << endl;
-	cout << "Real-time processing with informative debug output." << endl
-	     << "  scautoloc --debug" << endl;
+	std::cout << "Examples:" << std::endl;
+	std::cout << "Real-time processing with informative debug output." << std::endl
+	     << "  scautoloc --debug" << std::endl;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -220,7 +224,6 @@ void App::createCommandLineDescription() {
 	                        "as configured in 'processing.whitelist.agencies'. "
 	                        "Imported origins are not relocated and only used "
 	                        "for phase association.");
-//	commandline().addOption("Settings", "resend-imported-origins", "Re-send imported origins after phase association");
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -293,13 +296,13 @@ bool App::validateParameters() {
 		_config.adoptManualDepth = true;
 	}
 
-	_config.maxResidualKeep = 3 * _config.maxResidualUse;
-
 	if ( !_config.pickLogFile.empty() ) {
 		_config.pickLogEnable = true;
 	}
 
-	// return Client::Application::validateParameters();
+	// derived parameter
+	_config.maxResidualKeep = 3 * _config.maxResidualUse;
+
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -582,8 +585,7 @@ bool App::init() {
 		}
 	}
 	else {
-		// Read historical preferred origins in case we missed something
-		readHistoricEvents();
+// TEMP		readHistoricEvents();
 		if ( _wakeUpTimout > 0 ) {
 			enableTimer(_wakeUpTimout);
 		}
@@ -605,6 +607,25 @@ bool App::initInventory() {
 			SEISCOMP_ERROR("no inventory!");
 			return false;
 		}
+
+		// Remove unneeded inventory items to save some memory
+		for ( size_t n = 0; n < inventory->networkCount(); ++n ) {
+			DataModel::Network *network = inventory->network(n);
+
+			for ( size_t s = 0; s < network->stationCount(); ++s ) {
+				DataModel::Station *station = network->station(s);
+
+				for ( size_t l = 0; l < station->sensorLocationCount(); ++l ) {
+					DataModel::SensorLocation *sensorLocation = station->sensorLocation(l);
+					while (sensorLocation->streamCount())
+						sensorLocation->removeStream(0);
+					while (sensorLocation->auxStreamCount())
+						sensorLocation->removeAuxStream(0);
+					while (sensorLocation->commentCount())
+						sensorLocation->removeComment(0);
+				}
+			}
+		}
 	}
 	else {
 		SEISCOMP_DEBUG_S("Initializing station inventory from file '" + _stationLocationFile + "'");
@@ -620,7 +641,7 @@ bool App::initInventory() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Time &time) {
-	bool found = false;
+	bool found {false};
 	static std::set<std::string> configuredStreams;
 	std::string key = wfid.networkCode() + "." + wfid.stationCode();
 
@@ -673,8 +694,8 @@ bool App::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Ti
 			               epochStart.c_str(),
 			               epochEnd.c_str());
 
-			double elev = 0;
-			try { elev = station->elevation(); }
+			double elevation = 0;
+			try { elevation = station->elevation(); }
 			catch ( ... ) {}
 			::Autoloc::Station *sta =
 				new ::Autoloc::Station(
@@ -682,7 +703,7 @@ bool App::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Ti
 					network->code(),
 					station->latitude(),
 					station->longitude(),
-					elev);
+					elevation);
 
 			sta->used = true;
 			sta->maxNucDist = _config.defaultMaxNucDist;
@@ -720,49 +741,42 @@ void App::readHistoricEvents() {
 	// probably in the future but because of timing differences between
 	// different computers: safety first!
 	Core::Time now = Core::Time::GMT();
-	DataModel::DatabaseIterator it =
-		query()->getPreferredOrigins(now - Core::TimeSpan(_keepEventsTimeSpan),
-		                             now + Core::TimeSpan(_keepEventsTimeSpan), "");
-
 	OriginList preferredOrigins;
 	PickIds pickIds;
 
 	// Store all preferred origins
-	for ( ; it.get() != NULL; ++it ) {
-		DataModel::OriginPtr o = DataModel::Origin::Cast(it.get());
-		if ( o ) preferredOrigins.push_back(o);
+	DataModel::DatabaseIterator it =
+		query()->getPreferredOrigins(now - Core::TimeSpan(_keepEventsTimeSpan),
+		                             now + Core::TimeSpan(_keepEventsTimeSpan), "");
+	for ( ; it.get() != nullptr; ++it ) {
+		DataModel::OriginPtr origin = DataModel::Origin::Cast(it.get());
+		if ( origin )
+			preferredOrigins.push_back(origin);
 	}
 	it.close();
 
 	// Store all pickIDs of all origins and remove duplicates
-	for ( OriginList::iterator it = preferredOrigins.begin();
-	      it != preferredOrigins.end(); ++it ) {
-		DataModel::OriginPtr origin = *it;
+	for (auto& origin : preferredOrigins) {
 		if ( origin->arrivalCount() == 0 ) {
-			query()->loadArrivals(it->get());
+			query()->loadArrivals(origin.get());
 			for ( size_t i = 0; i < origin->arrivalCount(); ++i )
 				pickIds.insert(origin->arrival(i)->pickID());
 		}
 
 		SEISCOMP_DEBUG_S("read historical origin "+origin->publicID());
-
-		// Feed it!
-		//feedOrigin(it->get());
 	}
 
-	// Read all picks out of the database
-	for ( PickIds::iterator it = pickIds.begin();
-	      it != pickIds.end(); ++it ) {
+	// Read picks from database
+	for ( const std::string& pickID : pickIds ) {
 
-		DataModel::ObjectPtr obj = query()->getObject(DataModel::Pick::TypeInfo(), *it);
-		if ( !obj ) continue;
+		DataModel::ObjectPtr obj = query()->getObject(DataModel::Pick::TypeInfo(), pickID);
+		if ( !obj ) {
+			continue;
+		}
 		DataModel::PickPtr pick = DataModel::Pick::Cast(obj);
 		if ( !pick ) {
 			continue;
 		}
-
-		// Feed it!
-		//feedPick(pick.get());
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -771,25 +785,26 @@ void App::readHistoricEvents() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::runFromXMLFile(const char *fname)
+bool App::runFromXMLFile(const char *filename)
 {
-	DataModel::EventParametersPtr ep = new DataModel::EventParameters();
-	IO::XMLArchive ar;
+	SEISCOMP_INFO("App::runFromXMLFile");
 
-	if ( ! ar.open(fname)) {
-		SEISCOMP_ERROR("unable to open XML playback file '%s'", fname);
+	IO::XMLArchive ar;
+	if ( ! ar.open(filename)) {
+		SEISCOMP_ERROR("unable to open XML playback file '%s'", filename);
 		return false;
 	}
 
+	DataModel::EventParametersPtr ep = new DataModel::EventParameters();
 	ar >> ep;
 	SEISCOMP_INFO("finished reading event parameters from XML");
-	SEISCOMP_INFO("  number of picks:      %ld", (long int)ep->pickCount());
-	SEISCOMP_INFO("  number of amplitudes: %ld", (long int)ep->amplitudeCount());
-	SEISCOMP_INFO("  number of origins:    %ld", (long int)ep->originCount());
+	SEISCOMP_INFO("  number of picks:      %d", ep->pickCount());
+	SEISCOMP_INFO("  number of amplitudes: %d", ep->amplitudeCount());
+	SEISCOMP_INFO("  number of origins:    %d", ep->originCount());
 
 	// Tuple to be used in DSU sorting. The second member is used to place picks
 	// before amplitudes with identical creation times.
-	typedef std::tuple<Core::Time, int, DataModel::PublicObjectPtr> TimeObject;
+	typedef std::tuple<Core::Time, int, std::string, DataModel::PublicObjectPtr> TimeObject;
 	typedef std::vector<TimeObject> TimeObjectVector;
 
 	// retrieval of relevant objects from event parameters
@@ -800,26 +815,26 @@ bool App::runFromXMLFile(const char *fname)
 		ep->removePick(0);
 		DataModel::PublicObjectPtr o(pick);
 		Core::Time t = pick->creationInfo().creationTime();
-		objs.push_back(TimeObject(t, 0, o));
+		objs.push_back(TimeObject(t, 0, pick->publicID(), o));
 	}
 	while (ep->amplitudeCount() > 0) {
 		DataModel::AmplitudePtr amplitude = ep->amplitude(0);
 		ep->removeAmplitude(0);
 		DataModel::PublicObjectPtr o(amplitude);
 		Core::Time t = amplitude->creationInfo().creationTime();
-		t += Core::TimeSpan(0.00001);
-		objs.push_back(TimeObject(t, 1, o));
+		// t += Core::TimeSpan(0.00001);
+		objs.push_back(TimeObject(t, 1, amplitude->publicID(), o));
 	}
 	while (ep->originCount() > 0) {
 		DataModel::OriginPtr origin = ep->origin(0);
 		ep->removeOrigin(0);
 		DataModel::PublicObjectPtr o(origin);
 		Core::Time t = origin->creationInfo().creationTime();
-		objs.push_back(TimeObject(t, 2, o));
+		objs.push_back(TimeObject(t, 2, origin->publicID(), o));
 	}
 	std::sort(objs.begin(),objs.end());
 	for ( TimeObject &obj : objs ) {
-		_objects.push(std::get<2>(obj));
+		_objects.push(std::get<3>(obj));
 	}
 
 	if ( _objects.empty() )
@@ -831,6 +846,7 @@ bool App::runFromXMLFile(const char *fname)
 
 	objectsStartTime = playbackStartTime = Core::Time::GMT();
 	objectCount = 0;
+
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -839,11 +855,11 @@ bool App::runFromXMLFile(const char *fname)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::runFromEPFile(const char *fname) {
+bool App::runFromEPFile(const char *filename) {
+	SEISCOMP_INFO("App::runFromEPFile");
 	IO::XMLArchive ar;
-
-	if ( !ar.open(fname)) {
-		SEISCOMP_ERROR("unable to open XML file: %s", fname);
+	if ( !ar.open(filename)) {
+		SEISCOMP_ERROR("unable to open XML file: %s", filename);
 		return false;
 	}
 
@@ -851,22 +867,22 @@ bool App::runFromEPFile(const char *fname) {
 	ar.close();
 
 	if ( !_ep ) {
-		SEISCOMP_ERROR("No event parameters found: %s", fname);
+		SEISCOMP_ERROR("No event parameters found: %s", filename);
 		return false;
 	}
 
 	SEISCOMP_INFO("finished reading event parameters from XML");
-	SEISCOMP_INFO("  number of picks:      %ld", (long int)_ep->pickCount());
-	SEISCOMP_INFO("  number of amplitudes: %ld", (long int)_ep->amplitudeCount());
-	SEISCOMP_INFO("  number of origins:    %ld", (long int)_ep->originCount());
+	SEISCOMP_INFO("  number of picks:      %d", _ep->pickCount());
+	SEISCOMP_INFO("  number of amplitudes: %d", _ep->amplitudeCount());
+	SEISCOMP_INFO("  number of origins:    %d", _ep->originCount());
 
-	cerr << "Read from file: " << _ep->originCount() << " origin(s), "
+	std::cerr << "Read from file: " << _ep->originCount() << " origin(s), "
 	     << _ep->pickCount() << " pick(s), "
-	     << _ep->amplitudeCount() << " amplitudes(s)"<< endl;
+	     << _ep->amplitudeCount() << " amplitudes(s)"<< std::endl;
 
 	// Tuple to be used in DSU sorting. The second member is used to place picks
 	// before amplitudes with identical creation times.
-	typedef std::tuple<Core::Time, int, DataModel::PublicObjectPtr> TimeObject;
+	typedef std::tuple<Core::Time, int, std::string, DataModel::PublicObjectPtr> TimeObject;
 	typedef std::vector<TimeObject> TimeObjectVector;
 
 	// retrieval of relevant objects from event parameters
@@ -904,7 +920,7 @@ bool App::runFromEPFile(const char *fname) {
 		}
 
 		if ( add ) {
-			objs.push_back(TimeObject(t, 0, pick));
+			objs.push_back(TimeObject(t, 0, pick->publicID(), pick));
 		}
 	}
 
@@ -912,8 +928,8 @@ bool App::runFromEPFile(const char *fname) {
 		DataModel::AmplitudePtr amplitude = _ep->amplitude(i);
 		try {
 			Core::Time t = amplitude->creationInfo().creationTime();
-		t += Core::TimeSpan(0.00001);
-			objs.push_back(TimeObject(t, 1, amplitude));
+			// t += Core::TimeSpan(0.00001);
+			objs.push_back(TimeObject(t, 1, amplitude->publicID(), amplitude));
 		}
 		catch ( ... ) {
 			SEISCOMP_WARNING("Ignore amplitude %s: no creation time set",
@@ -925,7 +941,7 @@ bool App::runFromEPFile(const char *fname) {
 		DataModel::OriginPtr origin = _ep->origin(i);
 		try {
 			Core::Time t = origin->creationInfo().creationTime();
-			objs.push_back(TimeObject(t, 2, origin));
+			objs.push_back(TimeObject(t, 2, origin->publicID(), origin));
 		}
 		catch ( ... ) {
 			SEISCOMP_WARNING("Ignore origin %s: no creation time set",
@@ -935,7 +951,7 @@ bool App::runFromEPFile(const char *fname) {
 
 	std::sort(objs.begin(), objs.end());
 	for ( TimeObject &obj : objs ) {
-		_objects.push(std::get<2>(obj));
+		_objects.push(std::get<3>(obj));
 	}
 
 	while ( !_objects.empty() && !isExitRequested() ) {
@@ -954,7 +970,8 @@ bool App::runFromEPFile(const char *fname) {
 	ar << _ep;
 	ar.close();
 
-	cerr << "Output to XML: " << objectCount << " objects(s)" << endl;
+	std::cerr << "Output to XML: " << objectCount << " objects(s)" << std::endl;
+
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1013,6 +1030,7 @@ bool App::run() {
 	else if ( ! _exitRequested )
 		runFromPickFile(); // pick file read from stdin
 */
+
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1023,9 +1041,11 @@ bool App::run() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::done() {
 	_exitRequested = true;
-// FIXME	_flush();
 	shutdown();
-//	setStations(NULL);
+
+	// final log of public object counts
+	logObjectCounts();
+
 	Application::done();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1098,8 +1118,6 @@ void App::handleTimeout() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::handleAutoShutdown() {
-//	SEISCOMP_DEBUG("Autoshutdown: flushing pending results");
-// XXX FIXME: The following causes the shutdown to hang.
 //	_flush();
 	Client::Application::handleAutoShutdown();
 }
@@ -1107,61 +1125,43 @@ void App::handleAutoShutdown() {
 
 
 
-static bool manual(const DataModel::Origin *origin) {
-	try {
-		switch (origin->evaluationMode()) {
-		case DataModel::MANUAL:
-			return true;
-		default:
-			break;
-		}
-	}
-	catch ( Core::ValueException & ) {}
-	return false;
-}
-
-/*
-static bool preliminary(const DataModel::Origin *origin) {
-	try {
-		switch (origin->evaluationStatus()) {
-		case DataModel::PRELIMINARY:
-			return true;
-		default:
-			break;
-		}
-	}
-	catch ( Core::ValueException & ) {}
-	return false;
-}
-*/
-
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::addObject(const std::string& parentID, DataModel::Object* o) {
-	DataModel::PublicObject *po = DataModel::PublicObject::Cast(o);
-	if ( po == nullptr ) {
+	DataModel::PublicObject *publicObject = DataModel::PublicObject::Cast(o);
+	if ( !publicObject ) {
 		return;
 	}
-	// SEISCOMP_DEBUG("adding  %-12s %s", po->className(), po->publicID().c_str());
+
+	bool extra_debug = false;
 
 	DataModel::Pick *pick = DataModel::Pick::Cast(o);
 	if ( pick ) {
 		logObject(_inputPicks, Core::Time::GMT());
-		feed(pick);
+		if ( ! feed(pick))
+			return;
+		if (extra_debug)
+			logObjectCounts();
 		return;
 	}
 
 	DataModel::Amplitude *amplitude = DataModel::Amplitude::Cast(o);
 	if ( amplitude ) {
 		logObject(_inputAmps, Core::Time::GMT());
-		feed(amplitude);
+		if ( ! feed(amplitude))
+			return;
+		if (extra_debug)
+			logObjectCounts();
 		return;
 	}
 
 	DataModel::Origin *origin = DataModel::Origin::Cast(o);
 	if ( origin ) {
 		logObject(_inputOrgs, Core::Time::GMT());
-		feed(origin);
+		if ( ! feed(origin))
+			return;
+		if (extra_debug)
+			logObjectCounts();
 		return;
 	}
 }
@@ -1171,37 +1171,21 @@ void App::addObject(const std::string& parentID, DataModel::Object* o) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::removeObject(const std::string& parentID, DataModel::Object* o) {
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+bool App::feed(DataModel::Pick *scpick) {
 
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::updateObject(const std::string& parentID, DataModel::Object* o) {
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::feed(DataModel::Pick *sc3pick) {
-
-	const std::string &pickID = sc3pick->publicID();
+	const std::string &pickID = scpick->publicID();
 	try {
-		if ( sc3pick->evaluationStatus() == DataModel::REJECTED ) {
+		if ( scpick->evaluationStatus() == DataModel::REJECTED ) {
 			if ( !_config.allowRejectedPicks ) {
 				SEISCOMP_DEBUG("Ignoring pick %s with evaluation status %s",
-				               sc3pick->publicID().c_str(),
-				               sc3pick->evaluationStatus().toString());
+				               scpick->publicID().c_str(),
+				               scpick->evaluationStatus().toString());
 				return false;
 			}
 			else {
 				SEISCOMP_DEBUG("Considering pick %s with evaluation status %s",
-				               sc3pick->publicID().c_str(),
-				               sc3pick->evaluationStatus().toString());
+				               scpick->publicID().c_str(),
+				               scpick->evaluationStatus().toString());
 			}
 		}
 	}
@@ -1209,25 +1193,25 @@ bool App::feed(DataModel::Pick *sc3pick) {
 
 	if (_inputFileXML.size() || _inputEPFile.size()) {
 		try {
-			const Core::Time &creationTime = sc3pick->creationInfo().creationTime();
+			const Core::Time &creationTime = scpick->creationInfo().creationTime();
 			sync(creationTime);
 		}
-		catch(...) {
+		catch ( ... ) {
 			SEISCOMP_WARNING_S("Pick "+pickID+": no creation time set!");
 		}
 	}
 
-	if (objectAgencyID(sc3pick) != agencyID()) {
-		if ( isAgencyIDBlocked(objectAgencyID(sc3pick)) ) {
-			SEISCOMP_INFO_S("Blocked pick from agency " + objectAgencyID(sc3pick));
+	if (objectAgencyID(scpick) != agencyID()) {
+		if ( isAgencyIDBlocked(objectAgencyID(scpick)) ) {
+			SEISCOMP_INFO_S("Blocked pick from agency " + objectAgencyID(scpick));
 			return false;
 		}
 
-		SEISCOMP_INFO("Pick %s from agency %s", pickID.c_str(), objectAgencyID(sc3pick).c_str());
+		SEISCOMP_INFO("Pick %s from agency %s", pickID.c_str(), objectAgencyID(scpick).c_str());
 
 	}
 
-	const std::string &author = objectAuthor(sc3pick);
+	const std::string &author = objectAuthor(scpick);
 	const int priority = _authorPriority(author);
 	if (priority == 0) {
 		SEISCOMP_INFO("Pick %s not processed: author %s is not considered",
@@ -1236,27 +1220,26 @@ bool App::feed(DataModel::Pick *sc3pick) {
 	}
 
 	try {
-		if (sc3pick->evaluationMode() == DataModel::MANUAL) {
+		if (scpick->evaluationMode() == DataModel::MANUAL) {
 		}
 	}
 	catch ( ... ) {
 		SEISCOMP_WARNING("Pick %s: evaluation mode not set",
-		                 sc3pick->publicID().c_str());
-		sc3pick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
+		                 scpick->publicID().c_str());
+		scpick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
 	}
 
 	// configure station if needed
-	initOneStation(sc3pick->waveformID(), sc3pick->time().value());
+	initOneStation(scpick->waveformID(), scpick->time().value());
 
-	::Autoloc::PickPtr pick = convertFromSC3(sc3pick);
+	::Autoloc::PickPtr pick = convertFromSC(scpick);
 	if ( ! pick )
 		return false;
 
 	if ( _config.offline )
 		timeStamp();
 
-	if ( ! ::Autoloc::Autoloc3::feed(pick.get()))
-		return false;
+	::Autoloc::Autoloc3::feed(pick.get());
 
 	if ( _config.offline )
 		_flush();
@@ -1267,40 +1250,42 @@ bool App::feed(DataModel::Pick *sc3pick) {
 
 
 
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::feed(DataModel::Amplitude *sc3ampl) {
 
-	const std::string &amplID = sc3ampl->publicID();
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool App::feed(DataModel::Amplitude *scampl) {
+
+	const std::string &amplID = scampl->publicID();
 
 	if (_inputFileXML.size() || _inputEPFile.size()) {
 		try {
-			const Core::Time &creationTime = sc3ampl->creationInfo().creationTime();
+			const Core::Time &creationTime = scampl->creationInfo().creationTime();
 			sync(creationTime);
 		}
-		catch(...) {
+		catch ( ... ) {
 			SEISCOMP_WARNING("Amplitude %s: creation time not set",
 			                 amplID.c_str());
 		}
 	}
 
-	if (objectAgencyID(sc3ampl) != agencyID()) {
-		if ( isAgencyIDBlocked(objectAgencyID(sc3ampl)) ) {
-			SEISCOMP_INFO_S("Blocked amplitude from agency " + objectAgencyID(sc3ampl));
+	if (objectAgencyID(scampl) != agencyID()) {
+		if ( isAgencyIDBlocked(objectAgencyID(scampl)) ) {
+			SEISCOMP_INFO_S("Blocked amplitude from agency " + objectAgencyID(scampl));
 			return false;
 		}
 		SEISCOMP_INFO("Amplitude %s from agency %s",
-		              amplID.c_str(), objectAgencyID(sc3ampl).c_str());
+		              amplID.c_str(), objectAgencyID(scampl).c_str());
 	}
 
-	const std::string &atype  = sc3ampl->type();
-	const std::string &pickID = sc3ampl->pickID();
+	const std::string &atype  = scampl->type();
+	const std::string &pickID = scampl->pickID();
 
 	if ( atype != _amplTypeAbs && atype != _amplTypeSNR )
 		return false;
 
 	::Autoloc::Pick *pick = (::Autoloc::Pick *) Autoloc3::pick(pickID);
 	if ( ! pick ) {
-		SEISCOMP_WARNING_S("Pick " + pickID + " not found for " + atype + " amplitude");
+		// TODO: debug message not here
+		SEISCOMP_DEBUG_S("Pick " + pickID + " not found for " + atype + " amplitude");
 		return false;
 	}
 
@@ -1308,10 +1293,10 @@ bool App::feed(DataModel::Amplitude *sc3ampl) {
 		// note that for testing it is allowed to use the same amplitude as
 		// _amplTypeSNR and _amplTypeAbs  -> no 'else if' here
 		if ( atype == _amplTypeSNR )
-			pick->snr = sc3ampl->amplitude().value();
+			pick->snr = scampl->amplitude().value();
 		if ( atype == _amplTypeAbs ) {
-			pick->amp = sc3ampl->amplitude().value();
-			pick->per = (_amplTypeAbs == "mb") ? sc3ampl->period().value() : 1;
+			pick->amp = scampl->amplitude().value();
+			pick->per = (_amplTypeAbs == "mb") ? scampl->period().value() : 1;
 		}
 	}
 	catch ( ... ) {
@@ -1324,29 +1309,31 @@ bool App::feed(DataModel::Amplitude *sc3ampl) {
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::feed(DataModel::Origin *sc3origin) {
 
-	if ( ! sc3origin ) {
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool App::feed(DataModel::Origin *scorigin) {
+
+	if ( ! scorigin ) {
 		SEISCOMP_ERROR("This should never happen: origin=NULL");
 		return false;
 	}
 
-	SEISCOMP_INFO_S("got origin " + sc3origin->publicID() +
-			"   agency: " + objectAgencyID(sc3origin));
+	SEISCOMP_INFO_S("got origin " + scorigin->publicID() +
+			"   agency: " + objectAgencyID(scorigin));
 
-	const bool ownOrigin = objectAgencyID(sc3origin) == agencyID();
+	const bool ownOrigin = objectAgencyID(scorigin) == agencyID();
 
 	if ( ownOrigin ) {
-		if ( manual(sc3origin) ) {
+		if ( manual(scorigin) ) {
 			if ( ! _config.useManualOrigins ) {
-				SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(sc3origin) + " because autoloc.useManualOrigins = false");
+				SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(scorigin) + " because autoloc.useManualOrigins = false");
 				return false;
 			}
 		}
 		else {
 			// own origin which is not manual -> ignore
-			SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(sc3origin) + " because not a manual origin");
+			SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(scorigin) + " because not a manual origin");
 			return false;
 		}
 	}
@@ -1354,12 +1341,12 @@ bool App::feed(DataModel::Origin *sc3origin) {
 		// imported origin
 
 		if ( ! _config.useImportedOrigins ) {
-			SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(sc3origin) + " because autoloc.useImportedOrigins = false");
+			SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(scorigin) + " because autoloc.useImportedOrigins = false");
 			return false;
 		}
 
-		if ( isAgencyIDBlocked(objectAgencyID(sc3origin)) ) {
-			SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(sc3origin) + " due to blocked agency ID");
+		if ( isAgencyIDBlocked(objectAgencyID(scorigin)) ) {
+			SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(scorigin) + " due to blocked agency ID");
 			return false;
 		}
 	}
@@ -1369,20 +1356,28 @@ bool App::feed(DataModel::Origin *sc3origin) {
 	//  * an internal, manual origin
 
 	// TODO: Vorher konsistente Picks/Arrivals sicher stellen.
+	size_t arrivalCount = scorigin->arrivalCount();
+	for ( size_t i=0; i<arrivalCount; i++ ) {
+		const std::string &pickID = scorigin->arrival(i)->pickID();
+		DataModel::Pick *scpick = DataModel::Pick::Find(pickID);
+		if ( ! scpick) {
+			SEISCOMP_ERROR_S("Pick " + pickID + " not found");
+		}
+	}
 
-	::Autoloc::Origin *origin = convertFromSC3(sc3origin);
+	::Autoloc::Origin *origin = convertFromSC(scorigin);
 	if ( ! origin ) {
-		SEISCOMP_ERROR_S("Failed to convert origin " + objectAgencyID(sc3origin));
+		SEISCOMP_ERROR_S("Failed to convert origin " + objectAgencyID(scorigin));
 		return false;
 	}
 
 	// mark and log imported origin
-	if ( objectAgencyID(sc3origin) == agencyID() ) {
-		SEISCOMP_INFO_S("Using origin from agency " + objectAgencyID(sc3origin));
+	if ( objectAgencyID(scorigin) == agencyID() ) {
+		SEISCOMP_INFO_S("Using origin from agency " + objectAgencyID(scorigin));
 		origin->imported = false;
 	}
 	else {
-		SEISCOMP_INFO_S("Using origin from agency " + objectAgencyID(sc3origin));
+		SEISCOMP_INFO_S("Using origin from agency " + objectAgencyID(scorigin));
 		origin->imported = true;
 	}
 
@@ -1394,6 +1389,7 @@ bool App::feed(DataModel::Origin *sc3origin) {
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 
 
@@ -1409,14 +1405,14 @@ bool App::_report(const ::Autoloc::Origin *origin) {
 		SEISCOMP_INFO ("Origin %ld not sent (test/offline mode)", origin->id);
 
 		if ( _ep ) {
-			DataModel::OriginPtr sc3origin = ::Autoloc::convertToSC3(origin, _config.reportAllPhases);
+			DataModel::OriginPtr scorigin = convertToSC(origin, _config.reportAllPhases);
 			DataModel::CreationInfo ci;
 			ci.setAgencyID(agencyID());
 			ci.setAuthor(author());
 			ci.setCreationTime(now());
-			sc3origin->setCreationInfo(ci);
+			scorigin->setCreationInfo(ci);
 
-			_ep->add(sc3origin.get());
+			_ep->add(scorigin.get());
 
 			std::cerr << reportStr << std::endl;
 		}
@@ -1426,17 +1422,17 @@ bool App::_report(const ::Autoloc::Origin *origin) {
 		return true;
 	}
 
-	DataModel::OriginPtr sc3origin = ::Autoloc::convertToSC3(origin, _config.reportAllPhases);
+	DataModel::OriginPtr scorigin = convertToSC(origin, _config.reportAllPhases);
 	DataModel::CreationInfo ci;
 	ci.setAgencyID(agencyID());
 	ci.setAuthor(author());
 	ci.setCreationTime(now());
-	sc3origin->setCreationInfo(ci);
+	scorigin->setCreationInfo(ci);
 
 	DataModel::EventParameters ep;
 	bool wasEnabled = DataModel::Notifier::IsEnabled();
 	DataModel::Notifier::Enable();
-	ep.add(sc3origin.get());
+	ep.add(scorigin.get());
 	DataModel::Notifier::SetEnabled(wasEnabled);
 
 	DataModel::NotifierMessagePtr nmsg = DataModel::Notifier::GetMessage(true);
@@ -1446,16 +1442,16 @@ bool App::_report(const ::Autoloc::Origin *origin) {
 		SEISCOMP_INFO("Sent preliminary origin %ld (heads up)", origin->id);
 
 		// create and send journal entry
-		string str = "";
+		std::string str = "";
 		try {
-			str = sc3origin->evaluationStatus().toString();
+			str = scorigin->evaluationStatus().toString();
 		}
 		catch ( Core::ValueException & ) {}
 
 		if ( !str.empty() ) {
 			DataModel::JournalEntryPtr journalEntry = new DataModel::JournalEntry;
 			journalEntry->setAction("OrgEvalStatOK");
-			journalEntry->setObjectID(sc3origin->publicID());
+			journalEntry->setObjectID(scorigin->publicID());
 			journalEntry->setSender(SCCoreApp->author().c_str());
 			journalEntry->setParameters(str);
 			journalEntry->setCreated(Core::Time::GMT());
@@ -1466,7 +1462,7 @@ bool App::_report(const ::Autoloc::Origin *origin) {
 
 			if ( connection()->send(jm.get()) ) {
 				SEISCOMP_DEBUG("Sent origin journal entry for origin %s to the message group: %s",
-				               sc3origin->publicID().c_str(), primaryMessagingGroup().c_str());
+				               scorigin->publicID().c_str(), primaryMessagingGroup().c_str());
 			}
 			else {
 				SEISCOMP_ERROR("Sending origin journal entry failed with error: %s",
@@ -1486,11 +1482,8 @@ bool App::_report(const ::Autoloc::Origin *origin) {
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+} // namespace Autoloc
 
+} // namespace Applications
 
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-}
-
-}
-
-}
+} // namespace Seiscomp
