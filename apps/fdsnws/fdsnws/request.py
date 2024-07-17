@@ -27,19 +27,6 @@ class RequestOptions:
     FloatChars = re.compile(r"[^-0-9.]").search
     ChannelChars = re.compile(r"[^A-Za-z0-9*?]").search
     ChannelExtChars = re.compile(r"[^A-Za-z0-9*?+\-_]").search
-    TimeFormats = [
-        "%FT%T.%f",  # YYYY-MM-DDThh:mm:ss.ssssss
-        "%Y-%jT%T.%f",  # YYYY-DDDThh:mm:ss.ssssss
-        "%FT%T",  # YYYY-MM-DDThh:mm:ss
-        "%Y-%jT%T",  # YYYY-DDDThh:mm:ss
-        "%FT%R",  # YYYY-MM-DDThh:mm
-        "%Y-%jT%R",  # YYYY-DDDThh:mm
-        "%FT%H",  # YYYY-MM-DDThh
-        "%Y-%jT%H",  # YYYY-DDDThh
-        "%F",  # YYYY-MM-DD
-        "%Y-%j",  # YYYY-DDD
-        "%Y",  # YYYY
-    ]
     BooleanTrueValues = ["1", "true", "t", "yes", "y"]
     BooleanFalseValues = ["0", "false", "f", "no", "n"]
     OutputFormats = []  # override in derived classes
@@ -484,14 +471,10 @@ class RequestOptions:
         if value is None:
             return None
 
-        time = Time()
-        timeValid = False
-        for fmt in RequestOptions.TimeFormats:
-            if time.fromString(value, fmt):
-                timeValid = True
-                break
-
-        if not timeValid:
+        time = Time.FromString(value)
+        # use explicit test for None here since bool value for epoch date
+        # (1970-01-01) is False
+        if time is None:
             raise ValueError(f"invalid date format in parameter: {key}")
 
         return time
@@ -607,16 +590,10 @@ class RequestOptions:
 
             # start/end time
             ro.time = RequestOptions.Time()
-            ro.time.start = Time()
-            for fmt in RequestOptions.TimeFormats:
-                if ro.time.start.fromString(toks[4], fmt):
-                    break
+            ro.time.start = Time.FromString(toks[4])
             logEnd = "-"
             if len(toks) > 5:
-                ro.time.end = Time()
-                for fmt in RequestOptions.TimeFormats:
-                    if ro.time.end.fromString(toks[5], fmt):
-                        break
+                ro.time.end = Time.FromString(toks[5])
                 logEnd = ro.time.end.iso()
 
             seiscomp.logging.debug(
