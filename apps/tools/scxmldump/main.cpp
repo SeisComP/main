@@ -59,13 +59,15 @@ static void removeAllNetworkMagnitudes(Seiscomp::DataModel::Origin *origin) {
 
 static void removeAllStationMagnitudes(Seiscomp::DataModel::Origin *origin) {
 
-	while ( origin->stationMagnitudeCount() > 0 )
+	while ( origin->stationMagnitudeCount() > 0 ) {
 		origin->removeStationMagnitude(0);
+	}
 
 	for ( size_t i = 0; i < origin->magnitudeCount(); ++i ) {
 		Magnitude* netMag = origin->magnitude(i);
-		while ( netMag->stationMagnitudeContributionCount() > 0 )
+		while ( netMag->stationMagnitudeContributionCount() > 0 ) {
 			netMag->removeStationMagnitudeContribution(0);
+		}
 	}
 }
 
@@ -745,15 +747,26 @@ class EventDump : public Seiscomp::Client::Application {
 				if ( preferredOnly && !allMagnitudes ) {
 					MagnitudePtr netMag;
 					while ( origin->magnitudeCount() > 0 ) {
-						if ( origin->magnitude(0)->publicID() == event->preferredMagnitudeID() )
+						if ( origin->magnitude(0)->publicID() == event->preferredMagnitudeID() ) {
 							netMag = origin->magnitude(0);
-
+						}
 						origin->removeMagnitude(0);
 					}
 
 					if ( netMag ) {
 						foundPreferredMag = true;
 						origin->add(netMag.get());
+
+						// remove station magnitudes of types which are not preferred
+						for ( size_t i = 0; i < origin->stationMagnitudeCount(); ) {
+							auto staMag = origin->stationMagnitude(i);
+							if ( staMag->type() != netMag->type() ) {
+								origin->removeStationMagnitude(i);
+							}
+							else {
+								++i;
+							}
+						}
 					}
 				}
 				else if ( !foundPreferredMag ) {
@@ -901,8 +914,9 @@ class EventDump : public Seiscomp::Client::Application {
 							if ( preferredOnly && !allMagnitudes ) {
 								MagnitudePtr netMag;
 								while ( triggeringOrigin->magnitudeCount() > 0 ) {
-									if ( triggeringOrigin->magnitude(0)->publicID() == event->preferredMagnitudeID() )
+									if ( triggeringOrigin->magnitude(0)->publicID() == event->preferredMagnitudeID() ) {
 										netMag = triggeringOrigin->magnitude(0);
+									}
 
 									triggeringOrigin->removeMagnitude(0);
 								}
