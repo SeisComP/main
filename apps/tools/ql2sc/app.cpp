@@ -21,6 +21,7 @@
 #include <seiscomp/datamodel/amplitude.h>
 #include <seiscomp/datamodel/event.h>
 #include <seiscomp/datamodel/focalmechanism.h>
+#include <seiscomp/datamodel/momenttensor.h>
 #include <seiscomp/datamodel/pick.h>
 #include <seiscomp/datamodel/magnitude.h>
 #include <seiscomp/datamodel/origin.h>
@@ -1121,17 +1122,49 @@ void App::syncEvent(const EventParameters *ep, const Event *event,
 			if ( prefMag ) {
 				SEISCOMP_DEBUG("* check update of preferred magnitude type: '%s'",
 				               prefMag->type().c_str());
+
+				bool isMw = false;
+
+				// Check if the preferred magnitude is part of a moment tensor
+				if ( prefMag->type() == "Mw" ) {
+					for ( size_t i = 0; i < ep->focalMechanismCount(); ++i ) {
+						auto fm = ep->focalMechanism(i);
+						for ( size_t j = 0; j < fm->momentTensorCount(); ++j ) {
+							auto mt = fm->momentTensor(j);
+							if ( mt->derivedOriginID() == prefMag->origin()->publicID() ) {
+								isMw = true;
+								i = ep->focalMechanismCount();
+								break;
+							}
+						}
+					}
+				}
+
 				entry = getLastJournalEntry(*query(), targetEvent->publicID(), "EvPrefMagType");
-				if ( !entry || entry->sender() == author() ) {
-					entry = createJournalEntry(targetEvent->publicID(), "EvPrefMagType", prefMag->type());
-					notifiers.push_back(
-						new Notifier("Journaling", OP_ADD, entry.get())
-					);
+				if ( entry && entry->sender() != author() ) {
+					SEISCOMP_INFO("* skipping setting preferred magnitude type because it "
+					              "has been set already via EvPrefMagType by %s",
+					              entry->sender().c_str());
 				}
 				else {
-					SEISCOMP_INFO("* skipping setting preferred magnitude type because it "
-					              "has been set already by %s",
-					              entry->sender().c_str());
+					entry = getLastJournalEntry(*query(), targetEvent->publicID(), "EvPrefMw");
+					if ( entry && entry->sender() != author() ) {
+						SEISCOMP_INFO("* skipping setting preferred magnitude type because it "
+						              "has been set already via EvPrefMw by %s",
+						              entry->sender().c_str());
+					}
+					else {
+						if ( isMw ) {
+							SEISCOMP_DEBUG("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
+							entry = createJournalEntry(targetEvent->publicID(), "EvPrefMw", "true");
+						}
+						else {
+							entry = createJournalEntry(targetEvent->publicID(), "EvPrefMagType", prefMag->type());
+						}
+						notifiers.push_back(
+							new Notifier("Journaling", OP_ADD, entry.get())
+						);
+					}
 				}
 			}
 			else {
