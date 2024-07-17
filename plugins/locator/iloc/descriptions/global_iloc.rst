@@ -298,14 +298,16 @@ Setup in |scname|
 
       plugins = ${plugins}, lociloc
 
-#. Download iLoc data files from the :cite:t:`iloc-iris` website. Extract and
-   install them in :file:`@DATADIR@/iloc`. Ensure to download a valid file.
-   Example:
+#. Download the auxiliary data files for iLoc from GitHub linked on the
+   :cite:t:`iloc-iris` website. Extract and install them in
+   :file:`@DATADIR@/iloc`. Example:
 
    .. code-block:: sh
 
       mkdir $SEISCOMP_ROOT/share/iloc
-      wget -O /tmp/iLocAuxDir.tgz "http://iloc.geochem.hu/data/iLocAuxDir4.1.tgz"
+      # The name of the following file may change. Find the correct one in source:
+      # https://github.com/IstvanBondar/iLoc
+      wget -O /tmp/iLocAuxDir.tgz "https://github.com/IstvanBondar/iLoc/raw/main/iLocAuxDir4.2.tgz"
       tar xvf /tmp/iLocAuxDir.tgz -C $SEISCOMP_ROOT/share/iloc
 
    .. note ::
