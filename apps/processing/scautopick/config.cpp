@@ -180,13 +180,30 @@ void Picker::Config::dump() const {
 	printf("useAllStreams                    %s\n",     useAllStreams ? "true":"false");
 	printf("calculateAmplitudes              %s\n",     calculateAmplitudes ? "true":"false");
 	printf("calculateAmplitudeTypes          ");
-	if ( amplitudeList.empty() )
+	if ( amplitudeList.empty() ) {
 		printf("[]\n");
+	}
 	else {
 		for ( StringSet::const_iterator it = amplitudeList.begin();
 		      it != amplitudeList.end(); ++it ) {
-			if ( it != amplitudeList.begin() )
+			if ( it != amplitudeList.begin() ) {
 				printf(", ");
+			}
+			printf("%s", it->c_str());
+		}
+		printf("\n");
+	}
+
+	printf("update amplitude types           ");
+	if ( amplitudeUpdateList.empty() ) {
+		printf("[]\n");
+	}
+	else {
+		for ( StringSet::const_iterator it = amplitudeUpdateList.begin();
+		      it != amplitudeUpdateList.end(); ++it ) {
+			if ( it != amplitudeUpdateList.begin() ) {
+				printf(", ");
+			}
 			printf("%s", it->c_str());
 		}
 		printf("\n");
