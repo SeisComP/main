@@ -68,13 +68,13 @@
 				</option>
 				<option long-flag="stations" argument="sta-list">
 					<description>
-					If inventory is exported filter the stations to export where
-					each item is in format net[.{sta|*}].
+					If inventory is exported, filter the stations to export.
+					Wildcards are supported. Format of each item: net[.{sta|*}].
 					</description>
 				</option>
 				<option flag="C" long-flag="config">
 					<description>
-						Dump the configuration database.
+					Dump the configuration (bindings).
 					</description>
 				</option>
 				<option flag="J" long-flag="journal">
@@ -85,7 +85,7 @@
 				</option>
 				<option flag="R" long-flag="routing">
 					<description>
-					Dump the routing database.
+					Dump the routing.
 					</description>
 				</option>
 				<option flag="Y" long-flag="availability">
@@ -96,6 +96,12 @@
 				<option long-flag="with-segments">
 					<description>
 					Dump individual data segments.
+					</description>
+				</option>
+				<option flag="" long-flag="pick" argument="ID">
+					<description>
+					Pick public ID(s) to dump. Multiple IDs may be specified
+					as a comma-separated list.
 					</description>
 				</option>
 				<option flag="O" long-flag="origin" argument="ID">
@@ -112,22 +118,22 @@
 				</option>
 				<option flag="P" long-flag="with-picks">
 					<description>
-					Dump associated picks along with origins.
+					Add picks associated to origins.
 					</description>
 				</option>
 				<option flag="A" long-flag="with-amplitudes">
 					<description>
-					Dump associated amplitudes along with magnitudes.
+					Add amplitudes associated to magnitudes.
 					</description>
 				</option>
 				<option flag="M" long-flag="with-magnitudes">
 					<description>
-					Dump station magnitudes.
+					Add station magnitudes associated to origins.
 					</description>
 				</option>
 				<option flag="F" long-flag="with-focal-mechanism">
 					<description>
-					Dump focal mechanisms of events.
+					Add focal mechanisms associated to events.
 					</description>
 				</option>
 				<option flag="a" long-flag="ignore-arrivals">
@@ -164,7 +170,8 @@
 				</option>
 				<option flag="o" long-flag="output">
 					<description>
-						The output file. Default is stdout.
+						Name of output file. If not given, output is sent to
+						stdout.
 					</description>
 				</option>
 				<option long-flag="prepend-datasize">
