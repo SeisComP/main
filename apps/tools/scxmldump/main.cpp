@@ -97,14 +97,14 @@ class EventDump : public Seiscomp::Client::Application {
 	protected:
 		void createCommandLineDescription() {
 			commandline().addGroup("Dump");
-			commandline().addOption("Dump", "config,C", "Export the config.");
+			commandline().addOption("Dump", "config,C", "Export the config (bindings).");
 			commandline().addOption("Dump", "inventory,I", "Export the inventory.");
 			commandline().addOption("Dump", "without-station-groups",
 			                        "Remove station groups from inventory.");
 			commandline().addOption("Dump", "stations",
 			                        "If inventory is exported, filter the "
-			                        "stations to export. Format of each item: "
-			                        "net[.{sta|*}]", &_stationIDs);
+			                        "stations to export. Wildcards are supported."
+			                        "Format of each item: net[.{sta|*}]", &_stationIDs);
 			commandline().addOption("Dump", "journal,J", "Export the journal.");
 			commandline().addOption("Dump", "routing,R", "Export routing.");
 			commandline().addOption("Dump", "availability,Y",
@@ -113,17 +113,19 @@ class EventDump : public Seiscomp::Client::Application {
 			                        "Export individual data availability segments.");
 			commandline().addOption("Dump", "listen",
 			                        "Listen to the message server for incoming events.");
+			commandline().addOption("Dump", "pick",
+			                        "ID(s) of pick(s) to export.", &_pickIDsSingle, false);
 			commandline().addOption("Dump", "origin,O",
-			                        "ID(s) or origin(s) to export.", &_originIDs, false);
+			                        "ID(s) of origin(s) to export.", &_originIDs, false);
 			commandline().addOption("Dump", "event,E",
-			                        "ID(s) or event(s) to export.", &_eventIDs, false);
+			                        "ID(s) of event(s) to export.", &_eventIDs, false);
 			commandline().addOption("Dump", "with-picks,P", "Export associated picks.");
 			commandline().addOption("Dump", "with-amplitudes,A",
-			                        "Export associated amplitudes.");
+			                        "Add amplitudes associated to exported objects.");
 			commandline().addOption("Dump", "with-magnitudes,M",
-			                        "Export station magnitudes.");
+			                        "Add station magnitudes associated to exported objects.");
 			commandline().addOption("Dump", "with-focal-mechanisms,F",
-			                        "Export focal mechanisms.");
+			                        "Add focal mechanisms associated to exported objects.");
 			commandline().addOption("Dump", "ignore-arrivals,a",
 			                        "Do not export origin arrivals.");
 			commandline().addOption("Dump", "ignore-magnitudes",
@@ -135,9 +137,10 @@ class EventDump : public Seiscomp::Client::Application {
 			                        "If only the preferred origin is exported, "
 			                        "all magnitudes for this origin will be dumped.");
 			commandline().addGroup("Output");
-			commandline().addOption("Output", "formatted,f", "Use formatted output.");
+			commandline().addOption("Output", "formatted,f", "Use formatted XML output.");
 			commandline().addOption("Output", "output,o",
-			                        "Output file (default is stdout)",
+			                        "Name of output file. If not given, output "
+			                        "is sent to stdout.",
 			                        &_outputFile, false);
 			commandline().addOption("Output", "prepend-datasize",
 			                        "Prepend a line with the length of the XML string.");
@@ -166,13 +169,14 @@ class EventDump : public Seiscomp::Client::Application {
 			if ( !commandline().hasOption("listen") ) {
 				if ( !commandline().hasOption("event")
 				  && !commandline().hasOption("origin")
+				  && !commandline().hasOption("pick")
 				  && !commandline().hasOption("inventory")
 				  && !commandline().hasOption("config")
 				  && !commandline().hasOption("journal")
 				  && !commandline().hasOption("routing")
 				  && !commandline().hasOption("availability") ) {
 					cerr << "Require inventory, config, journal, routing or "
-					        "availability flag, or origin or event id" << endl;
+					        "availability flag, or IDs of origin(s), event(s) or pick(s)" << endl;
 					return false;
 				}
 
@@ -520,7 +524,13 @@ class EventDump : public Seiscomp::Client::Application {
 				Core::split(originIDs, _originIDs.c_str(), ",");
 				for ( const string &publicID : originIDs )
 					journalingPublicIDs.push_back(publicID);
+			}
 
+			vector<string> pickIDs;
+			if ( commandline().hasOption("pick") ) {
+				Core::split(pickIDs, _pickIDsSingle.c_str(), ",");
+				for ( const string &publicID : pickIDs )
+					journalingPublicIDs.push_back(publicID);
 			}
 
 			JournalingPtr jnl;
@@ -547,31 +557,53 @@ class EventDump : public Seiscomp::Client::Application {
 			}
 
 			EventParametersPtr ep;
-			if ( ! eventIDs.empty() ) {
-				if ( ! ep )
+			if ( !eventIDs.empty() ) {
+				if ( !ep ) {
 					ep = new EventParameters;
+				}
 				for ( const string &publicID : eventIDs ) {
 					EventPtr event = Event::Cast(PublicObjectPtr(
 						query()->getObject(Event::TypeInfo(), publicID)));
-					if ( event )
+					if ( event ) {
 						addEvent(ep.get(), event.get());
-					else
-						SEISCOMP_ERROR("Event with id '%s' has not been found", publicID.c_str());
+					}
+					else {
+						SEISCOMP_ERROR("Event with ID '%s' has not been found", publicID.c_str());
+					}
 				}
 			}
 
 			if ( ! originIDs.empty() ) {
-				if ( ! ep )
+				if ( ! ep ) {
 					ep = new EventParameters;
+				}
 				vector<string> originIDs;
 				Core::split(originIDs, _originIDs.c_str(), ",");
 				for ( const string &publicID : originIDs ) {
 					OriginPtr origin = Origin::Cast(PublicObjectPtr(
 						query()->getObject(Origin::TypeInfo(), publicID)));
-					if ( origin )
+					if ( origin ) {
 						addOrigin(ep.get(), origin.get());
-					else
-						SEISCOMP_ERROR("Origin with id '%s' has not been found", publicID.c_str());
+					}
+					else {
+						SEISCOMP_ERROR("Origin with ID '%s' has not been found", publicID.c_str());
+					}
+				}
+			}
+
+			if ( !pickIDs.empty() ) {
+				if ( !ep ) {
+					ep = new EventParameters;
+				}
+				for ( const string &publicID : pickIDs ) {
+					PickPtr pick = Pick::Cast(PublicObjectPtr(
+					    query()->getObject(Pick::TypeInfo(), publicID)));
+					if ( pick ) {
+						addPick(ep.get(), pick.get());
+					}
+					else {
+						SEISCOMP_ERROR("Pick with ID '%s' has not been found", publicID.c_str());
+					}
 				}
 			}
 
@@ -596,11 +628,18 @@ class EventDump : public Seiscomp::Client::Application {
 
 		void updateObject(const string&, Seiscomp::DataModel::Object* object) {
 			Event* e = Event::Cast(object);
-			if ( !e ) return;
+			if ( !e ) {
+				return;
+			}
 
 			EventParametersPtr ep = new EventParameters;
 			addEvent(ep.get(), e);
 			write(ep.get());
+		}
+
+		void addPick(EventParameters *ep, Pick *pick) {
+			SEISCOMP_INFO("Dumping Pick '%s'", pick->publicID().c_str());
+			ep->add(pick);
 		}
 
 
@@ -610,21 +649,24 @@ class EventDump : public Seiscomp::Client::Application {
 
 			query()->load(origin);
 
-			if ( commandline().hasOption("ignore-magnitudes") )
+			if ( commandline().hasOption("ignore-magnitudes") ) {
 				removeAllNetworkMagnitudes(origin);
+			}
 
-			if ( !withStationMagnitudes )
+			if ( !withStationMagnitudes ) {
 				removeAllStationMagnitudes(origin);
+			}
 
-			if ( ignoreArrivals )
+			if ( ignoreArrivals ) {
 				removeAllArrivals(origin);
+			}
 
 			if ( withPicks ) {
 				for ( size_t a = 0; a < origin->arrivalCount(); ++a ) {
-					const string &pickID =
-						origin->arrival(a)->pickID();
-					if (_pickIDs.find(pickID) != _pickIDs.end())
+					const string &pickID = origin->arrival(a)->pickID();
+					if (_pickIDs.find(pickID) != _pickIDs.end()) {
 						continue;
+					}
 					PickPtr pick = Pick::Cast(PublicObjectPtr(
 						query()->getObject(Pick::TypeInfo(), pickID)));
 					if ( !pick ) {
@@ -634,8 +676,9 @@ class EventDump : public Seiscomp::Client::Application {
 
 					query()->load(pick.get());
 
-					if ( !pick->eventParameters() )
+					if ( !pick->eventParameters() ) {
 						ep->add(pick.get());
+					}
 					_pickIDs.insert(pickID);
 				}
 			}
@@ -660,8 +703,9 @@ class EventDump : public Seiscomp::Client::Application {
 							               staMag->publicID().c_str());
 							continue;
 						}
-						if (_amplitudeIDs.find(amplitudeID) != _amplitudeIDs.end())
+						if (_amplitudeIDs.find(amplitudeID) != _amplitudeIDs.end()) {
 							continue;
+						}
 						AmplitudePtr amplitude = Amplitude::Cast(PublicObjectPtr(
 							query()->getObject(Amplitude::TypeInfo(), amplitudeID)));
 
@@ -671,8 +715,9 @@ class EventDump : public Seiscomp::Client::Application {
 							continue;
 						}
 
-						if ( !amplitude->eventParameters() )
+						if ( !amplitude->eventParameters() ) {
 							ep->add(amplitude.get());
+						}
 
 						_amplitudeIDs.insert(amplitudeID);
 					}
@@ -686,11 +731,13 @@ class EventDump : public Seiscomp::Client::Application {
 					DatabaseIterator it = query()->getAmplitudesForPick(pick->publicID());
 					for ( ; *it; ++it ) {
 						Amplitude *amplitude = Amplitude::Cast(*it);
-						if (_amplitudeIDs.find(amplitude->publicID()) != _amplitudeIDs.end())
+						if (_amplitudeIDs.find(amplitude->publicID()) != _amplitudeIDs.end()) {
 							continue;
+						}
 
-						if ( amplitude )
+						if ( amplitude ) {
 							ep->add(amplitude);
+						}
 
 						_amplitudeIDs.insert(amplitude->publicID());
 					}
@@ -703,8 +750,9 @@ class EventDump : public Seiscomp::Client::Application {
 			SEISCOMP_INFO("Dumping Event '%s'", event->publicID().c_str());
 			ep->add(event);
 
-			if ( !preferredOnly )
+			if ( !preferredOnly ) {
 				query()->load(event);
+			}
 			else {
 				query()->loadComments(event);
 				query()->loadEventDescriptions(event);
@@ -728,8 +776,9 @@ class EventDump : public Seiscomp::Client::Application {
 			bool foundPreferredMag = false;
 
 			// No need to search for it
-			if ( event->preferredMagnitudeID().empty() )
+			if ( event->preferredMagnitudeID().empty() ) {
 				foundPreferredMag = true;
+			}
 
 
 			// loop over origins referenced by event
@@ -778,11 +827,13 @@ class EventDump : public Seiscomp::Client::Application {
 					}
 				}
 
-				if ( !withStationMagnitudes )
+				if ( !withStationMagnitudes ) {
 					removeAllStationMagnitudes(origin.get());
+				}
 
-				if ( ignoreArrivals )
+				if ( ignoreArrivals ) {
 					removeAllArrivals(origin.get());
+				}
 
 				ep->add(origin.get());
 
@@ -790,8 +841,9 @@ class EventDump : public Seiscomp::Client::Application {
 					for ( size_t a = 0; a < origin->arrivalCount(); ++a ) {
 						const string &pickID =
 							origin->arrival(a)->pickID();
-						if (_pickIDs.find(pickID) != _pickIDs.end())
+						if (_pickIDs.find(pickID) != _pickIDs.end()) {
 							continue;
+						}
 						PickPtr pick = Pick::Cast(PublicObjectPtr(
 							query()->getObject(Pick::TypeInfo(), pickID)));
 						if ( !pick ) {
@@ -802,8 +854,9 @@ class EventDump : public Seiscomp::Client::Application {
 
 						query()->load(pick.get());
 
-						if ( !pick->eventParameters() )
+						if ( !pick->eventParameters() ) {
 							ep->add(pick.get());
+						}
 						_pickIDs.insert(pickID);
 					}
 				}
@@ -840,8 +893,9 @@ class EventDump : public Seiscomp::Client::Application {
 								continue;
 							}
 
-							if ( !amplitude->eventParameters() )
+							if ( !amplitude->eventParameters() ) {
 								ep->add(amplitude.get());
+							}
 
 							_amplitudeIDs.insert(amplitudeID);
 						}
@@ -858,11 +912,13 @@ class EventDump : public Seiscomp::Client::Application {
 					DatabaseIterator it = query()->getAmplitudesForPick(pick->publicID());
 					for ( ; *it; ++it ) {
 						Amplitude *amplitude = Amplitude::Cast(*it);
-						if (_amplitudeIDs.find(amplitude->publicID()) != _amplitudeIDs.end())
+						if (_amplitudeIDs.find(amplitude->publicID()) != _amplitudeIDs.end()) {
 							continue;
+						}
 
-						if ( amplitude )
+						if ( amplitude ) {
 							ep->add(amplitude);
+						}
 
 						_amplitudeIDs.insert(amplitude->publicID());
 					}
@@ -870,8 +926,9 @@ class EventDump : public Seiscomp::Client::Application {
 			}
 
 			if ( !withFocalMechanisms ) {
-				while ( event->focalMechanismReferenceCount() > 0 )
+				while ( event->focalMechanismReferenceCount() > 0 ) {
 					event->removeFocalMechanismReference(0);
+				}
 			}
 
 			for ( size_t i = 0; i < event->focalMechanismReferenceCount(); ++i ) {
@@ -887,8 +944,9 @@ class EventDump : public Seiscomp::Client::Application {
 				query()->load(fm.get());
 				for ( size_t m = 0; m < fm->momentTensorCount(); ++m ) {
 					MomentTensor *mt = fm->momentTensor(m);
-					if (ignoreArrivals) // TODO: review!
+					if (ignoreArrivals) {// TODO: review!
 						removeAllStationContributions(mt);
+					}
 				}
 
 				if ( !fm->triggeringOriginID().empty()
@@ -905,11 +963,13 @@ class EventDump : public Seiscomp::Client::Application {
 						else {
 							query()->load(triggeringOrigin.get());
 
-							if ( !withStationMagnitudes )
+							if ( !withStationMagnitudes ) {
 								removeAllStationMagnitudes(triggeringOrigin.get());
+							}
 
-							if ( ignoreArrivals )
+							if ( ignoreArrivals ) {
 								removeAllArrivals(triggeringOrigin.get());
+							}
 
 							if ( preferredOnly && !allMagnitudes ) {
 								MagnitudePtr netMag;
@@ -921,8 +981,9 @@ class EventDump : public Seiscomp::Client::Application {
 									triggeringOrigin->removeMagnitude(0);
 								}
 
-								if ( netMag )
+								if ( netMag ) {
 									triggeringOrigin->add(netMag.get());
+								}
 							}
 
 							ep->add(triggeringOrigin.get());
@@ -934,10 +995,14 @@ class EventDump : public Seiscomp::Client::Application {
 
 				for ( size_t m = 0; m < fm->momentTensorCount(); ++m ) {
 					MomentTensor *mt = fm->momentTensor(m);
-					if ( mt->derivedOriginID().empty() ) continue;
+					if ( mt->derivedOriginID().empty() ) {
+						continue;
+					}
 
 					OriginPtr derivedOrigin = ep->findOrigin(mt->derivedOriginID());
-					if ( derivedOrigin ) continue;
+					if ( derivedOrigin ) {
+						continue;
+					}
 
 					derivedOrigin = Origin::Cast(PublicObjectPtr(
 						query()->getObject(Origin::TypeInfo(), mt->derivedOriginID())));
@@ -1002,6 +1067,7 @@ class EventDump : public Seiscomp::Client::Application {
 		bool withFocalMechanisms;
 
 		string _outputFile;
+		string _pickIDsSingle;
 		string _originIDs;
 		string _eventIDs;
 
