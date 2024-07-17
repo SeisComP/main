@@ -26,12 +26,12 @@
 #include <cstdio>
 #include <iostream>
 
-#include <seiscomp3/client/inventory.h>
-#include <seiscomp3/datamodel/event.h>
-#include <seiscomp3/datamodel/origin.h>
-#include <seiscomp3/datamodel/eventparameters.h>
-#include <seiscomp3/datamodel/journalentry.h>
-#include <seiscomp3/io/archive/xmlarchive.h>
+#include <seiscomp/client/inventory.h>
+#include <seiscomp/datamodel/event.h>
+#include <seiscomp/datamodel/origin.h>
+#include <seiscomp/datamodel/eventparameters.h>
+#include <seiscomp/datamodel/journalentry.h>
+#include <seiscomp/io/archive/xmlarchive.h>
 
 using namespace std;
 using namespace Seiscomp;
