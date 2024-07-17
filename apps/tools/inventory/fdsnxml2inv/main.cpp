@@ -147,9 +147,9 @@ class SyncStationXML : public Client::Application {
 
 			cout << "Examples:" << endl;
 			cout << "Convert FDSN StationXML to SCML" << endl
-			     << "  fdnsxml2inv fdsn-station.xml inventory.xml" << endl;
+			     << "  fdsnxml2inv fdsn-station.xml inventory.xml" << endl;
 			cout  << endl << "Convert SCML to FDSN StationXML" << endl
-			     << "  fdnsxml2inv --to-staxml inventory.xml fdsn-station.xml" << endl;
+			     << "  fdsnxml2inv --to-staxml inventory.xml fdsn-station.xml" << endl;
 		}
 
 
