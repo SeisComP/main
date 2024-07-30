@@ -73,7 +73,7 @@ More parameters are available on the command-line:
    scrttv -h
 
 
-.. _scrttv-modes:
+.. _scrttv-modes-operation:
 
 Modes of Operation
 ==================
@@ -107,9 +107,16 @@ Stream selection
 
 Without further configuration scrttv displays waveforms for streams defined
 in global bindings. The selection can be refined by configuring
-:confval:`streams.codes`. Streams with
-:ref:`data latency <scqc>` < :confval:`maxDelay` are hidden but
-shown again when applicable. By default this parameter is inactive. For listing
+:confval:`streams.codes` and overridden on the command line using
+:option:`--channels`.
+
+
+Stream hiding
+-------------
+
+Streams with :ref:`data latency <scqc>` < :confval:`maxDelay` are hidden but
+shown again when applicable. By default  :confval:`maxDelay` is unconfigured and
+hiding streams is inactive. For listing
 streams hidden from one tab press :kbd:`h`.
 
 
@@ -299,11 +306,13 @@ Stream Processing
 Filtering
 ---------
 
-scrttv allows filtering of waveforms.
-The Filter selection dropdown menu  (see :ref:`Figure above <fig-scrttv-overview>`)
-and the hotkey :kbd:`f` can be used to toggle the list of filters pre-defined in
-:confval:`filter` or in :confval:`filters`.  The applied filter is named in the
-lower left corner. To show filtered and raw data together use the hotkey :kbd:`r`.
+scrttv allows filtering of waveforms. Any
+:ref:`filter available in SeisComP <filter-grammar>` can be considered. The
+filter selection dropdown menu (see :ref:`Figure above <fig-scrttv-overview>`)
+and the hotkeys :kbd:`g` or :kbd:`d` can be used to toggle the list of filters.
+This list of pre-defined in :confval:`filter` or in :confval:`filters`. You may
+switch between filtere and unfiltered data by pressing :kbd:`f`. To show
+filtered and raw data together use the hotkey :kbd:`r`.
 
 .. note::
 
@@ -317,8 +326,8 @@ Gain correction
 ---------------
 
 The stream gain is applied to waveforms and amplitude values are given in the
-physical units of the stream by default. For showing amplitudes in counts,
-deactivate the option *Apply gain* in the Interaction menu.
+physical units defined in the inventory of the stream by default. For showing
+amplitudes in counts, deactivate the option *Apply gain* in the Interaction menu.
 
 
 .. _scrttv-signal-detection:
@@ -340,7 +349,7 @@ Artificial origins
    :width: 16cm
    :align: center
 
-   Artifical origin.
+   Artificial origin.
 
 In case the operator recognizes several seismic signals which shall be processed
 further, e.g. in :ref:`scolv`, an artificial/preliminary origin can be set by
@@ -348,28 +357,37 @@ either pressing the middle mouse
 button on a trace or by opening the context menu (right mouse button) on a trace
 and selecting "Create artificial origin". The following pop-up window shows the
 coordinates of the selected station and the time the click was made on the
-trace. Both are used to generate the new artificial origin without any arrivals.
+trace. The coordinates and time define the hypocenter parameters of the the new
+artificial origin without adding any arrivals.
 Pressing "Create" sends this origin to the LOCATION group. This artificial
 origin is received e.g., by :ref:`scolv` and enables an immediate manual analysis
 of the closest traces.
 
-In order to send receive articifial origins and receive them in other GUIs
-:confval:`commands.target` of the global module configuration must be set and
-must be in line with :confval:`connection.username` of the receiving GUI module.
+In order to send artificial origins and receive them in other GUIs
+:confval:`commands.target` of the global module configuration must be configured
+in line with :confval:`connection.username` of the receiving GUI module.
 
-Alternatively, picks can be selected and origins can be located as preliminary
-solutions which are sent to the system as regular origin objects, see section
+Alternatively, picks can be selected and preliminary origins can be created
+which are sent to the system as regular origin objects, see section
 :ref:`scrttv-origin-association`.
 
 
 .. _scrttv-origin-association:
 
-Origin association
-------------------
+Pick association
+----------------
 
 scrttv comes with a minimal version of a phase associator and manual locator
-(Fig. :ref:`fig-scrttv-overview`). Picks can be selected, relocated and
-committed to the messaging system as manual preliminary location.
+based on selected and associated picks (Fig. :ref:`fig-scrttv-overview`). The
+workflow is:
+
+#. Visually identify phase picks which potentially belong to an event of interest,
+#. :ref:`Select these picks <scrttv_pick-selection>` for automatic association,
+#. :ref:`Control <scrttv_pick-locating>` the locator,
+#. :ref:`Commit <scrttv_pick-commit>` created origins along with all associated
+   picks.
+
+Origins are committed to the messaging system as manual but preliminary location.
 In contrast to the artificial origin operation which requires an immediate
 intervention with, e.g. :ref:`scolv`, this operation allows to store all those
 detected origins and work on them later because they will be stored in the
@@ -380,20 +398,28 @@ database.
    More detailed waveform and event analysis can be made in :ref:`scolv`.
 
 
+.. _scrttv_pick-selection:
+
 Pick selection
 ~~~~~~~~~~~~~~
 
-In order to select picks, the pick selection mode must be entered. Then dragging
-a box (rubber band) around the picks in question will add them to the "cart".
-The "cart" refers to the list of picks of the manual associated widget used to
-attempt to locate an origin. Simply dragging a box will remove all previously
-selected picks. Further options are:
+In order to select picks, the pick association mode must be entered. When done,
+clicking with mouse onto the data and dragging a box (rubber band) around the
+picks of interest will add the picks to a "cart".
+"cart" refers to the list of selected picks which then available in the
+associator/locator control widget used for locating an origin.
 
-* :kbd:`Shift + drag`: Add selected picks while keeping the previous selection.
-* :kbd:`Ctrl + drag`: Remove selected picks while keeping the previous selection.
+Simply dragging a new box will remove all previously selected picks. Further
+keyboard-mouse options are:
 
-If at least one pick has been added to the cart, the manual associator will
-open as a dock widget.
+* :kbd:`Shift + drag`: Add more picks to the while keeping the previous selection.
+* :kbd:`Ctrl + drag`: Remove selected picks from the previous selection.
+
+If at least one pick has been selected, the associator control will open as a
+dock widget for locating based on the selected picks. There, individual picks
+can also be removed from the selection by clicking on the close icon of each
+pick item. Selected picks are also highlighted in the traces by a color
+background bar.
 
 .. note::
 
@@ -401,25 +427,19 @@ open as a dock widget.
    of the application or even displayed floated as kind of overlay window. The
    position of the dock widget will be persistent across application restarts.
 
-At any change of the pick cart, the associator attempts a relocation and will
-display the result in the details or an error message at the top.
+At any change of the pick set, the associator will attempt a relocation
+displaying the results in the details. Error message will show up at the top.
 
-To add more picks to the cart, shift has to be pressed while dragging the
-selection box. To remove picks from the cart, :kbd:`Ctrl` has to be pressed while
-dragging the selection box. Picks can also be removed individually from the
-cart by clicking the close icon of each pick item.
 
-Picks being part of the cart are also highlighted in the traces.
-
+.. _scrttv_pick-locating:
 
 Locating from picks
 ~~~~~~~~~~~~~~~~~~~
 
-The associator adds all available locators in the system and presents them
+The associator control exposes all locators available in the system presenting them
 in a dropdown list at the bottom. The locator which should be selected as default
-can be controlled with :confval:`associator.defaultLocator`. The profile which
-is selected as default can be controlled with
-:confval:`associator.defaultLocatorProfile`.
+can be controlled with :confval:`associator.defaultLocator` and its default
+profile by :confval:`associator.defaultLocatorProfile`.
 
 Whenever the operator changes any of the values, a new location attempt is being
 made which can succeed or fail. A successful attempt will update the details,
@@ -437,19 +457,27 @@ to the origin. The depth dropdown list allows to set a predefined depth. The
 list of depth values can be controlled with :confval:`associator.fixedDepths`.
 
 
+.. _scrttv_pick-commit:
+
 Committing a solution
 ~~~~~~~~~~~~~~~~~~~~~
 
-Once a solution is accepted by the operator it can be committed to the system
-as regular origin as emitted by, e.g. `scautoloc`. Those origins will be sent to
-the message group defined by :confval:`messaging.location` and grabbed by
+Once you accept a solution you may press the button "Commit" be for sending it
+to the messaging as a regular origin. The receiving message group is defined by
+:confval:`messaging.groups.location`. The new origin is then grabbed by all
 connected modules, e.g., :ref:`scevent` and possibly associated to an
 :term:`event`.
 
+.. note::
+
+   When considering non-default message groups such as in multi-pipeline systems,
+   :confval:`messaging.groups.location` should be configuring accordingly.
+
 Alternatively, the button "Show Details" can be used to just send the origin to
 the GUI group and let :ref:`scolv` or other GUIs pick it up and show it. This
-will not store the origin in the database and works the same way as creating an
-artificial origin.
+will not store the origin in the database and works the same way as creating
+:ref:`artificial origins <scrttv-artificial-origins>`.
+
 
 .. _scrttv-hot-keys:
 
