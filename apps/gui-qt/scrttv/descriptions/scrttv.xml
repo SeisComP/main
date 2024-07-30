@@ -22,7 +22,7 @@
 			<parameter name="maxDelay" type="int" unit="s" default="0">
 				<description>
 					If greater than 0, then all traces for which the data latency is
-					higher than this value are hidden.
+					higher than this value are hidden. 0 disables the feature.
 				</description>
 			</parameter>
 			<parameter name="resortAutomatically" type="boolean" default="true">
@@ -80,6 +80,14 @@
 				<description>
 				Time span in seconds to switch back to the last view after an origin
 				caused resorting. The default is 15 min.
+				</description>
+			</parameter>
+			<parameter name="3c" type="boolean" default="false">
+				<description>
+				If enabled, all three components (vertical, 1st and 2nd horizontal)
+				related to the detecStream will be shown rather than only the
+				component configured in global bindings. The option is ignored
+				when using --no-inventory.
 				</description>
 			</parameter>
 			<group name="streams">
@@ -557,17 +565,9 @@
 					default: 'gmt'.
 					</description>
 				</option>
-				<option long-flag="buffer-size" argument="arg" publicID="mode#buffer-size">
-					<description>
-					Set the size of the waveform buffer in seconds, default: 1800
-					</description>
-				</option>
-				<option long-flag="max-delay" argument="arg" publicID="mode#max-delay">
-					<description>
-					The maximum delay in seconds to keep a trace visible
-					(0 to disable).
-					</description>
-				</option>
+
+				<option flag="" long-flag="buffer-size" argument="arg" param-ref="bufferSize" publicID="mode#buffer-size"/>
+				<option long-flag="max-delay" argument="arg"  param-ref="maxDelay" publicID="mode#max-delay"/>
 				<option long-flag="start-at-now" argument="" publicID="mode#start-at-now">
 					<description>
 					Subscribe to data starting at now rather than now - bufferSize
@@ -580,14 +580,8 @@
 					extraction.
 					</description>
 				</option>
-				<option long-flag="map-picks" argument="" publicID="mode#map-picks">
-					<description>
-					Map picks to best matching rows. This is important
-					if picks created on BHN should be shown but only the BHZ trace
-					is part of the list. Network code, station code and location code
-					must match anyway.
-					</description>
-				</option>
+				<option long-flag="map-picks" argument="" param-ref="mapPicks" publicID="mode#map-picks"/>
+				<option flag="" long-flag="3c" argument="" param-ref="3c"/>
 				<option long-flag="channels" argument="" publicID="mode#channels">
 					<description>
 					Channel(s) to display. The channel code may contain wildcards
@@ -597,7 +591,7 @@
 
 					default : all streams configured by global bindings.
 
-					GE.*.*.HH? : all HH streams of all stations from GE network.
+					GE.*.*.HH? : all HH channels of all stations from GE network.
 					</description>
 				</option>
 			</group>

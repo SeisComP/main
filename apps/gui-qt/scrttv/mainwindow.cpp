@@ -2151,7 +2151,7 @@ void MainWindow::openAcquisition() {
 			cout << "using configured streams of config module" << endl;
 			//streamMap["*"]["*"].insert("*", ChannelEntry("*",0));
 
-			DataModel::ConfigModule* module = SCApp->configModule();
+			auto module = SCApp->configModule();
 
 			if ( module ) {
 				int index = 0;
@@ -2176,28 +2176,56 @@ void MainWindow::openAcquisition() {
 						params.getString(loc, "detecLocid");
 						params.getString(cha, "detecStream");
 
-						if ( !cha.empty() ) {
-							if ( cha.size() < 3 ) {
-								char compCode = 'Z';
-
-								//cerr << " * " << net << "." << sta << "." << loc << "." << cha << 'Z' << endl;
-								SensorLocation *sloc = Client::Inventory::Instance()->getSensorLocation(net, sta, loc, _originTime);
-								if ( sloc ) {
-									Stream *stream = getVerticalComponent(sloc, cha.c_str(), _originTime);
-									if ( stream && !stream->code().empty() )
-										cha = stream->code();
-									else
-										cha += compCode;
-								}
-								else
-									cha += compCode;
-							}
-
-							if ( isStreamBlacklisted(streamsBlackList, net, sta, loc, cha) )
-								continue;
-
-							requestMap.append(WIDWithIndex(WaveformStreamID(net, sta, loc, cha, ""), index++));
+						if ( cha.empty() ) {
+							continue;
 						}
+
+						SensorLocation *sloc = Client::Inventory::Instance()->getSensorLocation(net, sta, loc, _originTime);
+
+						if ( Settings::global.threeComponents ) {
+							if ( !sloc ) {
+								SEISCOMP_WARNING("%s.%s.%s: meta data not found: cannot resolve 3C",
+								                 net, sta, loc);
+							}
+							else {
+								ThreeComponents tc;
+								getThreeComponents(tc, sloc, cha.substr(0, 2).data(), _originTime);
+								for ( size_t i = 0; i < 3; ++i ) {
+									if ( tc.comps[i] ) {
+										cha = tc.comps[i]->code();
+										if ( isStreamBlacklisted(streamsBlackList, net, sta, loc, cha) ) {
+											continue;
+										}
+										requestMap.append(WIDWithIndex(WaveformStreamID(net, sta, loc, cha, ""), index++));
+									}
+								}
+								continue;
+							}
+						}
+
+						if ( cha.size() < 3 ) {
+							char compCode = 'Z';
+
+							//cerr << " * " << net << "." << sta << "." << loc << "." << cha << 'Z' << endl;
+							if ( sloc ) {
+								auto stream = getVerticalComponent(sloc, cha.c_str(), _originTime);
+								if ( stream && !stream->code().empty() ) {
+									cha = stream->code();
+								}
+								else {
+									cha += compCode;
+								}
+							}
+							else {
+								cha += compCode;
+							}
+						}
+
+						if ( isStreamBlacklisted(streamsBlackList, net, sta, loc, cha) ) {
+							continue;
+						}
+
+						requestMap.append(WIDWithIndex(WaveformStreamID(net, sta, loc, cha, ""), index++));
 					}
 				}
 			}
