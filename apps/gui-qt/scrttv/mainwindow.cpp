@@ -905,7 +905,7 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 
 	if ( !SCApp->nonInteractive() ) {
 		_associator = new Associator(this);
-		_dockAssociator = new QDockWidget(tr("Manual associator"), this);
+		_dockAssociator = new QDockWidget(tr("Associator/locator control"), this);
 		_dockAssociator->setObjectName("Dock" + _associator->objectName());
 		_dockAssociator->setWidget(_associator);
 		_dockAssociator->setAllowedAreas(Qt::AllDockWidgetAreas);

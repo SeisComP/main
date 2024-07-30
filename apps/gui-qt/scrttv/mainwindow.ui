@@ -386,13 +386,13 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Collect picks</string>
+    <string>Associate picks</string>
    </property>
    <property name="iconText">
-    <string>Collect picks</string>
+    <string>Associate picks</string>
    </property>
    <property name="toolTip">
-    <string>Enter pick collecting mode</string>
+    <string>Enter pick association mode</string>
    </property>
    <property name="shortcut">
     <string>P</string>
@@ -707,7 +707,7 @@
   </action>
   <action name="actionCollect_picks">
    <property name="text">
-    <string>Collect picks</string>
+    <string>Associate picks</string>
    </property>
   </action>
   <action name="actionModeNone">
