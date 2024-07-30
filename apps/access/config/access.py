@@ -6,7 +6,6 @@ import re
 import glob
 import shutil
 import sys
-import imp
 import random
 import fnmatch
 import seiscomp.core
