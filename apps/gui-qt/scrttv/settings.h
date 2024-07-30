@@ -82,6 +82,12 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 			"is part of the list. Network code, station code and location code "
 			"must match anyway."
 		)
+		& cliSwitch(
+			threeComponents,
+			"Mode", "3c",
+			"Do not only show the vertical component of the detecStream but all three "
+			"components if available."
+		)
 
 		& cfg(filters, "filter") // Deprecated for backward compatibility
 		& cfg(filters, "filters")
@@ -93,6 +99,7 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 		& cfg(mapPicksToBestMatchingTrace, "mapPicks")
 		& cfg(autoApplyFilter, "autoApplyFilter")
 		& cfg(warnDataTimeRange, "warnDataTimeRange")
+		& cfg(threeComponents, "3c")
 
 		& cfg(groupConfig, "messaging.groups.config")
 		& cfg(groupLocation, "messaging.groups.location")
@@ -129,6 +136,7 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 	bool                     mapPicksToBestMatchingTrace{false};
 	bool                     inventoryDisabled{false};
 	bool                     disableTimeWindowRequest{false};
+	bool                     threeComponents{false};
 	int                      maxDelay{0};
 	int                      warnDataTimeRange{3600 * 6}; // 6 hours
 
