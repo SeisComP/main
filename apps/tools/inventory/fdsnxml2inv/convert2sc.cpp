@@ -2514,6 +2514,38 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 	}
 
 	try {
+		sc_stream->sampleRateNumerator();
+		sc_stream->sampleRateDenominator();
+	}
+	catch ( ... ) {
+		SEISCOMP_INFO("%s: no sampling rate given, trying to derive from decimations",
+		              chaCode);
+
+		OPT(Fraction) sr;
+
+		for ( const auto stage : stages ) {
+			try {
+				if ( stage->decimation().factor() > 0 ) {
+					double samplingRate = stage->decimation().inputSampleRate() / stage->decimation().factor();
+					sr = double2frac(samplingRate);
+				}
+				else {
+					SEISCOMP_WARNING("%s: stage #%d has an invalid decimation factor",
+					                 chaCode, stage->number());
+				}
+			}
+			catch ( ... ) {}
+		}
+
+		if ( sr ) {
+			SEISCOMP_INFO("%s: derived sampling rate with %d/%d sps",
+			              chaCode, sr->first, sr->second);
+			sc_stream->setSampleRateNumerator(sr->first);
+			sc_stream->setSampleRateDenominator(sr->second);
+		}
+	}
+
+	try {
 		numerator = sc_stream->sampleRateNumerator();
 		denominator = sc_stream->sampleRateDenominator();
 
