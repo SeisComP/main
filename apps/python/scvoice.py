@@ -203,7 +203,7 @@ class VoiceAlert(client.Application):
                 "agencyIDs: %s" % (" ".join(self._agencyIDs)))
 
         return True
-    
+
     def printUsage(self):
 
         print('''Usage:
@@ -271,6 +271,10 @@ Execute scvoice on command line with debug output
         except BaseException:
             logging.error(
                 "Failed to start alert script '%s'" % self._alertScript)
+
+    def done(self):
+        self._cache = None
+        client.Application.done(self)
 
     def handleMessage(self, msg):
         try:
