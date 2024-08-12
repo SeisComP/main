@@ -409,6 +409,7 @@ class ObjectAlert(seiscomp.client.Application):
             return False
 
     def done(self):
+        self._cache = None
         seiscomp.client.Application.done(self)
 
     def runPickScript(self, pickObjectList):
@@ -580,7 +581,7 @@ class ObjectAlert(seiscomp.client.Application):
             if obj:
                 if obj.type() == self._ampType:
                     seiscomp.logging.debug(
-                        f"got new %s amplitude '{self._ampType, obj.publicID()}'"
+                        f"got new {self._ampType} amplitude '{obj.publicID()}'"
                     )
                     self.notifyAmplitude(obj)
                 return
@@ -600,7 +601,7 @@ class ObjectAlert(seiscomp.client.Application):
                 return
 
             # magnitude
-            obj = seiscomp.datamodel.Magnitude.Cast(object)
+            obj = seiscomp.datamodel.Magnitude.Cast(scObject)
             if obj:
                 self._cache.feed(obj)
                 seiscomp.logging.debug(f"got new magnitude '{obj.publicID()}'")
