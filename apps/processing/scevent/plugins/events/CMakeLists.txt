@@ -1,1 +1,1 @@
-SUBDIRS(mmi regioncheck)
+SUBDIRS(mmi regioncheck settype)
