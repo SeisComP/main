@@ -292,9 +292,14 @@ results.
                  ; missing dip                      ; W;
                  ; empty azimuth                    ;  ; handled by SeisComP inventory reader
                  ; empty dip                        ;  ; handled by SeisComP inventory reader
-                 ; empty sensor ID                  ; I;
                  ; large depth                      ; W; :option:`--max-sensor-depth` and :confval:`check.maxSensorDepth` override default threshold (500 m)
+                 ; empty sensor ID                  ; I;
+                 ; sensor is unavailable            ; R;
+                 ; empty data logger ID             ; I;
+                 ; data logger is unavailable       ; R;
                  ; 2 or more than 3 streams exist   ; I;
                  ; 3C streams are not orthogonal    ; W; differences <= 5 degree are tolerated, applies to seismic sensors with codes G, H, L, N
 
-   sensor        ; referenced sensor not available  ; R;
+   sensor        ; referenced response not available; R;
+
+   data logger   ; referenced response not available; R;

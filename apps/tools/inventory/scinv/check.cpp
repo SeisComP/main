@@ -452,7 +452,7 @@ bool Check::check() {
 						// Done already in merge
 						/*
 						Sensor *sensor = findSensor(cha->sensor());
-						if ( sensor == nullptr ) {
+						if ( !sensor ) {
 							log(LogHandler::Unresolved,
 							    (string(cha->className()) + " " + id(cha) + "\n  "
 							     "referenced sensor is not available").c_str(), nullptr, nullptr);
@@ -465,6 +465,14 @@ bool Check::check() {
 						     "no sensor and thus no response information available").c_str(),
 						    cha, nullptr);
 					}
+
+					if ( cha->datalogger().empty() ) {
+						log(LogHandler::Information,
+						    (string(cha->className()) + " " + nslc(cha) + "\n  "
+						     "no data logger and thus no response information available").c_str(),
+						    cha, nullptr);
+					}
+
 				}
 
 				// check number of channels and orthogonality
@@ -528,9 +536,13 @@ bool Check::check() {
 	for ( size_t i = 0; i < _inv->sensorCount(); ++i ) {
 		Sensor *sensor = _inv->sensor(i);
 		Object *o = findPAZ(sensor->response());
-		if ( o == nullptr ) o = findPoly(sensor->response());
-		if ( o == nullptr ) o = findFAP(sensor->response());
-		if ( o == nullptr ) {
+		if ( !o ) {
+			o = findPoly(sensor->response());
+		}
+		if ( !o ) {
+			o = findFAP(sensor->response());
+		}
+		if ( !o ) {
 			// Done in merge
 			/*
 			log(LogHandler::Unresolved,

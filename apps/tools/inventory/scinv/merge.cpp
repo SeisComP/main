@@ -111,7 +111,9 @@ Merge::Merge(Inventory *inv) : InventoryTask(inv) {}
 
 
 bool Merge::push(Inventory *inv, int id) {
-	if ( _inv == NULL ) return false;
+	if ( !_inv ) {
+		return false;
+	}
 
 	InventoryVisitor bindToSource(id, &_sources);
 	inv->accept(&bindToSource);
@@ -122,27 +124,46 @@ bool Merge::push(Inventory *inv, int id) {
 	PublicObject::SetRegistrationEnabled(false);
 	Notifier::SetEnabled(false);
 
-	if ( !_tmpInv )
+	if ( !_tmpInv ) {
 		_tmpInv = new Inventory;
+	}
 
 	MOVE(_tmpInv, inv, StationGroup, stationGroup)
-	if ( _interrupted ) return false;
+	if ( _interrupted ) {
+		return false;
+	}
 	MOVE_GEN_NAME(_tmpInv, inv, AuxDevice, auxDevice)
-	if ( _interrupted ) return false;
+	if ( _interrupted ) {
+		return false;
+	}
 	MOVE_GEN_NAME(_tmpInv, inv, Sensor, sensor)
-	if ( _interrupted ) return false;
+	if ( _interrupted ) {
+		return false;
+	}
 	MOVE_GEN_NAME(_tmpInv, inv, Datalogger, datalogger)
-	if ( _interrupted ) return false;
+	if ( _interrupted ) {
+		return false;
+	}
 	MOVE_GEN_NAME(_tmpInv, inv, ResponsePAZ, responsePAZ)
-	if ( _interrupted ) return false;
+	if ( _interrupted ) {
+		return false;
+	}
 	MOVE_GEN_NAME(_tmpInv, inv, ResponseFAP, responseFAP)
-	if ( _interrupted ) return false;
+	if ( _interrupted ) {
+		return false;
+	}
 	MOVE_GEN_NAME(_tmpInv, inv, ResponsePolynomial, responsePolynomial)
-	if ( _interrupted ) return false;
+	if ( _interrupted ) {
+		return false;
+	}
 	MOVE_GEN_NAME(_tmpInv, inv, ResponseFIR, responseFIR)
-	if ( _interrupted ) return false;
+	if ( _interrupted ) {
+		return false;
+	}
 	MOVE_GEN_NAME(_tmpInv, inv, ResponseIIR, responseIIR)
-	if ( _interrupted ) return false;
+	if ( _interrupted ) {
+		return false;
+	}
 	MOVE(_tmpInv, inv, Network, network)
 
 	PublicObject::SetRegistrationEnabled(bckReg);
@@ -157,7 +178,9 @@ bool Merge::push(Inventory *inv, int id) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Merge::merge(bool stripUnreferenced) {
-	if ( _inv == NULL || _tmpInv == NULL ) return false;
+	if ( !_inv || !_tmpInv ) {
+		return false;
+	}
 
 	_stripUnreferenced = stripUnreferenced;
 	_stationIDMap.clear();
@@ -606,10 +629,10 @@ bool Merge::process(SensorLocation *loc, const Stream *stream) {
 
 	if ( !sc_cha->datalogger().empty() ) {
 		const Datalogger *dl = findDatalogger(sc_cha->datalogger());
-		if ( dl == NULL ) {
+		if ( !dl ) {
 			log(LogHandler::Unresolved,
 			    (string(sc_cha->className()) + " " + id(loc) + "." + sc_cha->code() + "/" + id(sc_cha->start()) + "\n  "
-			     "referenced datalogger is not available").c_str(), NULL, NULL);
+			     "referenced datalogger is not available: " + sc_cha->datalogger()).c_str(), NULL, NULL);
 			/*
 			SEISCOMP_WARNING("%s.%s.%s.%s: datalogger not found: %s",
 			                 loc->station()->network()->code().c_str(),
@@ -624,10 +647,10 @@ bool Merge::process(SensorLocation *loc, const Stream *stream) {
 
 	if ( !sc_cha->sensor().empty() ) {
 		const Sensor *sensor = findSensor(sc_cha->sensor());
-		if ( sensor == NULL ) {
+		if ( !sensor ) {
 			log(LogHandler::Unresolved,
 			    (string(sc_cha->className()) + " " + id(loc) + "." + sc_cha->code() + "/" + id(sc_cha->start()) + "\n  "
-			    "referenced sensor is not available").c_str(), NULL, NULL);
+			    "referenced sensor is not available: " + sc_cha->sensor()).c_str(), NULL, NULL);
 			/*
 			SEISCOMP_WARNING("%s.%s.%s.%s: sensor not found: %s",
 			                 loc->station()->network()->code().c_str(),
@@ -666,7 +689,7 @@ bool Merge::process(SensorLocation *loc, const AuxStream *aux) {
 
 	if ( !sc_aux->device().empty() ) {
 		const AuxDevice *d = findAuxDevice(sc_aux->device());
-		if ( d == NULL ) {
+		if ( !d ) {
 			SEISCOMP_INFO("%s.%s.%s.%s: aux device not found: %s",
 			                 loc->station()->network()->code().c_str(),
 			                 loc->station()->code().c_str(),
@@ -806,15 +829,15 @@ bool Merge::process(Datalogger *dl, const Decimation *deci) {
 				deciAnalogueChain += " ";
 
 			const ResponsePAZ *paz = findPAZ(filters[i]);
-			if ( paz == NULL ) {
+			if ( !paz ) {
 				const ResponsePolynomial *poly = findPoly(filters[i]);
-				if ( poly == NULL ) {
+				if ( !poly ) {
 					const ResponseFAP *fap = findFAP(filters[i]);
-					if ( fap == NULL ) {
+					if ( !fap ) {
 						const ResponseFIR *fir = findFIR(filters[i]);
-						if ( fir == NULL ) {
+						if ( !fir ) {
 							const ResponseIIR *iir = findIIR(filters[i]);
-							if ( iir == NULL ) {
+							if ( !iir ) {
 								log(LogHandler::Unresolved,
 								    (string(dl->className()) + " " + id(dl) + "/decimation " + Core::toString(sc_deci->sampleRateNumerator()) + "/" + Core::toString(sc_deci->sampleRateDenominator()) + "\n  "
 								    "analogue filter chain: response not found: " + filters[i]).c_str(), NULL, NULL);
@@ -869,11 +892,11 @@ bool Merge::process(Datalogger *dl, const Decimation *deci) {
 				deciDigitalChain += " ";
 
 			const ResponsePAZ *paz = findPAZ(filters[i]);
-			if ( paz == NULL ) {
+			if ( !paz ) {
 				const ResponseFIR *fir = findFIR(filters[i]);
-				if ( fir == NULL ) {
+				if ( !fir ) {
 					const ResponseIIR *iir = findIIR(filters[i]);
-					if ( iir == NULL ) {
+					if ( !iir ) {
 						log(LogHandler::Unresolved,
 						    (string(dl->className()) + " " + id(dl) + "/decimation " + Core::toString(sc_deci->sampleRateNumerator()) + "/" + Core::toString(sc_deci->sampleRateDenominator()) + "\n  "
 						    "digital filter chain: response not found: " + filters[i]).c_str(), NULL, NULL);
@@ -975,16 +998,16 @@ bool Merge::process(Stream *cha, const Sensor *sensor) {
 
 	if ( !sensor->response().empty() ) {
 		const ResponsePAZ *paz = findPAZ(sensor->response());
-		if ( paz == NULL ) {
+		if ( !paz ) {
 			const ResponsePolynomial *poly = findPoly(sensor->response());
-			if ( poly == NULL ) {
+			if ( !poly ) {
 				const ResponseFAP *fap = findFAP(sensor->response());
-				if ( fap == NULL ) {
+				if ( !fap ) {
 					const ResponseIIR *iir = findIIR(sensor->response());
-					if ( iir == NULL ) {
+					if ( !iir ) {
 						log(LogHandler::Unresolved,
 						    (string(sensor->className()) + " " + id(sensor) + "\n  "
-						     "referenced response is not available").c_str(), NULL, NULL);
+						     "referenced response not found: " + sensor->response()).c_str(), NULL, NULL);
 						/*
 						SEISCOMP_WARNING("Sensor %s: response not found: %s",
 						                 sensor->publicID().c_str(),
@@ -1178,14 +1201,14 @@ bool Merge::compareDatalogger(string &finalID, const string &id1,
 	const DataModel::Datalogger *dl1 = findDatalogger(id1);
 	const DataModel::Datalogger *dl2 = findDatalogger(id2);
 
-	if ( dl1 == NULL ) {
+	if ( !dl1 ) {
 		{
 			stringstream ss;
 			ss << "Datalogger " << id1 << " not defined";
 			log(LogHandler::Information, ss.str().c_str(), NULL, NULL);
 		}
 
-		if ( dl2 == NULL ) {
+		if ( !dl2 ) {
 			stringstream ss;
 			ss << "Datalogger " << id2 << " not defined, clear reference";
 			log(LogHandler::Information, ss.str().c_str(), NULL, NULL);
@@ -1197,14 +1220,14 @@ bool Merge::compareDatalogger(string &finalID, const string &id1,
 		return true;
 	}
 
-	if ( dl2 == NULL ) {
+	if ( !dl2 ) {
 		{
 			stringstream ss;
 			ss << "Datalogger " << id2 << " not defined";
 			log(LogHandler::Information, ss.str().c_str(), NULL, NULL);
 		}
 
-		if ( dl1 == NULL ) {
+		if ( !dl1 ) {
 			stringstream ss;
 			ss << "Datalogger " << id1 << " not defined, clear reference";
 			log(LogHandler::Information, ss.str().c_str(), NULL, NULL);
@@ -1245,9 +1268,9 @@ bool Merge::compareSensor(string &finalID, const string &id1,
 	const DataModel::Sensor *s1 = findSensor(id1);
 	const DataModel::Sensor *s2 = findSensor(id2);
 
-	if ( s1 == NULL ) {
+	if ( !s1 ) {
 		// Give warning about missing datalogger
-		if ( s2 == NULL ) {
+		if ( !s2 ) {
 			// Give warning about missing datalogger
 			finalID = "";
 		}
@@ -1257,9 +1280,9 @@ bool Merge::compareSensor(string &finalID, const string &id1,
 		return true;
 	}
 
-	if ( s2 == NULL ) {
+	if ( !s2 ) {
 		// Give warning about missing datalogger
-		if ( s1 == NULL ) {
+		if ( !s1 ) {
 			// Give warning about missing datalogger
 			finalID = "";
 		}
