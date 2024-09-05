@@ -749,11 +749,11 @@ class ObjectAlert(seiscomp.client.Application):
             #       return
 
             if dt > 3600:
-                dt = f"{(dt / 3600, (dt % 3600) / 60)} hours %d minutes ago"
+                dt = f"{int(dt / 3600)} hours {int((dt % 3600) / 60)} minutes ago"
             elif dt > 120:
-                dt = f"{dt / 60} minutes ago"
+                dt = f"{int(dt / 60)} minutes ago"
             else:
-                dt = f"{dt} seconds ago"
+                dt = f"{int(dt)} seconds ago"
 
             if preliminary:
                 message = f"earthquake, XXL, preliminary, {dt}, {dsc}"
