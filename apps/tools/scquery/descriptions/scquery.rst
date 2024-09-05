@@ -111,7 +111,7 @@ MariaDB/MySQL
    query.eventType = "SELECT pe.publicID, o.time_value AS OT FROM PublicObject pe, PublicObject po, Event e, Origin o WHERE pe._oid = e._oid AND po._oid = o._oid AND e.preferredOriginID = po.publicID AND e.type = '##type##' AND o.time_value >= '##startTime##' AND o.time_value <= '##endTime##';"
 
    query.originByAuthor.description = "Get origins by author"
-   query.byAuthor = "SELECT po.publicID, o.time_value AS OT, o.creationInfo_author FROM PublicObject po JOIN Origin o ON po._oid = o._oid WHERE o.creationInfo_author like '##author##' AND o.time_value >= '##startTime##' AND o.time_value <= '##endTime##';"
+   query.originByAuthor = "SELECT po.publicID, o.time_value AS OT, o.creationInfo_author FROM PublicObject po JOIN Origin o ON po._oid = o._oid WHERE o.creationInfo_author like '##author##' AND o.time_value >= '##startTime##' AND o.time_value <= '##endTime##';"
 
 **More examples and statistics**
 
