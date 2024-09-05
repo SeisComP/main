@@ -508,6 +508,17 @@ Execute on command line with debug output
 
                 if pick:
                     pick_cloned = seiscomp.datamodel.Pick.Cast(pick.clone())
+
+                    # Load comments
+                    if pick.commentCount() == 0:
+                        self.query().loadComments(pick)
+
+                    # Copy pick comments
+                    ncmts = pick.commentCount()
+                    for i in range(ncmts):
+                        cmt_cloned = seiscomp.datamodel.Comment.Cast(
+                            pick.comment(i).clone())
+                        pick_cloned.add(cmt_cloned)
                     ep.add(pick_cloned)
 
             # Copy network magnitudes
