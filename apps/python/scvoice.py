@@ -436,11 +436,11 @@ Execute scvoice on command line with debug output
     #       return
 
             if dt > 3600:
-                dt = "%d hours %d minutes ago" % (dt/3600, (dt % 3600)/60)
+                dt = "%d hours %d minutes ago" % (int(dt / 3600), int((dt % 3600) / 60))
             elif dt > 120:
-                dt = "%d minutes ago" % (dt/60)
+                dt = "%d minutes ago" % int(dt / 60)
             else:
-                dt = "%d seconds ago" % dt
+                dt = "%d seconds ago" % int(dt)
 
             if preliminary:
                 message = "earthquake, preliminary, %%s, %s" % dsc
