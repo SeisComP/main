@@ -43,8 +43,7 @@ void showQueries(const Config::Config& conf)
 	}
 
 	std::cout << "[ " << sqlQueries.size() << " queries found ]\n"  << std::endl;
-	for ( size_t i = 0; i < sqlQueries.size(); ++i )
-	{
+	for ( size_t i = 0; i < sqlQueries.size(); ++i ) {
 		std::string desc, query;
 
 		try { desc = conf.getString("query." + sqlQueries[i] + ".description"); } catch ( ... ) {}
@@ -53,13 +52,15 @@ void showQueries(const Config::Config& conf)
 		DBQuery q(sqlQueries[i], desc, query);
 		std::cout << "Query name: " << q.name() << std::endl;
 		std::cout << "Description: " << q.description() << std::endl;
-		if (q.hasParameter())
-		{
-			std::cout << "number of parameter: " << q.parameter().size() << std::endl;
+		if (q.hasParameter()) {
+			std::cout << "number of parameters: " << q.parameter().size() << std::endl;
 			std::cout << "Parameter: ";
 			for (std::vector<std::string>::const_iterator it = q.parameter().begin();
 			        it < q.parameter().end(); ++it)
 				std::cout << *it << " ";
+		}
+		else {
+			std::cout << "number of parameters: none";
 		}
 		std::cout << std::endl;
 		std::cout << std::endl;
