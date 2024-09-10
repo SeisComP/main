@@ -509,7 +509,7 @@ QVariant QcModel::data(const QModelIndex &index, int role) const {
 
 
 	//!---------------------------------------------------------------------------------
-	else if ( role == Qt::BackgroundColorRole ) {
+	else if ( role == Qt::BackgroundRole ) {
 		if ( index.column() == 1 ) {
 			return streamEnabled(index)?QColor(0,255,0,255):QColor(255,0,0,255);
 		}
