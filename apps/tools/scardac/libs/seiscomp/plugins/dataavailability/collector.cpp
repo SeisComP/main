@@ -22,7 +22,6 @@
 
 #include <seiscomp/logging/log.h>
 
-#include <boost/filesystem/convenience.hpp>
 
 IMPLEMENT_INTERFACE_FACTORY(Seiscomp::DataAvailability::Collector, SC_DAPLUGIN_API);
 
