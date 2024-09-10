@@ -78,9 +78,9 @@ class App : public Processing::Application {
 		                   const DataModel::WaveformStreamID &waveformID,
 		                   bool metaDataRequired);
 
-		bool initDetector( const std::string &streamID,
+		bool initDetector(const std::string &streamID,
 		                   const DataModel::WaveformStreamID &waveformID,
-		                   const Core::Time &time);
+		                   const Record *rec);
 
 		bool addFeatureExtractor(Seiscomp::DataModel::Pick *pick,
 		                         DataModel::Amplitude *amp,

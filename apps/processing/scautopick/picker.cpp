@@ -432,7 +432,6 @@ bool App::init() {
 
 	for ( StationConfig::const_iterator it = _stationConfig.begin();
 	      it != _stationConfig.end(); ++it ) {
-
 		// Ignore wildcards
 		if ( it->first.first == "*" ) continue;
 		if ( it->first.second == "*" ) continue;
@@ -443,7 +442,7 @@ bool App::init() {
 		// Ignore disabled channels
 		if ( !it->second.enabled ) {
 			SEISCOMP_INFO("Detector on station %s.%s disabled by config",
-			              it->first.first.c_str(), it->first.second.c_str());
+			              it->first.first, it->first.second);
 			continue;
 		}
 
@@ -847,7 +846,7 @@ bool App::initProcessor(Processing::WaveformProcessor *proc,
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::initDetector(const string &streamID,
                        const DataModel::WaveformStreamID &waveformID,
-                       const Core::Time &time) {
+                       const Record *rec) {
 	double trigOn = _config.defaultTriggerOnThreshold;
 	double trigOff = _config.defaultTriggerOffThreshold;
 	double tcorr = _config.defaultTimeCorrection;
@@ -905,13 +904,14 @@ bool App::initDetector(const string &streamID,
 		));
 
 	if ( !initProcessor(detector.get(), detector->usedComponent(),
-	                    time, streamID, waveformID, sensitivityCorrection) )
+	                    rec->startTime(), streamID, waveformID, sensitivityCorrection) )
 		return false;
 
 	SEISCOMP_DEBUG("%s: created detector with filter %s",
 	               streamID.c_str(), filter.c_str());
 
 	addProcessor(waveformID, detector.get());
+	detector->feed(rec);
 
 //	SEISCOMP_DEBUG("Number of processors: %lu", (unsigned long)processorCount());
 
@@ -925,7 +925,7 @@ bool App::initDetector(const string &streamID,
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::handleNewStream(const Record *rec) {
 	if ( _config.useAllStreams || _streamIDs.find(rec->streamID()) != _streamIDs.end() ) {
-		if ( !initDetector(rec->streamID(), waveformStreamID(rec), rec->startTime()) ) {
+		if ( !initDetector(rec->streamID(), waveformStreamID(rec), rec) ) {
 			SEISCOMP_ERROR("%s: initialization failed: abort operation",
 			               rec->streamID().c_str());
 			exit(1);
