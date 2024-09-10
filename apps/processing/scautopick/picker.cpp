@@ -1238,7 +1238,7 @@ void App::emitTrigger(const Processing::Detector *pickProc,
 	}
 
 	proc->setTrigger(time);
-	proc->setPublishFunction(bind(&App::emitPPick, this, placeholders::_1, placeholders::_2));
+	proc->setPublishFunction(bind(&App::emitPPick, this, placeholders::_1, placeholders::_2, static_cast<const Detector*>(pickProc)->duration()));
 
 	const DataModel::WaveformStreamID waveformID(waveformStreamID(rec));
 
@@ -1258,7 +1258,8 @@ void App::emitTrigger(const Processing::Detector *pickProc,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::emitPPick(const Processing::Picker *proc,
-                    const Processing::Picker::Result &res)
+                    const Processing::Picker::Result &res,
+                    double duration)
 {
 	PickMap::iterator it = _lastPicks.find(res.record->streamID());
 	if ( it != _lastPicks.end() ) {
@@ -1335,6 +1336,14 @@ void App::emitPPick(const Processing::Picker *proc,
 
 	if ( _config.extraPickComments && res.snr >= 0 ) {
 		DataModel::CommentPtr comment;
+
+		if ( duration >= 0 ) {
+			comment = new DataModel::Comment;
+			comment->setId("duration");
+			comment->setText(Core::toString(duration));
+			pick->add(comment.get());
+		}
+
 		comment = new DataModel::Comment;
 		comment->setId("SNR");
 		comment->setText(Core::toString(res.snr));
@@ -1511,6 +1520,15 @@ void App::emitDetection(const Processing::Detector *proc, const Record *rec, con
 	}
 	pick->setPhaseHint(DataModel::Phase(_config.phaseHint));
 	pick->setWaveformID(waveformStreamID(rec));
+
+	if ( _config.extraPickComments ) {
+		if ( static_cast<const Detector*>(proc)->duration() >= 0 ) {
+			auto comment = new DataModel::Comment;
+			comment->setId("duration");
+			comment->setText(Core::toString(static_cast<const Detector*>(proc)->duration()));
+			pick->add(comment);
+		}
+	}
 
 	SEISCOMP_DEBUG("Created detection %s", pick->publicID().c_str());
 

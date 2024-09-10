@@ -45,6 +45,10 @@ class Detector : public Processing::SimpleDetector {
 
 		void reset();
 
+		double duration() const {
+			return _finalPickDuration;
+		}
+
 
 	protected:
 		void fill(size_t n, double *samples);

@@ -106,7 +106,8 @@ class App : public Processing::Application {
 		                   const Record *rec, const Core::Time& time);
 
 		void emitPPick(const Processing::Picker *,
-		               const Processing::Picker::Result &);
+		               const Processing::Picker::Result &,
+		               double duration);
 
 		void emitSPick(const Processing::SecondaryPicker *,
 		               const Processing::SecondaryPicker::Result &);
