@@ -24,8 +24,6 @@
 #include <seiscomp/logging/log.h>
 #include <seiscomp/system/environment.h>
 
-#include <boost/filesystem/convenience.hpp>
-
 #include <utility>
 #include <vector>
 
