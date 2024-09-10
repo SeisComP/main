@@ -106,12 +106,10 @@ void Picker::Config::init(const Client::Application *app) {
 	catch (...) {}
 	try { triggerDeadTime = app->configGetDouble("thresholds.deadTime"); }
 	catch (...) {}
-	/* TODO: Needs support in detector
 	try { minDuration = app->configGetDouble("thresholds.minDuration"); }
 	catch (...) {}
 	try { maxDuration = app->configGetDouble("thresholds.maxDuration"); }
 	catch (...) {}
-	*/
 
 	try { amplitudeMaxTimeWindow = app->configGetDouble("thresholds.amplMaxTimeWindow"); }
 	catch (...) {}
@@ -208,13 +206,13 @@ void Picker::Config::dump() const {
 		}
 		printf("\n");
 	}
-	printf("interpolateGaps                  %s\n",     interpolateGaps ? "true":"false");
-	printf("maxGapLength                     %.2f s\n", maxGapLength);
-	printf("defaultFilter                    %s\n",     defaultFilter.c_str());
-	printf("defaultTriggerOnThreshold        %.2f\n",   defaultTriggerOnThreshold);
-	printf("defaultTriggerOffThreshold       %.2f\n",   defaultTriggerOffThreshold);
-	//printf("minDuration                      %.2f\n",   minDuration);
-	//printf("maxDuration                      %.2f\n",   maxDuration);
+	printf("interpolateGaps                  %s\n",    interpolateGaps ? "true":"false");
+	printf("maxGapLength                     %.2fs\n", maxGapLength);
+	printf("defaultFilter                    %s\n",    defaultFilter.c_str());
+	printf("defaultTriggerOnThreshold        %.2f\n",  defaultTriggerOnThreshold);
+	printf("defaultTriggerOffThreshold       %.2fs\n", defaultTriggerOffThreshold);
+	printf("minDuration                      %.2fs\n", minDuration);
+	printf("maxDuration                      %.2f\n",  maxDuration);
 	printf("triggerDeadTime                  %.2fs\n", triggerDeadTime);
 	printf("amplitudeMaxTimeWindow           %.2fs\n", amplitudeMaxTimeWindow);
 	printf("amplitudeMinOffset               %.2fs\n", amplitudeMinOffset);

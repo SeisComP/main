@@ -62,7 +62,7 @@ class Detector : public Processing::SimpleDetector {
 
 		void calculateMaxAmplitude(const Record *record, size_t i0, size_t i1, const DoubleArray &filteredData);
 
-		bool sendPick(const Record* rec, const Core::Time& t);
+		bool sendPick();
 		void sendMaxAmplitude(const Record *record);
 
 
@@ -88,27 +88,29 @@ class Detector : public Processing::SimpleDetector {
 
 		Processing::AmplitudeProcessor::PublishFunc _amplPublish;
 
-		Core::Time  _currentPick;
-		RecordCPtr  _currentPickRecord;
+		Core::Time            _currentPick;
+		RecordCPtr            _currentPickRecord;
+		double                _currentPickAmplitude;
+		double                _currentPickDuration{-1};
+		double                _finalPickDuration{-1};
 
-		Core::Time  _lastPick;
-		OPT(double) _lastAmplitude;
+		Core::Time            _lastPick;
+		OPT(double)           _lastAmplitude;
 
-		double      _triggeredAmplitude;
-		OPT(double) _minAmplitude;
+		OPT(double)           _minAmplitude;
 
-		Core::TimeSpan _deadTime;
-		Core::TimeSpan _twMax;
-		double         _amplitudeThreshold;
+		Core::TimeSpan        _deadTime;
+		Core::TimeSpan        _twMax;
+		double                _amplitudeThreshold;
 
-		double         _minDuration;
-		double         _maxDuration;
+		double                _minDuration{-1};
+		double                _maxDuration{-1};
 
-		bool           _sensitivityCorrection;
+		bool                  _sensitivityCorrection;
 
 		AmplitudeMaxProcessor _amplProc;
 
-		mutable std::string _pickID;
+		mutable std::string   _pickID;
 };
 
 
