@@ -44,7 +44,8 @@ class Repicker : public Client::Application {
 	private:
 		struct Settings : AbstractSettings {
 			std::string pickerInterface;
-			bool anyPhase{false};
+			bool        anyPhase{false};
+			std::string epFile;
 
 			void accept(SettingsLinker &linker) override;
 		};

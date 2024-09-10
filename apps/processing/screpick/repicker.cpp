@@ -44,17 +44,25 @@ namespace Applications {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Repicker::Settings::accept(SettingsLinker &linker) {
+
+	linker & cfg(epFile, "ep");
+	linker & cliAsPath(
+		epFile,
+		"Input", "ep",
+		"Name of input XML file (SCML) with all picks for offline processing."
+	);
+
 	linker & cfg(pickerInterface, "picker");
 	linker & cli(
 		pickerInterface, "Picker",
-		"picker,P", "Picker interface to be used for repicking",
+		"picker,P", "Picker interface to be used for repicking.",
 		true
 	);
 
 	linker & cfg(anyPhase, "anyPhase");
 	linker & cliSwitch(
 		anyPhase, "Picker",
-		"any-phase,A", "Allow any phase to be repicked and not just P"
+		"any-phase,A", "Allow any phase to be repicked and not just P."
 	);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -82,6 +90,12 @@ Repicker::Repicker(int argc, char **argv)
 void Repicker::printUsage() const {
 	cout << name() << " < STDIN > STDOUT" << endl;
 	Client::Application::printUsage();
+	cout << "Examples:" << endl;
+	cout << "Repick waveforms provided in a file based on picks from stdin" << endl;
+	cout << "  screpick -d localhost -I data.mseed < picks.xml > picks_repick.xml"
+	     << endl << endl;
+	cout << "Repick waveforms provided by stdin based on picks from a XML file provied by a file" << endl;
+	cout << "  cat *.mseed | screpick -d localhost -I - --ep picks.xml > picks_repick.xml" << endl;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -134,7 +148,17 @@ bool Repicker::init() {
 bool Repicker::run() {
 	EventParametersPtr ep;
 	IO::XMLArchive ar;
-	ar.open("-");
+
+	if ( !_settings.epFile.empty() ) {
+		if ( !ar.open(_settings.epFile.c_str()) ) {
+			cerr << "failed to open event parameter file: " << _settings.epFile << endl;
+			return false;
+		}
+	}
+	else {
+		ar.open("-");
+	}
+
 	ar >> ep;
 	if ( !ep ) {
 		SEISCOMP_ERROR("No event parameters found");
