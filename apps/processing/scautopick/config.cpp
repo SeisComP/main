@@ -78,6 +78,12 @@ void Picker::Config::init(const Client::Application *app) {
 	try { phaseHint = app->configGetString("phaseHint"); }
 	catch ( ... ) {}
 
+	try { commentID = app->configGetString("comment.ID"); }
+	catch ( ... ) {}
+
+	try { commentText = app->configGetString("comment.text"); }
+	catch ( ... ) {}
+
 	try { calculateAmplitudes = app->configGetBool("calculateAmplitudes"); }
 	catch (...) {}
 

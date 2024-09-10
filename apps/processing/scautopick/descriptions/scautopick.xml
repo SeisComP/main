@@ -220,6 +220,22 @@
 					</description>
 				</parameter>
 			</group>
+			<group name="comment">
+				<description>
+				Properties of a custom comment added to a pick. It requires both
+				ID and text to be configured.
+				</description>
+				<parameter name="ID" type="string" default="">
+					<description>
+					The ID of a custom comment.
+					</description>
+				</parameter>
+				<parameter name="text" type="string" default="">
+					<description>
+					The text of a custom comment.
+					</description>
+				</parameter>
+			</group>
 		</configuration>
 		<command-line>
 			<group name="Generic">

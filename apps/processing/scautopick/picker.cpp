@@ -1350,6 +1350,14 @@ void App::emitPPick(const Processing::Picker *proc,
 		pick->add(comment.get());
 	}
 
+	if ( !_config.commentID.empty() && !_config.commentText.empty() ) {
+		DataModel::CommentPtr comment;
+		comment = new DataModel::Comment;
+		comment->setId(_config.commentID);
+		comment->setText(_config.commentText);
+		pick->add(comment.get());
+	}
+
 	proc->finalizePick(pick.get());
 
 	string phaseHintCode;
@@ -1501,6 +1509,13 @@ void App::emitDetection(const Processing::Detector *proc, const Record *rec, con
 	pick->setCreationInfo(ci);
 	pick->setTime(time);
 	pick->setMethodID(proc->methodID());
+	if ( !_config.commentID.empty() && !_config.commentText.empty() ) {
+		DataModel::CommentPtr comment;
+		comment = new DataModel::Comment;
+		comment->setId(_config.commentID);
+		comment->setText(_config.commentText);
+		pick->add(comment.get());
+	}
 
 	// Set filterID
 	string filter = _config.defaultFilter;
