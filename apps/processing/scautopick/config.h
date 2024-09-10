@@ -51,6 +51,10 @@ class Config {
 		std::string amplitudeGroup;
 		std::string phaseHint;
 
+		// allow a comment added to the pick
+		std::string commentID;
+		std::string commentText;
+
 		// Sets the test mode. When enabled no picks and
 		// amplitudes are send via the messaging.
 		bool        test;
