@@ -56,8 +56,9 @@ class QcSortFilterProxyModel : public QSortFilterProxyModel {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-QcView::QcView(QcModel* qcModel, QWidget* parent, Qt::WindowFlags f)
-: QWidget(parent, f) {
+QcView::QcView(QcModel* qcModel, QString name, QWidget* parent,
+               Qt::WindowFlags f)
+: QWidget(parent, f), _name(std::move(name)) {
 	_qcModel = qcModel;
 	_qcProxyModel = new QcSortFilterProxyModel(this);
 	_qcProxyModel->setSourceModel(_qcModel);
@@ -69,7 +70,18 @@ QcView::QcView(QcModel* qcModel, QWidget* parent, Qt::WindowFlags f)
 	_layout->setMargin(2);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-QcView::~QcView(){}
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+QcView::~QcView() {
+	if ( !_name.isEmpty() ) {
+		SCApp->settings().beginGroup(_name);
+		SCApp->settings().setValue("streamIDFilter/text", _leFilter->text());
+		SCApp->settings().endGroup();
+	}
+}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -100,6 +112,15 @@ void QcView::init() {
 
 	connect(_leFilter, SIGNAL(textChanged(const QString&)), this, SLOT(filterRegExpChanged(const QString&)));
 	connect(_qcProxyModel, SIGNAL(layoutChanged()), this, SLOT(updateStreamCount()));
+
+	if ( !_name.isEmpty() ) {
+		SCApp->settings().beginGroup(_name);
+		auto filterStr = SCApp->settings().value("streamIDFilter/text").toString();
+		SCApp->settings().endGroup();
+		if ( !filterStr.isEmpty() ) {
+			_leFilter->setText(filterStr);
+		}
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -175,6 +196,14 @@ void QcView::filterRegExpChanged(const QString& filter) {
 	_qcProxyModel->setFilterRegExp(regExp);
 
 	updateStreamCount();
+
+	QPalette palette;
+	if ( !filter.isEmpty() ) {
+		auto color = _qcProxyModel->rowCount() ? QColor(192, 255, 192) :
+		                                         QColor(255, 192, 192);
+		palette.setColor(QPalette::Base, color);
+	}
+	_leFilter->setPalette(palette);
  }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -193,8 +222,9 @@ void QcView::updateStreamCount() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-QcTableView::QcTableView(QcModel* qcModel, QWidget* parent, Qt::WindowFlags f)
-: QcView(qcModel, parent, f) {
+QcTableView::QcTableView(QcModel* qcModel, QString name, QWidget* parent,
+                         Qt::WindowFlags f)
+: QcView(qcModel, name, parent, f) {
 	init();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -306,6 +336,10 @@ bool QcTableView::eventFilter(QObject* o, QEvent* e) {
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 void QcTableView::showDialog(const QModelIndex &index) {
 	QModelIndex idx(_qcProxyModel->mapToSource(index));
 
@@ -332,12 +366,15 @@ void QcTableView::showDialog(const QModelIndex &index) {
 		}
 	}
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-QcOverView::QcOverView(QcModel* qcModel, QWidget* parent, Qt::WindowFlags f)
-: QcView(qcModel, parent, f) {
+QcOverView::QcOverView(QcModel* qcModel, QString name, QWidget* parent,
+                       Qt::WindowFlags f)
+: QcView(qcModel, name, parent, f) {
 	init();
 }
 QcOverView::~QcOverView(){}

@@ -73,7 +73,7 @@ MainFrame::MainFrame() {
 	// create the views and associate them with the model
 
 	//! REPORT MESSAGES
-	_qcReportView = new QcTableView(_qcModel);
+	_qcReportView = new QcTableView(_qcModel, "QcReport");
 	_qcReportView->setRecordStreamURL(SCApp->recordStreamURL());
 	_qcReportView->setDatabaseQueryInterface(SCApp->query());
 	QLayout *Rlayout = new QVBoxLayout(_ui.tabQcReport);
@@ -81,7 +81,7 @@ MainFrame::MainFrame() {
 	Rlayout->addWidget(_qcReportView);
 
 	//! OVERVIEW
-	_qcOverView = new QcOverView(_qcModel, this);
+	_qcOverView = new QcOverView(_qcModel, "QcOverview", this);
 	_qcOverView->setRecordStreamURL(SCApp->recordStreamURL());
 	_qcOverView->setDatabaseQueryInterface(SCApp->query());
 	QLayout *Olayout = new QVBoxLayout(_ui.tabQcOver);

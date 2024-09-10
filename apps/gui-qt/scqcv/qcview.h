@@ -15,8 +15,8 @@
 
 
 
-#ifndef __QCVIEW_H__
-#define __QCVIEW_H__
+#ifndef QCVIEW_H
+#define QCVIEW_H
 
 #include <string>
 
@@ -42,8 +42,8 @@ class QcView : public QWidget {
 	Q_OBJECT
 
 	public:
-		QcView(QcModel *qcModel, QWidget *parent=nullptr,
-		       Qt::WindowFlags f=Qt::WindowFlags());
+		QcView(QcModel *qcModel, QString name=QString(),
+		       QWidget *parent=nullptr, Qt::WindowFlags f=Qt::WindowFlags());
 
 		~QcView();
 
@@ -64,6 +64,7 @@ class QcView : public QWidget {
 
 	protected:
 		QcModel                        *_qcModel;
+		QString                         _name;
 		QSortFilterProxyModel          *_qcProxyModel;
 		QVBoxLayout                    *_layout;
 		QHBoxLayout                    *_layout2;
@@ -71,7 +72,6 @@ class QcView : public QWidget {
 		QLabel                         *_lbVSecCount;
 		QLineEdit                      *_leFilter;
 		QLabel                         *_lbLeFilter;
-		QWidget                        *_parent;
 
 		std::string                     _recordStreamURL;
 		const DataModel::DatabaseQuery *_dbQuery;
@@ -87,7 +87,8 @@ class QcTableView : public QcView {
 	Q_OBJECT
 
 	public:
-		QcTableView(QcModel *qcModel, QWidget *parent=nullptr,
+		QcTableView(QcModel *qcModel, QString name=QString(),
+		            QWidget *parent=nullptr,
 		            Qt::WindowFlags f=Qt::WindowFlags());
 
 		~QcTableView();
@@ -120,7 +121,8 @@ class QcOverView : public QcView {
 	Q_OBJECT
 
 	public:
-		QcOverView(QcModel *qcModel, QWidget *parent=nullptr,
+		QcOverView(QcModel *qcModel, QString name=QString(),
+		           QWidget *parent=nullptr,
 		           Qt::WindowFlags f=Qt::WindowFlags());
 		~QcOverView();
 		void init();
