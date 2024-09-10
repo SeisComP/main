@@ -165,10 +165,8 @@ void Detector::reset() {
 	Processing::SimpleDetector::reset();
 	_lastPick = Core::Time();
 	_lastAmplitude = Core::None;
-	_currentPick = Core::Time();
-	_currentPickRecord = NULL;
+	_currentPickRecord = nullptr;
 	_minAmplitude = Core::None;
-	_triggeredAmplitude = 0;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -229,11 +227,16 @@ bool Detector::handleGap(Filter *filter, const Core::TimeSpan& gapLength,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Detector::emitPick(const Record *rec, const Core::Time &t) {
+	_currentPick = t;
+	_currentPickRecord = rec;
+	_currentPickDuration = 0;
+	_finalPickDuration = -1;
+
 	// Is there a last pick and a last snr amplitude? Then defer the pick
 	// until the max amplitude has been calculated
-	if ( _lastAmplitude && bool(_lastPick )) {
-		double dt = double(t - _lastPick);
-		double deadTime = double(_deadTime);
+	if ( _lastAmplitude && _lastPick ) {
+		double dt = static_cast<double>(t - _lastPick);
+		double deadTime = static_cast<double>(_deadTime);
 
 		if ( deadTime > 0 ) {
 			double dtn = dt/deadTime;
@@ -245,20 +248,9 @@ bool Detector::emitPick(const Record *rec, const Core::Time &t) {
 
 		SEISCOMP_DEBUG("Time to last pick = %.2f sec, last amplitude = %.2f, "
 		               "minimum amplitude = %.2f", dt, *_lastAmplitude, *_minAmplitude);
-
-		if ( *_minAmplitude > _triggeredAmplitude ) {
-			_currentPick = t;
-			_currentPickRecord = rec;
-
-			SEISCOMP_DEBUG("Defer pick, minimum amplitude to reach is %.2f", *_minAmplitude);
-			return false;
-		}
-
-		SEISCOMP_DEBUG("Deferred sending disabled, pick already reached minimum "
-		               "amplitude: %.2f >= %.2f", _triggeredAmplitude, *_minAmplitude);
 	}
 
-	return sendPick(rec, t);
+	return sendPick();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -266,13 +258,44 @@ bool Detector::emitPick(const Record *rec, const Core::Time &t) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Detector::sendPick(const Record* rec, const Core::Time& t) {
-	bool res = SimpleDetector::emitPick(rec, t);
-	_lastPick = t;
+bool Detector::sendPick() {
+	if ( !_currentPickRecord ) {
+		return false;
+	}
+
+	if ( _minAmplitude && (_currentPickAmplitude < *_minAmplitude) ) {
+		SEISCOMP_DEBUG("Defer pick, minimum amplitude to reach is %.2f", *_minAmplitude);
+		return false;
+	}
+
+	if ( (_minDuration >= 0) && (_currentPickDuration < _minDuration) ) {
+		SEISCOMP_DEBUG("Defer pick, minimum duration not reached: %f < %f",
+		               _currentPickDuration, _minDuration);
+		return false;
+	}
+
+	if ( _maxDuration >= 0 ) {
+		if ( _finalPickDuration < 0 ) {
+			SEISCOMP_DEBUG("Defer pick, final duration not yet available");
+			return false;
+		}
+
+		if ( _finalPickDuration > _maxDuration ) {
+			SEISCOMP_DEBUG("Discard pick, maximum duration exceeded: %.2f > %.2f",
+			               _finalPickDuration, _maxDuration);
+			return false;
+		}
+	}
+
+	SEISCOMP_DEBUG("Send pick, amp: %.2f >= %.2f, duration: %.2f in [%.2f;%.2f]",
+	               _currentPickAmplitude, *_minAmplitude, _currentPickDuration,
+	               _minDuration, _maxDuration);
+
+	bool res = SimpleDetector::emitPick(_currentPickRecord.get(), _currentPick);
+	_lastPick = _currentPick;
 
 	_minAmplitude = Core::None;
-	_currentPickRecord = NULL;
-	_currentPick = Core::Time();
+	_currentPickRecord = nullptr;
 
 	return res;
 }
@@ -285,12 +308,17 @@ bool Detector::sendPick(const Record* rec, const Core::Time& t) {
 void Detector::process(const Record *record, const DoubleArray &filteredData) {
 	_amplProc.pickIndex = 0;
 
+	if ( _currentPickRecord ) {
+		_currentPickDuration = static_cast<double>(record->endTime() - _currentPick);
+	}
+
 	SimpleDetector::process(record, filteredData);
 
 	if ( _amplProc.isRunning() ) {
 		calculateMaxAmplitude(record, _amplProc.pickIndex, filteredData.size(), filteredData);
-		if ( _amplProc.isFinished() )
+		if ( _amplProc.isFinished() ) {
 			sendMaxAmplitude(record);
+		}
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -302,16 +330,16 @@ void Detector::process(const Record *record, const DoubleArray &filteredData) {
 bool Detector::validateOn(const Record *record, size_t &i, const DoubleArray &filteredData) {
 	_amplProc.reset();
 	_amplProc.pickIndex = i;
-	_amplProc.neededSamples = (size_t)(_twMax * record->samplingFrequency());
+	_amplProc.neededSamples = static_cast<size_t>(_twMax * record->samplingFrequency());
 
-	_triggeredAmplitude = filteredData[i];
+	_currentPickAmplitude = filteredData[i];
 	_minAmplitude = Core::None;
 	_pickID = "";
 
 	SEISCOMP_DEBUG("[%s] trigger on = %s, amp = %f",
-	               record->streamID().c_str(),
-	               (record->startTime() + Core::TimeSpan(double(i)/record->samplingFrequency())).iso().c_str(),
-	               _triggeredAmplitude);
+	               record->streamID(),
+	               (record->startTime() + Core::TimeSpan(static_cast<double>(i) / record->samplingFrequency())).iso(),
+	               _currentPickAmplitude);
 
 	return true;
 }
@@ -323,26 +351,20 @@ bool Detector::validateOn(const Record *record, size_t &i, const DoubleArray &fi
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Detector::validateOff(const Record *record, size_t i,
                            const DoubleArray &filteredData) {
+	auto offTime = record->startTime() + Core::TimeSpan(static_cast<double>(i) / record->samplingFrequency());
+	_currentPickDuration = static_cast<double>(offTime - _currentPick);
+	_finalPickDuration = _currentPickDuration;
+
+	SEISCOMP_DEBUG("[%s] trigger off = %s, amp = %f, duration = %.2f",
+	               record->streamID(), offTime.iso(), filteredData[i], _finalPickDuration);
+
 	// No snr amplitude sent yet but an emitted pick?
 	if ( _amplProc.isRunning() ) {
 		calculateMaxAmplitude(record, _amplProc.pickIndex, i, filteredData);
 		sendMaxAmplitude(record);
 	}
 
-	if ( _lastPick ) {
-		Core::Time offTime;
-		offTime = record->startTime() +
-		          Core::TimeSpan(double(i)/record->samplingFrequency());
-		SEISCOMP_DEBUG("[%s] trigger off = %s, amp = %f",
-		               record->streamID().c_str(),
-		               offTime.iso().c_str(),
-		               filteredData[i]);
-		SEISCOMP_DEBUG("[%s] duration = %.2f",
-			       record->streamID().c_str(),
-		               double(offTime - _lastPick));
-		SEISCOMP_DEBUG("[%s] pick id is '%s'",
-			       record->streamID().c_str(), _pickID.c_str());
-	}
+	SEISCOMP_DEBUG("[%s] pick id is '%s'", record->streamID(), _pickID);
 
 	// Pick window is gone, reset pickID
 	_pickID = "";
@@ -355,7 +377,7 @@ bool Detector::validateOff(const Record *record, size_t i,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Detector::calculateMaxAmplitude(const Record *record, size_t i0, size_t i1, const DoubleArray &filteredData) {
+void Detector::calculateMaxAmplitude(const Record *, size_t i0, size_t i1, const DoubleArray &filteredData) {
 	size_t i = i0;
 
 	while ( i < i1 && _amplProc.processedSamples < _amplProc.neededSamples && i < (size_t)filteredData.size() ) {
@@ -367,6 +389,10 @@ void Detector::calculateMaxAmplitude(const Record *record, size_t i0, size_t i1,
 		++i;
 		++_amplProc.processedSamples;
 	}
+
+	if ( _amplProc.amplitude ) {
+		_currentPickAmplitude = *_amplProc.amplitude;
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -375,7 +401,12 @@ void Detector::calculateMaxAmplitude(const Record *record, size_t i0, size_t i1,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Detector::sendMaxAmplitude(const Record *record) {
-	_lastAmplitude = _amplProc.amplitude;
+	if ( _currentPickAmplitude < 0 ) {
+		_lastAmplitude = Core::None;
+	}
+	else{
+		_lastAmplitude = _currentPickAmplitude;
+	}
 
 	double offset = (double)_amplProc.index / record->samplingFrequency();
 
@@ -392,10 +423,9 @@ void Detector::sendMaxAmplitude(const Record *record) {
 	}
 
 	// emit the current pick
-	if ( _currentPickRecord && (bool)_currentPick )
-		sendPick(_currentPickRecord.get(), _currentPick);
+	sendPick();
 
-	Core::Time t = _lastPick + Core::TimeSpan(offset);
+	auto t = _currentPick + Core::TimeSpan(offset);
 	if ( _amplPublish && isEnabled() ) {
 		if ( _pickID.empty() ) {
 			SEISCOMP_DEBUG("No valid pickID set (pick has not been sent), cancel sending 'snr' amplitude");

@@ -178,6 +178,22 @@
 					similar to the trigger threshold. Read the documentation!
 					</description>
 				</parameter>
+				<parameter name="minDuration" type="double" default="-1">
+					<description>
+					The minimum duration to reach. The duration is measured as
+					the time between trigger on and trigger off. If this value
+					is configured the detection (pick) will be delayed in order
+					to compute and check the duration.
+					</description>
+				</parameter>
+				<parameter name="maxDuration" type="double" default="-1">
+					<description>
+					The maximum duration allowed. The duration is measured as
+					the time between trigger on and trigger off. If this value
+					is configured the detection (pick) will be delayed in order
+					to compute and check the duration.
+					</description>
+				</parameter>
 			</group>
 			<group name="amplitudes">
 				<parameter name="enableUpdate" type="list:string" default="" unit="">
