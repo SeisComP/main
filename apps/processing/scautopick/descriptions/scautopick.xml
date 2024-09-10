@@ -114,6 +114,11 @@
 					Supported comments:
 
 					SNR: added if SNR >= 0, comment id is &quot;SNR&quot;
+
+					duration: added if the duration has been computed at the time
+					          of the pick creation, which actually requires
+					          &quot;thresholds.maxDuration&quot; to be configured
+					          with a non-negative value.
 				</description>
 			</parameter>
 			<parameter name="fx" type="string">
