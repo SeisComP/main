@@ -57,6 +57,14 @@
 				<optionReference>records#record-type</optionReference>
 			</group>
 
+			<group name="Input">
+				<option flag="" long-flag="ep" argument="file">
+					<description>
+					Name of input XML file (SCML) with all picks for offline
+					processing.
+					</description>
+				</option>
+			</group>
 			<group name="Picker">
 				<option flag="P" long-flag="picker" argument="interface">
 					<description>
