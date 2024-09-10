@@ -502,12 +502,19 @@ bool EventTool::run() {
 		}
 
 		_ep = nullptr;
+		_journal = nullptr;
+
 		ar >> _ep;
+		ar >> _journal;
 		ar.close();
 
 		if ( !_ep ) {
 			SEISCOMP_ERROR("No event parameters found in %s", _epFile.c_str());
 			return false;
+		}
+
+		if ( !_journal ) {
+			_journal = new Journaling;
 		}
 
 		for ( size_t i = 0; i < _ep->eventCount(); ++i ) {
@@ -540,8 +547,8 @@ bool EventTool::run() {
 				SEISCOMP_DEBUG("... cannot associate with an event");
 				continue;
 			}
-			updatePreferredOrigin(info.get());
 
+			updatePreferredOrigin(info.get());
 		}
 
 
@@ -565,12 +572,21 @@ bool EventTool::run() {
 			}
 
 			updatePreferredFocalMechanism(info.get());
+		}
 
+		NotifierMessagePtr nmsg = Notifier::GetMessage(true);
+		if ( nmsg ) {
+			for ( const auto &n : *nmsg ) {
+				if ( JournalEntry::Cast(n->object()) ) {
+					n->apply();
+				}
+			}
 		}
 
 		ar.create("-");
 		ar.setFormattedOutput(true);
 		ar << _ep;
+		ar << _journal;
 		ar.close();
 
 		cerr << _ep->eventCount() << " events found" << endl;
