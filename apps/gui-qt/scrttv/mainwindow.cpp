@@ -3489,7 +3489,7 @@ void MainWindow::alignOriginTime() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::sortByStationCode() {
 	_switchBack->stop();
-	TRACEVIEWS(sortByText(0));
+	TRACEVIEWS(sortByText(0, 1, 3, 2));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -3499,7 +3499,7 @@ void MainWindow::sortByStationCode() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::sortByNetworkStationCode() {
 	_switchBack->stop();
-	TRACEVIEWS(sortByText(1, 0));
+	TRACEVIEWS(sortByText(1, 0, 3, 2));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
