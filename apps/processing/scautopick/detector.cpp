@@ -288,7 +288,8 @@ bool Detector::sendPick() {
 	}
 
 	SEISCOMP_DEBUG("Send pick, amp: %.2f >= %.2f, duration: %.2f in [%.2f;%.2f]",
-	               _currentPickAmplitude, *_minAmplitude, _currentPickDuration,
+	               _currentPickAmplitude, (_minAmplitude ? *_minAmplitude : -1.0),
+	               _currentPickDuration,
 	               _minDuration, _maxDuration);
 
 	bool res = SimpleDetector::emitPick(_currentPickRecord.get(), _currentPick);
