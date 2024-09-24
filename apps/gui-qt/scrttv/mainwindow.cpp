@@ -3499,7 +3499,7 @@ void MainWindow::sortByStationCode() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::sortByNetworkStationCode() {
 	_switchBack->stop();
-	TRACEVIEWS(sortByText(1, 0, 3, 2));
+	TRACEVIEWS(sortByText(1, 0, 2, 3));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
