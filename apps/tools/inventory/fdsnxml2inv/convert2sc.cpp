@@ -2460,6 +2460,27 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 
 	int numerator, denominator;
 
+	{
+		double finalSampleRate = -1;
+		for ( const auto stage : stages ) {
+			if ( finalSampleRate > 0 ) {
+				if ( finalSampleRate != stage->decimation().inputSampleRate() ) {
+					cerr << "W  inconsistent decimation stage #" << stage->number() << endl
+					     << "   computed input sample rate " << finalSampleRate << " does not match specified input sample rate "
+					     << static_cast<double>(stage->decimation().inputSampleRate())
+					     << endl;
+				}
+			}
+
+			try {
+				if ( stage->decimation().factor() > 0 ) {
+					finalSampleRate = stage->decimation().inputSampleRate() / stage->decimation().factor();
+				}
+			}
+			catch ( ... ) {}
+		}
+	}
+
 	try {
 		sc_stream->sampleRateNumerator();
 		sc_stream->sampleRateDenominator();
