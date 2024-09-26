@@ -461,22 +461,29 @@ class RecordRenamer:
             )
 
     def applyRules(self, rec):
+        matchedRules = []
+        # find rules that match the record
         for rule in self.renameRules:
             if rule.pattern is None or rule.pattern.fullmatch(
                 f"{rec.networkCode()}.{rec.stationCode()}."
                 f"{rec.locationCode()}.{rec.channelCode()}"
             ):
-                if rule.newNet != "-":
-                    rec.setNetworkCode(rule.newNet)
-                if rule.newSta != "-":
-                    rec.setStationCode(rule.newSta)
-                if rule.newLoc != "-":
-                    rec.setLocationCode(rule.newLoc)
-                if rule.newCha != "-":
-                    if len(rule.newCha) == 3 and rule.newCha[2] == "-":
-                        rec.setChannelCode(rule.newCha[0:2] + rec.channelCode()[2])
-                    else:
-                        rec.setChannelCode(rule.newCha)
+                # do not apply the rule here, because it would affect
+                # subsequent matches
+                matchedRules.append(rule)
+        # apply matched rules
+        for rule in matchedRules:
+            if rule.newNet != "-":
+                rec.setNetworkCode(rule.newNet)
+            if rule.newSta != "-":
+                rec.setStationCode(rule.newSta)
+            if rule.newLoc != "-":
+                rec.setLocationCode(rule.newLoc)
+            if rule.newCha != "-":
+                if len(rule.newCha) == 3 and rule.newCha[2] == "-":
+                    rec.setChannelCode(rule.newCha[0:2] + rec.channelCode()[2])
+                else:
+                    rec.setChannelCode(rule.newCha)
 
 
 ####################################################################
