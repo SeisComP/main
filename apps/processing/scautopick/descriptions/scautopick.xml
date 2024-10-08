@@ -187,16 +187,24 @@
 					<description>
 					The minimum duration to reach. The duration is measured as
 					the time between trigger on and trigger off. If this value
-					is configured the detection (pick) will be delayed in order
+					is configured, the detection (pick) will be delayed in order
 					to compute and check the duration.
+
+					The duration will be reported as comment to the pick when
+					activating &quot;extraPickComments&quot; allowing the tuning
+					of the acceptable duration range.
 					</description>
 				</parameter>
 				<parameter name="maxDuration" type="double" default="-1">
 					<description>
 					The maximum duration allowed. The duration is measured as
 					the time between trigger on and trigger off. If this value
-					is configured the detection (pick) will be delayed in order
+					is configured, the detection (pick) will be delayed in order
 					to compute and check the duration.
+
+					The duration will be reported as comment to the pick when
+					activating &quot;extraPickComments&quot; allowing the tuning
+					of the acceptable duration range.
 					</description>
 				</parameter>
 			</group>
