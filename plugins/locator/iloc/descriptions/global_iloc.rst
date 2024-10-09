@@ -14,7 +14,7 @@ based on :term:`phase picks <pick>`. iLoc is based on the location
 algorithm developed by :cite:t:`bondár-2009a` and implemented at the
 International Seismological Center, (:cite:t:`isc`, :cite:t:`bondár-2018`)
 with numerous new features added (:cite:t:`bondár-2018`).
-The stand-alone iLoc code can be downloaded from the :cite:t:`iloc-iris`
+The stand-alone iLoc code can be downloaded from the :cite:t:`iloc-github`
 software repository.
 
 Among the major advantages of using iLoc is that it can
@@ -36,7 +36,7 @@ History
 
 * Originally developed for U.S. Air Force Research Laboratory, today the standard
   at the International Seismological Centre (ISC) replacing previous routines
-* Open source, download website: :cite:t:`iloc-iris`
+* Open source, download website: :cite:t:`iloc-github`
 * Integrated first in SeisComP3 in 2019
 * Basis of the EMSC crowd-source locator, CsLoc since 2019
 * EMSC standard as of 2022
@@ -63,7 +63,7 @@ Algorithms
 
 This section describes some of the principles. The full description of the applied
 algorithms can be found in the iLoc documentation provided along with the package
-on the :cite:t:`iloc-iris` website.
+on the :cite:t:`iloc-github` website.
 
 
 Neighbourhood algorithm
@@ -181,7 +181,7 @@ Integration into |scname|
 -------------------------
 
 * Integration of iLoc into |scname| is provided by an external library of
-  routines (:cite:t:`iloc-iris`).
+  routines (:cite:t:`iloc-github`).
 * |scname| modules call iLoc routines by passing the objects via the plugin
   *lociloc* installed in :file:`@DATADIR@/plugins/lociloc.so`.
 * iLoc returns objects to |scname| for integration.
@@ -216,7 +216,7 @@ RSTT
 RSTT are available in :file:`@DATADIR@/iloc/RSTTmodels/pdu202009Du.geotess`.
 Custom RSTT can be integrated into iLoc and provided to |scname|.
 For adding custom RSTT to iLoc read the original iLoc documentation from the
-:cite:t:`iloc-iris` software repository.
+:cite:t:`iloc-github` software repository.
 
 The usage of RSTT is controlled per iLoc profile by global configuration
 parameters
@@ -298,26 +298,38 @@ Setup in |scname|
 
       plugins = ${plugins}, lociloc
 
-#. Download the auxiliary data files for iLoc from GitHub linked on the
-   :cite:t:`iloc-iris` website. Extract and install them in
-   :file:`@DATADIR@/iloc`. Example:
+#. Install the dependencies missing for iLoc. For download, the system variable
+   *SEISCOMP_ROOT* must be defined which you may wish to test first:
 
    .. code-block:: sh
 
-      mkdir $SEISCOMP_ROOT/share/iloc
-      # The name of the following file may change. Find the correct one in source:
-      # https://github.com/IstvanBondar/iLoc
-      wget -O /tmp/iLocAuxDir.tgz "https://github.com/IstvanBondar/iLoc/raw/main/iLocAuxDir4.2.tgz"
-      tar xvf /tmp/iLocAuxDir.tgz -C $SEISCOMP_ROOT/share/iloc
+      echo $SEISCOMP_ROOT
+
+   In case the variable is undefined, follow the instructions in section
+   :ref:`getting-started-variables`.
+
+   After *$SEISCOMP_ROOT* is defined you may install the software dependencies
+   for iLoc using the :ref:`install scripts <software_dependencies>` or simply
+   the :ref:`seiscomp` script:
+
+   .. code-block:: sh
+
+      seiscomp install-deps iloc
+
+   The install scripts will fetch auxiliary files from :cite:t:`iloc-github`
+   and install them in :file:`@DATADIR@/iloc/iLocAuxDir`. For manual download and
+   installation read the install scripts located in
+   :file:`@DATADIR@/deps/[os]/[version]/install-iloc.sh`.
 
    .. note ::
 
-      * Check the :cite:t:`iloc-iris` website for updates before downloading
+      * Check the :cite:t:`iloc-github` website for updates before downloading
         the file since the version number, hence the name of the download file
         may change.
       * Instead of generating the :file:`SEISCOMP_ROOT/share/iloc/iLocAuxDir`
-        directory, you can also create a symbolic link and maintain always the
-        same iLoc version in |scname| and externally.
+        directory, you can also manually install the dependencies somewhere else,
+        create a symbolic link and maintain always the same iLoc version in
+        |scname| and externally.
 
 #. Add and configure iLoc profiles for the velocity models. The global models
    *iasp91* and *ak135* are considered by default with default configuration
