@@ -894,9 +894,35 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 	_statusBarFile       = new QLabel;
 	_statusBarFilter     = new QComboBox;
 	_statusBarFilter->addItem(tr("No filter"));
-	for ( auto filter : Settings::global.filters ) {
-		_statusBarFilter->addItem(filter.c_str());
+	for ( const auto &filter : Settings::global.filters ) {
+		QStringList tokens = QString(filter.c_str()).split(";");
+		QString name, def;
+
+		if ( tokens.size() == 1 ) {
+			name = tokens[0];
+			def = tokens[0];
+		}
+		else {
+			name = tokens[0];
+			def = tokens[1];
+		}
+
+		if ( name.isEmpty() ) {
+			name = def;
+		}
+
+		if ( def.isEmpty() ) {
+			SEISCOMP_WARNING("Ignoring invalid filter: %s", filter);
+			continue;
+		}
+
+		if ( name[0] == "@" ) {
+			name.remove(0, 1);
+		}
+
+		_statusBarFilter->addItem(name, def);
 	}
+
 	connect(_statusBarFilter, SIGNAL(currentIndexChanged(int)),
 	        this, SLOT(filterSelectionChanged()));
 
@@ -3019,7 +3045,7 @@ void MainWindow::selectMode(int mode) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::filterSelectionChanged() {
 	if ( _statusBarFilter->currentIndex() > 0 ) {
-		TRACEVIEWS(setFilterByName(Settings::global.filters[_statusBarFilter->currentIndex() - 1].c_str()));
+		TRACEVIEWS(setFilterByName(_statusBarFilter->currentData().toString().toStdString().c_str()));
 		TRACEVIEWS(enableFilter(true));
 		TRACEVIEWS(toggleFilter(true));
 		_lastFilterIndex = _statusBarFilter->currentIndex();
