@@ -47,16 +47,25 @@
 			<parameter name="filter" type="string">
 				<description>
 				Define the filter to be used when filtering is activated. This
-				is only being used if filters is not set otherwise it is
-				overridden. This option is mainly for backward compatibility.
+				parameter is ignored if &quot;filters&quot; is configured.
+				This parameter exists mainly for backward compatibility.
 				</description>
 			</parameter>
 			<parameter name="filters" type="list:string" default="&quot;RMHP(2)>>ITAPER(5)>>BW(3,0.5,8.0)&quot;,&quot;RMHP(2)>>ITAPER(5)>>BW_HP(3, 3)&quot;">
 				<description>
-					Define a list of filters that is cycles through when pressing 'f'.
-					This options supersedes the filter option. If not defined then
-					filter is used instead. If defined then this filter list is
-					used exclusively and the filter option is ignored.
+					Define a list of filters that is cycles through when pressing
+					'G' or 'D'. Filtering is toggled with 'F'.
+					This parameter supersedes &quot;filter&quot;. If undefined,
+					&quot;filter&quot; is used instead. If defined, this filter
+					list is used exclusively and the filter option is ignored.
+
+					Formats:
+
+					&quot;filter grammar&quot;: filter grammar is shown in
+					the scrttv filter selection and applied.
+
+					&quot;name;filter grammar&quot;: name is shown in the scrttv
+					filter selection but filter grammar is applied.
 				</description>
 			</parameter>
 			<parameter name="autoApplyFilter" type="boolean" default="false">
