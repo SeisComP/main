@@ -20,6 +20,7 @@
 #include <seiscomp/datamodel/object.h>
 #include <seiscomp/datamodel/qualitycontrol.h>
 #include <seiscomp/datamodel/routing.h>
+#include <seiscomp/datamodel/journaling.h>
 #include <seiscomp/io/archive/xmlarchive.h>
 
 #include <iostream>
@@ -72,12 +73,17 @@ class XMLMerge : public Seiscomp::Client::Application {
 
 		void createCommandLineDescription() {
 			commandline().addGroup("Dump");
+			commandline().addOption("Dump", "availability,Y", "Include DataAvailability.");
 			commandline().addOption("Dump", "config,C", "Include Config.");
 			commandline().addOption("Dump", "event,E", "Include EventParameters.");
 			commandline().addOption("Dump", "inventory,I", "Include Inventory.");
+			commandline().addOption("Dump", "journaling,J", "Include Journaling.");
 			commandline().addOption("Dump", "quality,Q", "Include QualityControl.");
 			commandline().addOption("Dump", "routing,R", "Include Routing.");
-			commandline().addOption("Dump", "availability,Y", "Include DataAvailability.");
+			commandline().addGroup("Options");
+			commandline().addOption("Options", "ignore-bad-files",
+			                        "Tolerate empty or corrupted input files "
+			                        "and continue without interruption.");
 		}
 
 		bool run() {
@@ -86,15 +92,19 @@ class XMLMerge : public Seiscomp::Client::Application {
 			std::vector<Seiscomp::DataModel::ObjectPtr> storage;
 
 			// set up root objects to collect
+			bool collectDA      = commandline().hasOption("availability");
+			bool collectCfg     = commandline().hasOption("config");
 			bool collectEP      = commandline().hasOption("event");
 			bool collectInv     = commandline().hasOption("inventory");
-			bool collectCfg     = commandline().hasOption("config");
-			bool collectRouting = commandline().hasOption("routing");
+			bool collectJ       = commandline().hasOption("journaling");
 			bool collectQC      = commandline().hasOption("quality");
-			bool collectDA      = commandline().hasOption("availability");
+			bool collectRouting = commandline().hasOption("routing");
+
+			bool ignoreBadFiles       = commandline().hasOption("ignore-bad-files");
 
 			bool collectAll = !collectEP && !collectInv && !collectCfg &&
-			                  !collectRouting && !collectQC && !collectDA;
+			                  !collectRouting && !collectQC && !collectDA &&
+			                  !collectJ;
 
 			if ( collectAll || collectEP )
 				registerRootObject(Seiscomp::DataModel::EventParameters::ClassName());
@@ -108,13 +118,21 @@ class XMLMerge : public Seiscomp::Client::Application {
 				registerRootObject(Seiscomp::DataModel::QualityControl::ClassName());
 			if ( collectAll || collectDA )
 				registerRootObject(Seiscomp::DataModel::DataAvailability::ClassName());
+			if ( collectAll || collectJ )
+				registerRootObject(Seiscomp::DataModel::Journaling::ClassName());
 
 			std::map<std::string, Objects>::iterator it;
 
 			for ( size_t i = 0; i < _files.size(); ++i ) {
 				Seiscomp::IO::XMLArchive ar;
 				if ( !ar.open(_files[i].c_str()) ) {
-					std::cerr << "Failed to open file: " << _files[i] << std::endl;
+					std::cerr << "Failed to read content from file: "
+					          << _files[i] << std::endl;
+					// ignore files which could not be read
+					if ( ignoreBadFiles ) {
+						continue;
+					}
+
 					return false;
 				}
 
@@ -141,6 +159,11 @@ class XMLMerge : public Seiscomp::Client::Application {
 				}
 
 				ar.close();
+			}
+
+			if ( _objectBins.empty() ) {
+				std::cerr << "No output has been generated" << std::endl;
+				return false;
 			}
 
 			Seiscomp::DataModel::DiffMerge merger;

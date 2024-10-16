@@ -25,35 +25,56 @@
 				<optionReference>verbosity#trace</optionReference>
 				<optionReference>verbosity#log-file</optionReference>
 			</group>
+			<group name="Dump">
+				<option flag="Y" long-flag="availability">
+					<description>
+					Include DataAvailability specifically. If no specfic object
+					type is given, all supported objects are included.
+					</description>
+				</option>
+				<option flag="E" long-flag="event">
+					<description>
+					Include EventParameters specifically. If no specfic object
+					type is given, all supported objects are included.
+					</description>
+				</option>
+				<option flag="I" long-flag="inventory">
+					<description>
+					Include Inventory specifically. If no specfic object
+					type is given, all supported objects are included.
+					</description>
+				</option>
+				<option flag="J" long-flag="journaling">
+					<description>
+					Include QualityControl specifically. If no specfic object
+					type is given, all supported objects are included.
+					</description>
+				</option>
+				<option flag="C" long-flag="config">
+					<description>
+					Include Config specifically. If no specfic object
+					type is given, all supported objects are included.
+					</description>
+				</option>
+				<option flag="Q" long-flag="quality">
+					<description>
+					Include QualityControl specifically. If no specfic object
+					type is given, all supported objects are included.
+					</description>
+				</option>
+				<option flag="R" long-flag="routing">
+					<description>
+					Include Routing specifically. If no specfic object
+					type is given, all supported objects are included.
+					</description>
+				</option>
+			</group>
 			<group name="Options">
-				<option long-flag="event">
+				<option long-flag="ignore-bad-files">
 					<description>
-					Include Event Parameters.
-					</description>
-				</option>
-				<option long-flag="inventory">
-					<description>
-					Include Inventory.
-					</description>
-				</option>
-				<option long-flag="config">
-					<description>
-					Include Config.
-					</description>
-				</option>
-				<option long-flag="routing">
-					<description>
-					Include Routing.
-					</description>
-				</option>
-				<option long-flag="quality">
-					<description>
-					Include QualityControl.
-					</description>
-				</option>
-				<option long-flag="availability">
-					<description>
-					Include DataAvailability.
+					Tolerate empty or corrupted input files and continue without
+					interruption. Otherwise, the application stops if corrupt
+					or empty files are processed.
 					</description>
 				</option>
 			</group>
