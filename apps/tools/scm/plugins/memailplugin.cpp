@@ -500,7 +500,7 @@ void MEmailPlugin::process(const ClientTable &clientTable) {
 				find_if(
 					clientTable.begin(),
 					clientTable.end(),
-					bind2nd(ptr_fun(findName), rcIt->first)
+					bind(findName, placeholders::_1, rcIt->first)
 				);
 
 			if ( found == clientTable.end() && !rcIt->second ) {
