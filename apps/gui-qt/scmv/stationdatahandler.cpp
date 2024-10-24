@@ -85,7 +85,7 @@ void RecordHandler::handle(StationData* stationData, Record* record) {
 
 	double* begin = data;
 	double* maximumSample = std::max_element(begin, data + dataSize,
-	                                         std::ptr_fun(RecordHandlerCompare));
+	                                         RecordHandlerCompare);
 
 	*maximumSample = fabs(*maximumSample);
 

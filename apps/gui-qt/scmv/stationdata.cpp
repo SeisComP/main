@@ -13,6 +13,7 @@
 
 
 #include "stationdata.h"
+#include <functional>
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -36,7 +37,7 @@ void StationDataCollection::add(const StationData& data)  {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool StationDataCollection::remove(const std::string& id) {
-	iterator it = std::find_if(_data.begin(), _data.end(), std::bind1st(std::ptr_fun(compareIDs), id));
+	iterator it = std::find_if(_data.begin(), _data.end(), std::bind(compareIDs, id, std::placeholders::_1));
 	if ( it == end() ) return false;
 
 	_data.erase(it);
