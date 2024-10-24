@@ -51,15 +51,16 @@ ADD_SC_PLUGIN(
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-class SortClients : public std::binary_function<ClientInfoData, ClientInfoData, bool> {
+class SortClients {
 	public:
 		SortClients(Client::Status::Tag key) : _key(key) {}
 
-		result_type operator() (const first_argument_type& map0, const second_argument_type& map1) const {
+		bool operator() (const ClientInfoData &map0, const ClientInfoData &map1) const {
 			bool result = false;
 			try {
-				first_argument_type::const_iterator it0  = map0.find(_key);
-				second_argument_type::const_iterator it1 = map1.find(_key);
+				auto it0  = map0.find(_key);
+				auto it1 = map1.find(_key);
+
 				if ( it0 == map0.end() && it1 == map1.end() ) return true;
 				if ( it0 != map0.end() && it1 == map1.end() ) return false;
 				if ( it0 == map0.end() && it1 != map1.end() ) return true;
@@ -178,8 +179,7 @@ bool MNcursesPlugin::printTable(ClientTable& table) {
 	print(formatLine(_header), HIGHLIGHT);
 
 	std::lock_guard<std::mutex> l(_dataStructureMutex);
-	// std::stable_sort(_clientTableCache.begin(), _clientTableCache.end(), std::not2(SortClients(_activeTag)));
-	_clientTableCache.sort(std::not2(SortClients(_activeTag)));
+	_clientTableCache.sort(std::not_fn(SortClients(_activeTag)));
 
 	// Print clients
 	if ( _reverseSortOrder ) {
