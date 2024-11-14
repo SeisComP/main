@@ -195,7 +195,10 @@ void App::createCommandLineDescription() {
 	commandline().addOption("Mode", "amplitudes", "Enable/disable computation of amplitudes", &_config.calculateAmplitudes);
 	commandline().addOption("Mode", "test", "Do not send any object");
 	commandline().addOption("Mode", "playback", "Use playback mode that does not set a request time window and works best with files");
-	commandline().addOption("Mode", "ep", "Same as offline but outputs all result as an event parameters XML file");
+	commandline().addOption("Mode", "ep",
+	                        "Same as offline but outputs all result as an event "
+	                        "parameters XML file. Consider '--playback' or "
+	                        "configure accordingly for processing data from the past.");
 	commandline().addOption("Mode", "dump-config", "Dump the configuration and exit");
 	commandline().addOption("Mode", "dump-records", "Dump records to ASCII when in offline mode");
 
@@ -216,6 +219,10 @@ void App::createCommandLineDescription() {
 	commandline().addOption("Settings", "any-stream", "Use all/configured received Z streams for picking", &_config.useAllStreams);
 	commandline().addOption("Settings", "send-detections", "If a picker is configured send detections as well");
 	commandline().addOption("Settings", "extra-comments", "Add extra comments to picks.\nSupported: SNR");
+
+	commandline().addGroup("Output");
+	commandline().addOption("Output", "formatted,f",
+	                        "Use formatted XML output. Otherwise XML is unformatted.");
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -571,8 +578,11 @@ bool App::run() {
 		return true;
 	}
 
-	if ( commandline().hasOption("ep") )
+	if ( commandline().hasOption("ep") ) {
 		_ep = new DataModel::EventParameters;
+	}
+
+	_formatted = commandline().hasOption("formatted");
 
 	return Processing::Application::run();
 }
@@ -586,7 +596,7 @@ void App::done() {
 	if ( _ep ) {
 		IO::XMLArchive ar;
 		ar.create("-");
-		ar.setFormattedOutput(true);
+		ar.setFormattedOutput(_formatted);
 		ar << _ep;
 		ar.close();
 		cerr << "Found "<< _ep->pickCount() << " picks and "

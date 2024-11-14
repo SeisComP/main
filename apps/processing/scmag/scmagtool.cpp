@@ -70,7 +70,8 @@ class MagToolApp : public Seiscomp::Client::Application {
 			commandline().addGroup("Input");
 			commandline().addOption("Input", "ep",
 			                        "Event parameters XML file to be read and "
-			                        "processed. This implies offline mode and "
+			                        "processed. Use '-' to read from stdin. "
+			                        "This implies offline mode and "
 			                        "only processes all origins contained in "
 			                        "that file. It computes station magnitudes "
 			                        "for all picks associated with an origin "
@@ -100,6 +101,10 @@ class MagToolApp : public Seiscomp::Client::Application {
 			                        "accumulation function of the network magnitude.");
 			commandline().addOption("Reprocess", "keep-weights",
 			                        "Reuse the original weights in combintation with --static.");
+			commandline().addGroup("Output");
+			commandline().addOption("Output", "formatted,f",
+			                        "Use formatted XML output along with '--ep'. "
+			                        "Otherwise XML is unformatted.");
 		}
 
 		bool validateParameters() {
@@ -375,8 +380,9 @@ class MagToolApp : public Seiscomp::Client::Application {
 		}
 
 		bool init() {
-			if ( !Application::init() )
+			if ( !Application::init() ) {
 				return false;
+			}
 
 			_magtool.inputPickLog = addInputObjectLog("pick");
 			_magtool.inputAmpLog = addInputObjectLog("amplitude");
@@ -391,8 +397,11 @@ class MagToolApp : public Seiscomp::Client::Application {
 			              commandline().hasOption("keep-weights"),
 			              _warningLevel);
 
-			if ( _interval > 0 )
+			if ( _interval > 0 ) {
 				enableTimer(_interval);
+			}
+
+			_formatted = commandline().hasOption("formatted");
 
 			return true;
 		}
@@ -432,7 +441,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 				}
 
 				ar.create("-");
-				ar.setFormattedOutput(true);
+				ar.setFormattedOutput(_formatted);
 				ar << ep;
 				ar.close();
 
@@ -554,7 +563,8 @@ class MagToolApp : public Seiscomp::Client::Application {
 		MagTool _magtool;
 
 		std::string _epFile;
-		double _warningLevel;
+		bool        _formatted{false};
+		double      _warningLevel;
 };
 
 

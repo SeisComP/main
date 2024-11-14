@@ -87,6 +87,7 @@ class App : public Client::Application, protected ::Autoloc::Autoloc3
 		std::string _gridConfigFile{"@DATADIR@/scautoloc/grid.conf"};
 		std::string _amplTypeAbs{"mb"};
 		std::string _amplTypeSNR{"snr"};
+		bool        _formatted{false};
 
 		// sorted objects for playback
 		std::queue<DataModel::PublicObjectPtr> _objects;

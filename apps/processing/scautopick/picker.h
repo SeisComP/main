@@ -156,6 +156,7 @@ class App : public Processing::Application {
 
 		StationConfig  _stationConfig;
 		EP             _ep;
+		bool           _formatted{false};
 
 		ObjectLog     *_logPicks;
 		ObjectLog     *_logAmps;

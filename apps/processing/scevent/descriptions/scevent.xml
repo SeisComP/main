@@ -426,6 +426,28 @@
 				<optionReference>database#inventory-db</optionReference>
 				<optionReference>database#db-disable</optionReference>
 			</group>
+			<group name="Input">
+				<option long-flag="ep">
+					<description>
+					Event parameters XML file for offline processing of all
+					contained origins. Use '-' to read from stdin.
+					</description>
+				</option>
+				<option long-flag="reprocess">
+					<description>
+					Reprocess event parameters ignoring all event and journal
+					objects in input file. Works only in combination with '--ep'.
+					</description>
+				</option>
+			</group>
+			<group name="Output">
+				<option flag="f" long-flag="formatted">
+					<description>
+					Use formatted XML output along with '--ep'. Otherwise XML
+					is unformatted.
+					</description>
+				</option>
+			</group>
 		</command-line>
 	</module>
 </seiscomp>

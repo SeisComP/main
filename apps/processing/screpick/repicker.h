@@ -46,6 +46,7 @@ class Repicker : public Client::Application {
 			std::string pickerInterface;
 			bool        anyPhase{false};
 			std::string epFile;
+			bool        formatted{false};
 
 			void accept(SettingsLinker &linker) override;
 		};

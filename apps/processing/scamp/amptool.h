@@ -161,6 +161,7 @@ class AmpTool : public Seiscomp::Client::StreamApplication {
 		bool                       _replaceWaveformIDWithBindings{false};
 		std::string                _epFile;
 		EventParametersPtr         _ep;
+		bool                       _formatted{false};
 
 		double                     _initialAcquisitionTimeout{30.0};
 		double                     _runningAcquisitionTimeout{2.0};

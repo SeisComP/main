@@ -46,10 +46,9 @@ namespace Applications {
 void Repicker::Settings::accept(SettingsLinker &linker) {
 
 	linker & cfg(epFile, "ep");
-	linker & cliAsPath(
-		epFile,
-		"Input", "ep",
-		"Name of input XML file (SCML) with all picks for offline processing."
+	linker & cliAsPath(epFile, "Input", "ep",
+	                   "Name of input XML file (SCML) with all picks for "
+	                   "offline processing. Use '-' to read from stdin."
 	);
 
 	linker & cfg(pickerInterface, "picker");
@@ -61,8 +60,12 @@ void Repicker::Settings::accept(SettingsLinker &linker) {
 
 	linker & cfg(anyPhase, "anyPhase");
 	linker & cliSwitch(
-		anyPhase, "Picker",
-		"any-phase,A", "Allow any phase to be repicked and not just P."
+	            anyPhase, "Picker",
+	            "any-phase,A", "Allow any phase to be repicked and not just P."
+	);
+	linker & cliSwitch(
+	            formatted, "Output", "formatted,f",
+	            "Use formatted XML output. Otherwise XML is unformatted."
 	);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -427,7 +430,7 @@ bool Repicker::run() {
 	cerr << "Failed picks: " << failedPicks << endl;
 
 	ar.create("-");
-	ar.setFormattedOutput(true);
+	ar.setFormattedOutput(_settings.formatted);
 	ar << ep;
 
 	return true;

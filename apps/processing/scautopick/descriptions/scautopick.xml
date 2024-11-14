@@ -311,8 +311,10 @@
 				</option>
 				<option flag="" long-flag="ep">
 					<description>
-						Outputs an XML event parameters file containing all picks and amplitudes.
-						This option implies offline.
+						Outputs an XML event parameters file containing all
+						picks and amplitudes. This option implies '--offline'.
+						Consider '--playback' or configure accordingly for
+						processing data from the past.
 					</description>
 				</option>
 				<option flag="" long-flag="amplitudes" argument="arg" default="1">
@@ -356,6 +358,14 @@
 				<option long-flag="any-stream" argument="arg" param-ref="useAllStreams"/>
 				<option long-flag="send-detections" param-ref="sendDetections"/>
 				<option long-flag="extra-comments" param-ref="extraPickComments"/>
+			</group>
+			<group name="Output">
+				<option flag="f" long-flag="formatted">
+					<description>
+					Use formatted XML output along with '--ep'. Otherwise XML
+					is unformatted.
+					</description>
+				</option>
 			</group>
 		</command-line>
 	</module>

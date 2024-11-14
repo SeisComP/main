@@ -110,9 +110,10 @@ void App::createCommandLineDescription() {
 	                        &_inputFileXML, false);
 	commandline().addOption("Input", "ep",
 	                        "Name of input XML file (SCML) with all picks and"
-	                        "origins for offline processing. The database"
-	                        "connection is not received from messaging and must"
-	                        "be provided. Results are sent in XML to stdout." ,
+	                        "origins for offline processing.  Use '-' to read "
+	                        "from stdin.The database connection is not received "
+	                        "from messaging and must be provided. Results are "
+	                        "sent in XML to stdout." ,
 	                        &_inputEPFile, false);
 
 	commandline().addGroup("Settings");
@@ -224,6 +225,10 @@ void App::createCommandLineDescription() {
 	                        "as configured in 'processing.whitelist.agencies'. "
 	                        "Imported origins are not relocated and only used "
 	                        "for phase association.");
+
+	commandline().addGroup("Output");
+	commandline().addOption("Output", "formatted,f",
+	                        "Use formatted XML output. Otherwise XML is unformatted.");
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -302,6 +307,8 @@ bool App::validateParameters() {
 
 	// derived parameter
 	_config.maxResidualKeep = 3 * _config.maxResidualUse;
+
+	_formatted = commandline().hasOption("formatted");
 
 	return true;
 }
@@ -966,7 +973,7 @@ bool App::runFromEPFile(const char *filename) {
 
 
 	ar.create("-");
-	ar.setFormattedOutput(true);
+	ar.setFormattedOutput(_formatted);
 	ar << _ep;
 	ar.close();
 

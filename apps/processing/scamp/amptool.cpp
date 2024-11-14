@@ -126,7 +126,7 @@ void AmpTool::createCommandLineDescription() {
 	commandline().addGroup("Input");
 	commandline().addOption("Input", "ep",
 	                        "Event parameters XML file for offline processing of "
-	                        "all contained origins.",
+	                        "all contained origins. Use '-' to read from stdin.",
 	                        &_epFile);
 	commandline().addOption("Input", "picks,p",
 	                        "Force measuring amplitudes for picks only. Origins "
@@ -148,6 +148,10 @@ void AmpTool::createCommandLineDescription() {
 	commandline().addOption("Reprocess", "commit",
 	                        "Send amplitude updates to the messaging otherwise"
 	                        "an XML document will be output.");
+
+	commandline().addGroup("Output");
+	commandline().addOption("Output", "formatted,f",
+	                        "Use formatted XML output. Otherwise XML is unformatted.");
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -209,6 +213,7 @@ bool AmpTool::initConfiguration() {
 	_picks = commandline().hasOption("picks");
 	_forceReprocessing = commandline().hasOption("force");
 
+	_formatted = commandline().hasOption("formatted");
 
 	return true;
 }
@@ -558,7 +563,7 @@ bool AmpTool::run() {
 		}
 
 		ar.create("-");
-		ar.setFormattedOutput(true);
+		ar.setFormattedOutput(_formatted);
 		ar << _ep;
 		ar.close();
 

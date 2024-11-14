@@ -323,9 +323,9 @@
 				<option flag="" long-flag="ep" argument="file">
 					<description>
 					Name of input XML file (SCML) with all picks and origins for
-					offline processing. The database connection is not received
-					from messaging and must be provided. Results are sent in XML
-					to stdout.
+					offline processing. Use '-' to read from stdin. The
+					database connection is not received from messaging and must
+					be provided. Results are sent in XML to stdout.
 					</description>
 				</option>
 			</group>
@@ -480,6 +480,14 @@
 					The interval in seconds in which to check for extraordinarily
 					high pick activity, resulting in a dynamically increased
 					pick threshold.
+					</description>
+				</option>
+			</group>
+			<group name="Output">
+				<option flag="f" long-flag="formatted">
+					<description>
+					Use formatted XML output along with '--ep'. Otherwise XML
+					is unformatted.
 					</description>
 				</option>
 			</group>

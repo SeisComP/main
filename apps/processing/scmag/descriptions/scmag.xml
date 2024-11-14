@@ -159,7 +159,8 @@
 			<group name="Input">
 				<option long-flag="ep" argument="file" type="string">
 					<description>
-					Defines an event parameters XML file to be read and processed. This
+					Defines an event parameters XML file to be read and
+					processed. Use '-' to read from stdin. This
 					implies offline mode and only processes all origins contained
 					in that file. It computes station magnitudes for all picks associated
 					with an origin where amplitudes are available and the corresponding
@@ -197,6 +198,14 @@
 				<option long-flag="keep-weights">
 					<description>
 					Keep the original weights in combination with --static.
+					</description>
+				</option>
+			</group>
+			<group name="Output">
+				<option flag="f" long-flag="formatted">
+					<description>
+					Use formatted XML output along with '--ep'. Otherwise XML
+					is unformatted.
 					</description>
 				</option>
 			</group>

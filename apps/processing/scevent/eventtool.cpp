@@ -231,7 +231,17 @@ void EventTool::createCommandLineDescription() {
 	commandline().addOption("Generic", "event-id,E", "Event ID to update preferred objects (test only, no event updates)", &_eventID, true);
 
 	commandline().addGroup("Input");
-	commandline().addOption("Input", "ep", "Event parameters XML file for offline processing of all contained origins", &_epFile);
+	commandline().addOption("Input", "ep",
+	                        "Event parameters XML file for offline processing "
+	                        "of all contained origins. Use '-' to read from "
+	                        "stdin.", &_epFile);
+	commandline().addOption("Input", "reprocess",
+	                        "Reprocess event parameters ignoring all event and "
+	                        "journal objects in input file. Works only in "
+	                        "combination with '--ep'.");
+	commandline().addGroup("Output");
+	commandline().addOption("Output", "formatted,f",
+	                        "Use formatted XML output. Otherwise XML is unformatted.");
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -245,6 +255,8 @@ bool EventTool::validateParameters() {
 	}
 
 	_testMode = commandline().hasOption("test");
+	_reprocess = commandline().hasOption("reprocess");
+	_formatted = commandline().hasOption("formatted");
 
 	_sendClearCache = commandline().hasOption("clear-cache");
 
@@ -502,10 +514,11 @@ bool EventTool::run() {
 		}
 
 		_ep = nullptr;
-		_journal = nullptr;
-
 		ar >> _ep;
-		ar >> _journal;
+		if ( !_reprocess ) {
+			ar >> _journal;
+		}
+
 		ar.close();
 
 		if ( !_ep ) {
@@ -513,8 +526,11 @@ bool EventTool::run() {
 			return false;
 		}
 
-		if ( !_journal ) {
-			_journal = new Journaling;
+		// Ignore all event objects when reprocessing
+		if ( _reprocess ) {
+			while ( _ep->eventCount() ) {
+				_ep->removeEvent(0);
+			}
 		}
 
 		for ( size_t i = 0; i < _ep->eventCount(); ++i ) {
@@ -584,7 +600,7 @@ bool EventTool::run() {
 		}
 
 		ar.create("-");
-		ar.setFormattedOutput(true);
+		ar.setFormattedOutput(_formatted);
 		ar << _ep;
 		ar << _journal;
 		ar.close();
