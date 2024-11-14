@@ -693,10 +693,10 @@ bool Worker::readChunkSegments(Segments &segments, const std::string &chunk,
 	               "  availability         : %.2f%% (%.1fs)",
 	               _id, _sid.c_str(), chunk.c_str(),
 	               window.startTime().iso().c_str(),
-	               window.endTime().iso().c_str(), window.length(),
+	               window.endTime().iso().c_str(), static_cast<double>(window.length()),
 	               mtime.iso().c_str(), segments.size(), gaps, overlaps,
 	               outOfOrder, dropped, rateChanges, qualityChanges, records,
-	               availability/window.length()*100.0, availability);
+	               availability / static_cast<double>(window.length()) * 100.0, availability);
 
 	return true;
 }

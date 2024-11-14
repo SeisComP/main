@@ -405,7 +405,7 @@ void ImExImpl::cleanUp() {
 	SEISCOMP_DEBUG("Cleaning up in implementation for %s", _sinkName.c_str());
 	cleanUp(_eventList);
 
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 	SentOriginList::iterator it = _sentOrigins.begin();
 	while ( it != _sentOrigins.end() ) {
 		if ( now - (*it)->time().value() > _imex->cleanUpInterval() ) {
@@ -487,7 +487,7 @@ void ImExImpl::cleanUp(EventList& eventList)
 	EventList::iterator it = eventList.begin();
 	while ( it != eventList.end() ) {
 		try {
-			if ( Core::Time::GMT() - it->event()->creationInfo().creationTime() > _imex->cleanUpInterval() ) {
+			if ( Core::Time::UTC() - it->event()->creationInfo().creationTime() > _imex->cleanUpInterval() ) {
 				SEISCOMP_DEBUG("One %s with id: %s removed",
 						it->event()->className(), it->event()->publicID().c_str());
 				it = eventList.erase(it);

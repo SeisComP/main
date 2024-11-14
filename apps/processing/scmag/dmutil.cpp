@@ -43,7 +43,7 @@ bool dumpOrigin(const Seiscomp::DataModel::Origin *origin) {
 	using namespace Seiscomp::DataModel;
 	using namespace Seiscomp::Core;
 
-	double dt = double(Time::GMT() - origin->time().value())/60.;
+	double dt = double(Time::UTC() - origin->time().value())/60.;
 	SEISCOMP_INFO("**** origin %s",    origin->publicID().c_str());
 	SEISCOMP_INFO("* time      %s   = %.1f min ago",
 		      origin->time().value().toString("%F %T.%f").c_str(), dt );

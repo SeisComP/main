@@ -381,7 +381,7 @@ bool HCApp::init() {
 
 bool HCApp::run() {
 	if ( type() == Tty ) {
-		Core::Time endTime = _endTime.valid()?_endTime:Core::Time::GMT();
+		Core::Time endTime = _endTime.valid()?_endTime:Core::Time::UTC();
 
 		for ( size_t i = 0; i < _streamCodes.size(); ++i ) {
 			HeliCanvas *heli = new HeliCanvas();
@@ -437,7 +437,7 @@ bool HCApp::run() {
 
 				_streamThread->addStream(streamID.networkCode(), streamID.stationCode(),
 				                         streamID.locationCode(), streamID.channelCode(),
-				                         endTime - heli->recordsTimeSpan() - Core::TimeSpan(_timeSpanPerRow), Core::Time());
+				                         endTime - heli->recordsTimeSpan() - Core::TimeSpan(_timeSpanPerRow, 0), Core::Time());
 			}
 			else {
 				IO::RecordStreamPtr rs = IO::RecordStream::Open(recordStreamURL().c_str());
@@ -449,7 +449,7 @@ bool HCApp::run() {
 
 				rs->addStream(streamID.networkCode(), streamID.stationCode(),
 				              streamID.locationCode(), streamID.channelCode(),
-				              endTime - heli->recordsTimeSpan() - Core::TimeSpan(_timeSpanPerRow), endTime);
+				              endTime - heli->recordsTimeSpan() - Core::TimeSpan(_timeSpanPerRow, 0), endTime);
 
 				try {
 					IO::RecordInput ri(rs.get(), Array::FLOAT, Record::DATA_ONLY);
@@ -506,8 +506,8 @@ void HCApp::setupUi(MainWindow *w) {
 	stringToWaveformID(streamID, _streamCodes.front());
 	w->setStream(streamID);
 
-	w->setGain(findGain(streamID, _endTime.valid()?_endTime:Core::Time::GMT()));
-	w->setHeadline(findHeadline(streamID, _endTime.valid()?_endTime:Core::Time::GMT()));
+	w->setGain(findGain(streamID, _endTime.valid()?_endTime:Core::Time::UTC()));
+	w->setHeadline(findHeadline(streamID, _endTime.valid()?_endTime:Core::Time::UTC()));
 	w->setPostProcessingScript(_imagePostProcessingScript);
 
 	w->setLayout(_numberOfRows, _timeSpanPerRow);

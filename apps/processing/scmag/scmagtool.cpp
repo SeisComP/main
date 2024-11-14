@@ -480,14 +480,14 @@ class MagToolApp : public Seiscomp::Client::Application {
 		void addObject(const std::string &parentID, DataModel::Object *object) {
 			Pick *pick = Pick::Cast(object);
 			if ( pick != NULL ) {
-				logObject(_magtool.inputPickLog, Time::GMT());
+				logObject(_magtool.inputPickLog, Time::UTC());
 				_magtool.feed(pick);
 				return;
 			}
 
 			Amplitude *ampl = Amplitude::Cast(object);
 			if ( ampl != NULL ) {
-				logObject(_magtool.inputAmpLog, Time::GMT());
+				logObject(_magtool.inputAmpLog, Time::UTC());
 				Notifier::Enable();
 				_magtool.feed(ampl, false, false);
 				Notifier::Disable();
@@ -496,7 +496,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 
 			Origin *origin = Origin::Cast(object);
 			if ( origin != NULL ) {
-				logObject(_magtool.inputOrgLog, Time::GMT());
+				logObject(_magtool.inputOrgLog, Time::UTC());
 				// When an origins arrives the initial magnitudes
 				// have to be sent out immediately
 				_sendImmediately = true;
@@ -510,7 +510,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 		void updateObject(const std::string &, DataModel::Object *object) {
 			Amplitude *ampl = Amplitude::Cast(object);
 			if ( ampl != NULL ) {
-				logObject(_magtool.inputAmpLog, Time::GMT());
+				logObject(_magtool.inputAmpLog, Time::UTC());
 				Notifier::Enable();
 				_magtool.feed(ampl, true, false);
 				Notifier::Disable();
@@ -519,7 +519,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 
 			Origin *origin = Origin::Cast(object);
 			if ( origin != NULL ) {
-				logObject(_magtool.inputOrgLog, Time::GMT());
+				logObject(_magtool.inputOrgLog, Time::UTC());
 				// When an origins arrives the initial magnitudes
 				// have to be sent out immediately
 				_sendImmediately = true;

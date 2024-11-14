@@ -381,12 +381,12 @@ bool EventInformation::setEventOpComment(DataModel::JournalEntry *e, string &err
 		event->comment(i)->setText(e->parameters());
 
 		try {
-			event->comment(i)->creationInfo().setModificationTime(Core::Time::GMT());
+			event->comment(i)->creationInfo().setModificationTime(Core::Time::UTC());
 		}
 		catch ( ... ) {
 			CreationInfo ci;
 			ci.setAuthor(e->sender());
-			ci.setModificationTime(Core::Time::GMT());
+			ci.setModificationTime(Core::Time::UTC());
 			event->comment(i)->setCreationInfo(ci);
 		}
 
@@ -401,7 +401,7 @@ bool EventInformation::setEventOpComment(DataModel::JournalEntry *e, string &err
 	CreationInfo ci;
 	ci.setAuthor(e->sender());
 	try { ci.setCreationTime(e->created()); }
-	catch ( ... ) { ci.setCreationTime(Core::Time::GMT()); }
+	catch ( ... ) { ci.setCreationTime(Core::Time::UTC()); }
 	cmt->setCreationInfo(ci);
 
 	if ( !event->add(cmt.get()) ) {

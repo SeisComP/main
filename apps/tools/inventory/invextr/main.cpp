@@ -112,7 +112,7 @@ class InventoryExtractor : public Client::Application {
 			if ( !_begin.empty() ) {
 				begin = Seiscomp::Core::Time::FromString(_begin);
 			}
-			OPT(Seiscomp::Core::Time) end = Seiscomp::Core::Time::GMT();
+			OPT(Seiscomp::Core::Time) end = Seiscomp::Core::Time::UTC();
 			if ( !_end.empty() ) {
 				end = Seiscomp::Core::Time::FromString(_end);
 			}

@@ -372,8 +372,8 @@ bool EventTool::initConfiguration() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool EventTool::init() {
-	_config.eventTimeBefore = TimeSpan(30*60);
-	_config.eventTimeAfter = TimeSpan(30*60);
+	_config.eventTimeBefore = TimeSpan(30 * 60, 0);
+	_config.eventTimeAfter = TimeSpan(30 * 60, 0);
 
 	_config.eventIDPrefix = "gfz";
 	_config.eventIDPattern = "%p%Y%04c";
@@ -891,7 +891,7 @@ bool EventTool::hasDelayedEvent(const std::string &publicID,
 void EventTool::addObject(const string &parentID, Object* object) {
 	OriginPtr org = Origin::Cast(object);
 	if ( org ) {
-		logObject(_inputOrigin, Core::Time::GMT());
+		logObject(_inputOrigin, Core::Time::UTC());
 		SEISCOMP_DEBUG("* queued new origin %s (%ld, %d/%lu)",
 		              org->publicID().c_str(), (long int)org.get(),
 		              definingPhaseCount(org.get()), (unsigned long)org->arrivalCount());
@@ -902,7 +902,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 
 	Magnitude *mag = Magnitude::Cast(object);
 	if ( mag ) {
-		logObject(_inputMagnitude, Core::Time::GMT());
+		logObject(_inputMagnitude, Core::Time::UTC());
 		org = _cache.get<Origin>(parentID);
 		if ( org ) {
 			if ( org != mag->origin() )
@@ -924,7 +924,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 
 	FocalMechanismPtr fm = FocalMechanism::Cast(object);
 	if ( fm ) {
-		logObject(_inputFocalMechanism, Core::Time::GMT());
+		logObject(_inputFocalMechanism, Core::Time::UTC());
 		SEISCOMP_DEBUG("* queued new focal mechanism %s (%ld)",
 		               fm->publicID().c_str(), (long int)fm.get());
 		SEISCOMP_LOG(_infoChannel, "Received new focalmechanism %s", fm->publicID().c_str());
@@ -934,7 +934,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 
 	MomentTensor *mt = MomentTensor::Cast(object);
 	if ( mt ) {
-		logObject(_inputMomentTensor, Core::Time::GMT());
+		logObject(_inputMomentTensor, Core::Time::UTC());
 		fm = _cache.get<FocalMechanism>(parentID);
 		if ( fm ) {
 			if ( fm != mt->focalMechanism() )
@@ -955,7 +955,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 
 	OriginReference *ref = OriginReference::Cast(object);
 	if ( ref && !ref->originID().empty() ) {
-		logObject(_inputOriginRef, Core::Time::GMT());
+		logObject(_inputOriginRef, Core::Time::UTC());
 		SEISCOMP_LOG(_infoChannel, "Received new origin reference %s for event %s",
 		             ref->originID().c_str(), parentID.c_str());
 
@@ -991,7 +991,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 
 	FocalMechanismReference *fm_ref = FocalMechanismReference::Cast(object);
 	if ( fm_ref && !fm_ref->focalMechanismID().empty() ) {
-		logObject(_inputFMRef, Core::Time::GMT());
+		logObject(_inputFMRef, Core::Time::UTC());
 		SEISCOMP_LOG(_infoChannel, "Received new focal mechanism reference %s for event %s",
 		             fm_ref->focalMechanismID().c_str(), parentID.c_str());
 
@@ -1027,7 +1027,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 
 	EventPtr evt = Event::Cast(object);
 	if ( evt ) {
-		logObject(_inputEvent, Core::Time::GMT());
+		logObject(_inputEvent, Core::Time::UTC());
 		SEISCOMP_LOG(_infoChannel, "Received new event %s", evt->publicID().c_str());
 		EventInformationPtr info = cachedEvent(evt->publicID());
 		if ( !info ) {
@@ -1041,7 +1041,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 
 	JournalEntryPtr journalEntry = JournalEntry::Cast(object);
 	if ( journalEntry ) {
-		logObject(_inputJournal, Core::Time::GMT());
+		logObject(_inputJournal, Core::Time::UTC());
 		SEISCOMP_LOG(_infoChannel,
 		             "Received new journal entry from %s for object %s: %s(%s)",
 		             journalEntry->sender().c_str(), journalEntry->objectID().c_str(),
@@ -1064,7 +1064,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 void EventTool::updateObject(const std::string &parentID, Object* object) {
 	OriginPtr org = Origin::Cast(object);
 	if ( org ) {
-		logObject(_inputOrigin, Core::Time::GMT());
+		logObject(_inputOrigin, Core::Time::UTC());
 		if ( !org->registered() ) {
 			org = Origin::Find(org->publicID());
 			if ( !org ) {
@@ -1083,7 +1083,7 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 
 	FocalMechanismPtr fm = FocalMechanism::Cast(object);
 	if ( fm ) {
-		logObject(_inputFocalMechanism, Core::Time::GMT());
+		logObject(_inputFocalMechanism, Core::Time::UTC());
 		if ( !fm->registered() ) {
 			fm = FocalMechanism::Find(fm->publicID());
 			if ( !fm ) {
@@ -1101,7 +1101,7 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 
 	MagnitudePtr mag = Magnitude::Cast(object);
 	if ( mag ) {
-		logObject(_inputMagnitude, Core::Time::GMT());
+		logObject(_inputMagnitude, Core::Time::UTC());
 		if ( !mag->registered() ) {
 			mag = Magnitude::Find(mag->publicID());
 			if ( !mag ) {
@@ -1129,7 +1129,7 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 
 	EventPtr evt = Event::Cast(object);
 	if ( evt ) {
-		logObject(_inputEvent, Core::Time::GMT());
+		logObject(_inputEvent, Core::Time::UTC());
 		if ( !evt->registered() ) {
 			evt = Event::Find(evt->publicID());
 			if ( !evt ) {
@@ -1244,7 +1244,7 @@ createEntry(const std::string &id, const std::string &proc,
 	e->setObjectID(id);
 	e->setAction(proc);
 	e->setParameters(param);
-	e->setCreated(Core::Time::GMT());
+	e->setCreated(Core::Time::UTC());
 	return e;
 }
 
@@ -1291,7 +1291,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 					             origin->publicID().c_str(), info->event->publicID().c_str());
 				}
 				else {
-					logObject(_outputOriginRef, Time::GMT());
+					logObject(_outputOriginRef, Time::UTC());
 					SEISCOMP_INFO("%s: associated origin %s", info->event->publicID().c_str(),
 					              origin->publicID().c_str());
 					SEISCOMP_LOG(_infoChannel, "Origin %s associated to event %s",
@@ -1687,11 +1687,11 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 			if ( !e ) {
 				Notifier::Enable();
 				info->associate(org.get());
-				logObject(_outputOriginRef, Time::GMT());
+				logObject(_outputOriginRef, Time::UTC());
 				// Associate focal mechanism references
 				list<string>::iterator it;
 				for ( it = fmIDsToMove.begin(); it != fmIDsToMove.end(); ++it ) {
-					logObject(_outputFMRef, Time::GMT());
+					logObject(_outputFMRef, Time::UTC());
 					info->event->add(new FocalMechanismReference(*it));
 				}
 
@@ -1779,14 +1779,14 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 
 						Notifier::Enable();
 						newInfo->associate(org.get());
-						logObject(_outputOriginRef, Time::GMT());
+						logObject(_outputOriginRef, Time::UTC());
 						// Associate focal mechanism references
 						list<string>::iterator it;
 						for ( it = fmIDsToMove.begin(); it != fmIDsToMove.end(); ++it ) {
 							SEISCOMP_INFO("%s: associated focal mechanism %s", newInfo->event->publicID().c_str(),
 							              it->c_str());
 							newInfo->event->add(new FocalMechanismReference(*it));
-							logObject(_outputFMRef, Time::GMT());
+							logObject(_outputFMRef, Time::UTC());
 						}
 						SEISCOMP_INFO("%s: associated origin %s", newInfo->event->publicID().c_str(),
 						              org->publicID().c_str());
@@ -2046,7 +2046,7 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 			             origin->publicID().c_str(), info->event->publicID().c_str());
 		}
 		else {
-			logObject(_outputOriginRef, Time::GMT());
+			logObject(_outputOriginRef, Time::UTC());
 			SEISCOMP_INFO("%s: associated origin %s", info->event->publicID().c_str(),
 			              origin->publicID().c_str());
 			SEISCOMP_LOG(_infoChannel, "Origin %s associated to event %s",
@@ -2281,7 +2281,7 @@ EventInformationPtr EventTool::associateFocalMechanism(FocalMechanism *fm) {
 		             fm->publicID().c_str(), info->event->publicID().c_str());
 	}
 	else {
-		logObject(_outputFMRef, Time::GMT());
+		logObject(_outputFMRef, Time::UTC());
 		SEISCOMP_INFO("%s: associated focal mechanism %s", info->event->publicID().c_str(),
 		              fm->publicID().c_str());
 		SEISCOMP_LOG(_infoChannel, "FocalMechanism %s associated to event %s",
@@ -2462,7 +2462,7 @@ EventInformationPtr EventTool::createEvent(Origin *origin) {
 			return nullptr;
 		}
 
-		Time now = Time::GMT();
+		Time now = Time::UTC();
 		logObject(_outputEvent, now);
 
 		Notifier::Enable();
@@ -3034,7 +3034,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 								entry->setAction("EvPrefOrgEvalMode");
 								entry->setParameters("");
 								entry->setSender(author());
-								entry->setCreated(Core::Time::GMT());
+								entry->setCreated(Core::Time::UTC());
 								Notifier::Create(_journal->publicID(), OP_ADD, entry.get());
 								info->addJournalEntry(entry.get(), author());
 							}
@@ -3088,7 +3088,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 								entry->setAction("EvPrefOrgEvalMode");
 								entry->setParameters("");
 								entry->setSender(author());
-								entry->setCreated(Core::Time::GMT());
+								entry->setCreated(Core::Time::UTC());
 								Notifier::Create(_journal->publicID(), OP_ADD, entry.get());
 								info->addJournalEntry(entry.get(), author());
 							}
@@ -3358,7 +3358,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							entry->setAction("EvPrefOrgEvalMode");
 							entry->setParameters("");
 							entry->setSender(author());
-							entry->setCreated(Core::Time::GMT());
+							entry->setCreated(Core::Time::UTC());
 							Notifier::Create(_journal->publicID(), OP_ADD, entry.get());
 							info->addJournalEntry(entry.get(), author());
 						}
@@ -3690,7 +3690,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 		}
 
 		Core::Time minTime = info->preferredOrigin->time().value() + Core::TimeSpan(_config.delayPrefFocMech,0);
-		Core::Time now = Core::Time::GMT();
+		Core::Time now = Core::Time::UTC();
 
 		//SEISCOMP_LOG(_infoChannel, "Time to reach to set focal mechanism preferred is %s, now is %s",
 		//             minTime.toString("%FT%T").c_str(), now.toString("%FT%T").c_str());
@@ -3845,7 +3845,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 								entry->setAction("EvPrefOrgEvalMode");
 								entry->setParameters("");
 								entry->setSender(author());
-								entry->setCreated(Core::Time::GMT());
+								entry->setCreated(Core::Time::UTC());
 								Notifier::Create(_journal->publicID(), OP_ADD, entry.get());
 								info->addJournalEntry(entry.get());
 								*/
@@ -3890,7 +3890,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 								entry->setAction("EvPrefOrgEvalMode");
 								entry->setParameters("");
 								entry->setSender(author());
-								entry->setCreated(Core::Time::GMT());
+								entry->setCreated(Core::Time::UTC());
 								Notifier::Create(_journal->publicID(), OP_ADD, entry.get());
 								info->addJournalEntry(entry.get());
 								*/
@@ -4026,7 +4026,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 							entry->setAction("EvPrefOrgEvalMode");
 							entry->setParameters("");
 							entry->setSender(author());
-							entry->setCreated(Core::Time::GMT());
+							entry->setCreated(Core::Time::UTC());
 							Notifier::Create(_journal->publicID(), OP_ADD, entry.get());
 							info->addJournalEntry(entry.get());
 							*/
@@ -4310,7 +4310,7 @@ void EventTool::removedFromCache(Seiscomp::DataModel::PublicObject *po) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventTool::updateEvent(EventInformation *info, bool callProcessors) {
 	DataModel::Event *ev = info->event.get();
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 	// Set the modification to current time
 	try {
 		ev->creationInfo().setModificationTime(now);

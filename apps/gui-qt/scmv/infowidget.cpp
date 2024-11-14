@@ -449,8 +449,8 @@ void StationInfoWidget::startWaveformAcquisition() {
 	Core::split(tokens, id().c_str(), ".", false);
 	_recordStreamThread->addStream(tokens[0], tokens[1], tokens[2], tokens[3]);
 
-	Core::Time start = Core::Time::GMT() - _recordSequenceTimeSpan;
-	Core::Time end = Core::Time::GMT();
+	Core::Time start = Core::Time::UTC() - _recordSequenceTimeSpan;
+	Core::Time end = Core::Time::UTC();
 	_recordStreamThread->setTimeWindow(Core::TimeWindow(start, end));
 
 	_recordSequence = new RingBuffer(_recordSequenceTimeSpan);
@@ -463,7 +463,7 @@ void StationInfoWidget::startWaveformAcquisition() {
 
 	adjustRecordWidgetSize();
 
-	_recordWidget->setAlignment(Core::Time::GMT());
+	_recordWidget->setAlignment(Core::Time::UTC());
 
 	_recordWidgetTimer.setInterval(1000);
 	connect(&_recordWidgetTimer, SIGNAL(timeout()), this, SLOT(updateRecordWidgetAlignment()));
@@ -565,7 +565,7 @@ Gui::RecordMarker* StationInfoWidget::createRecordMarkerFromTime(const Core::Tim
 void StationInfoWidget::removeExpiredRecordMarker() {
 	RecordMarkerCollection::iterator it = _recordMarkerCache.begin();
 	for ( ; it != _recordMarkerCache.end(); it ++ ) {
-		Core::Time referenceTime = Core::Time::GMT() - _recordSequenceTimeSpan;
+		Core::Time referenceTime = Core::Time::UTC() - _recordSequenceTimeSpan;
 		if ( (*it)->time() < referenceTime ) {
 			_recordWidget->removeMarker(*it);
 			_recordMarkerCache.erase(it);
@@ -646,7 +646,7 @@ void StationInfoWidget::updateRecordWidget(Seiscomp::Record* record) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void StationInfoWidget::updateRecordWidgetAlignment() {
-	_recordWidget->setAlignment(Core::Time::GMT());
+	_recordWidget->setAlignment(Core::Time::UTC());
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

@@ -265,10 +265,10 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 
 						if ( !isFixedChannel ) {
 							DataModel::SensorLocation *sloc =
-								Client::Inventory::Instance()->getSensorLocation(net, sta, loc, Core::Time::GMT());
+								Client::Inventory::Instance()->getSensorLocation(net, sta, loc, Core::Time::UTC());
 
 							if ( sloc ) {
-								DataModel::Stream *stream = DataModel::getVerticalComponent(sloc, cha.c_str(), Core::Time::GMT());
+								DataModel::Stream *stream = DataModel::getVerticalComponent(sloc, cha.c_str(), Core::Time::UTC());
 								if ( stream ) {
 									cha = stream->code();
 								}
@@ -300,7 +300,7 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 	for ( size_t i = 0; i < inv->networkCount(); ++i ) {
 		Network* net = inv->network(i);
 		try {
-			if ( net->end() < Core::Time::GMT() ) {
+			if ( net->end() < Core::Time::UTC() ) {
 				continue;
 			}
 		}
@@ -329,7 +329,7 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 		for ( size_t j = 0; j < net->stationCount(); ++j ) {
 			Station* sta = net->station(j);
 			try {
-				if ( sta->end() < Core::Time::GMT() ) {
+				if ( sta->end() < Core::Time::UTC() ) {
 					continue;
 				}
 			}
@@ -361,7 +361,7 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 				SensorLocation *loc = sta->sensorLocation(l);
 
 				try {
-					if ( loc->end() < Core::Time::GMT() ){
+					if ( loc->end() < Core::Time::UTC() ){
 						continue;
 					}
 				}
@@ -379,7 +379,7 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 					Stream* stream = loc->stream(s);
 
 					try {
-						if ( stream->end() < Core::Time::GMT() ) {
+						if ( stream->end() < Core::Time::UTC() ) {
 							continue;
 						}
 					}
@@ -463,7 +463,7 @@ void MainFrame::prepareNotifier(QString streamID, bool enable) {
 		CreationInfo ci;
 		ci.setAuthor(SCApp->author());
 		ci.setAgencyID(SCApp->agencyID());
-		ci.setCreationTime(Core::Time::GMT());
+		ci.setCreationTime(Core::Time::UTC());
 
 		newCs->setCreationInfo(ci);
 
@@ -481,12 +481,12 @@ void MainFrame::prepareNotifier(QString streamID, bool enable) {
 		CreationInfo *ci;
 		try {
 			ci = &cs->creationInfo();
-			ci->setModificationTime(Core::Time::GMT());
+			ci->setModificationTime(Core::Time::UTC());
 		}
 		catch ( ... ) {
 			cs->setCreationInfo(CreationInfo());
 			ci = &cs->creationInfo();
-			ci->setCreationTime(Core::Time::GMT());
+			ci->setCreationTime(Core::Time::UTC());
 		}
 
 		ci->setAuthor(SCApp->author());

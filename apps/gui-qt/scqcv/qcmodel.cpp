@@ -307,7 +307,7 @@ void QcModel::cleanUp() {
 			if ( !wfq ) continue;
 
 			try {
-				double dt = (double)(Core::Time::GMT() - wfq->end());
+				double dt = (double)(Core::Time::UTC() - wfq->end());
 				SEISCOMP_DEBUG("[%f s] cleaning up alert entries for: %s", dt, getStreamID(wfq->waveformID()).toLatin1().data());
 				if (dt > _cleanUpTime) {
 					QString streamID = getStreamID(wfq->waveformID());
@@ -420,7 +420,7 @@ const DataModel::WaveformQuality* QcModel::getData(const QModelIndex &index) con
 	catch(...) {;;}
 	
 	try {
-		if (_config->expired(_columns.at(index.column()), (double)(Core::Time::GMT() - wfq->end())))
+		if (_config->expired(_columns.at(index.column()), (double)(Core::Time::UTC() - wfq->end())))
 			return NULL;
 		else
 			return wfq;

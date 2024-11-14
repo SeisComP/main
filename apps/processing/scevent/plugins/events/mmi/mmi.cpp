@@ -150,11 +150,11 @@ class MMIProcessor : public Seiscomp::Client::EventProcessor {
 
 			// Set the modification to current time
 			try {
-				mmiComment->creationInfo().setModificationTime(Time::GMT());
+				mmiComment->creationInfo().setModificationTime(Time::UTC());
 			}
 			catch ( ... ) {
 				CreationInfo ci;
-				ci.setModificationTime(Time::GMT());
+				ci.setModificationTime(Time::UTC());
 				mmiComment->setCreationInfo(ci);
 			}
 

@@ -18,6 +18,7 @@
 #include "app.h"
 
 #include <seiscomp/logging/log.h>
+#include <seiscomp/core/version.h>
 
 
 using namespace std;
@@ -31,7 +32,11 @@ namespace {
 
 #if BOOST_VERSION >= 103500
 boost::posix_time::time_duration wait(const Core::Time &until) {
-	double diff = until - Core::Time::GMT();
+#if SC_API_VERSION < SC_API_VERSION_CHECK(17,0,0)
+	double diff = until - Core::Time::UTC();
+#else
+	double diff = (until - Core::Time::UTC()).length();
+#endif
 	if ( diff <= 0 ) diff = 0.001; // make sure wait is positive
 	int s = (int) boost::posix_time::time_duration::ticks_per_second() * diff;
 	return boost::posix_time::time_duration(0, 0, 0, s);
@@ -157,7 +162,7 @@ void QLClient::listen() {
 		Core::Time from;
 		string filter = _config->filter;
 		if ( _backLog > 0 ) {
-			Core::Time minTime = Core::Time::GMT() - Core::TimeSpan(_backLog);
+			Core::Time minTime = Core::Time::UTC() - Core::TimeSpan(_backLog, 0);
 			from = lastUpdate();
 			if ( !from.valid() || from < minTime )
 				from = minTime;

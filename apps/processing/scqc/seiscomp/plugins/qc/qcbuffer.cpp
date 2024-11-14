@@ -30,7 +30,7 @@ namespace Qc {
 QcBuffer::QcBuffer()
 : _maxBufferSize(-1) {
 // buffer size in seconds
-	lastEvalTime = Core::Time::GMT();
+	lastEvalTime = Core::Time::UTC();
 	_recentlyUsed = false;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -44,7 +44,7 @@ QcBuffer::QcBuffer(double maxBufferSize)
 // buffer size in seconds
 
 // 	lastEvalTime = Core::Time(1970, 01, 01);
-	lastEvalTime = Core::Time::GMT();
+	lastEvalTime = Core::Time::UTC();
 	_recentlyUsed = false;
 
 }

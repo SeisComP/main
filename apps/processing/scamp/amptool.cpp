@@ -602,14 +602,14 @@ void AmpTool::addObject(const std::string& parentID, DataModel::Object* object) 
 void AmpTool::updateObject(const std::string &parentID, Object* object) {
 	Pick *pick = Pick::Cast(object);
 	if ( pick ) {
-		logObject(_inputPicks, Time::GMT());
+		logObject(_inputPicks, Time::UTC());
 		feed(pick);
 		return;
 	}
 
 	Amplitude *amp = Amplitude::Cast(object);
 	if ( amp && !amp->pickID().empty() ) {
-		logObject(_inputAmps, Time::GMT());
+		logObject(_inputAmps, Time::UTC());
 		PickPtr pick = _cache.get<Pick>(amp->pickID());
 		// No pick, no amplitude
 		if ( !pick )
@@ -626,7 +626,7 @@ void AmpTool::updateObject(const std::string &parentID, Object* object) {
 
 	Origin *origin = Origin::Cast(object);
 	if ( origin ) {
-		logObject(_inputOrgs, Time::GMT());
+		logObject(_inputOrgs, Time::UTC());
 		process(origin, nullptr);
 		return;
 	}
@@ -640,7 +640,7 @@ void AmpTool::updateObject(const std::string &parentID, Object* object) {
 void AmpTool::removeObject(const std::string &parentID, Object* object) {
 	Pick *pick = Pick::Cast(object);
 	if ( pick ) {
-		logObject(_inputPicks, Time::GMT());
+		logObject(_inputPicks, Time::UTC());
 		Pick *cachedPick = Pick::Find(pick->publicID());
 		if ( cachedPick )
 			_cache.remove(cachedPick);
@@ -649,7 +649,7 @@ void AmpTool::removeObject(const std::string &parentID, Object* object) {
 
 	Amplitude *amp = Amplitude::Cast(object);
 	if ( amp && !amp->pickID().empty() ) {
-		logObject(_inputAmps, Time::GMT());
+		logObject(_inputAmps, Time::UTC());
 		Amplitude *cachedAmplitude = Amplitude::Find(amp->publicID());
 		if ( cachedAmplitude ) {
 			AmplitudeRange range = _pickAmplitudes.equal_range(cachedAmplitude->pickID());
@@ -1137,10 +1137,12 @@ int AmpTool::addProcessor(Processing::AmplitudeProcessor *proc,
 
 		// Update processors station time window
 		StationRequest &req = _stationRequests[stationID];
-		if ( (bool)req.timeWindow == true )
+		if ( req.timeWindow.length() > TimeSpan(0, 0) ) {
 			req.timeWindow = req.timeWindow | proc->safetyTimeWindow();
-		else
+		}
+		else {
 			req.timeWindow = proc->safetyTimeWindow();
+		}
 
 		// The second value of the pair describes whether a new entry has been inserted or not
 		if ( handle.second ) {
@@ -1315,7 +1317,7 @@ AmpTool::createAmplitude(const Seiscomp::Processing::AmplitudeProcessor *proc,
 
 	amp->setPickID(proc->referencingPickID());
 
-	Time now = Time::GMT();
+	Time now = Time::UTC();
 	ci.setAgencyID(agencyID());
 	ci.setAuthor(author());
 	ci.setCreationTime(now);

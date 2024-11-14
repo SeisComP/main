@@ -138,7 +138,7 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 	bool                     disableTimeWindowRequest{false};
 	bool                     threeComponents{false};
 	int                      maxDelay{0};
-	int                      warnDataTimeRange{3600 * 6}; // 6 hours
+	Core::TimeSpan           warnDataTimeRange{3600 * 6, 0}; // 6 hours
 
 	std::string              groupConfig{"CONFIG"};
 	std::string              groupLocation{"LOCATION"};

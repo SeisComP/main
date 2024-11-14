@@ -42,7 +42,7 @@ class ObjectCounter : protected DataModel::Visitor {
 			++_count;
 			return true;
 		}
-		
+
 		void visit(DataModel::Object *) override {
 			++_count;
 		}
@@ -173,7 +173,7 @@ class DBTool : public Seiscomp::Client::Application {
 			int errorCode = -1;
 			if ( _listenMode != "none" && !commandline().hasOption("input") ) {
 				SEISCOMP_DEBUG("Checking database '%s'", _databaseWriteConnection.c_str());
-	
+
 				DatabaseInterfacePtr db = DatabaseInterface::Open(_databaseWriteConnection.c_str());
 				if ( db == NULL ) {
 					SEISCOMP_ERROR("Could not open output database '%s'", _databaseWriteConnection.c_str());
@@ -181,9 +181,9 @@ class DBTool : public Seiscomp::Client::Application {
 					return false;
 				}
 				--errorCode;
-		
+
 				SEISCOMP_DEBUG("Database check...ok");
-	
+
 				setDatabase(db.get());
 			}
 			else if ( commandline().hasOption("input") )
@@ -217,13 +217,13 @@ class DBTool : public Seiscomp::Client::Application {
 				SEISCOMP_DEBUG("Could not handle message of type '%s' -> ignoring", msg->className());
 				return NULL;
 			}
-		
+
 			if ( !Core::isEmpty(dbRequest->service()) && _settings.database.type != dbRequest->service() )
 				return NULL;
-		
+
 			if ( _settings.database.type.empty() || _settings.database.parameters.empty() )
 				return NULL;
-		
+
 			return new DatabaseProvideMessage(_settings.database.type.c_str(), _settings.database.parameters.c_str());
 		}
 
@@ -235,7 +235,7 @@ class DBTool : public Seiscomp::Client::Application {
 				if ( serviceMsg ) {
 					connection()->send(_serviceProvideGroup.c_str(), serviceMsg.get());
 				}
-		
+
 				return;
 			}
 
@@ -248,7 +248,7 @@ class DBTool : public Seiscomp::Client::Application {
 						continue;
 					}
 				}
-		
+
 				DataModel::Notifier* notifier = DataModel::Notifier::Cast(*it);
 				if ( notifier && notifier->object() ) {
 					DataModel::PublicObject *po = DataModel::PublicObject::Cast(notifier->object());
@@ -281,7 +281,7 @@ class DBTool : public Seiscomp::Client::Application {
 				cout << "Error: could not open input file '" << filename << "'" << endl;
 				return false;
 			}
-		
+
 			/*
 			DatabaseInterfacePtr db = DatabaseInterface::Open(_databaseWriteConnection.c_str());
 			if ( db == NULL ) {
@@ -289,9 +289,9 @@ class DBTool : public Seiscomp::Client::Application {
 				return false;
 			}
 			*/
-		
+
 			cout << "Parsing file '" << filename << "'..." << endl;
-		
+
 			Util::StopWatch timer;
 			Core::BaseObjectPtr obj;
 			ar >> obj;
@@ -309,26 +309,26 @@ class DBTool : public Seiscomp::Client::Application {
 			}
 
 			DataModel::ObjectPtr doc = DataModel::Object::Cast(obj);
-		
+
 			if ( !doc ) {
 				cout << "Error: no valid object found in file '" << filename << "'" << endl;
 				return false;
 			}
-		
+
 			ObjectWriter writer(*query(), !_remove, ObjectCounter(doc.get()).count(), 78);
-		
-			cout << "Time needed to parse XML: " << Core::Time(timer.elapsed()).toString("%T.%f") << endl;
+
+			cout << "Time needed to parse XML: " << timer.elapsed() << endl;
 			cout << "Document object type: " << doc->className() << endl;
 			cout << "Total number of objects: " << ObjectCounter(doc.get()).count() << endl;
-		
+
 			cout << "Writing " << doc->className() << " into database" << endl;
 			timer.restart();
-		
+
 			writer(doc.get());
 			cout << endl;
-		
+
 			cout << "While writing " << writer.count() << " objects " << writer.errors() << " errors occured" << endl;
-			cout << "Time needed to write " << writer.count() << " objects: " << Core::Time(timer.elapsed()).toString("%T.%f") << endl;
+			cout << "Time needed to write " << writer.count() << " objects: " << timer.elapsed() << endl;
 
 			if ( writer.errors() > 0 ) {
 				_returnCode = 1;

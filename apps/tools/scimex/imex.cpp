@@ -57,7 +57,7 @@ ImEx::ImEx(int argc, char* argv[])
 	setPrimaryMessagingGroup(Client::Protocol::LISTENER_GROUP);
 	setMessagingUsername(Util::basename(argv[0]));
 
-	_lastCleanUp = Core::Time::GMT();
+	_lastCleanUp = Core::Time::UTC();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -450,7 +450,7 @@ Core::MessagePtr ImEx::convertMessage(Core::Message* message) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void ImEx::dispatchMessage(Core::Message* msg) {
-	if ( Core::Time::GMT() - _lastCleanUp > _cleanUpInterval ) {
+	if ( Core::Time::UTC() - _lastCleanUp > _cleanUpInterval ) {
 		SEISCOMP_DEBUG("Cleaning up");
 		for ( size_t i = 0; i < _imexImpls.size(); ++i )
 			_imexImpls[i]->cleanUp();
@@ -460,7 +460,7 @@ void ImEx::dispatchMessage(Core::Message* msg) {
 		cleanUp(_eventList);
 		cleanUp(_originList);
 
-		_lastCleanUp = Core::Time::GMT();
+		_lastCleanUp = Core::Time::UTC();
 	}
 
 	if ( DataModel::NotifierMessagePtr notifierMessage = DataModel::NotifierMessage::Cast(msg) ) {
@@ -520,7 +520,7 @@ template <typename T>
 void ImEx::cleanUp(T& container) {
 	typename T::iterator it = container.begin();
 	while ( it != container.end() ) {
-		if ( Core::Time::GMT() - (*it)->time() > _cleanUpInterval ) {
+		if ( Core::Time::UTC() - (*it)->time() > _cleanUpInterval ) {
 			SEISCOMP_DEBUG("One element %s with id: %s removed",
 					(*it)->className(), (*it)->publicID().c_str());
 			it = container.erase(it);
@@ -538,7 +538,7 @@ void ImEx::cleanUp(T& container) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 template <typename T>
 void ImEx::cleanUpSpecial(T& container) {
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 	typename T::iterator it = container.begin();
 	while ( it != container.end() ) {
 		try {

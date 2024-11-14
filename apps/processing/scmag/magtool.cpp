@@ -430,7 +430,7 @@ bool MagTool::init(const MagnitudeTypes &mags, const Core::TimeSpan &expiry,
 	// Fill the origin cache
 	if ( SCCoreApp->query() ) {
 		auto db = SCCoreApp->query()->driver();
-		Core::Time startTime = Core::Time::GMT() - expiry;
+		Core::Time startTime = Core::Time::UTC() - expiry;
 		string query;
 		query += "select POrigin." + _T("publicID") + ",Origin.* from Origin,PublicObject as POrigin where Origin._oid=POrigin._oid and Origin." +
 		         _T("time_value") + ">='";
@@ -510,7 +510,7 @@ DataModel::StationMagnitude *MagTool::getStationMagnitude(
 			return nullptr;
 		}
 
-		Time now = Time::GMT();
+		Time now = Time::UTC();
 		SCCoreApp->logObject(outputMagLog, now);
 
 		DataModel::CreationInfo ci;
@@ -530,7 +530,7 @@ DataModel::StationMagnitude *MagTool::getStationMagnitude(
 	else {
 		DataModel::touch(mag);
 		mag->update();
-		SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+		SCCoreApp->logObject(outputMagLog, Core::Time::UTC());
 	}
 
 	if ( origin != mag->parent() ) {
@@ -585,7 +585,7 @@ DataModel::Magnitude *MagTool::getMagnitude(DataModel::Origin *origin,
 			return nullptr;
 		}
 
-		Time now = Time::GMT();
+		Time now = Time::UTC();
 		SCCoreApp->logObject(outputMagLog, now);
 
 		DataModel::CreationInfo ci;
@@ -655,7 +655,7 @@ DataModel::Magnitude *MagTool::getMagnitude(DataModel::Origin *origin,
 		if ( !tmpNewInstance ) {
 			DataModel::touch(mag);
 			mag->update();
-			SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+			SCCoreApp->logObject(outputMagLog, Core::Time::UTC());
 			SC_FMT_DEBUG("U NETMAG {}: {}", mag->publicID(), value);
 		}
 
@@ -1094,7 +1094,7 @@ bool MagTool::computeSummaryMagnitude(DataModel::Origin *origin) {
 
 		DataModel::touch(mag.get());
 		mag->update();
-		SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+		SCCoreApp->logObject(outputMagLog, Core::Time::UTC());
 		SC_FMT_DEBUG("U NETMAG {}: {}", mag->publicID(), value);
 	}
 
@@ -1535,7 +1535,7 @@ bool MagTool::processOrigin(DataModel::Origin* origin) {
 			if ( !newInstance ) {
 				DataModel::touch(netMag.get());
 				netMag->update();
-				SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+				SCCoreApp->logObject(outputMagLog, Core::Time::UTC());
 				SC_FMT_DEBUG("U NETMAG {}: {}", netMag->publicID(), netMag->magnitude().value());
 			}
 		}
@@ -1566,7 +1566,7 @@ bool MagTool::processOriginUpdateOnly(DataModel::Origin *origin) {
 
 	vector<double> mv, weights;
 
-	Time now = Time::GMT();
+	Time now = Time::UTC();
 
 	try { depth = origin->depth().value(); }
 	catch ( ... ) {
@@ -1942,7 +1942,7 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 		//   origin from the database and start to compute magnitudes which are
 		//   probably already part of that origin and will arrive with the next message.
 
-		Core::Time now = Core::Time::GMT();
+		Core::Time now = Core::Time::UTC();
 
 		SEISCOMP_DEBUG("Fetch origins to be updated from database");
 		auto dbit = SCCoreApp->query()->getOriginsForAmplitude(ampl->publicID());
@@ -2142,7 +2142,7 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 					if ( !newInstance ) {
 						DataModel::touch(netMag.get());
 						netMag->update();
-						SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+						SCCoreApp->logObject(outputMagLog, Core::Time::UTC());
 						SC_FMT_DEBUG("U NETMAG {}: {}", netMag->publicID(), netMag->magnitude().value());
 					}
 
@@ -2178,7 +2178,7 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 					if ( !newInstance ) {
 						DataModel::touch(netMag.get());
 						netMag->update();
-						SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+						SCCoreApp->logObject(outputMagLog, Core::Time::UTC());
 						SC_FMT_DEBUG("U NETMAG {}: {}", netMag->publicID(), netMag->magnitude().value());
 					}
 

@@ -29,14 +29,14 @@ class DateTime : public Core::Time {
 		DateTime();
 
 		//! Copy constructor
-		DateTime(const Core::Time& other);
-		DateTime(const DateTime& other);
+		DateTime(const Core::Time &other);
+		DateTime(const DateTime &other);
 
 		void serialize(Core::BaseObject::Archive &ar);
 };
 
 
-inline bool fromString(DateTime& date, const std::string& str) {
+inline bool fromString(DateTime &date, const std::string &str) {
 	int year = strtol(str.c_str(), NULL, 10);
 	if ( year < 1902 )
 		//return Core::Time(1902,1,1);
@@ -49,7 +49,7 @@ inline bool fromString(DateTime& date, const std::string& str) {
 }
 
 
-inline std::string toString(const DateTime& date) {
+inline std::string toString(const DateTime &date) {
 	if ( date.microseconds() == 0 )
 		return date.toString("%FT%TZ");
 	else

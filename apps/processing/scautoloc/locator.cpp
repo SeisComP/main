@@ -293,7 +293,7 @@ Origin* Locator::_screlocate(const Origin *origin)
 */
 	}
 
-	// 
+	//
 	// try the actual relocation
 	//
 	Seiscomp::DataModel::OriginCPtr screlo;
@@ -360,7 +360,7 @@ Origin* Locator::_screlocate(const Origin *origin)
 		relo->hypocenter.deperr = screlo->depth().uncertainty();
 	}
 
-	relo->time = screlo->time().value() - Seiscomp::Core::Time();
+	relo->time = screlo->time().value().epoch();
 	try {
 		relo->timeerr =
 			0.5*screlo->time().lowerUncertainty() +
@@ -432,7 +432,7 @@ bool determineAzimuthalGaps(const Origin *origin, double *primary, double *secon
 	for (size_t i=0; i<arrivalCount; i++) {
 
 		const Arrival &arr = origin->arrivals[i];
-	
+
 		if (arr.excluded)
 			continue;
 
@@ -457,7 +457,7 @@ bool determineAzimuthalGaps(const Origin *origin, double *primary, double *secon
 		if (gap > *secondary)
 			*secondary = gap;
 	}
-	
+
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

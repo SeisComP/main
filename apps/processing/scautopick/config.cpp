@@ -50,8 +50,8 @@ Picker::Config::Config() {
 	amplitudeMaxTimeWindow = 10.0;
 	amplitudeMinOffset = 3.0;
 
-	defaultTimeCorrection = Core::TimeSpan(-0.8);
-	ringBufferSize = Core::TimeSpan(5.*60.);
+	defaultTimeCorrection = -0.8;
+	ringBufferSize = 5. * 60.;
 	leadTime = 60.;
 	initTime = 60.;
 

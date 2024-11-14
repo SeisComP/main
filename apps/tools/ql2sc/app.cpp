@@ -597,7 +597,7 @@ bool App::run() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::done() {
 	// Wait max. 10s for all threads to shutdown
-	Core::Time until = Core::Time::GMT();
+	Core::Time until = Core::Time::UTC();
 	until += 10.0;
 
 	// Flush delayed events
@@ -982,7 +982,7 @@ string App::waitForEventAssociation(const std::string &originID, int timeout) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 JournalEntry *App::createJournalEntry(const string &id, const string &action, const string &params ) {
 	JournalEntry *entry = new JournalEntry;
-	entry->setCreated(Core::Time::GMT());
+	entry->setCreated(Core::Time::UTC());
 	entry->setObjectID(id);
 	entry->setSender(author());
 	entry->setAction(action);

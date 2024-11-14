@@ -48,7 +48,7 @@ QcPluginDelay::QcPluginDelay(): QcPlugin() {
 	_qcProcessor = new QcProcessorDelay();
 	_qcProcessor->subscribe(this);
 
-	_lastRecordEndTime = Core::Time::GMT();
+	_lastRecordEndTime = Core::Time::UTC();
 
 	_name = REGISTERED_NAME;
 	_parameterNames.push_back("delay");
@@ -67,7 +67,7 @@ void QcPluginDelay::timeoutTask() {
 
 	auto qcp = new QcParameter();
 	qcp->recordSamplingFrequency = -1;
-	qcp->recordEndTime = Core::Time::GMT();
+	qcp->recordEndTime = Core::Time::UTC();
 
 	// origin of previous buffer item was a real record
 	if ( _qcBuffer->back()->recordSamplingFrequency != -1 ) {

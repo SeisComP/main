@@ -131,7 +131,7 @@ inline string date2str(const Core::Time &t) {
 
 
 string timeToStr(const Core::Time &time) {
-	if ( time.microseconds() == 0 && time.seconds() % 86400 == 0 ) {
+	if ( time.microseconds() == 0 && time.epochSeconds() % 86400 == 0 ) {
 		return time.toString("%F");
 	}
 
@@ -1044,7 +1044,7 @@ DataModel::Network *
 createNetwork(const string &code)
 {
 	string id = "NET/" + code + "/" +
-	            Core::Time::GMT().toString("%Y%m%d%H%M%S.%f") + "." +
+	            Core::Time::UTC().toString("%Y%m%d%H%M%S.%f") + "." +
 	            Core::toString(Core::BaseObject::ObjectCount());
 	return DataModel::Network::Create(id);
 }
@@ -1054,7 +1054,7 @@ DataModel::Station *
 createStation(const string &net, const string &code)
 {
 	string id = "STA/" + net + "/" + code + "/" +
-	            Core::Time::GMT().toString("%Y%m%d%H%M%S.%f") + "." +
+	            Core::Time::UTC().toString("%Y%m%d%H%M%S.%f") + "." +
 	            Core::toString(Core::BaseObject::ObjectCount());
 	return DataModel::Station::Create(id);
 }
@@ -1064,7 +1064,7 @@ DataModel::SensorLocation *
 createSensorLocation(const string &net, const string &sta, const string &code)
 {
 	string id = "LOC/" + net + "/" + sta + "/" + code + "/" +
-	            Core::Time::GMT().toString("%Y%m%d%H%M%S.%f") + "." +
+	            Core::Time::UTC().toString("%Y%m%d%H%M%S.%f") + "." +
 	            Core::toString(Core::BaseObject::ObjectCount());
 	return DataModel::SensorLocation::Create(id);
 }

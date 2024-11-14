@@ -155,7 +155,7 @@ const string& EmailMessage::message()
 		string doubleSpacer = "\n\n";
 		string singleSpacer = "\n";
 		_message.append(_header);
-		_message.append(Core::Time::GMT().toString("%a, %d %b %Y %H:%M:%S"));
+		_message.append(Core::Time::UTC().toString("%a, %d %b %Y %H:%M:%S"));
 		_message.append(doubleSpacer);
 
 		if ( !_filteredClients.empty() ) {
@@ -271,11 +271,11 @@ ADD_SC_PLUGIN(
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 MEmailPlugin::MEmailPlugin() :
 	MonitorPluginInterface("memailplugin"),
-	_filterResponseInterval(60),
-	_requiredClientsTimeMarker(Core::Time::GMT()),
-	_reportRequiredClientsTimeSpan(5 * 60),
+	_filterResponseInterval(Core::TimeSpan(60, 0)),
+	_requiredClientsTimeMarker(Core::Time::UTC()),
+	_reportRequiredClientsTimeSpan(Core::TimeSpan(5 * 60, 0)),
 	_reportSilentClients(true),
-	_reportSilentClientsTimeSpan(60), // 60 sec.
+	_reportSilentClientsTimeSpan(Core::TimeSpan(60, 0)),
 	_sendEmail(false)
 {}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -473,7 +473,7 @@ void MEmailPlugin::process(const ClientTable &clientTable) {
 
 			int responseTime = 0;
 			Core::fromString(responseTime, responseTimeIt->second);
-			if ( responseTime > _reportSilentClientsTimeSpan ) {
+			if ( responseTime > _reportSilentClientsTimeSpan.length() ) {
 				if ( silentClientIt == _silentClients.end() ) {
 					silentClients.push_back(string("- ") + clientNameIt->second + hostNameStr);
 					_silentClients.push_back(clientNameIt->second);
@@ -490,8 +490,8 @@ void MEmailPlugin::process(const ClientTable &clientTable) {
 			_message.setSilentClients(silentClients, recoveredClients);
 	}
 
-	if ( Core::Time::GMT() - _requiredClientsTimeMarker > _reportRequiredClientsTimeSpan ) {
-		_requiredClientsTimeMarker = Core::Time::GMT();
+	if ( Core::Time::UTC() - _requiredClientsTimeMarker > _reportRequiredClientsTimeSpan ) {
+		_requiredClientsTimeMarker = Core::Time::UTC();
 		vector<string> missingClients;
 		vector<string> reconnectedClients;
 		RequiredClients::iterator rcIt = _requiredClients.begin();

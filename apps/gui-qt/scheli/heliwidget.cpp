@@ -48,14 +48,16 @@ bool minmax(const RecordSequence *seq, const Core::TimeWindow &tw,
 
 				if ( tw.overlaps(rtw) ) {
 					double fs = rec->samplingFrequency();
-					double dt = tw.startTime() - rec->startTime();
-					if( dt > 0 )
+					double dt = (tw.startTime() - rec->startTime()).length();
+					if ( dt > 0 ) {
 						imin = int(dt*fs);
+					}
 
-					dt = rec->endTime() - tw.endTime();
+					dt = (rec->endTime() - tw.endTime()).length();
 					imax = ns;
-					if( dt > 0 )
+					if ( dt > 0 ) {
 						imax -= int(dt*fs);
+					}
 				}
 				else
 					continue;
@@ -296,8 +298,8 @@ bool HeliCanvas::setCurrentTime(const Seiscomp::Core::Time &time) {
 
 	_currentTime = time;
 
-	time_t newEndSeconds = (_currentTime.seconds() / _rowTimeSpan) * _rowTimeSpan;
-	time_t oldEndTime = _rows.back().time;
+	time_t newEndSeconds = (_currentTime.epochSeconds() / _rowTimeSpan) * _rowTimeSpan;
+	time_t oldEndTime = _rows.back().time.epochSeconds();
 
 	// Computes the row shift
 	// > 0: shift rows down
@@ -320,7 +322,7 @@ bool HeliCanvas::setCurrentTime(const Seiscomp::Core::Time &time) {
 			_rows[i] = _rows[i+shift];
 
 		for ( int i = _rows.size() - shift; i < _rows.size(); ++i ) {
-			_rows[i].time = _rows[i-1].time + Core::TimeSpan(_rowTimeSpan);
+			_rows[i].time = _rows[i-1].time + Core::TimeSpan(_rowTimeSpan, 0);
 			_rows[i].polyline = AbstractRecordPolylinePtr();
 			_rows[i].update();
 		}
@@ -330,7 +332,7 @@ bool HeliCanvas::setCurrentTime(const Seiscomp::Core::Time &time) {
 			_rows[i] = _rows[i-shift];
 
 		for ( int i = shift-1; i >= 0; --i ) {
-			_rows[i].time = _rows[i+1].time - Core::TimeSpan(_rowTimeSpan);
+			_rows[i].time = _rows[i+1].time - Core::TimeSpan(_rowTimeSpan, 0);
 			_rows[i].polyline = AbstractRecordPolylinePtr();
 			_rows[i].update();
 		}
@@ -341,7 +343,7 @@ bool HeliCanvas::setCurrentTime(const Seiscomp::Core::Time &time) {
 
 
 Core::TimeSpan HeliCanvas::recordsTimeSpan() const {
-	return Core::TimeSpan(_recordsTimeSpan);
+	return Core::TimeSpan(_recordsTimeSpan, 0);
 }
 
 
@@ -510,7 +512,7 @@ void HeliCanvas::render(QPainter &p) {
 			}
 
 			float ofs, min, max, minAmp, maxAmp;
-			Core::TimeWindow tw(_rows[i].time, _rows[i].time + Core::TimeSpan(_rowTimeSpan));
+			Core::TimeWindow tw(_rows[i].time, _rows[i].time + Core::TimeSpan(_rowTimeSpan, 0));
 			minmax(_filteredRecords, tw, ofs, min, max);
 
 			if ( _scaling == "row" ) {
@@ -547,7 +549,7 @@ void HeliCanvas::render(QPainter &p) {
 						           polyline->front().first().x() - _labelMargin,
 						           rowHeight, gapBrush);
 
-					if ( (globalEnd - _rows[i].time) >= Core::TimeSpan(_rowTimeSpan) ) {
+					if ( (globalEnd - _rows[i].time) >= Core::TimeSpan(_rowTimeSpan, 0) ) {
 						if ( polyline->back().last().x() < _size.width()-2 )
 							p.fillRect(polyline->back().last().x(),
 							           rowPos, _size.width()-1 - polyline->back().last().x(),
@@ -561,7 +563,7 @@ void HeliCanvas::render(QPainter &p) {
 						           polyline->front().first().x() - _labelMargin,
 						           rowHeight, gapBrush);
 
-					if ( (globalEnd - _rows[i].time) >= Core::TimeSpan(_rowTimeSpan) ) {
+					if ( (globalEnd - _rows[i].time) >= Core::TimeSpan(_rowTimeSpan, 0) ) {
 						if ( polyline->back().last().x() < _size.width()-2 )
 							p.fillRect(polyline->back().last().x(),
 							           rowPos, _size.width()-1 - polyline->back().last().x(),
@@ -569,7 +571,7 @@ void HeliCanvas::render(QPainter &p) {
 					}
 				}
 			}
-			else if ( (globalEnd - _rows[i].time) >= Core::TimeSpan(_rowTimeSpan) )
+			else if ( (globalEnd - _rows[i].time) >= Core::TimeSpan(_rowTimeSpan, 0) )
 				p.fillRect(QRect(_labelMargin, rowPos, recordWidth, rowHeight), gapBrush);
 		}
 
@@ -616,7 +618,7 @@ void HeliCanvas::render(QPainter &p) {
 	double pos = 0;
 	double scale = double(recordWidth) / double(_rowTimeSpan);
 	double dx[2] = {_drx[0], _drx[1]};
-	
+
 	// Adapted from gui/libs/ruler
 	int tickLong = fontHeight/2;
 	int tickShort = tickLong/2;

@@ -509,8 +509,8 @@ MvMainWindow::MvMainWindow(QWidget* parent, Qt::WindowFlags flags)
 , _displayMode(NONE)
 , _mapUpdateInterval(1000)
 , _expiredEventsInterval(0)
-, _configStationPickCacheLifeSpan(15 * 60)
-, _configEventActivityLifeSpan(15 * 60)
+, _configStationPickCacheLifeSpan(15 * 60, 0)
+, _configEventActivityLifeSpan(15 * 60, 0)
 , _configRemoveEventDataOlderThanTimeSpan(static_cast<double>(12 * 3600))
 , _configReadEventsNotOlderThanTimeSpan(0.0)
 , _configStationRecordFilterStr("RMHP(50)->ITAPER(20)->BW(2,0.04,2)") {
@@ -566,7 +566,7 @@ bool MvMainWindow::init() {
 		_recordHandler.setRecordLifeSpan(recordLifeSpan);
 	} catch ( Config::Exception& ) {}
 
-	_triggerHandler.setPickLifeSpan(_configStationPickCacheLifeSpan);
+	_triggerHandler.setPickLifeSpan(_configStationPickCacheLifeSpan.length());
 
 	if ( !readStationsFromDataBase() ) {
 		SEISCOMP_INFO("Could not read stations from database");
@@ -656,7 +656,7 @@ bool MvMainWindow::eventFilter(QObject* object, QEvent* event) {
 				showMapCoordinates(pos);
 				return true;
 			}
-			else if ( mouseEvent->button() == Qt::MidButton ) {
+			else if ( mouseEvent->button() == Qt::MiddleButton ) {
 				QPoint pos = QPoint(mouseEvent->x(), mouseEvent->y());
 				sendArtificialOrigin(pos);
 				return true;
@@ -872,7 +872,7 @@ bool MvMainWindow::initRecordStream() {
 		_recordStreamThread->addStream(tokens[0],tokens[1],tokens[2], tokens[3]);
 
 		try {
-			it->gmGain = Client::Inventory::Instance()->getGain(tokens[0], tokens[1], tokens[2], tokens[3], Core::Time::GMT());
+			it->gmGain = Client::Inventory::Instance()->getGain(tokens[0], tokens[1], tokens[2], tokens[3], Core::Time::UTC());
 		}
 		catch ( ... ) {}
 	}
@@ -1019,7 +1019,7 @@ void MvMainWindow::sendArtificialOrigin(const QPoint& pos) {
 
 	ci.setAgencyID(SCApp->agencyID());
 	ci.setAuthor(SCApp->author());
-	ci.setCreationTime(Core::Time::GMT());
+	ci.setCreationTime(Core::Time::UTC());
 
 	origin->setCreationInfo(ci);
 	origin->setLongitude(dialog.longitude());
@@ -1138,9 +1138,9 @@ bool MvMainWindow::readStationsFromDataBase() {
 
 			if ( channel.size() < 3 ) {
 				char compCode = 'Z';
-				DataModel::SensorLocation *sloc = Client::Inventory::Instance()->getSensorLocation(net, sta, location, Core::Time::GMT());
+				DataModel::SensorLocation *sloc = Client::Inventory::Instance()->getSensorLocation(net, sta, location, Core::Time::UTC());
 				if ( sloc ) {
-					DataModel::Stream *stream = DataModel::getVerticalComponent(sloc, channel.c_str(), Core::Time::GMT());
+					DataModel::Stream *stream = DataModel::getVerticalComponent(sloc, channel.c_str(), Core::Time::UTC());
 					if ( stream )
 						channel = stream->code();
 					else
@@ -1162,7 +1162,7 @@ bool MvMainWindow::readStationsFromDataBase() {
 	DataModel::Inventory *inventory = Client::Inventory::Instance()->inventory();
 	if ( !inventory ) return false;
 
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 
 	for ( size_t i = 0; i < inventory->networkCount(); ++i ) {
 		DataModel::NetworkPtr network = inventory->network(i);
@@ -1219,8 +1219,8 @@ bool MvMainWindow::readStationsFromDataBase() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MvMainWindow::readPicksFromDataBaseNotOlderThan(const Core::TimeSpan& timeSpan) {
-	Core::Time begin = Core::Time::GMT() - timeSpan;
-	Core::Time end = Core::Time::GMT();
+	Core::Time begin = Core::Time::UTC() - timeSpan;
+	Core::Time end = Core::Time::UTC();
 
 #ifdef DEBUG_AMPLITUDES
 	std::vector<std::string> pickIds;
@@ -1262,8 +1262,8 @@ void MvMainWindow::readPicksFromDataBaseNotOlderThan(const Core::TimeSpan& timeS
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MvMainWindow::readEventsFromDataBaseNotOlderThan(const Seiscomp::Core::TimeSpan& timeSpan) {
-	Core::Time begin = Core::Time::GMT() - timeSpan;
-	Core::Time end = Core::Time::GMT();
+	Core::Time begin = Core::Time::UTC() - timeSpan;
+	Core::Time end = Core::Time::UTC();
 
 	typedef std::vector<DataModel::EventPtr> EventCollection;
 	EventCollection events;
@@ -1461,7 +1461,7 @@ bool MvMainWindow::checkIfEventIsActive(const EventData& eventData) {
 	std::string originId = eventData.preferredOriginId();
 	DataModel::Origin* origin = _eventDataRepository.findOrigin(originId);
 
-	Core::Time referenceTime = Core::Time::GMT() - _configEventActivityLifeSpan;
+	Core::Time referenceTime = Core::Time::UTC() - _configEventActivityLifeSpan;
 	if ( origin->time().value() < referenceTime )
 		return false;
 	return true;

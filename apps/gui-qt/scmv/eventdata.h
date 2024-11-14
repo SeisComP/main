@@ -34,7 +34,7 @@ class Data {
 	public:
 		Data(T* object)
 		: _objectPtr(object)
-		, _containerCreationTime(Seiscomp::Core::Time::GMT()) {
+		, _containerCreationTime(Seiscomp::Core::Time::UTC()) {
 		}
 
 		virtual ~Data() {}

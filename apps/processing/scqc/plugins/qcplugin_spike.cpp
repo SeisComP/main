@@ -70,7 +70,7 @@ void QcPluginSpike::generateReport(const QcBuffer *buf) const {
 	auto obj1 = new WaveformQuality();
 	obj1->setWaveformID(getWaveformID(_streamID));
 	obj1->setCreatorID(_app->creatorID());
-	obj1->setCreated(Core::Time::GMT());
+	obj1->setCreated(Core::Time::UTC());
 	obj1->setStart(buf->startTime());
 	obj1->setEnd(buf->endTime());
 	obj1->setType("report");
@@ -84,7 +84,7 @@ void QcPluginSpike::generateReport(const QcBuffer *buf) const {
 	auto obj2 = new WaveformQuality();
 	obj2->setWaveformID(getWaveformID(_streamID));
 	obj2->setCreatorID(_app->creatorID());
-	obj2->setCreated(Core::Time::GMT());
+	obj2->setCreated(Core::Time::UTC());
 	obj2->setStart(buf->startTime());
 	obj2->setEnd(buf->endTime());
 	obj2->setType("report");
@@ -98,7 +98,7 @@ void QcPluginSpike::generateReport(const QcBuffer *buf) const {
 	auto obj3 = new WaveformQuality();
 	obj3->setWaveformID(getWaveformID(_streamID));
 	obj3->setCreatorID(_app->creatorID());
-	obj3->setCreated(Core::Time::GMT());
+	obj3->setCreated(Core::Time::UTC());
 	obj3->setStart(buf->startTime());
 	obj3->setEnd(buf->endTime());
 	obj3->setType("report");
@@ -146,7 +146,7 @@ void QcPluginSpike::generateAlert(const QcBuffer *shortBuffer, const QcBuffer *l
 		auto obj1 = new WaveformQuality();
 		obj1->setWaveformID(getWaveformID(_streamID));
 		obj1->setCreatorID(_app->creatorID());
-		obj1->setCreated(Core::Time::GMT());
+		obj1->setCreated(Core::Time::UTC());
 		obj1->setStart(shortBuffer->startTime());
 		obj1->setEnd(shortBuffer->endTime());
 		obj1->setType("alert");
@@ -162,7 +162,7 @@ void QcPluginSpike::generateAlert(const QcBuffer *shortBuffer, const QcBuffer *l
 		auto obj2 = new WaveformQuality();
 		obj2->setWaveformID(getWaveformID(_streamID));
 		obj2->setCreatorID(_app->creatorID());
-		obj2->setCreated(Core::Time::GMT());
+		obj2->setCreated(Core::Time::UTC());
 		obj2->setStart(shortBuffer->startTime());
 		obj2->setEnd(shortBuffer->endTime());
 		obj2->setType("alert");

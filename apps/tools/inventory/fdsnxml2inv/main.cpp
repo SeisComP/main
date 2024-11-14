@@ -260,7 +260,7 @@ class SyncStationXML : public Client::Application {
 
 			FDSNXML::FDSNStationXML msg;
 			msg.setSender(agencyID());
-			msg.setCreated(Core::Time::GMT());
+			msg.setCreated(Core::Time::UTC());
 			msg.setSource("SeisComP");
 			Convert2FDSNStaXML cnv(&msg);
 			_activeConverter = &cnv;

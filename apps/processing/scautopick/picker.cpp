@@ -316,7 +316,7 @@ bool App::init() {
 		SEISCOMP_DEBUG("Starting in playback mode");
 	}
 	else {
-		recordStream()->setStartTime(Core::Time::GMT() - Core::TimeSpan(_config.leadTime));
+		recordStream()->setStartTime(Core::Time::UTC() - Core::TimeSpan(_config.leadTime));
 	}
 
 	if ( configModule() != NULL ) {
@@ -425,7 +425,7 @@ bool App::init() {
 		logAmplTypes += '\n';
 	}
 
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 	DataModel::Inventory *inv = Client::Inventory::Instance()->inventory();
 
 	StringSet subscribeStreams;
@@ -1291,7 +1291,7 @@ void App::emitPPick(const Processing::Picker *proc,
 		}
 	}
 
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 	DataModel::CreationInfo ci;
 	ci.setCreationTime(now);
 	ci.setAgencyID(agencyID());
@@ -1434,7 +1434,7 @@ void App::emitSPick(const Processing::SecondaryPicker *proc,
 		}
 	}
 
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 	DataModel::CreationInfo ci;
 	ci.setCreationTime(now);
 	ci.setAgencyID(agencyID());
@@ -1495,7 +1495,7 @@ void App::emitDetection(const Processing::Detector *proc, const Record *rec, con
 	}
 
 	bool isDetection = !_config.pickerType.empty() && _config.sendDetections;
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 	DataModel::PickPtr pick;
 	if ( hasCustomPublicIDPattern() )
 		pick = DataModel::Pick::Create();
@@ -1596,7 +1596,7 @@ void App::sendPick(Seiscomp::DataModel::Pick *pick, DataModel::Amplitude *amp,
 	               pick->waveformID().locationCode().c_str(),
 	               pick->waveformID().channelCode().c_str(),
 	               pick->publicID().c_str());
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 
 	logObject(_logPicks, now);
 	if ( amp )
@@ -1665,7 +1665,7 @@ void App::emitAmplitude(const AmplitudeProcessor *ampProc,
 	tw.setEnd(res.time.end);
 
 	DataModel::AmplitudePtr amp = (DataModel::Amplitude*)ampProc->userData();
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 
 	if ( amp == NULL ) {
 		if ( hasCustomPublicIDPattern() )

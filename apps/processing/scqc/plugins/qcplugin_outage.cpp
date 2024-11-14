@@ -81,14 +81,14 @@ void QcPluginOutage::update() {
 
 	if ( _qcProcessor->isValid() ) {
 		Core::Time end = qcp->recordStartTime;
-		Core::Time start = (Core::Time)(end - Core::Time(QcProcessorOutage::Cast(_qcProcessor.get())->getOutage()));
+		Core::Time start = end - Core::TimeSpan(QcProcessorOutage::Cast(_qcProcessor.get())->getOutage());
 
 		SEISCOMP_DEBUG("got outage: %s %s-%s",_streamID.c_str(),start.iso().c_str(),end.iso().c_str());
 
 		Outage *obj = new Outage();
 		obj->setWaveformID(getWaveformID(_streamID));
 		obj->setCreatorID(_app->creatorID());
-		obj->setCreated(Time::GMT());
+		obj->setCreated(Time::UTC());
 		obj->setStart(start);
 		obj->setEnd(end);
 		_qcMessenger->attachObject(obj,true,OP_ADD);
@@ -119,12 +119,12 @@ bool QcPluginOutage::fillUp(const QcParameter *qcp) {
 				Outage *obj1 = new Outage();
 				obj1->setWaveformID(getWaveformID(_streamID));
 				obj1->setCreatorID(_app->creatorID());
-				obj1->setCreated(Time::GMT());
+				obj1->setCreated(Time::UTC());
 
 				Outage *obj2 = new Outage();
 				obj2->setWaveformID(getWaveformID(_streamID));
 				obj2->setCreatorID(_app->creatorID());
-				obj2->setCreated(Time::GMT());
+				obj2->setCreated(Time::UTC());
 
 				if ( outStart != recStart ) {
 					obj1->setStart(outStart);

@@ -384,7 +384,7 @@ class TestApp : public Client::Application {
 				origin->removeStationMagnitude(0);
 
 			Processing::MagnitudeProcessorPtr magProc = Processing::MagnitudeProcessorFactory::Create(MAG_TYPE);
-			Core::Time now = Core::Time::GMT();
+			Core::Time now = Core::Time::UTC();
 
 			ep = NULL;
 			ep = new EventParameters;
@@ -544,7 +544,7 @@ class TestApp : public Client::Application {
 
 			amp->setPickID(proc->referencingPickID());
 
-			Core::Time now = Core::Time::GMT();
+			Core::Time now = Core::Time::UTC();
 			ci.setAgencyID(agencyID());
 			ci.setAuthor(author());
 			ci.setCreationTime(now);

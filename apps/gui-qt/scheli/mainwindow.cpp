@@ -195,7 +195,7 @@ void MainWindow::setLineWidth(int lw) {
 void MainWindow::setLayout(int rows, int secondsPerRow) {
 	_rowTimeSpan = secondsPerRow;
 	_heliWidget->canvas().setLayout(rows, secondsPerRow);
-	_fullTimeSpan = Core::TimeSpan(rows * secondsPerRow);
+	_fullTimeSpan = Core::TimeSpan(rows * secondsPerRow, 0);
 }
 
 
@@ -285,7 +285,7 @@ void MainWindow::startAcquisition() {
 	                         _streamID.stationCode(),
 	                         _streamID.locationCode(),
 	                         _streamID.channelCode(),
-	                         (_referenceTime.valid()?_referenceTime:Core::Time::GMT()) - _heliWidget->canvas().recordsTimeSpan(),
+	                         (_referenceTime.valid()?_referenceTime:Core::Time::UTC()) - _heliWidget->canvas().recordsTimeSpan(),
 	                         _referenceTime);
 
 	_streamThread->start();
@@ -342,7 +342,7 @@ void MainWindow::advanceTime() {
 		updateTimeLabel(_referenceTime);
 	}
 	else {
-		Core::Time now = Core::Time::GMT();
+		Core::Time now = Core::Time::UTC();
 		_heliWidget->setCurrentTime(now);
 		updateTimeLabel(now);
 	}

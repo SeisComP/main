@@ -116,7 +116,7 @@ class TraceView : public Seiscomp::Gui::RecordView {
 			setUpdatesEnabled(false);
 			Seiscomp::Gui::RecordView::setDefaultDisplay();
 			setJustification(1.0);
-			setTimeRange(-_timeSpan,0);
+			setTimeRange(-_timeSpan.length(), 0);
 			setUpdatesEnabled(true);
 		}
 
@@ -129,7 +129,7 @@ class TraceView : public Seiscomp::Gui::RecordView {
 		) const override;
 
 	private:
-		double _timeSpan;
+		Core::TimeSpan _timeSpan;
 };
 
 

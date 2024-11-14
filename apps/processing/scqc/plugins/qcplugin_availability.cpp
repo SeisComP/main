@@ -90,7 +90,7 @@ void QcPluginAvailability::timeoutTask() {
 
 	QcParameter* qcp = new QcParameter();
 	qcp->recordSamplingFrequency = -1;
-	qcp->recordEndTime = Core::Time::GMT();
+	qcp->recordEndTime = Core::Time::UTC();
 
 	// origin of previous buffer item was a real record
 	if (_qcBuffer->back()->recordSamplingFrequency != -1) {
@@ -125,7 +125,7 @@ void QcPluginAvailability::generateReport(const QcBuffer* buf) const {
 	obj = new WaveformQuality();
 	obj->setWaveformID(getWaveformID(_streamID));
 	obj->setCreatorID(_app->creatorID());
-	obj->setCreated(Core::Time::GMT());
+	obj->setCreated(Core::Time::UTC());
 	obj->setStart(buf->startTime());
 	obj->setEnd(buf->endTime());
 	obj->setType("report");
@@ -139,7 +139,7 @@ void QcPluginAvailability::generateReport(const QcBuffer* buf) const {
 	obj = new WaveformQuality();
 	obj->setWaveformID(getWaveformID(_streamID));
 	obj->setCreatorID(_app->creatorID());
-	obj->setCreated(Core::Time::GMT());
+	obj->setCreated(Core::Time::UTC());
 	obj->setStart(buf->startTime());
 	obj->setEnd(buf->endTime());
 	obj->setType("report");
@@ -153,7 +153,7 @@ void QcPluginAvailability::generateReport(const QcBuffer* buf) const {
 	obj = new WaveformQuality();
 	obj->setWaveformID(getWaveformID(_streamID));
 	obj->setCreatorID(_app->creatorID());
-	obj->setCreated(Core::Time::GMT());
+	obj->setCreated(Core::Time::UTC());
 	obj->setStart(buf->startTime());
 	obj->setEnd(buf->endTime());
 	obj->setType("report");
@@ -199,7 +199,7 @@ std::vector<double> QcPluginAvailability::availability(const QcBuffer *buf) cons
 		return returnVector; // a timeout entry
 	}
 
-	int estimatedSamples = Private::round(tw.length() * samplingFrequency);
+	int estimatedSamples = Private::round(static_cast<double>(tw.length()) * samplingFrequency);
 	int gapCount = 0;
 	int overlapCount = 0;
 	Core::Time lastTime = Core::Time();
@@ -213,7 +213,7 @@ std::vector<double> QcPluginAvailability::availability(const QcBuffer *buf) cons
 		}
 
 		Core::TimeWindow tw2(qcp->recordStartTime, qcp->recordEndTime);
-		int sampleCount = Private::round(tw2.length() * recordSamplingFrequency);
+		int sampleCount = Private::round(static_cast<double>(tw2.length()) * recordSamplingFrequency);
 
 		//! get gaps/overlaps
 		if ( lastTime != Core::Time() ) {

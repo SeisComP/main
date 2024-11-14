@@ -331,7 +331,7 @@ void Detector::process(const Record *record, const DoubleArray &filteredData) {
 bool Detector::validateOn(const Record *record, size_t &i, const DoubleArray &filteredData) {
 	_amplProc.reset();
 	_amplProc.pickIndex = i;
-	_amplProc.neededSamples = static_cast<size_t>(_twMax * record->samplingFrequency());
+	_amplProc.neededSamples = static_cast<size_t>(_twMax.length() * record->samplingFrequency());
 
 	_currentPickAmplitude = filteredData[i];
 	_minAmplitude = Core::None;

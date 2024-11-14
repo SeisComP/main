@@ -674,7 +674,7 @@ throw(Core::GeneralException)
 	ILOC_HYPO hypoCenter;
 
 	hypoCenter.isManMade = 0; // ???
-	hypoCenter.Time = inputOrigin->time().value();
+	hypoCenter.Time = inputOrigin->time().value().epoch();
 	hypoCenter.Lat = inputOrigin->latitude().value();
 	hypoCenter.Lon = inputOrigin->longitude().value();
 

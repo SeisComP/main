@@ -1436,7 +1436,7 @@ void MainWindow::setStationEnabled(const string& networkCode,
 		CreationInfo ci;
 		ci.setAuthor(SCApp->author());
 		ci.setAgencyID(SCApp->agencyID());
-		ci.setCreationTime(Core::Time::GMT());
+		ci.setCreationTime(Core::Time::UTC());
 
 		newCs->setCreationInfo(ci);
 
@@ -1457,12 +1457,12 @@ void MainWindow::setStationEnabled(const string& networkCode,
 		CreationInfo *ci;
 		try {
 			ci = &cs->creationInfo();
-			ci->setModificationTime(Core::Time::GMT());
+			ci->setModificationTime(Core::Time::UTC());
 		}
 		catch ( ... ) {
 			cs->setCreationInfo(CreationInfo());
 			ci = &cs->creationInfo();
-			ci->setCreationTime(Core::Time::GMT());
+			ci->setCreationTime(Core::Time::UTC());
 		}
 
 		ci->setAuthor(SCApp->author());
@@ -1669,7 +1669,7 @@ void MainWindow::listHiddenStreams() {
 
 	int numberOfLines = 0;
 
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 	foreach ( TraceView* view, _traceViews ) {
 		for ( int i = 0; i < view->rowCount(); ++i ) {
 			Seiscomp::Gui::RecordViewItem* item = view->itemAt(i);
@@ -1854,7 +1854,7 @@ void MainWindow::setupItem(const Record*, Gui::RecordViewItem *item) {
 			double scale = 1.0 / Client::Inventory::Instance()->getGain(
 					streamID.networkCode(), streamID.stationCode(),
 					streamID.locationCode(), streamID.channelCode(),
-					Settings::global.endTime.valid() ? Settings::global.endTime : Core::Time::GMT()
+					Settings::global.endTime.valid() ? Settings::global.endTime : Core::Time::UTC()
 				);
 
 			_scaleMap[streamID] = scale;
@@ -1987,7 +1987,7 @@ void MainWindow::createOrigin(Gui::RecordViewItem* item, Core::Time time) {
 	DataModel::CreationInfo ci;
 	ci.setAgencyID(SCApp->agencyID());
 	ci.setAuthor(SCApp->author());
-	ci.setCreationTime(Core::Time::GMT());
+	ci.setCreationTime(Core::Time::UTC());
 	origin->setCreationInfo(ci);
 	origin->setLongitude(dlg.longitude());
 	origin->setLatitude(dlg.latitude());
@@ -2067,7 +2067,7 @@ void MainWindow::loadFiles() {
 	TRACEVIEWS(setAlignment(_originTime));
 	TRACEVIEWS(setBufferSize(tw.length()));
 	TRACEVIEWS(setTimeSpan(tw.length()));
-	TRACEVIEWS(setTimeRange(-tw.length(), 0));
+	TRACEVIEWS(setTimeRange(-static_cast<double>(tw.length()), 0));
 
 	alignRight();
 	colorByConfig();
@@ -2082,7 +2082,7 @@ void MainWindow::loadFiles() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::openAcquisition() {
 	if ( !Settings::global.endTime ) {
-		_originTime = Core::Time::GMT();
+		_originTime = Core::Time::UTC();
 	}
 	else {
 		_originTime = Settings::global.endTime;
@@ -2925,8 +2925,8 @@ void MainWindow::checkTraceDelay() {
 		return;
 	}
 
-	Core::Time now = Core::Time::GMT();
-	Core::TimeSpan maxDelay = Core::TimeSpan(Settings::global.maxDelay);
+	Core::Time now = Core::Time::UTC();
+	Core::TimeSpan maxDelay = Core::TimeSpan(Settings::global.maxDelay, 0);
 	foreach ( TraceView* view, _traceViews ) {
 		for ( int i = 0; i < view->rowCount(); ++i ) {
 			Seiscomp::Gui::RecordViewItem* item = view->itemAt(i);
@@ -3074,7 +3074,7 @@ void MainWindow::reload() {
 		if ( QMessageBox::question(this, "Load data",
 		                           tr("Data range exceeds %1.\n"
 		                              "Do you want to continue?")
-		                           .arg(prettyTimeRange(Settings::global.warnDataTimeRange)),
+		                           .arg(prettyTimeRange(Settings::global.warnDataTimeRange.seconds())),
 		                           QMessageBox::Yes, QMessageBox::No) == QMessageBox::No ) {
 			return;
 		}
@@ -3092,13 +3092,13 @@ void MainWindow::switchToRealtime() {
 	Settings::global.endTime = Core::Time();
 	// Reset buffer size to initial config
 	_bufferSize = Core::TimeSpan(Settings::global.bufferSize, 0);
-	_originTime = Core::Time::GMT();
+	_originTime = Core::Time::UTC();
 	_dataTimeWindow.set(_originTime - _bufferSize, Settings::global.endTime);
 
 	TRACEVIEWS(setBufferSize(_bufferSize));
 	TRACEVIEWS(setTimeSpan(_bufferSize));
 	TRACEVIEWS(setAlignment(_originTime));
-	TRACEVIEWS(setTimeRange(-_bufferSize, 0));
+	TRACEVIEWS(setTimeRange(-_bufferSize.length(), 0));
 	_wantReload = true;
 
 	if ( _recordStreamThread ) {
@@ -3124,7 +3124,7 @@ void MainWindow::reloadTimeWindow(const Core::TimeWindow &tw) {
 	TRACEVIEWS(setBufferSize(_bufferSize));
 	TRACEVIEWS(setTimeSpan(_bufferSize));
 	TRACEVIEWS(setAlignment(_originTime));
-	TRACEVIEWS(setTimeRange(-_dataTimeWindow.length(), 0));
+	TRACEVIEWS(setTimeRange(-static_cast<double>(_dataTimeWindow.length()), 0));
 	_wantReload = true;
 
 	if ( _recordStreamThread ) {
@@ -3201,7 +3201,7 @@ void MainWindow::reloadData() {
 		if ( !Settings::global.disableTimeWindowRequest ) {
 			auto tw = _dataTimeWindow;
 			if ( Settings::global.initStartTime && !tw.endTime().valid() ) {
-				tw.setStartTime(Core::Time::GMT());
+				tw.setStartTime(Core::Time::UTC());
 			}
 			_recordStreamThread->setTimeWindow(tw);
 		}
@@ -3249,12 +3249,12 @@ void MainWindow::advance() {
 	CURRENT_TRACEVIEW_RET(dataTimeWindow, visibleTimeRange());
 	dataTimeWindow.setEndTime(dataTimeWindow.endTime() + Core::TimeSpan(0, 500000));
 
-	auto remainder = dataTimeWindow.endTime().seconds() % Settings::global.bufferSize;
+	auto remainder = dataTimeWindow.endTime().epochSeconds() % Settings::global.bufferSize;
 	if ( remainder ) {
-		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().seconds() + Settings::global.bufferSize - remainder, 0));
+		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().epochSeconds() + Settings::global.bufferSize - remainder, 0));
 	}
 	else {
-		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().seconds() + Settings::global.bufferSize, 0));
+		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().epochSeconds() + Settings::global.bufferSize, 0));
 	}
 	dataTimeWindow.setStartTime(dataTimeWindow.endTime() - Core::TimeSpan(Settings::global.bufferSize, 0));
 
@@ -3271,12 +3271,12 @@ void MainWindow::reverse() {
 	CURRENT_TRACEVIEW_RET(dataTimeWindow, visibleTimeRange());
 	dataTimeWindow.setEndTime(dataTimeWindow.endTime() + Core::TimeSpan(0, 500000));
 
-	auto remainder = dataTimeWindow.endTime().seconds() % Settings::global.bufferSize;
+	auto remainder = dataTimeWindow.endTime().epochSeconds() % Settings::global.bufferSize;
 	if ( remainder ) {
-		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().seconds() - remainder, 0));
+		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().epochSeconds() - remainder, 0));
 	}
 	else {
-		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().seconds() - Settings::global.bufferSize, 0));
+		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().epochSeconds() - Settings::global.bufferSize, 0));
 	}
 	dataTimeWindow.setStartTime(dataTimeWindow.endTime() - Core::TimeSpan(Settings::global.bufferSize, 0));
 
@@ -3624,7 +3624,7 @@ void MainWindow::jumpToLastRecord() {
 	if ( _lastRecordTime ) {
 		SEISCOMP_DEBUG("LastRecordTime = %s", _lastRecordTime.iso().c_str());
 		TRACEVIEWS(align());
-		TRACEVIEWS(move(_lastRecordTime - _traceViews.front()->alignment()));
+		TRACEVIEWS(move((_lastRecordTime - _traceViews.front()->alignment()).length()));
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -3662,7 +3662,7 @@ void MainWindow::step() {
 	colorByConfig();
 
 	if ( _ui.actionToggleAutoMove->isChecked() && !Settings::global.endTime ) {
-		TRACEVIEWS(setAlignment(Core::Time::GMT()));
+		TRACEVIEWS(setAlignment(Core::Time::UTC()));
 	}
 
 	// Check every 10 seconds the traces delay

@@ -162,7 +162,7 @@ Gui::EventSummaryView* MainFrame::eventSummaryView() const {
 void MainFrame::loadEvents(float days) {
 	Core::TimeWindow tw;
 
-	tw.setEndTime(Core::Time::GMT());
+	tw.setEndTime(Core::Time::UTC());
 	tw.setStartTime(tw.endTime() - Core::TimeSpan(days*86400));
 
 	_listPage->setInterval(tw);

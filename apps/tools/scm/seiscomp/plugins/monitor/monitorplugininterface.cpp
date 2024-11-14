@@ -50,8 +50,8 @@ bool findName(ClientInfoData clientData, std::string name) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 MonitorPluginInterface::MonitorPluginInterface(const std::string& name)
-	: _filterMeanInterval(10*60),
-	  _filterMeanTimeMark(Core::Time::GMT()),
+	: _filterMeanInterval(10*60, 0),
+	  _filterMeanTimeMark(Core::Time::UTC()),
 	  _name(name),
 	  _operational(false),
 	  _isFilteringEnabled(false),
@@ -234,8 +234,8 @@ const ClientTable* MonitorPluginInterface::filterMean(const ClientTable &clientT
 		}
 	}
 
-	if ( Core::Time::GMT() - _filterMeanTimeMark >= _filterMeanInterval ) {
-		_filterMeanTimeMark = Core::Time::GMT();
+	if ( Core::Time::UTC() - _filterMeanTimeMark >= _filterMeanInterval ) {
+		_filterMeanTimeMark = Core::Time::UTC();
 		// Calculate mean
 		for ( ClientTable::iterator it = _filterMeanClientTable.begin();
 			 it != _filterMeanClientTable.end(); ++it ) {

@@ -298,7 +298,7 @@ MainFrame::MainFrame(){
 	try { pickerConfig.allComponentsMaximumStationDistance = SCApp->configGetDouble("picker.allComponentsMaximumDistance"); }
 	catch ( ... ) { pickerConfig.allComponentsMaximumStationDistance = 10.0; }
 
-	try { pickerConfig.usePerStreamTimeWindows = Core::TimeSpan(SCApp->configGetBool("picker.usePerStreamTimeWindows")); }
+	try { pickerConfig.usePerStreamTimeWindows = SCApp->configGetBool("picker.usePerStreamTimeWindows"); }
 	catch ( ... ) { pickerConfig.usePerStreamTimeWindows = false; }
 
 	try { pickerConfig.removeAutomaticStationPicks = SCApp->configGetBool("picker.removeAutomaticPicksFromStationAfterManualReview"); }
@@ -307,14 +307,14 @@ MainFrame::MainFrame(){
 	try { pickerConfig.removeAutomaticPicks = SCApp->configGetBool("picker.removeAllAutomaticPicksAfterManualReview"); }
 	catch ( ... ) { pickerConfig.removeAutomaticPicks = false; }
 
-	try { pickerConfig.preOffset = Core::TimeSpan(SCApp->configGetInt("picker.preOffset")); }
-	catch ( ... ) { pickerConfig.preOffset = Core::TimeSpan(60); }
+	try { pickerConfig.preOffset = Core::TimeSpan(SCApp->configGetInt("picker.preOffset"), 0); }
+	catch ( ... ) { pickerConfig.preOffset = Core::TimeSpan(60, 0); }
 
-	try { pickerConfig.postOffset = Core::TimeSpan(SCApp->configGetInt("picker.postOffset")); }
-	catch ( ... ) { pickerConfig.postOffset = Core::TimeSpan(120); }
+	try { pickerConfig.postOffset = Core::TimeSpan(SCApp->configGetInt("picker.postOffset"), 0); }
+	catch ( ... ) { pickerConfig.postOffset = Core::TimeSpan(120, 0); }
 
-	try { pickerConfig.minimumTimeWindow = Core::TimeSpan(SCApp->configGetInt("picker.minimumTimeWindow")); }
-	catch ( ... ) { pickerConfig.minimumTimeWindow = Core::TimeSpan(1800); }
+	try { pickerConfig.minimumTimeWindow = Core::TimeSpan(SCApp->configGetInt("picker.minimumTimeWindow"), 0); }
+	catch ( ... ) { pickerConfig.minimumTimeWindow = Core::TimeSpan(1800, 0); }
 
 	try { pickerConfig.alignmentPosition = SCApp->configGetDouble("picker.alignmentPosition"); }
 	catch ( ... ) { pickerConfig.alignmentPosition = 0.5; }
@@ -551,11 +551,11 @@ MainFrame::MainFrame(){
 	try { pickerConfig.defaultDepth = SCApp->configGetDouble("olv.defaultDepth"); }
 	catch ( ... ) { pickerConfig.defaultDepth = 10; }
 
-	try { amplitudeConfig.preOffset = Core::TimeSpan(SCApp->configGetInt("amplitudePicker.preOffset")); }
-	catch ( ... ) { amplitudeConfig.preOffset = Core::TimeSpan(300.0); }
+	try { amplitudeConfig.preOffset = Core::TimeSpan(SCApp->configGetInt("amplitudePicker.preOffset"), 0); }
+	catch ( ... ) { amplitudeConfig.preOffset = Core::TimeSpan(300, 0); }
 
-	try { amplitudeConfig.postOffset = Core::TimeSpan(SCApp->configGetInt("amplitudePicker.postOffset")); }
-	catch ( ... ) { amplitudeConfig.postOffset = Core::TimeSpan(300.0); }
+	try { amplitudeConfig.postOffset = Core::TimeSpan(SCApp->configGetInt("amplitudePicker.postOffset"), 0); }
+	catch ( ... ) { amplitudeConfig.postOffset = Core::TimeSpan(300, 0); }
 
 	try { amplitudeConfig.defaultNoiseBegin = SCApp->configGetDouble("amplitudePicker.defaultNoiseBegin"); }
 	catch ( ... ) {}
@@ -965,7 +965,7 @@ void MainFrame::loadEvents(float days) {
 
 	Core::TimeWindow tw;
 
-	tw.setEndTime(Core::Time::GMT());
+	tw.setEndTime(Core::Time::UTC());
 	tw.setStartTime(tw.endTime() - Core::TimeSpan(days*86400));
 
 	_eventList->setInterval(tw);
@@ -1609,7 +1609,7 @@ void MainFrame::publishEvent() {
 
 	string tmpFileName;
 	stringstream tmpss;
-	tmpss << "/tmp/seiscomp_" <<   event->publicID() <<  "." << Core::pid() << "." << Core::Time::GMT().iso() << ".xml";
+	tmpss << "/tmp/seiscomp_" <<   event->publicID() <<  "." << Core::pid() << "." << Core::Time::UTC().iso() << ".xml";
 	tmpFileName = tmpss.str();
 	IO::XMLArchive ar;
 	if( !ar.create(tmpFileName.c_str()) ) {
@@ -1631,7 +1631,7 @@ void MainFrame::publishEvent() {
 */
 	string tmpFileName;
 	stringstream tmpss;
-	tmpss << "/tmp/seiscomp_" <<   event->publicID() <<  "." << System::HostInfo().pid() << "." << Core::Time::GMT().iso() << ".xml";
+	tmpss << "/tmp/seiscomp_" <<   event->publicID() <<  "." << System::HostInfo().pid() << "." << Core::Time::UTC().iso() << ".xml";
 	tmpFileName = tmpss.str();
 	IO::XMLArchive ar;
 	if( !ar.create(tmpFileName.c_str()) ) {

@@ -740,14 +740,14 @@ void App::readHistoricEvents() {
 	// Fetch all historic events out of the database. The endtime is
 	// probably in the future but because of timing differences between
 	// different computers: safety first!
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 	OriginList preferredOrigins;
 	PickIds pickIds;
 
 	// Store all preferred origins
 	DataModel::DatabaseIterator it =
-		query()->getPreferredOrigins(now - Core::TimeSpan(_keepEventsTimeSpan),
-		                             now + Core::TimeSpan(_keepEventsTimeSpan), "");
+		query()->getPreferredOrigins(now - Core::TimeSpan(_keepEventsTimeSpan, 0),
+		                             now + Core::TimeSpan(_keepEventsTimeSpan, 0), "");
 	for ( ; it.get() != nullptr; ++it ) {
 		DataModel::OriginPtr origin = DataModel::Origin::Cast(it.get());
 		if ( origin )
@@ -844,7 +844,7 @@ bool App::runFromXMLFile(const char *filename)
 		SEISCOMP_DEBUG("playback speed factor %g", _playbackSpeed);
 	}
 
-	objectsStartTime = playbackStartTime = Core::Time::GMT();
+	objectsStartTime = playbackStartTime = Core::Time::UTC();
 	objectCount = 0;
 
 	return true;
@@ -994,7 +994,7 @@ const Seiscomp::Core::Time App::now() const {
 	if (_inputFileXML.size() || _inputEPFile.size())
 		return syncTime;
 
-	return Core::Time::GMT();
+	return Core::Time::UTC();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1095,10 +1095,10 @@ void App::handleTimeout() {
 			objectsStartTime = t;
 
 		if (_playbackSpeed > 0) {
-			double dt = t - objectsStartTime;
-			Core::TimeSpan dp = dt/_playbackSpeed;
+			double dt = static_cast<double>(t - objectsStartTime);
+			Core::TimeSpan dp = dt / _playbackSpeed;
 			t = playbackStartTime + dp;
-			if (Core::Time::GMT() < t)
+			if (Core::Time::UTC() < t)
 				break; // until next handleTimeout() call
 		} // otherwise no speed limit :)
 
@@ -1137,7 +1137,7 @@ void App::addObject(const std::string& parentID, DataModel::Object* o) {
 
 	DataModel::Pick *pick = DataModel::Pick::Cast(o);
 	if ( pick ) {
-		logObject(_inputPicks, Core::Time::GMT());
+		logObject(_inputPicks, Core::Time::UTC());
 		if ( ! feed(pick))
 			return;
 		if (extra_debug)
@@ -1147,7 +1147,7 @@ void App::addObject(const std::string& parentID, DataModel::Object* o) {
 
 	DataModel::Amplitude *amplitude = DataModel::Amplitude::Cast(o);
 	if ( amplitude ) {
-		logObject(_inputAmps, Core::Time::GMT());
+		logObject(_inputAmps, Core::Time::UTC());
 		if ( ! feed(amplitude))
 			return;
 		if (extra_debug)
@@ -1157,7 +1157,7 @@ void App::addObject(const std::string& parentID, DataModel::Object* o) {
 
 	DataModel::Origin *origin = DataModel::Origin::Cast(o);
 	if ( origin ) {
-		logObject(_inputOrgs, Core::Time::GMT());
+		logObject(_inputOrgs, Core::Time::UTC());
 		if ( ! feed(origin))
 			return;
 		if (extra_debug)
@@ -1454,7 +1454,7 @@ bool App::_report(const ::Autoloc::Origin *origin) {
 			journalEntry->setObjectID(scorigin->publicID());
 			journalEntry->setSender(SCCoreApp->author().c_str());
 			journalEntry->setParameters(str);
-			journalEntry->setCreated(Core::Time::GMT());
+			journalEntry->setCreated(Core::Time::UTC());
 
 			DataModel::NotifierMessagePtr jm = new DataModel::NotifierMessage;
 			jm->attach(new DataModel::Notifier(DataModel::Journaling::ClassName(),

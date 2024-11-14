@@ -358,7 +358,7 @@ Time Autoloc3::now()
 	if (_config.playback)
 		return _now;
 
-	return Time(Seiscomp::Core::Time::GMT());
+	return Time(Seiscomp::Core::Time::UTC());
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -670,7 +670,7 @@ double Autoloc3::_score(const Origin *origin) const
 bool Autoloc3::_log(const Pick *pick)
 {
 	if (_pickLogFilePrefix != "") {
-		Time now = Time(Seiscomp::Core::Time::GMT());
+		Time now = Time(Seiscomp::Core::Time::UTC());
 		setPickLogFileName(_pickLogFilePrefix+"."+sctime(now).toString("%F"));
 	}
 

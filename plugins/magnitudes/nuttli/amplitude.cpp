@@ -356,7 +356,7 @@ OPT(double) MNAmplitude::getDefinedOnset(const PhaseOrVelocity *priorities,
 					}
 
 					// Phase and location matches, use it
-					double onset = pick->time().value() - _environment.hypocenter->time().value();
+					double onset = (pick->time().value() - _environment.hypocenter->time().value()).length();
 					double scale = left ? -1.0 : 1.0;
 					try {
 						onset += scale * pick->time().lowerUncertainty();
@@ -444,7 +444,7 @@ OPT(double) MNAmplitude::getEarliestOnset(double lat0, double lon0, double depth
 		}
 
 		// Phase and location matches, use it
-		double onset = pick->time().value() - _environment.hypocenter->time().value();
+		double onset = (pick->time().value() - _environment.hypocenter->time().value()).length();
 		try {
 			onset -= pick->time().lowerUncertainty();
 		}
@@ -592,7 +592,7 @@ void MNAmplitude::setEnvironment(const Seiscomp::DataModel::Origin *hypocenter,
 
 	double noiseWindowStart = *noiseWindowEnd - _snrWindowSeconds;
 
-	double pickOffset = _trigger - _environment.hypocenter->time().value();
+	double pickOffset = (_trigger - _environment.hypocenter->time().value()).length();
 	noiseWindowStart -= pickOffset;
 	*noiseWindowEnd -= pickOffset;
 	*signalWindowStart-= pickOffset;

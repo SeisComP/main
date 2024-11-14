@@ -267,7 +267,7 @@ class ObjectDispatcher : public BaseObjectDispatcher {
 				if ( _connection->send(targetIt->second, &notifierMessage) )
 					return true;
 
-				SEISCOMP_ERROR("Could not send object %s to %s@%s", 
+				SEISCOMP_ERROR("Could not send object %s to %s@%s",
 				               object->className(), targetIt->second.c_str(),
 				               _connection->source().c_str());
 				if ( _connection->isConnected() ) break;
@@ -740,7 +740,7 @@ class DispatchTool : public Seiscomp::Client::Application {
 
 			unsigned int totalCount = ObjectCounter(doc.get()).count();
 
-			SEISCOMP_INFO("Time needed to parse XML: %s", Core::Time(timer.elapsed()).toString("%T.%f"));
+			SEISCOMP_INFO("Time needed to parse XML: %s", (Core::Time() + timer.elapsed()).toString("%T.%f"));
 			SEISCOMP_INFO("Document object type: %s", doc->className());
 			SEISCOMP_INFO("Total number of objects: %d", totalCount);
 
@@ -761,10 +761,11 @@ class DispatchTool : public Seiscomp::Client::Application {
 				ar.close();
 			}
 
-			SEISCOMP_INFO("While dispatching %d/%d objects %d errors occured", 
+			SEISCOMP_INFO("While dispatching %d/%d objects %d errors occured",
 			              dispatcher->count(), totalCount, dispatcher->errors());
 			SEISCOMP_INFO("Time needed to dispatch %d objects: %s",
-			              dispatcher->count(), Core::Time(timer.elapsed()).toString("%T.%f"));
+			              dispatcher->count(),
+			              (Core::Time() + timer.elapsed()).toString("%T.%f"));
 
 			delete dispatcher;
 

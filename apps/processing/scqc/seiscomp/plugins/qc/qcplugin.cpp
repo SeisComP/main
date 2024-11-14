@@ -133,9 +133,9 @@ void QcPlugin::generateNullReport() const {
 		auto obj = new DataModel::WaveformQuality();
 		obj->setWaveformID(getWaveformID(_streamID));
 		obj->setCreatorID(_app->creatorID());
-		obj->setCreated(Core::Time::GMT());
-		obj->setStart(Core::Time::GMT());
-		obj->setEnd(Core::Time::GMT());
+		obj->setCreated(Core::Time::UTC());
+		obj->setStart(Core::Time::UTC());
+		obj->setEnd(Core::Time::UTC());
 		obj->setType("report");
 		obj->setParameter(_parameterNames[i]);
 		obj->setValue(0.0);
@@ -163,7 +163,7 @@ void QcPlugin::generateReport(const QcBuffer *buf) const {
 	auto obj = new DataModel::WaveformQuality();
 	obj->setWaveformID(getWaveformID(_streamID));
 	obj->setCreatorID(_app->creatorID());
-	obj->setCreated(Core::Time::GMT());
+	obj->setCreated(Core::Time::UTC());
 	obj->setStart(buf->startTime());
 	obj->setEnd(buf->endTime());
 	obj->setType("report");
@@ -207,7 +207,7 @@ void QcPlugin::generateAlert(const QcBuffer *shortBuffer,
 		auto obj = new DataModel::WaveformQuality();
 		obj->setWaveformID(getWaveformID(_streamID));
 		obj->setCreatorID(_app->creatorID());
-		obj->setCreated(Core::Time::GMT());
+		obj->setCreated(Core::Time::UTC());
 		obj->setStart(shortBuffer->startTime());
 		obj->setEnd(shortBuffer->endTime());
 		obj->setType("alert");
@@ -340,8 +340,8 @@ void QcPlugin::sendMessages(const Core::Time &rectime) {
 	//! A R C H I V E
 	if ( _qcConfig->archiveInterval() >= 0 && rectime != Core::Time() ) {
 		diff = rectime - _lastArchiveTime;
-		if ( diff > Core::TimeSpan(_qcConfig->archiveInterval()) || _app->exitRequested() ) {
-			QcBufferCPtr archiveBuffer = _qcBuffer->qcParameter(_qcConfig->archiveBuffer());
+		if ( diff > Core::TimeSpan(_qcConfig->archiveInterval(), 0) || _app->exitRequested() ) {
+			QcBufferCPtr archiveBuffer = _qcBuffer->qcParameter(Core::TimeSpan(_qcConfig->archiveBuffer(), 0));
 			if ( !archiveBuffer->empty() ) {
 				generateReport(archiveBuffer.get());
 				sendObjects(true); // as notifier msg
@@ -355,8 +355,8 @@ void QcPlugin::sendMessages(const Core::Time &rectime) {
 	//! R E P O R T
 	if ( _qcConfig->reportInterval() >= 0 ) {
 		diff = rectime - _lastReportTime;
-		if ( diff > Core::TimeSpan(_qcConfig->reportInterval()) || rectime == Core::Time()) {
-			QcBufferCPtr reportBuffer = _qcBuffer->qcParameter(_qcConfig->reportBuffer());
+		if ( diff > Core::TimeSpan(_qcConfig->reportInterval(), 0) || rectime == Core::Time()) {
+			QcBufferCPtr reportBuffer = _qcBuffer->qcParameter(Core::TimeSpan(_qcConfig->reportBuffer(), 0));
 			generateReport(reportBuffer.get());
 			sendObjects(false);
 			_lastReportTime = rectime;
@@ -369,8 +369,10 @@ void QcPlugin::sendMessages(const Core::Time &rectime) {
 	// in archive mode we don't want alert msg
 	if ( !_app->archiveMode() && _qcConfig->alertInterval() >= 0 ) {
 		diff = rectime - _lastAlertTime;
-		if ( ( diff > Core::TimeSpan(_qcConfig->alertInterval()) && (int)_qcBuffer->length() >= _qcConfig->alertBuffer() ) || rectime == Core::Time()) {
-			QcBufferCPtr alertBuffer = _qcBuffer->qcParameter(_qcConfig->alertBuffer());
+		if ( ( diff > Core::TimeSpan(_qcConfig->alertInterval(), 0)
+		    && static_cast<int>(_qcBuffer->length().seconds()) >= _qcConfig->alertBuffer() )
+		  || rectime == Core::Time()) {
+			QcBufferCPtr alertBuffer = _qcBuffer->qcParameter(Core::TimeSpan(_qcConfig->alertBuffer(), 0));
 			if ( alertBuffer->empty() ) {
 				return;
 			}

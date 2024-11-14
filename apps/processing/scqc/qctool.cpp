@@ -58,9 +58,9 @@ QcTool::QcTool(int argc, char **argv)
 	_qcMessenger = new QcMessenger(this);
 
 	//! TODO
-	_ringBufferSize = Core::TimeSpan(5.*60.);
-	_leadTime = Core::TimeSpan(0.*60.);
-	_maxGapLength = Core::TimeSpan(1.*60.);
+	_ringBufferSize = 5. * 60.;
+	_leadTime = 0. * 60.;
+	_maxGapLength = 1. * 60.;
 	_archiveMode = false;
 	_autoTime = false;
 
@@ -129,7 +129,7 @@ bool QcTool::validateParameters() {
 				_beginTime = Seiscomp::Core::Time::FromString(begin.c_str(), "%F %T");
 			}
 			catch ( ... ) {
-				_beginTime = Core::Time::GMT() - Core::TimeSpan(24*3600.0);
+				_beginTime = Core::Time::UTC() - Core::TimeSpan(24*3600.0);
 				SEISCOMP_WARNING("using (current time - 24h) as begin time");
 			}
 
@@ -141,7 +141,7 @@ bool QcTool::validateParameters() {
 			_endTime = Seiscomp::Core::Time::FromString(end.c_str(), "%F %T");
 		}
 		catch ( ... ) {
-			_endTime = Core::Time::GMT();
+			_endTime = Core::Time::UTC();
 			SEISCOMP_WARNING("using current time as end time");
 		}
 
@@ -266,7 +266,7 @@ bool QcTool::init() {
 		SEISCOMP_INFO("*** ARCHIVE MODE ***");
 	}
 	else {
-		_beginTime = Core::Time::GMT() - Core::TimeSpan(_leadTime);
+		_beginTime = Core::Time::UTC() - Core::TimeSpan(_leadTime);
 		_endTime = Core::Time();
 	}
 
@@ -307,7 +307,7 @@ bool QcTool::init() {
 							bool isFixedChannel = cha.size() > 2;
 
 							DataModel::SensorLocation *sloc =
-								Client::Inventory::Instance()->getSensorLocation(net, sta, loc, Core::Time::GMT());
+								Client::Inventory::Instance()->getSensorLocation(net, sta, loc, Core::Time::UTC());
 
 							if ( _use3Components ) {
 								std::string groupCode;
@@ -320,7 +320,7 @@ bool QcTool::init() {
 								if ( sloc ) {
 									DataModel::ThreeComponents tc;
 
-									if ( DataModel::getThreeComponents(tc, sloc, groupCode.c_str(), Core::Time::GMT()) ) {
+									if ( DataModel::getThreeComponents(tc, sloc, groupCode.c_str(), Core::Time::UTC()) ) {
 										if ( tc.comps[DataModel::ThreeComponents::Vertical] )
 											addStream(net, sta, loc, tc.comps[DataModel::ThreeComponents::Vertical]->code());
 										else
@@ -352,7 +352,7 @@ bool QcTool::init() {
 								// Only vertical
 								if ( !isFixedChannel ) {
 									if ( sloc ) {
-										DataModel::Stream *stream = DataModel::getVerticalComponent(sloc, cha.c_str(), Core::Time::GMT());
+										DataModel::Stream *stream = DataModel::getVerticalComponent(sloc, cha.c_str(), Core::Time::UTC());
 										if ( stream )
 											addStream(net, sta, loc, stream->code());
 										else
@@ -461,7 +461,7 @@ Core::Time QcTool::findLast(string net, string sta, string loc, string cha) {
 	DatabaseIterator dbit = query()->getWaveformQualityDescending(WaveformStreamID(net, sta, loc, cha, ""), "rms", "report");
 	DataModel::WaveformQuality* wfq;
 	int year, month, day;
-	Core::Time::GMT().get(&year, &month, &day);
+	Core::Time::UTC().get(&year, &month, &day);
 	Core::Time today(year, month, day);
 	Core::Time lastEndTime = today - Core::TimeSpan(_dbLookBack * 24 * 3600.0);
 	if ( dbit.valid() ) {
