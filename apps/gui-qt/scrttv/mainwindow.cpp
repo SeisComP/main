@@ -2730,7 +2730,7 @@ void MainWindow::addTabulator() {
 void MainWindow::filterChanged(const QString &s) {
 	Settings::global.filters.push_back(s.toStdString());
 	_statusBarFilter->blockSignals(true);
-	_statusBarFilter->addItem(s);
+	_statusBarFilter->addItem(s, s);
 	_statusBarFilter->setCurrentIndex(_statusBarFilter->count() - 1);
 	_statusBarFilter->blockSignals(false);
 	filterSelectionChanged();
