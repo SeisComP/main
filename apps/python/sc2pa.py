@@ -36,7 +36,7 @@ class ProcAlert(seiscomp.client.Application):
         self.addMessagingSubscription("LOCATION")
         self.addMessagingSubscription("MAGNITUDE")
 
-        self.maxAgeDays = 1.
+        self.maxAgeDays = 1.0
         self.minPickCount = 25
 
         self.procAlertScript = ""
@@ -46,17 +46,28 @@ class ProcAlert(seiscomp.client.Application):
     def createCommandLineDescription(self):
         try:
             self.commandline().addGroup("Publishing")
-            self.commandline().addIntOption("Publishing", "min-arr",
-                                            "Minimum arrival count of a published origin", self.minPickCount)
-            self.commandline().addDoubleOption("Publishing", "max-age",
-                                               "Maximum age in days of published origins", self.maxAgeDays)
-            self.commandline().addStringOption("Publishing", "procalert-script",
-                                               "Specify the script to publish an event. The ProcAlert file and the event id are passed as parameter $1 and $2")
-            self.commandline().addOption("Publishing", "test",
-                                         "Test mode, no messages are sent")
+            self.commandline().addIntOption(
+                "Publishing",
+                "min-arr",
+                "Minimum arrival count of a published origin",
+                self.minPickCount,
+            )
+            self.commandline().addDoubleOption(
+                "Publishing",
+                "max-age",
+                "Maximum age in days of published origins",
+                self.maxAgeDays,
+            )
+            self.commandline().addStringOption(
+                "Publishing",
+                "procalert-script",
+                "Specify the script to publish an event. The ProcAlert file and the event id are passed as parameter $1 and $2",
+            )
+            self.commandline().addOption(
+                "Publishing", "test", "Test mode, no messages are sent"
+            )
         except:
-            seiscomp.logging.warning(
-                "caught unexpected error %s" % sys.exc_info())
+            seiscomp.logging.warning(f"caught unexpected error {sys.exc_info()}")
 
     def initConfiguration(self):
         if not seiscomp.client.Application.initConfiguration(self):
@@ -99,14 +110,12 @@ class ProcAlert(seiscomp.client.Application):
             pass
 
         self.bulletin = Bulletin(self.query(), "autoloc1")
-        self.cache = seiscomp.datamodel.PublicObjectRingBuffer(
-            self.query(), 100)
+        self.cache = seiscomp.datamodel.PublicObjectRingBuffer(self.query(), 100)
 
         if not self.procAlertScript:
             seiscomp.logging.warning("No procalert script given")
         else:
-            seiscomp.logging.info(
-                "Using procalert script: %s" % self.procAlertScript)
+            seiscomp.logging.info(f"Using procalert script: {self.procAlertScript}")
 
         return True
 
@@ -114,7 +123,7 @@ class ProcAlert(seiscomp.client.Application):
         org = seiscomp.datamodel.Origin.Cast(obj)
         if org:
             self.cache.feed(org)
-            seiscomp.logging.info("Received origin %s" % org.publicID())
+            seiscomp.logging.info(f"Received origin {org.publicID()}")
             return
 
         self.updateObject(parentID, obj)
@@ -127,7 +136,7 @@ class ProcAlert(seiscomp.client.Application):
 
                 org = self.cache.get(seiscomp.datamodel.Origin, orid)
                 if not org:
-                    seiscomp.logging.error("Unable to fetch origin %s" % orid)
+                    seiscomp.logging.error(f"Unable to fetch origin {orid}")
                     return
 
                 if org.arrivalCount() == 0:
@@ -138,7 +147,7 @@ class ProcAlert(seiscomp.client.Application):
                     self.query().loadMagnitudes(org)
 
                 if not self.originMeetsCriteria(org, evt):
-                    seiscomp.logging.warning("Origin %s not published" % orid)
+                    seiscomp.logging.warning(f"Origin {orid} not published")
                     return
 
                 txt = self.bulletin.printEvent(evt)
@@ -154,7 +163,7 @@ class ProcAlert(seiscomp.client.Application):
                 return
 
         except:
-            sys.stderr.write("%s\n" % sys.exc_info())
+            sys.stderr.write(f"{sys.exc_info()}\n")
 
     def hasValidNetworkMagnitude(self, org, evt):
         nmag = org.magnitudeCount()
@@ -166,9 +175,9 @@ class ProcAlert(seiscomp.client.Application):
 
     def send_procalert(self, txt, evid):
         if self.procAlertScript:
-            tmp = "/tmp/yyy%s" % evid.replace("/", "_").replace(":", "-")
+            tmp = f"/tmp/yyy{evid.replace('/', '_').replace(':', '-')}"
             f = file(tmp, "w")
-            f.write("%s" % txt)
+            f.write(f"{txt}")
             f.close()
 
             os.system(self.procAlertScript + " " + tmp + " " + evid)
@@ -190,7 +199,7 @@ class ProcAlert(seiscomp.client.Application):
             publish = False
 
         now = seiscomp.core.Time.GMT()
-        if (now - org.time().value()).seconds()/86400. > self.maxAgeDays:
+        if (now - org.time().value()).seconds() / 86400.0 > self.maxAgeDays:
             seiscomp.logging.error("origin too old - ignored")
             publish = False
 

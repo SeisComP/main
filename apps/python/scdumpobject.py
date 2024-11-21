@@ -31,10 +31,15 @@ class ObjectDumper(seiscomp.client.Application):
         self.commandline().addStringOption("Dump", "public-id,P", "publicID")
 
     def loadEventParametersObject(self, publicID):
-        for tp in \
-                seiscomp.datamodel.Pick, seiscomp.datamodel.Amplitude, seiscomp.datamodel.Origin, \
-                seiscomp.datamodel.Event, seiscomp.datamodel.FocalMechanism, \
-                seiscomp.datamodel.Magnitude, seiscomp.datamodel.StationMagnitude:
+        for tp in (
+            seiscomp.datamodel.Pick,
+            seiscomp.datamodel.Amplitude,
+            seiscomp.datamodel.Origin,
+            seiscomp.datamodel.Event,
+            seiscomp.datamodel.FocalMechanism,
+            seiscomp.datamodel.Magnitude,
+            seiscomp.datamodel.StationMagnitude,
+        ):
 
             obj = self.query().loadObject(tp.TypeInfo(), publicID)
             obj = tp.Cast(obj)
@@ -44,9 +49,13 @@ class ObjectDumper(seiscomp.client.Application):
                 return ep
 
     def loadInventoryObject(self, publicID):
-        for tp in \
-                seiscomp.datamodel.Network, seiscomp.datamodel.Station, seiscomp.datamodel.Sensor, \
-                seiscomp.datamodel.SensorLocation, seiscomp.datamodel.Stream:
+        for tp in (
+            seiscomp.datamodel.Network,
+            seiscomp.datamodel.Station,
+            seiscomp.datamodel.Sensor,
+            seiscomp.datamodel.SensorLocation,
+            seiscomp.datamodel.Stream,
+        ):
 
             obj = self.query().loadObject(tp.TypeInfo(), publicID)
             obj = tp.Cast(obj)

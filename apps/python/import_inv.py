@@ -31,8 +31,7 @@ class Importer(seiscomp.client.Application):
 
     def run(self):
         if len(self._args) == 0:
-            sys.stderr.write(
-                "Usage: import_inv [{format}|help] <input> [output]\n")
+            sys.stderr.write("Usage: import_inv [{format}|help] <input> [output]\n")
             return False
 
         if self._args[0] == "help":
@@ -44,20 +43,20 @@ class Importer(seiscomp.client.Application):
             if self._args[1] == "formats":
                 return self.printFormats()
 
-            sys.stderr.write("unknown topic '%s'\n" % self._args[1])
+            sys.stderr.write(f"unknown topic '{self._args[1]}'\n")
             return False
 
         fmt = self._args[0]
         try:
-            prog = os.path.join(
-                os.environ['SEISCOMP_ROOT'], "bin", "%s2inv" % fmt)
+            prog = os.path.join(os.environ["SEISCOMP_ROOT"], "bin", f"{fmt}2inv")
         except:
             sys.stderr.write(
-                "Could not get SeisComP root path, SEISCOMP_ROOT not set?\n")
+                "Could not get SeisComP root path, SEISCOMP_ROOT not set?\n"
+            )
             return False
 
         if not os.path.exists(prog):
-            sys.stderr.write("Format '%s' is not supported\n" % fmt)
+            sys.stderr.write(f"Format '{fmt}' is not supported\n")
             return False
 
         if len(self._args) < 2:
@@ -74,40 +73,40 @@ class Importer(seiscomp.client.Application):
             # Append .xml if the ending is not already .xml
             if filename[-4:] != ".xml":
                 filename = filename + ".xml"
-            storage_dir = os.path.join(
-                os.environ['SEISCOMP_ROOT'], "etc", "inventory")
+            storage_dir = os.path.join(os.environ["SEISCOMP_ROOT"], "etc", "inventory")
             output = os.path.join(storage_dir, filename)
             try:
                 os.makedirs(storage_dir)
             except:
                 pass
-            sys.stderr.write("Generating output to %s\n" % output)
+            sys.stderr.write(f"Generating output to {output}\n")
         else:
             output = self._args[2]
 
-        proc = subprocess.Popen([prog, input, output],
-                                stdout=None, stderr=None, shell=False)
+        proc = subprocess.Popen(
+            [prog, input, output], stdout=None, stderr=None, shell=False
+        )
         chans = proc.communicate()
         if proc.returncode != 0:
-            sys.stderr.write(
-                "Conversion failed, return code: %d\n" % proc.returncode)
+            sys.stderr.write("Conversion failed, return code: %d\n" % proc.returncode)
             return False
 
         return True
 
     def printFormats(self):
         try:
-            path = os.path.join(os.environ['SEISCOMP_ROOT'], "bin", "*2inv")
+            path = os.path.join(os.environ["SEISCOMP_ROOT"], "bin", "*2inv")
         except:
             sys.stderr.write(
-                "Could not get SeisComP root path, SEISCOMP_ROOT not set?\n")
+                "Could not get SeisComP root path, SEISCOMP_ROOT not set?\n"
+            )
             return False
 
         files = glob.glob(path)
         formats = []
         for f in files:
             prog = os.path.basename(f)
-            formats.append(prog[:prog.find("2inv")])
+            formats.append(prog[: prog.find("2inv")])
 
         formats.sort()
         sys.stdout.write("%s\n" % "\n".join(formats))
@@ -116,21 +115,26 @@ class Importer(seiscomp.client.Application):
 
     def printUsage(self):
 
-        print('''Usage:
+        print(
+            """Usage:
   import_inv [FORMAT] input [output]
   import_inv help [topic]
 
-Import inventory information from various sources.''')
+Import inventory information from various sources."""
+        )
 
         seiscomp.client.Application.printUsage(self)
 
-        print('''Examples:
+        print(
+            """Examples:
 List all supported inventory formats
   import_inv help formats
 
 Convert from FDSN stationXML to SeisComp format
   import_inv fdsnxml inventory_fdsnws.xml inventory_sc.xml
-''')
+"""
+        )
+
 
 if __name__ == "__main__":
     app = Importer(len(sys.argv), sys.argv)

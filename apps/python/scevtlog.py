@@ -47,25 +47,27 @@ def originStatusToChar(org):
     # Manual origin are always tagged as M
     try:
         if org.evaluationMode() == seiscomp.datamodel.MANUAL:
-            return 'M'
+            return "M"
     except:
         pass
 
     try:
         if org.evaluationStatus() == seiscomp.datamodel.PRELIMINARY:
-            return 'P'
-        elif org.evaluationStatus() == seiscomp.datamodel.CONFIRMED or \
-                org.evaluationStatus() == seiscomp.datamodel.REVIEWED or \
-                org.evaluationStatus() == seiscomp.datamodel.FINAL:
-            return 'C'
+            return "P"
+        elif (
+            org.evaluationStatus() == seiscomp.datamodel.CONFIRMED
+            or org.evaluationStatus() == seiscomp.datamodel.REVIEWED
+            or org.evaluationStatus() == seiscomp.datamodel.FINAL
+        ):
+            return "C"
         elif org.evaluationStatus() == seiscomp.datamodel.REJECTED:
-            return 'X'
+            return "X"
         elif org.evaluationStatus() == seiscomp.datamodel.REPORTED:
-            return 'R'
+            return "R"
     except:
         pass
 
-    return 'A'
+    return "A"
 
 
 class CachePopCallback(seiscomp.datamodel.CachePopCallback):
@@ -85,8 +87,7 @@ class EventHistory(seiscomp.client.Application):
         self.setMessagingEnabled(True)
         self.setDatabaseEnabled(True, True)
         self.setMessagingUsername("scevtlog")
-        self.setPrimaryMessagingGroup(
-            seiscomp.client.Protocol.LISTENER_GROUP)
+        self.setPrimaryMessagingGroup(seiscomp.client.Protocol.LISTENER_GROUP)
         self.addMessagingSubscription("EVENT")
         self.addMessagingSubscription("LOCATION")
         self.addMessagingSubscription("MAGNITUDE")
@@ -100,7 +101,8 @@ class EventHistory(seiscomp.client.Application):
 
         # Create an object cache of half an hour
         self._cache = seiscomp.datamodel.PublicObjectTimeSpanBuffer(
-            self.query(), seiscomp.core.TimeSpan(30.0*60.0))
+            self.query(), seiscomp.core.TimeSpan(30.0 * 60.0)
+        )
         self._cache.setPopCallback(self._popCallback)
 
         # Event progress counter
@@ -124,13 +126,17 @@ class EventHistory(seiscomp.client.Application):
         try:
             self.commandline().addGroup("Storage")
             self.commandline().addStringOption(
-                "Storage", "directory,o", "Specify the storage directory. "
-                "Default: @LOGDIR@/events.")
-            self.commandline().addStringOption("Storage", "format,f",
-                                               "Specify storage format (autoloc1, autoloc3, xml [default])")
+                "Storage",
+                "directory,o",
+                "Specify the storage directory. " "Default: @LOGDIR@/events.",
+            )
+            self.commandline().addStringOption(
+                "Storage",
+                "format,f",
+                "Specify storage format (autoloc1, autoloc3, xml [default])",
+            )
         except:
-            seiscomp.logging.warning(
-                "caught unexpected error %s" % sys.exc_info())
+            seiscomp.logging.warning(f"caught unexpected error {sys.exc_info()}")
         return True
 
     def initConfiguration(self):
@@ -157,17 +163,21 @@ class EventHistory(seiscomp.client.Application):
         return True
 
     def printUsage(self):
-        print('''Usage:
+        print(
+            """Usage:
   scevtlog [options]
 
-Save event history into files''')
+Save event history into files"""
+        )
 
         seiscomp.client.Application.printUsage(self)
 
-        print('''Examples:
+        print(
+            """Examples:
 Execute on command line with debug output
   scevtlog --debug
-''')
+"""
+        )
 
     def init(self):
         if not seiscomp.client.Application.init(self):
@@ -183,7 +193,11 @@ Execute on command line with debug output
         except:
             pass
 
-        if self._format != "autoloc1" and self._format != "autoloc3" and self._format != "xml":
+        if (
+            self._format != "autoloc1"
+            and self._format != "autoloc3"
+            and self._format != "xml"
+        ):
             self._format = "xml"
 
         try:
@@ -193,17 +207,19 @@ Execute on command line with debug output
             pass
 
         if self._directory:
-            self._directory = seiscomp.system.Environment.Instance().absolutePath(self._directory)
-            sys.stderr.write("Logging events to %s\n" % self._directory)
+            self._directory = seiscomp.system.Environment.Instance().absolutePath(
+                self._directory
+            )
+            sys.stderr.write(f"Logging events to {self._directory}\n")
 
         self._cache.setDatabaseArchive(self.query())
         return True
 
     # def run(self):
-        # obj = self._cache.get(seiscomp.datamodel.Magnitude, "or080221153929#16#netMag.mb")
+    # obj = self._cache.get(seiscomp.datamodel.Magnitude, "or080221153929#16#netMag.mb")
 
-        # self.updateObject(obj)
-        # return True
+    # self.updateObject(obj)
+    # return True
 
     def done(self):
         seiscomp.client.Application.done(self)
@@ -225,14 +241,16 @@ Execute on command line with debug output
             latency = time - tim
 
             summary[1] = "%5d.%02d" % (
-                latency.seconds() / 60, (latency.seconds() % 60) * 100 / 60)
+                latency.seconds() / 60,
+                (latency.seconds() % 60) * 100 / 60,
+            )
 
             lat = org.latitude().value()
             lon = org.longitude().value()
 
             dep = "%7s" % "---"
             try:
-                dep = "%7.0f" % org.depth().value()
+                dep = f"{org.depth().value():7.0f}"
                 summary[4] = dep
             except:
                 summary[4] = "%7s" % ""
@@ -244,8 +262,8 @@ Execute on command line with debug output
             except:
                 summary[5] = "%5s" % ""
 
-            summary[2] = "%7.2f" % lat
-            summary[3] = "%7.2f" % lon
+            summary[2] = f"{lat:7.2f}"
+            summary[3] = f"{lon:7.2f}"
 
             try:
                 summary[9] = originStatusToChar(org)
@@ -254,7 +272,7 @@ Execute on command line with debug output
 
         if mag:
             summary[6] = "%12s" % mag.type()
-            summary[7] = "%5.2f" % mag.magnitude().value()
+            summary[7] = f"{mag.magnitude().value():5.2f}"
             try:
                 summary[8] = "%5d" % mag.stationCount()
             except:
@@ -269,10 +287,10 @@ Execute on command line with debug output
     def printEventProcAlert(self, evt, newEvent):
         now = seiscomp.core.Time.GMT()
 
-        org = self._cache.get(seiscomp.datamodel.Origin,
-                              evt.preferredOriginID())
+        org = self._cache.get(seiscomp.datamodel.Origin, evt.preferredOriginID())
         prefmag = self._cache.get(
-            seiscomp.datamodel.Magnitude, evt.preferredMagnitudeID())
+            seiscomp.datamodel.Magnitude, evt.preferredMagnitudeID()
+        )
 
         summary = self.getSummary(now, org, prefmag)
 
@@ -294,13 +312,18 @@ Execute on command line with debug output
         if org:
             narr = org.arrivalCount()
             for i in range(narr):
-                picks.append(self._cache.get(
-                    seiscomp.datamodel.Pick, org.arrival(i).pickID()))
+                picks.append(
+                    self._cache.get(seiscomp.datamodel.Pick, org.arrival(i).pickID())
+                )
 
             nstamags = org.stationMagnitudeCount()
             for i in range(nstamags):
-                amps.append(self._cache.get(
-                    seiscomp.datamodel.Amplitude, org.stationMagnitude(i).amplitudeID()))
+                amps.append(
+                    self._cache.get(
+                        seiscomp.datamodel.Amplitude,
+                        org.stationMagnitude(i).amplitudeID(),
+                    )
+                )
 
         netmag = {}
         nmag = org.magnitudeCount()
@@ -322,27 +345,48 @@ Execute on command line with debug output
             # which is always valid within the SC3 distribution
             except:
                 arNow = now.get()
-            seiscomp.logging.error("directory is " + self._directory + "/".join(
-                ["%.2d" % i for i in arNow[1:4]]) + "/" + evt.publicID() + "/")
+            seiscomp.logging.error(
+                "directory is "
+                + self._directory
+                + "/".join(["%.2d" % i for i in arNow[1:4]])
+                + "/"
+                + evt.publicID()
+                + "/"
+            )
 
-            directory = self._directory + \
-                "/".join(["%.2d" % i for i in arNow[1:4]]) + \
-                "/" + evt.publicID() + "/"
+            directory = (
+                self._directory
+                + "/".join(["%.2d" % i for i in arNow[1:4]])
+                + "/"
+                + evt.publicID()
+                + "/"
+            )
             if directory != self._currentDirectory:
                 if createDirectory(directory) == False:
-                    seiscomp.logging.error(
-                        "Unable to create directory %s" % directory)
+                    seiscomp.logging.error(f"Unable to create directory {directory}")
                     return
 
             self._currentDirectory = directory
-            self.writeLog(self._currentDirectory + self.convertID(evt.publicID()) +
-                          "." + ("%06d" % self.eventProgress(evt.publicID(), directory)), txt, "w")
-            self.writeLog(self._currentDirectory +
-                          self.convertID(evt.publicID()) + ".last", txt, "w")
+            self.writeLog(
+                self._currentDirectory
+                + self.convertID(evt.publicID())
+                + "."
+                + ("%06d" % self.eventProgress(evt.publicID(), directory)),
+                txt,
+                "w",
+            )
+            self.writeLog(
+                self._currentDirectory + self.convertID(evt.publicID()) + ".last",
+                txt,
+                "w",
+            )
             self.writeLog(self._directory + "last", txt, "w")
-            self.writeLog(self._currentDirectory + self.convertID(evt.publicID()) + ".summary",
-                          "|".join(summary), "a",
-                          "# Layout: Timestamp, +OT (minutes, decimal), Latitude, Longitude, Depth, PhaseCount, MagType, Magnitude, MagCount")
+            self.writeLog(
+                self._currentDirectory + self.convertID(evt.publicID()) + ".summary",
+                "|".join(summary),
+                "a",
+                "# Layout: Timestamp, +OT (minutes, decimal), Latitude, Longitude, Depth, PhaseCount, MagType, Magnitude, MagCount",
+            )
 
         seiscomp.logging.info("cache size = %d" % self._cache.size())
 
@@ -361,12 +405,12 @@ Execute on command line with debug output
         if evt.eventDescriptionCount() == 0:
             self.query().loadEventDescriptions(evt)
 
-        org = self._cache.get(seiscomp.datamodel.Origin,
-                              evt.preferredOriginID())
+        org = self._cache.get(seiscomp.datamodel.Origin, evt.preferredOriginID())
 
         if evt.preferredFocalMechanismID():
             fm = self._cache.get(
-                seiscomp.datamodel.FocalMechanism, evt.preferredFocalMechanismID())
+                seiscomp.datamodel.FocalMechanism, evt.preferredFocalMechanismID()
+            )
         else:
             fm = None
 
@@ -378,7 +422,8 @@ Execute on command line with debug output
         if org.arrivalCount() == 0:
             self.query().loadArrivals(org)
         prefmag = self._cache.get(
-            seiscomp.datamodel.Magnitude, evt.preferredMagnitudeID())
+            seiscomp.datamodel.Magnitude, evt.preferredMagnitudeID()
+        )
 
         wasEnabled = seiscomp.datamodel.PublicObject.IsRegistrationEnabled()
         seiscomp.datamodel.PublicObject.SetRegistrationEnabled(False)
@@ -406,13 +451,16 @@ Execute on command line with debug output
 
             # Copy focal mechanism reference
             fm_ref = evt.focalMechanismReference(
-                seiscomp.datamodel.FocalMechanismReferenceIndex(fm.publicID()))
+                seiscomp.datamodel.FocalMechanismReferenceIndex(fm.publicID())
+            )
             if fm_ref:
                 fm_ref_cloned = seiscomp.datamodel.FocalMechanismReference.Cast(
-                    fm_ref.clone())
+                    fm_ref.clone()
+                )
                 if fm_ref_cloned is None:
                     fm_ref_cloned = seiscomp.datamodel.FocalMechanismReference(
-                        fm.publicID())
+                        fm.publicID()
+                    )
                 evt_cloned.add(fm_ref_cloned)
 
             nmt = fm.momentTensorCount()
@@ -425,24 +473,23 @@ Execute on command line with debug output
                 if ep.findOrigin(mt.derivedOriginID()) is not None:
                     continue
 
-                seiscomp.datamodel.PublicObject.SetRegistrationEnabled(
-                    wasEnabled)
+                seiscomp.datamodel.PublicObject.SetRegistrationEnabled(wasEnabled)
                 derivedOrigin = self._cache.get(
-                    seiscomp.datamodel.Origin, mt.derivedOriginID())
+                    seiscomp.datamodel.Origin, mt.derivedOriginID()
+                )
                 seiscomp.datamodel.PublicObject.SetRegistrationEnabled(False)
 
                 if derivedOrigin is None:
                     seiscomp.logging.warning(
-                        "derived origin for MT %s not found" % mt.derivedOriginID())
+                        f"derived origin for MT {mt.derivedOriginID()} not found"
+                    )
                     continue
 
                 # Origin has been read from database -> read all childs
                 if not self._cache.cached():
-                    seiscomp.datamodel.PublicObject.SetRegistrationEnabled(
-                        wasEnabled)
+                    seiscomp.datamodel.PublicObject.SetRegistrationEnabled(wasEnabled)
                     self.query().load(derivedOrigin)
-                    seiscomp.datamodel.PublicObject.SetRegistrationEnabled(
-                        False)
+                    seiscomp.datamodel.PublicObject.SetRegistrationEnabled(False)
 
                 # Add it to the event parameters
                 ep.add(derivedOrigin)
@@ -462,25 +509,26 @@ Execute on command line with debug output
             # Copy event comments
             ncmts = evt.commentCount()
             for i in range(ncmts):
-                cmt_cloned = seiscomp.datamodel.Comment.Cast(
-                    evt.comment(i).clone())
+                cmt_cloned = seiscomp.datamodel.Comment.Cast(evt.comment(i).clone())
                 evt_cloned.add(cmt_cloned)
 
             # Copy origin references
             org_ref = evt.originReference(
-                seiscomp.datamodel.OriginReferenceIndex(org.publicID()))
+                seiscomp.datamodel.OriginReferenceIndex(org.publicID())
+            )
             if org_ref:
                 org_ref_cloned = seiscomp.datamodel.OriginReference.Cast(
-                    org_ref.clone())
+                    org_ref.clone()
+                )
                 if org_ref_cloned is None:
-                    org_ref_cloned = seiscomp.datamodel.OriginReference(
-                        org.publicID())
+                    org_ref_cloned = seiscomp.datamodel.OriginReference(org.publicID())
                 evt_cloned.add(org_ref_cloned)
 
             # Copy event descriptions
             for i in range(evt.eventDescriptionCount()):
                 ed_cloned = seiscomp.datamodel.EventDescription.Cast(
-                    evt.eventDescription(i).clone())
+                    evt.eventDescription(i).clone()
+                )
                 evt_cloned.add(ed_cloned)
 
             org_cloned = seiscomp.datamodel.Origin.Cast(org.clone())
@@ -489,21 +537,17 @@ Execute on command line with debug output
             # Copy origin comments
             ncmts = org.commentCount()
             for i in range(ncmts):
-                cmt_cloned = seiscomp.datamodel.Comment.Cast(
-                    org.comment(i).clone())
+                cmt_cloned = seiscomp.datamodel.Comment.Cast(org.comment(i).clone())
                 org_cloned.add(cmt_cloned)
 
             # Copy arrivals
             narr = org.arrivalCount()
             for i in range(narr):
-                arr_cloned = seiscomp.datamodel.Arrival.Cast(
-                    org.arrival(i).clone())
+                arr_cloned = seiscomp.datamodel.Arrival.Cast(org.arrival(i).clone())
                 org_cloned.add(arr_cloned)
 
-                seiscomp.datamodel.PublicObject.SetRegistrationEnabled(
-                    wasEnabled)
-                pick = self._cache.get(
-                    seiscomp.datamodel.Pick, arr_cloned.pickID())
+                seiscomp.datamodel.PublicObject.SetRegistrationEnabled(wasEnabled)
+                pick = self._cache.get(seiscomp.datamodel.Pick, arr_cloned.pickID())
                 seiscomp.datamodel.PublicObject.SetRegistrationEnabled(False)
 
                 if pick:
@@ -517,7 +561,8 @@ Execute on command line with debug output
                     ncmts = pick.commentCount()
                     for i in range(ncmts):
                         cmt_cloned = seiscomp.datamodel.Comment.Cast(
-                            pick.comment(i).clone())
+                            pick.comment(i).clone()
+                        )
                         pick_cloned.add(cmt_cloned)
                     ep.add(pick_cloned)
 
@@ -528,8 +573,7 @@ Execute on command line with debug output
 
                 mag_cloned = seiscomp.datamodel.Magnitude.Cast(mag.clone())
 
-                seiscomp.datamodel.PublicObject.SetRegistrationEnabled(
-                    wasEnabled)
+                seiscomp.datamodel.PublicObject.SetRegistrationEnabled(wasEnabled)
                 if mag.stationMagnitudeContributionCount() == 0:
                     self.query().loadStationMagnitudeContributions(mag)
                 seiscomp.datamodel.PublicObject.SetRegistrationEnabled(False)
@@ -537,8 +581,11 @@ Execute on command line with debug output
                 # Copy magnitude references
                 nmagref = mag.stationMagnitudeContributionCount()
                 for j in range(nmagref):
-                    mag_ref_cloned = seiscomp.datamodel.StationMagnitudeContribution.Cast(
-                        mag.stationMagnitudeContribution(j).clone())
+                    mag_ref_cloned = (
+                        seiscomp.datamodel.StationMagnitudeContribution.Cast(
+                            mag.stationMagnitudeContribution(j).clone()
+                        )
+                    )
                     mag_cloned.add(mag_ref_cloned)
 
                 org_cloned.add(mag_cloned)
@@ -548,19 +595,18 @@ Execute on command line with debug output
             amp_map = dict()
             for i in range(smag):
                 mag_cloned = seiscomp.datamodel.StationMagnitude.Cast(
-                    org.stationMagnitude(i).clone())
+                    org.stationMagnitude(i).clone()
+                )
                 org_cloned.add(mag_cloned)
                 if (mag_cloned.amplitudeID() in amp_map) == False:
                     amp_map[mag_cloned.amplitudeID()] = True
-                    seiscomp.datamodel.PublicObject.SetRegistrationEnabled(
-                        wasEnabled)
+                    seiscomp.datamodel.PublicObject.SetRegistrationEnabled(wasEnabled)
                     amp = self._cache.get(
-                        seiscomp.datamodel.Amplitude, mag_cloned.amplitudeID())
-                    seiscomp.datamodel.PublicObject.SetRegistrationEnabled(
-                        False)
+                        seiscomp.datamodel.Amplitude, mag_cloned.amplitudeID()
+                    )
+                    seiscomp.datamodel.PublicObject.SetRegistrationEnabled(False)
                     if amp:
-                        amp_cloned = seiscomp.datamodel.Amplitude.Cast(
-                            amp.clone())
+                        amp_cloned = seiscomp.datamodel.Amplitude.Cast(amp.clone())
                         ep.add(amp_cloned)
 
         seiscomp.datamodel.PublicObject.SetRegistrationEnabled(wasEnabled)
@@ -585,20 +631,29 @@ Execute on command line with debug output
             except:
                 arNow = now.get()
 
-            directory = self._directory + \
-                "/".join(["%.2d" % i for i in arNow[1:4]]) + \
-                "/" + evt.publicID() + "/"
+            directory = (
+                self._directory
+                + "/".join(["%.2d" % i for i in arNow[1:4]])
+                + "/"
+                + evt.publicID()
+                + "/"
+            )
             if directory != self._currentDirectory:
                 if createDirectory(directory) == False:
-                    seiscomp.logging.error(
-                        "Unable to create directory %s" % directory)
+                    seiscomp.logging.error(f"Unable to create directory {directory}")
                     return
 
             self._currentDirectory = directory
             # self.writeLog(self._currentDirectory + evt.publicID(), "#<\n" + txt + "#>\n")
-            #self.writeLog(self._currentDirectory + evt.publicID() + ".last", txt, "w")
-            ar.create(self._currentDirectory + self.convertID(evt.publicID()) + "." + ("%06d" %
-                                                                                       self.eventProgress(evt.publicID(), directory)) + ".xml" + self._revisionFileExt)
+            # self.writeLog(self._currentDirectory + evt.publicID() + ".last", txt, "w")
+            ar.create(
+                self._currentDirectory
+                + self.convertID(evt.publicID())
+                + "."
+                + ("%06d" % self.eventProgress(evt.publicID(), directory))
+                + ".xml"
+                + self._revisionFileExt
+            )
             ar.setCompression(True)
             if self._useGZIP:
                 ar.setCompressionMethod(seiscomp.io.XMLArchive.GZIP)
@@ -612,31 +667,35 @@ Execute on command line with debug output
             ar.writeObject(ep)
             ar.close()
             # Write last xml
-            ar.create(self._currentDirectory +
-                      self.convertID(evt.publicID()) + ".last.xml")
+            ar.create(
+                self._currentDirectory + self.convertID(evt.publicID()) + ".last.xml"
+            )
             ar.setCompression(False)
             ar.writeObject(ep)
             ar.close()
-            self.writeLog(self._currentDirectory + self.convertID(evt.publicID()) + ".summary",
-                          "|".join(summary), "a",
-                          "# Layout: Timestamp, +OT (minutes, decimal), Latitude, Longitude, Depth, PhaseCount, MagType, Magnitude, MagCount")
+            self.writeLog(
+                self._currentDirectory + self.convertID(evt.publicID()) + ".summary",
+                "|".join(summary),
+                "a",
+                "# Layout: Timestamp, +OT (minutes, decimal), Latitude, Longitude, Depth, PhaseCount, MagType, Magnitude, MagCount",
+            )
 
         del ep
 
     def convertID(self, id):
-        '''Converts an ID containing slashes to one without slashes'''
-        p = re.compile('/')
-        return p.sub('_', id)
+        """Converts an ID containing slashes to one without slashes"""
+        p = re.compile("/")
+        return p.sub("_", id)
 
     def writeLog(self, file, text, mode="a", header=None):
         of = open(file, mode)
         if of:
             if of.tell() == 0 and not header is None:
-                of.write(header+"\n")
-            of.write(text+"\n")
+                of.write(header + "\n")
+            of.write(text + "\n")
             of.close()
         else:
-            seiscomp.logging.error("Unable to write file: %s" % file)
+            seiscomp.logging.error(f"Unable to write file: {file}")
 
     def objectAboutToPop(self, obj):
         try:
@@ -686,8 +745,8 @@ Execute on command line with debug output
         for file in files:
             if os.path.isfile(directory + file) == False:
                 continue
-            fid = file[len(evtID + '.'):len(file)]
-            sep = fid.find('.')
+            fid = file[len(evtID + ".") : len(file)]
+            sep = fid.find(".")
             if sep == -1:
                 sep = len(fid)
             fid = fid[0:sep]
@@ -769,8 +828,10 @@ Execute on command line with debug output
                         if evt:
                             self.printEvent(evt, False)
                         else:
-                            sys.stderr.write("Unable to fetch event for ID '%s' while update of magnitude '%s'\n" % (
-                                evtID, obj.publicID()))
+                            sys.stderr.write(
+                                "Unable to fetch event for ID '%s' while update of magnitude '%s'\n"
+                                % (evtID, obj.publicID())
+                            )
                     else:
                         # Magnitude has not been associated to an event yet
                         pass
@@ -798,8 +859,10 @@ Execute on command line with debug output
                         if evt:
                             self.printEvent(evt, False)
                         else:
-                            sys.stderr.write("Unable to fetch event for ID '%s' while update of origin '%s'\n" % (
-                                evtID, obj.publicID()))
+                            sys.stderr.write(
+                                "Unable to fetch event for ID '%s' while update of origin '%s'\n"
+                                % (evtID, obj.publicID())
+                            )
                     else:
                         # Origin has not been associated to an event yet
                         pass

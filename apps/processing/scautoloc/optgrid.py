@@ -30,7 +30,7 @@ def readGrid(gridfile):
         p.lat, p.lon, p.dep, p.rad, p.dist = tuple(map(float, line[:5]))
         p.nmin = int(line[5])
 
-#       print p.lat,p.lon,p.dep,p.rad,p.dist,p.nmin
+        #       print p.lat,p.lon,p.dep,p.rad,p.dist,p.nmin
         grid.append(p)
     return grid
 
@@ -38,11 +38,13 @@ def readGrid(gridfile):
 def writeGrid(grid, gridfile):
     gridfile = file(gridfile, "w")
     for p in grid:
-        dist = int(p.dist+1)
+        dist = int(p.dist + 1)
         if dist > 180:
             dist = 180
-        gridfile.write("%6.2f %6.2f %5.1f %5.2f %5.1f %d\n" %
-                       (p.lat, p.lon, p.dep, p.rad, dist, p.nmin))
+        gridfile.write(
+            "%6.2f %6.2f %5.1f %5.2f %5.1f %d\n"
+            % (p.lat, p.lon, p.dep, p.rad, dist, p.nmin)
+        )
     gridfile.close()
 
 
@@ -84,8 +86,13 @@ class InvApp(seiscomp.client.Application):
                 for ista in range(nsta):
                     sta = net.station(ista)
                     line = "%-2s %-5s %9.4f %9.4f %6.1f" % (
-                        net.code(), sta.code(), sta.latitude(), sta.longitude(), sta.elevation())
-#                   print dir(sta)
+                        net.code(),
+                        sta.code(),
+                        sta.latitude(),
+                        sta.longitude(),
+                        sta.elevation(),
+                    )
+                    #                   print dir(sta)
                     try:
                         start = sta.start()
                     except:

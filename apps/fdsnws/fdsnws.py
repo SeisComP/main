@@ -946,9 +946,9 @@ configuration read:
         stationInv = dataSelectInv = None
         if self._serveDataSelect or self._serveStation:
             retn = False
-            stationInv = (
-                dataSelectInv
-            ) = seiscomp.client.Inventory.Instance().inventory()
+            stationInv = dataSelectInv = (
+                seiscomp.client.Inventory.Instance().inventory()
+            )
             seiscomp.logging.info("inventory loaded")
 
             if self._serveDataSelect and self._serveStation:

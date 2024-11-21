@@ -41,8 +41,13 @@ class InvApp(seiscomp.client.Application):
                 for ista in range(nsta):
                     sta = net.station(ista)
                     line = "%-2s %-5s %9.4f %9.4f %6.1f" % (
-                        net.code(), sta.code(), sta.latitude(), sta.longitude(), sta.elevation())
-#                   print dir(sta)
+                        net.code(),
+                        sta.code(),
+                        sta.latitude(),
+                        sta.longitude(),
+                        sta.elevation(),
+                    )
+                    #                   print dir(sta)
                     try:
                         start = sta.start()
                     except:

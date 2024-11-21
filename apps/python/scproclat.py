@@ -77,10 +77,10 @@ class ProcLatency(seiscomp.client.Application):
         try:
             self.commandline().addGroup("Storage")
             self.commandline().addStringOption(
-                "Storage", "directory,o", "Specify the storage directory")
+                "Storage", "directory,o", "Specify the storage directory"
+            )
         except:
-            seiscomp.logging.warning(
-                "caught unexpected error %s" % sys.exc_info())
+            seiscomp.logging.warning(f"caught unexpected error {sys.exc_info()}")
 
     def initConfiguration(self):
         if not seiscomp.client.Application.initConfiguration(self):
@@ -114,8 +114,10 @@ class ProcLatency(seiscomp.client.Application):
             pass
 
         if self._directory:
-            self._directory = seiscomp.system.Environment.Instance().absolutePath(self._directory)
-            sys.stderr.write("Logging latencies to %s\n" % self._directory)
+            self._directory = seiscomp.system.Environment.Instance().absolutePath(
+                self._directory
+            )
+            sys.stderr.write(f"Logging latencies to {self._directory}\n")
 
         return True
 
@@ -123,13 +125,13 @@ class ProcLatency(seiscomp.client.Application):
         try:
             self.logObject(parentID, obj, False)
         except:
-            sys.stderr.write("%s\n" % traceback.format_exc())
+            sys.stderr.write(f"{traceback.format_exc()}\n")
 
     def updateObject(self, parentID, obj):
         try:
             self.logObject("", obj, True)
         except:
-            sys.stderr.write("%s\n" % traceback.format_exc())
+            sys.stderr.write(f"{traceback.format_exc()}\n")
 
     def logObject(self, parentID, obj, update):
         now = seiscomp.core.Time.GMT()
@@ -150,8 +152,14 @@ class ProcLatency(seiscomp.client.Application):
                 except:
                     pass
 
-            self.logStation(now, created, pick.time().value(
-            ), pick.publicID() + ";P;" + phase, pick.waveformID(), update)
+            self.logStation(
+                now,
+                created,
+                pick.time().value(),
+                pick.publicID() + ";P;" + phase,
+                pick.waveformID(),
+                update,
+            )
             return
 
         amp = seiscomp.datamodel.Amplitude.Cast(obj)
@@ -164,8 +172,18 @@ class ProcLatency(seiscomp.client.Application):
                     pass
 
             try:
-                self.logStation(now, created, amp.timeWindow().reference(), amp.publicID(
-                ) + ";A;" + amp.type() + ";" + "%.2f" % amp.amplitude().value(), amp.waveformID(), update)
+                self.logStation(
+                    now,
+                    created,
+                    amp.timeWindow().reference(),
+                    amp.publicID()
+                    + ";A;"
+                    + amp.type()
+                    + ";"
+                    + f"{amp.amplitude().value():.2f}",
+                    amp.waveformID(),
+                    update,
+                )
             except:
                 pass
             return
@@ -173,21 +191,24 @@ class ProcLatency(seiscomp.client.Application):
         org = seiscomp.datamodel.Origin.Cast(obj)
         if org:
             status = ""
-            lat = "%.2f" % org.latitude().value()
-            lon = "%.2f" % org.longitude().value()
+            lat = f"{org.latitude().value():.2f}"
+            lon = f"{org.longitude().value():.2f}"
             try:
                 depth = "%d" % org.depth().value()
             except:
                 pass
 
             try:
-                status = seiscomp.datamodel.EOriginStatusNames.name(
-                    org.status())
+                status = seiscomp.datamodel.EOriginStatusNames.name(org.status())
             except:
                 pass
 
-            self.logFile(now, org.time().value(), org.publicID(
-            ) + ";O;" + status + ";" + lat + ";" + lon + ";" + depth, update)
+            self.logFile(
+                now,
+                org.time().value(),
+                org.publicID() + ";O;" + status + ";" + lat + ";" + lon + ";" + depth,
+                update,
+            )
             return
 
         mag = seiscomp.datamodel.Magnitude.Cast(obj)
@@ -197,33 +218,57 @@ class ProcLatency(seiscomp.client.Application):
                 count = "%d" % mag.stationCount()
             except:
                 pass
-            self.logFile(now, None, mag.publicID() + ";M;" + mag.type() +
-                         ";" + "%.4f" % mag.magnitude().value() + ";" + count, update)
+            self.logFile(
+                now,
+                None,
+                mag.publicID()
+                + ";M;"
+                + mag.type()
+                + ";"
+                + f"{mag.magnitude().value():.4f}"
+                + ";"
+                + count,
+                update,
+            )
             return
 
         orgref = seiscomp.datamodel.OriginReference.Cast(obj)
         if orgref:
-            self.logFile(now, None, parentID + ";OR;" +
-                         orgref.originID(), update)
+            self.logFile(now, None, parentID + ";OR;" + orgref.originID(), update)
             return
 
         evt = seiscomp.datamodel.Event.Cast(obj)
         if evt:
-            self.logFile(now, None, evt.publicID(
-            ) + ";E;" + evt.preferredOriginID() + ";" + evt.preferredMagnitudeID(), update)
+            self.logFile(
+                now,
+                None,
+                evt.publicID()
+                + ";E;"
+                + evt.preferredOriginID()
+                + ";"
+                + evt.preferredMagnitudeID(),
+                update,
+            )
             return
 
     def logStation(self, received, created, triggered, text, waveformID, update):
-        streamID = waveformID.networkCode() + "." + waveformID.stationCode() + "." + \
-            waveformID.locationCode() + "." + waveformID.channelCode()
+        streamID = (
+            waveformID.networkCode()
+            + "."
+            + waveformID.stationCode()
+            + "."
+            + waveformID.locationCode()
+            + "."
+            + waveformID.channelCode()
+        )
 
         aNow = received.get()
         aTriggered = triggered.get()
 
-        nowDirectory = self._directory + \
-            "/".join(["%.2d" % i for i in aNow[1:4]]) + "/"
-        triggeredDirectory = self._directory + \
-            "/".join(["%.2d" % i for i in aTriggered[1:4]]) + "/"
+        nowDirectory = self._directory + "/".join(["%.2d" % i for i in aNow[1:4]]) + "/"
+        triggeredDirectory = (
+            self._directory + "/".join(["%.2d" % i for i in aTriggered[1:4]]) + "/"
+        )
 
         logEntry = timeSpanToString(received - triggered) + ";"
         if created is not None:
@@ -238,45 +283,49 @@ class ProcLatency(seiscomp.client.Application):
 
         logEntry = logEntry + ";" + text
 
-        sys.stdout.write("%s;%s\n" % (timeToString(received), logEntry))
+        sys.stdout.write(f"{timeToString(received)};{logEntry}\n")
 
         if nowDirectory != self._nowDirectory:
             if createDirectory(nowDirectory) == False:
-                seiscomp.logging.error(
-                    "Unable to create directory %s" % nowDirectory)
+                seiscomp.logging.error(f"Unable to create directory {nowDirectory}")
                 return False
 
             self._nowDirectory = nowDirectory
 
-        self.writeLog(self._nowDirectory + streamID + ".rcv",
-                      timeToString(received) + ";" + logEntry)
+        self.writeLog(
+            self._nowDirectory + streamID + ".rcv",
+            timeToString(received) + ";" + logEntry,
+        )
 
         if triggeredDirectory != self._triggeredDirectory:
             if createDirectory(triggeredDirectory) == False:
                 seiscomp.logging.error(
-                    "Unable to create directory %s" % triggeredDirectory)
+                    f"Unable to create directory {triggeredDirectory}"
+                )
                 return False
 
             self._triggeredDirectory = triggeredDirectory
 
-        self.writeLog(self._triggeredDirectory + streamID +
-                      ".trg", timeToString(triggered) + ";" + logEntry)
+        self.writeLog(
+            self._triggeredDirectory + streamID + ".trg",
+            timeToString(triggered) + ";" + logEntry,
+        )
 
         return True
 
     def logFile(self, received, triggered, text, update):
         aNow = received.get()
-        nowDirectory = self._directory + \
-            "/".join(["%.2d" % i for i in aNow[1:4]]) + "/"
+        nowDirectory = self._directory + "/".join(["%.2d" % i for i in aNow[1:4]]) + "/"
         triggeredDirectory = None
 
-        #logEntry = timeToString(received)
+        # logEntry = timeToString(received)
         logEntry = ""
 
         if not triggered is None:
             aTriggered = triggered.get()
-            triggeredDirectory = self._directory + \
-                "/".join(["%.2d" % i for i in aTriggered[1:4]]) + "/"
+            triggeredDirectory = (
+                self._directory + "/".join(["%.2d" % i for i in aTriggered[1:4]]) + "/"
+            )
 
             logEntry = logEntry + timeSpanToString(received - triggered)
 
@@ -289,30 +338,33 @@ class ProcLatency(seiscomp.client.Application):
 
         logEntry = logEntry + ";" + text
 
-        sys.stdout.write("%s;%s\n" % (timeToString(received), logEntry))
+        sys.stdout.write(f"{timeToString(received)};{logEntry}\n")
 
         if nowDirectory != self._nowDirectory:
             if createDirectory(nowDirectory) == False:
-                seiscomp.logging.error(
-                    "Unable to create directory %s" % nowDirectory)
+                seiscomp.logging.error(f"Unable to create directory {nowDirectory}")
                 return False
 
             self._nowDirectory = nowDirectory
 
-        self.writeLog(self._nowDirectory + "objects.rcv",
-                      timeToString(received) + ";" + logEntry)
+        self.writeLog(
+            self._nowDirectory + "objects.rcv", timeToString(received) + ";" + logEntry
+        )
 
         if triggeredDirectory:
             if triggeredDirectory != self._triggeredDirectory:
                 if createDirectory(triggeredDirectory) == False:
                     seiscomp.logging.error(
-                        "Unable to create directory %s" % triggeredDirectory)
+                        f"Unable to create directory {triggeredDirectory}"
+                    )
                     return False
 
                 self._triggeredDirectory = triggeredDirectory
 
-            self.writeLog(self._triggeredDirectory + "objects.trg",
-                          timeToString(triggered) + ";" + logEntry)
+            self.writeLog(
+                self._triggeredDirectory + "objects.trg",
+                timeToString(triggered) + ";" + logEntry,
+            )
 
         return True
 
