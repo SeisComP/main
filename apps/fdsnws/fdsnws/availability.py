@@ -278,6 +278,11 @@ class _Availability(BaseResource):
     isLeaf = True
 
     # --------------------------------------------------------------------------
+    @staticmethod
+    def _createRequestOptions():
+        pass
+
+    # --------------------------------------------------------------------------
     def __init__(self, access=None, user=None):
         super().__init__(VERSION)
 
@@ -322,6 +327,14 @@ class _Availability(BaseResource):
             return self.renderErrorPage(req, http.BAD_REQUEST, str(e), ro)
 
         return self._prepareRequest(req, ro)
+
+    # --------------------------------------------------------------------------
+    def _processRequest(self, req, ro, dac):
+        pass
+
+    # --------------------------------------------------------------------------
+    def _writeJSONChannels(self, req, header, footer, lines, ro):
+        pass
 
     # --------------------------------------------------------------------------
     def _prepareRequest(self, req, ro):
@@ -936,8 +949,7 @@ class FDSNAvailabilityQuery(_Availability):
                 lineCount += 1
 
                 if ext is prevExt:
-                    if attExt.updated() > lastUpdate:
-                        lastUpdate = attExt.updated()
+                    lastUpdate = max(lastUpdate, attExt.updated())
                     segments.append(attExt)
                     continue
 
@@ -1003,8 +1015,7 @@ class FDSNAvailabilityQuery(_Availability):
                 if ext is prevExt:
                     if attExt.sampleRate() in segGroups:
                         segGroup = segGroups[attExt.sampleRate()]
-                        if attExt.updated() > segGroup.updated:
-                            segGroup.updated = attExt.updated()
+                        segGroup.updated = max(segGroup.updated, attExt.updated())
                         segGroup.segments.append(attExt)
                         continue
 
@@ -1083,8 +1094,7 @@ class FDSNAvailabilityQuery(_Availability):
                 if ext is prevExt:
                     if attExt.quality() in segGroups:
                         segGroup = segGroups[attExt.quality()]
-                        if attExt.updated() > segGroup.updated:
-                            segGroup.updated = attExt.updated()
+                        segGroup.updated = max(segGroup.updated, attExt.updated())
                         segGroup.segments.append(attExt)
                         continue
 
@@ -1164,8 +1174,7 @@ class FDSNAvailabilityQuery(_Availability):
                 if ext is prevExt:
                     if t in segGroups:
                         segGroup = segGroups[t]
-                        if attExt.updated() > segGroup.updated:
-                            segGroup.updated = attExt.updated()
+                        segGroup.updated = max(segGroup.updated, attExt.updated())
                         segGroup.segments.append(attExt)
                         continue
 

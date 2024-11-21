@@ -68,7 +68,6 @@ from seiscomp.fdsnws.http import (
     NoResource,
     Site,
     ServiceVersion,
-    AuthResource,
     WADLFilter,
 )
 from seiscomp.fdsnws.log import Log
@@ -1051,6 +1050,7 @@ configuration read:
             dataselect1.putChild(b"builder", fileRes)
 
             if self._authEnabled:
+                from seiscomp.fdsnws.http import AuthResource
                 dataselect1.putChild(
                     b"auth",
                     AuthResource(DataSelectVersion, self._authGnupgHome, self._userdb),
