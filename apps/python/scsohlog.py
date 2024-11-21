@@ -40,13 +40,13 @@ Tests = {
     "uptime": "s",
     "dbadds": "row/s",
     "dbupdates": "row/s",
-    "dbdeletes": "row/s"
+    "dbdeletes": "row/s",
 }
 
 
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Class TestLog to hold the properties of a test. It also creates XML.
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 class TestLog:
     def __init__(self):
         self.value = None
@@ -54,28 +54,28 @@ class TestLog:
         self.update = None
 
     def toXML(self, f, name):
-        f.write('<test name="%s"' % name)
+        f.write(f'<test name="{name}"')
         if self.value:
             try:
                 # Try to convert to float
                 fvalue = float(self.value)
-                if fvalue % 1.0 >= 1E-6:
-                    f.write(' value="%f"' % fvalue)
+                if fvalue % 1.0 >= 1e-6:
+                    f.write(f' value="{fvalue:f}"')
                 else:
                     f.write(' value="%d"' % int(fvalue))
             except:
-                f.write(' value="%s"' % self.value)
+                f.write(f' value="{self.value}"')
         if self.uom:
-            f.write(' uom="%s"' % self.uom)
+            f.write(f' uom="{self.uom}"')
         if self.update:
-            f.write(' updateTime="%s"' % self.update)
-        f.write('/>')
+            f.write(f' updateTime="{self.update}"')
+        f.write("/>")
 
 
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Class ObjectLog to hold the properties of a object log. It also creates
 # XML.
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 class ObjectLog:
     def __init__(self):
         self.count = None
@@ -85,27 +85,27 @@ class ObjectLog:
         self.update = None
 
     def toXML(self, f, name, channel):
-        f.write('<object')
+        f.write("<object")
         if name:
-            f.write(' name="%s"' % name)
+            f.write(f' name="{name}"')
         if channel:
-            f.write(' channel="%s"' % channel)
+            f.write(f' channel="{channel}"')
         if not self.count is None:
-            f.write(' count="%s"' % self.count)
+            f.write(f' count="{self.count}"')
         if not self.timeWindow is None:
-            f.write(' timeWindow="%s"' % self.timeWindow)
+            f.write(f' timeWindow="{self.timeWindow}"')
         if not self.average is None:
-            f.write(' average="%s"' % self.average)
+            f.write(f' average="{self.average}"')
         if self.last:
-            f.write(' lastTime="%s"' % self.last)
-        f.write(' updateTime="%s"' % self.update)
-        f.write('/>')
+            f.write(f' lastTime="{self.last}"')
+        f.write(f' updateTime="{self.update}"')
+        f.write("/>")
 
 
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Class Client that holds all tests and object logs of a particular client
 # (messaging user name).
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 class Client:
     def __init__(self):
         self.pid = None
@@ -116,10 +116,10 @@ class Client:
         self.outputLogs = dict()
         self.tests = dict()
 
-    #----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
     # Update/add (system) tests based on the passed tests dictionary retrieved
     # from a status message.
-    #----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
     def updateTests(self, updateTime, tests):
         for name, value in list(tests.items()):
             if name == "pid":
@@ -140,7 +140,7 @@ class Client:
                     continue
                 if len(t) != 4:
                     continue
-                value = str(t[0]*86400+t[1]*3600+t[2]*60+t[3])
+                value = str(t[0] * 86400 + t[1] * 3600 + t[2] * 60 + t[3])
 
             if name not in self.tests:
                 log = TestLog()
@@ -151,9 +151,9 @@ class Client:
             log.value = value
             log.update = updateTime
 
-    #----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
     # Update/add object logs based on the passed log text. The content is parsed.
-    #----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
     def updateObjects(self, updateTime, log):
         # Check input structure
         v = inputRegEx.search(log)
@@ -167,14 +167,14 @@ class Client:
             logs = self.inputLogs
 
         try:
-            tmp = v.group('params').split(',')
+            tmp = v.group("params").split(",")
         except:
             return
 
         params = dict()
         for p in tmp:
             try:
-                param, value = p.split(':', 1)
+                param, value = p.split(":", 1)
             except:
                 continue
             params[param] = value
@@ -194,37 +194,37 @@ class Client:
         logObj.last = params.get("last")
 
     def toXML(self, f, name):
-        f.write('<service name="%s"' % name)
+        f.write(f'<service name="{name}"')
         if self.host:
-            f.write(' host="%s"' % self.host)
+            f.write(f' host="{self.host}"')
         if self.pid:
-            f.write(' pid="%s"' % self.pid)
+            f.write(f' pid="{self.pid}"')
         if self.progname:
-            f.write(' prog="%s"' % self.progname)
-        f.write('>')
+            f.write(f' prog="{self.progname}"')
+        f.write(">")
         for name, log in list(self.tests.items()):
             log.toXML(f, name)
         if len(self.inputLogs) > 0:
-            f.write('<input>')
+            f.write("<input>")
             for id, log in list(self.inputLogs.items()):
                 log.toXML(f, id[0], id[1])
-            f.write('</input>')
+            f.write("</input>")
         if len(self.outputLogs) > 0:
-            f.write('<output>')
+            f.write("<output>")
             for id, log in list(self.outputLogs.items()):
                 log.toXML(f, id[0], id[1])
-            f.write('</output>')
+            f.write("</output>")
         f.write("</service>")
 
 
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # SC3 application class Monitor
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 class Monitor(seiscomp.client.Application):
     def __init__(self, argc, argv):
         seiscomp.client.Application.__init__(self, argc, argv)
         self.setDatabaseEnabled(False, False)
-        self.setMembershipMessagesEnabled(True);
+        self.setMembershipMessagesEnabled(True)
         self.addMessagingSubscription(seiscomp.client.Protocol.STATUS_GROUP)
         self.setMessagingUsername("")
         self.setPrimaryMessagingGroup(seiscomp.client.Protocol.LISTENER_GROUP)
@@ -236,15 +236,21 @@ class Monitor(seiscomp.client.Application):
     def createCommandLineDescription(self):
         try:
             self.commandline().addGroup("Output")
-            self.commandline().addStringOption("Output", "file,o",
-                                               "Specify the output file to create")
-            self.commandline().addIntOption("Output", "interval,i",
-                                            "Specify the output interval in seconds (default: 60)")
-            self.commandline().addStringOption("Output", "script",
-                                               "Specify an output script to be called after the output file is generated")
+            self.commandline().addStringOption(
+                "Output", "file,o", "Specify the output file to create"
+            )
+            self.commandline().addIntOption(
+                "Output",
+                "interval,i",
+                "Specify the output interval in seconds (default: 60)",
+            )
+            self.commandline().addStringOption(
+                "Output",
+                "script",
+                "Specify an output script to be called after the output file is generated",
+            )
         except:
-            seiscomp.logging.warning(
-                "caught unexpected error %s" % sys.exc_info())
+            seiscomp.logging.warning(f"caught unexpected error {sys.exc_info()}")
         return True
 
     def initConfiguration(self):
@@ -287,31 +293,44 @@ class Monitor(seiscomp.client.Application):
         except:
             pass
 
-        self._outputFile = seiscomp.system.Environment.Instance().absolutePath(self._outputFile)
-        seiscomp.logging.info("Output file: %s" % self._outputFile)
+        self._outputFile = seiscomp.system.Environment.Instance().absolutePath(
+            self._outputFile
+        )
+        seiscomp.logging.info(f"Output file: {self._outputFile}")
 
         if self._outputScript:
-            self._outputScript = seiscomp.system.Environment.Instance().absolutePath(self._outputScript)
-            seiscomp.logging.info("Output script: %s" % self._outputScript)
+            self._outputScript = seiscomp.system.Environment.Instance().absolutePath(
+                self._outputScript
+            )
+            seiscomp.logging.info(f"Output script: {self._outputScript}")
 
-        self._monitor = self.addInputObjectLog("status", seiscomp.client.Protocol.STATUS_GROUP)
+        self._monitor = self.addInputObjectLog(
+            "status", seiscomp.client.Protocol.STATUS_GROUP
+        )
         self.enableTimer(self._outputInterval)
-        seiscomp.logging.info("Starting output timer with %d secs" % self._outputInterval)
+        seiscomp.logging.info(
+            "Starting output timer with %d secs" % self._outputInterval
+        )
 
         return True
 
     def printUsage(self):
-        print('''Usage:
+        print(
+            """Usage:
   scsohlog [options]
 
-Connect to the messaging collecting information sent from connected clients''')
+Connect to the messaging collecting information sent from connected clients"""
+        )
 
         seiscomp.client.Application.printUsage(self)
 
-        print('''Examples:
+        print(
+            """Examples:
 Create an output XML file every 60 seconds and execute a custom script to process the XML file
   scsohlog -o stat.xml -i 60 --script process-stat.sh
-''')
+"""
+        )
+
     def handleNetworkMessage(self, msg):
         # A state of health message
         if msg.type == seiscomp.client.Packet.Status:
@@ -327,10 +346,10 @@ Create an output XML file every 60 seconds and execute a custom script to proces
         # If we got disconnected all client states are deleted
         self._clients = dict()
 
-    #----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
     # Timeout handler called by the Application class.
     # Write XML to configured output file and trigger configured script.
-    #----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
     def handleTimeout(self):
         if self._outputFile == "-":
             self.toXML(sys.stdout)
@@ -341,7 +360,8 @@ Create an output XML file every 60 seconds and execute a custom script to proces
             f = open(self._outputFile, "w")
         except:
             seiscomp.logging.error(
-                "Unable to create output file: %s" % self._outputFile)
+                f"Unable to create output file: {self._outputFile}"
+            )
             return
 
         self.toXML(f)
@@ -350,15 +370,15 @@ Create an output XML file every 60 seconds and execute a custom script to proces
         if self._outputScript:
             os.system(self._outputScript + " " + self._outputFile)
 
-    #----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
     # Write XML to stream f
-    #----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
     def toXML(self, f):
         f.write('<?xml version="1.0" encoding="UTF-8"?>')
-        f.write('<server name="seiscomp" host="%s">' % self.messagingURL())
+        f.write(f'<server name="seiscomp" host="{self.messagingURL()}">')
         for name, client in list(self._clients.items()):
             client.toXML(f, name)
-        f.write('</server>')
+        f.write("</server>")
 
     def updateStatus(self, name, items):
         if name not in self._clients:
@@ -387,9 +407,8 @@ Create an output XML file every 60 seconds and execute a custom script to proces
         client.updateTests(update, params)
         for o in objs:
             client.updateObjects(update, o)
-        #client.toXML(sys.stdout, name)
+        # client.toXML(sys.stdout, name)
 
 
 app = Monitor(len(sys.argv), sys.argv)
 sys.exit(app())
-

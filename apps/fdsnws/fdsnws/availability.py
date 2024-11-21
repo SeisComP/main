@@ -816,13 +816,19 @@ class FDSNAvailabilityExtent(_Availability):
         comparator = (
             compareNSLC
             if ro.orderBy == ro.VOrderByNSLC
-            else compareCount
-            if ro.orderBy == ro.VOrderByCount
-            else compareCountDesc
-            if ro.orderBy == ro.VOrderByCountDesc
-            else compareUpdate
-            if ro.orderBy == ro.VOrderByUpdate
-            else compareUpdateDesc
+            else (
+                compareCount
+                if ro.orderBy == ro.VOrderByCount
+                else (
+                    compareCountDesc
+                    if ro.orderBy == ro.VOrderByCountDesc
+                    else (
+                        compareUpdate
+                        if ro.orderBy == ro.VOrderByUpdate
+                        else compareUpdateDesc
+                    )
+                )
+            )
         )
         lines.sort(key=cmp_to_key(comparator))
 

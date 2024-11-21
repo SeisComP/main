@@ -39,13 +39,13 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv[1:], "hf", ["help", "formatted"])
     except getopt.error as msg:
-        sys.stderr.write("%s\n" % msg)
+        sys.stderr.write(f"{msg}\n")
         sys.stderr.write("for help use --help\n")
         return 1
 
     for o, a in opts:
         if o in ["-h", "--help"]:
-            sys.stderr.write("%s\n" % usage)
+            sys.stderr.write(f"{usage}\n")
             return 1
         elif o in ["-f", "--formatted"]:
             formatted = True

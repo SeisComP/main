@@ -6,7 +6,7 @@ import seiscomp.system
 
 
 def parseBindPort(bind):
-    bindToks = bind.split(':')
+    bindToks = bind.split(":")
     if len(bindToks) == 1:
         return int(bindToks[0])
     elif len(bindToks) == 2:
@@ -28,7 +28,7 @@ class Module(seiscomp.kernel.Module):
     def updateConfig(self):
         messaging = True
         messagingPort = 18180
-        messagingProtocol = 'scmp'
+        messagingProtocol = "scmp"
 
         try:
             messaging = self.env.getBool("messaging.enable")
@@ -51,14 +51,13 @@ class Module(seiscomp.kernel.Module):
 
             try:
                 bind = self.env.getString("messaging.bind")
-                bindToks = bind.split(':')
+                bindToks = bind.split(":")
                 if len(bindToks) == 1:
                     messagingPort = int(bindToks[0])
                 elif len(bindToks) == 2:
                     messagingPort = int(bindToks[1])
                 else:
-                    sys.stdout.write(
-                        "E invalid messaging bind parameter: %s\n" % bind)
+                    sys.stdout.write(f"E invalid messaging bind parameter: {bind}\n")
                     sys.stdout.write("  expected either 'port' or 'ip:port'\n")
                     return 1
             except:
@@ -69,12 +68,16 @@ class Module(seiscomp.kernel.Module):
             p = parseBindPort(cfg.getString("interface.ssl.bind"))
             if p > 0:
                 messagingPort = p
-                messagingProtocol = 'scmps'
+                messagingProtocol = "scmps"
 
         # Synchronize inventory
-        return os.system("scinv sync --console=1 -H %s://localhost:%d/production --filebase \"%s\" --rc-dir \"%s\" --key-dir \"%s\""
-                         % (messagingProtocol, messagingPort,
-                            os.path.join(self.env.root, "etc", "inventory"),
-                            os.path.join(self.env.root, "var", "lib", "rc"),
-                            os.path.join(self.env.root, "etc", "key")))
-
+        return os.system(
+            'scinv sync --console=1 -H %s://localhost:%d/production --filebase "%s" --rc-dir "%s" --key-dir "%s"'
+            % (
+                messagingProtocol,
+                messagingPort,
+                os.path.join(self.env.root, "etc", "inventory"),
+                os.path.join(self.env.root, "var", "lib", "rc"),
+                os.path.join(self.env.root, "etc", "key"),
+            )
+        )

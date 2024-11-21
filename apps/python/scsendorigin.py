@@ -70,7 +70,7 @@ class SendOrigin(seiscomp.client.Application):
             )
             self.commandline().addStringOption("Parameters", "time", "time of origin")
         except:
-            seiscomp.logging.warning("caught unexpected error %s" % sys.exc_info())
+            seiscomp.logging.warning(f"caught unexpected error {sys.exc_info()}")
 
     def printUsage(self):
         print(

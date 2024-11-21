@@ -34,13 +34,13 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv[1:], "hf", ["help"])
     except getopt.error as msg:
-        sys.stderr.write("%s\n" % msg)
+        sys.stderr.write(f"{msg}\n")
         sys.stderr.write("for help use --help\n")
         return 1
 
     for o, a in opts:
         if o in ["-h", "--help"]:
-            sys.stderr.write("%s\n" % usage)
+            sys.stderr.write(f"{usage}\n")
             return 1
         elif o in ["-f"]:
             formatted = True
@@ -52,19 +52,19 @@ def main(argv):
 
     ar = seiscomp.io.XMLArchive()
     if not ar.open(argv[0]):
-        sys.stderr.write("Unable to parse input file: %s\n" % argv[0])
+        sys.stderr.write(f"Unable to parse input file: {argv[0]}\n")
         return 2
 
     obj = ar.readObject()
     ar.close()
 
     if obj is None:
-        sys.stderr.write("Empty document in %s\n" % argv[0])
+        sys.stderr.write(f"Empty document in {argv[0]}\n")
         return 3
 
     inv = seiscomp.datamodel.Inventory.Cast(obj)
     if inv is None:
-        sys.stderr.write("No inventory found in %s\n" % argv[0])
+        sys.stderr.write(f"No inventory found in {argv[0]}\n")
         return 4
 
     if len(argv) < 2:
