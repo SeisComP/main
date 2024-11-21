@@ -13,19 +13,25 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
-import time, sys, os, traceback
-import seiscomp.core, seiscomp.client, seiscomp.datamodel
-import seiscomp.logging, seiscomp.system
+import os
+import sys
+import traceback
+
+import seiscomp.core
+import seiscomp.client
+import seiscomp.datamodel
+import seiscomp.logging
+import seiscomp.system
 
 
-def createDirectory(dir):
-    if os.access(dir, os.W_OK):
+def createDirectory(directory):
+    if os.access(directory, os.W_OK):
         return True
 
     try:
-        os.makedirs(dir)
+        os.makedirs(directory)
         return True
-    except:
+    except OSError:
         return False
 
 
@@ -46,8 +52,8 @@ def timeSpanToString(ts):
 
     if neg:
         return "-%.2d:%.2d:%.2d:%.2d.%06d" % (days, hours, mins, secs, usecs)
-    else:
-        return "%.2d:%.2d:%.2d:%.2d.%06d" % (days, hours, mins, secs, usecs)
+
+    return "%.2d:%.2d:%.2d:%.2d.%06d" % (days, hours, mins, secs, usecs)
 
 
 class ProcLatency(seiscomp.client.Application):
@@ -135,8 +141,6 @@ class ProcLatency(seiscomp.client.Application):
 
     def logObject(self, parentID, obj, update):
         now = seiscomp.core.Time.GMT()
-        time = None
-
         pick = seiscomp.datamodel.Pick.Cast(obj)
         if pick:
             phase = ""
@@ -199,7 +203,7 @@ class ProcLatency(seiscomp.client.Application):
                 pass
 
             try:
-                status = seiscomp.datamodel.EOriginStatusNames.name(org.status())
+                status = seiscomp.datamodel.EEvaluationStatusNames.name(org.status())
             except:
                 pass
 
@@ -286,7 +290,7 @@ class ProcLatency(seiscomp.client.Application):
         sys.stdout.write(f"{timeToString(received)};{logEntry}\n")
 
         if nowDirectory != self._nowDirectory:
-            if createDirectory(nowDirectory) == False:
+            if not createDirectory(nowDirectory):
                 seiscomp.logging.error(f"Unable to create directory {nowDirectory}")
                 return False
 
@@ -298,7 +302,7 @@ class ProcLatency(seiscomp.client.Application):
         )
 
         if triggeredDirectory != self._triggeredDirectory:
-            if createDirectory(triggeredDirectory) == False:
+            if not createDirectory(triggeredDirectory):
                 seiscomp.logging.error(
                     f"Unable to create directory {triggeredDirectory}"
                 )
@@ -321,7 +325,7 @@ class ProcLatency(seiscomp.client.Application):
         # logEntry = timeToString(received)
         logEntry = ""
 
-        if not triggered is None:
+        if triggered is not None:
             aTriggered = triggered.get()
             triggeredDirectory = (
                 self._directory + "/".join(["%.2d" % i for i in aTriggered[1:4]]) + "/"
@@ -341,7 +345,7 @@ class ProcLatency(seiscomp.client.Application):
         sys.stdout.write(f"{timeToString(received)};{logEntry}\n")
 
         if nowDirectory != self._nowDirectory:
-            if createDirectory(nowDirectory) == False:
+            if not createDirectory(nowDirectory):
                 seiscomp.logging.error(f"Unable to create directory {nowDirectory}")
                 return False
 
@@ -353,7 +357,7 @@ class ProcLatency(seiscomp.client.Application):
 
         if triggeredDirectory:
             if triggeredDirectory != self._triggeredDirectory:
-                if createDirectory(triggeredDirectory) == False:
+                if not createDirectory(triggeredDirectory):
                     seiscomp.logging.error(
                         f"Unable to create directory {triggeredDirectory}"
                     )
@@ -369,11 +373,8 @@ class ProcLatency(seiscomp.client.Application):
         return True
 
     def writeLog(self, file, text):
-        of = open(file, "a")
-        if of:
-            of.write(text)
-            of.write("\n")
-            of.close()
+        with open(file, "a", encoding="utf8") as of:
+            of.print(text, file=of)
 
 
 app = ProcLatency(len(sys.argv), sys.argv)

@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 import sys
+import traceback
+
 import seiscomp.core
 import seiscomp.client
-import seiscomp.dataModel
+import seiscomp.datamodel
 
 
 class InvApp(seiscomp.client.Application):
@@ -15,16 +17,16 @@ class InvApp(seiscomp.client.Application):
 
     def validateParameters(self):
         try:
-            if seiscomp.client.Application.validateParameters(self) == False:
+            if not seiscomp.client.Application.validateParameters(self):
                 return False
-
-            return True
 
         except:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
             sys.exit(-1)
+
+        return True
 
     def run(self):
         now = seiscomp.core.Time.GMT()

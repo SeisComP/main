@@ -13,11 +13,14 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
-import time
 import sys
 import os
-import time
-import seiscomp.core, seiscomp.client, seiscomp.datamodel, seiscomp.logging
+
+import seiscomp.core
+import seiscomp.client
+import seiscomp.datamodel
+import seiscomp.logging
+
 from seiscomp.scbulletin import Bulletin, stationCount
 
 
@@ -40,8 +43,8 @@ class ProcAlert(seiscomp.client.Application):
         self.minPickCount = 25
 
         self.procAlertScript = ""
-
-        ep = seiscomp.datamodel.EventParameters()
+        self.bulletin = None
+        self.cache = None
 
     def createCommandLineDescription(self):
         try:
@@ -61,7 +64,8 @@ class ProcAlert(seiscomp.client.Application):
             self.commandline().addStringOption(
                 "Publishing",
                 "procalert-script",
-                "Specify the script to publish an event. The ProcAlert file and the event id are passed as parameter $1 and $2",
+                "Specify the script to publish an event. The ProcAlert file and the "
+                "event id are passed as parameter $1 and $2",
             )
             self.commandline().addOption(
                 "Publishing", "test", "Test mode, no messages are sent"
@@ -174,13 +178,14 @@ class ProcAlert(seiscomp.client.Application):
         return False
 
     def send_procalert(self, txt, evid):
-        if self.procAlertScript:
-            tmp = f"/tmp/yyy{evid.replace('/', '_').replace(':', '-')}"
-            f = file(tmp, "w")
-            f.write(f"{txt}")
-            f.close()
+        if not self.procAlertScript:
+            return
 
-            os.system(self.procAlertScript + " " + tmp + " " + evid)
+        file = f"/tmp/yyy{evid.replace('/', '_').replace(':', '-')}"
+        with open(file, "w", encoding="utf8") as f:
+            print(txt, file=f)
+
+        os.system(self.procAlertScript + " " + file + " " + evid)
 
     def coordinates(self, org):
         return org.latitude().value(), org.longitude().value(), org.depth().value()
@@ -194,7 +199,7 @@ class ProcAlert(seiscomp.client.Application):
             seiscomp.logging.error("suspicious region/depth - ignored")
             publish = False
 
-        if stationCount(org) < self.minPickCount:
+        if stationCount(org, 0.5) < self.minPickCount:
             seiscomp.logging.error("too few picks - ignored")
             publish = False
 
