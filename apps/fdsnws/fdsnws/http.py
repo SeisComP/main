@@ -7,19 +7,11 @@
 # Email:   herrnkind@gempa.de
 ################################################################################
 
-import base64
-import datetime
-import hashlib
-import json
-import time
-import dateutil.parser
-
 from twisted.web import http, resource, server, static, util
 
 import seiscomp.core
 import seiscomp.logging
 
-from . import gnupg
 from .utils import accessLog, b_str, u_str, writeTSBin
 
 VERSION = "1.2.4"
@@ -262,66 +254,6 @@ class DirectoryResource(static.File):
 
 
 ################################################################################
-class AuthResource(BaseResource):
-    isLeaf = True
-
-    def __init__(self, version, gnupghome, userdb):
-        super().__init__(version)
-
-        self.__gpg = gnupg.GPG(gnupghome=gnupghome)
-        self.__userdb = userdb
-
-    # ---------------------------------------------------------------------------
-    def render_POST(self, request):
-        request.setHeader("Content-Type", "text/plain; charset=utf-8")
-
-        try:
-            verified = self.__gpg.decrypt(request.content.getvalue())
-
-        except OSError as e:
-            msg = "gpg decrypt error"
-            seiscomp.logging.warning(f"{msg}: {e}")
-            return self.renderErrorPage(request, http.INTERNAL_SERVER_ERROR, msg)
-
-        except Exception as e:
-            msg = "invalid token"
-            seiscomp.logging.warning(f"{msg}: {e}")
-            return self.renderErrorPage(request, http.BAD_REQUEST, msg)
-
-        if verified.trust_level is None or verified.trust_level < verified.TRUST_FULLY:
-            msg = "token has invalid signature"
-            seiscomp.logging.warning(msg)
-            return self.renderErrorPage(request, http.BAD_REQUEST, msg)
-
-        try:
-            attributes = json.loads(u_str(verified.data))
-            td = dateutil.parser.parse(
-                attributes["valid_until"]
-            ) - datetime.datetime.now(dateutil.tz.tzutc())
-            lifetime = td.seconds + td.days * 24 * 3600
-
-        except Exception as e:
-            msg = "token has invalid validity"
-            seiscomp.logging.warning(f"{msg}: {e}")
-            return self.renderErrorPage(request, http.BAD_REQUEST, msg)
-
-        if lifetime <= 0:
-            msg = "token is expired"
-            seiscomp.logging.warning(msg)
-            return self.renderErrorPage(request, http.BAD_REQUEST, msg)
-
-        userid = base64.urlsafe_b64encode(hashlib.sha256(verified.data).digest()[:18])
-        password = self.__userdb.addUser(
-            u_str(userid),
-            attributes,
-            time.time() + min(lifetime, 24 * 3600),
-            u_str(verified.data),
-        )
-        accessLog(request, None, http.OK, len(userid) + len(password) + 1, None)
-        return userid + b":" + password
-
-
-################################################################################
 class Site(server.Site):
     def __init__(self, res, corsOrigins):
         super().__init__(res)
@@ -362,6 +294,3 @@ class Site(server.Site):
             # Set Vary header to let the browser know that the response depends
             # on the request. Certain cache strategies should be disabled.
             req.setHeader("Vary", "Origin")
-
-
-# vim: ts=4 et
