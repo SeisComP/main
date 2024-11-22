@@ -53,7 +53,7 @@ def readXML(self):
 
         if self._eventType:
             try:
-                eventType = seiscomp.datamodel.EEventTypeNames_name(evt.type())
+                eventType = seiscomp.datamodel.EEventTypeNames.name(evt.type())
                 if eventType != self._eventType:
                     continue
             except ValueError:
@@ -303,7 +303,7 @@ Print IDs of all events in XML file
 
             if self._eventType:
                 try:
-                    eventType = seiscomp.datamodel.EEventTypeNames_name(evt.type())
+                    eventType = seiscomp.datamodel.EEventTypeNames.name(evt.type())
                     if eventType != self._eventType:
                         continue
                 except ValueError:

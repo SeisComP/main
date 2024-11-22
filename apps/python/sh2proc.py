@@ -489,7 +489,7 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
                         seiscomp.datamodel.IMPULSIVE,
                         seiscomp.datamodel.QUESTIONABLE,
                     ]:
-                        if value == seiscomp.datamodel.EPickOnsetNames_name(onset):
+                        if value == seiscomp.datamodel.EPickOnsetNames.name(onset):
                             pick.setOnset(onset)
                             found = True
                             break
@@ -524,7 +524,7 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
                         seiscomp.datamodel.AUTOMATIC,
                         seiscomp.datamodel.MANUAL,
                     ]:
-                        if value == seiscomp.datamodel.EEvaluationModeNames_name(mode):
+                        if value == seiscomp.datamodel.EEvaluationModeNames.name(mode):
                             pick.setEvaluationMode(mode)
                             found = True
                             break
