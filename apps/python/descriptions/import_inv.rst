@@ -8,7 +8,6 @@ an input format such as
    :delim: ;
 
    scml; :ref:`scml2inv`; :ref:`SeisComP inventory XML <concepts_inventory>`, schema: :file:`$SEISCOMP_ROOT/share/xml/`
-   sc3; :ref:`sc32inv`; Alias for scml for backwards compatibility to SeisComP3
    arclink; :ref:`arclink2inv`; Arclink inventory XML
    dlsv; :ref:`dlsv2inv`; `dataless SEED <http://www.iris.edu/data/dataless.htm>`_
    fdsnxml; :ref:`fdsnxml2inv`; `FDSN StationXML <http://www.fdsn.org/xml/station/>`_
