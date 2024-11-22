@@ -288,9 +288,7 @@ class AccessUpdater(seiscomp.client.Application):
                     mcount += 1
                     if msg and mcount == maxmsg:
                         sent += mcount
-                        logd(
-                            f"sending message ({sent / float(Nsize) * 100.0:5.1f} %)"
-                        )
+                        logd(f"sending message ({sent / float(Nsize) * 100.0:5.1f} %)")
                         self.send(group, msg)
                         msg.clear()
                         mcount = 0

@@ -1051,6 +1051,7 @@ configuration read:
 
             if self._authEnabled:
                 from seiscomp.fdsnws.authresource import AuthResource
+
                 dataselect1.putChild(
                     b"auth",
                     AuthResource(DataSelectVersion, self._authGnupgHome, self._userdb),

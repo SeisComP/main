@@ -359,9 +359,7 @@ Create an output XML file every 60 seconds and execute a custom script to proces
         try:
             f = open(self._outputFile, "w")
         except:
-            seiscomp.logging.error(
-                f"Unable to create output file: {self._outputFile}"
-            )
+            seiscomp.logging.error(f"Unable to create output file: {self._outputFile}")
             return
 
         self.toXML(f)
