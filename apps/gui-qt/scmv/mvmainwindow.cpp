@@ -1861,8 +1861,14 @@ Gui::OriginSymbol* MvMainWindow::createOriginSymbolFromEvent(DataModel::Event* e
 		return NULL;
 	}
 
+	OPT(double) depth;
+	try {
+		depth = origin->depth();
+	}
+	catch ( Core::ValueException & ) {}
+
 	Gui::TTDecorator *ttDecorator = new Gui::TTDecorator();
-	ttDecorator->setDepth(origin->depth());
+	ttDecorator->setDepth(depth.value_or(0));
 	ttDecorator->setOriginTime(origin->time());
 	ttDecorator->setLatitude(origin->latitude());
 	ttDecorator->setLongitude(origin->longitude());
@@ -1880,7 +1886,7 @@ Gui::OriginSymbol* MvMainWindow::createOriginSymbolFromEvent(DataModel::Event* e
 	originSymbol->setLatitude(origin->latitude());
 	originSymbol->setLongitude(origin->longitude());
 	originSymbol->setID(event->publicID());
-	originSymbol->setDepth(origin->depth());
+	originSymbol->setDepth(depth.value_or(0));
 	originSymbol->setPreferredMagnitudeValue(magnitudeValue);
 	originSymbol->setPriority(Gui::Map::Symbol::MEDIUM);
 
