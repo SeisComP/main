@@ -1383,6 +1383,7 @@ class FDSNAvailabilityQuery(_Availability):
             seg = None
             ext = None
             lines = 0
+            jitter = 0.0
             while (
                 not req._disconnected  # pylint: disable=W0212
                 and (seg is None or segIt.next())

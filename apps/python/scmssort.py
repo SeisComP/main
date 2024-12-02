@@ -215,14 +215,13 @@ def read_time_window(opt):
 def read_lines(file):
     # read from stdin
     if file == "-":
-        for line in sys.stdin:
-            yield line
+        yield from sys.stdin
         return
 
     # read from file
     with open(file, "r", encoding="utf-8") as f:
-        for line in f:
-            yield line
+        yield from f
+        return
 
 
 def compile_stream_pattern(opt):
@@ -285,7 +284,7 @@ def record_input(file, datatype=core.Array.INT):
         raise FileNotFoundError("Could not find file")
 
     if not stream.setSource(file):
-        raise Exception("Could not set record stream source")
+        raise ValueError("Could not set record stream source")
 
     it = io.RecordInput(stream, datatype, core.Record.SAVE_RAW)
 
@@ -326,8 +325,8 @@ def main():
             "  + end time must be greater than start time"
         )
         return False
-    else:
-        info(f"Filtering records by time window: {time2str(t_min)}~{time2str(t_max)}")
+
+    info(f"Filtering records by time window: {time2str(t_min)}~{time2str(t_max)}")
 
     # stream filter
     pattern = compile_stream_pattern(opt)
@@ -377,6 +376,7 @@ def main():
         try:
             for rec in record_input(file):
                 records_file += 1
+                stream_id = ""
 
                 # skip record if outside time window
                 if (t_min and rec.endTime() < t_min) or (
