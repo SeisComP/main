@@ -788,6 +788,8 @@ class FDSNEvent(BaseResource):
         colPID = _T("publicID")
         colTime = _T("time_value")
         colMag = _T("magnitude_value")
+        colLat = _T("latitude_value")
+        colLon = _T("longitude_value")
         if orderByMag:
             colOrderBy = f"m.{colMag}"
         else:
@@ -795,7 +797,6 @@ class FDSNEvent(BaseResource):
 
         bBox = None
         if ro.geo:
-            colLat, colLon = _T("latitude_value"), _T("longitude_value")
             if ro.geo.bBox:
                 bBox = ro.geo.bBox
             else:

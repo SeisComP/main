@@ -30,6 +30,13 @@ import seiscomp.io
 import seiscomp.system
 
 
+def recStreamID(rec):
+    return (
+        f"{rec.networkCode()}.{rec.stationCode()}."
+        f"{rec.locationCode()}.{rec.channelCode()}"
+    )
+
+
 class Archive:
     def __init__(self, archiveDirectory):
         self.archiveDirectory = archiveDirectory
@@ -298,10 +305,6 @@ class StreamIterator:
             self.current = self.record.startTime()
             self.currentEnd = self.record.endTime()
 
-    def next(self):
-        # needed for Python 2 only
-        return self.__next__()
-
     def __next__(self):
         while True:
             self.record, self.index = self.archive.readRecord(self.file, self.index)
@@ -464,10 +467,7 @@ class RecordRenamer:
         matchedRules = []
         # find rules that match the record
         for rule in self.renameRules:
-            if rule.pattern is None or rule.pattern.fullmatch(
-                f"{rec.networkCode()}.{rec.stationCode()}."
-                f"{rec.locationCode()}.{rec.channelCode()}"
-            ):
+            if rule.pattern is None or rule.pattern.fullmatch(recStreamID(rec)):
                 # do not apply the rule here, because it would affect
                 # subsequent matches
                 matchedRules.append(rule)
@@ -580,7 +580,7 @@ def checkFilePrint(fileName, streamDict):
         if rec is None:
             continue
 
-        stream = f"{rec.networkCode()}.{rec.stationCode()}.{rec.locationCode()}.{rec.channelCode()}"
+        stream = recStreamID(rec)
         recStart = rec.startTime()
         recEnd = rec.endTime()
 
@@ -980,10 +980,10 @@ def main():
         if flag in ["-t", "--time-window"]:
             tmin, tmax = list(map(str2time, arg.split("~")))
             if tmin is None or tmax is None:
-                print(f"error: {arg}", file=sys.stderr)
                 print(
-                    "       Provide correct time interval: -t 'startTime~endtime'\n"
-                    "       with valid time format, e.g.: 'YYYY-MM-DD hh:mm:ss' or YYYY-MM-DDThh:mm:ss",
+                    f"""error: {arg}
+       Provide correct time interval: -t 'startTime~endtime'
+       with valid time format, e.g.: 'YYYY-MM-DD hh:mm:ss' or YYYY-MM-DDThh:mm:ss""",
                     file=sys.stderr,
                 )
 
@@ -1145,16 +1145,17 @@ def main():
     if dump:
         stdout = True
 
-    if stdout:
-        out = sys.stdout.buffer
-
-    if not test and outputFile:
-        print(f"Output data to file: {outputFile}", file=sys.stderr)
-        try:
-            out = open(outputFile, "wb")
-        except Exception:
-            print("Cannot create output file {outputFile}", file=sys.stderr)
-            return -1
+    out = None
+    if not test:
+        if outputFile:
+            print(f"Output data to file: {outputFile}", file=sys.stderr)
+            try:
+                out = open(outputFile, "wb")
+            except Exception:
+                print("Cannot create output file {outputFile}", file=sys.stderr)
+                return -1
+        else:
+            out = sys.stdout.buffer
 
     # list file witht times takes priority over nslc list
     if listFile:
@@ -1278,7 +1279,7 @@ def main():
                 )
 
             if printStreams:
-                stream = f"{rec.networkCode()}.{rec.stationCode()}.{rec.locationCode()}.{rec.channelCode()}"
+                stream = recStreamID(rec)
                 recStart = rec.startTime()
                 recEnd = rec.endTime()
 
@@ -1325,7 +1326,7 @@ def main():
 
             recordRenamer.applyRules(rec)
 
-            if not test:
+            if out:
                 out.write(rec.raw().str())
 
             foundRecords += 1
@@ -1346,7 +1347,7 @@ def main():
     elif checkSDS:
         foundIssues = 0
         checkedFiles = 0
-        for path, subdirs, files in os.walk(archiveDirectory):
+        for path, _subdirs, files in os.walk(archiveDirectory):
             for name in files:
                 fileName = os.path.join(path, name)
                 checkedFiles += 1
@@ -1448,7 +1449,7 @@ def main():
                         continue
 
                 if printStreams:
-                    stream = f"{rec.networkCode()}.{rec.stationCode()}.{rec.locationCode()}.{rec.channelCode()}"
+                    stream = recStreamID(rec)
                     recStart = rec.startTime()
                     recEnd = rec.endTime()
 
@@ -1623,11 +1624,8 @@ def main():
                 file=sys.stderr,
             )
 
-            if maxTime < str2time(end):
-                maxTime = str2time(end)
-
-            if minTime > str2time(start):
-                minTime = str2time(start)
+            maxTime = max(maxTime, str2time(end))
+            minTime = min(minTime, str2time(start))
 
             totalChans.add(key)
             totalNetworks.add(key.split(".")[0])
@@ -1663,6 +1661,8 @@ def main():
             f"#   samples:    {totalSamples}",
             file=sys.stderr,
         )
+
+    return 0
 
 
 if __name__ == "__main__":

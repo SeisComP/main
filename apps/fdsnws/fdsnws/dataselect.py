@@ -584,6 +584,7 @@ class FDSNDataSelect(BaseResource):
             samples = 0
 
         trackerList = []
+        userIP = ""
 
         if app._trackdbEnabled or app._requestLog:
             xff = req.requestHeaders.getRawHeaders("x-forwarded-for")
