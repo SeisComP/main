@@ -186,8 +186,9 @@ bool AmpTool::validateParameters() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool AmpTool::initConfiguration() {
-	if ( !Client::StreamApplication::initConfiguration() )
+	if ( !Client::StreamApplication::initConfiguration() ) {
 		return false;
+	}
 
 	try {
 		std::vector<std::string> amplitudes = configGetStrings("amplitudes");
