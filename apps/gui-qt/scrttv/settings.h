@@ -123,7 +123,7 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 	}
 
 	int                      bufferSize{1800};
-	Core::Time               endTime;
+	OPT(Core::Time)          endTime;
 	std::string              inputFile;
 	std::string              filter;
 	std::vector<std::string> filters{{"RMHP(2)>>ITAPER(5)>>BW(3, 0.5, 8.0)"},{"RMHP(2)>>ITAPER(5)>>BW_HP(3, 3)"}};

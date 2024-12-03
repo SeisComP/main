@@ -202,9 +202,9 @@ bool isStreamBlacklisted(const vector<string> &blacklist,
 
 
 #define _T(name) q->driver()->convertColumnName(name)
-DatabaseIterator loadPicks(const Core::Time &start, const Core::Time &end) {
+DatabaseIterator loadPicks(const Core::Time &start, const OPT(Core::Time) &end) {
 	SEISCOMP_DEBUG("Loading picks from %s to %s",
-	               start.iso().c_str(), end.iso().c_str());
+	               start.iso(), (end ? *end : Core::Time()).iso());
 
 	// Assumed to be valid => check at caller
 	auto q = SCApp->query();
@@ -214,8 +214,8 @@ DatabaseIterator loadPicks(const Core::Time &start, const Core::Time &end) {
 	       "from Pick join PublicObject as PPick"
 	       " on Pick._oid=PPick._oid"
 	       " and Pick." << _T("time_value") << ">='" << q->toString(start) << "' ";
-	if ( end.valid() ) {
-		oss << "and Pick." << _T("time_value") << "<='" << q->toString(end) << "' ";
+	if ( end ) {
+		oss << "and Pick." << _T("time_value") << "<='" << q->toString(*end) << "' ";
 	}
 	oss << "left join Arrival"
 	       " on Arrival." << _T("pickID") << "=PPick." << _T("publicID") << " "
@@ -1676,23 +1676,28 @@ void MainWindow::listHiddenStreams() {
 
 			if ( item->isVisible() ) continue;
 
-			Seiscomp::Gui::RecordWidget *w = item->widget();
-			Seiscomp::Core::Time lastSample;
-			if ( w->records() != NULL ) lastSample = w->records()->timeWindow().endTime();
+			Gui::RecordWidget *w = item->widget();
+			OPT(Core::Time) lastSample;
+			if ( w->records() ) {
+				lastSample = w->records()->timeWindow().endTime();
+			}
 
 			QString state;
 
-			if ( item->isInvisibilityForced() )
+			if ( item->isInvisibilityForced() ) {
 				state = "disabled";
+			}
 
-			if ( !lastSample.valid() )
+			if ( !lastSample ) {
 				data += QString("<tr><td>%1</td><td></td><td>%2</td></tr>")
 				                .arg(waveformIDToString(item->streamID())).arg(state);
-			else
+			}
+			else {
 				data += QString("<tr><td>%1</td><td align=right>%2</td><td>%3</td></tr>")
 				                .arg(waveformIDToString(item->streamID()))
-				                .arg(strTimeSpan((now - lastSample).seconds()))
+				                .arg(strTimeSpan((now - *lastSample).seconds()))
 				                .arg(state);
+			}
 
 			++numberOfLines;
 		}
@@ -1854,7 +1859,7 @@ void MainWindow::setupItem(const Record*, Gui::RecordViewItem *item) {
 			double scale = 1.0 / Client::Inventory::Instance()->getGain(
 					streamID.networkCode(), streamID.stationCode(),
 					streamID.locationCode(), streamID.channelCode(),
-					Settings::global.endTime.valid() ? Settings::global.endTime : Core::Time::UTC()
+					Settings::global.endTime ? *Settings::global.endTime : Core::Time::UTC()
 				);
 
 			_scaleMap[streamID] = scale;
@@ -2023,12 +2028,13 @@ void MainWindow::loadFiles() {
 
 	_traceViews.front()->setUpdatesEnabled(false);
 
-	_lastRecordTime = Core::Time();
+	_lastRecordTime = Core::None;
 
 	for ( size_t i = 0; i < _dataFiles.size(); ++i ) {
 		RecordStream::File file;
 		file.setRecordType("mseed");
-		file.setTimeWindow(_dataTimeWindow);
+		file.setStartTime(_dataTimeStart);
+		file.setEndTime(_dataTimeEnd);
 
 		if ( !file.setSource(_dataFiles[i]) ) {
 			cerr << "could not open file '" << _dataFiles[i] << "'" << endl;
@@ -2051,7 +2057,7 @@ void MainWindow::loadFiles() {
 
 		for ( Record *rec : input ) {
 			if ( _traceViews.front()->feed(rec) ) {
-				if ( !_lastRecordTime.valid() || _lastRecordTime < rec->endTime() ) {
+				if ( !_lastRecordTime || *_lastRecordTime < rec->endTime() ) {
 					_lastRecordTime = rec->endTime();
 				}
 			}
@@ -2081,14 +2087,9 @@ void MainWindow::loadFiles() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::openAcquisition() {
-	if ( !Settings::global.endTime ) {
-		_originTime = Core::Time::UTC();
-	}
-	else {
-		_originTime = Settings::global.endTime;
-	}
-
-	_dataTimeWindow.set(_originTime - _bufferSize, Settings::global.endTime);
+	_originTime = Settings::global.endTime ? *Settings::global.endTime : Core::Time::UTC();
+	_dataTimeStart = _originTime - _bufferSize;
+	_dataTimeEnd = Settings::global.endTime;
 
 	TRACEVIEWS(setBufferSize(_bufferSize));
 	TRACEVIEWS(setTimeSpan(_bufferSize));
@@ -2931,10 +2932,18 @@ void MainWindow::checkTraceDelay() {
 		for ( int i = 0; i < view->rowCount(); ++i ) {
 			Seiscomp::Gui::RecordViewItem* item = view->itemAt(i);
 			Seiscomp::Gui::RecordWidget *w = item->widget();
-			Seiscomp::Core::Time lastSample;
+			OPT(Seiscomp::Core::Time) lastSample;
 
-			if ( w->records() != NULL ) lastSample = w->records()->timeWindow().endTime();
-			item->setVisible(now - (!lastSample.valid()?_dataTimeWindow.startTime():lastSample) <= maxDelay);
+			if ( w->records() ) {
+				lastSample = w->records()->timeWindow().endTime();
+			}
+
+			if ( lastSample ) {
+				item->setVisible(now - *lastSample <= maxDelay);
+			}
+			else {
+				item->setVisible(now - _dataTimeStart <= maxDelay);
+			}
 		}
 	}
 }
@@ -3089,11 +3098,12 @@ void MainWindow::reload() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::switchToRealtime() {
-	Settings::global.endTime = Core::Time();
+	Settings::global.endTime = Core::None;
 	// Reset buffer size to initial config
 	_bufferSize = Core::TimeSpan(Settings::global.bufferSize, 0);
 	_originTime = Core::Time::UTC();
-	_dataTimeWindow.set(_originTime - _bufferSize, Settings::global.endTime);
+	_dataTimeStart = _originTime - _bufferSize;
+	_dataTimeEnd = Settings::global.endTime;
 
 	TRACEVIEWS(setBufferSize(_bufferSize));
 	TRACEVIEWS(setTimeSpan(_bufferSize));
@@ -3116,15 +3126,16 @@ void MainWindow::switchToRealtime() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::reloadTimeWindow(const Core::TimeWindow &tw) {
-	_dataTimeWindow = tw;
-	Settings::global.endTime = _dataTimeWindow.endTime();
-	_bufferSize = _dataTimeWindow.length();
-	_originTime = Settings::global.endTime;
+	_dataTimeStart = tw.startTime();
+	_dataTimeEnd = tw.endTime();
+	Settings::global.endTime = _dataTimeEnd;
+	_bufferSize = *_dataTimeEnd - _dataTimeStart;
+	_originTime = *_dataTimeEnd;
 
 	TRACEVIEWS(setBufferSize(_bufferSize));
 	TRACEVIEWS(setTimeSpan(_bufferSize));
 	TRACEVIEWS(setAlignment(_originTime));
-	TRACEVIEWS(setTimeRange(-static_cast<double>(_dataTimeWindow.length()), 0));
+	TRACEVIEWS(setTimeRange(-static_cast<double>(_bufferSize), 0));
 	_wantReload = true;
 
 	if ( _recordStreamThread ) {
@@ -3143,7 +3154,7 @@ void MainWindow::reloadTimeWindow(const Core::TimeWindow &tw) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::reloadData() {
 	_wantReload = false;
-	_ui.actionSwitchToRealtime->setEnabled(Settings::global.endTime.valid());
+	_ui.actionSwitchToRealtime->setEnabled(Settings::global.endTime.has_value());
 
 	_statusBarFile->setText(tr("Loading picks"));
 
@@ -3152,10 +3163,7 @@ void MainWindow::reloadData() {
 
 	if ( Settings::global.showPicks && SCApp->query() ) {
 		SCApp->showMessage("Loading picks");
-		DatabaseIterator it = loadPicks(
-			_dataTimeWindow.startTime(),
-			_dataTimeWindow.endTime()
-		);
+		DatabaseIterator it = loadPicks(_dataTimeStart, _dataTimeEnd);
 
 		auto db = SCApp->query()->driver();
 		int picks = 0, arrivals = 0;
@@ -3199,11 +3207,13 @@ void MainWindow::reloadData() {
 	}
 	else {
 		if ( !Settings::global.disableTimeWindowRequest ) {
-			auto tw = _dataTimeWindow;
-			if ( Settings::global.initStartTime && !tw.endTime().valid() ) {
-				tw.setStartTime(Core::Time::UTC());
+			if ( Settings::global.initStartTime && !_dataTimeEnd ) {
+				_recordStreamThread->setStartTime(Core::Time::UTC());
 			}
-			_recordStreamThread->setTimeWindow(tw);
+			else {
+				_recordStreamThread->setStartTime(_dataTimeStart);
+			}
+			_recordStreamThread->setEndTime(_dataTimeEnd);
 		}
 
 		for ( auto item : _channelRequests ) {
@@ -3404,16 +3414,13 @@ void MainWindow::showScaledValues(bool enable) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::receivedRecord(Seiscomp::Record* r) {
 	RecordPtr rec = r;
-	/*
-	std::cout << rec->streamID() << ": " << rec->startTime().iso() << " ~ "
-	          << rec->endTime().iso() << ", " << (1.0 / rec->samplingFrequency()) << std::endl;
-	*/
-
-	foreach( TraceView* view, _traceViews )
+	foreach( TraceView* view, _traceViews ) {
 		if ( view->feed(rec) ) {
-			if ( _lastRecordTime < rec->endTime() )
+			if ( !_lastRecordTime || (*_lastRecordTime < rec->endTime()) ) {
 				_lastRecordTime = rec->endTime();
+			}
 		}
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -3421,10 +3428,8 @@ void MainWindow::receivedRecord(Seiscomp::Record* r) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MainWindow::selectedTime(Seiscomp::Gui::RecordWidget* widget,
-                              Seiscomp::Core::Time time) {
-	//widget->setAlignment(time);
-}
+void MainWindow::selectedTime(Seiscomp::Gui::RecordWidget *,
+                              Seiscomp::Core::Time) {}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -3504,7 +3509,7 @@ void MainWindow::scrollRight() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::alignOriginTime() {
-	SEISCOMP_DEBUG("OriginTime = %s", _originTime.iso().c_str());
+	SEISCOMP_DEBUG("OriginTime = %s", _originTime.iso());
 	TRACEVIEWS(setAlignment(_originTime));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -3622,9 +3627,9 @@ void MainWindow::alignRight() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::jumpToLastRecord() {
 	if ( _lastRecordTime ) {
-		SEISCOMP_DEBUG("LastRecordTime = %s", _lastRecordTime.iso().c_str());
+		SEISCOMP_DEBUG("LastRecordTime = %s", _lastRecordTime->iso());
 		TRACEVIEWS(align());
-		TRACEVIEWS(move((_lastRecordTime - _traceViews.front()->alignment()).length()));
+		TRACEVIEWS(move((*_lastRecordTime - _traceViews.front()->alignment()).length()));
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -3980,7 +3985,7 @@ bool MainWindow::addPick(Pick* pick, int refCount) {
 		return false;
 	}
 
-	if ( Settings::global.endTime.valid() && age < Core::TimeSpan(0, 0) ) {
+	if ( Settings::global.endTime && age < Core::TimeSpan(0, 0) ) {
 		return false;
 	}
 

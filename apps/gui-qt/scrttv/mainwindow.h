@@ -349,8 +349,9 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		Gui::ProgressBar                         *_statusBarProg;
 		Core::TimeSpan                            _bufferSize;
 		Core::Time                                _originTime;
-		Core::Time                                _lastRecordTime;
-		Core::TimeWindow                          _dataTimeWindow;
+		OPT(Core::Time)                           _lastRecordTime;
+		Core::Time                                _dataTimeStart;
+		OPT(Core::Time)                           _dataTimeEnd;
 
 		QMap<DataModel::WaveformStreamID, double> _scaleMap;
 		QColor                                    _searchBase, _searchError;

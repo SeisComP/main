@@ -118,20 +118,9 @@ class App : public Kicker<MainWindow> {
 				Settings::global.filters.push_back(Settings::global.filter);
 			}
 
-			try {
-				/*
-				string dt = SCApp->commandline().option<string>("end-time");
-				Settings::global.endTime = Seiscomp::Core::Time::FromString(dt.c_str(), "%F %T");
-				if ( !Settings::global.endTime.valid() ) {
-					cerr << "ERROR: passed endtime is not valid, expect format \"YYYY-mm-dd HH:MM:SS\"" << endl
-					     << "       example: --end-time \"2010-01-01 12:00:00\"" << endl;
-					return false;
-				}
-				*/
-
-				cout << "Set defined endtime: " << Settings::global.endTime.toString("%F %T") << endl;
+			if ( Settings::global.endTime ) {
+				cout << "Set defined endtime: " << Settings::global.endTime->toString("%F %T") << endl;
 			}
-			catch ( ... ) {}
 
 			return true;
 		}
