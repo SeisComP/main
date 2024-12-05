@@ -517,6 +517,9 @@ bool EventTool::run() {
 		ar >> _ep;
 		if ( !_reprocess ) {
 			ar >> _journal;
+			if ( !_journal ) {
+				_journal = new Journaling;
+			}
 		}
 
 		ar.close();
