@@ -3154,7 +3154,7 @@ void MainWindow::reloadTimeWindow(const Core::TimeWindow &tw) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::reloadData() {
 	_wantReload = false;
-	_ui.actionSwitchToRealtime->setEnabled(Settings::global.endTime.has_value());
+	_ui.actionSwitchToRealtime->setEnabled(static_cast<bool>(Settings::global.endTime));
 
 	_statusBarFile->setText(tr("Loading picks"));
 
