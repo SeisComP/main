@@ -56,27 +56,26 @@ std::string encode(uint64_t x, const char *sym, int numsym,
                    int len, uint64_t *width) {
 	string enc;
 
-	if ( len == 0 ) len = 4;
+	if ( len == 0 ) {
+		len = 4;
+	}
 
-	uint64_t dx = uint64_t(((370*24)*60)*60)*1000;
-	uint64_t w, rng = 1, tmp = rng;
+	uint64_t ms_total = uint64_t(((366 * 24) * 60) * 60) * 1000;
+	uint64_t slot_total = 1;
 
 	for ( int i = 0; i < len; ++i ) {
-		tmp = rng * numsym;
-		if ( tmp > rng ) rng = tmp;
+		auto tmp = slot_total * numsym;
+		if ( tmp > slot_total ) {
+			slot_total = tmp;
+		}
 		else {
 			len = i;
 			break;
 		}
 	}
 
-	w = dx / rng;
-	if ( w == 0 ) w = 1;
-
-	if ( dx >= rng )
-		x /= w;
-	else
-		x *= (rng / dx);
+	double ms_per_slot = ms_total > slot_total ? static_cast<double>(ms_total) / static_cast<double>(slot_total) : 1;
+	x /= ms_per_slot;
 
 	for ( int i = 0; i < len; ++i ) {
 		uint64_t d = x / numsym;
@@ -85,7 +84,9 @@ std::string encode(uint64_t x, const char *sym, int numsym,
 		x = d;
 	}
 
-	if ( width ) *width = w;
+	if ( width ) {
+		*width = static_cast<uint64_t>(ceil(ms_per_slot));
+	}
 
 	return string(enc.rbegin(), enc.rend());
 }
@@ -185,17 +186,19 @@ std::string generateEventID(int year, uint64_t x, const std::string &prefix,
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 string allocateEventID(DatabaseArchive *ar, const Origin *origin,
                        const Seiscomp::Client::Config &config) {
-	if ( !origin )
-		return "";
+	if ( !origin ) {
+		return string();
+	}
 
 	int year, yday, hour, min, sec, usec;
 
-	if ( !origin->time().value().get2(&year, &yday, &hour, &min, &sec, &usec) )
-		return "";
+	if ( !origin->time().value().get2(&year, &yday, &hour, &min, &sec, &usec) ) {
+		return string();
+	}
 
 	uint64_t width; // in milliseconds
 	// Maximum precission is 1 millisecond
-	uint64_t x = uint64_t((((yday*24)+hour)*60+min)*60+sec)*1000 + usec/1000;
+	uint64_t x = uint64_t((((yday * 24) + hour) * 60 + min) * 60 + sec) * 1000 + usec / 1000;
 
 	string text;
 	string eventID = generateEventID(year, x, config.eventIDPrefix,
@@ -224,8 +227,11 @@ string allocateEventID(DatabaseArchive *ar, const Origin *origin,
 		                          config.eventIDPattern, text);
 		blocked = config.blacklistIDs.find(text) != config.blacklistIDs.end();
 		o = ar?ar->getObject(Event::TypeInfo(), eventID):Event::Find(eventID);
-		if ( !o && !blocked )
+
+		if ( !o && !blocked ) {
 			return eventID;
+		}
+
 		if ( blocked ) {
 			SEISCOMP_WARNING("Blocked ID: %s (rejected %s)", eventID.c_str(), text.c_str());
 		}
@@ -242,14 +248,17 @@ string allocateEventID(DatabaseArchive *ar, const Origin *origin,
 		                          config.eventIDPattern, text);
 		blocked = config.blacklistIDs.find(text) != config.blacklistIDs.end();
 		o = ar?ar->getObject(Event::TypeInfo(), eventID):Event::Find(eventID);
-		if ( !o && !blocked )
+
+		if ( !o && !blocked ) {
 			return eventID;
+		}
+
 		if ( blocked ) {
 			SEISCOMP_WARNING("Blocked ID: %s (rejected %s)", eventID.c_str(), text.c_str());
 		}
 	}
 
-	return "";
+	return string();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -607,7 +616,7 @@ int goodness(const Magnitude *netmag, int mbcount,
 
 	size_t mcount = stationCount(netmag);
 	double mval = netmag->magnitude().value();
-	
+
 	if ( mcount < config.minStationMagnitudes )
 		return 0;
 
