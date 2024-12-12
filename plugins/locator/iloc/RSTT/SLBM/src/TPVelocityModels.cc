@@ -90,9 +90,6 @@ template class TPdTaudr<VelocityCubic>;
 //template class util::IntegrateFunction<TPdDistdr<VelocityCubic> >;
 //template class util::IntegrateFunction<TPdTaudr<VelocityCubic> >;
 
-template<class V>
-const double   VelocityIntegrate<V>::vmIntegTol = 1.0e-6;
-
 // **** _FUNCTION IMPLEMENTATIONS_ *********************************************
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
@@ -536,22 +533,6 @@ void VelocityCubic::writeVelocity(ostream& os) const
      << va2 << std::setprecision(4) << std::setw(12) << std::right
      << va3 << std::setprecision(4) << std::setw(12) << std::right
      << "Cubic" << endl;
-}
-
-// **** _FUNCTION DESCRIPTION_ *************************************************
-//
-//! \brief Used to create the distance and tau integrand functions vmDist,
-//! and vmTau, and their associated integration objects vmDistNI and
-//! vmTauNI.
-//
-// *****************************************************************************
-template<class V>
-void VelocityIntegrate<V>::createNumericObjects(V& v)
-{
-  vmDist   = new TPdDistdr<V>(v);
-  vmDistNI = new util::IntegrateFunction<TPdDistdr<V> >(*vmDist, vmIntegTol);
-  vmTau    = new TPdTaudr<V>(v);
-  vmTauNI  = new util::IntegrateFunction<TPdTaudr<V> >(*vmTau, vmIntegTol);
 }
 
 } // end namespace taup

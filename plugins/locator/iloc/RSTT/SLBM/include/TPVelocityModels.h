@@ -1302,13 +1302,13 @@ class TAUP_EXP VelocityIntegrate : public TPVelocityLayer
     void                   createNumericObjects(V& v);
 
     //! \brief The default integration tolerance
-    static const double    vmIntegTol;
+    static constexpr const double vmIntegTol = 1.0e-6;
 
     //! \brief The distance integrand object templated on the velocity.
-    TPdDistdr<V>*          vmDist;
+    TPdDistdr<V>*                 vmDist;
 
     //! \brief The tau integrand object templated on the velocity.
-    TPdTaudr<V>*           vmTau;
+    TPdTaudr<V>*                  vmTau;
 
     //! \brief The numerical integration object templated on vmDist.
     util::IntegrateFunction<TPdDistdr<V> >* vmDistNI;
@@ -1316,6 +1316,17 @@ class TAUP_EXP VelocityIntegrate : public TPVelocityLayer
     //! \brief The numerical integration object templated on vmTau.
     util::IntegrateFunction<TPdTaudr<V> >*  vmTauNI;
 };
+
+
+template<class V>
+inline void VelocityIntegrate<V>::createNumericObjects(V& v)
+{
+  vmDist   = new TPdDistdr<V>(v);
+  vmDistNI = new util::IntegrateFunction<TPdDistdr<V> >(*vmDist, vmIntegTol);
+  vmTau    = new TPdTaudr<V>(v);
+  vmTauNI  = new util::IntegrateFunction<TPdTaudr<V> >(*vmTau, vmIntegTol);
+}
+
 
 // *****************************************************************************
 //
