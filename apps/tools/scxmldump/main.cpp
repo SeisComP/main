@@ -12,7 +12,7 @@
  ***************************************************************************/
 
 
-#define SEISCOMP_COMPONENT SCEventDump
+#define SEISCOMP_COMPONENT SCXMLDump
 
 #include <seiscomp/logging/log.h>
 #include <seiscomp/client/application.h>
@@ -45,15 +45,17 @@ using namespace Seiscomp::DataModel;
 
 static void removeAllArrivals(Seiscomp::DataModel::Origin *origin) {
 
-	while ( origin->arrivalCount() > 0 )
+	while ( origin->arrivalCount() > 0 ) {
 		origin->removeArrival(0);
+	}
 }
 
 
 static void removeAllNetworkMagnitudes(Seiscomp::DataModel::Origin *origin) {
 
-	while ( origin->magnitudeCount() > 0 )
+	while ( origin->magnitudeCount() > 0 ) {
 		origin->removeMagnitude(0);
+	}
 }
 
 
@@ -74,15 +76,16 @@ static void removeAllStationMagnitudes(Seiscomp::DataModel::Origin *origin) {
 
 static void removeAllStationContributions(Seiscomp::DataModel::MomentTensor *mt) {
 
-	while ( mt->momentTensorStationContributionCount() > 0 )
+	while ( mt->momentTensorStationContributionCount() > 0 ) {
 		mt->removeMomentTensorStationContribution(0);
+	}
 }
 
 
 
-class EventDump : public Seiscomp::Client::Application {
+class XMLDump : public Seiscomp::Client::Application {
 	public:
-		EventDump(int argc, char** argv) : Application(argc, argv) {
+		XMLDump(int argc, char** argv) : Application(argc, argv) {
 			setPrimaryMessagingGroup(Seiscomp::Client::Protocol::LISTENER_GROUP);
 			addMessagingSubscription("EVENT");
 			setMessagingEnabled(true);
@@ -93,9 +96,12 @@ class EventDump : public Seiscomp::Client::Application {
 			addMessagingSubscription("EVENT");
 		}
 
+		~XMLDump() override {
+			flushArchive();
+		}
 
 	protected:
-		void createCommandLineDescription() {
+		void createCommandLineDescription() override {
 			commandline().addGroup("Dump");
 			commandline().addOption("Dump", "config,C", "Export the config (bindings).");
 			commandline().addOption("Dump", "inventory,I", "Export the inventory.");
@@ -146,7 +152,7 @@ class EventDump : public Seiscomp::Client::Application {
 			                        "Prepend a line with the length of the XML string.");
 		}
 
-		void printUsage() const {
+		void printUsage() const override {
 			std::cout << "Usage:" << std::endl << "  scxmldump [options]"
 			          << std::endl << std::endl
 			          << "Dump objects from a database to XML."
@@ -161,9 +167,13 @@ class EventDump : public Seiscomp::Client::Application {
 			          << std::endl << std::endl;
 		}
 
-		bool validateParameters() {
+		bool validateParameters() override {
 			if ( !Seiscomp::Client::Application::validateParameters() ) {
 				return false;
+			}
+
+			if ( _outputFile.empty() ) {
+				_outputFile = "-";
 			}
 
 			if ( !commandline().hasOption("listen") ) {
@@ -195,342 +205,444 @@ class EventDump : public Seiscomp::Client::Application {
 			return true;
 		}
 
-		bool write(PublicObject *po, Journaling *jnl = nullptr) {
-			XMLArchive ar;
-			stringbuf buf;
-			if ( !ar.create(&buf) ) {
-				SEISCOMP_ERROR("Could not create output file '%s'", _outputFile.c_str());
-				return false;
-			}
+		bool write(PublicObject *po) {
+			if ( !_archive ) {
+				_archive = new XMLArchive();
+				_archive->setFormattedOutput(commandline().hasOption("formatted"));
 
-			ar.setFormattedOutput(commandline().hasOption("formatted"));
-
-			if ( po )
-				ar << po;
-			if ( jnl )
-				ar << jnl;
-
-			ar.close();
-
-			string content = buf.str();
-
-			if ( !_outputFile.empty() && _outputFile != "-" ) {
-				ofstream file(_outputFile.c_str(), ios::out | ios::trunc);
-
-				if ( !file.is_open() ) {
-					SEISCOMP_ERROR("Could not create file: %s", _outputFile.c_str());
-					return false;
+				if ( commandline().hasOption("prepend-datasize") ) {
+					if ( !_archive->create(&_archiveBuf) ) {
+						SEISCOMP_ERROR("Could not create output file '%s'", _outputFile.c_str());
+						delete _archive;
+						_archive = nullptr;
+						return false;
+					}
 				}
-
-				if ( commandline().hasOption("prepend-datasize") )
-					file << content.size() << endl << content;
-				else
-					file << content;
-
-				file.close();
+				else {
+					if ( !_archive->create(_outputFile.c_str()) ) {
+						SEISCOMP_ERROR("Could not create output file '%s'", _outputFile.c_str());
+						delete _archive;
+						_archive = nullptr;
+						return false;
+					}
+				}
 			}
-			else {
-				if ( commandline().hasOption("prepend-datasize") )
-					cout << content.size() << endl << content << flush;
-				else
-					cout << content << flush;
-				SEISCOMP_INFO("Flushing %lu bytes", (unsigned long)content.size());
+
+
+			if ( po ) {
+				*_archive << po;
 			}
 
 			return true;
 		}
 
-		bool run() {
-			if ( !query() ) {
-				SEISCOMP_ERROR("No database connection");
+		bool flushArchive() {
+			if ( !_archive ) {
 				return false;
 			}
 
-			if ( commandline().hasOption("inventory") ) {
-				typedef string NetworkID;
-				typedef pair<NetworkID,string> StationID;
-				typedef set<NetworkID> NetworkFilter;
-				typedef set<StationID> StationFilter;
-				NetworkFilter networkFilter;
-				StationFilter stationFilter;
-				set<string> usedSensors, usedDataloggers, usedDevices, usedResponses;
-				vector<string> stationIDs;
+			_archive->close();
+			delete _archive;
+			_archive = nullptr;
 
-				InventoryPtr inv = query()->loadInventory();
-				if ( !inv ) {
-					SEISCOMP_ERROR("Inventory has not been found");
-					return false;
+			if ( !commandline().hasOption("prepend-datasize") ) {
+				return true;
+			}
+
+			string content = _archiveBuf.str();
+			_archiveBuf.str("");
+
+			if ( _outputFile == "-" ) {
+				cout << content.size() << endl << content << flush;
+				SEISCOMP_INFO("Flushing %zu bytes", content.size());
+				return true;
+			}
+
+			ofstream file(_outputFile.c_str(), ios::out | ios::trunc);
+
+			if ( !file.is_open() ) {
+				SEISCOMP_ERROR("Could not create file: %s", _outputFile.c_str());
+				return false;
+			}
+
+			file << content.size() << endl << content;
+			file.close();
+
+			return true;
+		}
+
+
+		bool dumpInventory() {
+			SEISCOMP_INFO("Dumping Inventory");
+			typedef string NetworkID;
+			typedef pair<NetworkID,string> StationID;
+			typedef set<NetworkID> NetworkFilter;
+			typedef set<StationID> StationFilter;
+			NetworkFilter networkFilter;
+			StationFilter stationFilter;
+			set<string> usedSensors;
+			set<string> usedDataloggers;
+			set<string> usedDevices;
+			set<string> usedResponses;
+			vector<string> stationIDs;
+
+			InventoryPtr inv = query()->loadInventory();
+			if ( !inv ) {
+				SEISCOMP_ERROR("Inventory has not been found");
+				return false;
+			}
+
+			if ( !_stationIDs.empty() ) {
+				Core::split(stationIDs, _stationIDs.c_str(), ",");
+
+				for ( const auto &stationID : stationIDs ) {
+					size_t pos = stationID.find('.');
+
+					if ( pos == string::npos ) {
+						stationFilter.insert(StationID(stationID, "*"));
+						networkFilter.insert(stationID);
+					}
+					else {
+						stationFilter.insert(
+						            StationID(
+						                stationID.substr(0,pos),
+						                stationID.substr(pos+1)
+						                )
+						            );
+						networkFilter.insert(stationID.substr(0,pos));
+					}
 				}
 
-				if ( !_stationIDs.empty() ) {
-					Core::split(stationIDs, _stationIDs.c_str(), ",");
+				// Remove unwanted networks
+				for ( size_t n = 0; n < inv->networkCount(); ) {
+					Network *net = inv->network(n);
 
-					for ( size_t i = 0; i < stationIDs.size(); ++i ) {
-						size_t pos = stationIDs[i].find('.');
-
-						if ( pos == string::npos ) {
-							stationFilter.insert(StationID(stationIDs[i], "*"));
-							networkFilter.insert(stationIDs[i]);
-						}
-						else {
-							stationFilter.insert(
-								StationID(
-									stationIDs[i].substr(0,pos),
-									stationIDs[i].substr(pos+1)
-								)
-							);
-							networkFilter.insert(stationIDs[i].substr(0,pos));
+					bool passed;
+					NetworkFilter::iterator nit;
+					for ( nit = networkFilter.begin(), passed = false;
+					      nit != networkFilter.end(); ++ nit ) {
+						if ( Core::wildcmp(*nit, net->code()) ) {
+							passed = true;
+							break;
 						}
 					}
 
-					// Remove unwanted networks
-					for ( size_t n = 0; n < inv->networkCount(); ) {
-						Network *net = inv->network(n);
+					if ( !passed ) {
+						inv->removeNetwork(n);
+						continue;
+					}
 
-						bool passed;
-						NetworkFilter::iterator nit;
-						for ( nit = networkFilter.begin(), passed = false;
-						      nit != networkFilter.end(); ++ nit ) {
-							if ( Core::wildcmp(*nit, net->code()) ) {
+					++n;
+
+					// Remove unwanted stations
+					for ( size_t s = 0; s < net->stationCount(); ) {
+						Station *sta = net->station(s);
+
+						StationFilter::iterator sit;
+						for ( sit = stationFilter.begin(), passed = false;
+						      sit != stationFilter.end(); ++ sit ) {
+							if ( Core::wildcmp(sit->first, net->code()) &&
+							     Core::wildcmp(sit->second, sta->code()) ) {
 								passed = true;
 								break;
 							}
 						}
 
+						// Should this station be filtered
 						if ( !passed ) {
-							inv->removeNetwork(n);
+							net->removeStation(s);
 							continue;
 						}
 
-						++n;
-
-						// Remove unwanted stations
-						for ( size_t s = 0; s < net->stationCount(); ) {
-							Station *sta = net->station(s);
-
-							StationFilter::iterator sit;
-							for ( sit = stationFilter.begin(), passed = false;
-							      sit != stationFilter.end(); ++ sit ) {
-								if ( Core::wildcmp(sit->first, net->code()) &&
-								     Core::wildcmp(sit->second, sta->code()) ) {
-									passed = true;
-									break;
-								}
-							}
-
-							// Should this station be filtered
-							if ( !passed ) {
-								net->removeStation(s);
-								continue;
-							}
-
-							++s;
-						}
-					}
-
-					// Collect used sensors and dataloggers
-					for ( size_t n = 0; n < inv->networkCount(); ++n ) {
-						Network *net = inv->network(n);
-
-						for ( size_t s = 0; s < net->stationCount(); ++s ) {
-							Station *sta = net->station(s);
-
-							// Collect all used sensors and dataloggers
-							for ( size_t l = 0; l < sta->sensorLocationCount(); ++l ) {
-								SensorLocation *loc = sta->sensorLocation(l);
-								for ( size_t c = 0; c < loc->streamCount(); ++c ) {
-									Stream *cha = loc->stream(c);
-									usedSensors.insert(cha->sensor());
-									usedDataloggers.insert(cha->datalogger());
-								}
-
-								for ( size_t a = 0; a < loc->auxStreamCount(); ++a ) {
-									AuxStream *aux = loc->auxStream(a);
-									usedDevices.insert(aux->device());
-								}
-							}
-						}
-					}
-
-					// Removed unused dataloggers
-					for ( size_t i = 0; i < inv->dataloggerCount(); ) {
-						Datalogger *dl = inv->datalogger(i);
-						if ( usedDataloggers.find(dl->publicID()) == usedDataloggers.end() ) {
-							inv->removeDatalogger(i);
-							continue;
-						}
-
-						++i;
-
-						for ( size_t j = 0; j < dl->decimationCount(); ++j ) {
-							Decimation *deci = dl->decimation(j);
-							try {
-								const string &c = deci->analogueFilterChain().content();
-								if ( !c.empty() ) {
-									vector<string> ids;
-									Core::fromString(ids, c);
-									usedResponses.insert(ids.begin(), ids.end());
-								}
-							}
-							catch ( ... ) {}
-
-							try {
-								const string &c = deci->digitalFilterChain().content();
-								if ( !c.empty() ) {
-									vector<string> ids;
-									Core::fromString(ids, c);
-									usedResponses.insert(ids.begin(), ids.end());
-								}
-							}
-							catch ( ... ) {}
-						}
-					}
-
-					for ( size_t i = 0; i < inv->sensorCount(); ) {
-						Sensor *sensor = inv->sensor(i);
-						if ( usedSensors.find(sensor->publicID()) == usedSensors.end() ) {
-							inv->removeSensor(i);
-							continue;
-						}
-
-						++i;
-
-						usedResponses.insert(sensor->response());
-					}
-
-					for ( size_t i = 0; i < inv->auxDeviceCount(); ) {
-						AuxDevice *device = inv->auxDevice(i);
-						if ( usedDevices.find(device->publicID()) == usedDevices.end() ) {
-							inv->removeAuxDevice(i);
-							continue;
-						}
-
-						++i;
-					}
-
-					// Go through all available responses and remove unused ones
-					for ( size_t i = 0; i < inv->responseFIRCount(); ) {
-						ResponseFIR *resp = inv->responseFIR(i);
-						// Response not used -> remove it
-						if ( usedResponses.find(resp->publicID()) == usedResponses.end() )
-							inv->removeResponseFIR(i);
-						else
-							++i;
-					}
-
-					for ( size_t i = 0; i < inv->responsePAZCount(); ) {
-						ResponsePAZ *resp = inv->responsePAZ(i);
-						// Response not used -> remove it
-						if ( usedResponses.find(resp->publicID()) == usedResponses.end() )
-							inv->removeResponsePAZ(i);
-						else
-							++i;
-					}
-
-					for ( size_t i = 0; i < inv->responsePolynomialCount(); ) {
-						ResponsePolynomial *resp = inv->responsePolynomial(i);
-						// Response not used -> remove it
-						if ( usedResponses.find(resp->publicID()) == usedResponses.end() )
-							inv->removeResponsePolynomial(i);
-						else
-							++i;
-					}
-
-					for ( size_t i = 0; i < inv->responseFAPCount(); ) {
-						ResponseFAP *resp = inv->responseFAP(i);
-						// Response not used -> remove it
-						if ( usedResponses.find(resp->publicID()) == usedResponses.end() )
-							inv->removeResponseFAP(i);
-						else
-							++i;
-					}
-
-					for ( size_t i = 0; i < inv->responseIIRCount(); ) {
-						ResponseIIR *resp = inv->responseIIR(i);
-						// Response not used -> remove it
-						if ( usedResponses.find(resp->publicID()) == usedResponses.end() )
-							inv->removeResponseIIR(i);
-						else
-							++i;
+						++s;
 					}
 				}
 
-				if ( commandline().hasOption("without-station-groups") ) {
-					while ( inv->stationGroupCount() > 0 )
-						inv->removeStationGroup(0);
+				// Collect used sensors and dataloggers
+				for ( size_t n = 0; n < inv->networkCount(); ++n ) {
+					Network *net = inv->network(n);
+
+					for ( size_t s = 0; s < net->stationCount(); ++s ) {
+						Station *sta = net->station(s);
+
+						// Collect all used sensors and dataloggers
+						for ( size_t l = 0; l < sta->sensorLocationCount(); ++l ) {
+							SensorLocation *loc = sta->sensorLocation(l);
+							for ( size_t c = 0; c < loc->streamCount(); ++c ) {
+								Stream *cha = loc->stream(c);
+								usedSensors.insert(cha->sensor());
+								usedDataloggers.insert(cha->datalogger());
+							}
+
+							for ( size_t a = 0; a < loc->auxStreamCount(); ++a ) {
+								AuxStream *aux = loc->auxStream(a);
+								usedDevices.insert(aux->device());
+							}
+						}
+					}
 				}
 
-				if ( !write(inv.get()) ) return false;
+				// Removed unused dataloggers
+				for ( size_t i = 0; i < inv->dataloggerCount(); ) {
+					Datalogger *dl = inv->datalogger(i);
+					if ( usedDataloggers.find(dl->publicID()) == usedDataloggers.end() ) {
+						inv->removeDatalogger(i);
+						continue;
+					}
+
+					++i;
+
+					for ( size_t j = 0; j < dl->decimationCount(); ++j ) {
+						Decimation *deci = dl->decimation(j);
+						try {
+							const string &c = deci->analogueFilterChain().content();
+							if ( !c.empty() ) {
+								vector<string> ids;
+								Core::fromString(ids, c);
+								usedResponses.insert(ids.begin(), ids.end());
+							}
+						}
+						catch ( ... ) {}
+
+						try {
+							const string &c = deci->digitalFilterChain().content();
+							if ( !c.empty() ) {
+								vector<string> ids;
+								Core::fromString(ids, c);
+								usedResponses.insert(ids.begin(), ids.end());
+							}
+						}
+						catch ( ... ) {}
+					}
+				}
+
+				for ( size_t i = 0; i < inv->sensorCount(); ) {
+					Sensor *sensor = inv->sensor(i);
+					if ( usedSensors.find(sensor->publicID()) == usedSensors.end() ) {
+						inv->removeSensor(i);
+						continue;
+					}
+
+					++i;
+
+					usedResponses.insert(sensor->response());
+				}
+
+				for ( size_t i = 0; i < inv->auxDeviceCount(); ) {
+					auto *device = inv->auxDevice(i);
+					if ( usedDevices.find(device->publicID()) == usedDevices.end() ) {
+						inv->removeAuxDevice(i);
+						continue;
+					}
+
+					++i;
+				}
+
+				// Go through all available responses and remove unused ones
+				for ( size_t i = 0; i < inv->responseFIRCount(); ) {
+					auto *resp = inv->responseFIR(i);
+					// Response not used -> remove it
+					if ( usedResponses.find(resp->publicID()) == usedResponses.end() ) {
+						inv->removeResponseFIR(i);
+						continue;
+					}
+
+					++i;
+				}
+
+				for ( size_t i = 0; i < inv->responsePAZCount(); ) {
+					auto *resp = inv->responsePAZ(i);
+					// Response not used -> remove it
+					if ( usedResponses.find(resp->publicID()) == usedResponses.end() ) {
+						inv->removeResponsePAZ(i);
+						continue;
+					}
+
+					++i;
+				}
+
+				for ( size_t i = 0; i < inv->responsePolynomialCount(); ) {
+					auto *resp = inv->responsePolynomial(i);
+					// Response not used -> remove it
+					if ( usedResponses.find(resp->publicID()) == usedResponses.end() ) {
+						inv->removeResponsePolynomial(i);
+						continue;
+					}
+
+					++i;
+				}
+
+				for ( size_t i = 0; i < inv->responseFAPCount(); ) {
+					auto *resp = inv->responseFAP(i);
+					// Response not used -> remove it
+					if ( usedResponses.find(resp->publicID()) == usedResponses.end() ) {
+						inv->removeResponseFAP(i);
+						continue;
+					}
+
+					++i;
+				}
+
+				for ( size_t i = 0; i < inv->responseIIRCount(); ) {
+					auto *resp = inv->responseIIR(i);
+					// Response not used -> remove it
+					if ( usedResponses.find(resp->publicID()) == usedResponses.end() ) {
+						inv->removeResponseIIR(i);
+						continue;
+					}
+
+					++i;
+				}
 			}
 
-			if ( commandline().hasOption("config") ) {
-				ConfigPtr cfg = query()->loadConfig();
-				if ( !cfg ) {
-					SEISCOMP_ERROR("Config has not been found");
-					return false;
+			if ( commandline().hasOption("without-station-groups") ) {
+				while ( inv->stationGroupCount() > 0 ) {
+					inv->removeStationGroup(0);
 				}
-
-				if ( !write(cfg.get()) ) return false;
 			}
 
+			return write(inv.get());
+		}
 
-			if ( commandline().hasOption("routing") ) {
-				RoutingPtr routing = query()->loadRouting();
-				if ( !routing ) {
-					SEISCOMP_ERROR("Routing has not been found");
-					return false;
-				}
 
-				if ( !write(routing.get()) ) return false;
+		bool dumpConfig() {
+			SEISCOMP_INFO("Dumping Config");
+			ConfigPtr cfg = query()->loadConfig();
+			if ( !cfg ) {
+				SEISCOMP_ERROR("Config has not been found");
+				return false;
 			}
 
-			if ( commandline().hasOption("availability") ) {
-				DataAvailabilityPtr avail = new DataAvailability();
-				query()->loadDataExtents(avail.get());
-				if ( avail->dataExtentCount() == 0 ) {
-					SEISCOMP_ERROR("No data availability extents found");
-					return false;
-				}
+			return write(cfg.get());
+		}
 
-				if ( commandline().hasOption("with-segments") ) {
-					for ( size_t i = 0; i < avail->dataExtentCount(); ++i ) {
-						query()->load(avail->dataExtent(i));
-					}
-				}
-				else {
-					for ( size_t i = 0; i < avail->dataExtentCount(); ++i ) {
-						query()->loadDataAttributeExtents(avail->dataExtent(i));
-					}
-				}
 
-				if ( !write(avail.get()) ) return false;
+		bool dumpRouting() {
+			SEISCOMP_INFO("Dumping Routing");
+			RoutingPtr routing = query()->loadRouting();
+			if ( !routing ) {
+				SEISCOMP_ERROR("Routing has not been found");
+				return false;
 			}
 
+			return write(routing.get());
+		}
+
+
+		bool dumpDataAvailability() {
+			SEISCOMP_INFO("Dumping DataAvailability");
+			DataAvailabilityPtr avail = new DataAvailability();
+			query()->loadDataExtents(avail.get());
+			if ( avail->dataExtentCount() == 0 ) {
+				SEISCOMP_ERROR("No data availability extents found");
+				return false;
+			}
+
+			if ( commandline().hasOption("with-segments") ) {
+				for ( size_t i = 0; i < avail->dataExtentCount(); ++i ) {
+					query()->load(avail->dataExtent(i));
+				}
+			}
+			else {
+				for ( size_t i = 0; i < avail->dataExtentCount(); ++i ) {
+					query()->loadDataAttributeExtents(avail->dataExtent(i));
+				}
+			}
+
+			return write(avail.get());
+		}
+
+
+		bool dumpEPAndJournal() {
 			// collection of publicIDs for which we might want the
 			// journal to be dumped (if journal output is requested).
 			vector<string> journalingPublicIDs;
 
 			// parse -E and -O command-line arguments and collect the publicID's
-
 			vector<string> eventIDs;
 			if ( commandline().hasOption("event") ) {
 				Core::split(eventIDs, _eventIDs.c_str(), ",");
-				for ( const string &publicID : eventIDs )
+				for ( const auto &publicID : eventIDs ) {
 					journalingPublicIDs.push_back(publicID);
+				}
 			}
 
 			vector<string> originIDs;
 			if ( commandline().hasOption("origin") ) {
 				Core::split(originIDs, _originIDs.c_str(), ",");
-				for ( const string &publicID : originIDs )
+				for ( const auto &publicID : originIDs ) {
 					journalingPublicIDs.push_back(publicID);
+				}
 			}
 
 			vector<string> pickIDs;
 			if ( commandline().hasOption("pick") ) {
 				Core::split(pickIDs, _pickIDsSingle.c_str(), ",");
-				for ( const string &publicID : pickIDs )
+				for ( const auto &publicID : pickIDs ) {
 					journalingPublicIDs.push_back(publicID);
+				}
+			}
+
+			EventParametersPtr ep;
+			if ( !eventIDs.empty() ) {
+				if ( !ep ) {
+					SEISCOMP_INFO("Dumping EventParameters");
+					ep = new EventParameters;
+				}
+
+				for ( const auto &publicID : eventIDs ) {
+					EventPtr event = Event::Cast(PublicObjectPtr(
+						query()->getObject(Event::TypeInfo(), publicID)));
+					if ( event ) {
+						addEvent(ep.get(), event.get());
+					}
+					else {
+						SEISCOMP_ERROR("Event with ID '%s' has not been found", publicID.c_str());
+					}
+				}
+			}
+
+			if ( ! originIDs.empty() ) {
+				if ( ! ep ) {
+					SEISCOMP_INFO("Dumping EventParameters");
+					ep = new EventParameters;
+				}
+
+				vector<string> originIDs;
+				Core::split(originIDs, _originIDs.c_str(), ",");
+				for ( const auto &publicID : originIDs ) {
+					OriginPtr origin = Origin::Cast(PublicObjectPtr(
+						query()->getObject(Origin::TypeInfo(), publicID)));
+					if ( origin ) {
+						addOrigin(ep.get(), origin.get());
+					}
+					else {
+						SEISCOMP_ERROR("Origin with ID '%s' has not been found", publicID.c_str());
+					}
+				}
+			}
+
+			if ( !pickIDs.empty() ) {
+				if ( !ep ) {
+					SEISCOMP_INFO("Dumping EventParameters");
+					ep = new EventParameters;
+				}
+
+				for ( const auto &publicID : pickIDs ) {
+					PickPtr pick = Pick::Cast(PublicObjectPtr(
+					    query()->getObject(Pick::TypeInfo(), publicID)));
+					if ( pick ) {
+						SEISCOMP_INFO("Dumping Pick '%s'", pick->publicID().c_str());
+						ep->add(pick.get());
+					}
+					else {
+						SEISCOMP_ERROR("Pick with ID '%s' has not been found", publicID.c_str());
+					}
+				}
+			}
+
+			if ( ep && !write(ep.get()) ) {
+				return false;
 			}
 
 			JournalingPtr jnl;
@@ -538,7 +650,7 @@ class EventDump : public Seiscomp::Client::Application {
 				if ( ! journalingPublicIDs.empty() ) {
 					// create a journal specific to the publicIDs
 					jnl = new Journaling();
-					for ( const string &publicID : journalingPublicIDs ) {
+					for ( const auto &publicID : journalingPublicIDs ) {
 						DatabaseIterator it = query()->getJournal(publicID);
 						while ( it.get() ) {
 							jnl->add(JournalEntry::Cast(*it));
@@ -554,92 +666,52 @@ class EventDump : public Seiscomp::Client::Application {
 						return false;
 					}
 				}
-			}
 
-			EventParametersPtr ep;
-			if ( !eventIDs.empty() ) {
-				if ( !ep ) {
-					ep = new EventParameters;
-				}
-				for ( const string &publicID : eventIDs ) {
-					EventPtr event = Event::Cast(PublicObjectPtr(
-						query()->getObject(Event::TypeInfo(), publicID)));
-					if ( event ) {
-						addEvent(ep.get(), event.get());
-					}
-					else {
-						SEISCOMP_ERROR("Event with ID '%s' has not been found", publicID.c_str());
-					}
-				}
-			}
-
-			if ( ! originIDs.empty() ) {
-				if ( ! ep ) {
-					ep = new EventParameters;
-				}
-				vector<string> originIDs;
-				Core::split(originIDs, _originIDs.c_str(), ",");
-				for ( const string &publicID : originIDs ) {
-					OriginPtr origin = Origin::Cast(PublicObjectPtr(
-						query()->getObject(Origin::TypeInfo(), publicID)));
-					if ( origin ) {
-						addOrigin(ep.get(), origin.get());
-					}
-					else {
-						SEISCOMP_ERROR("Origin with ID '%s' has not been found", publicID.c_str());
-					}
-				}
-			}
-
-			if ( !pickIDs.empty() ) {
-				if ( !ep ) {
-					ep = new EventParameters;
-				}
-				for ( const string &publicID : pickIDs ) {
-					PickPtr pick = Pick::Cast(PublicObjectPtr(
-					    query()->getObject(Pick::TypeInfo(), publicID)));
-					if ( pick ) {
-						addPick(ep.get(), pick.get());
-					}
-					else {
-						SEISCOMP_ERROR("Pick with ID '%s' has not been found", publicID.c_str());
-					}
-				}
-			}
-
-			if ( ep || jnl ) {
-				if ( ! write(ep.get(), jnl.get()) )
+				if ( !write(jnl.get()) ) {
 					return false;
-				return true;
+				}
 			}
-
-			if ( commandline().hasOption("listen") )
-				return Application::run();
 
 			return true;
 		}
 
 
-		void addObject(const string& parentID,
-		               Seiscomp::DataModel::Object* object) {
+		bool run() override {
+			if ( !query() ) {
+				SEISCOMP_ERROR("No database connection");
+				return false;
+			}
+
+			if ( ( commandline().hasOption("inventory") && !dumpInventory() ) ||
+			     ( commandline().hasOption("config") && !dumpConfig() ) ||
+			     ( commandline().hasOption("routing") && !dumpRouting() ) ||
+			     ( commandline().hasOption("availability") && !dumpDataAvailability() ) ||
+			     ( !dumpEPAndJournal() ) ) {
+				return false;
+			}
+
+			flushArchive();
+
+			return !commandline().hasOption("listen") || Application::run();
+		}
+
+
+		void addObject(const string &parentID,
+		               Seiscomp::DataModel::Object *object) override {
 			updateObject(parentID, object);
 		}
 
 
-		void updateObject(const string&, Seiscomp::DataModel::Object* object) {
-			Event* e = Event::Cast(object);
+		void updateObject(const string &parentID,
+		                  Seiscomp::DataModel::Object *object) override {
+			auto *e = Event::Cast(object);
 			if ( !e ) {
 				return;
 			}
 
 			EventParametersPtr ep = new EventParameters;
 			addEvent(ep.get(), e);
-			write(ep.get());
-		}
-
-		void addPick(EventParameters *ep, Pick *pick) {
-			SEISCOMP_INFO("Dumping Pick '%s'", pick->publicID().c_str());
-			ep->add(pick);
+			write(ep.get()) && flushArchive();
 		}
 
 
@@ -763,7 +835,7 @@ class EventDump : public Seiscomp::Client::Application {
 				);
 
 				if ( withFocalMechanisms
-				  && !event->preferredFocalMechanismID().empty() )
+				  && !event->preferredFocalMechanismID().empty() ) {
 					event->add(
 						FocalMechanismReferencePtr(
 							new FocalMechanismReference(
@@ -771,6 +843,7 @@ class EventDump : public Seiscomp::Client::Application {
 							)
 						).get()
 					);
+				}
 			}
 
 			bool foundPreferredMag = false;
@@ -808,7 +881,7 @@ class EventDump : public Seiscomp::Client::Application {
 
 						// remove station magnitudes of types which are not preferred
 						for ( size_t i = 0; i < origin->stationMagnitudeCount(); ) {
-							auto staMag = origin->stationMagnitude(i);
+							auto *staMag = origin->stationMagnitude(i);
 							if ( staMag->type() != netMag->type() ) {
 								origin->removeStationMagnitude(i);
 							}
@@ -1032,23 +1105,27 @@ class EventDump : public Seiscomp::Client::Application {
 				if ( origin ) {
 					query()->load(origin.get());
 
-					if ( !withStationMagnitudes )
+					if ( !withStationMagnitudes ) {
 						removeAllStationMagnitudes(origin.get());
+					}
 
-					if ( ignoreArrivals )
+					if ( ignoreArrivals ) {
 						removeAllArrivals(origin.get());
+					}
 
 					if ( preferredOnly && !allMagnitudes ) {
 						MagnitudePtr netMag;
 						while ( origin->magnitudeCount() > 0 ) {
-							if ( origin->magnitude(0)->publicID() == event->preferredMagnitudeID() )
+							if ( origin->magnitude(0)->publicID() == event->preferredMagnitudeID() ) {
 								netMag = origin->magnitude(0);
+							}
 
 							origin->removeMagnitude(0);
 						}
 
-						if ( netMag )
+						if ( netMag ) {
 							origin->add(netMag.get());
+						}
 					}
 
 					ep->add(origin.get());
@@ -1078,10 +1155,13 @@ class EventDump : public Seiscomp::Client::Application {
 		set<string> _pickIDs, _amplitudeIDs;
 
 		string _stationIDs;
+
+		XMLArchive *_archive{nullptr};
+		stringbuf _archiveBuf;
 };
 
 
 int main(int argc, char** argv) {
-	EventDump app(argc, argv);
+	XMLDump app(argc, argv);
 	return app.exec();
 }
