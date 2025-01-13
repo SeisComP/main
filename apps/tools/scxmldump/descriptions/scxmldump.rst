@@ -1,13 +1,18 @@
-scxmldump reads various parameters from a SeisComP database:
+scxmldump reads SeisComP objects from database or messaging and writes them
+in SeisComP XML (:term:`SCML`) to stdout or into a file (:option:`-o`).
 
-* Availability,
-* Config (bindings parameters),
-* Event parameters,
-* Inventory,
-* Journal,
-* Routing.
+* Dumping from a SeisComP database supports various
+  :ref:`objects <api-datamodel-python>`:
 
-The parameters are sent to stdout or written into an XML (:term:`SCML`) file.
+  * Availability,
+  * Config (bindings parameters),
+  * Event parameters,
+  * Inventory,
+  * Journal,
+  * Routing.
+
+* Dumping from a SeisComP messaging (:option:`--listen`) considers only event
+  parameters.
 
 .. note::
 
@@ -22,7 +27,7 @@ To get event, origin or pick information from the database without using SQL
 commands is an important task for the user. :ref:`scxmldump` queries the
 database and transforms that information into XML. Events and origins can be
 treated further by :ref:`scbulletin` for generating bulletins or conversion
-into KML.
+into other formats including KML.
 
 Many processing modules, e.g., :ref:`scevent` support the on-demand processing
 of dumped event parameters by the command-line option :option:`--ep`.
@@ -48,55 +53,59 @@ An XSD schema of the XML output can be found under
 Examples
 --------
 
-Dump inventory
+* Dump inventory
 
-.. code-block:: sh
+  .. code-block:: sh
 
-   scxmldump -fI -o inventory.xml -d mysql://sysop:sysop@localhost/seiscomp
+     scxmldump -d mysql://sysop:sysop@localhost/seiscomp -fI -o inventory.xml
 
-Dump config (bindings parameters)
+* Dump config (bindings parameters)
 
-.. code-block:: sh
+  .. code-block:: sh
 
-   scxmldump -fC -o config.xml -d mysql://sysop:sysop@localhost/seiscomp
+     scxmldump -d localhost -fC -o config.xml
 
-Dump full event data incl. the relevant journal entries
+* Dump full event data including the relevant journal entries
 
-.. code-block:: sh
+  .. code-block:: sh
 
-   scxmldump -fPAMFJ -E test2012abcd -o test2012abcd.xml \
-             -d mysql://sysop:sysop@localhost/seiscomp
+     scxmldump -d localhost -fPAMFJ -E test2012abcd -o test2012abcd.xml
 
+* Dump full event data. Event IDs are provided by :ref:`scevtls` and received
+  from stdin
 
-Dump summary event data
+  .. code-block:: sh
 
-.. code-block:: sh
+     scevtls -d localhost --begin 2025-01-01 |\
+     scxmldump -d localhost -fPAMF -E - -o events.xml
 
-   scxmldump -fap -E test2012abcd -o test2012abcd.xml \
-             -d mysql://sysop:sysop@localhost/seiscomp
+* Dump summary event data
 
+  .. code-block:: sh
 
-Create bulletin from an event
+     scxmldump -d localhost -fap -E test2012abcd -o test2012abcd.xml
 
-.. code-block:: sh
+* Create bulletin from an event using :ref:`scbulletin`
 
-   scxmldump -fPAMF -E test2012abcd
-             -d mysql://sysop:sysop@localhost/seiscomp | \
-   scbulletin
+  .. code-block:: sh
 
+     scxmldump -d localhost -fPAMF -E test2012abcd | scbulletin
 
-Copy event parameters to another database
+* Copy event parameters to another database
 
-.. code-block:: sh
+  .. code-block:: sh
 
-   scxmldump -fPAMF -E test2012abcd \
-             -d mysql://sysop:sysop@localhost/seiscomp | \
-   scdb -i - -d mysql://sysop:sysop@archive-db/seiscomp
+     scxmldump -d localhost -fPAMF -E test2012abcd |\
+     scdb -i - -d mysql://sysop:sysop@archive-db/seiscomp
 
+* Dump the entire journal:
 
-Export the entire journal:
+  .. code-block:: sh
 
-.. code-block:: sh
+     scxmldump -d localhost -fJ -o journal.xml
 
-   scxmldump -fJ -o journal.xml \
-             -d mysql://sysop:sysop@localhost/seiscomp
+* Dump events received from messaging on local computer:
+
+  .. code-block:: sh
+
+     scxmldump -H localhost/production --listen

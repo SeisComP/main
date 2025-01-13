@@ -103,44 +103,47 @@ class XMLDump : public Seiscomp::Client::Application {
 	protected:
 		void createCommandLineDescription() override {
 			commandline().addGroup("Dump");
-			commandline().addOption("Dump", "config,C", "Export the config (bindings).");
-			commandline().addOption("Dump", "inventory,I", "Export the inventory.");
+			commandline().addOption("Dump", "config,C", "Dump the config (bindings).");
+			commandline().addOption("Dump", "inventory,I", "Dump the inventory.");
 			commandline().addOption("Dump", "without-station-groups",
 			                        "Remove station groups from inventory.");
 			commandline().addOption("Dump", "stations",
-			                        "If inventory is exported, filter the "
-			                        "stations to export. Wildcards are supported."
+			                        "If inventory is dumped, filter the "
+			                        "stations to dump. Wildcards are supported."
 			                        "Format of each item: net[.{sta|*}]", &_stationIDs);
-			commandline().addOption("Dump", "journal,J", "Export the journal.");
-			commandline().addOption("Dump", "routing,R", "Export routing.");
+			commandline().addOption("Dump", "journal,J", "Dump the journal.");
+			commandline().addOption("Dump", "routing,R", "Dump routing.");
 			commandline().addOption("Dump", "availability,Y",
-			                        "Export data availability information.");
+			                        "Dump data availability information.");
 			commandline().addOption("Dump", "with-segments",
-			                        "Export individual data availability segments.");
+			                        "Dump individual data availability segments.");
 			commandline().addOption("Dump", "listen",
 			                        "Listen to the message server for incoming events.");
 			commandline().addOption("Dump", "pick",
-			                        "ID(s) of pick(s) to export.", &_pickIDsSingle, false);
+			                        "ID(s) of pick(s) to dump. Use '-' for "
+			                        "reading from stdin.", &_pickIDsSingle, false);
 			commandline().addOption("Dump", "origin,O",
-			                        "ID(s) of origin(s) to export.", &_originIDs, false);
+			                        "ID(s) of origin(s) to dump. Use '-' for "
+			                        "reading from stdin.", &_originIDs, false);
 			commandline().addOption("Dump", "event,E",
-			                        "ID(s) of event(s) to export.", &_eventIDs, false);
-			commandline().addOption("Dump", "with-picks,P", "Export associated picks.");
+			                        "ID(s) of event(s) to dump. Use '-' for "
+			                        "reading from stdin.", &_eventIDs, false);
+			commandline().addOption("Dump", "with-picks,P", "Dump associated picks.");
 			commandline().addOption("Dump", "with-amplitudes,A",
-			                        "Add amplitudes associated to exported objects.");
+			                        "Add amplitudes associated to dumped objects.");
 			commandline().addOption("Dump", "with-magnitudes,M",
-			                        "Add station magnitudes associated to exported objects.");
+			                        "Add station magnitudes associated to dumped objects.");
 			commandline().addOption("Dump", "with-focal-mechanisms,F",
-			                        "Add focal mechanisms associated to exported objects.");
+			                        "Add focal mechanisms associated to dumped objects.");
 			commandline().addOption("Dump", "ignore-arrivals,a",
-			                        "Do not export origin arrivals.");
+			                        "Do not dump arrivals of origins.");
 			commandline().addOption("Dump", "ignore-magnitudes",
-			                        "Ignores magnitudes of exported origins.");
+			                        "Do not dump magnitudes of origins.");
 			commandline().addOption("Dump", "preferred-only,p",
-			                        "When exporting events, only the preferred "
+			                        "When dumping events, only the preferred "
 			                        "origin and the preferred magnitude will be dumped.");
 			commandline().addOption("Dump", "all-magnitudes,m",
-			                        "If only the preferred origin is exported, "
+			                        "If only the preferred origin is dumped, "
 			                        "all magnitudes for this origin will be dumped.");
 			commandline().addGroup("Output");
 			commandline().addOption("Output", "formatted,f", "Use formatted XML output.");
@@ -155,15 +158,19 @@ class XMLDump : public Seiscomp::Client::Application {
 		void printUsage() const override {
 			std::cout << "Usage:" << std::endl << "  scxmldump [options]"
 			          << std::endl << std::endl
-			          << "Dump objects from a database to XML."
+			          << "Dump objects from a database or messaging to XML."
 			          << std::endl;
 
 			Client::Application::printUsage();
 
 			std::cout << "Examples:" << std::endl;
-			std::cout << "Dump event parameters for one event into a XML file"
+			std::cout << "Dump event parameters for one event in database into a XML file"
 			          << std::endl
 			          << "  scxmldump -d mysql://sysop:sysop@localhost/seiscomp -E gempa2022abcd -PAMFf -o gempa2022abcd.xml"
+			          << std::endl << std::endl;
+			std::cout << "Dump all event parameters received from local messaging into XML"
+			          << std::endl
+			          << "  scxmldump -H localhost/production --listen"
 			          << std::endl << std::endl;
 		}
 
