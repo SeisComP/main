@@ -151,6 +151,28 @@ double HCApp::findGain(const DataModel::WaveformStreamID &streamID, const Core::
 	}
 }
 
+void HCApp::printUsage() const {
+	std::cout << "Usage:" << std::endl << name() << " [command] [options]"
+	          << std::endl << std::endl;
+	std::cout << "Commands:" << std::endl
+	          << "capture   Capture one image and generate a file instead of "
+	             "opening the\n"
+	             "          scheli GUI."
+	          << std::endl;
+
+	Seiscomp::Client::Application::printUsage();
+
+	std::cout << "Examples:" << std::endl;
+	std::cout << "Real-time view of a single stream CX.PB01..HHZ updated every 10 s"
+	          << std::endl
+	          << "  " << name() << " --stream CX.PB01..HHZ --interval 10"
+	          << std::endl << std::endl;
+	std::cout << "Capture image files of streams CX.PB01..HHZ and CX.PB02..HHZ every 60 s"
+	          << std::endl
+	          << "  " << name() << " capture --stream CX.PB01..HHZ --stream CX.PB02..HHZ --interval 60"
+	          << std::endl;
+
+}
 
 bool HCApp::initConfiguration() {
 	if ( !Gui::Application::initConfiguration() )
@@ -220,54 +242,64 @@ void HCApp::createCommandLineDescription() {
 	Gui::Application::createCommandLineDescription();
 
 	commandline().addGroup("Mode");
-	commandline().addOption("Mode", "end-time", "Set the end time of acquisition, "
-	                        "default: 'gmt', format \"%F %T\"",
+	commandline().addOption("Mode", "end-time", "Set the end time of acquisition.\n"
+	                        "Default: 'gmt'\nFormat: \"%F %T\"",
 	                        (std::string*)nullptr);
 	commandline().addOption("Mode", "offline", "Do not connect to a messaging "
-	                        "server and do not use the database");
+	                        "server and do not use the database.");
 	commandline().addOption("Mode", "no-messaging", "Do not connect to a "
-	                        "messaging server but use the database");
+	                        "messaging server but use the database.");
 
 	commandline().addGroup("Data");
 	commandline().addOption("Data", "stream", "The record stream that should be "
 	                        "displayed. Use option multiple times for multiple "
-	                        "streams. Format: net.sta.loc.cha", &_streamIDs);
-	commandline().addOption("Data", "filter", "The filter to apply", &_filterString);
-	commandline().addOption("Data", "gain", "Gain applied to the data before plotting.", &_gain);
+	                        "streams.\nFormat: NET.STA.LOC.CHA", &_streamIDs);
+	commandline().addOption("Data", "filter", "The filter to apply.",
+	                        &_filterString);
+	commandline().addOption("Data", "gain", "Gain applied to the data before plotting.",
+	                        &_gain);
 	commandline().addOption("Data", "amp-scaling", "Method for scaling amplitudes per row. "
 	                        "Possible values:"
 	                        "\nminmax: Scale all rows to configured minimum and "
 	                        "maximum amplitudes."
-	                        "\nrow: Scale each row to the maximum within this row.",&_scaling);
+	                        "\nrow: Scale each row to the maximum within this row.",
+	                        &_scaling);
 	commandline().addOption("Data", "amp-range-min", "Lower bound of amplitude "
 	                        "range per row. Requires --amp-scaling minmax",
 	                        &_amplitudesMin);
 	commandline().addOption("Data", "amp-range-max", "Upper bound of amplitude "
 	                        "range per row. Requires --amp-scaling minmax",
 	                        &_amplitudesMax);
-	commandline().addOption("Data", "amp-range", "Arround zero bound of amplitude "
-	                        "range per row. Requires --amp-scaling minmax. "
-	                        "Overrides min and max values.", &_amplitudesRange);
+	commandline().addOption("Data", "amp-range",
+	                        "Arround zero bound of amplitude range per row "
+	                        "overriding min and max values. Requires --amp-scaling minmax",
+	                        &_amplitudesRange);
 	commandline().addOption("Data", "record-time", "Let the last row always "
-	                        "contain the last record received",
+	                        "contain the last record received.",
 	                        &_fixCurrentTimeToLastRecord);
 
 	commandline().addGroup("Output");
 	commandline().addOption("Output", "desc", "Enables/disables the display of a "
-	                        "station description", &_stationDescription);
-	commandline().addOption("Output", "rows", "Configures the number of rows to display", &_numberOfRows);
-	commandline().addOption("Output", "time-span", "Configures the time-span "
-	                        "(in secs) per row", &_timeSpanPerRow);
+	                        "station description.", &_stationDescription);
+	commandline().addOption("Output", "rows", "Configures the number of rows to display.",
+	                        &_numberOfRows);
+	commandline().addOption("Output", "time-span",
+	                        "Configures the time-span (in secs) per row.",
+	                        &_timeSpanPerRow);
 	commandline().addOption("Output", "aa", "Sets antialiasing for rendering the "
-	                        "traces", &_antialiasing);
-	commandline().addOption("Output", "xres", "Output x resolution when generating images", &_xRes);
-	commandline().addOption("Output", "yres", "Output y resolution when generating images", &_yRes);
-	commandline().addOption("Output", "dpi", "Output dpi when generating postscript", &_dpi);
+	                        "traces.", &_antialiasing);
+	commandline().addOption("Output", "xres", "Output x resolution when generating images.",
+	                        &_xRes);
+	commandline().addOption("Output", "yres", "Output y resolution when generating images.",
+	                        &_yRes);
+	commandline().addOption("Output", "dpi", "Output dpi when generating postscript.",
+	                        &_dpi);
 	commandline().addOption("Output", "output,o", "Output filename (placeholders: "
-	                        "%N,%S,%L,%C for network, station, sensorLocation, channel)",
+	                        "%N,%S,%L,%C for network, station, sensorLocation, channel).",
 	                        &_outputFilename);
-	commandline().addOption("Output", "interval", "Snapshot interval (<= 0 disables "
-	                        "timed snapshots)", &_snapshotTimeout);
+	commandline().addOption("Output", "interval",
+	                        "Snapshot interval (<= 0 disables timed snapshots).",
+	                        &_snapshotTimeout);
 }
 
 
