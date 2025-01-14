@@ -1,9 +1,6 @@
-fdsnws is a server that provides event and station information by FDSN Web Services
-(:cite:t:`fdsn`)
-from a SeisComP database and waveforms from a :ref:`global_recordstream` source.
-Also it may be configured to serve data
-availability information as described in the IRIS DMC FDSNWS availability Web
-Service Documentation (:cite:t:`iris-dmc`).
+fdsnws is a server that provides event, station and data availability
+information by FDSN Web Services (:cite:t:`fdsn`) from a SeisComP database and
+waveforms from a :ref:`global_recordstream` source.
 
 .. caution::
    If you expose the FDSN Web Service as a public service, make sure that
@@ -247,10 +244,6 @@ The data availability web service returns detailed time span information of
 what time series data is available at the DMC archive. The availability information
 can be created by :ref:`scardac` in the |scname| database from where it is
 fetched by fdsnws.
-
-The availability service is no official standard yet. This implementation aims
-to be compatible with the IRIS DMC availability FDSN Web Service
-(:cite:t:`iris-dmc`) implementation.
 
 * request type: HTTP-GET, HTTP-POST
 * results may be filtered e.g. by channel code, time and quality
