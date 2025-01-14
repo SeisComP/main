@@ -69,9 +69,9 @@ class HCApp : public Gui::Application {
 		struct HeliStream {
 			HeliStream() {}
 			HeliStream(HeliCanvas *hc) : canvas(hc) {}
-			HeliCanvas *canvas;
-			QString     headline;
-			Core::Time  lastSample;
+			HeliCanvas      *canvas;
+			QString          headline;
+			OPT(Core::Time)  lastSample;
 		};
 
 		typedef QMap<std::string, HeliStream> HeliStreamMap;

@@ -589,18 +589,20 @@ void HCApp::saveSnapshots() {
 			it.value().canvas->setCurrentTime(*_endTime - Core::TimeSpan(0,1));
 		}
 		else {
-			endTime = it.value().lastSample;
-			it.value().canvas->setCurrentTime(it.value().lastSample - Core::TimeSpan(0,1));
+			endTime = *it.value().lastSample;
+			it.value().canvas->setCurrentTime(*it.value().lastSample - Core::TimeSpan(0,1));
 		}
 
-		QString from = (endTime-it.value().canvas->recordsTimeSpan()).toString(_timeFormat.c_str()).c_str();
+		QString from = (endTime - it.value().canvas->recordsTimeSpan()).toString(_timeFormat.c_str()).c_str();
 		QString to = (endTime-Core::TimeSpan(0,1)).toString(_timeFormat.c_str()).c_str();
 		QString dateline;
 
-		if ( from != to && !from.isEmpty() && !to.isEmpty() )
+		if ( from != to && !from.isEmpty() && !to.isEmpty() ) {
 			dateline = QString("%1 - %2").arg(from).arg(to);
-		else
+		}
+		else {
 			dateline = QString("%1").arg(to);
+		}
 
 		DataModel::WaveformStreamID streamID;
 		stringToWaveformID(streamID, it.key());
@@ -641,8 +643,9 @@ void HCApp::receivedRecord(Seiscomp::Record *rec) {
 
 		if ( !it.value().lastSample || (endTime > it.value().lastSample) ) {
 			it.value().lastSample = endTime;
-			if ( _fixCurrentTimeToLastRecord )
-				it.value().canvas->setCurrentTime(it.value().lastSample - Core::TimeSpan(0,1));
+			if ( _fixCurrentTimeToLastRecord ) {
+				it.value().canvas->setCurrentTime(*it.value().lastSample - Core::TimeSpan(0,1));
+			}
 		}
 
 		it.value().canvas->feed(rec);
