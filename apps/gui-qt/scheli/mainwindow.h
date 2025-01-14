@@ -107,7 +107,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		Seiscomp::DataModel::WaveformStreamID _streamID;
 		Seiscomp::Core::Time                  _realTimeStart;
 		Seiscomp::Core::Time                  _globalEndTime;
-		Seiscomp::Core::Time                  _referenceTime;
+		OPT(Seiscomp::Core::Time)             _referenceTime;
 		Seiscomp::Core::TimeSpan              _fullTimeSpan;
 		std::string                           _timeFormat;
 		QTimer                                _timer;

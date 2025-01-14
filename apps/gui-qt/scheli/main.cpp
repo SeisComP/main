@@ -328,15 +328,16 @@ bool HCApp::validateParameters() {
 
 	try {
 		std::string dt = SCApp->commandline().option<std::string>("end-time");
-		_endTime = Seiscomp::Core::Time::FromString(dt.c_str(), "%F %T");
-		if ( !_endTime.valid() ) {
+		try {
+			_endTime = Seiscomp::Core::Time::FromString(dt.c_str(), "%F %T");
+			std::cout << "Set defined endtime: " << _endTime->toString("%F %T") << std::endl;
+		}
+		catch ( ... ) {
 			std::cerr << "ERROR: passed endtime is not valid, expect format "
 			             "\"YYYY-mm-dd HH:MM:SS\"" << std::endl
 			          << "       example: --end-time \"2010-01-01 12:00:00\"" << std::endl;
 			return false;
 		}
-
-		std::cout << "Set defined endtime: " << _endTime.toString("%F %T") << std::endl;
 	}
 	catch ( ... ) {}
 
@@ -413,7 +414,7 @@ bool HCApp::init() {
 
 bool HCApp::run() {
 	if ( type() == Tty ) {
-		Core::Time endTime = _endTime.valid()?_endTime:Core::Time::UTC();
+		Core::Time endTime = _endTime ? *_endTime : Core::Time::UTC();
 
 		for ( size_t i = 0; i < _streamCodes.size(); ++i ) {
 			HeliCanvas *heli = new HeliCanvas();
@@ -531,15 +532,17 @@ void HCApp::setupUi(MainWindow *w) {
 	w->setStationDescriptionEnabled(_stationDescription);
 	w->setAntialiasingEnabled(_antialiasing);
 	w->setLineWidth(_lineWidth);
-	w->setReferenceTime(_endTime);
+	if ( _endTime ) {
+		w->setReferenceTime(*_endTime);
+	}
 	w->setTimeFormat(_timeFormat);
 
 	DataModel::WaveformStreamID streamID;
 	stringToWaveformID(streamID, _streamCodes.front());
 	w->setStream(streamID);
 
-	w->setGain(findGain(streamID, _endTime.valid()?_endTime:Core::Time::UTC()));
-	w->setHeadline(findHeadline(streamID, _endTime.valid()?_endTime:Core::Time::UTC()));
+	w->setGain(findGain(streamID, _endTime ? *_endTime : Core::Time::UTC()));
+	w->setHeadline(findHeadline(streamID, _endTime ? *_endTime : Core::Time::UTC()));
 	w->setPostProcessingScript(_imagePostProcessingScript);
 
 	w->setLayout(_numberOfRows, _timeSpanPerRow);
@@ -581,9 +584,9 @@ void HCApp::saveSnapshots() {
 
 		Core::Time endTime;
 
-		if ( _endTime.valid() ) {
-			endTime = _endTime;
-			it.value().canvas->setCurrentTime(_endTime - Core::TimeSpan(0,1));
+		if ( _endTime ) {
+			endTime = *_endTime;
+			it.value().canvas->setCurrentTime(*_endTime - Core::TimeSpan(0,1));
 		}
 		else {
 			endTime = it.value().lastSample;

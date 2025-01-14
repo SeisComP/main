@@ -79,7 +79,7 @@ class HCApp : public Gui::Application {
 		std::vector<std::string> _streamCodes;
 		std::vector<std::string> _streamIDs;
 		HeliStreamMap            _helis;
-		Core::Time               _endTime;
+		OPT(Core::Time)          _endTime;
 		std::string              _filterString;
 		std::string              _imagePostProcessingScript;
 		double                   _gain;

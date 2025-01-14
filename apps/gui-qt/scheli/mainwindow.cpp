@@ -285,7 +285,7 @@ void MainWindow::startAcquisition() {
 	                         _streamID.stationCode(),
 	                         _streamID.locationCode(),
 	                         _streamID.channelCode(),
-	                         (_referenceTime.valid()?_referenceTime:Core::Time::UTC()) - _heliWidget->canvas().recordsTimeSpan(),
+	                         (_referenceTime ? *_referenceTime : Core::Time::UTC()) - _heliWidget->canvas().recordsTimeSpan(),
 	                         _referenceTime);
 
 	_streamThread->start();
@@ -327,19 +327,23 @@ void MainWindow::updateTimeLabel(const Core::Time &time) {
 	QString from = (time-_fullTimeSpan).toString(_timeFormat.c_str()).c_str();
 	QString to = (time-Core::TimeSpan(0,1)).toString(_timeFormat.c_str()).c_str();
 
-	if ( from != to && !from.isEmpty() && !to.isEmpty() )
-		_ui.labelDate->setText(QString("%1 - %2").arg(from).arg(to));
-	else
+	if ( from != to && !from.isEmpty() && !to.isEmpty() ) {
+		_ui.labelDate->setText(QString("%1 - %2").arg(from, to));
+	}
+	else {
 		_ui.labelDate->setText(QString("%1").arg(to));
+	}
 }
 
 
 void MainWindow::advanceTime() {
-	if ( _fixCurrentTimeToLastRecord ) return;
+	if ( _fixCurrentTimeToLastRecord ) {
+		return;
+	}
 
-	if ( _referenceTime.valid() ) {
-		_heliWidget->setCurrentTime(_referenceTime - Core::TimeSpan(0,1));
-		updateTimeLabel(_referenceTime);
+	if ( _referenceTime ) {
+		_heliWidget->setCurrentTime(*_referenceTime - Core::TimeSpan(0,1));
+		updateTimeLabel(*_referenceTime);
 	}
 	else {
 		Core::Time now = Core::Time::UTC();
