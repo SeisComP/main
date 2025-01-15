@@ -127,7 +127,7 @@ QString prettySize(double size) {
 
 QString prettyTimeSpan(const Seiscomp::Core::TimeSpan& span) {
 	int days, hours, minutes, seconds;
-	span.elapsedTime(&days, &hours, &minutes, &seconds);
+	span.get(&days, &hours, &minutes, &seconds);
 
 	if ( days > 0 )
 		return QString("%1d%2h%3m%4s")
