@@ -63,7 +63,7 @@ using PropertyIndex = Diff3::PropertyIndex;
 PropertyIndex CreationInfoIndex;
 
 
-Core::Time getLastModificationTime(const CreationInfo &ci) {
+OPT(Core::Time) getLastModificationTime(const CreationInfo &ci) {
 	try {
 		return ci.modificationTime();
 	}
@@ -74,18 +74,29 @@ Core::Time getLastModificationTime(const CreationInfo &ci) {
 		catch ( ... ) {}
 	}
 
-	return Core::Time();
+	return Core::None;
+}
+
+
+inline OPT(Core::Time) getLastModificationTime(const CreationInfo *ci) {
+	return getLastModificationTime(*ci);
 }
 
 
 template <typename T>
-Core::Time getLastModificationTime(const T *o) {
+OPT(Core::Time) getLastModificationTime(const T *o) {
 	try {
 		return getLastModificationTime(o->creationInfo());
 	}
 	catch ( ... ) {}
 
-	return Core::Time();
+	return Core::None;
+}
+
+
+template <typename T>
+inline bool checkUpdateOnTimeStamps(const T *remoteO, const T *localO) {
+	return getLastModificationTime(remoteO) > getLastModificationTime(localO);
 }
 
 
@@ -173,12 +184,10 @@ class MyDiff : public Diff4 {
 				ciRemote = CreationInfo::Cast(boost::any_cast<Core::BaseObject*>(v));
 
 				if ( ciLocal && ciRemote ) {
-					Core::Time localMTime = getLastModificationTime(*ciLocal);
-					Core::Time remoteMTime = getLastModificationTime(*ciRemote);
-
-					if ( localMTime >= remoteMTime ) {
-						if ( node && node->level() >= LogNode::OPERATIONS )
+					if ( !checkUpdateOnTimeStamps(ciRemote, ciLocal) ) {
+						if ( node && node->level() >= LogNode::OPERATIONS ) {
 							node->setMessage("SKIP UPDATE due to modification time");
+						}
 						return false;
 					}
 				}
@@ -387,22 +396,6 @@ JournalEntryPtr getLastJournalEntry(DatabaseQuery &query, const string &eventID,
 	}
 	it.close();
 	return journalEntry;
-}
-
-
-template <typename T>
-bool checkUpdateOnTimeStamps(const T *remoteO, const T *localO) {
-	Core::Time remoteTS = getLastModificationTime(remoteO);
-	Core::Time localTS = getLastModificationTime(localO);
-
-	if ( remoteTS.valid() && localTS.valid() ) {
-		return remoteTS > localTS;
-	}
-
-	if ( remoteTS.valid() )
-		return true;
-
-	return false;
 }
 
 
