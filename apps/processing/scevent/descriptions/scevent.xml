@@ -444,6 +444,12 @@
 					objects in input file. Works only in combination with '--ep'.
 					</description>
 				</option>
+				<option long-flag="update-event-id">
+					<description>
+					Update IDs of events if they already exist. Works only in
+					combination with '--ep'.
+					</description>
+				</option>
 			</group>
 			<group name="Output">
 				<option flag="f" long-flag="formatted">

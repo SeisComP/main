@@ -230,6 +230,7 @@ class EventTool : public Application {
 		std::string                   _epFile;
 		bool                          _reprocess{false};
 		bool                          _formatted{false};
+		bool                          _updateEventID{false};
 
 		Config                        _config;
 		EventProcessors               _processors;

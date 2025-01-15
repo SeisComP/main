@@ -239,6 +239,9 @@ void EventTool::createCommandLineDescription() {
 	                        "Reprocess event parameters ignoring all event and "
 	                        "journal objects in input file. Works only in "
 	                        "combination with '--ep'.");
+	commandline().addOption("Input", "update-event-id",
+	                        "Update IDs of events if they already exist. Works "
+	                        "only in combination with '--ep'.");
 	commandline().addGroup("Output");
 	commandline().addOption("Output", "formatted,f",
 	                        "Use formatted XML output. Otherwise XML is unformatted.");
@@ -257,6 +260,7 @@ bool EventTool::validateParameters() {
 	_testMode = commandline().hasOption("test");
 	_reprocess = commandline().hasOption("reprocess");
 	_formatted = commandline().hasOption("formatted");
+	_updateEventID = commandline().hasOption("update-event-id");
 
 	_sendClearCache = commandline().hasOption("clear-cache");
 
@@ -538,6 +542,17 @@ bool EventTool::run() {
 
 		for ( size_t i = 0; i < _ep->eventCount(); ++i ) {
 			EventPtr evt = _ep->event(i);
+			if ( _updateEventID ) {
+				auto *origin = _ep->findOrigin(evt->preferredOriginID());
+				if ( origin ) {
+					string eventID = allocateEventID(query(), origin, _config);
+					evt->setPublicID(eventID);
+				}
+				else {
+					SEISCOMP_DEBUG("Cannot update event ID: preferred origin '%s'"
+					               " not found", evt->preferredOriginID().c_str());
+				}
+			}
 			EventInformationPtr info = new EventInformation(
 				&_cache, &_config, query(), evt, author()
 			);
