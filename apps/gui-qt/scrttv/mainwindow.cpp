@@ -3216,7 +3216,7 @@ void MainWindow::reloadData() {
 			_recordStreamThread->setEndTime(_dataTimeEnd);
 		}
 
-		for ( auto item : _channelRequests ) {
+		for ( auto &item : _channelRequests ) {
 			_recordStreamThread->addStream(
 				item.networkCode(), item.stationCode(),
 				item.locationCode(), item.channelCode()
