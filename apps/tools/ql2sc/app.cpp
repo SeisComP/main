@@ -833,14 +833,16 @@ void App::addObject(const string& parentID, Object *obj) {
 	PublicObject *po = PublicObject::Cast(obj);
 	if ( po ) {
 		Event *event = Event::Cast(po);
-		if ( !event )
+		if ( !event ) {
 			_cache.feed(po);
+		}
 	}
 	else if ( !_waitForEventIDOriginID.empty() ) {
 		OriginReference *ref = OriginReference::Cast(obj);
 		if ( ref ) {
-			if ( ref->originID() == _waitForEventIDOriginID )
+			if ( ref->originID() == _waitForEventIDOriginID ) {
 				originAssociatedWithEvent(parentID, ref->originID());
+			}
 		}
 	}
 }
@@ -861,8 +863,9 @@ void App::updateObject(const std::string& parentID, DataModel::Object *obj) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::removeObject(const string& parentID, Object *obj) {
 	PublicObject *po = PublicObject::Cast(obj);
-	if ( po )
+	if ( po ) {
 		_cache.remove(po);
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -915,7 +918,9 @@ void App::handleTimeout() {
 template <class T>
 void App::diffPO(T *remotePO, const string &parentID, Notifiers &notifiers,
                  LogNode *logNode) {
-	if ( remotePO == NULL ) return;
+	if ( !remotePO ) {
+		return;
+	}
 
 	// search corresponding object in cache
 	typename Core::SmartPointer<T>::Impl localPO;
@@ -957,7 +962,10 @@ string App::waitForEventAssociation(const std::string &originID, int timeout) {
 	_waitForEventIDTimeout = timeout;
 
 	while ( !_waitForEventIDOriginID.empty() ) {
-		if ( !waitEvent() ) break;
+		if ( !waitEvent() ) {
+			break;
+		}
+
 		if ( !_waitForEventIDResult.empty() ) {
 			return _waitForEventIDResult;
 		}
@@ -1065,11 +1073,13 @@ void App::syncEvent(const EventParameters *ep, const Event *event,
 						              entry->sender().c_str());
 					}
 				}
-				else
+				else {
 					SEISCOMP_DEBUG("* origins are not being routed, skip fixing it");
+				}
 			}
-			else
+			else {
 				SEISCOMP_WARNING("* preferred origin not found in input document, skip fixing it");
+			}
 		}
 
 		if ( targetEvent->preferredFocalMechanismID() != event->preferredFocalMechanismID() ) {
@@ -1091,11 +1101,13 @@ void App::syncEvent(const EventParameters *ep, const Event *event,
 						              entry->sender().c_str());
 					}
 				}
-				else
+				else {
 					SEISCOMP_DEBUG("* focalMechanisms are not being routed, skip fixing it");
+				}
 			}
-			else
+			else {
 				SEISCOMP_WARNING("* preferred origin not found in input document, skip fixing it");
+			}
 		}
 
 		if ( targetEvent->preferredMagnitudeID() != event->preferredMagnitudeID() ) {
@@ -1301,7 +1313,9 @@ void App::syncEvent(const EventParameters *ep, const Event *event,
 	// Comments in general
 	for ( size_t i = 0; i < targetEvent->commentCount(); ++i ) {
 		Comment *localCmt = targetEvent->comment(i);
-		if ( localCmt->id() == "Operator" ) continue;
+		if ( localCmt->id() == "Operator" ) {
+			continue;
+		}
 
 		SEISCOMP_DEBUG("> %s", localCmt->id().c_str());
 
@@ -1334,7 +1348,9 @@ void App::syncEvent(const EventParameters *ep, const Event *event,
 
 	for ( size_t i = 0; i < event->commentCount(); ++i ) {
 		Comment *remoteCmt = event->comment(i);
-		if ( remoteCmt->id() == "Operator" ) continue;
+		if ( remoteCmt->id() == "Operator" ) {
+			continue;
+		}
 
 		SEISCOMP_DEBUG("< %s", remoteCmt->id().c_str());
 
@@ -1432,7 +1448,9 @@ bool App::sendNotifiers(const Notifiers &notifiers, const RoutingTable &routing)
 	}
 
 	// Sync with messaging
-	if ( connection() ) connection()->syncOutbox();
+	if ( connection() ) {
+		connection()->syncOutbox();
+	}
 
 	return true;
 }
@@ -1492,7 +1510,9 @@ void App::applyNotifier(const Notifier *n) {
 		PublicObject *notifierPO = PublicObject::Cast(n->object());
 		if ( notifierPO && n->operation() == OP_UPDATE ) {
 			PublicObject *po = PublicObject::Find(notifierPO->publicID());
-			if ( po ) po->assign(notifierPO);
+			if ( po ) {
+				po->assign(notifierPO);
+			}
 		}
 	}
 	else {
@@ -1541,8 +1561,9 @@ void App::readLastUpdates() {
 	while ( ifs.good() && getline(ifs, line) ) {
 		++i;
 		if ( Core::split(toks, line.c_str(), " ") == 2 &&
-		     time.fromString(toks[1].c_str(), "%FT%T.%fZ") )
+		     time.fromString(toks[1].c_str(), "%FT%T.%fZ") ) {
 			hostTimes[toks[0]] = time;
+		}
 		else {
 			SEISCOMP_ERROR("line %i of last update file '%s' invalid",
 			               i, _lastUpdateFile.c_str());
@@ -1588,9 +1609,10 @@ void App::writeLastUpdates() {
 	ofs.close();
 
 	// move temporary file
-	if ( ::rename(tmpFile.c_str(), _lastUpdateFile.c_str()) )
+	if ( ::rename(tmpFile.c_str(), _lastUpdateFile.c_str()) ) {
 		SEISCOMP_ERROR("Could not rename temporary file '%s' to '%s'",
 		               tmpFile.c_str(), _lastUpdateFile.c_str());
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
