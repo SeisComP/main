@@ -80,6 +80,9 @@ typedef pair<string,Location> EpochIndex;
 typedef pair<string,FDSNXML::Channel*> ChannelEpoch;
 
 
+Core::Time defaultStartTime(1902, 1, 1);
+
+
 bool epochLowerThan(const ChannelEpoch &e1, const ChannelEpoch &e2) {
 	try {
 		return e1.second->startDate() < e2.second->startDate();
@@ -202,11 +205,11 @@ template <typename T>
 bool overlaps(const T *epoch1, const T *epoch2) {
 	Core::TimeWindow tw1, tw2;
 	try { tw1.setStartTime(epoch1->startDate()); }
-	catch ( ... ) { tw1.setStartTime(Core::Time(1980,1,1)); }
+	catch ( ... ) { tw1.setStartTime(defaultStartTime); }
 	try { tw1.setEndTime(epoch1->endDate()); } catch ( ... ) {}
 
 	try { tw2.setStartTime(epoch2->startDate()); }
-	catch ( ... ) { tw2.setStartTime(Core::Time(1980,1,1)); }
+	catch ( ... ) { tw2.setStartTime(defaultStartTime); }
 	try { tw2.setEndTime(epoch2->endDate()); } catch ( ... ) {}
 
 	return overlaps(tw1, tw2);
@@ -217,11 +220,11 @@ template <typename T>
 bool overlaps2(const T *epoch1, const T *epoch2) {
 	Core::TimeWindow tw1, tw2;
 	try { tw1.setStartTime(epoch1->start()); }
-	catch ( ... ) { tw1.setStartTime(Core::Time(1980,1,1)); }
+	catch ( ... ) { tw1.setStartTime(defaultStartTime); }
 	try { tw1.setEndTime(epoch1->end()); } catch ( ... ) {}
 
 	try { tw2.setStartTime(epoch2->start()); }
-	catch ( ... ) { tw2.setStartTime(Core::Time(1980,1,1)); }
+	catch ( ... ) { tw2.setStartTime(defaultStartTime); }
 	try { tw2.setEndTime(epoch2->end()); } catch ( ... ) {}
 
 	return overlaps(tw1, tw2);
@@ -1648,7 +1651,7 @@ bool Convert2SC::push(const FDSNXML::FDSNStationXML *msg) {
 			start = net->startDate();
 		}
 		catch ( ... ) {
-			start = Core::Time(1980,1,1);
+			start = defaultStartTime;
 		}
 
 		// Mark network as seen
@@ -1917,7 +1920,7 @@ bool Convert2SC::process(DataModel::Network *sc_net,
 		start = sta->startDate();
 	}
 	catch ( ... ) {
-		start = Core::Time(1980,1,1);
+		start = defaultStartTime;
 	}
 
 	string staCode = sta->code();
@@ -2143,7 +2146,7 @@ bool Convert2SC::process(DataModel::Network *sc_net,
 				// A new time window should be started
 				if ( newTw ) {
 					try { sensorLocationStart = cha->startDate(); }
-					catch ( ... ) { sensorLocationStart = Core::Time(1980,1,1); }
+					catch ( ... ) { sensorLocationStart = defaultStartTime; }
 
 					try { sensorLocationEnd = cha->endDate(); }
 					catch ( ... ) { sensorLocationEnd = Core::None; }
@@ -2271,7 +2274,7 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 
 	Core::Time start;
 	try { start = cha->startDate(); }
-	catch ( ... ) { start = Core::Time(1980,1,1); }
+	catch ( ... ) { start = defaultStartTime; }
 
 	string chaCode = cha->code();
 	Core::trim(chaCode);
