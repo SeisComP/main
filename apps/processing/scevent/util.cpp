@@ -547,10 +547,10 @@ eventFERegionDescription(DataModel::Event *ev) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int magnitudePriority(const std::string &magType, const Client::Config &config) {
 	int n = config.magTypes.size();
-	for ( Client::Config::StringList::const_iterator it = config.magTypes.begin();
-	      it != config.magTypes.end(); ++it, --n ) {
-		if ( magType == *it )
+	for ( auto it = config.magTypes.begin(); it != config.magTypes.end(); ++it, --n ) {
+		if ( magType == *it ) {
 			break;
+		}
 	}
 
 	return n;
@@ -563,10 +563,10 @@ int magnitudePriority(const std::string &magType, const Client::Config &config) 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int agencyPriority(const std::string &agencyID, const Client::Config &config) {
 	int n = config.agencies.size();
-	for ( Client::Config::StringList::const_iterator it = config.agencies.begin();
-	      it != config.agencies.end(); ++it, --n ) {
-		if ( agencyID == *it )
+	for ( auto it = config.agencies.begin(); it != config.agencies.end(); ++it, --n ) {
+		if ( agencyID == *it ) {
 			break;
+		}
 	}
 
 	return n;
@@ -579,10 +579,10 @@ int agencyPriority(const std::string &agencyID, const Client::Config &config) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int authorPriority(const std::string &author, const Client::Config &config) {
 	int n = config.authors.size();
-	for ( Client::Config::StringList::const_iterator it = config.authors.begin();
-	      it != config.authors.end(); ++it, --n ) {
-		if ( author == *it )
+	for ( auto it = config.authors.begin(); it != config.authors.end(); ++it, --n ) {
+		if ( author == *it ) {
 			break;
+		}
 	}
 
 	return n;
@@ -595,10 +595,10 @@ int authorPriority(const std::string &author, const Client::Config &config) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int methodPriority(const std::string &methodID, const Client::Config &config) {
 	int n = config.methods.size();
-	for ( Client::Config::StringList::const_iterator it = config.methods.begin();
-	      it != config.methods.end(); ++it, --n ) {
-		if ( methodID == *it )
+	for ( auto it = config.methods.begin(); it != config.methods.end(); ++it, --n ) {
+		if ( methodID == *it ) {
 			break;
+		}
 	}
 
 	return n;
@@ -611,14 +611,16 @@ int methodPriority(const std::string &methodID, const Client::Config &config) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int goodness(const Magnitude *netmag, int mbcount,
              double mbval, const Client::Config &config) {
-	if ( !netmag )
+	if ( !netmag ) {
 		return -1;
+	}
 
 	size_t mcount = stationCount(netmag);
 	double mval = netmag->magnitude().value();
 
-	if ( mcount < config.minStationMagnitudes )
+	if ( mcount < config.minStationMagnitudes ) {
 		return 0;
+	}
 
 	// Special Mw(mB) criterion
 
