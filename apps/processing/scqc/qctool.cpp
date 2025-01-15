@@ -121,18 +121,16 @@ bool QcTool::validateParameters() {
 
 	if ( (_archiveMode = commandline().hasOption("archive")) ) {
 
-		if (!(_autoTime = commandline().hasOption("auto-time"))) {
-
+		if ( !(_autoTime = commandline().hasOption("auto-time")) ) {
 			try {
 				string begin = commandline().option<string>("begin-time");
 				cout << "begin-time = " << begin << endl;
 				_beginTime = Seiscomp::Core::Time::FromString(begin.c_str(), "%F %T");
 			}
 			catch ( ... ) {
-				_beginTime = Core::Time::UTC() - Core::TimeSpan(24*3600.0);
+				_beginTime = Core::Time::UTC() - Core::TimeSpan(24 * 3600, 0);
 				SEISCOMP_WARNING("using (current time - 24h) as begin time");
 			}
-
 		}
 
 		try {
@@ -380,18 +378,27 @@ bool QcTool::init() {
 				SEISCOMP_DEBUG("Reading those streams matching: %s", mask.c_str());
 
 				DataModel::Inventory* inv = Seiscomp::Client::Inventory::Instance()->inventory();
-				if (inv) {
-					for (size_t i = 0; i < inv->networkCount(); ++i) {
+				if ( inv ) {
+					for ( size_t i = 0; i < inv->networkCount(); ++i ) {
 						DataModel::NetworkPtr network = inv->network(i);
-						for (size_t j = 0; j < network->stationCount(); ++j) {
+
+						for ( size_t j = 0; j < network->stationCount(); ++j ) {
 							DataModel::StationPtr station = network->station(j);
-							try {if (station->end()) continue;} catch (...) {}
+							try {
+								station->end();
+								continue;
+							}
+							catch (...) {}
 
-							for (size_t l = 0; l < station->sensorLocationCount(); ++l) {
+							for ( size_t l = 0; l < station->sensorLocationCount(); ++l ) {
 								DataModel::SensorLocationPtr sloc = station->sensorLocation(l);
-								try {if (sloc->end()) continue;} catch (...) {}
+								try {
+									sloc->end();
+									continue;
+								}
+								catch (...) {}
 
-								for (size_t s = 0; s < sloc->streamCount(); ++s) {
+								for ( size_t s = 0; s < sloc->streamCount(); ++s ) {
 									DataModel::StreamPtr stream = sloc->stream(s);
 
 									string net, sta, loc, cha;
@@ -401,10 +408,11 @@ bool QcTool::init() {
 									cha = stream->code();
 
 									string streamID = net + "." + sta + "." + loc + "." + cha;
-									if (!boost::regex_match(streamID, what, streamMask)) {
+									if ( !boost::regex_match(streamID, what, streamMask) ) {
 										SEISCOMP_DEBUG("ignoring: %s", streamID.c_str());
 										continue;
 									}
+
 									addStream(net, sta, loc, cha);
 								}
 							}
@@ -434,14 +442,13 @@ bool QcTool::init() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 //! Add stream for processing.
 void QcTool::addStream(string net, string sta, string loc, string cha) {
-
 	string streamID = net + "." + sta + "." + loc + "." + cha;
 	_streamIDs.insert(streamID);
 
 	Core::Time begin = _beginTime;
 	Core::Time end   = _endTime;
 
-	if (_autoTime) {
+	if ( _autoTime ) {
 		begin = findLast(net, sta, loc, cha);
 	}
 
