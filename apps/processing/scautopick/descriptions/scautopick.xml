@@ -183,7 +183,7 @@
 					similar to the trigger threshold. Read the documentation!
 					</description>
 				</parameter>
-				<parameter name="minDuration" type="double" default="-1">
+				<parameter name="minDuration" type="double" default="-1" unit="s">
 					<description>
 					The minimum duration to reach. The duration is measured as
 					the time between trigger on and trigger off. If this value
@@ -195,12 +195,13 @@
 					of the acceptable duration range.
 					</description>
 				</parameter>
-				<parameter name="maxDuration" type="double" default="-1">
+				<parameter name="maxDuration" type="double" default="-1" unit="s">
 					<description>
 					The maximum duration allowed. The duration is measured as
 					the time between trigger on and trigger off. If this value
 					is configured, the detection (pick) will be delayed in order
-					to compute and check the duration.
+					to compute and check the duration. Negative values
+					deactivate the check.
 
 					The duration will be reported as comment to the pick when
 					activating &quot;extraPickComments&quot; allowing the tuning

@@ -59,6 +59,8 @@ class App : public Processing::Application {
 
 		void handleNewStream(const Record *rec) override;
 
+		void printUsage() const override;
+
 
 	private:
 		// Initializes a single component of a processor.
