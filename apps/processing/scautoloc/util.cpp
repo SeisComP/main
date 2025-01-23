@@ -28,6 +28,7 @@
 #include <sstream>
 #include <string>
 #include <map>
+#include <algorithm>
 #include <cmath>
 
 #include "util.h"
@@ -151,8 +152,7 @@ bool travelTimeP(double lat1, double lon1, double dep1, double lat2, double lon2
 {
 	static Seiscomp::TravelTimeTable ttt;
 
-	Seiscomp::TravelTimeList
-		*ttlist = ttt.compute(lat1, lon1, dep1, lat2, lon2, alt2);
+	auto ttlist = ttt.compute(lat1, lon1, std::max(dep1, 0.01), lat2, lon2, alt2);
 
 	for (auto& tt : *ttlist) {
 		result = tt;

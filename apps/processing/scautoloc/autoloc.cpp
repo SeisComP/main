@@ -15,6 +15,7 @@
 #define SEISCOMP_COMPONENT Autoloc
 #include <seiscomp/logging/log.h>
 #include <seiscomp/seismology/ttt.h>
+#include <algorithm>
 #include <cmath>
 
 #include "util.h"
@@ -940,7 +941,10 @@ bool Autoloc3::_perhapsPdiff(const Pick *pick) const
 			continue;
 
 		Seiscomp::TravelTimeTable ttt;
-		Seiscomp::TravelTimeList *ttlist = ttt.compute(origin->hypocenter.lat, origin->hypocenter.lon, origin->hypocenter.dep, station->lat, station->lon, 0);
+		auto ttlist = ttt.compute(origin->hypocenter.lat,
+		                          origin->hypocenter.lon,
+		                          std::max(origin->hypocenter.dep, 0.01),
+		                          station->lat, station->lon, 0);
 		const Seiscomp::TravelTime *tt;
 		if ( (tt = getPhase(ttlist, "Pdiff")) == nullptr ) {
 			delete ttlist;
@@ -2564,7 +2568,10 @@ double Autoloc3::_testFake(Origin *origin) const
 			double delta, az, baz, depth=otherOrigin->hypocenter.dep;
 			delazi(&(otherOrigin->hypocenter), sta, delta, az, baz);
 			Seiscomp::TravelTimeTable ttt;
-			Seiscomp::TravelTimeList *ttlist = ttt.compute(otherOrigin->hypocenter.lat, otherOrigin->hypocenter.lon, otherOrigin->hypocenter.dep, sta->lat, sta->lon, 0);
+			auto ttlist = ttt.compute(otherOrigin->hypocenter.lat,
+			                          otherOrigin->hypocenter.lon,
+			                          std::max(otherOrigin->hypocenter.dep, 0.01),
+			                          sta->lat, sta->lon, 0);
 			if (delta > 30) {
 				const Seiscomp::TravelTime *tt = getPhase(ttlist, "PP");
 				if (tt && ! arr.pick->xxl && arr.score < 1) {

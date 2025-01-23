@@ -17,7 +17,8 @@
 #define SEISCOMP_COMPONENT Autoloc
 #include <seiscomp/logging/log.h>
 
-#include <math.h>
+#include <algorithm>
+#include <cmath>
 #include <seiscomp/seismology/ttt.h>
 
 #include "util.h"
@@ -121,9 +122,8 @@ Associator::feed(const Pick* pick)
 		double delta, az, baz;
 		delazi(&hypo, station, delta, az, baz);
 
-		Seiscomp::TravelTimeList
-			*ttlist = ttt.compute(hypo.lat, hypo.lon, hypo.dep,
-			                      station->lat, station->lon, 0);
+		auto ttlist = ttt.compute(hypo.lat, hypo.lon, std::max(hypo.dep, 0.01),
+		                          station->lat, station->lon, 0);
 
 		// An imported origin is treated as if it had a very high
 		// score. => Anything can be associated with it.
