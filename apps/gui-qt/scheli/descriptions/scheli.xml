@@ -64,7 +64,7 @@
 					Gain-corrected amplitudes given in units of the sensor.
 					For example: m/s.
 					</description>
-					<parameter name="scaling" type="string" default="minmax" values="minmx,row">
+					<parameter name="scaling" type="string" default="minmax" values="minmax,row">
 						<description>
 						Define the method to scale traces within rows. Possible
 						values are: 
