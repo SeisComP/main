@@ -114,7 +114,7 @@ bool equivalent(const Seiscomp::DataModel::WaveformStreamID &wfid1,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-double arrivalWeight(const Seiscomp::DataModel::Arrival *arr, double defaultWeight=1.) {
+double arrivalWeight(const Seiscomp::DataModel::Arrival *arr, double defaultWeight) {
 	try {
 		return arr->weight();
 	}
@@ -136,16 +136,6 @@ char getShortPhaseName(const string &phase) {
 	}
 
 	return phase[0];
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool validArrival(const Seiscomp::DataModel::Arrival *arr, double minWeight) {
-	return arrivalWeight(arr) >= minWeight
-	       && getShortPhaseName(arr->phase().code()) == 'P';
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
