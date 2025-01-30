@@ -857,11 +857,6 @@ MainFrame::MainFrame(){
 	        this, SLOT(committedNewOrigin(Seiscomp::DataModel::Origin*, Seiscomp::DataModel::Event*)));
 #endif
 
-	/*
-	connect(_originLocator, SIGNAL(newOriginSet(Seiscomp::DataModel::Origin*, bool)),
-	        _eventSmallSummary, SLOT(showOrigin(Seiscomp::DataModel::Origin*)));
-	*/
-
 	connect(_originLocator, SIGNAL(waveformsRequested()),
 	        this, SLOT(showWaveforms()));
 	connect(_originLocator, SIGNAL(eventListRequested()),
@@ -1105,14 +1100,14 @@ void MainFrame::configureAcquisition() {
 
 		std::vector<std::string> filters;
 		foreach ( const PickerView::Config::FilterEntry &entry, pc.filters ) {
-			filters.push_back(QString("%1;%2").arg(entry.first).arg(entry.second).toStdString());
+			filters.push_back(QString("%1;%2").arg(entry.first, entry.second).toStdString());
 		}
 
 		SCApp->configSetStrings("picker.filters", filters);
 
 		filters.clear();
 		foreach ( const AmplitudeView::Config::FilterEntry &entry, ac.filters ) {
-			filters.push_back(QString("%1;%2").arg(entry.first).arg(entry.second).toStdString());
+			filters.push_back(QString("%1;%2").arg(entry.first, entry.second).toStdString());
 		}
 
 		if ( pc.repickerSignalStart )
