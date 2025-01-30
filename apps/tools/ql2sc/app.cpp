@@ -641,16 +641,22 @@ void App::feed(QLClient *client, IO::QuakeLink::Response *response) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::dispatchNotification(int type, Core::BaseObject *obj) {
-	if ( type >= 0 ) return false;
-	if ( type == -1 ) return true;
+	if ( type >= 0 ) {
+		return false;
+	}
+
+	if ( type == -1 ) {
+		return true;
+	}
 
 	size_t index = -type - 2;
-	if ( index >= _clients.size() ) return false;
+	if ( index >= _clients.size() ) {
+		return false;
+	}
 
-	QLClient *client = _clients[index];
-
-	IO::QuakeLink::Response *msg = IO::QuakeLink::Response::Cast(obj);
-	if ( msg == NULL ) {
+	auto client = _clients[index];
+	auto msg = IO::QuakeLink::Response::Cast(obj);
+	if ( !msg ) {
 		SEISCOMP_ERROR("received invalid message from host '%s'",
 		               client->config()->host.c_str());
 		return true;
