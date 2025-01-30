@@ -247,8 +247,8 @@ class EventTool : public Application {
 		DelayBuffer                   _delayBuffer;
 		DelayEventBuffer              _delayEventBuffer;
 
-		Logging::Channel             *_infoChannel;
-		Logging::Output              *_infoOutput;
+		Logging::Channel             *_infoChannel{nullptr};
+		Logging::Output              *_infoOutput{nullptr};
 
 		ObjectLog                    *_inputOrigin;
 		ObjectLog                    *_inputMagnitude;

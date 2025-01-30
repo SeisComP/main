@@ -200,9 +200,6 @@ EventTool::EventTool(int argc, char **argv) : Application(argc, argv) {
 	_cache.setPopCallback(bind(&EventTool::removedFromCache, this, placeholders::_1));
 
 	_infoChannel = SEISCOMP_DEF_LOGCHANNEL("processing/info", Logging::LL_INFO);
-	string logFile = Environment::Instance()->logFile(_name + "-processing-info");
-	_infoOutput = new Logging::FileRotatorOutput(logFile.c_str(), 60*60*24, 30);
-	_infoOutput->subscribe(_infoChannel);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -212,7 +209,9 @@ EventTool::EventTool(int argc, char **argv) : Application(argc, argv) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventTool::~EventTool() {
 	delete _infoChannel;
-	delete _infoOutput;
+	if ( _infoOutput ) {
+		delete _infoOutput;
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -245,6 +244,8 @@ void EventTool::createCommandLineDescription() {
 	commandline().addGroup("Output");
 	commandline().addOption("Output", "formatted,f",
 	                        "Use formatted XML output. Otherwise XML is unformatted.");
+	commandline().addOption("Output", "disable-info-log",
+	                        "Do not populate the scevent-processing-info.log file.");
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -264,11 +265,17 @@ bool EventTool::validateParameters() {
 
 	_sendClearCache = commandline().hasOption("clear-cache");
 
-	if ( commandline().hasOption("db-disable") )
-		setDatabaseEnabled(false, false);
+	if ( commandline().hasOption("disable-info-log") ) {
+		_config.logProcessing = false;
+	}
 
-	if ( _originID != "" || _eventID != "" )
+	if ( commandline().hasOption("db-disable") ) {
+		setDatabaseEnabled(false, false);
+	}
+
+	if ( _originID != "" || _eventID != "" ) {
 		setMessagingEnabled(false);
+	}
 
 	// For offline processing messaging is disabled and database
 	if ( !_epFile.empty() ) {
@@ -420,8 +427,17 @@ bool EventTool::init() {
 	_config.delayPrefFocMech = 0;
 	_config.ignoreMTDerivedOrigins = true;
 	_config.setAutoEventTypeNotExisting = false;
+	_config.logProcessing = true;
 
-	if ( !Application::init() ) return false;
+	if ( !Application::init() ) {
+		return false;
+	}
+
+	if ( _config.logProcessing ) {
+		string logFile = Environment::Instance()->logFile(_name + "-processing-info");
+		_infoOutput = new Logging::FileRotatorOutput(logFile.c_str(), 60*60*24, 30);
+		_infoOutput->subscribe(_infoChannel);
+	}
 
 	if ( !_config.score.empty() || _config.minAutomaticScore ) {
 		if ( _config.score.empty() ) {

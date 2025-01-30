@@ -450,6 +450,16 @@
 					combination with '--ep'.
 					</description>
 				</option>
+				<option long-flag="clear-cache">
+					<description>
+					Send a clear cache message and quit.
+					</description>
+				</option>
+				<option long-flag="disable-info-log">
+					<description>
+					Do not populate the scevent-processing-info.log file.
+					</description>
+				</option>
 			</group>
 			<group name="Output">
 				<option flag="f" long-flag="formatted">

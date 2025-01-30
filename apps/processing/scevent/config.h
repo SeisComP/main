@@ -51,6 +51,8 @@ struct Config {
 	typedef std::vector<std::string> StringList;
 	typedef std::set<std::string> StringSet;
 
+	bool            logProcessing{true};
+
 	size_t          minAutomaticArrivals;
 	OPT(double)     minAutomaticScore;
 	size_t          minMatchingPicks;
