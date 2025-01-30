@@ -92,7 +92,7 @@ class EventTypeProcessor : public Client::EventProcessor {
 		 * @return Update flag: true, if the event type has been updated, false
 		 *         otherwise.
 		 */
-		bool process(DataModel::Event *event, const Journal &journal) {
+		bool process(DataModel::Event *event, bool isNewEvent, const Journal &journal) {
 			SEISCOMP_DEBUG("evtype plugin: working on event %s",
 			               event->publicID().c_str());
 

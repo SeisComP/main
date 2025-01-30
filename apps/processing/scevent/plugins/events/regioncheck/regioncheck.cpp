@@ -211,7 +211,7 @@ bool RegionCheckProcessor::setup(const Config::Config &config) {
 }
 
 
-bool RegionCheckProcessor::process(Event *event, const Journal &journal) {
+bool RegionCheckProcessor::process(Event *event, bool isNewEvent, const Journal &journal) {
 	Origin *org = Origin::Find(event->preferredOriginID());
 
 	SEISCOMP_DEBUG("evrc plugin: processing event %s",

@@ -27,13 +27,15 @@
 /******************************************************************************
  scevent API Changelog
  ******************************************************************************
+ 3
+   - Added newEvent flag to process()
  2
    - Added list of event journal entries to process()
 
  <undefined>
    - Initial API
  */
-#define SCEVENT_EVENTPROCESSOR_API_VERSION 2
+#define SCEVENT_EVENTPROCESSOR_API_VERSION 3
 
 
 namespace Seiscomp {
@@ -81,6 +83,7 @@ class SC_EVPLUGIN_API EventProcessor : public Seiscomp::Core::BaseObject {
 		//! This method should return true if the event objects needs
 		//! an update.
 		virtual bool process(DataModel::Event *event,
+		                     bool isNewEvent,
 		                     const Journal &journals) = 0;
 };
 

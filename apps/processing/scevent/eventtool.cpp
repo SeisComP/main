@@ -3541,8 +3541,9 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 	     triggeredMag->publicID() == info->event->preferredMagnitudeID() ) {
 		// Call registered processors
 		for ( EventProcessorPtr &proc : _processors ) {
-			if ( proc->process(info->event.get(), info->journal) )
+			if ( proc->process(info->event.get(), info->created, info->journal) ) {
 				update = true;
+			}
 		}
 
 		// Processors have been called already
@@ -3619,11 +3620,11 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		if ( !info->created )
 			updateEvent(info, callProcessors);
 		else {
-			info->created = false;
-
 			// Call registered processors
-			for ( EventProcessorPtr &proc : _processors )
-				proc->process(info->event.get(), info->journal);
+			for ( EventProcessorPtr &proc : _processors ) {
+				proc->process(info->event.get(), info->created, info->journal);
+			}
+			info->created = false;
 		}
 	}
 
@@ -4127,17 +4128,20 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 	if ( update ) {
 		// Update preferred magnitude based on new focal mechanism if
 		// Mw is fixed
-		if ( info->constraints.fixMw )
+		if ( info->constraints.fixMw ) {
 			choosePreferred(info, info->preferredOrigin.get(), nullptr);
+		}
 
-		if ( !info->created )
+		if ( !info->created ) {
 			updateEvent(info);
+		}
 		else {
-			info->created = false;
-
 			// Call registered processors
-			for ( EventProcessorPtr &proc : _processors )
-				proc->process(info->event.get(), info->journal);
+			for ( EventProcessorPtr &proc : _processors ) {
+				proc->process(info->event.get(), info->created, info->journal);
+			}
+
+			info->created = false;
 		}
 	}
 }
@@ -4372,8 +4376,9 @@ void EventTool::updateEvent(EventInformation *info, bool callProcessors) {
 
 	if ( callProcessors ) {
 		// Call registered processors
-		for ( EventProcessorPtr &proc : _processors )
-			proc->process(ev, info->journal);
+		for ( EventProcessorPtr &proc : _processors ) {
+			proc->process(ev, info->created, info->journal);
+		}
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
