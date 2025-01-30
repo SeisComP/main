@@ -333,14 +333,16 @@ bool AmpTool::run() {
 
 		dbQuery += " group by PPick." + _T("publicID") + ", Pick._oid";
 
-		if ( !commandline().hasOption("commit") )
+		if ( !commandline().hasOption("commit") ) {
 			_testMode = true;
+		}
 
 		EventParametersPtr ep;
-		if ( _testMode )
+		if ( _testMode ) {
 			ep = new EventParameters;
+		}
 
-		typedef list<PickPtr> PickList;
+		using PickList = list<PickPtr>;
 		PickList picks;
 
 		cerr << "Collecting picks ... " << flush;
@@ -707,10 +709,26 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 
 	// Typedef a pickmap entry containing the pick and
 	// the distance of the station from the origin
-	typedef pair<PickCPtr, double> PickStreamEntry;
+	struct PickStreamEntry {
+		PickCPtr pick;
+		double distance;
+		bool used{false};
+	};
 
 	// Typedef a pickmap that maps a streamcode to a pick
-	typedef map<string, PickStreamEntry> PickStreamMap;
+	using PickStreamMap = map<string, PickStreamEntry>;
+	std::map<std::string, bool> considerUnusedArrivals;
+
+	for ( const auto &type : _amplitudeTypes ) {
+		bool consider = false;
+		try {
+			consider = configGetBool(
+				fmt::format("amplitudes.{}.considerUnusedArrivals", type)
+			);
+		}
+		catch ( ... ) {}
+		considerUnusedArrivals[type] = consider;
+	}
 
 	// This map is needed to find the earliest P pick of
 	// a certain stream
@@ -735,7 +753,7 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 
 			double weight = Private::arrivalWeight(arr);
 
-			if ( Private::shortPhaseName(arr->phase().code()) != 'P' || weight < _minWeight ) {
+			if ( Private::shortPhaseName(arr->phase().code()) != 'P' ) {
 				SEISCOMP_INFO("Ignoring pick '%s' weight=%.1f phase=%s",
 				              pickID.c_str(), weight, arr->phase().code().c_str());
 				continue;
@@ -766,16 +784,19 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 				continue;
 			}
 
-			PickStreamEntry &e = pickStreamMap[streamID];
+			auto &e = pickStreamMap[streamID];
 
 			// When there is already a pick registered for this stream which has
 			// been picked earlier, ignore the current pick
-			if ( e.first && e.first->time().value() < pick->time().value() ) {
+			if ( e.pick && e.pick->time().value() < pick->time().value() ) {
 				continue;
 			}
 
-			e.first = pick;
-			e.second = distance;
+			e.pick = pick;
+			e.distance = distance;
+			if ( !e.used ) {
+				e.used = weight >= _minWeight;
+			}
 		}
 	}
 	else if ( pick ) {
@@ -783,22 +804,23 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 		_report << "Processing report for Pick: " << pick->publicID() << std::endl;
 		_report << "-----------------------------------------------------------------" << std::endl;
 
-		DataModel::WaveformStreamID wfid = pick->waveformID();
+		auto wfid = pick->waveformID();
 		// Strip the component code because every AmplitudeProcessor
 		// will use its own component to pick the amplitude on
 		wfid.setChannelCode(wfid.channelCode().substr(0,2));
 		string streamID = Private::toStreamID(wfid);
-		PickStreamEntry &e = pickStreamMap[streamID];
-		e.first = pick;
+		auto &e = pickStreamMap[streamID];
+		e.pick = pick;
 		// there is no distance for picks without origins
-		e.second = 0.0;
+		e.distance = 0.0;
+		e.used = true;
 	}
 
-	for ( PickStreamMap::iterator it = pickStreamMap.begin(); it != pickStreamMap.end(); ++it ) {
-		PickCPtr pick = it->second.first;
+	for ( auto &[streamID, e] : pickStreamMap ) {
+		PickCPtr pick = e.pick;
 		const string &pickID = pick->publicID();
 		const Time &pickTime = pick->time().value();
-		double distance = it->second.second;
+		double distance = e.distance;
 		OPT(double) depth;
 
 		AmplitudeRange amps = getAmplitudes(pickID);
@@ -815,16 +837,23 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 			_report << "     + distance = " << distance << std::endl;
 		}
 
-		for ( AmplitudeList::iterator ait = _amplitudeTypes.begin();
-		      ait != _amplitudeTypes.end(); ++ait ) {
+		for ( const auto &type : _amplitudeTypes ) {
+			// Station is disabled, check if amplitude type is overriden
+			if ( !e.used ) {
+				if ( auto ait = considerUnusedArrivals.find(type);
+				     ait == considerUnusedArrivals.end() || !ait->second ) {
+					_report << "     - " << type << " [arrival is disabled]" << std::endl;
+					continue;
+				}
+			}
 
-			AmplitudePtr existingAmp = hasAmplitude(amps, *ait);
+			AmplitudePtr existingAmp = hasAmplitude(amps, type);
 
 			if ( existingAmp ) {
 				if ( !_reprocessAmplitudes ) {
 					SEISCOMP_INFO("Skipping %s calculation for pick %s, amplitude exists already",
-					              ait->c_str(), pickID.c_str());
-					_report << "     - " << *ait << " [amplitude exists already]" << std::endl;
+					              type.c_str(), pickID.c_str());
+					_report << "     - " << type << " [amplitude exists already]" << std::endl;
 					continue;
 				}
 
@@ -832,8 +861,8 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 					if ( existingAmp->evaluationMode() == DataModel::MANUAL ) {
 						if ( !_forceReprocessing ) {
 							SEISCOMP_INFO("Skipping %s calculation for pick %s, amplitude exists already and is manual (use --force)",
-							              ait->c_str(), pickID.c_str());
-							_report << "     - " << *ait << " [manual amplitude exists already]" << std::endl;
+							              type.c_str(), pickID.c_str());
+							_report << "     - " << type << " [manual amplitude exists already]" << std::endl;
 							continue;
 						}
 					}
@@ -841,10 +870,10 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 				catch ( ... ) {}
 			}
 
-			AmplitudeProcessorPtr proc = AmplitudeProcessorFactory::Create(ait->c_str());
+			AmplitudeProcessorPtr proc = AmplitudeProcessorFactory::Create(type.c_str());
 			if ( !proc ) {
-				SEISCOMP_LOG(_errorChannel, "Failed to create AmplitudeProcessor %s", ait->c_str());
-				_report << "     - " << *ait << " [amplitudeprocessor NULL]" << std::endl;
+				SEISCOMP_LOG(_errorChannel, "Failed to create AmplitudeProcessor %s", type.c_str());
+				_report << "     - " << type << " [amplitudeprocessor NULL]" << std::endl;
 				continue;
 			}
 
@@ -861,7 +890,7 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 			}
 			else {
 				SC_FMT_DEBUG("Measuring {} amplitude for pick {} independent of origin",
-				             ait->c_str(), pick->publicID().c_str());
+				             type.c_str(), pick->publicID().c_str());
 				res = addProcessor(proc.get(), nullptr, pick.get(), None, None, None);
 			}
 
