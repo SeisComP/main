@@ -56,6 +56,9 @@ class Check : public InventoryTask {
 		template <typename T1, typename T2>
 		void checkOutside(const T1 *parent, const T2 *obj);
 
+		template <typename T>
+		void checkDescription(const T *obj);
+
 		Seiscomp::DataModel::Sensor *findSensor(const std::string &) const;
 		Seiscomp::DataModel::ResponsePAZ *findPAZ(const std::string &) const;
 		Seiscomp::DataModel::ResponsePolynomial *findPoly(const std::string &) const;

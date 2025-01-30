@@ -186,6 +186,8 @@ bool Check::check() {
 			    net, nullptr);
 		}
 
+		checkDescription(net);
+
 		for ( size_t s = 0; s < net->stationCount(); ++s ) {
 			Station *sta = net->station(s);
 			if ( sta->code().empty() ) {
@@ -197,6 +199,7 @@ bool Check::check() {
 			checkEpoch(sta);
 			checkOverlap(stationEpochs[sta->code()], sta);
 			checkOutside(net, sta);
+			checkDescription(sta);
 
 			EpochMap locationEpochs;
 			double lat = 0.0;
@@ -550,6 +553,8 @@ bool Check::check() {
 			     "referenced response is not available").c_str(), nullptr, nullptr);
 			*/
 		}
+
+		checkDescription(sensor);
 	}
 
 	return true;
@@ -621,6 +626,23 @@ void Check::checkOutside(const T1 *parent, const T2 *obj) {
 		     "epoch " + toString(epoch) + " outside parent " +
 		     parent->className() + " epoch " + toString(pepoch)).c_str(),
 		    obj, obj);
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+template<typename T>
+void Check::checkDescription(const T* obj) {
+	if ( obj->description().find('|') != string::npos ) {
+		log(LogHandler::Warning,
+		    (string(obj->className()) + "\n  "
+		     "pipe character (|) in description attribute which is reserved "
+		     "as a delimiter in the text format of the FDSNWS station service. "
+		     "ID: " + obj->publicID()).c_str(),
+		    obj, nullptr);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
