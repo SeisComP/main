@@ -313,29 +313,37 @@ bool AmpTool::run() {
 			return false;
 		}
 
-		Core::Time startTime, endTime;
+		OPT(Core::Time) startTime, endTime;
 
-		if ( !_strTimeWindowStartTime.empty()
-		  && !startTime.fromString(_strTimeWindowStartTime.c_str(), "%F %T") ) {
-			cerr << "Invalid start time: " << _strTimeWindowStartTime << endl;
-			return false;
+		if ( !_strTimeWindowStartTime.empty() ) {
+			Core::Time tmp;
+			if ( !tmp.fromString(_strTimeWindowStartTime.c_str(), "%F %T") ) {
+				cerr << "Invalid start time: " << _strTimeWindowStartTime << endl;
+				return false;
+			}
+			startTime = tmp;
 		}
 
-		if ( !_strTimeWindowEndTime.empty()
-		  && !endTime.fromString(_strTimeWindowEndTime.c_str(), "%F %T") ) {
-			cerr << "Invalid end time: " << _strTimeWindowEndTime << endl;
-			return false;
+		if ( !_strTimeWindowEndTime.empty() ) {
+			Core::Time tmp;
+			if ( !tmp.fromString(_strTimeWindowEndTime.c_str(), "%F %T") ) {
+				cerr << "Invalid end time: " << _strTimeWindowEndTime << endl;
+				return false;
+			}
+			endTime = tmp;
 		}
 
 		std::string dbQuery;
 		dbQuery += "select PPick." + _T("publicID") + ", Pick.* from Pick,PublicObject as PPick,Amplitude "
 		           "where Pick._oid=PPick._oid and Amplitude." + _T("pickID") + "=PPick." + _T("publicID");
 
-		if ( startTime.valid() )
-			 dbQuery += " and Pick." + _T("time_value") + ">='" + startTime.toString("%F %T") + "'";
+		if ( startTime ) {
+			 dbQuery += " and Pick." + _T("time_value") + ">='" + startTime->toString("%F %T") + "'";
+		}
 
-		if ( endTime.valid() )
-			 dbQuery += " and Pick." + _T("time_value") + "<'" + endTime.toString("%F %T") + "'";
+		if ( endTime ) {
+			 dbQuery += " and Pick." + _T("time_value") + "<'" + endTime->toString("%F %T") + "'";
+		}
 
 		dbQuery += " group by PPick." + _T("publicID") + ", Pick._oid";
 
