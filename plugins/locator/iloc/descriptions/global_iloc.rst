@@ -194,9 +194,9 @@ the configuration in |scname|.
 Velocity models
 ---------------
 
-iLoc ships with the global models *iasp91* and *ak135* as well as with regional
-seismic travel-time tables, RSTT, which, if activated by configuration, replaces
-the global models in areas where they are defined.
+iLoc ships with the global velocity models *iasp91* and *ak135* as well as with
+regional seismic travel-time tables, RSTT, which, if activated by configuration,
+replace the global models in areas where they are defined.
 
 
 .. _iloc-velocity_global:
@@ -204,8 +204,11 @@ the global models in areas where they are defined.
 Global models
 ~~~~~~~~~~~~~
 
-The global models *iasp91* and *ak135* and RSTT are available by default without
-further configuration.
+The global models *iasp91* and *ak135* as well as *RSTT* are available and apply
+by default without further configuration if the default locator profiles *iasp91*
+and *ak135*, respectively, are applied. The same is true if explicit iLoc
+profiles using *iasp91* or *ak135* for the profile names are added to the
+configuration.
 
 
 .. _iloc-velocity_rstt:
