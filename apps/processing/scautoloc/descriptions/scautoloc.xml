@@ -44,12 +44,12 @@
 					Time to keep picks in the buffer with respect to pick time, not creation time.
 					</description>
 				</parameter>
-				<parameter name="originKeep" type="integer" default="86400" unit="s">
+				<parameter name="originKeep" type="int" default="86400" unit="s">
 					<description>
 					Time to keep origins in buffer.
 					</description>
 				</parameter>
-				<parameter name="cleanupInterval" type="integer" default="3600" unit="s">
+				<parameter name="cleanupInterval" type="int" default="3600" unit="s">
 					<description>
 					Clean-up interval for removing old/unused objects.
 					</description>
@@ -69,7 +69,7 @@
 					Maximum travel-time residual (unweighted) for a pick at a station to be used.
 					</description>
 				</parameter>
-				<parameter name="minPhaseCount" type="integer" default="6">
+				<parameter name="minPhaseCount" type="int" default="6">
 					<description>
 					Minimum number of phases for reporting origins.
 					</description>
@@ -92,7 +92,7 @@
 					Maximum epicntral distance to stations for accepting picks.
 					</description>
 				</parameter>
-				<parameter name="minStaCountIgnorePKP" type="integer" default="15">
+				<parameter name="minStaCountIgnorePKP" type="int" default="15">
 					<description>
 					If the station count for stations at &lt; 105 degrees distance
 					exceeds this number, no picks at &gt; 105 degrees will be
@@ -114,17 +114,17 @@
 					amplitude object. If it is empty, the pick SNR is 10.
 					</description>
 				</parameter>
-				<parameter name="grid" type="path" default="@DATADIR@/scautoloc/grid.conf">
+				<parameter name="grid" type="file" default="@DATADIR@/scautoloc/grid.conf" options="read">
 					<description>
 					Location of the grid file for nucleating origins.
 					</description>
 				</parameter>
-				<parameter name="stationConfig" type="path" default="@DATADIR@/scautoloc/station.conf">
+				<parameter name="stationConfig" type="file" default="@DATADIR@/scautoloc/station.conf" options="read">
 					<description>
 					Location of the station configuration file for nucleating origins.
 					</description>
 				</parameter>
-				<parameter name="stationLocations" type="path" default="">
+				<parameter name="stationLocations" type="file" default="" options="read">
 					<description>
 					The station file to be used when in offline mode.
 					If no file is given the database is used. An example is given
@@ -188,7 +188,7 @@
 					Activate for writing pick log files to &quot;pickLog&quot;.
 					</description>
 				</parameter>
-				<parameter name="pickLog" type="string" default="@LOGDIR@/autoloc-picklog">
+				<parameter name="pickLog" type="file" default="@LOGDIR@/autoloc-picklog" options="write">
 					<description>
 					Location of pick log file containing information about received
 					picks. Activate &quot;pickLogEnable&quot; for writing the files.
@@ -222,7 +222,7 @@
 						BOTH minAmplitude and minSNR need to be exceeded!
 						</description>
 					</parameter>
-					<parameter name="minPhaseCount" type="integer" default="4">
+					<parameter name="minPhaseCount" type="int" default="4">
 						<description>
 						Minimum number of XXL picks for forming an origin.
 						Must be >= 4.

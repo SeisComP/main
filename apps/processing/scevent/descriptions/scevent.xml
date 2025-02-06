@@ -29,7 +29,7 @@
 					[w] is an optional width parameter.
 				</description>
 			</parameter>
-			<parameter name="eventIDLookupMargin" type="integer" default="-1">
+			<parameter name="eventIDLookupMargin" type="int" default="-1">
 				<description>
 					Configures the number of event ID slots to look back and
 					forth when an event ID is already taken. The default in
@@ -219,7 +219,7 @@
 					</description>
 				</parameter>
 
-				<parameter name="priorities" type="list:string" default="AGENCY, STATUS, PHASES_AUTOMATIC, TIME_AUTOMATIC">
+				<parameter name="priorities" type="list:string" default="AGENCY,STATUS,PHASES_AUTOMATIC,TIME_AUTOMATIC" values="AGENCY,AUTHOR,MODE,STATUS,PHASES,PHASES_AUTOMATIC,RMS,RMS_AUTOMATIC,TIME,TIME_AUTOMATIC,SCORE">
 					<description>
 						The general priority list to decide if an Origin becomes preferred.
 						The priority decreases in the order of the parameters.
@@ -323,7 +323,7 @@
 					</description>
 				</parameter>
 
-				<parameter name="delayTimeSpan" type="int" unit="s" default = "0">
+				<parameter name="delayTimeSpan" type="int" unit="s" default="0">
 					<description>
 					The timespan to delay Event creation from new Origins which
 					cannot be associated to an existing Event.
