@@ -163,7 +163,7 @@ void Detector::setSensitivityCorrection(bool enable) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Detector::reset() {
 	Processing::SimpleDetector::reset();
-	_lastPick = Core::Time();
+	_lastPick = Core::None;
 	_lastAmplitude = Core::None;
 	_currentPickRecord = nullptr;
 	_minAmplitude = Core::None;
@@ -235,7 +235,7 @@ bool Detector::emitPick(const Record *rec, const Core::Time &t) {
 	// Is there a last pick and a last snr amplitude? Then defer the pick
 	// until the max amplitude has been calculated
 	if ( _lastAmplitude && _lastPick ) {
-		double dt = static_cast<double>(t - _lastPick);
+		double dt = static_cast<double>(t - *_lastPick);
 		double deadTime = static_cast<double>(_deadTime);
 
 		if ( deadTime > 0 ) {
@@ -427,13 +427,13 @@ void Detector::sendMaxAmplitude(const Record *record) {
 	sendPick();
 
 	auto t = _currentPick + Core::TimeSpan(offset);
-	if ( _amplPublish && isEnabled() ) {
+	if ( _amplPublish && isEnabled() && _lastPick ) {
 		if ( _pickID.empty() ) {
 			SEISCOMP_DEBUG("No valid pickID set (pick has not been sent), cancel sending 'snr' amplitude");
 			return;
 		}
 
-		AmplitudeProcessor_SNR ampProc(_lastPick + this->offset());
+		AmplitudeProcessor_SNR ampProc(*_lastPick + this->offset());
 		Processing::AmplitudeProcessor::Result res;
 		ampProc.setReferencingPickID(_pickID);
 		res.amplitude.value = *_lastAmplitude;

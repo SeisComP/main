@@ -98,7 +98,7 @@ class Detector : public Processing::SimpleDetector {
 		double                _currentPickDuration{-1};
 		double                _finalPickDuration{-1};
 
-		Core::Time            _lastPick;
+		OPT(Core::Time)       _lastPick;
 		OPT(double)           _lastAmplitude;
 
 		OPT(double)           _minAmplitude;
