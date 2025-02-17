@@ -54,7 +54,7 @@ static void CriticalDistanceTTIntercept(int n, double *v, double *vsq,
  * file scope globals
  */
 #define ILOC_NDEP 33
-#define ILOC_NDIS 20
+#define ILOC_NDIS 28
 
 
 /*
@@ -88,7 +88,9 @@ ILOC_TT_TABLE *iLoc_GenerateLocalTTtables(char *LocalVmodel, ILOC_TTINFO *LocalT
     int npha, n, i, j, k, ind, ndists, ndepths, icon, imoh;
     double dists[ILOC_NDIS] = {
           0.0,  0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5,
-          1.75, 2.0,   2.5,  3.0, 3.5,  4.0, 4.5,  5.0, 5.5,  6.0
+          1.75, 2.0,   2.5,  3.0, 3.5,  4.0, 4.5,  5.0, 5.5,  6.0,
+          6.5,  7.0,   7.5,  8.0,  8.5,  9.0, 9.5, 10.0
+
     };
     double depths[ILOC_NDEP] = {
           0.0,   1.0,   2.5,   5.0,   7.5,  10.0,  12.5,  15.0,  17.5,  20.0,
@@ -392,7 +394,7 @@ static int GenerateLocalTT(double depth, double delta,
  */
         u = DirectPhase(n, v, vsq, thk, iq, dq, dkm, depth, &tdir);
         if (iq < imoh) {
-            if (iq < icon) strcpy(lag, "g");
+            if (iq < icon || icon < 0) strcpy(lag, "g");
             else           strcpy(lag, "b");
         }
         else {
@@ -733,7 +735,7 @@ static int ReadLocalVelocityModel(char *fname, ILOC_VMODEL *LocalVelocityModelp,
 /*
  *  read local velocity model
  */
-    LocalVelocityModelp->iconr = LocalVelocityModelp->imoho = 0;
+    LocalVelocityModelp->iconr = LocalVelocityModelp->imoho = -1;
     i = 0;
     k = 0;
     while ((nb = getline(&line, &nbytes, fp)) > 0) {
