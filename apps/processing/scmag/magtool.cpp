@@ -2104,11 +2104,11 @@ bool MagTool::feed(DataModel::Amplitude* amp, bool update, bool remove) {
 					continue;
 				}
 
-				if ( getShortPhaseName(arr->phase().code()) != 'P' ) {
+				if ( getShortPhaseName(a->phase().code()) != 'P' ) {
 					continue;
 				}
 
-				if ( (arrivalWeight(arr) < _minimumArrivalWeight)
+				if ( (arrivalWeight(a) < _minimumArrivalWeight)
 				  && !considerUnusedArrivals(amp->type()) ) {
 					invalidArrivalWeight = true;
 					continue;
