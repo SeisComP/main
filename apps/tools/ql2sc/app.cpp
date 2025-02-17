@@ -1048,6 +1048,32 @@ void App::syncEvent(const EventParameters *ep, const Event *event,
 
 	SEISCOMP_INFO("Sync with event %s", targetEvent->publicID().c_str());
 
+	// Associate all focal mechanisms
+	for ( size_t i = 0; i < event->focalMechanismReferenceCount(); ++i ) {
+		auto fmRef = event->focalMechanismReference(i);
+		auto fm = ep->findFocalMechanism(fmRef->focalMechanismID());
+		if ( !fm ) {
+			SEISCOMP_WARNING("* referenced focal mechanism not found in event: '%s'",
+			                 fmRef->focalMechanismID().c_str());
+			continue;
+		}
+
+		EventPtr associatedEvent = query()->getEventForFocalMechanism(fm->publicID());
+		if ( !associatedEvent || associatedEvent->publicID() != targetEvent->publicID() ) {
+			// Force association
+			notifiers.push_back(
+				new Notifier(
+					targetEvent->publicID(),
+					OP_ADD,
+					new FocalMechanismReference(fm->publicID())
+				)
+			);
+
+			SEISCOMP_DEBUG("* force association of focal mechanism: '%s'",
+			               fm->publicID().c_str());
+		}
+	}
+
 	JournalEntryPtr entry;
 
 	// Preferred origin
