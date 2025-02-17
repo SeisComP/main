@@ -17,6 +17,19 @@
 					documentation for their installation.
 					</description>
 				</parameter>
+				<parameter name="usePickUncertainties" type="boolean" default="false">
+					<description>
+					Whether to use pick time uncertainties (true) or to use the
+					default timing error (false).
+					</description>
+				</parameter>
+				<parameter name="defaultTimeError" type="double" default="9999999" unit="s">
+					<description>
+					The default pick time error forwarded to iLoc if no pick time
+					uncertainties are set or if using the pick time uncertainties
+					is disabled.
+					</description>
+				</parameter>
 				<parameter name="profiles" type="list:string" default="iasp91,ak135">
 					<description>
 					iLoc profile name.
@@ -212,7 +225,6 @@
 							profile.
 							</description>
 						</parameter>
-
 					</struct>
 				</group>
 			</group>
