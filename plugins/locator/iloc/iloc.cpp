@@ -430,6 +430,13 @@ bool ILoc::init(const Config::Config &config) {
 		_defaultPickUncertainty = ILOC_NULLVAL;
 	}
 
+	try {
+		_usePickUncertainties = config.getDouble("iLoc.usePickUncertainties");
+	}
+	catch ( ... ) {
+		_usePickUncertainties = false;
+	}
+
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -565,7 +572,7 @@ bool ILoc::setParameter(const string &name, const string &value) {
 	else INP_STRING(MinDepthPhases, int)
 	else INP_STRING(MaxShallowDepthError, double)
 	else INP_STRING(MaxDeepDepthError, double)
-	else if ( name == "DEFAULT_PICK_UNCERTAINTY" ) {
+	else if ( name == "DefaultPickUncertainty" ) {
 		double dpu;
 
 		if ( !Core::fromString(dpu, value) ) {
