@@ -193,17 +193,35 @@ Fraction double2frac(double d) {
 }
 
 
+class OpenTimeWindow {
+	public:
+		OpenTimeWindow() {}
+		OpenTimeWindow(Seiscomp::Core::Time startTime, OPT(Seiscomp::Core::Time) endTime)
+		: _startTime(startTime), _endTime(endTime) {}
+
+	public:
+		void setStartTime(const Seiscomp::Core::Time &time) { _startTime = time; }
+		const Seiscomp::Core::Time &startTime() const { return _startTime; }
+		void setEndTime(const Seiscomp::Core::Time &time) { _endTime = time; }
+		const OPT(Seiscomp::Core::Time) &endTime() const { return _endTime; }
+
+	private:
+		Seiscomp::Core::Time      _startTime;
+		OPT(Seiscomp::Core::Time) _endTime;
+};
+
+
 // Special overlap check for time windows where end time might be open
-bool overlaps(const Core::TimeWindow &tw1, const Core::TimeWindow &tw2) {
+bool overlaps(const OpenTimeWindow &tw1, const OpenTimeWindow &tw2) {
     if ( tw2.startTime() < tw1.startTime() ) return overlaps(tw2, tw1);
-    return !tw1.endTime().valid() || tw1.endTime() > tw2.startTime();
+    return !tw1.endTime() || *tw1.endTime() > tw2.startTime();
 }
 
 
 
 template <typename T>
 bool overlaps(const T *epoch1, const T *epoch2) {
-	Core::TimeWindow tw1, tw2;
+	OpenTimeWindow tw1, tw2;
 	try { tw1.setStartTime(epoch1->startDate()); }
 	catch ( ... ) { tw1.setStartTime(defaultStartTime); }
 	try { tw1.setEndTime(epoch1->endDate()); } catch ( ... ) {}
@@ -218,7 +236,7 @@ bool overlaps(const T *epoch1, const T *epoch2) {
 
 template <typename T>
 bool overlaps2(const T *epoch1, const T *epoch2) {
-	Core::TimeWindow tw1, tw2;
+	OpenTimeWindow tw1, tw2;
 	try { tw1.setStartTime(epoch1->start()); }
 	catch ( ... ) { tw1.setStartTime(defaultStartTime); }
 	try { tw1.setEndTime(epoch1->end()); } catch ( ... ) {}
@@ -1948,10 +1966,7 @@ bool Convert2SC::process(DataModel::Network *sc_net,
 	BCK(oldEnd, Core::Time, sc_sta->end());
 
 	try {
-		if ( sta->endDate().valid() )
-			sc_sta->setEnd(sta->endDate());
-		else
-			sc_sta->setEnd(Core::None);
+		sc_sta->setEnd(sta->endDate());
 	}
 	catch ( ... ) {
 		sc_sta->setEnd(Core::None);
@@ -2317,17 +2332,17 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 	string flags;
 
 	try {
-		if ( cha->endDate().valid() )
-			sc_stream->setEnd(cha->endDate());
-		else
-			sc_stream->setEnd(Core::None);
+		sc_stream->setEnd(cha->endDate());
 	}
-	catch ( ... ) { sc_stream->setEnd(Core::None); }
+	catch ( ... ) {
+		sc_stream->setEnd(Core::None);
+	}
 
 	sc_stream->setDepth(cha->depth().value());
 
-	for ( size_t i = 0; i < cha->typeCount(); ++i )
+	for ( size_t i = 0; i < cha->typeCount(); ++i ) {
 		flags += cha->type(i)->type().toString()[0];
+	}
 
 	/* Should it default to "GC"? Currently no.
 	if ( flags.empty() )
