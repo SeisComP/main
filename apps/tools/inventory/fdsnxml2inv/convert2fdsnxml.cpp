@@ -445,17 +445,20 @@ void populateComments(const T1 *sc, T2 sx) {
 
 			sx_comment->setId(id);
 
-			if ( subject.length() > 0 )
+			if ( subject.length() > 0 ) {
 				sx_comment->setSubject(subject);
+			}
 
 			sx_comment->setValue(value);
 		}
 		else {
 			int id;
-			if ( Core::fromString(id, comment->id()) )
+			if ( Core::fromString(id, comment->id()) ) {
 				sx_comment->setId(id);
-			else
-				sx_comment->setId(c+1);
+			}
+			else {
+				sx_comment->setId(c + 1);
+			}
 			sx_comment->setValue(comment->text());
 		}
 
