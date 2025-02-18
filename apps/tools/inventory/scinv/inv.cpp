@@ -28,6 +28,116 @@ InventoryTask::SourceMap InventoryTask::_sources;
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+OpenTimeWindow::OpenTimeWindow() {}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+OpenTimeWindow::OpenTimeWindow(Seiscomp::Core::Time startTime, OPT(Seiscomp::Core::Time) endTime)
+: _startTime(startTime), _endTime(endTime) {}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool OpenTimeWindow::overlaps(const OpenTimeWindow &other) const {
+	// Both end times are open -> overlap
+	if ( !endTime() && !other.endTime() ) {
+		return true;
+	}
+
+	// Check overlap on both closed epochs
+	if ( endTime() && other.endTime() ) {
+		if ( startTime() >= *other.endTime() ) {
+			return false;
+		}
+		if ( *endTime() <= other.startTime() ) {
+			return false;
+		}
+	}
+	// this is an open epoch
+	else if ( !endTime() ) {
+		if ( other.endTime() <= startTime() ) {
+			return false;
+		}
+	}
+	// other is an open epoch
+	else {
+		if ( endTime() <= other.startTime() ) {
+			return false;
+		}
+	}
+
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool OpenTimeWindow::outside(const OpenTimeWindow &child) const {
+	if ( child.startTime() < startTime() ) {
+		return true;
+	}
+
+	if ( !child.endTime() && endTime() ) {
+		return true;
+	}
+
+	// Check overlap on both closed epochs
+	if ( endTime() && child.endTime() ) {
+		if ( child.startTime() > *endTime() ) {
+			return true;
+		}
+		if ( *child.endTime() > *endTime() ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+string toString(const OpenTimeWindow &tw ) {
+	string res;
+
+	if ( tw.startTime().microseconds() > 0 ) {
+		res = tw.startTime().toString("%F %T.%f");
+	}
+	else {
+		res = tw.startTime().toString("%F %T");
+	}
+
+	res += " - ";
+
+	if ( tw.endTime() ) {
+		if ( tw.endTime()->microseconds() > 0 ) {
+			res += tw.endTime()->toString("%F %T.%f");
+		}
+		else {
+			res += tw.endTime()->toString("%F %T");
+		}
+	}
+	else {
+		res += "...";
+	}
+
+	return res;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 InventoryTask::InventoryTask(Seiscomp::DataModel::Inventory *inv) : _inv(inv) {
 	_logHandler = NULL;
 

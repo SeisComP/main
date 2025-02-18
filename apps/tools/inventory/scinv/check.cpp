@@ -45,74 +45,15 @@ string nslc(const Stream *obj) {
 }
 
 
-string toString(const Core::TimeWindow &tw ) {
-	string res;
-	if ( tw.startTime().microseconds() > 0 )
-		res = tw.startTime().toString("%F %T.%f");
-	else
-		res = tw.startTime().toString("%F %T");
-
-	res += " - ";
-
-	if ( tw.endTime().valid() ) {
-		if ( tw.endTime().microseconds() > 0 )
-			res += tw.endTime().toString("%F %T.%f");
-		else
-			res += tw.endTime().toString("%F %T");
-	}
-	else
-		res += "...";
-
-	return res;
-}
-
-
-bool overlaps(const Core::TimeWindow &tw1, const Core::TimeWindow &tw2) {
-	// Both end times are open -> overlap
-	if ( !tw1.endTime().valid() && !tw2.endTime().valid() ) return true;
-
-	// Check overlap on both closed epochs
-	if ( tw1.endTime().valid() && tw2.endTime().valid() ) {
-		if ( tw1.startTime() >= tw2.endTime() ) return false;
-		if ( tw1.endTime() <= tw2.startTime() ) return false;
-	}
-	// tw1 is an open epoch
-	else if ( !tw1.endTime().valid() ) {
-		if ( tw2.endTime() <= tw1.startTime() ) return false;
-	}
-	// tw2 is an open epoch
-	else {
-		if ( tw1.endTime() <= tw2.startTime() ) return false;
-	}
-
-	return true;
-}
-
-
-const Core::TimeWindow *
-overlaps(const Check::TimeWindows &epochs, const Core::TimeWindow &tw) {
-	Check::TimeWindows::const_iterator it;
-	for ( it = epochs.begin(); it != epochs.end(); ++it ) {
-		const Core::TimeWindow &epoch = *it;
-		if ( overlaps(epoch, tw) )
+const OpenTimeWindow *
+overlaps(const Check::Epochs &epochs, const OpenTimeWindow &tw) {
+	for ( auto &epoch : epochs ) {
+		if ( epoch.overlaps(tw) ) {
 			return &epoch;
+		}
 	}
 
 	return nullptr;
-}
-
-
-bool outside(const Core::TimeWindow &fence, const Core::TimeWindow &child) {
-	if ( child.startTime() < fence.startTime() ) return true;
-	if ( !child.endTime().valid() && fence.endTime().valid() ) return true;
-
-	// Check overlap on both closed epochs
-	if ( fence.endTime().valid() && child.endTime().valid() ) {
-		if ( child.startTime() > fence.endTime() ) return true;
-		if ( child.endTime() > fence.endTime() ) return true;
-	}
-
-	return false;
 }
 
 
@@ -585,14 +526,13 @@ void Check::checkEpoch(const T *obj) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 template <typename T>
-void Check::checkOverlap(TimeWindows &epochs, const T *obj) {
-	Core::Time end;
-	try { end = obj->end(); }
-	catch ( ... ) {}
+void Check::checkOverlap(Epochs &epochs, const T *obj) {
+	OPT(Core::Time) end;
+	try { end = obj->end(); } catch ( ... ) {}
 
-	Core::TimeWindow epoch(obj->start(), end);
-	const Core::TimeWindow *tw = overlaps(epochs, epoch);
-	if ( tw != nullptr ) {
+	OpenTimeWindow epoch(obj->start(), end);
+	auto tw = overlaps(epochs, epoch);
+	if ( tw ) {
 		log(LogHandler::Conflict,
 		    (string(obj->className()) + " " + nslc(obj) + "\n  "
 		     "overlapping epochs " +
@@ -610,17 +550,15 @@ void Check::checkOverlap(TimeWindows &epochs, const T *obj) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 template <typename T1, typename T2>
 void Check::checkOutside(const T1 *parent, const T2 *obj) {
-	Core::Time pend, end;
+	OPT(Core::Time) pend, end;
 
-	try { pend = parent->end(); }
-	catch ( ... ) {}
-	try { end = obj->end(); }
-	catch ( ... ) {}
+	try { pend = parent->end(); } catch ( ... ) {}
+	try { end = obj->end(); } catch ( ... ) {}
 
-	Core::TimeWindow pepoch(parent->start(), pend);
-	Core::TimeWindow epoch(obj->start(), end);
+	OpenTimeWindow pepoch(parent->start(), pend);
+	OpenTimeWindow epoch(obj->start(), end);
 
-	if ( outside(pepoch, epoch) ) {
+	if ( pepoch.outside(epoch) ) {
 		log(LogHandler::Conflict,
 		    (string(obj->className()) + " " + nslc(obj) + "\n  "
 		     "epoch " + toString(epoch) + " outside parent " +
