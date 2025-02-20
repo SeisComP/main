@@ -18,9 +18,7 @@
 #include <seiscomp/core/strings.h>
 
 #include <iostream>
-#include <iomanip>
 #include <fstream>
-#include <map>
 #include <set>
 
 
@@ -58,9 +56,14 @@ class InventoryExtractor : public Client::Application {
 			commandline().addOption("Extract", "end",
 			                        "End time to consider streams.", &_end);
 			commandline().addOption("Extract", "chans",
-			                        "A comma separated list of channel id's to "
-			                        "extract which can contain wildcards. "
-			                        "Default: *.*.*.* meaning all streams.",
+			                        "A comma separated list of streams to "
+			                        "extract or remove (--rm) which can contain "
+			                        "wildcards. Avoiding confusion with files"
+			                        "names due to SHELL extension requires to"
+			                        "enclose stream codes by quotes. Default: "
+			                        "*.*.*.* meaning all streams. Unreferenced "
+			                        "sensors, data loggers and resonses are "
+			                        "removed when extracting.",
 			                        &_chanIDs);
 			commandline().addOption("Extract", "nslc",
 			                        "Stream list file to be used for extracting "
@@ -73,8 +76,12 @@ class InventoryExtractor : public Client::Application {
 			commandline().addOption("Extract", "rm",
 			                        "Remove the given channels instead of "
 			                        "extracting them.");
-			commandline().addOption("Extract", "formatted,f",
+			commandline().addGroup("Output");
+			commandline().addOption("Output", "formatted,f",
 			                        "Enable formatted XML output.");
+			commandline().addOption("Output", "output,o",
+			                        "Name of output file. If not given or '-', "
+			                        "output is sent to stdout.", &_output);
 		}
 
 
@@ -90,19 +97,26 @@ class InventoryExtractor : public Client::Application {
 			cout << "Usage:"  << endl
 			     << "  " << name() << " [OPTIONS] [input=stdin] [output=stdout]"
 			     << endl << endl
-			     << "Extract or remove streams from inventory." << endl;
+			     << "Extract or remove streams from inventory. When extracting "
+			        "all unreferenced sensor, data loggers and responses are "
+			        "removed" << endl;
 
 			Client::Application::printUsage();
 
 			cout << "Examples:" << endl;
-			cout << "Extract inventory for entire GR network" << endl
-			     << "  " << name() << " -f --chans GR.*.*.* inventory_all.xml > inventory_GR.xml"
+			cout << "Clean inventory from unreferenced objects keeping all "
+			        "streams. XML is written to a file." << endl
+			     << "  " << name() << " inventory_all.xml -o inventory_all_cleaned.xml"
+			     << endl << endl;
+			cout << "Extract inventory for entire GR network. XML is written to "
+			        "stdout" << endl
+			     << "  " << name() << " --chans GR.*.*.* inventory_all.xml > inventory_GR.xml"
 			     << endl << endl;
 			cout << "Extract inventory for all stations within the given region" << endl
-			     << "  " << name() << " -f -r -10,0,50,15 inventory_all.xml > inventory_GR.xml"
+			     << "  " << name() << " -r -10,0,50,15 inventory_all.xml > inventory_GR.xml"
 			     << endl << endl;
 			cout << "Remove inventory for entire GR network" << endl
-			     << "  " << name() << " -f --rm --chans GR.*.*.* inventory_all.xml > inventory_others.xml"
+			     << "  " << name() << " --rm --chans GR.*.*.* inventory_all.xml > inventory_others.xml"
 			     << endl << endl;
 		}
 
@@ -157,7 +171,7 @@ class InventoryExtractor : public Client::Application {
 
 
 			vector<string> opts = commandline().unrecognizedOptions();
-			string input("-"), output("-");
+			string input("-");
 
 			if ( opts.empty() ) {
 				cerr << "Reading inventory from stdin. Use Ctrl + C to interrupt."
@@ -165,10 +179,6 @@ class InventoryExtractor : public Client::Application {
 			}
 			else {
 				input = opts[0];
-			}
-
-			if ( opts.size() > 1 ) {
-				output = opts[1];
 			}
 
 			DataModel::InventoryPtr inv;
@@ -411,8 +421,8 @@ class InventoryExtractor : public Client::Application {
 				}
 			}
 
-			if ( !ar.create(output.c_str()) ) {
-				cerr << "Unable to create output " << output << endl;
+			if ( !ar.create(_output.c_str()) ) {
+				cerr << "Unable to create output " << _output << endl;
 				return false;
 			}
 
@@ -430,6 +440,7 @@ class InventoryExtractor : public Client::Application {
 		string              _chanIDs{"*.*.*.*"};
 		bool                _remove{false};
 		string              _region;
+		string              _output{"-"};
 		Geo::GeoBoundingBox _bBox;
 };
 
