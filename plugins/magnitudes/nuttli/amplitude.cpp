@@ -506,6 +506,11 @@ void MNAmplitude::setEnvironment(const Seiscomp::DataModel::Origin *hypocenter,
 	double hypoLat, hypoLon, hypoDepth;
 	double recvLat, recvLon;
 
+	if ( !_trigger ) {
+		setStatus(MissingTime, 0);
+		return;
+	}
+
 	if ( _environment.hypocenter == NULL ) {
 		setStatus(MissingHypocenter, 0);
 		return;
@@ -592,7 +597,7 @@ void MNAmplitude::setEnvironment(const Seiscomp::DataModel::Origin *hypocenter,
 
 	double noiseWindowStart = *noiseWindowEnd - _snrWindowSeconds;
 
-	double pickOffset = (_trigger - _environment.hypocenter->time().value()).length();
+	double pickOffset = (*_trigger - _environment.hypocenter->time().value()).length();
 	noiseWindowStart -= pickOffset;
 	*noiseWindowEnd -= pickOffset;
 	*signalWindowStart-= pickOffset;

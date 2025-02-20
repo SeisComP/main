@@ -66,20 +66,13 @@ class MNMagnitude : public Seiscomp::Processing::MagnitudeProcessor {
 		                        const Locale *,
 		                        double &value) override;
 
-		bool treatAsValidMagnitude() const override;
-
 		Status estimateMw(const Seiscomp::Config::Config *config,
 		                  double magnitude, double &estimateMw,
 		                  double &stdError) override;
 
 
 	private:
-		bool   _validValue;
-		double _minSNR;
-		double _minPeriod;
-		double _maxPeriod;
-		double _minDistance;
-		double _maxDistance;
+		void setDefaults();
 };
 
 
