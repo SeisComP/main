@@ -83,12 +83,23 @@ existing subtrees into a final inventory before synchronization.
 
 .. code-block:: sh
 
-   scinv merge net1.xml net2.xml -o inv.xml
+   scinv merge network1.xml network2.xml -o inventory.xml
 
 .. note::
 
    Merging inventory XML files is also supported by :ref:`scxmlmerge` but
    without the full :ref:`consistency checks <scinv_check>`.
+
+Along with :option:`--strip`, unreferenced data logger, sensors and responses
+are removed resulting in small XML files.
+
+.. code-block:: sh
+
+   scinv merge --strip network1.xml network2.xml -o inventory.xml
+
+.. note::
+
+   Removing such unreferenced objects is also achieved by :ref:`invextr`.
 
 
 .. _scinv_apply:
