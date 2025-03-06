@@ -163,7 +163,7 @@ class UserDB:
     # -------------------------------------------------------------------------
     def checkPassword(self, cred):
         try:
-            pw = self.__users[cred.username][0]
+            pw = self.__users[u_str(cred.username)][0]
 
         except KeyError:
             return False
@@ -179,7 +179,7 @@ class UserDB:
         seiscomp.logging.info("known users:")
 
         for name, user in list(self.__users.items()):
-            seiscomp.logging.info(f" {u_str(name)} {user[1]} {user[2]}")
+            seiscomp.logging.info(f" {name} {user[1]} {user[2]}")
 
 
 ###############################################################################
