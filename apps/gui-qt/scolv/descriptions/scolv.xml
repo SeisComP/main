@@ -266,6 +266,12 @@
 						</description>
 					</parameter>
 				</group>
+				<parameter name="originAgencyIDs" type="list:string">
+					<description>
+					Define a list of agencyIDs which can be used as override
+					for the origin agencyID when committing with options.
+					</description>
+				</parameter>
 				<parameter name="originComments" type="list:string">
 					<description>
 					A list of origin comment profiles. These profiles will be
