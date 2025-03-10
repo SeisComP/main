@@ -24,47 +24,6 @@
 
 namespace Seiscomp {
 namespace Applications {
-
-
-Picker::Config::Config() {
-	amplitudeGroup = "AMPLITUDE";
-	phaseHint = "P";
-
-	test = false;
-	offline = false;
-
-	useAllStreams = false;
-	calculateAmplitudes = true;
-	interpolateGaps = false;
-	maxGapLength = 4.5;
-
-	defaultChannel = "BH";
-	defaultFilter = "RMHP(10)>>ITAPER(30)>>BW(4,0.7,2)>>STALTA(2,80)";
-	defaultTriggerOnThreshold = 3.0;
-	defaultTriggerOffThreshold = 1.5;
-
-	minDuration = -1;
-	maxDuration = -1;
-
-	triggerDeadTime = 30.0;
-	amplitudeMaxTimeWindow = 10.0;
-	amplitudeMinOffset = 3.0;
-
-	defaultTimeCorrection = -0.8;
-	ringBufferSize = 5. * 60.;
-	leadTime = 60.;
-	initTime = 60.;
-
-	pickerType = "";
-	killPendingSecondaryProcessors = true;
-	sendDetections = false;
-	extraPickComments = false;
-	playback = false;
-
-	amplitudeList.insert("MLv");
-	amplitudeList.insert("mb");
-	amplitudeList.insert("mB");
-}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
