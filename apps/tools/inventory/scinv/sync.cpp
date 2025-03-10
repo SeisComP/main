@@ -46,8 +46,9 @@ class RemoveUntouchedObjects : public Visitor {
 		}
 
 		void visit(Object *o) {
-			if ( _registry.find(o) == _registry.end() )
+			if ( _registry.find(o) == _registry.end() ) {
 				_out.insert(o);
+			}
 		}
 
 	private:
@@ -1127,9 +1128,9 @@ void Sync::cleanUp() {
 	_inv->accept(&cleaner);
 
 	// Detach/delete them
-	ObjectSet::iterator it;
-	for ( it = toBeRemoved.begin(); it != toBeRemoved.end(); ++it )
-		(*it)->detach();
+	for ( auto *obj : toBeRemoved ) {
+		obj->detach();
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
