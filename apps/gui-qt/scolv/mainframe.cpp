@@ -283,6 +283,9 @@ MainFrame::MainFrame(){
 	try { pickerConfig.loadAllPicks = SCApp->configGetBool("picker.loadAllPicks"); }
 	catch ( ... ) { pickerConfig.loadAllPicks = true; }
 
+	try { pickerConfig.showDataInSensorUnit = SCApp->configGetBool("picker.showDataInSensorUnit"); }
+	catch ( ... ) { pickerConfig.showDataInSensorUnit = false; }
+
 	try { pickerConfig.loadStrongMotionData = SCApp->configGetBool("picker.loadStrongMotion"); }
 	catch ( ... ) { pickerConfig.loadStrongMotionData = false; }
 
@@ -1083,6 +1086,7 @@ void MainFrame::configureAcquisition() {
 		SCApp->configSetBool("picker.ignoreUnconfiguredStations", pc.ignoreUnconfiguredStations);
 		SCApp->configSetBool("picker.loadAllComponents", pc.loadAllComponents);
 		SCApp->configSetBool("picker.loadAllPicks", pc.loadAllPicks);
+		SCApp->configSetBool("picker.showDataInSensorUnit", pc.showDataInSensorUnit);
 		SCApp->configSetBool("picker.loadStrongMotion", pc.loadStrongMotionData);
 		SCApp->configSetBool("picker.limitStationAcquisition", pc.limitStations);
 		SCApp->configSetInt("picker.limitStationAcquisitionCount", pc.limitStationCount);
