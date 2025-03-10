@@ -439,6 +439,9 @@ bool Repicker::run() {
 	cerr << "Repicked picks: " << repickedPicks.size() << endl;
 
 	if ( _settings.repickedOnly ) {
+		// Release parameter set to prevent debug output
+		ep = nullptr;
+
 		ep = new EventParameters;
 		for ( const auto &pick : repickedPicks ) {
 			ep->add(pick.get());
