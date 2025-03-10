@@ -115,6 +115,9 @@ void Picker::Config::init(const Client::Application *app) {
 
 	try { playback = app->configGetBool("playback"); }
 	catch ( ... ) {}
+
+	try { generateSimplifiedIDs = app->configGetBool("simplifiedIDs"); }
+	catch ( ... ) {}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

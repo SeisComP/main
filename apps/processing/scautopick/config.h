@@ -162,6 +162,7 @@ class Config {
 		// Accept historic data in real-time playbacks?
 		bool        playback{false};
 
+		bool        generateSimplifiedIDs{false};
 
 	public:
 		void dump() const;

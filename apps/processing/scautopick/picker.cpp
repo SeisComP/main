@@ -56,38 +56,47 @@ using namespace Seiscomp::Processing;
 
 namespace {
 
-char statusFlag(const Seiscomp::DataModel::Pick* pick) {
+
+char statusFlag(const Seiscomp::DataModel::Pick *pick) {
 	try {
-		if ( pick->evaluationMode() == Seiscomp::DataModel::AUTOMATIC )
+		if ( pick->evaluationMode() == Seiscomp::DataModel::AUTOMATIC ) {
 			return 'A';
-		else
+		}
+		else {
 			return 'M';
+		}
 	}
 	catch ( ... ) {}
 	return 'A';
 }
 
 
-bool contains(const Seiscomp::Core::TimeWindow &tw, const Seiscomp::Core::Time &time) {
-	if ( !time.valid() ) return false;
+bool contains(const Seiscomp::Core::TimeWindow &tw, const OPT(Seiscomp::Core::Time) &time) {
+	if ( !time ) {
+		return false;
+	}
 
-	if ( tw.startTime().valid() && tw.endTime().valid() )
-		return tw.contains(time);
+	if ( tw.startTime().valid() && tw.endTime().valid() ) {
+		return tw.contains(*time);
+	}
 
-	if ( tw.startTime().valid() )
-		return time >= tw.startTime();
+	if ( tw.startTime().valid() ) {
+		return *time >= tw.startTime();
+	}
 
-	if ( tw.endTime().valid() )
-		return time < tw.endTime();
+	if ( tw.endTime().valid() ) {
+		return *time < tw.endTime();
+	}
 
 	return true;
 }
 
-Seiscomp::DataModel::WaveformStreamID waveformStreamID(const Seiscomp::Record *rec)
-{
+
+Seiscomp::DataModel::WaveformStreamID waveformStreamID(const Seiscomp::Record *rec) {
 	return Seiscomp::DataModel::WaveformStreamID(
 		rec->networkCode(), rec->stationCode(), rec->locationCode(), rec->channelCode(), "");
 }
+
 
 std::string dotted(const Seiscomp::DataModel::WaveformStreamID &wf) {
 	return wf.networkCode() + "." + wf.stationCode() + "." + wf.locationCode() + "." + wf.channelCode();
@@ -156,9 +165,7 @@ ostream& operator<<(ostream& o, const Seiscomp::DataModel::Amplitude* amp) {
 
 
 namespace Seiscomp {
-
 namespace Applications {
-
 namespace Picker {
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -697,7 +704,7 @@ bool App::initComponent(Processing::WaveformProcessor *proc,
                         const std::string &streamID,
                         const DataModel::WaveformStreamID &waveformID,
                         bool metaDataRequired) {
-	StreamMap::iterator it = _streams.find(streamID);
+	auto it = _streams.find(streamID);
 	if ( it != _streams.end() && contains(it->second->epoch, time) ) {
 		proc->streamConfig(comp) = *it->second;
 		if ( proc->streamConfig(comp).gain == 0.0 && metaDataRequired ) {
@@ -1326,21 +1333,21 @@ void App::emitPPick(const Processing::Picker *proc,
 	}
 
 	DataModel::PickPtr pick;
-	if ( hasCustomPublicIDPattern() ) {
-		pick = DataModel::Pick::Create();
-
-		if ( !pick ) {
-			SEISCOMP_WARNING("Duplicate pick ignored");
-			return;
-		}
-	}
-	else {
-		std::string pickID = res.time.toString("%Y%m%d.%H%M%S.%2f-") + _config.pickerType +
+	if ( _config.generateSimplifiedIDs ) {
+		std::string pickID = res.time.toString("%Y%m%d.%H%M%S.%f-") + _config.pickerType +
 		                     "-" + res.record->streamID();
 		pick = DataModel::Pick::Create(pickID);
 
 		if ( !pick ) {
 			SEISCOMP_WARNING("Duplicate pick %s ignored", pickID.c_str());
+			return;
+		}
+	}
+	else {
+		pick = DataModel::Pick::Create();
+
+		if ( !pick ) {
+			SEISCOMP_WARNING("Duplicate pick ignored");
 			return;
 		}
 	}
@@ -1432,10 +1439,12 @@ void App::emitPPick(const Processing::Picker *proc,
 	tw.setEnd(res.timeWindowEnd);
 
 	DataModel::AmplitudePtr amp;
-	if ( hasCustomPublicIDPattern() )
-		amp = DataModel::Amplitude::Create();
-	else
+	if ( _config.generateSimplifiedIDs ) {
 		amp = DataModel::Amplitude::Create(pick->publicID() + ".snr");
+	}
+	else {
+		amp = DataModel::Amplitude::Create();
+	}
 
 	if ( amp ) {
 		amp->setCreationInfo(ci);
@@ -1469,21 +1478,22 @@ void App::emitPPick(const Processing::Picker *proc,
 void App::emitSPick(const Processing::SecondaryPicker *proc,
                     const Processing::SecondaryPicker::Result &res) {
 	DataModel::PickPtr pick;
-	if ( hasCustomPublicIDPattern() ) {
-		pick = DataModel::Pick::Create();
 
-		if ( !pick ) {
-			SEISCOMP_WARNING("Duplicate pick ignored");
-			return;
-		}
-	}
-	else {
-		std::string pickID = res.time.toString("%Y%m%d.%H%M%S.%2f-") + _config.secondaryPickerType +
+	if ( _config.generateSimplifiedIDs ) {
+		std::string pickID = res.time.toString("%Y%m%d.%H%M%S.%f-") + _config.secondaryPickerType +
 		                     "-" + res.record->streamID();
 		pick = DataModel::Pick::Create(pickID);
 
 		if ( !pick ) {
 			SEISCOMP_WARNING("Duplicate pick %s ignored", pickID.c_str());
+			return;
+		}
+	}
+	else {
+		pick = DataModel::Pick::Create();
+
+		if ( !pick ) {
+			SEISCOMP_WARNING("Duplicate pick ignored");
 			return;
 		}
 	}
@@ -1551,10 +1561,12 @@ void App::emitDetection(const Processing::Detector *proc, const Record *rec, con
 	bool isDetection = !_config.pickerType.empty() && _config.sendDetections;
 	Core::Time now = Core::Time::UTC();
 	DataModel::PickPtr pick;
-	if ( hasCustomPublicIDPattern() )
+	if ( _config.generateSimplifiedIDs ) {
+		pick = DataModel::Pick::Create(time.toString("%Y%m%d.%H%M%S.%f-") + rec->streamID());
+	}
+	else {
 		pick = DataModel::Pick::Create();
-	else
-		pick = DataModel::Pick::Create(time.toString("%Y%m%d.%H%M%S.%2f-") + rec->streamID());
+	}
 
 	DataModel::CreationInfo ci;
 	ci.setCreationTime(now);
@@ -1721,11 +1733,13 @@ void App::emitAmplitude(const AmplitudeProcessor *ampProc,
 	DataModel::AmplitudePtr amp = (DataModel::Amplitude*)ampProc->userData();
 	Core::Time now = Core::Time::UTC();
 
-	if ( amp == NULL ) {
-		if ( hasCustomPublicIDPattern() )
-			amp = DataModel::Amplitude::Create();
-		else
+	if ( !amp ) {
+		if ( _config.generateSimplifiedIDs ) {
 			amp = DataModel::Amplitude::Create(ampProc->referencingPickID() + "." + ampProc->type());
+		}
+		else {
+			amp = DataModel::Amplitude::Create();
+		}
 
 		if ( !amp ) {
 			SEISCOMP_WARNING("Internal error: duplicate amplitudeID?");
@@ -1811,7 +1825,5 @@ void App::emitAmplitude(const AmplitudeProcessor *ampProc,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 }
-
 }
-
 }
