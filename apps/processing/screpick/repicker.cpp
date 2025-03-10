@@ -67,6 +67,10 @@ void Repicker::Settings::accept(SettingsLinker &linker) {
 	            formatted, "Output", "formatted,f",
 	            "Use formatted XML output. Otherwise XML is unformatted."
 	);
+
+	linker & cliSwitch(repickedOnly, "Output", "repicked-only",
+	                   "Output repicked picks only"
+	);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -170,6 +174,8 @@ bool Repicker::run() {
 
 	size_t processedPicks = 0;
 	size_t failedPicks = 0;
+
+	std::list<PickPtr> repickedPicks;
 
 	for ( size_t i = 0; i < ep->pickCount() && !isExitRequested(); ++i ) {
 		auto pick = ep->pick(i);
@@ -416,6 +422,8 @@ bool Repicker::run() {
 						break;
 				}
 			}
+
+			repickedPicks.push_back(pick);
 		}
 
 		++processedPicks;
@@ -428,6 +436,14 @@ bool Repicker::run() {
 
 	cerr << "Processed picks: " << processedPicks << endl;
 	cerr << "Failed picks: " << failedPicks << endl;
+	cerr << "Repicked picks: " << repickedPicks.size() << endl;
+
+	if ( _settings.repickedOnly ) {
+		ep = new EventParameters;
+		for ( const auto &pick : repickedPicks ) {
+			ep->add(pick.get());
+		}
+	}
 
 	ar.create("-");
 	ar.setFormattedOutput(_settings.formatted);
