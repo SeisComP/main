@@ -44,7 +44,7 @@ static bool valid(const Pick *pick)
 	if (pick->snr <= 0 || pick->snr > 1.0E7) {
 		if (pick->snr > 1.0E7)
 			// If SNR is so high, something *must* be wrong
-			SEISCOMP_WARNING("Pick %s with snr of %g was rejected", pick->id.c_str(), pick->snr);
+			SEISCOMP_WARNING("Pick %s with snr of %g was rejected", pick->label.c_str(), pick->snr);
 		return false;
 	}
 
@@ -302,7 +302,7 @@ bool Autoloc3::_blacklisted(const Pick *pick) const
 void Autoloc3::_setBlacklisted(const Pick *pick, bool yes)
 {
 	if (yes) {
-		SEISCOMP_INFO_S("process pick BLACKLISTING " + pick->id + " (manual pick)");
+		SEISCOMP_INFO_S("process pick BLACKLISTING " + pick->label + " (manual pick)");
 		_blacklist.insert(pick);
 	}
 	else {
@@ -370,12 +370,12 @@ Time Autoloc3::now()
 bool Autoloc3::_store(const Pick *pick)
 {
 	if ( ! _addStationInfo(pick)) {
-		SEISCOMP_DEBUG_S("missing station info for pick " + pick->id);
+		SEISCOMP_DEBUG_S("missing station info for pick " + pick->label);
 		return false;
 	}
 
 	if ( ! pick->station()) {
-		SEISCOMP_DEBUG_S("missing station info for pick " + pick->id);
+		SEISCOMP_DEBUG_S("missing station info for pick " + pick->label);
 		return false;
 	}
 
@@ -383,7 +383,7 @@ bool Autoloc3::_store(const Pick *pick)
 		// This means that this pick is completely ignored!
 		// Nevertheless, we might want to loosely associate it to an
 		// origin, i.e. associate it without using it for location
-		SEISCOMP_DEBUG_S("ignoring pick " + pick->id);
+		SEISCOMP_DEBUG_S("ignoring pick " + pick->label);
 		return false;
 		// A manual pick, however, is processed, because we assume
 		// that the analyst knows best!
@@ -391,7 +391,7 @@ bool Autoloc3::_store(const Pick *pick)
 
 	// pick too old? -> ignored completely
 	if (pick->time < now() - _config.maxAge) {
-		SEISCOMP_DEBUG_S("ignoring old pick " + pick->id);
+		SEISCOMP_DEBUG_S("ignoring old pick " + pick->label);
 		return false;
 	}
 
@@ -425,8 +425,8 @@ bool Autoloc3::feed(const Pick *pick)
 	if ( automatic(pick) ) {
 		if ( ! hasAmplitude(pick)) {
 			if (isnew)
-				SEISCOMP_DEBUG("process pick %-35s %c   waiting for amplitude",
-					       pick->id.c_str(), modeFlag(pick));
+				SEISCOMP_DEBUG("process pick %s waiting for amplitude",
+					       pick->label.c_str());
 			return false;
 		}
 	}
@@ -472,7 +472,7 @@ Origin *Autoloc3::_findMatchingOrigin(const Origin *origin)
 			if ( !pick->station()) {
 				const std::string net_sta = pick->net + "." + pick->sta;
 				SEISCOMP_WARNING("Pick %3d   %s    %s  without station info",i1,
-						 net_sta.c_str(),pick->id.c_str());
+						 net_sta.c_str(), pick->label.c_str());
 				continue;
 			}
 
@@ -561,7 +561,7 @@ bool Autoloc3::feed(Origin *origin)
 				// This should actually NEVER happen
 				SEISCOMP_ERROR("This should NEVER happen:");
 				SEISCOMP_ERROR("Arrival references pick without station");
-				SEISCOMP_ERROR("Pick is %s", arr.pick->id.c_str());
+				SEISCOMP_ERROR("Pick is %s", arr.pick->label.c_str());
 				continue;
 			}
 
@@ -685,7 +685,7 @@ bool Autoloc3::_log(const Pick *pick)
 	      time2str(pick->time).c_str(),
 	      pick->net.c_str(), pick->sta.c_str(), pick->cha.c_str(), loc.c_str(),
 	      pick->snr, pick->amp, pick->per, modeFlag(pick),
-	      pick->id.c_str());
+	      pick->label.c_str());
 	_pickLogFile << line << std::endl;
 
 	SEISCOMP_INFO("%s", line);
@@ -739,7 +739,7 @@ bool Autoloc3::_tooManyRecentPicks(const Pick *newPick) const
 		return false;
 
 	if (newPick->snr <= 0.) {
-		SEISCOMP_DEBUG("_tooManyRecentPicks: new pick without snr amplitude: %s -> ignored  (%g)", newPick->id.c_str(), newPick->snr);
+		SEISCOMP_DEBUG("_tooManyRecentPicks: new pick without snr amplitude: %s -> ignored  (%g)", newPick->label.c_str(), newPick->snr);
 		return true;
 	}
 
@@ -774,14 +774,14 @@ bool Autoloc3::_tooManyRecentPicks(const Pick *newPick) const
 	// were 10 Picks with SNR X
 	weightedSum *= 2*0.07; // TODO: Make 0.07 configurable?
 	if (newPick->snr < weightedSum) {
-		SEISCOMP_DEBUG("_tooManyRecentPicks: %-35s      %.2f < %.2f",
-			      newPick->id.c_str(), newPick->snr, weightedSum);
+		SEISCOMP_DEBUG("_tooManyRecentPicks: %s      %.2f < %.2f",
+			      newPick->label.c_str(), newPick->snr, weightedSum);
 		return true;
 	}
 
 	if (newPick->snr < prevThreshold) {
-		SEISCOMP_DEBUG("_tooManyRecentPicks: %-35s   XX %.2f < %.2f",
-			       newPick->id.c_str(), newPick->snr, prevThreshold);
+		SEISCOMP_DEBUG("_tooManyRecentPicks: %s   XX %.2f < %.2f",
+			       newPick->label.c_str(), newPick->snr, prevThreshold);
 		return true;
 	}
 
@@ -837,7 +837,7 @@ Origin *Autoloc3::merge(const Origin *origin1, const Origin *origin2)
 		combined->add(tmp);
 		SEISCOMP_DEBUG(" MRG %ld->%ld added %s",
 			       origin2->id, origin1->id,
-			       arr2.pick->id.c_str());
+			       arr2.pick->label.c_str());
 	}
 
 #ifdef LOG_RELOCATOR_CALLS
@@ -901,7 +901,7 @@ bool Autoloc3::_followsBiggerPick(const Pick *newPick) const
 		if (dt < 0 || dt > _config.xxlDeadTime)
 			continue;
 
-		SEISCOMP_INFO_S("process pick IGNORING " + newPick->id + " (following XXL pick" + pick->id + ")");
+		SEISCOMP_INFO_S("process pick IGNORING " + newPick->label + " (following XXL pick" + pick->label + ")");
 		return true;
 	}
 
@@ -954,7 +954,7 @@ bool Autoloc3::_perhapsPdiff(const Pick *pick) const
 
 		double dt = pick->time - (origin->time + tt->time);
 		if (dt > 0 && dt < 150) {
-			SEISCOMP_DEBUG("Pick %s in Pdiff coda of origin %ld", pick->id.c_str(), origin->id);
+			SEISCOMP_DEBUG("Pick %s in Pdiff coda of origin %ld", pick->label.c_str(), origin->id);
 			result = true;
 		}
 	}
@@ -1163,7 +1163,7 @@ OriginPtr Autoloc3::_tryAssociate(const Pick *pick)
 		}
 		Arrival &arr = associatedOrigin->arrivals[index];
 		SEISCOMP_INFO("IMP associated pick %s to origin %ld   phase=%s aff=%.4f dist=%.1f wt=%d",
-			  pick->id.c_str(), associatedOrigin->id,
+			  pick->label.c_str(), associatedOrigin->id,
 			  arr.phase.c_str(), arr.affinity, arr.distance, arr.excluded?0:1);
 		origin = associatedOrigin;
 	}
@@ -1186,7 +1186,7 @@ OriginPtr Autoloc3::_tryAssociate(const Pick *pick)
 			break;
 
 		if (asso.phase == "P" || asso.phase == "PKP") {
-			SEISCOMP_DEBUG_S(" *** " + pick->id);
+			SEISCOMP_DEBUG_S(" *** " + pick->label);
 			SEISCOMP_DEBUG_S(" *** " + printOneliner(associatedOrigin.get())+"  ph="+asso.phase);
 			bool success = _associate(associatedOrigin.get(), pick, asso.phase);
 			std::string oneliner = printOneliner(associatedOrigin.get())+"  ph="+asso.phase;
@@ -1213,7 +1213,7 @@ OriginPtr Autoloc3::_tryAssociate(const Pick *pick)
 		}
 		Arrival &arr = associatedOrigin->arrivals[index];
 		SEISCOMP_INFO("associated pick %s to origin %ld   phase=%s aff=%.4f dist=%.1f wt=%d",
-			  pick->id.c_str(), associatedOrigin->id, arr.phase.c_str(), asso.affinity, arr.distance, arr.excluded?0:1);
+			  pick->label.c_str(), associatedOrigin->id, arr.phase.c_str(), asso.affinity, arr.distance, arr.excluded?0:1);
 		}
 
 		if ( ! _passedFilter(associatedOrigin.get()))
@@ -1380,7 +1380,7 @@ bool Autoloc3::_process(const Pick *pick)
 {
 	// process a pick
 	if ( ! valid(pick) ) {
-		SEISCOMP_DEBUG("invalid pick %-35s", pick->id.c_str());
+		SEISCOMP_DEBUG("invalid pick %s", pick->label.c_str());
 		return false;
 	}
 
@@ -1407,8 +1407,8 @@ bool Autoloc3::_process(const Pick *pick)
 	_log(pick);
 
 	if ( _blacklisted(pick) ) {
-		SEISCOMP_INFO("process pick %-35s %c blacklisted -> ignored",
-			       pick->id.c_str(), modeFlag(pick));
+		SEISCOMP_INFO("process pick %s blacklisted -> ignored",
+			       pick->label.c_str());
 		return false;
 	}
 
@@ -1429,7 +1429,7 @@ bool Autoloc3::_process(const Pick *pick)
 		}
 	}
 
-	SEISCOMP_INFO("process pick %-35s %s", pick->id.c_str(), (pick->xxl ? " XXL":""));
+	SEISCOMP_INFO("process pick %s %s", pick->label.c_str(), (pick->xxl ? " XXL":""));
 
 	if ( _followsBiggerPick(pick) )
 		return false;
@@ -1935,7 +1935,7 @@ bool Autoloc3::_excludeDistantStations(Origin *origin)
 		if (arr.distance > maxDistance) {
 			arr.excluded = Arrival::StationDistance;
 			excludedCount++;
-			SEISCOMP_DEBUG("_excludeDistantStations origin %ld exc %s", origin->id, arr.pick->id.c_str());
+			SEISCOMP_DEBUG("_excludeDistantStations origin %ld exc %s", origin->id, arr.pick->label.c_str());
 		}
 	}
 
@@ -2001,10 +2001,10 @@ bool Autoloc3::_passedFilter(Origin *origin)
 		// compute min. phase count of origin for this pick to be consistent with that origin
 		int minPhaseCount = _config.minPhaseCount + (arr.distance-arr.pick->station()->maxNucDist)*_config.distSlope;
 
-		SEISCOMP_DEBUG(" AAA origin=%d pick=%s  %d  %d", origin->id, arr.pick->id.c_str(), phaseCount, minPhaseCount);
+		SEISCOMP_DEBUG(" AAA origin=%d pick=%s  %d  %d", origin->id, arr.pick->label.c_str(), phaseCount, minPhaseCount);
 		if (phaseCount < minPhaseCount) {
 //			if (_config.offline || _config.test)
-				SEISCOMP_DEBUG(" XXX inconsistent origin=%d pick=%s", origin->id, arr.pick->id.c_str());
+				SEISCOMP_DEBUG(" XXX inconsistent origin=%d pick=%s", origin->id, arr.pick->label.c_str());
 			continue;
 		}
 
@@ -2175,7 +2175,7 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const std::string &p
 			arr.excluded = Arrival::UnusedPhase;
 		else if (delta > 105 && delta < 125) {
 			// FIXME: This could be avoided by using separate P and PKP tables
-			SEISCOMP_INFO("origin %ld: excluding pick %s because 105<delta<125", copy->id, pick->id.c_str());
+			SEISCOMP_INFO("origin %ld: excluding pick %s because 105<delta<125", copy->id, pick->label.c_str());
 			arr.excluded = Arrival::UnusedPhase;
 		}
 	}
@@ -2281,7 +2281,7 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const std::string &p
 		origin->updateFrom(copy.get());
 	}
 
-	SEISCOMP_DEBUG_S(" ADD " + printOneliner(origin) + " add " + arr.pick->id + " " + arr.phase);
+	SEISCOMP_DEBUG_S(" ADD " + printOneliner(origin) + " add " + arr.pick->label + " " + arr.phase);
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2470,7 +2470,7 @@ bool Autoloc3::_enhanceScore(Origin *origin, size_t maxloops)
 		}
 
 		if (bestScore > 5)  // don't spoil the log
-			SEISCOMP_DEBUG_S(" ENH " + printOneliner(relo.get()) + " exc " + arr.pick->id);
+			SEISCOMP_DEBUG_S(" ENH " + printOneliner(relo.get()) + " exc " + arr.pick->label);
 
 		origin->updateFrom(relo.get());
 		count++;
@@ -2556,7 +2556,7 @@ double Autoloc3::_testFake(Origin *origin) const
 				const Arrival &oarr = otherOrigin->arrivals[iarr];
 //				if ( ! arr.excluded) {
 					arr.excluded = Arrival::DeterioratesSolution;
-					SEISCOMP_DEBUG("_testFake: doubly associated pick %s", oarr.pick->id.c_str());
+					SEISCOMP_DEBUG("_testFake: doubly associated pick %s", oarr.pick->label.c_str());
 					count ++;
 					continue;
 //				}
@@ -2833,7 +2833,7 @@ bool Autoloc3::_trimResiduals(Origin *origin)
 			break;
 
 		origin->updateFrom(relo.get());
-		SEISCOMP_DEBUG_S(" TRM " + printOneliner(relo.get()) + " exc " + arr.pick->id);
+		SEISCOMP_DEBUG_S(" TRM " + printOneliner(relo.get()) + " exc " + arr.pick->label);
 		count++;
 	}
 
@@ -2878,7 +2878,7 @@ bool Autoloc3::_trimResiduals(Origin *origin)
 			break;
 
 		origin->updateFrom(relo.get());
-		SEISCOMP_DEBUG_S(" TRM " + printOneliner(relo.get()) + " inc " + arr.pick->id);
+		SEISCOMP_DEBUG_S(" TRM " + printOneliner(relo.get()) + " inc " + arr.pick->label);
 		count++;
 	}
 

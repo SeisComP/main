@@ -17,6 +17,8 @@
 # define SEISCOMP_COMPONENT Autoloc
 #include <seiscomp/logging/log.h>
 #include <seiscomp/datamodel/publicobject.h>
+#include <seiscomp/datamodel/pick.h>
+#include <seiscomp/datamodel/utils.h>
 #include <map>
 
 #include "scutil.h"
@@ -59,5 +61,66 @@ bool manual(const DataModel::Origin *origin) {
 	return false;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+template <typename T>
+std::string objectStreamID(const T *o) {
+	const auto &wfid = o->waveformID();
+	return wfid.networkCode() + "." + wfid.stationCode() + "." + wfid.locationCode() + "." + wfid.channelCode();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string phaseHint(const DataModel::Pick *scpick) {
+	try {
+		return scpick->phaseHint().code();
+	}
+	catch ( ... ) {
+	}
+
+	return "";
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+template <typename T>
+char evaluationModeToChar(const T *o) {
+	try {
+		if ( o->evaluationMode() == DataModel::MANUAL )
+			return 'M';
+	}
+	catch ( ... ) {}
+
+	return 'A';
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string pickLabel(const DataModel::Pick *scpick) {
+	const auto &wfid = scpick->waveformID();
+	const std::string &n = wfid.networkCode(); 
+	const std::string &s = wfid.stationCode();
+	const std::string &l = wfid.locationCode();
+	const std::string &c = wfid.channelCode();
+	const std::string &m = scpick->methodID();
+	const std::string &p = phaseHint(scpick);
+	std::string t = scpick->time().value().toString("%Y%m%d.%H%M%S.%6f");
+	std::string a = objectAuthor(scpick);
+	std::string g = objectAgencyID(scpick);
+	return t + "-" + n + "." + s + "." + l + "." + c + "-" + evaluationModeToChar(scpick) + "-" + p + "-" + m + "-" + a + "-" + g;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 } // namespace Seiscomp

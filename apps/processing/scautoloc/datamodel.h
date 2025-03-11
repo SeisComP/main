@@ -60,12 +60,12 @@ class Pick : public Seiscomp::Core::BaseObject
 
    	public:
 		Pick() = delete;
-		Pick(const std::string &id, const std::string &net, const std::string &sta, const Time &time);
+		Pick(const std::string &id, const std::string &label, const std::string &net, const std::string &sta, const Time &time);
 		~Pick();
 
 		static size_t count();
 
-		/* const */ std::string id, net, sta, loc, cha;
+		/* const */ std::string id, label, net, sta, loc, cha;
 		const Station *station() const { return _station.get(); }
 		void setStation(const Station *sta) const;
 

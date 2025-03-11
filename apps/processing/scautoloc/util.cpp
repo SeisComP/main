@@ -425,8 +425,9 @@ Pick* readPickLine()
 		return nullptr;
 
 	std::string key = net + "." + sta;
+	std::string label = date + "." + time + "-" + net + "." + sta + "." + loc + "." + cha + "-" + stat;
 	Time ptime = str2time(date+" "+time);
-	Pick *pick = new Pick(id, net, sta, ptime);
+	Pick *pick = new Pick(id, label, net, sta, ptime);
 	pick->amp  = amp;
 	pick->per  = per;
 	pick->snr  = snr;

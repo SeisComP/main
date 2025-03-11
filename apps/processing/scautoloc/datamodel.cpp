@@ -43,8 +43,8 @@ Station::Station(const std::string &code, const std::string &net, double lat, do
 static size_t _pickCount=0;
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Pick::Pick(const std::string &id, const std::string &net, const std::string &sta, const Time &time)
-	: id(id), net(net), sta(sta),
+Pick::Pick(const std::string &id, const std::string &label, const std::string &net, const std::string &sta, const Time &time)
+	: id(id), label(label), net(net), sta(sta),
 	  time(time), amp(0), per(0), snr(0), normamp(0),
 	  mode(Automatic), xxl(false), _originID(0), _station(nullptr)
 {

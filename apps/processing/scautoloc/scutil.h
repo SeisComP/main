@@ -23,6 +23,10 @@ namespace Seiscomp {
 
 	bool manual(const DataModel::Origin *origin);
 
+	// Pick label used for logging.
+	// The goal is to display much information as possible as a relatively short string.
+	std::string pickLabel(const DataModel::Pick*);
+
 } // namespace Seiscomp
 
 #endif

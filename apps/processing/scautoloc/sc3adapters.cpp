@@ -33,6 +33,7 @@
 #include "sc3adapters.h"
 #include "app.h"
 #include "util.h"
+#include "scutil.h"
 #include "datamodel.h"
 
 
@@ -330,11 +331,12 @@ Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seisc
 Autoloc::Pick *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seiscomp::DataModel::Pick *scpick)
 {
 	const std::string &id  = scpick->publicID();
+	const std::string &label = pickLabel(scpick);
 	const std::string &net = scpick->waveformID().networkCode();
 	const std::string &sta = scpick->waveformID().stationCode();
 	::Autoloc::Time time = ::Autoloc::Time(scpick->time().value());
 
-	::Autoloc::Pick* pick = new ::Autoloc::Pick(id,net,sta,time);
+	::Autoloc::Pick* pick = new ::Autoloc::Pick(id, label, net, sta, time);
 
 	pick->mode = ::Autoloc::Utils::mode(scpick);
 	pick->loc = scpick->waveformID().locationCode();

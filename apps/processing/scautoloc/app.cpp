@@ -1032,12 +1032,6 @@ bool App::run() {
 		return Application::run();
 	}
 
-/*
-	// OBSOLETE not that the XML playback is available
-	else if ( ! _exitRequested )
-		runFromPickFile(); // pick file read from stdin
-*/
-
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1181,22 +1175,26 @@ void App::addObject(const std::string& parentID, DataModel::Object* o) {
 bool App::feed(DataModel::Pick *scpick) {
 
 	const std::string &pickID = scpick->publicID();
+
+	SEISCOMP_INFO_S("Pick " + pickID);
+	SEISCOMP_INFO_S("  label  " + pickLabel(scpick));
+
 	try {
 		if ( scpick->evaluationStatus() == DataModel::REJECTED ) {
 			if ( !_config.allowRejectedPicks ) {
-				SEISCOMP_DEBUG("Ignoring pick %s with evaluation status %s",
-				               scpick->publicID().c_str(),
+				SEISCOMP_INFO("Pick with evaluation status '%s' rejected - STOP",
 				               scpick->evaluationStatus().toString());
 				return false;
 			}
 			else {
-				SEISCOMP_DEBUG("Considering pick %s with evaluation status %s",
-				               scpick->publicID().c_str(),
+				SEISCOMP_INFO("Pick with evaluation status '%s' accepted",
 				               scpick->evaluationStatus().toString());
 			}
 		}
 	}
-	catch ( ... ) {}
+	catch ( ... ) {
+		SEISCOMP_WARNING_S("Pick " + pickID + ": missing evaluation status");
+	}
 
 	if (_inputFileXML.size() || _inputEPFile.size()) {
 		try {
@@ -1204,25 +1202,18 @@ bool App::feed(DataModel::Pick *scpick) {
 			sync(creationTime);
 		}
 		catch ( ... ) {
-			SEISCOMP_WARNING_S("Pick "+pickID+": no creation time set!");
+			SEISCOMP_WARNING_S("Pick " + pickID + ": no creation time set!");
 		}
 	}
 
-	if (objectAgencyID(scpick) != agencyID()) {
-		if ( isAgencyIDBlocked(objectAgencyID(scpick)) ) {
-			SEISCOMP_INFO_S("Blocked pick from agency " + objectAgencyID(scpick));
-			return false;
-		}
-
-		SEISCOMP_INFO("Pick %s from agency %s", pickID.c_str(), objectAgencyID(scpick).c_str());
-
+	if (objectAgencyID(scpick) != agencyID() && isAgencyIDBlocked(objectAgencyID(scpick))) {
+		SEISCOMP_INFO_S("Blocked pick from agency " + objectAgencyID(scpick));
+		return false;
 	}
 
-	const std::string &author = objectAuthor(scpick);
-	const int priority = _authorPriority(author);
+	const int priority = _authorPriority(objectAuthor(scpick));
 	if (priority == 0) {
-		SEISCOMP_INFO("Pick %s not processed: author %s is not considered",
-		              pickID.c_str(), author.c_str());
+		SEISCOMP_INFO_S("Blocked pick from author " + objectAuthor(scpick));
 		return false;
 	}
 
@@ -1231,7 +1222,7 @@ bool App::feed(DataModel::Pick *scpick) {
 		}
 	}
 	catch ( ... ) {
-		SEISCOMP_WARNING("Pick %s: evaluation mode not set",
+		SEISCOMP_WARNING("Pick %s: setting evaluation mode to 'automatic'",
 		                 scpick->publicID().c_str());
 		scpick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
 	}
