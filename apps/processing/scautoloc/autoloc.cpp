@@ -941,10 +941,19 @@ bool Autoloc3::_perhapsPdiff(const Pick *pick) const
 			continue;
 
 		Seiscomp::TravelTimeTable ttt;
-		auto ttlist = ttt.compute(origin->hypocenter.lat,
-		                          origin->hypocenter.lon,
-		                          std::max(origin->hypocenter.dep, 0.01),
-		                          station->lat, station->lon, 0);
+		Seiscomp::TravelTimeList *ttlist{nullptr};
+		try {
+			ttlist = ttt.compute(origin->hypocenter.lat,
+			                     origin->hypocenter.lon,
+			                     std::max(origin->hypocenter.dep, 0.01),
+		        	             station->lat, station->lon, 0);
+		}
+		catch ( std::out_of_range & ) {
+			continue;
+		}
+		if ( ! ttlist)
+			continue;
+
 		const Seiscomp::TravelTime *tt;
 		if ( (tt = getPhase(ttlist, "Pdiff")) == nullptr ) {
 			delete ttlist;
@@ -2568,10 +2577,19 @@ double Autoloc3::_testFake(Origin *origin) const
 			double delta, az, baz, depth=otherOrigin->hypocenter.dep;
 			delazi(&(otherOrigin->hypocenter), sta, delta, az, baz);
 			Seiscomp::TravelTimeTable ttt;
-			auto ttlist = ttt.compute(otherOrigin->hypocenter.lat,
-			                          otherOrigin->hypocenter.lon,
-			                          std::max(otherOrigin->hypocenter.dep, 0.01),
-			                          sta->lat, sta->lon, 0);
+			Seiscomp::TravelTimeList *ttlist {nullptr};
+			try {
+			       	ttlist = ttt.compute(otherOrigin->hypocenter.lat,
+				                     otherOrigin->hypocenter.lon,
+				                     std::max(otherOrigin->hypocenter.dep, 0.01),
+				                     sta->lat, sta->lon, 0);
+			}
+			catch ( std::out_of_range & ) {
+				continue;
+			}
+			if ( ! ttlist)
+				continue;
+
 			if (delta > 30) {
 				const Seiscomp::TravelTime *tt = getPhase(ttlist, "PP");
 				if (tt && ! arr.pick->xxl && arr.score < 1) {

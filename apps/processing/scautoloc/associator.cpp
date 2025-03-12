@@ -122,8 +122,17 @@ Associator::feed(const Pick* pick)
 		double delta, az, baz;
 		delazi(&hypo, station, delta, az, baz);
 
-		auto ttlist = ttt.compute(hypo.lat, hypo.lon, std::max(hypo.dep, 0.01),
-		                          station->lat, station->lon, 0);
+		Seiscomp::TravelTimeList *ttlist {nullptr};
+
+		try {
+			ttlist = ttt.compute(hypo.lat, hypo.lon, std::max(hypo.dep, 0.01),
+			                     station->lat, station->lon, 0);
+		}
+		catch ( std::out_of_range & ) {
+			continue;
+		}
+		if ( ! ttlist)
+			continue;
 
 		// An imported origin is treated as if it had a very high
 		// score. => Anything can be associated with it.
