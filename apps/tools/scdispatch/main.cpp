@@ -637,20 +637,10 @@ class DispatchTool : public Seiscomp::Client::Application {
 					}
 				}
 			}
-			else if ( commandline().hasOption("print-objects") ) {
-				for ( auto &kv : _routingTable ) {
-					cout << kv.first << endl;
-				}
+			else if ( commandline().hasOption("print-objects")
+			       || commandline().hasOption("print-routingtable") ) {
 				setMessagingEnabled(false);
-				setDatabaseEnabled(false ,false);
-				return true;
-			}
-			else if ( commandline().hasOption("print-routingtable") ) {
-				for ( auto &kv : _routingTable ) {
-					cout << kv.first << ":" << kv.second << endl;
-				}
-				setMessagingEnabled(false);
-				setDatabaseEnabled(false ,false);
+				setDatabaseEnabled(false, false);
 				return true;
 			}
 
@@ -720,12 +710,15 @@ class DispatchTool : public Seiscomp::Client::Application {
 			}
 
 			BaseObjectDispatcher *dispatcher = nullptr;
-			if ( _notifierOperation == "merge" )
+			if ( _notifierOperation == "merge" ) {
 				dispatcher = new ObjectMerger(connection(), query(), commandline().hasOption("test"), true);
-			else if ( _notifierOperation == "merge-without-remove" )
+			}
+			else if ( _notifierOperation == "merge-without-remove" ) {
 				dispatcher = new ObjectMerger(connection(), query(), commandline().hasOption("test"), false);
-			else
+			}
+			else {
 				dispatcher = new ObjectDispatcher(connection(), _operation, commandline().hasOption("test"));
+			}
 
 			dispatcher->setRoutingTable(_routingTable);
 
