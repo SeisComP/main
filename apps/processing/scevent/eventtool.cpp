@@ -301,6 +301,7 @@ bool EventTool::initConfiguration() {
 	try { _config.matchingPicksTimeDiffAND = configGetBool("eventAssociation.compareAllArrivalTimes"); } catch (...) {}
 	try { _config.matchingLooseAssociatedPicks = configGetBool("eventAssociation.allowLooseAssociatedArrivals"); } catch (...) {}
 	try { _config.minAutomaticArrivals = configGetInt("eventAssociation.minimumDefiningPhases"); } catch (...) {}
+	try { _config.minAutomaticScore = configGetDouble("eventAssociation.minimumScore"); } catch (...) {}
 
 	Config::RegionFilter regionFilter;
 	GlobalRegionPtr region = new GlobalRegion;
@@ -3020,9 +3021,8 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 				bool allowBadMagnitude = false;
 
 				// Run through the priority list and check the values
-				for ( Config::StringList::iterator it = _config.priorities.begin();
-				      it != _config.priorities.end(); ++it ) {
-					if ( *it == "AGENCY" ) {
+				for ( auto &check : _config.priorities ) {
+					if ( check == "AGENCY" ) {
 						int originAgencyPriority = agencyPriority(objectAgencyID(origin), _config);
 						int preferredOriginAgencyPriority = agencyPriority(objectAgencyID(info->preferredOrigin.get()), _config);
 
@@ -3045,7 +3045,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							break;
 						}
 					}
-					else if ( *it == "AUTHOR" ) {
+					else if ( check == "AUTHOR" ) {
 						int originAuthorPriority = authorPriority(objectAuthor(origin), _config);
 						int preferredOriginAuthorPriority = authorPriority(objectAuthor(info->preferredOrigin.get()), _config);
 
@@ -3066,7 +3066,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							break;
 						}
 					}
-					else if ( *it == "MODE" ) {
+					else if ( check == "MODE" ) {
 						int originPriority = modePriority(origin);
 						int preferredOriginPriority = modePriority(info->preferredOrigin.get());
 
@@ -3120,7 +3120,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							break;
 						}
 					}
-					else if ( *it == "STATUS" ) {
+					else if ( check == "STATUS" ) {
 						int originPriority = priority(origin);
 						int preferredOriginPriority = priority(info->preferredOrigin.get());
 
@@ -3171,7 +3171,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							break;
 						}
 					}
-					else if ( *it == "METHOD" ) {
+					else if ( check == "METHOD" ) {
 						int originMethodPriority = methodPriority(origin->methodID(), _config);
 						int preferredOriginMethodPriority = methodPriority(info->preferredOrigin->methodID(), _config);
 
@@ -3193,7 +3193,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							break;
 						}
 					}
-					else if ( *it == "PHASES" ) {
+					else if ( check == "PHASES" ) {
 						int originPhaseCount = definingPhaseCount(origin);
 						int preferredOriginPhaseCount = definingPhaseCount(info->preferredOrigin.get());
 						if ( originPhaseCount < preferredOriginPhaseCount ) {
@@ -3210,7 +3210,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							break;
 						}
 					}
-					else if ( *it == "PHASES_AUTOMATIC" ) {
+					else if ( check == "PHASES_AUTOMATIC" ) {
 						EvaluationMode status = AUTOMATIC;
 						try {
 							status = origin->evaluationMode();
@@ -3236,7 +3236,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							break;
 						}
 					}
-					else if ( *it == "RMS" ) {
+					else if ( check == "RMS" ) {
 						double originRMS = rms(origin);
 						double preferredOriginRMS = rms(info->preferredOrigin.get());
 
@@ -3268,7 +3268,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							break;
 						}
 					}
-					else if ( *it == "RMS_AUTOMATIC" ) {
+					else if ( check == "RMS_AUTOMATIC" ) {
 						EvaluationMode status = AUTOMATIC;
 						try {
 							status = origin->evaluationMode();
@@ -3309,7 +3309,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							break;
 						}
 					}
-					else if ( *it == "TIME" ) {
+					else if ( check == "TIME" ) {
 						Core::Time originCreationTime = created(origin);
 						Core::Time preferredOriginCreationTime = created(info->preferredOrigin.get());
 						if ( originCreationTime < preferredOriginCreationTime ) {
@@ -3323,7 +3323,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							break;
 						}
 					}
-					else if ( *it == "TIME_AUTOMATIC" ) {
+					else if ( check == "TIME_AUTOMATIC" ) {
 						EvaluationMode status = AUTOMATIC;
 						try {
 							status = origin->evaluationMode();
@@ -3346,7 +3346,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							break;
 						}
 					}
-					else if ( *it == "SCORE" ) {
+					else if ( check == "SCORE" ) {
 						double score = _score->evaluate(origin);
 						double preferredScore = _score->evaluate(info->preferredOrigin.get());
 						if ( score < preferredScore ) {
@@ -3834,9 +3834,8 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 
 			if ( !_config.priorities.empty() ) {
 				// Run through the priority list and check the values
-				for ( Config::StringList::iterator it = _config.priorities.begin();
-				      it != _config.priorities.end(); ++it ) {
-					if ( *it == "AGENCY" ) {
+				for ( auto &check : _config.priorities ) {
+					if ( check == "AGENCY" ) {
 						int fmAgencyPriority = agencyPriority(objectAgencyID(fm), _config);
 						int preferredFMAgencyPriority = agencyPriority(objectAgencyID(info->preferredFocalMechanism.get()), _config);
 
@@ -3857,7 +3856,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 							break;
 						}
 					}
-					else if ( *it == "AUTHOR" ) {
+					else if ( check == "AUTHOR" ) {
 						int fmAuthorPriority = authorPriority(objectAuthor(fm), _config);
 						int preferredFMAuthorPriority = authorPriority(objectAuthor(info->preferredFocalMechanism.get()), _config);
 
@@ -3878,7 +3877,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 							break;
 						}
 					}
-					else if ( *it == "MODE" ) {
+					else if ( check == "MODE" ) {
 						int fmPriority = modePriority(fm);
 						int preferredFMPriority = modePriority(info->preferredFocalMechanism.get());
 
@@ -3923,7 +3922,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 							break;
 						}
 					}
-					else if ( *it == "STATUS" ) {
+					else if ( check == "STATUS" ) {
 						int fmPriority = priority(fm);
 						int preferredFMPriority = priority(info->preferredFocalMechanism.get());
 
@@ -3968,7 +3967,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 							break;
 						}
 					}
-					else if ( *it == "METHOD" ) {
+					else if ( check == "METHOD" ) {
 						int fmMethodPriority = methodPriority(fm->methodID(), _config);
 						int preferredFMMethodPriority = methodPriority(info->preferredFocalMechanism->methodID(), _config);
 
@@ -3990,7 +3989,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 							break;
 						}
 					}
-					else if ( *it == "TIME" ) {
+					else if ( check == "TIME" ) {
 						Core::Time fmCreationTime = created(fm);
 						Core::Time preferredFMCreationTime = created(info->preferredFocalMechanism.get());
 						if ( fmCreationTime < preferredFMCreationTime ) {
@@ -4004,7 +4003,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 							break;
 						}
 					}
-					else if ( *it == "TIME_AUTOMATIC" ) {
+					else if ( check == "TIME_AUTOMATIC" ) {
 						EvaluationMode status = AUTOMATIC;
 						try {
 							status = fm->evaluationMode();
@@ -4027,7 +4026,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 							break;
 						}
 					}
-					else if ( *it == "SCORE" ) {
+					else if ( check == "SCORE" ) {
 						double score = _score->evaluate(fm);
 						double preferredScore = _score->evaluate(info->preferredFocalMechanism.get());
 						if ( score < preferredScore ) {
