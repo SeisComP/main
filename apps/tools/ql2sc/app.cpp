@@ -929,7 +929,7 @@ void App::diffPO(T *remotePO, const string &parentID, Notifiers &notifiers,
 	}
 
 	// search corresponding object in cache
-	typename Core::SmartPointer<T>::Impl localPO;
+	Core::SmartPointer<T> localPO;
 	localPO = T::Cast(_cache.find(remotePO->typeInfo(), remotePO->publicID()));
 
 	// if object was not found in cache but loaded from database, all of its

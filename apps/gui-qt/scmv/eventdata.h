@@ -55,8 +55,8 @@ class Data {
 		}
 
 	private:
-		typename Seiscomp::Core::SmartPointer<T>::Impl _objectPtr;
-		Seiscomp::Core::Time                           _containerCreationTime;
+		Seiscomp::Core::SmartPointer<T> _objectPtr;
+		Seiscomp::Core::Time            _containerCreationTime;
 
 };
 

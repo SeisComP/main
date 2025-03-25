@@ -156,7 +156,7 @@ class MNAmplitude : public Seiscomp::Processing::AmplitudeProcessor {
 			)
 		);
 
-		typedef Seiscomp::Core::SmartPointer<Filter>::Impl FilterPtr;
+		using FilterPtr = Seiscomp::Core::SmartPointer<Filter>;
 
 		void setDefaults();
 
