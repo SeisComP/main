@@ -37,27 +37,35 @@ class DummyEventLayer : public Gui::Map::Layer {
 		virtual void init(const Seiscomp::Config::Config &cfg) {
 			try {
 				std::string pos = cfg.getString("eventLegendPosition");
-				if ( pos == "topleft" )
+				if ( pos == "topleft" ) {
 					_eventLegend->setArea(Qt::AlignLeft | Qt::AlignTop);
-				else if ( pos == "topright" )
+				}
+				else if ( pos == "topright" ) {
 					_eventLegend->setArea(Qt::AlignRight | Qt::AlignTop);
-				else if ( pos == "bottomright" )
+				}
+				else if ( pos == "bottomright" ) {
 					_eventLegend->setArea(Qt::AlignRight | Qt::AlignBottom);
-				else if ( pos == "bottomleft" )
+				}
+				else if ( pos == "bottomleft" ) {
 					_eventLegend->setArea(Qt::AlignLeft | Qt::AlignBottom);
+				}
 			}
 			catch ( ... ) {}
 
 			try {
 				std::string pos = cfg.getString("mapLegendPosition");
-				if ( pos == "topleft" )
+				if ( pos == "topleft" ) {
 					_mapLegend->setArea(Qt::AlignLeft | Qt::AlignTop);
-				else if ( pos == "topright" )
+				}
+				else if ( pos == "topright" ) {
 					_mapLegend->setArea(Qt::AlignRight | Qt::AlignTop);
-				else if ( pos == "bottomright" )
+				}
+				else if ( pos == "bottomright" ) {
 					_mapLegend->setArea(Qt::AlignRight | Qt::AlignBottom);
-				else if ( pos == "bottomleft" )
+				}
+				else if ( pos == "bottomleft" ) {
 					_mapLegend->setArea(Qt::AlignLeft | Qt::AlignBottom);
+				}
 			}
 			catch ( ... ) {}
 		}

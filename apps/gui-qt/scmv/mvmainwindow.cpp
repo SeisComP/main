@@ -654,7 +654,6 @@ bool MvMainWindow::eventFilter(QObject* object, QEvent* event) {
 			if ( mouseEvent->button() == Qt::LeftButton	&& mouseEvent->modifiers() == Qt::ShiftModifier ) {
 				QPoint pos = QPoint(mouseEvent->x(), mouseEvent->y());
 				showMapCoordinates(pos);
-				return true;
 			}
 			else if ( mouseEvent->button() == Qt::MiddleButton ) {
 				QPoint pos = QPoint(mouseEvent->x(), mouseEvent->y());
