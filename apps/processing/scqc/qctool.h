@@ -85,7 +85,7 @@ class QcTool : public QcApp, public bsig::trackable {
 		bool _archiveMode;
 		bool _autoTime;
 		Core::Time _beginTime;
-		Core::Time _endTime;
+		OPT(Core::Time) _endTime;
 		std::string _streamMask;
 
 		bool _useConfiguredStreams;

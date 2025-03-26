@@ -120,7 +120,6 @@ bool QcTool::validateParameters() {
 	}
 
 	if ( (_archiveMode = commandline().hasOption("archive")) ) {
-
 		if ( !(_autoTime = commandline().hasOption("auto-time")) ) {
 			try {
 				string begin = commandline().option<string>("begin-time");
@@ -218,7 +217,9 @@ bool QcTool::initConfiguration() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool QcTool::init() {
-	if ( !StreamApplication::init() ) return false;
+	if ( !StreamApplication::init() ) {
+		return false;
+	}
 
 	QcPluginPtr qcPlugin;
 	QcPluginFactory::ServiceNames* services = QcPluginFactory::Services();
@@ -265,7 +266,7 @@ bool QcTool::init() {
 	}
 	else {
 		_beginTime = Core::Time::UTC() - Core::TimeSpan(_leadTime);
-		_endTime = Core::Time();
+		_endTime = Core::None;
 	}
 
 	if (!_streamMask.empty())
@@ -446,14 +447,14 @@ void QcTool::addStream(string net, string sta, string loc, string cha) {
 	_streamIDs.insert(streamID);
 
 	Core::Time begin = _beginTime;
-	Core::Time end   = _endTime;
 
 	if ( _autoTime ) {
 		begin = findLast(net, sta, loc, cha);
 	}
 
-	SEISCOMP_INFO("adding stream: %s with timewindow: %s -- %s", streamID.c_str(), begin.iso().c_str(), end.iso().c_str());
-	recordStream()->addStream(net, sta, loc, cha, begin, end);
+	SEISCOMP_INFO("adding stream: %s with timewindow: %s -- %s",
+	              streamID, begin.iso(), _endTime ? _endTime->iso() : "[]");
+	recordStream()->addStream(net, sta, loc, cha, begin, _endTime);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
