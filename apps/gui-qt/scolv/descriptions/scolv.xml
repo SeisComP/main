@@ -476,7 +476,7 @@
 				</parameter>
 				<parameter name="limitStationAcquisitionCount" type="int" default="10">
 					<description>
-						Limit the data acquisituion to the given number of
+						Limit the data acquisition to the given number of
 						the nearest stations. Requires to activate
 						&quot;picker.limitStationAcquisition&quot;.
 					</description>
