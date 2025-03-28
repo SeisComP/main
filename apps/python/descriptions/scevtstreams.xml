@@ -2,7 +2,8 @@
 <seiscomp>
 	<module name="scevtstreams" category="Utilities">
 		<description>
-		Extract stream information with time windows from picks of an event.
+		Extract stream information and time windows from picks of an event or
+		solitary picks.
 		</description>
 		<command-line>
 			<synopsis>
@@ -42,8 +43,8 @@
 			<group name="Input">
 				<option flag="i" long-flag="input" argument="arg">
 					<description>
-					Input XML file name. Reads event from the XML file instead of
-					database. Use '-' to read from stdin.
+					Input XML file name. Reads event and picks from the XML file
+					instead of database. Use '-' to read from stdin.
 					</description>
 				</option>
 				<option flag="f" long-flag="format" argument="arg">
@@ -61,7 +62,7 @@
 				<option flag="" long-flag="net-sta" argument="arg">
 					<description>
 					Filter read picks by network code or network and station
-					code. Format: NET or NET.STA
+					code. Format: NET or NET.STA .
 					</description>
 				</option>
 				<option flag="" long-flag="nslc" argument="arg">

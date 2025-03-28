@@ -295,7 +295,7 @@ class EventStreams(client.Application):
             """Usage:
   scevtstreams [options]
 
-Extract stream information and time windows from an event"""
+Extract stream information and time windows from picks of an event or solitary picks."""
         )
 
         client.Application.printUsage(self)
@@ -305,8 +305,8 @@ Extract stream information and time windows from an event"""
 Get the time windows for an event in the database:
   scevtstreams -E gfz2012abcd -d mysql://sysop:sysop@localhost/seiscomp
 
-Create lists compatible with fdsnws:
-  scevtstreams -E gfz2012abcd -i event.xml -m 120,500 --fdsnws
+Get the time windows for all picks given in an XML file without origins and events:
+  scevtstreams -i picks.xml -m 120,500
 """
         )
 
@@ -314,10 +314,14 @@ Create lists compatible with fdsnws:
         resolveWildcards = self.commandline().hasOption("resolve-wildcards")
 
         picks = []
-
         # read picks from input file
         if self.inputFile:
-            picks = self.readXML()
+            try:
+                picks = self.readXML()
+            except IOError as e:
+                print(f"Error: {e}", file=sys.stderr)
+                return False
+
             if not picks:
                 raise ValueError("Could not find picks in input file")
 
@@ -327,6 +331,7 @@ Create lists compatible with fdsnws:
                 pick = datamodel.Pick.Cast(obj)
                 if pick is None:
                     continue
+
                 picks.append(pick)
 
             if not picks:
@@ -502,11 +507,18 @@ Create lists compatible with fdsnws:
 
         ep = datamodel.EventParameters.Cast(obj)
         if ep is None:
-            raise ValueError("no event parameters found in input file")
+            # pick may be provided as base object, only one can be read
+            pick = datamodel.Pick.Cast(obj)
+            if pick is None:
+                raise ValueError(
+                    "Neither event parameters nor pick found in input file"
+                )
+            else:
+                return [pick]
 
         # we require at least one origin which references to picks via arrivals
-        if ep.originCount() == 0:
-            raise ValueError("no origin found in input file")
+        if ep.originCount() == 0 and ep.pickCount() == 0:
+            raise ValueError("No origin found in input file")
 
         originIDs = []
 
@@ -524,7 +536,7 @@ Create lists compatible with fdsnws:
         # use first event/origin if no id was specified
         else:
             # no event, use first available origin
-            if ep.eventCount() == 0:
+            if ep.eventCount() == 0 and ep.originCount() > 0:
                 if ep.originCount() > 1:
                     print(
                         "WARNING: Input file contains no event but more than "
@@ -534,7 +546,7 @@ Create lists compatible with fdsnws:
                 originIDs.append(ep.origin(0).publicID())
 
             # use origin references of first available event
-            else:
+            elif ep.eventCount() > 0 and ep.originCount() > 0:
                 if ep.eventCount() > 1:
                     print(
                         "WARNING: Input file contains more than 1 event. "
@@ -546,10 +558,18 @@ Create lists compatible with fdsnws:
                     ev.originReference(i).originID()
                     for i in range(ev.originReferenceCount())
                 ]
+            else:
+                print("Found no origins, trying to continue with picks only.")
 
-        # collect pickIDs
+        if originIDs:
+            print(
+                f"Considering all arrivals from {len(originIDs)} origin(s).",
+                file=sys.stderr,
+            )
+
         pickIDs = set()
         for oID in originIDs:
+            # collect pickIDs from origins
             o = datamodel.Origin.Find(oID)
             if o is None:
                 continue
@@ -557,12 +577,20 @@ Create lists compatible with fdsnws:
             for i in range(o.arrivalCount()):
                 pickIDs.add(o.arrival(i).pickID())
 
+        if len(pickIDs) == 0:
+            #  try reading picks only
+            for i in range(ep.pickCount()):
+                pickIDs.add(ep.pick(i).publicID())
+
         # lookup picks
         picks = []
         for pickID in pickIDs:
             pick = datamodel.Pick.Find(pickID)
             if pick:
                 picks.append(pick)
+
+        if len(pickIDs) == 0:
+            print("Found no picks.", file=sys.stderr)
 
         return picks
 
