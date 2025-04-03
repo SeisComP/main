@@ -163,7 +163,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 					return false;
 				}
 
-				if ( percent < 0 || percent > 100 ) {
+				if ( (percent < 0) || (percent > 100) ) {
 					SEISCOMP_ERROR("magnitudes.average(%s): 'trimmedMean' parameter with %.2f is out of bounds", type, percent);
 					return false;
 				}
@@ -186,7 +186,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 					return false;
 				}
 
-				if ( percent < 0 || percent > 100 ) {
+				if ( (percent < 0) || (percent > 100) ) {
 					SEISCOMP_ERROR("magnitudes.average(%s): 'trimmedMedian' parameter with %.2f is out of bounds", type, percent);
 					return false;
 				}
@@ -201,7 +201,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 					return false;
 				}
 
-				if ( distance < 0 || distance > 100 ) {
+				if ( (distance < 0) || (distance > 100) ) {
 					SEISCOMP_ERROR("magnitudes.average(%s): 'medianTrimmedMean' parameter with %.2f is out of bounds", type, distance);
 					return false;
 				}
