@@ -1,7 +1,7 @@
-ql2sc manages the import of SeisComP objects from one or several QuakeLink servers
-into a SeisComP system in real time. Like :ref:`scimex` but contrary to
-:ref:`scimport` the exchange of the SeisComP objects is event based. This means no
-messages will be exchanged until the exporting system has produced an event.
+ql2sc manages the import of SeisComP objects from one or several QuakeLink
+servers into a SeisComP system in real time. Like :ref:`scimex` but contrary to
+:ref:`scimport` the exchange of the SeisComP objects is event based. This means
+no messages will be exchanged until the exporting system has produced an event.
 
 The user may control at various levels which information to import. Whenever
 possible server-side filters should be preferred to reduce both the network
@@ -124,11 +124,11 @@ By default we route:
 
 * Picks and Amplitudes to the ``IMPORT_GROUP`` group to prevent processing by
   the local locator and amplitude processor
-* Origins (including its StationMagnitude and Magnitude children) to the
-  ``LOCATION`` to allow event association.
-* FocalMechanisms to the ``FOCMECH`` group to trigger processing by specialized
-  applications, e.g., graphical user interfaces for strong motion analysis or
-  tsunami risk assessment.
+* Origins and FocalMechanisms to the ``LOCATION`` group to allow event association.
+
+A common deviation from the default is to route FocalMechanisms to the ``FOCMECH``
+group to trigger processing by specialized applications, e.g., graphical user
+interfaces for strong motion analysis or tsunami risk assessment.
 
 We don't route events at all. With the help of :ref:`scevent` locations are
 either associated to existing events or will create new events with local
@@ -248,7 +248,7 @@ happen that the imported event ID is different from the event ID of the local
 system. The input host configuration parameter :confval:`syncEventAttributes`
 controls that behaviour. It is set to true by default which means that imported
 event attributes are going to be imported as well. ql2sc does not update
-directly the attributes but commandates scevent in as many cases as possible
+directly the attributes but commands scevent in as many cases as possible
 to do so. To find the matching local event it takes the first occurrence which
 has associated the currently imported preferred origin.
 
