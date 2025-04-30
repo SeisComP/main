@@ -125,6 +125,41 @@ bool readIDParam(vector<string> &store, string &previousStdinParam,
 }
 
 
+void readTree(DatabaseArchive *ar, PublicObject *obj) {
+	auto meta = obj->meta();
+	if ( !meta ) {
+		return;
+	}
+
+	auto properyCount = meta->propertyCount();
+	for ( size_t i = 0; i < properyCount; ++i ) {
+		auto prop = meta->property(i);
+		if ( !prop->isArray() || !prop->isClass() ) {
+			continue;
+		}
+
+		auto factory = ClassFactory::FindByClassName(prop->type());
+		if ( !factory ) {
+			continue;
+		}
+
+		auto it = ar->getObjects(obj->publicID(), *factory->typeInfo());
+		for ( ; it.get(); ++it ) {
+			prop->arrayAddObject(obj, it.get());
+		}
+		it.close();
+
+		if ( factory->typeInfo()->isTypeOf(PublicObject::TypeInfo()) ) {
+			// Load childs
+			auto cnt = prop->arrayElementCount(obj);
+			for ( size_t c = 0; c < cnt; ++c ) {
+				readTree(ar, static_cast<PublicObject*>(prop->arrayObject(obj, static_cast<int>(c))));
+			}
+		}
+	}
+}
+
+
 
 class XMLDump : public Seiscomp::Client::Application {
 	public:
@@ -195,6 +230,8 @@ class XMLDump : public Seiscomp::Client::Application {
 			                        "all magnitudes for this origin will be dumped.");
 			commandline().addOption("Dump", "public-id",
 			                        "Dump object(s) by its(their) publicID.", &_publicIDParam);
+			commandline().addOption("Dump", "with-childs", "Whether to export child objects for "
+			                        "PublicObjects or not. Valid in combination with --public-id.");
 			commandline().addGroup("Output");
 			commandline().addOption("Output", "formatted,f", "Use formatted XML output.");
 			commandline().addOption("Output", "output,o",
@@ -259,6 +296,7 @@ class XMLDump : public Seiscomp::Client::Application {
 			_allMagnitudes         = commandline().hasOption("all-magnitudes");
 			_ignoreArrivals        = commandline().hasOption("ignore-arrivals");
 			_withFocalMechanisms   = commandline().hasOption("with-focal-mechanisms");
+			_withChilds            = commandline().hasOption("with-childs");
 
 			string previousStdinParam;
 			if ( !readIDParam(_publicIDs, previousStdinParam, _publicIDParam, "public-id") ||
@@ -650,6 +688,9 @@ class XMLDump : public Seiscomp::Client::Application {
 
 					PublicObjectPtr po = query()->getObject(*rtti, publicID);
 					if ( po ) {
+						if ( _withChilds ) {
+							readTree(query(), po.get());
+						}
 						write(po.get());
 						found = true;
 						break;
@@ -1243,6 +1284,7 @@ class XMLDump : public Seiscomp::Client::Application {
 		bool _withAmplitudes;
 		bool _withStationMagnitudes;
 		bool _withFocalMechanisms;
+		bool _withChilds;
 
 		string _outputFile;
 		string _publicIDParam;
