@@ -157,35 +157,145 @@ void readTree(DatabaseArchive *ar, PublicObject *obj) {
 }
 
 
-bool classIsRootType(const RTTI *typeInfo) {
-	auto classes = ClassFactory::RegisteredClasses();
-	for ( auto &[rtti, name] : classes ) {
-		auto meta = MetaObject::Find(name);
-		if ( !meta ) {
-			continue;
+struct Node {
+	const RTTI  *typeInfo;
+	list<Node*>  parents;
+	list<Node*>  childs;
+};
+
+
+class ClassGraph {
+	public:
+		ClassGraph() {
+			// Generate graph
+			auto classes = ClassFactory::RegisteredClasses();
+			for ( auto &[rtti, name] : classes ) {
+				if ( !rtti->isTypeOf(Object::TypeInfo()) ) {
+					continue;
+				}
+
+				auto meta = MetaObject::Find(name);
+				if ( !meta ) {
+					continue;
+				}
+
+				auto properyCount = meta->propertyCount();
+				for ( size_t i = 0; i < properyCount; ++i ) {
+					auto prop = meta->property(i);
+					if ( !prop->isArray() || !prop->isClass() ) {
+						continue;
+					}
+
+					auto factory = ClassFactory::FindByClassName(prop->type());
+					if ( !factory
+					  || !factory->typeInfo()
+					  || !factory->typeInfo()->isTypeOf(Object::TypeInfo()) ) {
+						continue;
+					}
+
+					add(rtti, factory->typeInfo());
+				}
+			}
+
+			// Optimize node array
+			for ( auto it = _nodes.begin(); it != _nodes.end(); ) {
+				auto &node = *it;
+				if ( node->parents.empty() ) {
+					// Root type
+					++it;
+				}
+				else {
+					pushRoot(node);
+					it = _nodes.erase(it);
+				}
+			}
 		}
 
-		auto properyCount = meta->propertyCount();
-		for ( size_t i = 0; i < properyCount; ++i ) {
-			auto prop = meta->property(i);
-			if ( !prop->isArray() || !prop->isClass() ) {
-				continue;
+	public:
+		bool isRootType(const RTTI *rtti) const {
+			if ( auto it = _nodeMap.find(rtti); it != _nodeMap.end() ) {
+				return it->second->parents.empty();
+			}
+			return false;
+		}
+
+		const RTTI *getParentRootType(const RTTI *rtti) const {
+			if ( auto it = _nodeMap.find(rtti); it != _nodeMap.end() ) {
+				auto node = it->second;
+				size_t distance = 0;
+				while ( !node->parents.empty() ) {
+					if ( node->parents.size() > 1 ) {
+						return nullptr;
+					}
+					node = node->parents.front();
+					++distance;
+				}
+				return distance > 0 ? node->typeInfo : nullptr;
+			}
+			return nullptr;
+		}
+
+		const RTTI *getDirectRootType(const RTTI *rtti) const {
+			if ( auto it = _nodeMap.find(rtti); it != _nodeMap.end() ) {
+				auto node = it->second;
+				if ( node->parents.size() == 1 ) {
+					if ( node->parents.front()->parents.size() == 0 ) {
+						return node->parents.front()->typeInfo;
+					}
+				}
+			}
+			return nullptr;
+		}
+
+
+	private:
+		void pushRoot(Node *node) {
+			if ( node->parents.empty() ) {
+				if ( auto it = find(_nodes.begin(), _nodes.end(), node); it == _nodes.end() ) {
+					_nodes.push_back(node);
+				}
+				return;
 			}
 
-			auto factory = ClassFactory::FindByClassName(prop->type());
-			if ( !factory ) {
-				continue;
-			}
-
-			if ( factory->typeInfo() == typeInfo ) {
-				return false;
+			for ( auto &parent : node->parents ) {
+				pushRoot(parent);
 			}
 		}
-	}
 
-	return true;
-}
+		void add(const RTTI *parent, const RTTI *child) {
+			Node *parentNode, *childNode;
+			bool floating = true;
 
+			if ( auto it = _nodeMap.find(parent); it != _nodeMap.end() ) {
+				parentNode = it->second;
+				floating = false;
+			}
+			else {
+				parentNode = new Node({ parent });
+				_nodeMap[parent] = parentNode;
+			}
+
+			if ( auto it = _nodeMap.find(child); it != _nodeMap.end() ) {
+				childNode = it->second;
+				floating = false;
+			}
+			else {
+				childNode = new Node({ child });
+				_nodeMap[child] = childNode;
+			}
+
+			parentNode->childs.push_back(childNode);
+			childNode->parents.push_back(parentNode);
+
+			if ( floating ) {
+				_nodes.push_back(parentNode);
+			}
+		}
+
+	private:
+		list<Node*>             _nodes;
+		map<const RTTI*, Node*> _nodeMap;
+};
 
 
 class XMLDump : public Seiscomp::Client::Application {
@@ -259,6 +369,8 @@ class XMLDump : public Seiscomp::Client::Application {
 			                        "Dump object(s) by its(their) publicID.", &_publicIDParam);
 			commandline().addOption("Dump", "with-childs", "Whether to export child objects for "
 			                        "PublicObjects or not. Valid in combination with --public-id.");
+			commandline().addOption("Dump", "with-root", "Whether to add the container of exported "
+			                        "PublicObjects or not. Valid in combination with --public-id.");
 			commandline().addGroup("Output");
 			commandline().addOption("Output", "formatted,f", "Use formatted XML output.");
 			commandline().addOption("Output", "output,o",
@@ -324,6 +436,7 @@ class XMLDump : public Seiscomp::Client::Application {
 			_ignoreArrivals        = commandline().hasOption("ignore-arrivals");
 			_withFocalMechanisms   = commandline().hasOption("with-focal-mechanisms");
 			_withChilds            = commandline().hasOption("with-childs");
+			_withRoot              = commandline().hasOption("with-root");
 
 			string previousStdinParam;
 			if ( !readIDParam(_publicIDs, previousStdinParam, _publicIDParam, "public-id") ||
@@ -686,6 +799,10 @@ class XMLDump : public Seiscomp::Client::Application {
 				return true;
 			}
 
+			ClassGraph classGraph;
+
+			vector<PublicObjectPtr> roots;
+
 			auto classes = ClassFactory::RegisteredClasses();
 			SEISCOMP_DEBUG("Dumping %d publicID%s",
 			               _publicIDs.size(), _publicIDs.size() > 1 ? "s":"");
@@ -697,7 +814,7 @@ class XMLDump : public Seiscomp::Client::Application {
 						continue;
 					}
 
-					if ( classIsRootType(rtti) ) {
+					if ( classGraph.isRootType(rtti) ) {
 						// Root types do not have a database table representation
 						continue;
 					}
@@ -707,18 +824,43 @@ class XMLDump : public Seiscomp::Client::Application {
 						if ( _withChilds ) {
 							readTree(query(), po.get());
 						}
-						write(po.get());
+
+						if ( _withRoot ) {
+							auto root = classGraph.getDirectRootType(rtti);
+							if ( root ) {
+								auto parent = PublicObject::Find(root->className());
+								if ( !parent ) {
+									parent = PublicObject::Cast(ClassFactory::Create(root->className()));
+									roots.push_back(parent);
+								}
+								if ( parent ) {
+									po->attachTo(parent);
+									SEISCOMP_DEBUG("+ %s", publicID);
+								}
+								else {
+									SEISCOMP_DEBUG("- %s [parent container not available]", publicID);
+								}
+							}
+							else {
+								SEISCOMP_DEBUG("- %s [no direct root container for %s]", publicID, rtti->className());
+							}
+						}
+						else {
+							write(po.get());
+							SEISCOMP_DEBUG("+ %s", publicID);
+						}
 						found = true;
 						break;
 					}
 				}
 
-				if ( found ) {
-					SEISCOMP_DEBUG("+ %s", publicID);
-				}
-				else {
+				if ( !found ) {
 					SEISCOMP_DEBUG("- %s [not found]", publicID);
 				}
+			}
+
+			for ( auto root : roots ) {
+				write(root.get());
 			}
 
 			return true;
@@ -1301,6 +1443,7 @@ class XMLDump : public Seiscomp::Client::Application {
 		bool _withStationMagnitudes;
 		bool _withFocalMechanisms;
 		bool _withChilds;
+		bool _withRoot;
 
 		string _outputFile;
 		string _publicIDParam;
