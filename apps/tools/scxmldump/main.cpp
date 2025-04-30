@@ -300,7 +300,8 @@ class ClassGraph {
 
 class XMLDump : public Seiscomp::Client::Application {
 	public:
-		XMLDump(int argc, char** argv) : Application(argc, argv) {
+		XMLDump(int argc, char** argv)
+		: Application(argc, argv) {
 			setPrimaryMessagingGroup(Seiscomp::Client::Protocol::LISTENER_GROUP);
 			addMessagingSubscription("EVENT");
 			setMessagingEnabled(true);
@@ -309,6 +310,8 @@ class XMLDump : public Seiscomp::Client::Application {
 			setInterpretNotifierEnabled(true);
 
 			addMessagingSubscription("EVENT");
+
+			bindSettings(&_settings);
 		}
 
 		~XMLDump() override {
@@ -316,81 +319,6 @@ class XMLDump : public Seiscomp::Client::Application {
 		}
 
 	protected:
-		void createCommandLineDescription() override {
-			commandline().addGroup("Dump");
-			commandline().addOption("Dump", "config,C", "Dump the config (bindings).");
-			commandline().addOption("Dump", "inventory,I", "Dump the inventory.");
-			commandline().addOption("Dump", "without-station-groups",
-			                        "Remove station groups from inventory.");
-			commandline().addOption("Dump", "stations",
-			                        "If inventory is dumped, filter the "
-			                        "stations to dump. Wildcards are supported."
-			                        "Format of each item: net[.{sta|*}]. Use '-' "
-			                        "to read the IDs as individual lines from stdin.",
-			                        &_stationIDParam);
-			commandline().addOption("Dump", "journal,J", "Dump the journal.");
-			commandline().addOption("Dump", "routing,R", "Dump routing.");
-			commandline().addOption("Dump", "availability,Y",
-			                        "Dump data availability information.");
-			commandline().addOption("Dump", "with-segments",
-			                        "Dump individual data availability segments.");
-			commandline().addOption("Dump", "listen",
-			                        "Listen to the message server for incoming "
-			                        "events. Otherwise scxmldump reads from database.");
-			commandline().addOption("Dump", "event,E",
-			                        "ID(s) of event(s) to dump. Use '-' to read "
-			                        "the IDs as individual lines from stdin.",
-			                        &_eventIDParam, false);
-			commandline().addOption("Dump", "origin,O",
-			                        "ID(s) of origin(s) to dump. Use '-' to read "
-			                        "the IDs as individual lines from stdin.",
-			                        &_originIDParam, false);
-			commandline().addOption("Dump", "with-picks,P", "Dump associated picks.");
-			commandline().addOption("Dump", "with-amplitudes,A",
-			                        "Add amplitudes associated to dumped objects.");
-			commandline().addOption("Dump", "with-magnitudes,M",
-			                        "Add station magnitudes associated to dumped objects.");
-			commandline().addOption("Dump", "with-focal-mechanisms,F",
-			                        "Add focal mechanisms associated to dumped objects.");
-			commandline().addOption("Dump", "ignore-arrivals,a",
-			                        "Do not dump arrivals of origins.");
-			commandline().addOption("Dump", "ignore-magnitudes",
-			                        "Do not dump magnitudes of origins.");
-			commandline().addOption("Dump", "preferred-only,p",
-			                        "When dumping events, only the preferred "
-			                        "origin and the preferred magnitude will be dumped.");
-			commandline().addOption("Dump", "all-magnitudes,m",
-			                        "If only the preferred origin is dumped, "
-			                        "all magnitudes for this origin will be dumped.");
-			commandline().addOption("Dump", "pick",
-			                        "ID(s) of pick(s) to dump. Use '-' to read "
-			                        "the IDs as individual lines from stdin.",
-			                        &_pickIDParam, false);
-			commandline().addOption("Dump", "public-id",
-			                        "ID(s) of any object(s) to dump. Use '-' to "
-			                        "read the IDs as individual lines from "
-			                        "stdin. No parent objects are dumped.",
-			                        &_publicIDParam);
-			commandline().addOption("Dump", "with-childs",
-			                        "Dump also all child objects of dumped "
-			                        "objects. Valid only in combination with "
-			                        "--public-id.");
-			commandline().addOption("Dump", "with-root", "Whether to add the container of exported "
-			                        "PublicObjects or not. Objects which are not a direct child of "
-			                        "EventParameters, Inventory and so on, also referred to as "
-			                        "top-level objects, will not be exported. "
-			                        "Valid in combination with --public-id.");
-			commandline().addGroup("Output");
-			commandline().addOption("Output", "formatted,f",
-			                        "Use formatted XML output.");
-			commandline().addOption("Output", "output,o",
-			                        "Name of output file. If not given or '-', "
-			                        "output is sent to stdout.",
-			                        &_outputFile, false);
-			commandline().addOption("Output", "prepend-datasize",
-			                        "Prepend a line with the length of the XML string.");
-		}
-
 		void printUsage() const override {
 			std::cout << "Usage:" << std::endl << "  " << name() << " [options]"
 			          << std::endl << std::endl
@@ -419,20 +347,20 @@ class XMLDump : public Seiscomp::Client::Application {
 				return false;
 			}
 
-			if ( _outputFile.empty() ) {
-				_outputFile = "-";
+			if ( _settings.outputFile.empty() ) {
+				_settings.outputFile = "-";
 			}
 
-			if ( !commandline().hasOption("listen") ) {
-				if ( !commandline().hasOption("public-id")
-				  && !commandline().hasOption("event")
-				  && !commandline().hasOption("origin")
-				  && !commandline().hasOption("pick")
-				  && !commandline().hasOption("inventory")
-				  && !commandline().hasOption("config")
-				  && !commandline().hasOption("journal")
-				  && !commandline().hasOption("routing")
-				  && !commandline().hasOption("availability") ) {
+			if ( !_settings.listen ) {
+				if ( _settings.publicIDParam.empty()
+				  && _settings.eventIDParam.empty()
+				  && _settings.originIDParam.empty()
+				  && _settings.pickIDParam.empty()
+				  && !_settings.dumpInventory
+				  && !_settings.dumpConfig
+				  && !_settings.dumpJournal
+				  && !_settings.dumpRouting
+				  && !_settings.dumpAvailability ) {
 					cerr << "Require inventory, config, journal, routing or "
 					        "availability flag, or IDs of origin(s), event(s) "
 					        "or any other object" << endl;
@@ -443,22 +371,12 @@ class XMLDump : public Seiscomp::Client::Application {
 				setLoggingToStdErr(true);
 			}
 
-			_withPicks             = commandline().hasOption("with-picks");
-			_withAmplitudes        = commandline().hasOption("with-amplitudes");
-			_preferredOnly         = commandline().hasOption("preferred-only");
-			_withStationMagnitudes = commandline().hasOption("with-magnitudes");
-			_allMagnitudes         = commandline().hasOption("all-magnitudes");
-			_ignoreArrivals        = commandline().hasOption("ignore-arrivals");
-			_withFocalMechanisms   = commandline().hasOption("with-focal-mechanisms");
-			_withChilds            = commandline().hasOption("with-childs");
-			_withRoot              = commandline().hasOption("with-root");
-
 			string previousStdinParam;
-			if ( !readIDParam(_publicIDs, previousStdinParam, _publicIDParam, "public-id") ||
-			     !readIDParam(_stationIDs, previousStdinParam, _stationIDParam, "stations") ||
-			     !readIDParam(_eventIDs, previousStdinParam, _eventIDParam, "event") ||
-			     !readIDParam(_originIDs, previousStdinParam, _originIDParam, "origin") ||
-			     !readIDParam(_pickIDs, previousStdinParam, _pickIDParam, "pick") ) {
+			if ( !readIDParam(_publicIDs, previousStdinParam, _settings.publicIDParam, "public-id")
+			  || !readIDParam(_stationIDs, previousStdinParam, _settings.stationIDParam, "stations")
+			  || !readIDParam(_eventIDs, previousStdinParam, _settings.eventIDParam, "event")
+			  || !readIDParam(_originIDs, previousStdinParam, _settings.originIDParam, "origin")
+			  || !readIDParam(_pickIDs, previousStdinParam, _settings.pickIDParam, "pick") ) {
 				return false;
 			}
 
@@ -468,19 +386,21 @@ class XMLDump : public Seiscomp::Client::Application {
 		bool write(PublicObject *po) {
 			if ( !_archive ) {
 				_archive = new XMLArchive();
-				_archive->setFormattedOutput(commandline().hasOption("formatted"));
+				_archive->setFormattedOutput(_settings.formatted);
 
-				if ( commandline().hasOption("prepend-datasize") ) {
+				if ( _settings.prependDatasize ) {
 					if ( !_archive->create(&_archiveBuf) ) {
-						SEISCOMP_ERROR("Could not create output file '%s'", _outputFile.c_str());
+						SEISCOMP_ERROR("Could not create output file '%s'",
+						               _settings.outputFile);
 						delete _archive;
 						_archive = nullptr;
 						return false;
 					}
 				}
 				else {
-					if ( !_archive->create(_outputFile.c_str()) ) {
-						SEISCOMP_ERROR("Could not create output file '%s'", _outputFile.c_str());
+					if ( !_archive->create(_settings.outputFile.c_str()) ) {
+						SEISCOMP_ERROR("Could not create output file '%s'",
+						               _settings.outputFile);
 						delete _archive;
 						_archive = nullptr;
 						return false;
@@ -505,23 +425,23 @@ class XMLDump : public Seiscomp::Client::Application {
 			delete _archive;
 			_archive = nullptr;
 
-			if ( !commandline().hasOption("prepend-datasize") ) {
+			if ( !_settings.prependDatasize ) {
 				return true;
 			}
 
 			string content = _archiveBuf.str();
 			_archiveBuf.str("");
 
-			if ( _outputFile == "-" ) {
+			if ( _settings.outputFile == "-" ) {
 				cout << content.size() << endl << content << flush;
 				SEISCOMP_INFO("Flushing %zu bytes", content.size());
 				return true;
 			}
 
-			ofstream file(_outputFile.c_str(), ios::out | ios::trunc);
+			ofstream file(_settings.outputFile.c_str(), ios::out | ios::trunc);
 
 			if ( !file.is_open() ) {
-				SEISCOMP_ERROR("Could not create file: %s", _outputFile.c_str());
+				SEISCOMP_ERROR("Could not create file: %s", _settings.outputFile);
 				return false;
 			}
 
@@ -752,7 +672,7 @@ class XMLDump : public Seiscomp::Client::Application {
 				}
 			}
 
-			if ( commandline().hasOption("without-station-groups") ) {
+			if ( _settings.withoutStationGroups ) {
 				while ( inv->stationGroupCount() > 0 ) {
 					inv->removeStationGroup(0);
 				}
@@ -795,7 +715,7 @@ class XMLDump : public Seiscomp::Client::Application {
 				return false;
 			}
 
-			if ( commandline().hasOption("with-segments") ) {
+			if ( _settings.withSegments ) {
 				for ( size_t i = 0; i < avail->dataExtentCount(); ++i ) {
 					query()->load(avail->dataExtent(i));
 				}
@@ -836,11 +756,11 @@ class XMLDump : public Seiscomp::Client::Application {
 
 					PublicObjectPtr po = query()->getObject(*rtti, publicID);
 					if ( po ) {
-						if ( _withChilds ) {
+						if ( _settings.withChilds ) {
 							readTree(query(), po.get());
 						}
 
-						if ( _withRoot ) {
+						if ( _settings.withRoot ) {
 							auto root = classGraph.getDirectRootType(rtti);
 							if ( root ) {
 								auto parent = PublicObject::Find(root->className());
@@ -850,19 +770,19 @@ class XMLDump : public Seiscomp::Client::Application {
 								}
 								if ( parent ) {
 									po->attachTo(parent);
-									SEISCOMP_DEBUG("+ %s", publicID);
+									SEISCOMP_INFO("+ %s", publicID);
 								}
 								else {
-									SEISCOMP_DEBUG("- %s [parent container not available]", publicID);
+									SEISCOMP_WARNING("- %s [parent container not available]", publicID);
 								}
 							}
 							else {
-								SEISCOMP_DEBUG("- %s [no direct root container for %s]", publicID, rtti->className());
+								SEISCOMP_WARNING("- %s [no direct root container for %s]", publicID, rtti->className());
 							}
 						}
 						else {
 							write(po.get());
-							SEISCOMP_DEBUG("+ %s", publicID);
+							SEISCOMP_INFO("+ %s", publicID);
 						}
 						found = true;
 						break;
@@ -870,7 +790,7 @@ class XMLDump : public Seiscomp::Client::Application {
 				}
 
 				if ( !found ) {
-					SEISCOMP_DEBUG("- %s [not found]", publicID);
+					SEISCOMP_WARNING("- %s [not found]", publicID);
 				}
 			}
 
@@ -949,8 +869,7 @@ class XMLDump : public Seiscomp::Client::Application {
 			}
 
 			JournalingPtr jnl;
-			if ( commandline().hasOption("journal") ) {
-
+			if ( _settings.dumpJournal ) {
 				vector<string> journalingPublicIDs;
 				journalingPublicIDs.insert(journalingPublicIDs.end(),
 				                           _eventIDs.cbegin(), _eventIDs.cend());
@@ -994,17 +913,18 @@ class XMLDump : public Seiscomp::Client::Application {
 				return false;
 			}
 
-			if ( ( commandline().hasOption("inventory") && !dumpInventory() ) ||
-			     ( commandline().hasOption("config") && !dumpConfig() ) ||
-			     ( commandline().hasOption("routing") && !dumpRouting() ) ||
-			     ( commandline().hasOption("availability") && !dumpDataAvailability() ) ||
-			     !dumpEPAndJournal() || !dumpPublicIDs() ) {
+			if ( ( _settings.dumpInventory && !dumpInventory() )
+			  || ( _settings.dumpConfig && !dumpConfig() )
+			  || ( _settings.dumpRouting && !dumpRouting() )
+			  || ( _settings.dumpAvailability && !dumpDataAvailability() )
+			  || !dumpEPAndJournal()
+			  || !dumpPublicIDs() ) {
 				return false;
 			}
 
 			flushArchive();
 
-			return !commandline().hasOption("listen") || Application::run();
+			return !_settings.listen || Application::run();
 		}
 
 
@@ -1033,19 +953,19 @@ class XMLDump : public Seiscomp::Client::Application {
 
 			query()->load(origin);
 
-			if ( commandline().hasOption("ignore-magnitudes") ) {
+			if ( _settings.withoutMagnitudes ) {
 				removeAllNetworkMagnitudes(origin);
 			}
 
-			if ( !_withStationMagnitudes ) {
+			if ( !_settings.withStationMagnitudes ) {
 				removeAllStationMagnitudes(origin);
 			}
 
-			if ( _ignoreArrivals ) {
+			if ( _settings.withoutArrivals ) {
 				removeAllArrivals(origin);
 			}
 
-			if ( _withPicks ) {
+			if ( _settings.withPicks ) {
 				for ( size_t a = 0; a < origin->arrivalCount(); ++a ) {
 					const string &pickID = origin->arrival(a)->pickID();
 					if ( _pickIDSet.find(pickID) != _pickIDSet.end() ) {
@@ -1068,7 +988,7 @@ class XMLDump : public Seiscomp::Client::Application {
 				}
 			}
 
-			if ( _withAmplitudes && _withStationMagnitudes ) {
+			if ( _settings.withAmplitudes && _settings.withStationMagnitudes ) {
 				// Extract amplitudes corresponding to station magnitudes
 				for ( size_t m = 0; m < origin->magnitudeCount(); ++m ) {
 					Magnitude* netMag = origin->magnitude(m);
@@ -1110,7 +1030,7 @@ class XMLDump : public Seiscomp::Client::Application {
 				}
 			}
 
-			if ( _withAmplitudes && !_withStationMagnitudes ) {
+			if ( _settings.withAmplitudes && !_settings.withStationMagnitudes ) {
 				// Extract all amplitudes for all picks
 				for ( size_t p = 0; p < ep->pickCount(); ++p ) {
 					Pick *pick = ep->pick(p);
@@ -1136,7 +1056,7 @@ class XMLDump : public Seiscomp::Client::Application {
 			SEISCOMP_INFO("Dumping Event '%s'", event->publicID().c_str());
 			ep->add(event);
 
-			if ( !_preferredOnly ) {
+			if ( !_settings.preferredOnly ) {
 				query()->load(event);
 			}
 			else {
@@ -1148,7 +1068,7 @@ class XMLDump : public Seiscomp::Client::Application {
 					).get()
 				);
 
-				if ( _withFocalMechanisms
+				if ( _settings.withFocalMechanisms
 				  && !event->preferredFocalMechanismID().empty() ) {
 					event->add(
 						FocalMechanismReferencePtr(
@@ -1180,7 +1100,7 @@ class XMLDump : public Seiscomp::Client::Application {
 
 				query()->load(origin.get());
 
-				if ( _preferredOnly && !_allMagnitudes ) {
+				if ( _settings.preferredOnly && !_settings.allMagnitudes ) {
 					MagnitudePtr netMag;
 					while ( origin->magnitudeCount() > 0 ) {
 						if ( origin->magnitude(0)->publicID() == event->preferredMagnitudeID() ) {
@@ -1214,20 +1134,19 @@ class XMLDump : public Seiscomp::Client::Application {
 					}
 				}
 
-				if ( !_withStationMagnitudes ) {
+				if ( !_settings.withStationMagnitudes ) {
 					removeAllStationMagnitudes(origin.get());
 				}
 
-				if ( _ignoreArrivals ) {
+				if ( _settings.withoutArrivals ) {
 					removeAllArrivals(origin.get());
 				}
 
 				ep->add(origin.get());
 
-				if ( _withPicks ) {
+				if ( _settings.withPicks ) {
 					for ( size_t a = 0; a < origin->arrivalCount(); ++a ) {
-						const string &pickID =
-							origin->arrival(a)->pickID();
+						const string &pickID = origin->arrival(a)->pickID();
 						if ( _pickIDSet.find(pickID) != _pickIDSet.end() ) {
 							continue;
 						}
@@ -1249,7 +1168,7 @@ class XMLDump : public Seiscomp::Client::Application {
 					}
 				}
 
-				if ( _withAmplitudes && _withStationMagnitudes ) {
+				if ( _settings.withAmplitudes && _settings.withStationMagnitudes ) {
 					for ( size_t m = 0; m < origin->magnitudeCount(); ++m ) {
 						Magnitude* netMag = origin->magnitude(m);
 						for ( size_t s = 0; s < netMag->stationMagnitudeContributionCount(); ++s ) {
@@ -1293,7 +1212,7 @@ class XMLDump : public Seiscomp::Client::Application {
 			// end of loop over origins referenced by event
 
 
-			if ( _withAmplitudes && !_withStationMagnitudes ) {
+			if ( _settings.withAmplitudes && !_settings.withStationMagnitudes ) {
 				// Extract all amplitudes for all picks
 				for ( size_t p = 0; p < ep->pickCount(); ++p ) {
 					Pick *pick = ep->pick(p);
@@ -1313,7 +1232,7 @@ class XMLDump : public Seiscomp::Client::Application {
 				}
 			}
 
-			if ( !_withFocalMechanisms ) {
+			if ( !_settings.withFocalMechanisms ) {
 				while ( event->focalMechanismReferenceCount() > 0 ) {
 					event->removeFocalMechanismReference(0);
 				}
@@ -1332,7 +1251,7 @@ class XMLDump : public Seiscomp::Client::Application {
 				query()->load(fm.get());
 				for ( size_t m = 0; m < fm->momentTensorCount(); ++m ) {
 					auto *mt = fm->momentTensor(m);
-					if ( _ignoreArrivals ) {// TODO: review!
+					if ( _settings.withoutArrivals ) {// TODO: review!
 						removeAllStationContributions(mt);
 					}
 				}
@@ -1351,15 +1270,15 @@ class XMLDump : public Seiscomp::Client::Application {
 						else {
 							query()->load(triggeringOrigin.get());
 
-							if ( !_withStationMagnitudes ) {
+							if ( !_settings.withStationMagnitudes ) {
 								removeAllStationMagnitudes(triggeringOrigin.get());
 							}
 
-							if ( _ignoreArrivals ) {
+							if ( _settings.withoutArrivals ) {
 								removeAllArrivals(triggeringOrigin.get());
 							}
 
-							if ( _preferredOnly && !_allMagnitudes ) {
+							if ( _settings.preferredOnly && !_settings.allMagnitudes ) {
 								MagnitudePtr netMag;
 								while ( triggeringOrigin->magnitudeCount() > 0 ) {
 									if ( triggeringOrigin->magnitude(0)->publicID() == event->preferredMagnitudeID() ) {
@@ -1420,15 +1339,15 @@ class XMLDump : public Seiscomp::Client::Application {
 				if ( origin ) {
 					query()->load(origin.get());
 
-					if ( !_withStationMagnitudes ) {
+					if ( !_settings.withStationMagnitudes ) {
 						removeAllStationMagnitudes(origin.get());
 					}
 
-					if ( _ignoreArrivals ) {
+					if ( _settings.withoutArrivals ) {
 						removeAllArrivals(origin.get());
 					}
 
-					if ( _preferredOnly && !_allMagnitudes ) {
+					if ( _settings.preferredOnly && !_settings.allMagnitudes ) {
 						MagnitudePtr netMag;
 						while ( origin->magnitudeCount() > 0 ) {
 							if ( origin->magnitude(0)->publicID() == event->preferredMagnitudeID() ) {
@@ -1450,22 +1369,183 @@ class XMLDump : public Seiscomp::Client::Application {
 
 
 	private:
-		bool _preferredOnly;
-		bool _allMagnitudes;
-		bool _ignoreArrivals;
-		bool _withPicks;
-		bool _withAmplitudes;
-		bool _withStationMagnitudes;
-		bool _withFocalMechanisms;
-		bool _withChilds;
-		bool _withRoot;
+		struct Settings : AbstractSettings {
+			void accept(SettingsLinker &linker) override {
+				linker
+				& cliSwitch(
+					dumpConfig,
+					"Dump", "config,C", "Dump the config (bindings)."
+				)
+				& cliSwitch(
+					dumpInventory,
+					"Dump", "inventory,I", "Dump the inventory."
+				)
+				& cliSwitch(
+					withoutStationGroups,
+					"Dump", "without-station-groups",
+					"Remove station groups from inventory."
+				)
+				& cli(
+					stationIDParam,
+					"Dump", "stations",
+					"If inventory is dumped, filter the "
+					"stations to dump. Wildcards are supported."
+					"Format of each item: net[.{sta|*}]. Use '-' "
+					"to read the IDs as individual lines from stdin."
+				)
+				& cliSwitch(
+					dumpJournal,
+					"Dump", "journal,J", "Dump the journal."
+				)
+				& cliSwitch(
+					dumpRouting,
+					"Dump", "routing,R", "Dump routing."
+				)
+				& cliSwitch(
+					dumpAvailability,
+					"Dump", "availability,Y",
+					"Dump data availability information."
+				)
+				& cliSwitch(
+					withSegments,
+					"Dump", "with-segments",
+					"Dump individual data availability segments."
+				)
+				& cliSwitch(
+					listen,
+					"Dump", "listen",
+					"Listen to the message server for incoming events."
+				)
+				& cli(
+					eventIDParam,
+					"Dump", "event,E",
+					"ID(s) of event(s) to export. Use '-' to read "
+					"the IDs as individual lines from stdin."
+				)
+				& cli(
+					originIDParam,
+					"Dump", "origin,O",
+					"ID(s) of origin(s) to dump. Use '-' to read "
+					"the IDs as individual lines from stdin."
+				)
+				& cliSwitch(
+					withPicks,
+					"Dump", "with-picks,P", "Dump associated picks."
+				)
+				& cliSwitch(
+					withAmplitudes,
+					"Dump", "with-amplitudes,A",
+					"Add amplitudes associated to dumped objects."
+				)
+				& cliSwitch(
+					withStationMagnitudes,
+					"Dump", "with-magnitudes,M",
+					"Add station magnitudes associated to dumped objects."
+				)
+				& cliSwitch(
+					withFocalMechanisms,
+					"Dump", "with-focal-mechanisms,F",
+					"Add focal mechanisms associated to dumped objects."
+				)
+				& cliSwitch(
+					withoutArrivals,
+					"Dump", "ignore-arrivals,a",
+					"Do not dump arrivals of origins."
+				)
+				& cliSwitch(
+					withoutMagnitudes,
+					"Dump", "ignore-magnitudes",
+					"Do not dump magnitudes of origins."
+				)
+				& cliSwitch(
+					preferredOnly,
+					"Dump", "preferred-only,p",
+					"When dumping events, only the preferred "
+					"origin and the preferred magnitude will be dumped."
+				)
+				& cliSwitch(
+					allMagnitudes,
+					"Dump", "all-magnitudes,m",
+					"If only the preferred origin is dumped, "
+					"all magnitudes for this origin will be dumped."
+				)
+				& cli(
+					pickIDParam,
+					"Dump", "pick",
+					"ID(s) of pick(s) to dump. Use '-' to read "
+					"the IDs as individual lines from stdin."
+				)
+				& cli(
+					publicIDParam,
+					"Dump", "public-id",
+					"ID(s) of any object(s) to dump. Use '-' to "
+					"read the IDs as individual lines from "
+					"stdin. No parent objects are dumped."
+				)
+				& cliSwitch(
+					withChilds,
+					"Dump", "with-childs",
+					"Dump also all child objects of dumped "
+					"objects. Valid only in combination with "
+					"--public-id."
+				)
+				& cliSwitch(
+					withRoot,
+					"Dump", "with-root",
+					"PublicObjects or not. Objects which are not a direct child of "
+					"EventParameters, Inventory and so on, also referred to as "
+					"top-level objects, will not be exported. "
+					"Valid in combination with --public-id."
+				)
 
-		string _outputFile;
-		string _publicIDParam;
-		string _stationIDParam;
-		string _eventIDParam;
-		string _originIDParam;
-		string _pickIDParam;
+				& cliSwitch(
+					formatted,
+					"Output", "formatted,f",
+					"Use formatted XML output."
+				)
+				& cli(
+					outputFile,
+					"Output", "output,o",
+					"Name of output file. If not given or '-', output "
+					"is sent to stdout."
+				)
+				& cliSwitch(
+					prependDatasize,
+					"Output", "prepend-datasize",
+					"Prepend a line with the length of the XML string."
+				);
+			}
+
+			bool   dumpConfig{false};
+			bool   dumpInventory{false};
+			bool   withoutStationGroups{false};
+			bool   dumpJournal{false};
+			bool   dumpRouting{false};
+			bool   dumpAvailability{false};
+			bool   withSegments{false};
+			bool   listen{false};
+			bool   prependDatasize{false};
+
+			bool   preferredOnly{false};
+			bool   allMagnitudes{false};
+			bool   withoutArrivals{false};
+			bool   withoutMagnitudes{false};
+			bool   withPicks{false};
+			bool   withAmplitudes{false};
+			bool   withStationMagnitudes{false};
+			bool   withFocalMechanisms{false};
+			bool   withChilds{false};
+			bool   withRoot{false};
+
+			bool   formatted{false};
+
+			string outputFile;
+			string publicIDParam;
+			string stationIDParam;
+			string eventIDParam;
+			string originIDParam;
+			string pickIDParam;
+		}              _settings;
 
 		vector<string> _publicIDs;
 		vector<string> _stationIDs;
