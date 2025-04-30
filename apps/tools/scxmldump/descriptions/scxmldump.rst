@@ -19,6 +19,9 @@ in SeisComP XML (:term:`SCML`) to stdout or into a file (:option:`-o`).
    Waveform quality control (QC) parameters can be read from databases using
    :ref:`scqcquery`.
 
+* Furthermore any object carrying a publicID can be retrieved from the database
+  including its hierarchie or not. See :ref:`scxmldump-public-objects`.
+
 
 Event parameters
 ----------------
@@ -40,6 +43,39 @@ and sending to a SeisComP messaging is provided by :ref:`scdispatch`.
    and origins can be provided by :ref:`scevtls` and :ref:`scorgls`,
    respectively. Event, origin and pick IDs can also be read from graphical
    tools like :ref:`scolv` or used database queries assisted by :ref:`scquery`.
+
+
+.. _scxmldump-public-objects:
+PublicObjects
+-------------
+
+The option :option:`--public-id` defines a list of publicIDs to be retrieved
+from the database. As the data model is extendable via plugins and custom code,
+scxmldump cannot know all of those object types and how to retrieve them
+from the database. If a publicID belongs to a type for which the code resides
+in another library or plugin, then scxmldump must load this plugin or library
+in order to find the correct database tables. For example, if a strong motion
+object should be dumped, then the plugin dmsm must be loaded into scxmldump.
+
+.. code-block:: sh
+
+   scxmldump -d localhost --plugins dbmysql,dmsm --public-id StrongMotionOrigin/123456
+
+This command would only export the StrongMotionOrigin itself without all
+child objects. Option :option:`--with-childs` must be passed to export the
+full hierarchy:
+
+.. code-block:: sh
+
+   scxmldump -d localhost --plugins dbmysql,dmsm --public-id StrongMotionOrigin/123456 --with-childs
+
+
+If the extension code resides in a library then LD_PRELOAD can be used to inject
+the code into scxmldump:
+
+.. code-block:: sh
+
+   LD_PRELOAD=/home/sysop/seiscomp/lib/libseiscomp_datamodel_sm.so scxmldump -d localhost --public-id StrongMotionOrigin/123456 --with-childs
 
 
 Format conversion
