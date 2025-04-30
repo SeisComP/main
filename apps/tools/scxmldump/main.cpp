@@ -24,9 +24,6 @@
 #include <seiscomp/datamodel/routing.h>
 #include <seiscomp/datamodel/dataavailability.h>
 #include <seiscomp/datamodel/eventparameters.h>
-#include <seiscomp/datamodel/arclinklog.h>
-#include <seiscomp/datamodel/qualitycontrol.h>
-#include <seiscomp/datamodel/routing.h>
 #include <seiscomp/datamodel/event.h>
 #include <seiscomp/datamodel/origin.h>
 #include <seiscomp/datamodel/pick.h>
@@ -157,6 +154,36 @@ void readTree(DatabaseArchive *ar, PublicObject *obj) {
 			}
 		}
 	}
+}
+
+
+bool classIsRootType(const RTTI *typeInfo) {
+	auto classes = ClassFactory::RegisteredClasses();
+	for ( auto &[rtti, name] : classes ) {
+		auto meta = MetaObject::Find(name);
+		if ( !meta ) {
+			continue;
+		}
+
+		auto properyCount = meta->propertyCount();
+		for ( size_t i = 0; i < properyCount; ++i ) {
+			auto prop = meta->property(i);
+			if ( !prop->isArray() || !prop->isClass() ) {
+				continue;
+			}
+
+			auto factory = ClassFactory::FindByClassName(prop->type());
+			if ( !factory ) {
+				continue;
+			}
+
+			if ( factory->typeInfo() == typeInfo ) {
+				return false;
+			}
+		}
+	}
+
+	return true;
 }
 
 
@@ -665,24 +692,13 @@ class XMLDump : public Seiscomp::Client::Application {
 			for ( auto &publicID : _publicIDs ) {
 				bool found = false;
 				for ( auto &[rtti, name] : classes ) {
-					// Filter classnames which do not have a corresponding database
-					// table.
-					// That the classes are hard-coded right now is hopefully a
-					// temporary solution. Not doing this check is also possible
-					// but would log errors that the database table is not available.
-					if ( (name == DataModel::EventParameters::ClassName())
-					  || (name == DataModel::Inventory::ClassName())
-					  || (name == DataModel::QualityControl::ClassName())
-					  || (name == DataModel::Routing::ClassName())
-					  || (name == DataModel::Config::ClassName())
-					  || (name == DataModel::DataAvailability::ClassName())
-					  || (name == DataModel::ArclinkLog::ClassName())
-					  || (name == DataModel::Journaling::ClassName()) ) {
+					if ( (rtti == &PublicObject::TypeInfo())
+					  || !rtti->isTypeOf(PublicObject::TypeInfo()) ) {
 						continue;
 					}
 
-					if ( (rtti == &PublicObject::TypeInfo())
-					  || !rtti->isTypeOf(PublicObject::TypeInfo()) ) {
+					if ( classIsRootType(rtti) ) {
+						// Root types do not have a database table representation
 						continue;
 					}
 
