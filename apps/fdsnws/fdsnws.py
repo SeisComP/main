@@ -40,7 +40,7 @@ import seiscomp.logging
 import seiscomp.client
 import seiscomp.system
 
-from seiscomp.math import KM_OF_DEGREE
+from seiscomp.math import WGS84_KM_OF_DEGREE
 
 from seiscomp.fdsnws.utils import isRestricted, u_str, b_str
 from seiscomp.fdsnws.dataselect import (
@@ -878,7 +878,7 @@ Execute on command line with debug output
         if self._invCoordinatePrecision is not None:
             invCoordinatePrecisionStr = (
                 f"{self._invCoordinatePrecision} decimal places (≅"
-                f"{int(KM_OF_DEGREE * 1000 / 10**self._invCoordinatePrecision)}m)"
+                f"{int(WGS84_KM_OF_DEGREE * 1000 / 10**self._invCoordinatePrecision)}m)"
             )
         else:
             invCoordinatePrecisionStr = "unlimited"
