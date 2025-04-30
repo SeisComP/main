@@ -50,12 +50,6 @@
 			</group>
 
 			<group name="Dump">
-				<option long-flag="listen">
-					<description>
-					Enable server mode which listens to the message server for
-					incoming events and dumps each received add/update.
-					</description>
-				</option>
 				<option flag="I" long-flag="inventory">
 					<description>
 					Dump the inventory.
@@ -79,7 +73,7 @@
 				</option>
 				<option flag="J" long-flag="journal">
 					<description>
-					Dump the journal. In combination with -E only corresponding 
+					Dump the journal. In combination with -E only corresponding
 					journal entries are included.
 					</description>
 				</option>
@@ -99,22 +93,24 @@
 					&quot;--availability&quot;.
 					</description>
 				</option>
-				<option flag="" long-flag="pick" argument="ID">
+				<option long-flag="listen">
 					<description>
-					Pick public ID(s) to dump. Multiple IDs may be specified
-					as a comma-separated list. Use "-" for reading from stdin.
-					</description>
-				</option>
-				<option flag="O" long-flag="origin" argument="ID">
-					<description>
-					Origin public ID(s) to dump. Multiple origins may be specified
-					as a comma-separated list. Use "-" for reading from stdin.
+					Listen to the message server for incoming events. Otherwise
+					scxmldump reads from database.
 					</description>
 				</option>
 				<option flag="E" long-flag="event" argument="ID">
 					<description>
 					Event public ID(s) to dump. Multiple events may be specified
-					as a comma-separated list. Use "-" for reading from stdin.
+					as a comma-separated list. Use "-" for reading the IDs as
+					individual lines from stdin.
+					</description>
+				</option>
+				<option flag="O" long-flag="origin" argument="ID">
+					<description>
+					Origin public ID(s) to dump. Multiple origins may be specified
+					as a comma-separated list. Use "-" for reading the IDs as
+					individual lines from stdin
 					</description>
 				</option>
 				<option flag="P" long-flag="with-picks">
@@ -159,6 +155,33 @@
 					<description>
 					If only the preferred origin is dumped, all magnitudes for
 					this origin will be dumped.
+					</description>
+				</option>
+				<option flag="" long-flag="pick" argument="ID">
+					<description>
+					ID(s) of pick(s) to dump. Use '-' to read the IDs as
+					individual lines from stdin.
+					</description>
+				</option>
+				<option flag="" long-flag="public-id" argument="ID">
+					<description>
+					ID(s) of any object(s) to dump. Use '-' to read the IDs as
+					individual lines from stdin. No parent objects are dumped.
+					</description>
+				</option>
+				<option flag="" long-flag="with-childs">
+					<description>
+					Dump also all child objects of dumped objects. Valid only in
+					combination with --public-id.
+					</description>
+				</option>
+				<option flag="" long-flag="with-root">
+					<description>
+					Whether to add the container of exported PublicObjects or
+					not. Objects which are not a direct child of
+					EventParameters, Inventory and so on, also referred to as
+					top-level objects, will not be exported.
+					Valid in combination with --public-id.
 					</description>
 				</option>
 			</group>

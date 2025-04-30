@@ -335,19 +335,16 @@ class XMLDump : public Seiscomp::Client::Application {
 			commandline().addOption("Dump", "with-segments",
 			                        "Dump individual data availability segments.");
 			commandline().addOption("Dump", "listen",
-			                        "Listen to the message server for incoming events.");
-			commandline().addOption("Dump", "pick",
-			                        "ID(s) of pick(s) to dump. Use '-' to read "
+			                        "Listen to the message server for incoming "
+			                        "events. Otherwise scxmldump reads from database.");
+			commandline().addOption("Dump", "event,E",
+			                        "ID(s) of event(s) to dump. Use '-' to read "
 			                        "the IDs as individual lines from stdin.",
-			                        &_pickIDParam, false);
+			                        &_eventIDParam, false);
 			commandline().addOption("Dump", "origin,O",
 			                        "ID(s) of origin(s) to dump. Use '-' to read "
 			                        "the IDs as individual lines from stdin.",
 			                        &_originIDParam, false);
-			commandline().addOption("Dump", "event,E",
-			                        "ID(s) of event(s) to export. Use '-' to read "
-			                        "the IDs as individual lines from stdin.",
-			                        &_eventIDParam, false);
 			commandline().addOption("Dump", "with-picks,P", "Dump associated picks.");
 			commandline().addOption("Dump", "with-amplitudes,A",
 			                        "Add amplitudes associated to dumped objects.");
@@ -365,24 +362,37 @@ class XMLDump : public Seiscomp::Client::Application {
 			commandline().addOption("Dump", "all-magnitudes,m",
 			                        "If only the preferred origin is dumped, "
 			                        "all magnitudes for this origin will be dumped.");
+			commandline().addOption("Dump", "pick",
+			                        "ID(s) of pick(s) to dump. Use '-' to read "
+			                        "the IDs as individual lines from stdin.",
+			                        &_pickIDParam, false);
 			commandline().addOption("Dump", "public-id",
-			                        "Dump object(s) by its(their) publicID.", &_publicIDParam);
-			commandline().addOption("Dump", "with-childs", "Whether to export child objects for "
-			                        "PublicObjects or not. Valid in combination with --public-id.");
+			                        "ID(s) of any object(s) to dump. Use '-' to "
+			                        "read the IDs as individual lines from "
+			                        "stdin. No parent objects are dumped.",
+			                        &_publicIDParam);
+			commandline().addOption("Dump", "with-childs",
+			                        "Dump also all child objects of dumped "
+			                        "objects. Valid only in combination with "
+			                        "--public-id.");
 			commandline().addOption("Dump", "with-root", "Whether to add the container of exported "
-			                        "PublicObjects or not. Valid in combination with --public-id.");
+			                        "PublicObjects or not. Objects which are not a direct child of "
+			                        "EventParameters, Inventory and so on, also referred to as "
+			                        "top-level objects, will not be exported. "
+			                        "Valid in combination with --public-id.");
 			commandline().addGroup("Output");
-			commandline().addOption("Output", "formatted,f", "Use formatted XML output.");
+			commandline().addOption("Output", "formatted,f",
+			                        "Use formatted XML output.");
 			commandline().addOption("Output", "output,o",
-			                        "Name of output file. If not given or '-', output "
-			                        "is sent to stdout.",
+			                        "Name of output file. If not given or '-', "
+			                        "output is sent to stdout.",
 			                        &_outputFile, false);
 			commandline().addOption("Output", "prepend-datasize",
 			                        "Prepend a line with the length of the XML string.");
 		}
 
 		void printUsage() const override {
-			std::cout << "Usage:" << std::endl << "  scxmldump [options]"
+			std::cout << "Usage:" << std::endl << "  " << name() << " [options]"
 			          << std::endl << std::endl
 			          << "Dump objects from a database or messaging to XML."
 			          << std::endl;
@@ -392,11 +402,15 @@ class XMLDump : public Seiscomp::Client::Application {
 			std::cout << "Examples:" << std::endl;
 			std::cout << "Dump event parameters for one event in database into a XML file"
 			          << std::endl
-			          << "  scxmldump -d mysql://sysop:sysop@localhost/seiscomp -E gempa2022abcd -PAMFf -o gempa2022abcd.xml"
+			          << "  " << name() << " -d mysql://sysop:sysop@localhost/seiscomp -E 2022abcd -PAMFf -o 2022abcd.xml"
+			          << std::endl << std::endl;
+			std::cout << "Dump the parameters for one object given by its public ID adding all child objects."
+			          << std::endl
+			          << "  " << name() << " -d localhost --public-id Origin/20250101.0000000 --with-childs"
 			          << std::endl << std::endl;
 			std::cout << "Dump all event parameters received from local messaging into XML"
 			          << std::endl
-			          << "  scxmldump -H localhost/production --listen"
+			          << "  " << name() << " -H localhost/production --listen"
 			          << std::endl << std::endl;
 		}
 
@@ -420,7 +434,8 @@ class XMLDump : public Seiscomp::Client::Application {
 				  && !commandline().hasOption("routing")
 				  && !commandline().hasOption("availability") ) {
 					cerr << "Require inventory, config, journal, routing or "
-					        "availability flag, or IDs of origin(s), event(s) or pick(s)" << endl;
+					        "availability flag, or IDs of origin(s), event(s) "
+					        "or any other object" << endl;
 					return false;
 				}
 
