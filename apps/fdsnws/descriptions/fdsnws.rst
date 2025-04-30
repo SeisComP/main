@@ -519,16 +519,16 @@ station AAI (assuming that we are authorized to get data of this station).
 
   .. code-block:: sh
 
-     sysop@host:~$ wget --post-file token.asc https://geofon.gfz-potsdam.de/fdsnws/dataselect/1/auth -O cred.txt
-     sysop@host:~$ curl --data-binary @token.asc https://geofon.gfz-potsdam.de/fdsnws/dataselect/1/auth -o cred.txt
+     sysop@host:~$ wget --post-file token.asc https://geofon.gfz.de/fdsnws/dataselect/1/auth -O cred.txt
+     sysop@host:~$ curl --data-binary @token.asc https://geofon.gfz.de/fdsnws/dataselect/1/auth -o cred.txt
 
 * The resulting file "cred.txt" contains username and password separated by
   a colon, so one can conveniently use a shell expansion:
 
   .. code-block:: sh
 
-     sysop@host:~$ wget "http://`cat cred.txt`@geofon.gfz-potsdam.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -O data.mseed
-     sysop@host:~$ curl --digest "http://`cat cred.txt`@geofon.gfz-potsdam.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -o data.mseed
+     sysop@host:~$ wget "http://`cat cred.txt`@geofon.gfz.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -O data.mseed
+     sysop@host:~$ curl --digest "http://`cat cred.txt`@geofon.gfz.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -o data.mseed
 
 * Using the :ref:`fdsnws_fetch <sec-fdsnws-related>` utility, the two steps above can be combined into
   one:

@@ -903,7 +903,7 @@ Import miniSEED data into a SDS archive, check all modified files for errors
   {os.path.basename(__file__)} -I file.mseed --with-filecheck $SEISCOMP_ROOT/var/lib/archive
 
 Import miniSEED data from FDSNWS into a SDS archive for specific time range and streams
-  {os.path.basename(__file__)} -I fdsnws://geofon.gfz-potsdam.de \
+  {os.path.basename(__file__)} -I fdsnws://geofon.gfz.de \
 -t 2022-03-28T15:48~2022-03-28T16:18 --nslc list.file $SEISCOMP_ROOT/var/lib/archive
 
 Check an archive for files with out-of-order records

@@ -52,8 +52,10 @@ class Tracker:
             self.__data["userLocation"]["country"] = geoip.country_code_by_addr(userIP)
 
         if (
-            userName and userName.lower().endswith("@gfz-potsdam.de")
-        ) or userIP.startswith("139.17."):
+            (userName and userName.lower().endswith("@gfz-potsdam.de"))
+            or (userName and userName.lower().endswith("@gfz.de"))
+            or userIP.startswith("139.17.")
+        ):
             self.__data["userLocation"]["institution"] = "GFZ"
 
     # pylint: disable=W0613
