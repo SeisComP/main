@@ -859,7 +859,7 @@ class XMLDump : public Seiscomp::Client::Application {
 				}
 			}
 
-			for ( auto root : roots ) {
+			for ( auto &root : roots ) {
 				write(root.get());
 			}
 
