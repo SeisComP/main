@@ -24,6 +24,9 @@
 #include <seiscomp/datamodel/routing.h>
 #include <seiscomp/datamodel/dataavailability.h>
 #include <seiscomp/datamodel/eventparameters.h>
+#include <seiscomp/datamodel/arclinklog.h>
+#include <seiscomp/datamodel/qualitycontrol.h>
+#include <seiscomp/datamodel/routing.h>
 #include <seiscomp/datamodel/event.h>
 #include <seiscomp/datamodel/origin.h>
 #include <seiscomp/datamodel/pick.h>
@@ -190,6 +193,8 @@ class XMLDump : public Seiscomp::Client::Application {
 			commandline().addOption("Dump", "all-magnitudes,m",
 			                        "If only the preferred origin is dumped, "
 			                        "all magnitudes for this origin will be dumped.");
+			commandline().addOption("Dump", "public-id",
+			                        "Dump object(s) by its(their) publicID.", &_publicIDParam);
 			commandline().addGroup("Output");
 			commandline().addOption("Output", "formatted,f", "Use formatted XML output.");
 			commandline().addOption("Output", "output,o",
@@ -229,7 +234,8 @@ class XMLDump : public Seiscomp::Client::Application {
 			}
 
 			if ( !commandline().hasOption("listen") ) {
-				if ( !commandline().hasOption("event")
+				if ( !commandline().hasOption("public-id")
+				  && !commandline().hasOption("event")
 				  && !commandline().hasOption("origin")
 				  && !commandline().hasOption("pick")
 				  && !commandline().hasOption("inventory")
@@ -255,7 +261,8 @@ class XMLDump : public Seiscomp::Client::Application {
 			_withFocalMechanisms   = commandline().hasOption("with-focal-mechanisms");
 
 			string previousStdinParam;
-			if ( !readIDParam(_stationIDs, previousStdinParam, _stationIDParam, "stations") ||
+			if ( !readIDParam(_publicIDs, previousStdinParam, _publicIDParam, "public-id") ||
+			     !readIDParam(_stationIDs, previousStdinParam, _stationIDParam, "stations") ||
 			     !readIDParam(_eventIDs, previousStdinParam, _eventIDParam, "event") ||
 			     !readIDParam(_originIDs, previousStdinParam, _originIDParam, "origin") ||
 			     !readIDParam(_pickIDs, previousStdinParam, _pickIDParam, "pick") ) {
@@ -609,12 +616,60 @@ class XMLDump : public Seiscomp::Client::Application {
 			return write(avail.get());
 		}
 
+		bool dumpPublicIDs() {
+			if ( _publicIDs.empty() ) {
+				return true;
+			}
+
+			auto classes = ClassFactory::RegisteredClasses();
+			SEISCOMP_DEBUG("Dumping %d publicID%s",
+			               _publicIDs.size(), _publicIDs.size() > 1 ? "s":"");
+			for ( auto &publicID : _publicIDs ) {
+				bool found = false;
+				for ( auto &[rtti, name] : classes ) {
+					// Filter classnames which do not have a corresponding database
+					// table.
+					// That the classes are hard-coded right now is hopefully a
+					// temporary solution. Not doing this check is also possible
+					// but would log errors that the database table is not available.
+					if ( (name == DataModel::EventParameters::ClassName())
+					  || (name == DataModel::Inventory::ClassName())
+					  || (name == DataModel::QualityControl::ClassName())
+					  || (name == DataModel::Routing::ClassName())
+					  || (name == DataModel::Config::ClassName())
+					  || (name == DataModel::DataAvailability::ClassName())
+					  || (name == DataModel::ArclinkLog::ClassName())
+					  || (name == DataModel::Journaling::ClassName()) ) {
+						continue;
+					}
+
+					if ( (rtti == &PublicObject::TypeInfo())
+					  || !rtti->isTypeOf(PublicObject::TypeInfo()) ) {
+						continue;
+					}
+
+					PublicObjectPtr po = query()->getObject(*rtti, publicID);
+					if ( po ) {
+						write(po.get());
+						found = true;
+						break;
+					}
+				}
+
+				if ( found ) {
+					SEISCOMP_DEBUG("+ %s", publicID);
+				}
+				else {
+					SEISCOMP_DEBUG("- %s [not found]", publicID);
+				}
+			}
+
+			return true;
+		}
 
 		bool dumpEPAndJournal() {
 			// collection of publicIDs for which we might want the
 			// journal to be dumped (if journal output is requested).
-			vector<string> journalingPublicIDs;
-
 			EventParametersPtr ep;
 			if ( !_eventIDs.empty() ) {
 				if ( !ep ) {
@@ -729,7 +784,7 @@ class XMLDump : public Seiscomp::Client::Application {
 			     ( commandline().hasOption("config") && !dumpConfig() ) ||
 			     ( commandline().hasOption("routing") && !dumpRouting() ) ||
 			     ( commandline().hasOption("availability") && !dumpDataAvailability() ) ||
-			     ( !dumpEPAndJournal() ) ) {
+			     !dumpEPAndJournal() || !dumpPublicIDs() ) {
 				return false;
 			}
 
@@ -1190,11 +1245,13 @@ class XMLDump : public Seiscomp::Client::Application {
 		bool _withFocalMechanisms;
 
 		string _outputFile;
+		string _publicIDParam;
 		string _stationIDParam;
 		string _eventIDParam;
 		string _originIDParam;
 		string _pickIDParam;
 
+		vector<string> _publicIDs;
 		vector<string> _stationIDs;
 		vector<string> _eventIDs;
 		vector<string> _originIDs;
