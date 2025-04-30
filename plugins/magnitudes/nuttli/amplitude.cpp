@@ -28,7 +28,7 @@
 #include <seiscomp/datamodel/amplitude.h>
 #include <seiscomp/math/geo.h>
 #include <seiscomp/math/mean.h>
-#include <seiscomp/seismology/ttt/locsat.h>
+#include <seiscomp/seismology/ttt.h>
 
 #include <cmath>
 
@@ -220,7 +220,7 @@ bool MNAmplitude::setup(const Settings &settings) {
 	_locationCode = settings.locationCode;
 
 	if ( !_travelTimeTable ) {
-		_travelTimeTable = new Seiscomp::TTT::Locsat;
+		_travelTimeTable = Seiscomp::TravelTimeTableInterfaceFactory::Create("LOCSAT");
 
 		string vmodel = "iasp91";
 
