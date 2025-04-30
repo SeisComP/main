@@ -20,8 +20,6 @@
 #include <map>
 #include <set>
 
-#include <seiscomp/seismology/locator/locsat.h>
-
 #include "datamodel.h"
 #include "nucleator.h"
 #include "associator.h"

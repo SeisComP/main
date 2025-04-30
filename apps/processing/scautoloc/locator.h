@@ -19,7 +19,7 @@
 #include <string>
 #include <map>
 
-#include <seiscomp/seismology/locator/locsat.h>
+#include <seiscomp/seismology/locatorinterface.h>
 #include "datamodel.h"
 
 
