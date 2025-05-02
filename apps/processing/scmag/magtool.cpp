@@ -1480,13 +1480,22 @@ bool MagTool::processOrigin(DataModel::Origin* origin) {
 		catch ( ... ) {}
 
 		if ( !sloc ) {
-			SEISCOMP_WARNING("No sensor location meta data for pick %s",
-			                 pick->publicID().c_str());
+			SEISCOMP_WARNING("No sensor location meta data for %s pick %s",
+			                 strStream.c_str(), pick->publicID().c_str());
 		}
 
 		e.pick = pick;
 		e.loc = sloc;
-		e.dist = arr->distance();
+
+		try {
+			e.dist = arr->distance();
+		}
+		catch ( Core::ValueException& ) {
+			SEISCOMP_WARNING("Arrival.distance not set for %s pick %s: skip it",
+				             strStream.c_str(), pick->publicID().c_str());
+			continue;
+		}
+
 		if ( !e.used ) {
 			e.used = arrivalWeight(arr) >= _minimumArrivalWeight;
 		}
