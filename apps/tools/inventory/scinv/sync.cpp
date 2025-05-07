@@ -28,7 +28,7 @@ class RemoveUntouchedObjects : public Visitor {
 	// ----------------------------------------------------------------------
 	public:
 		//! C'tor
-		RemoveUntouchedObjects(set<Object*> &registry, set<Object*> &out)
+		RemoveUntouchedObjects(const set<Object*> &registry, set<Object*> &out)
 		: Visitor(TM_TOPDOWN), _registry(registry), _out(out) {}
 
 
@@ -52,7 +52,7 @@ class RemoveUntouchedObjects : public Visitor {
 		}
 
 	private:
-		set<Object*> &_registry;
+		const set<Object*> &_registry;
 		set<Object*> &_out;
 };
 
