@@ -81,25 +81,20 @@ class MySQLDB(QueryInterface):
         return tmp_tables
 
     def deleteObjectQuery(self, *v):
-        if v[0]:
-            q = (
-                "delete "
-                + v[0]
-                + " from "
-                + ", ".join(v)
-                + " where "
-                + v[0]
-                + "._oid="
-                + v[1]
-                + "._oid and "
-            )
-        else:
-            q = "delete " + v[1] + " from " + ", ".join(v[1:]) + " where "
+        q = (
+            "delete "
+            + v[0]
+            + " from "
+            + ", ".join(v)
+            + " where "
+            + v[0]
+            + "._oid="
+            + v[1]
+            + "._oid"
+        )
 
         for i in range(1, len(v) - 1):
-            if i > 1:
-                q += " and "
-            q += v[i] + "._oid=" + v[i + 1] + "._oid"
+            q += " and " + v[i] + "._oid=" + v[i + 1] + "._oid"
 
         return q
 
@@ -211,25 +206,20 @@ class PostgresDB(QueryInterface):
         return tmp_tables
 
     def deleteObjectQuery(self, *v):
-        if v[0]:
-            q = (
-                "delete from "
-                + v[0]
-                + " using "
-                + ", ".join(v[1:])
-                + " where "
-                + v[0]
-                + "._oid="
-                + v[1]
-                + "._oid and "
-            )
-        else:
-            q = "delete from " + v[1] + " using " + ", ".join(v[2:]) + " where "
+        q = (
+            "delete from "
+            + v[0]
+            + " using "
+            + ", ".join(v[1:])
+            + " where "
+            + v[0]
+            + "._oid="
+            + v[1]
+            + "._oid"
+        )
 
         for i in range(1, len(v) - 1):
-            if i > 1:
-                q += " and "
-            q += v[i] + "._oid=" + v[i + 1] + "._oid"
+            q += " and " + v[i] + "._oid=" + v[i + 1] + "._oid"
 
         return q
 
@@ -783,6 +773,7 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                 self.beginMessage("Deleting waveform quality parameters")
                 if not self.runCommand(
                     self._query.deleteObjectQuery("Object", "WaveformQuality")
+                    + " and "
                     + timeRangeSelection(f"WaveformQuality.{self.cnvCol('end')}")
                 ):
                     return False
@@ -825,6 +816,11 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
             self.beginMessage("Find old events")
             if not self.runCommand(old_events):
                 return False
+
+            old_events = "create index idx_oid on old_events(_oid)"
+            if not self.runCommand(old_events):
+                return False
+
             self.endMessage(self.globalCount("old_events"))
 
             # Delete OriginReferences of old events
@@ -879,6 +875,10 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
 
             self.beginMessage("Find unassociated focal mechanisms")
 
+            if not self.runCommand(tmp_fm):
+                return False
+
+            tmp_fm = "create index idx_oid on tmp_fm(_oid)"
             if not self.runCommand(tmp_fm):
                 return False
 
@@ -993,12 +993,16 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
             if not self.runCommand(tmp_origin):
                 return False
 
+            tmp_origin = "create index idx_oid on tmp_origin(_oid)"
+            if not self.runCommand(tmp_origin):
+                return False
+
             tmp_origin = (
                 "\
       update tmp_origin set used=1 \
       where ("
                 + self.cnvCol("publicID")
-                + " in (select distinct "
+                + " in (select "
                 + self.cnvCol("originID")
                 + " from OriginReference)) \
       or ("
@@ -1295,27 +1299,27 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
             self._query.deleteJournalQuery("PublicObject", *v) + " and used=0"
         )
         self.runCommand(
-            self._query.deleteObjectQuery(None, "Object", *v) + " and used=0"
+            self._query.deleteObjectQuery("Object", *v) + " and used=0"
         )
         self.runCommand(
-            self._query.deleteObjectQuery(None, "PublicObject", *v) + " and used=0"
+            self._query.deleteObjectQuery("PublicObject", *v) + " and used=0"
         )
 
     def deleteObjects(self, *v):
         self.runCommand(self._query.deleteJournalQuery("PublicObject", *v))
-        self.runCommand(self._query.deleteObjectQuery(None, *v))
-        self.runCommand(self._query.deleteObjectQuery("PublicObject", *v))
-        self.runCommand(self._query.deleteObjectQuery("Object", *v))
+        self.runCommand(self._query.deleteObjectQuery(*v))
+        self.runCommand(self._query.deleteObjectQuery("PublicObject", *v[1:]))
+        self.runCommand(self._query.deleteObjectQuery("Object", *v[1:]))
 
     def deleteUnusedObjects(self, *v):
         self.runCommand(
             self._query.deleteJournalQuery("PublicObject", *v) + " and used=0"
         )
-        self.runCommand(self._query.deleteObjectQuery(None, *v) + " and used=0")
+        self.runCommand(self._query.deleteObjectQuery(*v) + " and used=0")
         self.runCommand(
-            self._query.deleteObjectQuery("PublicObject", *v) + " and used=0"
+            self._query.deleteObjectQuery("PublicObject", *v[1:]) + " and used=0"
         )
-        self.runCommand(self._query.deleteObjectQuery("Object", *v) + " and used=0")
+        self.runCommand(self._query.deleteObjectQuery("Object", *v[1:]) + " and used=0")
 
     def delete(self, message, func, *v):
         self.beginMessage(message)
