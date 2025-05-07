@@ -473,7 +473,7 @@ class DBCleaner(seiscomp.client.Application):
             f"""Usage:
   {os.path.basename(__file__)} [options]
 
-Remove event and waveform quality parameters from the database in a timespan. Use 
+Remove event and waveform quality parameters from the database in a timespan. Use
 scardac for removing data availability parameters."""
         )
 
@@ -1096,6 +1096,10 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
             if not self.runCommand(tmp_pick):
                 return False
 
+            tmp_pick = "create index idx_oid on tmp_pick(_oid)"
+            if not self.runCommand(tmp_pick):
+                return False
+
             tmp_pick = (
                 "\
       update tmp_pick set used=1 \
@@ -1145,6 +1149,10 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                 )
             )
 
+            if not self.runCommand(tmp_amp):
+                return False
+
+            tmp_amp = "create index idx_oid on tmp_amp(_oid)"
             if not self.runCommand(tmp_amp):
                 return False
 
@@ -1295,19 +1303,19 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
 
     def deleteObjects(self, *v):
         self.runCommand(self._query.deleteJournalQuery("PublicObject", *v))
-        self.runCommand(self._query.deleteObjectQuery("Object", *v))
-        self.runCommand(self._query.deleteObjectQuery("PublicObject", *v))
         self.runCommand(self._query.deleteObjectQuery(None, *v))
+        self.runCommand(self._query.deleteObjectQuery("PublicObject", *v))
+        self.runCommand(self._query.deleteObjectQuery("Object", *v))
 
     def deleteUnusedObjects(self, *v):
         self.runCommand(
             self._query.deleteJournalQuery("PublicObject", *v) + " and used=0"
         )
-        self.runCommand(self._query.deleteObjectQuery("Object", *v) + " and used=0")
+        self.runCommand(self._query.deleteObjectQuery(None, *v) + " and used=0")
         self.runCommand(
             self._query.deleteObjectQuery("PublicObject", *v) + " and used=0"
         )
-        self.runCommand(self._query.deleteObjectQuery(None, *v) + " and used=0")
+        self.runCommand(self._query.deleteObjectQuery("Object", *v) + " and used=0")
 
     def delete(self, message, func, *v):
         self.beginMessage(message)
