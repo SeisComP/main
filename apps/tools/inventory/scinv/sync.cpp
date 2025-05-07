@@ -160,7 +160,7 @@ bool Sync::push(const Seiscomp::DataModel::Inventory *inv) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Sync::process(const StationGroup *group) {
-	SEISCOMP_INFO("Synching station group %s", group->code().c_str());
+	SEISCOMP_INFO("Synchronizing station group %s", group->code().c_str());
 
 	bool newInstance = false;
 	bool needUpdate = false;
@@ -244,7 +244,7 @@ bool Sync::process(StationGroup *group, const StationReference *ref) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Sync::process(const Network *net) {
-	SEISCOMP_INFO("Synching network %s (%s)",
+	SEISCOMP_INFO("Synchronizing network %s (%s)",
 	              net->code().c_str(), net->start().toString("%F %T").c_str());
 
 	bool newInstance = false;

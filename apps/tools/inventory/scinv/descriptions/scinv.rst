@@ -258,14 +258,16 @@ results.
    :delim: ;
 
    network       ; start time after end time        ; !;
-                 ; network without station          ; W;
                  ; empty start time                 ;  ; handled by SeisComP inventory reader: network is ignored
+                 ; overlapping epochs               ; C;
+                 ; network without station          ; W;
                  ; empty station                    ; W;
                  ; empty code                       ; W;
 
    station       ; start time after end time        ; !;
                  ; empty or no start time           ; W; station is ignored
                  ; start time after end time        ; !;
+                 ; overlapping epochs               ; C;
                  ; empty code                       ; W;
                  ; empty latitude                   ; W;
                  ; empty longitude                  ; W;
@@ -278,6 +280,7 @@ results.
                  ; elevation far away from station  ; W; :option:`--max-elevation-difference` and :confval:`check.maxElevationDifference` override default threshold (500 m)
                  ; epoch outside network epochs     ; C;
                  ; epoch outside station epochs     ; C;
+                 ; overlapping epochs               ; C;
                  ; empty or no start time           ; W; sensorLocation is ignored
                  ; empty latitude                   ; W;
                  ; empty longitude                  ; W;
@@ -287,11 +290,11 @@ results.
                  ; has no channel/stream            ; W;
 
    stream        ; empty or no start time           ;  ; handled by SeisComP inventory reader: stream is ignored
-                 ; empty azimuth                    ; C;
                  ; epoch outside sensorLocation     ; C;
                  ; epoch outside station            ; C;
                  ; epoch outside network            ; C;
                  ; start time after end time        ; C;
+                 ; overlapping epochs               ; C;
                  ; missing gain value               ; W; empty value is handled by SeisComP inventory reader
                  ; gain value = 0                   ; W;
                  ; gain < 0 and dip > 0             ; W; may result in unexpected behavior, consider positive gain and negative dip
