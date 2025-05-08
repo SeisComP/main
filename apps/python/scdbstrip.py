@@ -684,6 +684,11 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
             self.beginMessage("Search objects")
             if not self.runCommand(tmp_object):
                 return False
+
+            tmp_object = "create index idx_oid on tmp_object(_oid)"
+            if not self.runCommand(tmp_object):
+                return False
+
             self.endMessage(self.globalCount("tmp_object"))
 
             for table in tables:
