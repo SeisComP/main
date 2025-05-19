@@ -9,12 +9,11 @@
 				directory structure and the event files are stored.
 				</description>
 			</parameter>
-			<parameter name="format" type="string" default="xml">
+			<parameter name="format" type="string" default="xml" values="xml,autoloc1,autoloc3">
 				<description>
-				Specify output event format (default is autoloc3). For completeness
-				it is recommended to switch to xml as storage format. The autoloc3
-				format can be easily reconstructed with scbulletin but not the other
-				way around.
+				Event output format. For completeness it is recommended to stick
+				with the default 'xml' as it can be converted to 'autoloc1' and
+				'autoloc3' by scbulletin but not the other way around.
 				</description>
 			</parameter>
 			<parameter name="gzip" type="boolean" default="false">
