@@ -15,6 +15,7 @@
 
 import sys
 import io
+import os
 from seiscomp.legacy.fseed import *
 from seiscomp.legacy.db.seiscomp3 import sc3wrap
 from seiscomp.legacy.db.seiscomp3.inventory import Inventory
@@ -29,8 +30,11 @@ def iterinv(obj):
 
 
 def main():
-    if len(sys.argv) < 1 or len(sys.argv) > 3:
-        print("Usage inv2dlsv [in_xml [out_dataless]]", file=sys.stderr)
+    if len(sys.argv) < 2 or len(sys.argv) > 3 or sys.argv[1] == "-h":
+        print(
+            f"Usage {os.path.basename(__file__)} [in_xml [out_dataless]]",
+            file=sys.stderr,
+        )
         return 1
 
     if len(sys.argv) > 1:
