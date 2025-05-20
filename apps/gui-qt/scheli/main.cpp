@@ -329,7 +329,7 @@ bool HCApp::validateParameters() {
 	try {
 		std::string dt = SCApp->commandline().option<std::string>("end-time");
 		try {
-			_endTime = Seiscomp::Core::Time::FromString(dt.c_str(), "%F %T");
+			_endTime = Seiscomp::Core::Time::FromString(dt.c_str());
 			std::cout << "Set defined endtime: " << _endTime->toString("%F %T") << std::endl;
 		}
 		catch ( ... ) {
