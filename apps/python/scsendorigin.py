@@ -69,8 +69,8 @@ class SendOrigin(seiscomp.client.Application):
                 "Parameters", "coord", "Latitude,longitude,depth of origin"
             )
             self.commandline().addStringOption("Parameters", "time", "time of origin")
-        except:
-            seiscomp.logging.warning(f"caught unexpected error {sys.exc_info()}")
+        except Exception:
+            seiscomp.logging.warning(f"Caught unexpected error {sys.exc_info()}")
 
     def printUsage(self):
         print(
@@ -85,7 +85,7 @@ Create an artificial origin and send to the messaging"""
         print(
             """Examples:
 Send an artificial origin with hypocenter parameters to the messaging
-  scsendorigin --time "2022-05-01 10:00:00" --coord 52,12,10
+  scsendorigin --time 2022-05-01T10:00:00 --coord 52,12,10
 """
         )
 

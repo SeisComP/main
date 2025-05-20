@@ -108,10 +108,16 @@ class EventList(seiscomp.client.Application):
         )
         self.commandline().addGroup("Events")
         self.commandline().addStringOption(
-            "Events", "begin", "Specify the lower bound of the time interval."
+            "Events",
+            "begin",
+            "Specify the lower bound of the time interval. Uses 1900-01-01T00:00:00 "
+            "unless given.",
         )
         self.commandline().addStringOption(
-            "Events", "end", "Specify the upper bound of the time interval."
+            "Events",
+            "end",
+            "Specify the upper bound of the time interval Uses 2500-01-01T00:00:00 "
+            "unless given.",
         )
         self.commandline().addStringOption(
             "Events",
@@ -266,7 +272,7 @@ List event IDs available in a given time range and print to stdout."""
             f"""Examples:
 Print all event IDs from year 2022 and thereafter
   {os.path.basename(__file__)} -d mysql://sysop:sysop@localhost/seiscomp \
---begin "2022-01-01 00:00:00"
+--begin 2022-01-01T00:00:00
 
 Print all event IDs with event type 'quarry blast'
   {os.path.basename(__file__)} -d mysql://sysop:sysop@localhost/seiscomp --event-type 'quarry blast'

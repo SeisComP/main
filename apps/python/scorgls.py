@@ -89,12 +89,14 @@ class OriginList(seiscomp.client.Application):
         self.commandline().addStringOption(
             "Origins",
             "begin",
-            "The lower bound of the time interval. Format: '1970-01-01 00:00:00'.",
+            "The lower bound of the time interval. Uses 1900-01-01T00:00:00 unless "
+            "given.",
         )
         self.commandline().addStringOption(
             "Origins",
             "end",
-            "The upper bound of the time interval. Format: '1970-01-01 00:00:00'.",
+            "The upper bound of the time interval. Format: 1970-01-01T00:00:00. Uses "
+            "2500-01-01T00:00:00 unless given.",
         )
         self.commandline().addStringOption(
             "Origins", "author", "The author of the origins."
@@ -179,7 +181,7 @@ List origin IDs available in a given time range and print to stdout."""
             f"""Examples:
 Print all origin IDs from year 2022 and thereafter
   {os.path.basename(__file__)} -d mysql://sysop:sysop@localhost/seiscomp \
---begin "2022-01-01 00:00:00"
+--begin 2022-01-01T00:00:00
 
 Print IDs of all events in XML file
   {os.path.basename(__file__)} -i origins.xml
