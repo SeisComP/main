@@ -304,7 +304,14 @@ void HCApp::createCommandLineDescription() {
 
 
 bool HCApp::validateParameters() {
-	if ( !Gui::Application::validateParameters() ) return false;
+	if ( !Gui::Application::validateParameters() ) {
+		return false;
+	}
+
+	if ( _timeSpanPerRow <= 0 ) {
+		std::cerr << "Invalid time-span: " << _timeSpanPerRow << std::endl;
+		return false;
+	}
 
 	if ( !_streamIDs.empty() ) {
 		for ( const auto &stream : _streamIDs ) {
