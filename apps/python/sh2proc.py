@@ -86,7 +86,7 @@ class SH2Proc(seiscomp.client.Application):
             """Usage:
   sh2proc [options]
 
-Convert Seismic Handler event data to SeisComP XML format"""
+Convert Seismic Handler event data to SeisComP XML format which is sent to stdout."""
         )
 
         seiscomp.client.Application.printUsage(self)
@@ -95,10 +95,10 @@ Convert Seismic Handler event data to SeisComP XML format"""
             """Examples:
 Convert the Seismic Handler file shm.evt to SCML. Receive the database
 connection to read inventory and configuration information from messaging
-  sh2proc shm.evt
+  sh2proc shm.evt > event.xml
 
 Read Seismic Handler data from stdin. Provide inventory and configuration in XML
-  cat shm.evt | sh2proc --inventory-db=inventory.xml --config-db=config.xml
+  cat shm.evt | sh2proc --inventory-db=inventory.xml --config-db=config.xml > event.xml
 """
         )
 
