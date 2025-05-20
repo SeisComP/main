@@ -19,14 +19,14 @@
 				empty list (=""): all agencies are allowed
 				</description>
 			</parameter>
-                        <parameter name="authors" type="list:string" default="">
-                                <description>
-                                List of authors to consider picks and origins. The author
-                                is extracted from the pick or the preferred origin of the event
-                                and compared with the configured authors.
-                                empty list (=""): all authors are allowed
-                                </description>
-                        </parameter>
+			<parameter name="authors" type="list:string" default="">
+				<description>
+				List of authors to consider picks and origins. The author
+				is extracted from the pick or the preferred origin of the event
+				and compared with the configured authors.
+				empty list (=""): all authors are allowed
+				</description>
+			</parameter>
 			<group name="poi">
 				<parameter name="message" type="string">
 					<description>
@@ -56,28 +56,28 @@
 				</parameter>
 			</group>
 			<group name="scripts">
-				<parameter name="pick" type="string">
+				<parameter name="pick" type="file" options="execute">
 					<description>
 					The script to be called when a pick
 					arrives. Network-, station code, pick publicID are passed
 					as parameters $1, $2, $3.
 					</description>
 				</parameter>
-				<parameter name="amplitude" type="string">
+				<parameter name="amplitude" type="file" options="execute">
 					<description>
 					The script to be called when an amplitude
 					arrives. Network-, station code, amplitude and amplitude
 					public ID are passed as parameters $1, $2, $3, $4.
 					</description>
 				</parameter>
-				<parameter name="alert" type="string">
+				<parameter name="alert" type="file" options="execute">
 					<description>
 					The script to be called when a preliminary
 					origin arrives. Latitude and longitude are passed as
 					parameters $1 and $2.
 					</description>
 				</parameter>
-				<parameter name="event" type="string">
+				<parameter name="event" type="file" options="execute">
 					<description>
 					The script to be called when an event has been
 					declared. The message string, a flag (1=new event,

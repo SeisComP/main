@@ -39,6 +39,8 @@ class ObjectAlert(seiscomp.client.Application):
         self.addMessagingSubscription("EVENT")
         self.addMessagingSubscription("LOCATION")
         self.addMessagingSubscription("MAGNITUDE")
+        self.addMessagingSubscription("AMPLITUDE")
+        self.addMessagingSubscription("PICK")
 
         self.setAutoApplyNotifierEnabled(True)
         self.setInterpretNotifierEnabled(True)
@@ -76,50 +78,57 @@ class ObjectAlert(seiscomp.client.Application):
         self.commandline().addOption(
             "Generic",
             "first-new",
-            "calls an event a new event when it is seen the first time",
+            "Calls an event a new event when it is seen the first time.",
         )
         self.commandline().addGroup("Alert")
         self.commandline().addStringOption(
-            "Alert", "amp-type", "amplitude type to listen to", self._ampType
+            "Alert",
+            "amp-type",
+            "Amplitude type to listen to.",
+            self._ampType,
         )
         self.commandline().addStringOption(
             "Alert",
             "pick-script",
-            "script to be called when a pick arrived, network-, station code pick "
-            "publicID are passed as parameters $1, $2, $3 and $4",
+            "Script to be called when a pick arrived, network-, station code pick "
+            "publicID are passed as parameters $1, $2, $3 and $4.",
         )
         self.commandline().addStringOption(
             "Alert",
             "amp-script",
-            "script to be called when a station amplitude arrived, network-, station "
-            "code, amplitude and amplitude publicID are passed as parameters $1, $2, $3 and $4",
+            "Script to be called when a station amplitude arrived, network-, station "
+            "code, amplitude and amplitude publicID are passed as parameters $1, $2, "
+            "$3 and $4.",
         )
         self.commandline().addStringOption(
             "Alert",
             "alert-script",
-            "script to be called when a preliminary origin arrived, latitude and "
-            "longitude are passed as parameters $1 and $2",
+            "Script to be called when a preliminary origin arrived, latitude and "
+            "longitude are passed as parameters $1 and $2.",
         )
         self.commandline().addStringOption(
             "Alert",
             "event-script",
-            "script to be called when an event has been declared; the message string, a "
-            "flag (1=new event, 0=update event), the EventID, the arrival count and the "
-            "magnitude (optional when set) are passed as parameter $1, $2, $3, $4 and $5",
+            "Script to be called when an event has been declared; the message string, "
+            "a flag (1=new event, 0=update event), the EventID, the arrival count and "
+            "the magnitude (optional when set) are passed as parameter $1, $2, $3, $4 "
+            "and $5.",
         )
         self.commandline().addGroup("Cities")
         self.commandline().addStringOption(
             "Cities",
             "max-dist",
-            "maximum distance for using the distance from a city to the earthquake",
+            "Maximum distance for using the distance from a city to the earthquake.",
+            str(self._citiesMaxDist),
         )
         self.commandline().addStringOption(
             "Cities",
             "min-population",
-            "minimum population for a city to become a point of interest",
+            "Minimum population for a city to become a point of interest.",
+            str(self._citiesMinPopulation),
         )
         self.commandline().addGroup("Debug")
-        self.commandline().addStringOption("Debug", "eventid,E", "specify Event ID")
+        self.commandline().addStringOption("Debug", "eventid,E", "Specify event ID.")
         return True
 
     def init(self):
@@ -174,7 +183,7 @@ class ObjectAlert(seiscomp.client.Application):
             phaseStreams = self.configGetStrings("constraints.phaseStreams")
             for item in phaseStreams:
                 rule = item.strip()
-                # rule is NET.STA.LOC.CHA and the special charactes ? * | ( ) are allowed
+                # allowned: NET.STA.LOC.CHA and the special charactes ? * | ( )
                 if not re.fullmatch(r"[A-Z|a-z|0-9|\?|\*|\||\(|\)|\.]+", rule):
                     seiscomp.logging.error(
                         f"Wrong stream ID format in `constraints.phaseStreams`: {item}"
@@ -559,7 +568,8 @@ class ObjectAlert(seiscomp.client.Application):
                             break
                     if not matched:
                         seiscomp.logging.debug(
-                            f" + stream ID {waveformID} does not match constraints.phaseStreams rules"
+                            f" + stream ID {waveformID} does not match "
+                            "constraints.phaseStreams rules"
                         )
                         return
 
@@ -568,7 +578,8 @@ class ObjectAlert(seiscomp.client.Application):
                         self.notifyPick(obj)
                     else:
                         seiscomp.logging.debug(
-                            f" + phase hint {phaseHint} does not match '{self._phaseHints}'"
+                            f" + phase hint {phaseHint} does not match "
+                            f"'{self._phaseHints}'"
                         )
                 else:
                     seiscomp.logging.debug(
