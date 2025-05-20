@@ -62,50 +62,52 @@ class VoiceAlert(client.Application):
         self.commandline().addOption(
             "Generic",
             "first-new",
-            "calls an event a new event when it is " "seen the first time",
+            "Calls an event a new event when it is seen the first time.",
         )
         self.commandline().addGroup("Alert")
         self.commandline().addStringOption(
             "Alert",
             "amp-type",
-            "specify the amplitude type to listen to",
+            "Specify the amplitude type to listen to.",
             self._ampType,
         )
         self.commandline().addStringOption(
             "Alert",
             "amp-script",
-            "specify the script to be called when a "
+            "Specify the script to be called when a "
             "stationamplitude arrived, network-, stationcode and amplitude are "
-            "passed as parameters $1, $2 and $3",
+            "passed as parameters $1, $2 and $3.",
         )
         self.commandline().addStringOption(
             "Alert",
             "alert-script",
-            "specify the script to be called when a "
+            "Specify the script to be called when a "
             "preliminary origin arrived, latitude and longitude are passed as "
-            "parameters $1 and $2",
+            "parameters $1 and $2.",
         )
         self.commandline().addStringOption(
             "Alert",
             "event-script",
-            "specify the script to be called when an "
+            "Specify the script to be called when an "
             "event has been declared; the message string, a flag (1=new event, "
             "0=update event), the EventID, the arrival count and the magnitude "
-            "(optional when set) are passed as parameter $1, $2, $3, $4 and $5",
+            "(optional when set) are passed as parameter $1, $2, $3, $4 and $5.",
         )
         self.commandline().addGroup("Cities")
         self.commandline().addStringOption(
             "Cities",
             "max-dist",
-            "maximum distance for using the distance " "from a city to the earthquake",
+            "Maximum distance for using the distance from a city to the earthquake.",
+            str(self._citiesMaxDist),
         )
         self.commandline().addStringOption(
             "Cities",
             "min-population",
-            "minimum population for a city to " "become a point of interest",
+            "Minimum population for a city to become a point of interest.",
+            str(self._citiesMinPopulation),
         )
         self.commandline().addGroup("Debug")
-        self.commandline().addStringOption("Debug", "eventid,E", "specify Event ID")
+        self.commandline().addStringOption("Debug", "eventid,E", "Specify event ID.")
         return True
 
     def init(self):

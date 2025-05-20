@@ -42,21 +42,21 @@
 				</parameter>
 			</group>
 			<group name="scripts">
-				<parameter name="amplitude" type="string">
+				<parameter name="amplitude" type="file" options="execute">
 					<description>
 					Specify the script to be called if an amplitude
 					arrives, network-, stationcode and amplitude are passed
 					as parameters $1, $2 and $3.
 					</description>
 				</parameter>
-				<parameter name="alert" type="string">
+				<parameter name="alert" type="file" options="execute">
 					<description>
 					Specify the script to be called if a preliminary
 					origin arrives, latitude and longitude are passed as
 					parameters $1 and $2.
 					</description>
 				</parameter>
-				<parameter name="event" type="string">
+				<parameter name="event" type="file" options="execute">
 					<description>
 					Specify the script to be called when an event has been
 					declared; the message string, a flag (1=new event,
