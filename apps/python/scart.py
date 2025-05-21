@@ -908,6 +908,11 @@ Import miniSEED data from FDSNWS into a SDS archive for specific time range and 
 
 Check an archive for files with out-of-order records
   {os.path.basename(__file__)} --check /archive
+
+Play back miniSEED data from archive at normal speed as in real time and pipe \
+them into another application, here scrttv
+
+  {os.path.basename(__file__)} -dmv -t 2026-05-01~2026-05-02 /archive | scrttv -I - --offline --no-inventory
 """
 
 
