@@ -61,7 +61,7 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 			maxDelay,
 			"Mode", "max-delay",
 			"The maximum delay in seconds to keep a trace visible (0 to disable). "
-			"Channels with larger delays will be hidden until the delay is in range."
+			"Channels with larger delays are hidden until the delay is in range."
 		)
 		& cliSwitch(
 			initStartTime,
@@ -112,12 +112,13 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 		& cli(
 		    vstreams,
 		    "Mode", "channels",
-		    "Channel(s) to display. The channel code may contain wildcards at "
-		    "any position but the support of wildcards depends on RecordStream. "
-		    "Repeat the option for multiple channel groups. "
-		    "Examples:\n"
+		    "Channel(s) to display. The corresponding rows are only shown when "
+		    "data for the considered time window is available. "
+		    "The channel code may contain wildcards at any position but the "
+		    "support of wildcards depends on RecordStream. Repeat the option "
+		    "for multiple channel groups. Examples:\n"
 		    "default : all streams configured by global bindings.\n"
-		    "GE.*.*.HH? : all HH streams of all stations from GE network.",
+		    "GE.*.*.HH? : all HH channels of all stations from GE network.",
 		    true
 		);
 	}

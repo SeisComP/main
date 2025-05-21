@@ -51,7 +51,7 @@
 				This parameter exists mainly for backward compatibility.
 				</description>
 			</parameter>
-			<parameter name="filters" type="list:string" default="&quot;RMHP(2)>>ITAPER(5)>>BW(3,0.5,8.0)&quot;,&quot;RMHP(2)>>ITAPER(5)>>BW_HP(3, 3)&quot;">
+			<parameter name="filters" type="list:string" default="&quot;BW 0.5 - 8.0 Hz;RMHP(2)>>ITAPER(5)>>BW(3, 0.5, 8.0)&quot;,&quot;HP 3.0 Hz;RMHP(2)>>ITAPER(5)>>BW_HP(3, 3)&quot;">
 				<description>
 					Define a list of filters that is cycles through when pressing
 					'G' or 'D'. Filtering is toggled with 'F'.
@@ -104,10 +104,9 @@
 					<description>
 					Configure the initial stream sorting.
 					</description>
-					<parameter name="mode" type="string" default="distance">
+					<parameter name="mode" type="string" default="distance" values="config,distance,station,network,group">
 						<description>
-						The sort mode applied initially. Allowed values
-						are: config, distance, station, network, group.
+						The mode applied initially for sorting traces.
 						</description>
 					</parameter>
 					<parameter name="latitude" type="double" unit="deg" default="0.0">
@@ -158,7 +157,7 @@
 					e.g. &quot;GE.MORC..BHZ&quot;.
 					</description>
 				</parameter>
-				<parameter name="rows" type="integer">
+				<parameter name="rows" type="int">
 					<description>
 					Number of rows to show at once in one windows. If more traces
 					than rows are loaded, the are accessible by a scroll bar.
@@ -228,7 +227,8 @@
 						</parameter>
 						<group name="pen">
 							<description>
-							Define the trace pen of the group.
+							Define the trace pen of the group. Read the SeisComP
+							GUI documenation for full details.
 							</description>
 							<parameter name="color" type="color">
 								<description>
@@ -259,16 +259,14 @@
 								0:FFBF00,1:C70039
 								</description>
 							</parameter>
-							<parameter name="style" type="string" default="SolidLine">
+							<parameter name="style" type="string" default="solidline" values="nopen,solidline,dashline,dotline,dashdotline,dashdotdotline">
 								<description>
-								The style of the pen. Supported values are: NoPen,
-								SolidLine, DashLine, DotLine, DashDotLine,
-								DashDotDotLine.
+								The line style of the pen.
 								</description>
 							</parameter>
 							<parameter name="width" type="double" default="1.0" unit="px">
 								<description>
-								The width of the pen.
+								The line width of the pen.
 								</description>
 							</parameter>
 						</group>
@@ -336,7 +334,7 @@
 									<description>
 									</description>
 								</parameter>
-								<parameter name="style" type="string" default="solidline">
+								<parameter name="style" type="string" default="solidline" values="nopen,solidline,dashline,dotline,dashdotline,dashdotdotline">
 									<description>
 									</description>
 								</parameter>
@@ -347,9 +345,10 @@
 							</group>
 							<group name="brush">
 								<description>
-								Properties of the area below the minimum.
+								Properties of the area below the minimum. Read
+								the SeisComP GUI documenation for full details.
 								</description>
-								<parameter name="style" type="string" default="nobrush">
+								<parameter name="style" type="string" default="nobrush" values="solid,dense1,dense2,dense3,dense4,dense5,dense6,dense7,nobrush,horizontal,vertical,cross,bdiag,fdiag,diagross">
 									<description>
 									</description>
 								</parameter>
@@ -370,13 +369,14 @@
 							</parameter>
 							<group name="pen">
 								<description>
-								Line properties.
+								Line properties. Read the SeisComP GUI
+								documenation for full details.
 								</description>
 								<parameter name="width" type="string" default="1" unit="">
 									<description>
 									</description>
 								</parameter>
-								<parameter name="style" type="string" default="solidline">
+								<parameter name="style" type="string" default="solidline" values="nopen,solidline,dashline,dotline,dashdotline,dashdotdotline">
 									<description>
 									</description>
 								</parameter>
@@ -387,9 +387,10 @@
 							</group>
 							<group name="brush">
 								<description>
-								Properties of the area above the maximum.
+								Properties of the area above the maximum. Read
+								the SeisComP GUI documenation for full details.
 								</description>
-								<parameter name="style" type="string" default="nobrush">
+								<parameter name="style" type="string" default="nobrush" values="solid,dense1,dense2,dense3,dense4,dense5,dense6,dense7,nobrush,horizontal,vertical,cross,bdiag,fdiag,diagross">
 									<description>
 									</description>
 								</parameter>
@@ -439,15 +440,14 @@
 					Whether to use logarithmic frequency scale.
 					</description>
 				</parameter>
-				<parameter name="normalization" type="string" default="fixed">
+				<parameter name="normalization" type="string" default="fixed" values="fixed,frequency,time">
 					<description>
-					Which amplitude normalization mode to use: &quot;fixed&quot;,
-					&quot;frequency&quot; or &quot;time&quot;.
+					The amplitude normalization mode to use.
 					</description>
 				</parameter>
 				<parameter name="axis" type="boolean" default="false">
 					<description>
-					Whether to show the frequency axis.
+					Show the frequency axis.
 					</description>
 				</parameter>
 				<parameter name="minimumAmplitude" type="double" default="-15" unit="log(ps)">
@@ -593,10 +593,12 @@
 				<option flag="" long-flag="3c" argument="" param-ref="3c"/>
 				<option long-flag="channels" argument="" publicID="mode#channels">
 					<description>
-					Channel(s) to display. The channel code may contain wildcards
-					at any position but the support of wildcards depends on
-					RecordStream. Repeat the option for multiple
-					channel groups. Examples:
+					Channel(s) to display. The corresponding rows are only shown
+					when data for the considered time window is available.
+
+					The channel code may contain wildcards at any position but
+					the support of wildcards depends on RecordStream.
+					Repeat the option for multiple channel groups. Examples:
 
 					default : all streams configured by global bindings.
 

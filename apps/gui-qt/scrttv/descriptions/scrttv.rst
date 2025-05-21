@@ -66,7 +66,7 @@ Among the configurable parameters are:
   * trace properties and trace background colors,
   * font and general GUI parameters.
 
-More parameters are available on the command-line:
+More options are available on the command-line:
 
 .. code-block:: sh
 
@@ -477,6 +477,52 @@ Alternatively, the button "Show Details" can be used to just send the origin to
 the GUI group and let :ref:`scolv` or other GUIs pick it up and show it. This
 will not store the origin in the database and works the same way as creating
 :ref:`artificial origins <scrttv-artificial-origins>`.
+
+
+.. _scrttv-applications:
+
+Applications
+============
+
+#. View waveforms with default settings printing debug information
+
+   .. code-block:: sh
+
+      scrttv --debug
+
+#. View 3C data from default recordstream 3 hours before midnight. All available
+   picks are displayed.
+
+   .. code-block:: sh
+
+      scrttv --buffer-size 10800 --end-time 2022-06-01 --map-picks
+
+#. View data from a miniSEED file in offline mode without messaging
+
+   .. code-block:: sh
+
+      scrttv file.mseed
+
+#. View all HH streams from stations CX.PB01 and CX.PB02 without messaging and
+   inventory
+
+   .. code-block:: sh
+
+      scrttv --offline --no-inventory --channels CX.PB01.*.HH? --channels CX.PB02.*.HH?
+
+#. View the miniSEED data from all file ending with .mseed which are read from
+   stdin
+
+   .. code-block:: sh
+
+      cat *.mseed | scrttv -
+
+#. View miniSEED data played back from archive at normal speed as in real time
+   using :ref:`scart`
+
+   .. code-block:: sh
+
+      scart -dmv -t 2026-05-01~2026-05-02 /archive | scrttv -I - --offline --no-inventory
 
 
 .. _scrttv-hot-keys:
