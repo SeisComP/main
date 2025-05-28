@@ -77,7 +77,7 @@ MainFrame::MainFrame() {
 	_qcReportView->setRecordStreamURL(SCApp->recordStreamURL());
 	_qcReportView->setDatabaseQueryInterface(SCApp->query());
 	QLayout *Rlayout = new QVBoxLayout(_ui.tabQcReport);
-	Rlayout->setMargin(2);
+	Rlayout->setContentsMargins(2, 2, 2, 2);
 	Rlayout->addWidget(_qcReportView);
 
 	//! OVERVIEW
@@ -85,7 +85,7 @@ MainFrame::MainFrame() {
 	_qcOverView->setRecordStreamURL(SCApp->recordStreamURL());
 	_qcOverView->setDatabaseQueryInterface(SCApp->query());
 	QLayout *Olayout = new QVBoxLayout(_ui.tabQcOver);
-	Olayout->setMargin(2);
+	Olayout->setContentsMargins(2, 2, 2, 2);
 	Olayout->addWidget(_qcOverView);
 
 	connect(SCApp, SIGNAL(messageAvailable(Seiscomp::Core::Message*, Seiscomp::Client::Packet*)),
@@ -159,7 +159,10 @@ void MainFrame::readMessage(Core::Message *msg, Client::Packet *) {
 
 
 bool compareChannelCode(const QString& left, const QString& right) {
-	if ( left.count() < 2 || right.count() < 2 ) return false;
+	if ( (left.size() < 2) || (right.size() < 2) ) {
+		return false;
+	}
+
 	return (left[0] == right[0] || left[0] == '?' || right[0] == '?') &&
 	       (left[1] == right[1] || left[1] == '?' || right[1] == '?');
 }

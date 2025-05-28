@@ -712,11 +712,11 @@ void MvMainWindow::setupStandardUi() {
 
 	// Setup map
 	_ui.gmTab->setLayout(new QGridLayout);
-	_ui.gmTab->layout()->setMargin(0);
+	_ui.gmTab->layout()->setContentsMargins(0, 0, 0, 0);
 	_ui.gmTab->layout()->setSpacing(0);
 
 	_ui.qcTab->setLayout(new QGridLayout);
-	_ui.qcTab->layout()->setMargin(0);
+	_ui.qcTab->layout()->setContentsMargins(0, 0, 0, 0);
 	_ui.qcTab->layout()->setSpacing(0);
 
 	QWidget* currentTab = _ui.gmTab;

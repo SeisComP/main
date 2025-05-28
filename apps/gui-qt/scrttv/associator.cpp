@@ -117,7 +117,7 @@ class Badge : public QFrame {
 	public:
 		Badge(TraceMarker *marker, QMap<QString, QWidget*> &badges) {
 			setLayout(new QHBoxLayout);
-			layout()->setMargin(0);
+			layout()->setContentsMargins(0, 0, 0, 0);
 			setFrameShape(QFrame::StyledPanel);
 			setFrameShadow(QFrame::Raised);
 
@@ -126,7 +126,7 @@ class Badge : public QFrame {
 
 			content->setSizePolicy(QSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum));
 			content->setLayout(new QHBoxLayout);
-			content->layout()->setMargin(0);
+			content->layout()->setContentsMargins(0, 0, 0, 0);
 
 			QString labelText = waveformIDToString(marker->pick->waveformID());
 			try {
@@ -198,7 +198,7 @@ Associator::Associator(QWidget *parent) : QWidget(parent) {
 	unsetMessage();
 
 	_ui.framePicks->setLayout(new QVBoxLayout);
-	_ui.framePicks->layout()->setMargin(0);
+	_ui.framePicks->layout()->setContentsMargins(0, 0, 0, 0);
 
 	QScrollArea *area = new QScrollArea();
 	_ui.framePicks->layout()->addWidget(area);
@@ -215,7 +215,7 @@ Associator::Associator(QWidget *parent) : QWidget(parent) {
 	sizePolicy.setHeightForWidth(true);
 	_mapWidget->setSizePolicy(sizePolicy);
 	// _mapWidget->setDrawStationAnnotations(true);
-	_ui.frameMap->layout()->setMargin(0);
+	_ui.frameMap->layout()->setContentsMargins(0, 0, 0, 0);
 	_ui.frameMap->layout()->addWidget(_mapWidget);
 
 	connect(_mapWidget, SIGNAL(arrivalChanged(int, bool)),
@@ -1011,7 +1011,7 @@ void Associator::inspect() {
 	QDialog dlg;
 	dlg.restoreGeometry(state);
 	dlg.setLayout(new QVBoxLayout);
-	dlg.layout()->setMargin(0);
+	dlg.layout()->setContentsMargins(0, 0, 0, 0);
 	dlg.layout()->addWidget(w);
 	dlg.exec();
 	state = dlg.saveGeometry();

@@ -768,11 +768,16 @@ void TraceTabWidget::checkActiveTab(const QPoint& p) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool TraceTabWidget::checkDraging(QDropEvent *event) {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	checkActiveTab(event->pos());
+#else
+	checkActiveTab(event->position().toPoint());
+#endif
 
 	Seiscomp::Gui::RecordView* view = dynamic_cast<Seiscomp::Gui::RecordView*>(event->source());
-	if ( view == widget(currentIndex()) )
+	if ( view == widget(currentIndex()) ) {
 		return false;
+	}
 
 	return true;
 }
@@ -783,7 +788,11 @@ bool TraceTabWidget::checkDraging(QDropEvent *event) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void TraceTabWidget::dragEnterEvent(QDragEnterEvent *event) {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	checkActiveTab(event->pos());
+#else
+	checkActiveTab(event->position().toPoint());
+#endif
 	event->acceptProposedAction();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -916,7 +925,7 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 			continue;
 		}
 
-		if ( name[0] == "@" ) {
+		if ( name[0] == '@' ) {
 			name.remove(0, 1);
 		}
 
@@ -1582,7 +1591,7 @@ TraceView* MainWindow::createTraceView() {
 	traceView->setSelectionEnabled(false);
 	traceView->setSelectionMode(Seiscomp::Gui::RecordView::ExtendedSelection);
 	traceView->setDefaultItemColumns(4);
-	traceView->layout()->setMargin(6);
+	traceView->layout()->setContentsMargins(6, 6, 6, 6);
 	traceView->showScrollBar(!SCApp->nonInteractive());
 
 	// determine the required label width
@@ -1951,8 +1960,8 @@ void MainWindow::changeTraceState() {
 
 	_questionApplyChanges.setInfo("Stations to be changed:\n" +
 	                              QString(" - %1.%2")
-	                               .arg(item->streamID().networkCode().c_str())
-	                               .arg(item->streamID().stationCode().c_str()));
+	                               .arg(item->streamID().networkCode().c_str(),
+	                                    item->streamID().stationCode().c_str()));
 
 	if ( _questionApplyChanges.exec() == QDialog::Rejected )
 		return;
@@ -1968,11 +1977,15 @@ void MainWindow::changeTraceState() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::createOrigin(Gui::RecordViewItem* item, Core::Time time) {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	if ( item->data().type() == QVariant::Invalid ) {
+#else
+	if ( item->data().typeId() == QVariant::Invalid ) {
+#endif
 		if ( !_statusBarFile ) return;
 
 		const double *v = item->widget()->value(time);
-		if ( v == NULL ) {
+		if ( !v ) {
 			_statusBarFile->setText("");
 		}
 		else {
@@ -2764,16 +2777,19 @@ void MainWindow::enableSearch() {
 void MainWindow::searchByText(const QString &text) {
 	if ( text.isEmpty() ) return;
 
-	QRegExp rx(text + "*");
-	rx.setPatternSyntax(QRegExp::Wildcard);
-	rx.setCaseSensitivity(Qt::CaseInsensitive);
+	QRegularExpression rx = QRegularExpression(
+		QRegularExpression::wildcardToRegularExpression(text + "*"),
+		QRegularExpression::CaseInsensitiveOption
+	);
 
-	TraceView *current = NULL, *found = NULL;
+	TraceView *current = nullptr, *found = nullptr;
 
-	if ( _tabWidget )
+	if ( _tabWidget ) {
 		current = _traceViews[_tabWidget->currentIndex()];
-	else
+	}
+	else {
 		current = _traceViews[0];
+	}
 
 	foreach ( TraceView *view, _traceViews ) {
 		view->deselectAllItems();

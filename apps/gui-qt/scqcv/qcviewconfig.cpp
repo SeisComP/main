@@ -81,7 +81,7 @@ bool QcViewConfig::init() {
 	try {
 		Strings parameter = _app->configGetStrings("parameter");
 		for (Strings::iterator it = parameter.begin(); it != parameter.end(); ++it) {
-			QStringList sl = QString(it->c_str()).split(QRegExp(":"));
+			QStringList sl = QString(it->c_str()).split(":");
 			QString parameter = sl.first().simplified();
 			QString cfgName = sl.last().simplified();
 			_parameterList.append(parameter);

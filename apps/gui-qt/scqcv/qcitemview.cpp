@@ -401,7 +401,12 @@ int QcItemView::horizontalOffset() const
 void QcItemView::paintEvent(QPaintEvent *event)
 {
 // 	QItemSelectionModel *selections = selectionModel();
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	QStyleOptionViewItem option = viewOptions();
+#else
+	QStyleOptionViewItem option;
+	initViewItemOption(&option);
+#endif
 
 	QBrush background = option.palette.base();
 	QPen foreground(option.palette.color(QPalette::WindowText));

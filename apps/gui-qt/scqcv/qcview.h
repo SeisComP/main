@@ -145,7 +145,7 @@ class QcTableCornerButton : public QPushButton {
 
 		void paintEvent(QPaintEvent*) {
 			QStyleOptionButton opt;
-			opt.init(this);
+			opt.initFrom(this);
 			opt.state = QStyle::State_None;
 			opt.features = QStyleOptionButton::Flat;
 			opt.rect = rect();

@@ -796,7 +796,7 @@ void MainFrame::onLog(const QString &/*channelName*/,
                       const QString &msg,
                       int time) {
 	QDateTime dt;
-	dt.setTime_t(time);
+	dt.setSecsSinceEpoch(time);
 
 	_ui.textLog->setTextColor(QColor(0,0,0));
 	_ui.textLog->insertPlainText("[" + dt.toString(Qt::ISODate) + "] ");

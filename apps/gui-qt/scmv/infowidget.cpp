@@ -411,7 +411,7 @@ void StationInfoWidget::uiInit() {
 	QGroupBox* groupBox = new QGroupBox(QString("Waveform Data %1").arg(id().c_str()));
 
 	QVBoxLayout* boxLayout = new QVBoxLayout();
-	boxLayout->setMargin(1);
+	boxLayout->setContentsMargins(1, 1, 1, 1);
 	boxLayout->addWidget(_recordWidget);
 	boxLayout->addWidget(_recordWidgetTimeScale);
 

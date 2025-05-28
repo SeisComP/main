@@ -219,7 +219,7 @@ MainFrame::MainFrame(){
 	tabWidget->addTab(container, "Current");
 
 	layout = new QHBoxLayout(_ui.frameSummary);
-	layout->setMargin(0);
+	layout->setContentsMargins(0, 0, 0, 0);
 	//layout->addWidget(_eventSmallSummary);
 	layout->addWidget(tabWidget);
 	if ( !_exportScript.empty() ) {

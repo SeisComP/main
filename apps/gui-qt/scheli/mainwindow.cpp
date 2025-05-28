@@ -49,7 +49,7 @@ MainWindow::MainWindow() {
 	_ui.frameSpacer->setFixedWidth(_heliWidget->canvas().labelWidth());
 
 	QVBoxLayout *layout = new QVBoxLayout(_ui.frameHeli);
-	layout->setMargin(0);
+	layout->setContentsMargins(0, 0, 0, 0);
 	_ui.frameHeli->setLayout(layout);
 	layout->addWidget(_heliWidget);
 

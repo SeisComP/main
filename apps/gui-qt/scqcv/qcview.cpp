@@ -38,14 +38,16 @@ namespace Qc {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class QcSortFilterProxyModel : public QSortFilterProxyModel {
 	public:
-		QcSortFilterProxyModel(QObject* obj=0) 
+		QcSortFilterProxyModel(QObject* obj=0)
 		:	QSortFilterProxyModel(obj) {}
 
 		bool lessThan(const QModelIndex &left, const QModelIndex &right) const {
-			if ( sourceModel()->data(left).type() == QVariant::Invalid )
+			if ( !sourceModel()->data(left).isValid() ) {
 				return true;
-			if ( sourceModel()->data(right).type() == QVariant::Invalid )
+			}
+			if ( !sourceModel()->data(right).isValid() ) {
 				return false;
+			}
 
 			return QSortFilterProxyModel::lessThan(left, right);
 		}
@@ -67,7 +69,7 @@ QcView::QcView(QcModel* qcModel, QString name, QWidget* parent,
 	_qcProxyModel->setFilterKeyColumn(0);
 
 	_layout = new QVBoxLayout(this);
-	_layout->setMargin(2);
+	_layout->setContentsMargins(2, 2, 2, 2);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -191,9 +193,9 @@ void QcView::setFilterRegExp(const QString& expr){
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void QcView::filterRegExpChanged(const QString& filter) {
-	QRegExp regExp(filter, Qt::CaseInsensitive, QRegExp::RegExp);
-	_qcProxyModel->setFilterRegExp(regExp);
+void QcView::filterRegExpChanged(const QString &filter) {
+	QRegularExpression regExp(filter, QRegularExpression::CaseInsensitiveOption);
+	_qcProxyModel->setFilterRegularExpression(regExp);
 
 	updateStreamCount();
 
@@ -244,7 +246,7 @@ void QcTableView::init() {
 	_qcTable = new QTableView();
 	_qcTable->verticalHeader()->hide();
 	_qcTable->setModel(_qcProxyModel);
-	_qcTable->sortByColumn(0, Qt::AscendingOrder); 
+	_qcTable->sortByColumn(0, Qt::AscendingOrder);
 	_qcTable->setSortingEnabled(true);
 	_qcTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 	_qcTable->horizontalHeader()->setSectionsMovable(true);
@@ -326,7 +328,7 @@ double QcTableView::streamWidgetLength() const {
 bool QcTableView::eventFilter(QObject* o, QEvent* e) {
 	if (e->type() == QEvent::Paint){
 		QcTableCornerButton* btn = qobject_cast<QcTableCornerButton*>(o);
-			
+
 		if (btn) {
 			btn->paintEvent(static_cast<QPaintEvent*>(e));
 			return true;

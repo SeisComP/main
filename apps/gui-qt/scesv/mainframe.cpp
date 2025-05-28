@@ -61,11 +61,11 @@ MainFrame::MainFrame() {
 	}
 	else {
 		QLayout* layoutSummary = new QVBoxLayout(_ui.tabSummary);
-		layoutSummary->setMargin(9);
+		layoutSummary->setContentsMargins(9, 9, 9, 9);
 		layoutSummary->addWidget(_eventSummary);
 
 		QLayout* layoutEventList = new QVBoxLayout(_ui.tabEventList);
-		layoutEventList->setMargin(9);
+		layoutEventList->setContentsMargins(9, 9, 9, 9);
 		layoutEventList->addWidget(_listPage);
 
 		SCScheme.applyTabPosition(_ui.tabWidget);
