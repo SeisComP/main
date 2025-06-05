@@ -27,6 +27,7 @@
 #define SEISCOMP_COMPONENT SCEVENT
 #include <seiscomp/logging/log.h>
 
+#include <mutex>
 #include <thread>
 
 #include "eventinfo.h"
@@ -62,7 +63,7 @@ class EventTool : public Application {
 		 *           is allowed.
 		 * @return The eventID or an empty string.
 		 */
-		std::string tryToAssociate(const DataModel::EventParameters *ep) const;
+		std::string tryToAssociate(const DataModel::EventParameters *ep);
 
 
 	protected:
@@ -97,17 +98,20 @@ class EventTool : public Application {
 
 		EventInformationPtr associateOriginCheckDelay(DataModel::Origin *);
 		EventInformationPtr associateOrigin(DataModel::Origin *, bool allowEventCreation,
-		                                    bool *createdEvent = nullptr);
+		                                    bool *createdEvent = nullptr,
+		                                    const EventInformation::PickCache *pickCache = nullptr);
 		void updatedOrigin(DataModel::Origin *, DataModel::Magnitude *, bool realOriginUpdate);
 
 		EventInformationPtr associateFocalMechanismCheckDelay(DataModel::FocalMechanism *);
 		EventInformationPtr associateFocalMechanism(DataModel::FocalMechanism *);
 		void updatedFocalMechanism(DataModel::FocalMechanism *, bool realFMUpdate);
 
-		MatchResult compare(EventInformation *info, DataModel::Origin *origin);
+		MatchResult compare(EventInformation *info, DataModel::Origin *origin,
+		                    const EventInformation::PickCache *cache = nullptr) const;
 
 		EventInformationPtr createEvent(DataModel::Origin *origin);
-		EventInformationPtr findMatchingEvent(DataModel::Origin *origin);
+		EventInformationPtr findMatchingEvent(DataModel::Origin *origin,
+		                                      const EventInformation::PickCache *cache = nullptr) const;
 		EventInformationPtr findAssociatedEvent(DataModel::Origin *origin);
 		EventInformationPtr findAssociatedEvent(DataModel::FocalMechanism *fm);
 
@@ -257,6 +261,7 @@ class EventTool : public Application {
 
 		Seiscomp::Wired::ServerPtr    _restAPI;
 		std::thread                   _restAPIThread;
+		mutable std::mutex            _associationMutex;
 
 		Logging::Channel             *_infoChannel{nullptr};
 		Logging::Output              *_infoOutput{nullptr};

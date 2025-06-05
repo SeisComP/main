@@ -38,6 +38,7 @@
 #include <seiscomp/wired/protocols/http.h>
 
 #include <functional>
+#include <stdexcept>
 
 
 using namespace std;
@@ -188,6 +189,22 @@ class RESTAPISession : public Wired::HttpSession {
 		static inline const string ErrorInvalidXMLDocument = "Invalid input document: XML format expected.";
 		static inline const string ErrorInvalidInputDocument = "Invalid input document: EventParameters expected.";
 
+		bool handleGETRequest(Wired::HttpRequest &req) override {
+			if ( req.path == "/api/1/info" ) {
+				static auto json =
+				"{"
+					"\"name\":\"" + _app->name() + "\","
+					"\"framework\":\"" + _app->frameworkVersion() + "\"" +
+				( _app->version() ? string(",\"version\":\"") + _app->version() + "\"" : string() ) +
+				"}";
+				sendResponse(json, Wired::HTTP_200, "application/json");
+				return true;
+			}
+
+			sendStatus(Wired::HTTP_404);
+			return true;
+		}
+
 		bool handlePOSTRequest(Wired::HttpRequest &req) override {
 			if ( req.path == "/api/1/try-to-associate" ) {
 				if ( req.contentType != "text/xml" ) {
@@ -209,6 +226,7 @@ class RESTAPISession : public Wired::HttpSession {
 					return true;
 				}
 
+				SEISCOMP_DEBUG("Handle association REST request");
 				try {
 					auto eventID = _app->tryToAssociate(ep.get());
 					if ( eventID.empty() ) {
@@ -218,7 +236,8 @@ class RESTAPISession : public Wired::HttpSession {
 						sendStatus(Wired::HTTP_200, eventID);
 					}
 				}
-				catch ( std::exception &e ) {
+				catch ( exception &e ) {
+					SEISCOMP_WARNING("Association REST request: %s", e.what());
 					sendStatus(Wired::HTTP_400, e.what());
 				}
 
@@ -292,7 +311,25 @@ EventTool::~EventTool() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-std::string EventTool::tryToAssociate(const DataModel::EventParameters *ep) const {
+std::string EventTool::tryToAssociate(const DataModel::EventParameters *ep) {
+	if ( ep->originCount() != 1 ) {
+		throw runtime_error("One origin is required and only one origin is allowed");
+	}
+
+	EventInformation::PickCache cache;
+	auto org = ep->origin(0);
+	for ( size_t i = 0; i < ep->pickCount(); ++i ) {
+		auto pick = ep->pick(i);
+		cache[pick->publicID()] = pick;
+	}
+
+	scoped_lock l(_associationMutex);
+
+	auto info = associateOrigin(org, false, nullptr, &cache);
+	if ( info && info->event ) {
+		return info->event->publicID();
+	}
+
 	return std::string();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -680,6 +717,11 @@ void EventTool::handleMessage(Core::Message *msg) {
 	_updates.clear();
 	_realUpdates.clear();
 	_originBlackList.clear();
+
+	// Lock the entire association process and all the supporting data
+	// structures. Only tryToAssociate will also lock this mutex from
+	// within the REST API thread.
+	scoped_lock l(_associationMutex);
 
 	Application::handleMessage(msg);
 
@@ -1939,8 +1981,11 @@ EventInformationPtr EventTool::associateOriginCheckDelay(DataModel::Origin *orig
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *origin,
                                                bool allowEventCreation,
-                                               bool *createdEvent) {
-	if ( createdEvent ) *createdEvent = false;
+                                               bool *createdEvent,
+                                               const EventInformation::PickCache *pickCache) {
+	if ( createdEvent ) {
+		*createdEvent = false;
+	}
 
 	// Default origin status
 	EvaluationMode status = AUTOMATIC;
@@ -1951,7 +1996,8 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 	}
 
 	// Find a matching (cached) event for this origin
-	EventInformationPtr info = findMatchingEvent(origin);
+	EventInformationPtr info = findMatchingEvent(origin, pickCache);
+
 	if ( !info ) {
 		Core::Time startTime = origin->time().value() - _config.eventAssociation.eventTimeBefore;
 		Core::Time endTime = origin->time().value() + _config.eventAssociation.eventTimeAfter;
@@ -1988,7 +2034,7 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 				);
 				if ( tmp->valid() ) {
 					tmp->loadAssocations(query());
-					MatchResult res = compare(tmp.get(), origin);
+					MatchResult res = compare(tmp.get(), origin, pickCache);
 					if ( res > bestResult ) {
 						bestResult = res;
 						info = tmp;
@@ -2004,6 +2050,11 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 			SEISCOMP_DEBUG("... found best matching event %s (code: %d)", info->event->publicID().c_str(),
 			               static_cast<int>(bestResult));
 			cacheEvent(info);
+
+			if ( pickCache ) {
+				return info;
+			}
+
 			if ( info->event->originReference(origin->publicID()) ) {
 				SEISCOMP_DEBUG("... origin already associated to event %s", info->event->publicID().c_str());
 				SEISCOMP_LOG(_infoChannel, "Origin %s skipped: already associated to event %s",
@@ -2013,7 +2064,9 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 		}
 		// Create a new event
 		else {
-			if ( !allowEventCreation ) return nullptr;
+			if ( !allowEventCreation || pickCache ) {
+				return nullptr;
+			}
 
 			if ( isAgencyIDBlocked(objectAgencyID(origin)) ) {
 				SEISCOMP_LOG(_infoChannel, "Origin %s skipped: agencyID blocked and is not allowed to create a new event",
@@ -2049,12 +2102,15 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 				}
 			}
 
-			if ( !checkRegionFilter(_config.regionFilter, origin) )
+			if ( !checkRegionFilter(_config.regionFilter, origin) ) {
 				return nullptr;
+			}
 
 			info = createEvent(origin);
 			if ( info ) {
-				if ( createdEvent ) *createdEvent = true;
+				if ( createdEvent ) {
+					*createdEvent = true;
+				}
 				SEISCOMP_INFO("%s: created", info->event->publicID().c_str());
 				SEISCOMP_LOG(_infoChannel, "Origin %s created a new event %s",
 				             origin->publicID().c_str(), info->event->publicID().c_str());
@@ -2065,6 +2121,10 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 		SEISCOMP_DEBUG("... found cached event information %s for origin", info->event->publicID().c_str());
 		SEISCOMP_LOG(_infoChannel, "Found matching event %s for origin %s",
 			         info->event->publicID().c_str(), origin->publicID().c_str());
+
+		if ( pickCache ) {
+			return info;
+		}
 	}
 
 	if ( info ) {
@@ -2168,11 +2228,13 @@ void EventTool::updatedOrigin(DataModel::Origin *org,
 	// If there is no cached origin the same instance is passed back
 	Origin *origin = Origin::Find(org->publicID());
 	if ( origin ) {
-		if ( origin != org )
+		if ( origin != org ) {
 			*origin = *org;
+		}
 	}
-	else
+	else {
 		origin = org;
+	}
 
 	EventInformationPtr info = findAssociatedEvent(origin);
 	if ( !info ) {
@@ -2386,8 +2448,9 @@ void EventTool::updatedFocalMechanism(FocalMechanism *focalMechanism, bool realF
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventTool::MatchResult EventTool::compare(EventInformation *info,
-                                          Seiscomp::DataModel::Origin *origin) {
-	size_t matchingPicks = info->matchingPicks(query(), origin);
+                                          Seiscomp::DataModel::Origin *origin,
+                                          const EventInformation::PickCache *cache) const {
+	size_t matchingPicks = info->matchingPicks(query(), origin, cache);
 
 	MatchResult result = Nothing;
 
@@ -2437,12 +2500,12 @@ EventTool::MatchResult EventTool::compare(EventInformation *info,
 		             (double)diffTime, (double)_config.eventAssociation.maxTimeDiff);
 
 		if ( diffTime.abs() <= _config.eventAssociation.maxTimeDiff ) {
-
-			if ( result == Picks )
+			if ( result == Picks ) {
 				result = PicksAndLocation;
-			else
+			}
+			else {
 				result = Location;
-
+			}
 		}
 	}
 
@@ -2530,19 +2593,22 @@ EventInformationPtr EventTool::createEvent(Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-EventInformationPtr EventTool::findMatchingEvent(Origin *origin) {
+EventInformationPtr EventTool::findMatchingEvent(
+	Origin *origin,
+	const EventInformation::PickCache *cache
+) const {
 	MatchResult bestResult = Nothing;
 	EventInformationPtr bestInfo = nullptr;
 
-	for ( auto it = _events.begin(); it != _events.end(); ++it ) {
-		if ( it->second->event && isAgencyIDBlocked(objectAgencyID(it->second->event.get())) ) {
+	for ( auto &[id, info] : _events ) {
+		if ( info->event && isAgencyIDBlocked(objectAgencyID(info->event.get())) ) {
 			continue;
 		}
 
-		MatchResult res = compare(it->second.get(), origin);
+		MatchResult res = compare(info.get(), origin, cache);
 		if ( res > bestResult ) {
 			bestResult = res;
-			bestInfo = it->second;
+			bestInfo = info;
 		}
 	}
 
@@ -2564,12 +2630,12 @@ EventInformationPtr EventTool::findMatchingEvent(Origin *origin) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventInformationPtr EventTool::findAssociatedEvent(DataModel::Origin *origin) {
-	for ( auto it = _events.begin(); it != _events.end(); ++it ) {
-		if ( it->second->event->originReference(origin->publicID()) ) {
+	for ( auto &[id, info] : _events ) {
+		if ( info->event->originReference(origin->publicID()) ) {
 			SEISCOMP_DEBUG("... feeding cache with event %s",
-			               it->second->event->publicID().c_str());
-			refreshEventCache(it->second);
-			return it->second;
+			               info->event->publicID().c_str());
+			refreshEventCache(info);
+			return info;
 		}
 	}
 
@@ -2582,12 +2648,12 @@ EventInformationPtr EventTool::findAssociatedEvent(DataModel::Origin *origin) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventInformationPtr EventTool::findAssociatedEvent(DataModel::FocalMechanism *fm) {
-	for ( auto it = _events.begin(); it != _events.end(); ++it ) {
-		if ( it->second->event->focalMechanismReference(fm->publicID()) ) {
+	for ( auto &[id, info] : _events ) {
+		if ( info->event->focalMechanismReference(fm->publicID()) ) {
 			SEISCOMP_DEBUG("... feeding cache with event %s",
-			               it->second->event->publicID().c_str());
-			refreshEventCache(it->second);
-			return it->second;
+			               info->event->publicID().c_str());
+			refreshEventCache(info);
+			return info;
 		}
 	}
 
@@ -2785,8 +2851,9 @@ void EventTool::refreshEventCache(EventInformationPtr info) {
 	}
 
 	// Add the event to the EventParameters
-	if ( !info->event->eventParameters() )
+	if ( !info->event->eventParameters() ) {
 		_ep->add(info->event.get());
+	}
 
 	// Feed event into cache
 	_cache.feed(info->event.get());
@@ -2807,12 +2874,12 @@ bool EventTool::isEventCached(const string &eventID) const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventInformationPtr EventTool::cachedEvent(const std::string &eventID) {
-	EventMap::const_iterator it = _events.find(eventID);
-	if ( it == _events.end() ) return nullptr;
+	if ( auto it = _events.find(eventID); it != _events.end() ) {
+		refreshEventCache(it->second);
+		return it->second;
+	}
 
-	refreshEventCache(it->second);
-
-	return it->second;
+	return nullptr;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2821,11 +2888,11 @@ EventInformationPtr EventTool::cachedEvent(const std::string &eventID) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool EventTool::removeCachedEvent(const std::string &eventID) {
-	auto it = _events.find(eventID);
-	if ( it != _events.end() ) {
+	if ( auto it = _events.find(eventID); it != _events.end() ) {
 		_events.erase(it);
 		return true;
 	}
+
 	return false;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

@@ -22,112 +22,159 @@
 #include <algorithm>
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 using namespace std;
 using namespace Seiscomp;
 using namespace Seiscomp::DataModel;
 using namespace Seiscomp::Client;
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-EventInformation::EventInformation(Cache *c, Config *cfg_)
-: cache(c), cfg(cfg_), created(false), aboutToBeRemoved(false), dirtyPickSet(false) {
-}
 
 
-EventInformation::EventInformation(Cache *c, Config *cfg_,
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+EventInformation::EventInformation(Cache *c, Config *cfg)
+: cache(c), cfg(cfg) {}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+EventInformation::EventInformation(Cache *c, Config *cfg,
                                    DatabaseQuery *q, const string &eventID,
                                    const string &self)
-: cache(c), cfg(cfg_), created(false), aboutToBeRemoved(false), dirtyPickSet(false) {
+: cache(c), cfg(cfg) {
 	load(q, eventID, self);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-EventInformation::EventInformation(Cache *c, Config *cfg_,
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+EventInformation::EventInformation(Cache *c, Config *cfg,
                                    DatabaseQuery *q, EventPtr &event,
                                    const string &self)
-: cache(c), cfg(cfg_), created(false), aboutToBeRemoved(false), dirtyPickSet(false) {
+: cache(c), cfg(cfg) {
 	load(q, event, self);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventInformation::~EventInformation() {
-	for ( list<DataModel::JournalEntryPtr>::iterator it = journal.begin();
-	      it != journal.end(); ++it ) {
-		(*it)->detach();
+	for ( auto &entry : journal ) {
+		entry->detach();
 	}
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventInformation::load(DatabaseQuery *q, const string &eventID, const string &self) {
 	EventPtr e = cache->get<Event>(eventID);
 	load(q, e, self);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventInformation::load(DatabaseQuery *q, EventPtr &e, const string &self) {
 	event = e;
-	if ( !event )
+	if ( !event ) {
 		return;
+	}
 
 	dirtyPickSet = true;
 
-	preferredOrigin = NULL;
-	preferredMagnitude = NULL;
-	preferredFocalMechanism = NULL;
+	preferredOrigin = nullptr;
+	preferredMagnitude = nullptr;
+	preferredFocalMechanism = nullptr;
 
-	if ( !event->preferredOriginID().empty() )
+	if ( !event->preferredOriginID().empty() ) {
 		preferredOrigin = cache->get<Origin>(event->preferredOriginID());
+	}
 
 	if ( preferredOrigin ) {
-		if ( !preferredOrigin->arrivalCount() && q )
+		if ( !preferredOrigin->arrivalCount() && q ) {
 			q->loadArrivals(preferredOrigin.get());
+		}
 
-		if ( !preferredOrigin->magnitudeCount() && q )
+		if ( !preferredOrigin->magnitudeCount() && q ) {
 			q->loadMagnitudes(preferredOrigin.get());
+		}
 	}
 
 
-	if ( !event->preferredMagnitudeID().empty() )
+	if ( !event->preferredMagnitudeID().empty() ) {
 		preferredMagnitude = cache->get<Magnitude>(event->preferredMagnitudeID());
+	}
 
-	if ( !event->preferredFocalMechanismID().empty() )
+	if ( !event->preferredFocalMechanismID().empty() ) {
 		preferredFocalMechanism = cache->get<FocalMechanism>(event->preferredFocalMechanismID());
+	}
 
 	if ( preferredFocalMechanism ) {
-		if ( !preferredFocalMechanism->momentTensorCount() && q )
+		if ( !preferredFocalMechanism->momentTensorCount() && q ) {
 			q->loadMomentTensors(preferredFocalMechanism.get());
+		}
 	}
 
 	// Read journal for event
 	if ( q ) {
-		DatabaseIterator dbit = q->getJournal(event->publicID());
-		while ( dbit.get() != NULL ) {
+		auto dbit = q->getJournal(event->publicID());
+		while ( dbit.get() ) {
 			JournalEntryPtr entry = JournalEntry::Cast(dbit.get());
-			if ( entry )
+			if ( entry ) {
 				addJournalEntry(entry.get(), self);
+			}
 			++dbit;
 		}
 	}
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventInformation::loadAssocations(DataModel::DatabaseQuery *q) {
-	if ( !q || !event ) return;
-	q->load(event.get());
+	if ( q && event ) {
+		q->load(event.get());
+	}
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 size_t EventInformation::matchingPicks(DataModel::DatabaseQuery *q,
-                                       DataModel::Origin *o) {
+                                       DataModel::Origin *o,
+                                       const EventInformation::PickCache *pickCache) {
 	if ( dirtyPickSet ) {
 		pickIDs.clear();
 		picks.clear();
 
-		if ( !event ) return 0;
+		if ( !event ) {
+			return 0;
+		}
 
 		for ( size_t i = 0; i < event->originReferenceCount(); ++i  ) {
 			OriginPtr org = cache->get<Origin>(event->originReference(i)->originID());
-			if ( !org ) continue;
-			if ( q && org->arrivalCount() == 0 ) q->loadArrivals(org.get());
+			if ( !org ) {
+				continue;
+			}
+			if ( q && org->arrivalCount() == 0 ) {
+				q->loadArrivals(org.get());
+			}
 			for ( size_t j = 0; j < org->arrivalCount(); ++j ) {
 				try { if ( org->arrival(j)->weight() <= 0.0 ) continue; }
 				catch ( ... ) {}
@@ -135,8 +182,9 @@ size_t EventInformation::matchingPicks(DataModel::DatabaseQuery *q,
 				pickIDs.insert(org->arrival(j)->pickID());
 				if ( cfg->eventAssociation.maxMatchingPicksTimeDiff >= 0 ) {
 					PickPtr p = cache->get<Pick>(org->arrival(j)->pickID());
-					if ( p )
+					if ( p ) {
 						insertPick(p.get());
+					}
 				}
 			}
 		}
@@ -144,25 +192,43 @@ size_t EventInformation::matchingPicks(DataModel::DatabaseQuery *q,
 		dirtyPickSet = false;
 	}
 
-	typedef pair<PickAssociation::const_iterator, PickAssociation::const_iterator> PickRange;
 	size_t matches = 0;
 
 	if ( cfg->eventAssociation.maxMatchingPicksTimeDiff < 0 ) {
 		for ( size_t i = 0; i < o->arrivalCount(); ++i ) {
-			if ( !o->arrival(i) ) continue;
+			if ( !o->arrival(i) ) {
+				continue;
+			}
 			// weight = 0 => raus
 			if ( !cfg->eventAssociation.matchingLooseAssociatedPicks
-			  && Private::arrivalWeight(o->arrival(i)) == 0 ) continue;
-			if ( pickIDs.find(o->arrival(i)->pickID()) != pickIDs.end() )
+			  && Private::arrivalWeight(o->arrival(i)) == 0 ) {
+				continue;
+			}
+			if ( pickIDs.find(o->arrival(i)->pickID()) != pickIDs.end() ) {
 				++matches;
+			}
 		}
 	}
 	else {
 		for ( size_t i = 0; i < o->arrivalCount(); ++i ) {
-			if ( !o->arrival(i) ) continue;
+			if ( !o->arrival(i) ) {
+				continue;
+			}
 			if ( !cfg->eventAssociation.matchingLooseAssociatedPicks
-			  && Private::arrivalWeight(o->arrival(i)) == 0 ) continue;
-			PickPtr p = cache->get<Pick>(o->arrival(i)->pickID());
+			  && Private::arrivalWeight(o->arrival(i)) == 0 ) {
+				continue;
+			}
+			PickPtr p;
+
+			if ( pickCache ) {
+				if ( auto it = pickCache->find(o->arrival(i)->pickID()); it != pickCache->end() ) {
+					p = it->second;
+				}
+			}
+			else {
+				p = cache->get<Pick>(o->arrival(i)->pickID());
+			}
+
 			if ( !p ) {
 				SEISCOMP_WARNING("could not load origin pick %s",
 				                 o->arrival(i)->pickID().c_str());
@@ -178,10 +244,9 @@ size_t EventInformation::matchingPicks(DataModel::DatabaseQuery *q,
 			}
 			catch ( ... ) {}
 
-			PickRange range = picks.equal_range(id);
-			PickAssociation::const_iterator it;
+			auto range = picks.equal_range(id);
 			int hit = 0, cnt = 0;
-			for ( it = range.first; it != range.second; ++it ) {
+			for ( auto it = range.first; it != range.second; ++it ) {
 				Pick *cmp = it->second.get();
 				char cmpCode = ' ';
 				try {
@@ -189,7 +254,9 @@ size_t EventInformation::matchingPicks(DataModel::DatabaseQuery *q,
 				}
 				catch ( ... ) {}
 
-				if ( code != cmpCode ) continue;
+				if ( code != cmpCode ) {
+					continue;
+				}
 
 				++cnt;
 				try {
@@ -201,12 +268,16 @@ size_t EventInformation::matchingPicks(DataModel::DatabaseQuery *q,
 			}
 
 			// No picks checked, continue
-			if ( !hit ) continue;
+			if ( !hit ) {
+				continue;
+			}
 
 			if ( cfg->eventAssociation.matchingPicksTimeDiffAND ) {
 				// Here AND is implemented. The distance to every single pick must
 				// lie within the configured threshold
-				if ( hit == cnt ) ++matches;
+				if ( hit == cnt ) {
+					++matches;
+				}
 			}
 			else {
 				// OR, at least one pick must match
@@ -217,45 +288,68 @@ size_t EventInformation::matchingPicks(DataModel::DatabaseQuery *q,
 
 	return matches;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool EventInformation::valid() const {
-	return event != NULL && preferredOrigin != NULL;
+	return event && preferredOrigin;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool EventInformation::associate(DataModel::Origin *o) {
 	if ( !event ) return false;
 
 	event->add(new OriginReference(o->publicID()));
 	for ( size_t i = 0; i < o->arrivalCount(); ++i ) {
-		if ( !o->arrival(i) ) continue;
+		if ( !o->arrival(i) ) {
+			continue;
+		}
 		if ( !cfg->eventAssociation.matchingLooseAssociatedPicks
-		  && Private::arrivalWeight(o->arrival(i)) == 0 ) continue;
+		  && Private::arrivalWeight(o->arrival(i)) == 0 ) {
+			continue;
+		}
 		pickIDs.insert(o->arrival(i)->pickID());
 		if ( cfg->eventAssociation.maxMatchingPicksTimeDiff >= 0 ) {
 			PickPtr p = cache->get<Pick>(o->arrival(i)->pickID());
-			if ( p )
+			if ( p ) {
 				insertPick(p.get());
-			else
+			}
+			else {
 				SEISCOMP_WARNING("could not load event pick %s",
 				                 o->arrival(i)->pickID().c_str());
+			}
 		}
 	}
 
 	return true;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool EventInformation::associate(DataModel::FocalMechanism *fm) {
-	if ( !event ) return false;
+	if ( !event ) {
+		return false;
+	}
 
 	event->add(new FocalMechanismReference(fm->publicID()));
-
 	return true;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool EventInformation::addJournalEntry(DataModel::JournalEntry *e,
                                        const string &self) {
 	journal.push_back(e);
@@ -263,8 +357,9 @@ bool EventInformation::addJournalEntry(DataModel::JournalEntry *e,
 	// Update constraints
 	if ( e->action() == "EvPrefMagType" ) {
 		constraints.preferredMagnitudeType = e->parameters();
-		if ( !constraints.preferredMagnitudeType.empty() )
+		if ( !constraints.preferredMagnitudeType.empty() ) {
 			constraints.fixMw = false;
+		}
 	}
 	else if ( e->action() == "EvPrefOrgID" ) {
 		constraints.preferredOriginID = e->parameters();
@@ -285,8 +380,9 @@ bool EventInformation::addJournalEntry(DataModel::JournalEntry *e,
 				constraints.preferredOriginID = "";
 				constraints.preferredOriginEvaluationMode = em;
 			}
-			else
+			else {
 				return false;
+			}
 		}
 	}
 	else if ( e->action() == "EvPrefOrgAutomatic" ) {
@@ -304,8 +400,9 @@ bool EventInformation::addJournalEntry(DataModel::JournalEntry *e,
 				constraints.preferredFocalMechanismID = "";
 				constraints.preferredFocalMechanismEvaluationMode = em;
 			}
-			else
+			else {
 				return false;
+			}
 		}
 	}
 	else if ( e->action() == "EvPrefFocAutomatic" ) {
@@ -317,21 +414,28 @@ bool EventInformation::addJournalEntry(DataModel::JournalEntry *e,
 			constraints.fixMw = true;
 			constraints.preferredMagnitudeType = "";
 		}
-		else if ( e->parameters() == "false" )
+		else if ( e->parameters() == "false" ) {
 			constraints.fixMw = false;
+		}
 		// Else keep the last state
 	}
 	else if ( e->action() == "EvTypeOK" ) {
-		if ( e->parameters() == ":unset:" || e->sender() == self )
+		if ( e->parameters() == ":unset:" || e->sender() == self ) {
 			constraints.fixType = false;
-		else
+		}
+		else {
 			constraints.fixType = true;
+		}
 	}
 
 	return true;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool EventInformation::setEventName(DataModel::JournalEntry *e, string &error) {
 	if ( !event ) {
 		error = ":internal:";
@@ -361,8 +465,12 @@ bool EventInformation::setEventName(DataModel::JournalEntry *e, string &error) {
 
 	return true;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool EventInformation::setEventOpComment(DataModel::JournalEntry *e, string &error) {
 	if ( !event ) {
 		error = ":internal:";
@@ -411,9 +519,14 @@ bool EventInformation::setEventOpComment(DataModel::JournalEntry *e, string &err
 
 	return true;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventInformation::insertPick(Pick *p) {
 	string id = p->waveformID().networkCode() + "." + p->waveformID().stationCode();
-	picks.insert(PickAssociation::value_type(id, p));
+	picks.insert({ id, p });
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
