@@ -290,8 +290,8 @@ template<typename Container> class container_source {
 };
 
 
-bool loadEventParam(EventParametersPtr &ep, const string &data,
-                    bool gzip = false) {
+bool load(EventParametersPtr &ep, JournalingPtr &ej,
+          const string &data, bool gzip = false) {
 	bool retn = false;
 	bool registrationEnabled = PublicObject::IsRegistrationEnabled();
 	PublicObject::SetRegistrationEnabled(false);
@@ -305,7 +305,7 @@ bool loadEventParam(EventParametersPtr &ep, const string &data,
 		if ( !ar.open(&buf) )
 			SEISCOMP_ERROR("[xml] could not open stream buffer for reading");
 		else {
-			ar >> ep;
+			ar >> ep >> ej;
 			retn = ar.success() && ep;
 			ar.close();
 		}
@@ -499,6 +499,7 @@ bool App::run() {
 
 			// Offline processing
 			EventParametersPtr ep;
+			JournalingPtr ej;
 			Notifiers notifiers, journals;
 			LogNodePtr logNode;
 
@@ -511,7 +512,8 @@ bool App::run() {
 				return false;
 			}
 
-			ar >> ep;
+			ar >> ep >> ej;
+
 			ar.close();
 
 			PublicObject::SetRegistrationEnabled(registrationEnabled);
@@ -560,8 +562,9 @@ bool App::run() {
 			}
 
 			// No event routing, forward event attributes
-			for ( size_t i = 0; i < ep->eventCount(); ++i )
-				syncEvent(ep.get(), ep->event(i), NULL, journals, true);
+			for ( size_t i = 0; i < ep->eventCount(); ++i ) {
+				syncEvent(ep.get(), ej.get(), ep->event(i), nullptr, journals, true);
+			}
 
 			cerr << "Notifiers: " << notifiers.size() << endl;
 			cerr << "Journals: " << journals.size() << endl;
@@ -594,16 +597,16 @@ void App::done() {
 	until += 10.0;
 
 	// Flush delayed events
-	for ( auto &it : _eventDelayBuffer ) {
-		auto item = it.second;
+	for ( auto &[eventID, item] : _eventDelayBuffer ) {
 		auto ep = item.ep;
+		auto ej = item.ej;
 		auto event = item.event;
 		auto config = item.config;
 		auto &routing = config->routingTable;
 
 		Notifiers journals;
 		// No event routing, forward event attributes
-		syncEvent(ep.get(), event, &routing,
+		syncEvent(ep.get(), ej.get(), event, &routing,
 		          journals, config->syncPreferred);
 		sendJournals(journals);
 	}
@@ -694,6 +697,7 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 		                      _baseSettings.logging.verbosity > 3 ? LogNode::DIFFERENCES : LogNode::OPERATIONS);
 
 	EventParametersPtr ep;
+	JournalingPtr ej;
 
 	// event remove message
 	if ( msg->disposed ) {
@@ -712,8 +716,9 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 		return false;
 	}
 
-	if ( !loadEventParam(ep, msg->data, msg->gzip) )
+	if ( !load(ep, ej, msg->data, msg->gzip) ) {
 		return false;
+	}
 
 	const string &epID = ep->publicID();
 
@@ -780,7 +785,7 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 						auto event = ep->event(i);
 						auto itp = _eventDelayBuffer.insert({
 							event->publicID(), {
-								ep, event, config,
+								ep, ej, event, config,
 								// Add one to incorporate the current
 								// running ticker.
 								config->syncEventDelay + 1
@@ -804,7 +809,7 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 					Notifiers journals;
 					// No event routing, forward event attributes
 					for ( size_t i = 0; i < ep->eventCount(); ++i ) {
-						syncEvent(ep.get(), ep->event(i), &routing,
+						syncEvent(ep.get(), ej.get(), ep->event(i), &routing,
 						          journals, config->syncPreferred);
 					}
 					sendJournals(journals);
@@ -896,6 +901,7 @@ void App::handleTimeout() {
 		--item.timeout;
 		if ( item.timeout <= 0 ) {
 			auto ep = item.ep;
+			auto ej = item.ej;
 			auto event = item.event;
 			auto config = item.config;
 			auto &routing = config->routingTable;
@@ -904,7 +910,7 @@ void App::handleTimeout() {
 			SEISCOMP_DEBUG("%s: synchronize delayed event",
 			               event->publicID());
 			// No event routing, forward event attributes
-			syncEvent(ep.get(), event, &routing,
+			syncEvent(ep.get(), ej.get(), event, &routing,
 			          journals, config->syncPreferred);
 			sendJournals(journals);
 
@@ -1002,8 +1008,9 @@ JournalEntry *App::createJournalEntry(const string &id, const string &action, co
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::syncEvent(const EventParameters *ep, const Event *event,
-                    const RoutingTable *routing, Notifiers &notifiers,
+void App::syncEvent(const EventParameters *ep, const Journaling *journals,
+                    const Event *event, const RoutingTable *routing,
+                    Notifiers &notifiers,
                     bool syncPreferred) {
 	if ( !query() ) {
 		SEISCOMP_ERROR("No database query available for event attribute synchronization");

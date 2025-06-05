@@ -21,6 +21,7 @@
 #include <seiscomp/client/application.h>
 #include <seiscomp/core/datetime.h>
 #include <seiscomp/datamodel/eventparameters.h>
+#include <seiscomp/datamodel/journaling.h>
 #include <seiscomp/datamodel/publicobjectcache.h>
 #include <seiscomp/datamodel/diff.h>
 
@@ -83,6 +84,7 @@ class App : public Client::Application {
 		            Notifiers &notifiers, LogNode *logNode = NULL);
 
 		void syncEvent(const DataModel::EventParameters *ep,
+		               const DataModel::Journaling *journals,
 		               const DataModel::Event *event,
 		               const RoutingTable *routing,
 		               Notifiers &notifiers, bool syncPreferred);
@@ -104,6 +106,7 @@ class App : public Client::Application {
 	private:
 		struct EventDelayItem {
 			DataModel::EventParametersPtr ep;
+			DataModel::JournalingPtr ej;
 			DataModel::Event *event; // Pointer from ep
 			const HostConfig *config;
 			int timeout;
