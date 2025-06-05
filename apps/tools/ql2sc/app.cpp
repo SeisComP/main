@@ -25,7 +25,6 @@
 #include <seiscomp/datamodel/pick.h>
 #include <seiscomp/datamodel/magnitude.h>
 #include <seiscomp/datamodel/origin.h>
-#include <seiscomp/datamodel/journaling.h>
 #include <seiscomp/datamodel/journalentry.h>
 #include <seiscomp/io/archive/xmlarchive.h>
 #include <seiscomp/logging/log.h>
@@ -329,8 +328,8 @@ class SC_SYSTEM_CORE_API PublicObjectCacheFeeder : protected Visitor {
 		 : _cache(cache), _root(nullptr) {}
 
 		void feed(Object *o, bool skipRoot = false) {
-			_root = skipRoot ? o : NULL;
-			if ( o != NULL )
+			_root = skipRoot ? o : nullptr;
+			if ( o )
 				o->accept(this);
 		}
 
@@ -400,6 +399,21 @@ JournalEntryPtr getLastJournalEntry(DatabaseQuery &query, const string &eventID,
 }
 
 
+JournalEntryPtr getLastJournalEntry(const Journaling *journals, const string &eventID,
+                                    const string &action) {
+	if ( journals ) {
+		for ( size_t i = 0; i < journals->journalEntryCount(); ++i ) {
+			auto entry = journals->journalEntry(i);
+			if ( (entry->objectID() == eventID) && (entry->action() == action) ) {
+				return entry;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+
 } // ns anonymous
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -423,10 +437,9 @@ App::App(int argc, char **argv)
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 App::~App() {
-	for ( QLClients::iterator it = _clients.begin(); it != _clients.end(); ++it ) {
-		if ( *it != NULL ) {
-			delete *it;
-			*it = NULL;
+	for ( auto *client : _clients ) {
+		if ( client ) {
+			delete client;
 		}
 	}
 }
@@ -1045,14 +1058,95 @@ string App::waitForEventAssociation(const std::string &originID, int timeout) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-JournalEntry *App::createJournalEntry(const string &id, const string &action, const string &params ) {
+JournalEntry *App::createJournalEntry(const string &id, const string &action, const string &params,
+                                      const Core::Time *created) {
 	JournalEntry *entry = new JournalEntry;
-	entry->setCreated(Core::Time::UTC());
+	entry->setCreated(created ? *created : Core::Time::UTC());
 	entry->setObjectID(id);
 	entry->setSender(author());
 	entry->setAction(action);
 	entry->setParameters(params);
 	return entry;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+template <typename R, typename T>
+void App::checkUpdate(Notifiers &notifiers,
+                      R (T::*func)() const, const T *remote, const T *local,
+                      const char *name, const Journaling *journals,
+                      const char *action) {
+	typename OPT(R) rR, lR;
+
+	try {
+		rR = (remote->*func)();
+	}
+	catch ( ... ) {}
+
+	try {
+		lR = (local->*func)();
+	}
+	catch ( ... ) {}
+
+	if ( rR == lR ) {
+		return;
+	}
+
+	SEISCOMP_DEBUG("* check update of %s: '%s'", name, rR ? rR->toString() : "");
+
+	OPT(Core::Time) updateTime;
+	try {
+		updateTime = remote->creationInfo().modificationTime();
+	}
+	catch ( ... ) {
+		try {
+			updateTime = remote->creationInfo().creationTime();
+		}
+		catch ( ... ) {}
+	}
+
+	// Fetch last remote journal entry to set the event type
+	auto entry = getLastJournalEntry(journals, remote->publicID(), action);
+	if ( entry ) {
+		const char *rStrR = rR ? rR->toString() : "\0";
+		if ( entry->parameters() != rStrR ) {
+			SEISCOMP_WARNING("%s: %s is not matching the last journal type, ignoring it",
+			                 remote->publicID(), name);
+		}
+		else {
+			try {
+				updateTime = entry->created();
+			}
+			catch ( ... ) {}
+		}
+	}
+
+	// Fetch last local journal entry to set the event type
+	entry = getLastJournalEntry(*query(), local->publicID(), action);
+	if ( !entry || entry->sender() == author() ) {
+		if ( updateTime && entry ) {
+			if ( *updateTime > entry->created() ) {
+				// The remote update time is more recent, apply it
+				entry = createJournalEntry(local->publicID(), action, rR ? rR->toString() : "", updateTime ? &updateTime.get() : nullptr);
+				notifiers.push_back(
+					new Notifier("Journaling", OP_ADD, entry.get())
+				);
+			}
+			else {
+				SEISCOMP_INFO("* skipping %s update because the "
+				              "local change is more recent than the remote one",
+				              name);
+			}
+		}
+	}
+	else {
+		SEISCOMP_INFO("* skipping %s update because it "
+		              "has been set already by %s",
+		              name, entry->sender());
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1270,59 +1364,17 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 	}
 
 	// Event type
-	{
-		OPT(EventType) et, targetEt;
-
-		try { et = event->type(); } catch ( ... ) {}
-		try { targetEt = targetEvent->type(); } catch ( ... ) {}
-
-		if ( et != targetEt ) {
-			SEISCOMP_DEBUG("* check update of event type: '%s'", et ? et->toString() : "");
-
-			entry = getLastJournalEntry(*query(), targetEvent->publicID(), "EvType");
-			if ( !entry || entry->sender() == author() ) {
-				entry = createJournalEntry(targetEvent->publicID(), "EvType", et ? et->toString() : "");
-				notifiers.push_back(
-					new Notifier("Journaling", OP_ADD, entry.get())
-				);
-			}
-			else {
-				SEISCOMP_INFO("* skipping event type update because it "
-				              "has been set already by %s",
-				              entry->sender().c_str());
-			}
-		}
-	}
+	checkUpdate(notifiers, &Event::type, event, targetEvent.get(),
+	            "event type", journals, "EvTypeOK");
 
 	// Event type certainty
-	{
-		OPT(EventTypeCertainty) etc, targetEtc;
-
-		try { etc = event->typeCertainty(); } catch ( ... ) {}
-		try { targetEtc = targetEvent->typeCertainty(); } catch ( ... ) {}
-
-		if ( etc != targetEtc ) {
-			SEISCOMP_DEBUG("* check update of event type certainty: '%s'", etc ? etc->toString() : "");
-
-			entry = getLastJournalEntry(*query(), targetEvent->publicID(), "EvTypeCertainty");
-			if ( !entry || entry->sender() == author() ) {
-				entry = createJournalEntry(targetEvent->publicID(), "EvTypeCertainty", etc ? etc->toString() : "");
-				notifiers.push_back(
-					new Notifier("Journaling", OP_ADD, entry.get())
-				);
-			}
-			else {
-				SEISCOMP_INFO("* skipping event type certainty update because it "
-				              "has been set already by %s",
-				              entry->sender().c_str());
-			}
-		}
-	}
+	checkUpdate(notifiers, &Event::typeCertainty, event, targetEvent.get(),
+	            "event type certainty", journals, "EvTypeCertaintyOK");
 
 	// Event name
 	{
-		EventDescription *desc = event->eventDescription(EventDescriptionIndex(EARTHQUAKE_NAME));
-		EventDescription *targetDesc = targetEvent->eventDescription(EventDescriptionIndex(EARTHQUAKE_NAME));
+		auto desc = event->eventDescription(EventDescriptionIndex(EARTHQUAKE_NAME));
+		auto targetDesc = targetEvent->eventDescription(EventDescriptionIndex(EARTHQUAKE_NAME));
 
 		if ( desc ) {
 			if ( !targetDesc || desc->text() != targetDesc->text() ) {
@@ -1338,7 +1390,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 				else {
 					SEISCOMP_INFO("* skipping event name update because it "
 					              "has been set already by %s",
-					              entry->sender().c_str());
+					              entry->sender());
 				}
 			}
 		}
@@ -1355,7 +1407,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 				else {
 					SEISCOMP_INFO("* skipping event name removal because it "
 					              "has been set already by %s",
-					              entry->sender().c_str());
+					              entry->sender());
 				}
 			}
 		}
@@ -1379,7 +1431,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 				else {
 					SEISCOMP_INFO("* skipping event opertor comment update because it "
 					              "has been set already by %s",
-					              entry->sender().c_str());
+					              entry->sender());
 				}
 			}
 		}
@@ -1395,7 +1447,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 				else {
 					SEISCOMP_INFO("* skipping event operator comment removal because it "
 					              "has been set already by %s",
-					              entry->sender().c_str());
+					              entry->sender());
 				}
 			}
 		}
@@ -1431,7 +1483,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 				else {
 					SEISCOMP_INFO("* skipping update for comment '%s' because the "
 					              "local counterpart was updated later",
-					              localCmt->id().c_str());
+					              localCmt->id());
 				}
 			}
 		}
@@ -1512,7 +1564,7 @@ bool App::sendNotifiers(const EventParameters *ep, const Notifiers &notifiers,
 				if ( ep && Origin::Cast(n->object()) ) {
 					// If the object is an origin and if event attributes
 					// should be synchronized then we add a JournalEntry which
-					// add a hint of the remote eventID for this particular
+					// adds a hint of the remote eventID for this particular
 					// origin so that scevent can grab this hint and assign that
 					// eventID if an event has to be created.
 					auto org = static_cast<Origin*>(n->object());
@@ -1523,6 +1575,7 @@ bool App::sendNotifiers(const EventParameters *ep, const Notifiers &notifiers,
 							// The origin is either the preferred origin or it
 							// is associated -> use this eventID as hint
 							JournalEntryPtr hint = new JournalEntry;
+							hint->setCreated(Core::Time::UTC());
 							hint->setObjectID(org->publicID());
 							hint->setSender(author());
 							hint->setAction("OrgEventIDHint");
@@ -1631,7 +1684,7 @@ void App::applyNotifier(const Notifier *n) {
 	// detect the diff in the first place
 	PublicObject *parent = PublicObject::Find(n->parentID());
 
-	if ( parent == NULL ) {
+	if ( !parent ) {
 		PublicObject *notifierPO = PublicObject::Cast(n->object());
 		if ( notifierPO && n->operation() == OP_UPDATE ) {
 			PublicObject *po = PublicObject::Find(notifierPO->publicID());

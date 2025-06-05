@@ -100,11 +100,18 @@ class App : public Client::Application {
 
 		DataModel::JournalEntry *createJournalEntry(const std::string &id,
 		                                            const std::string &action,
-		                                            const std::string &params);
+		                                            const std::string &params,
+		                                            const Core::Time *created = nullptr);
 
 		std::string waitForEventAssociation(const std::string &originID, int timeout);
 		void originAssociatedWithEvent(const std::string &eventID,
 		                               const std::string &originID);
+
+		template <typename R, typename T>
+		void checkUpdate(Notifiers &notifiers,
+		                 R (T::*func)() const, const T *remote, const T *local,
+		                 const char *name, const DataModel::Journaling *journals,
+		                 const char *action);
 
 	private:
 		struct EventDelayItem {
