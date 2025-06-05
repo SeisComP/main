@@ -1130,7 +1130,7 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 	_switchBack->setSingleShot(true);
 
 	connect(_timer, SIGNAL(timeout()), this, SLOT(step()));
-	connect(_switchBack, SIGNAL(timeout()), this, SLOT(sortByConfig()));
+	connect(_switchBack, SIGNAL(timeout()), this, SLOT(restoreDefaultSorting()));
 
 	connect(&RecordStreamState::Instance(), SIGNAL(connectionClosed(RecordStreamThread*)),
 	        this, SLOT(recordStreamClosed(RecordStreamThread*)));
@@ -1357,34 +1357,68 @@ void MainWindow::start() {
 		openAcquisition();
 	}
 
-	double lat = 0.0;
-	double lon = 0.0;
+	_sortMode = SortMode::Config;
+	_sortLat = 0.0;
+	_sortLon = 0.0;
+
 	try {
-		lat = Gui::Application::Instance()->configGetDouble("streams.sort.latitude");
+		_sortLat = Gui::Application::Instance()->configGetDouble("streams.sort.latitude");
 	}
 	catch ( ... ) {}
 	try {
-		lon = Gui::Application::Instance()->configGetDouble("streams.sort.longitude");
+		_sortLon = Gui::Application::Instance()->configGetDouble("streams.sort.longitude");
 	}
 	catch ( ... ) {}
 
 	try {
 		string sortMode = SCApp->configGetString("streams.sort.mode");
-		if ( sortMode == "config" )
-			sortByConfig();
-		else if ( sortMode == "distance" )
-			sortByOrigin(lat, lon);
-		else if ( sortMode == "station" )
-			sortByStationCode();
-		else if ( sortMode == "network" )
-			sortByNetworkStationCode();
-		else if ( sortMode == "group" )
-			sortByGroup();
+		if ( sortMode == "config" ) {
+			_sortMode = SortMode::Config;
+		}
+		else if ( sortMode == "distance" ) {
+			_sortMode = SortMode::Distance;
+		}
+		else if ( sortMode == "station" ) {
+			_sortMode = SortMode::Station;
+		}
+		else if ( sortMode == "network" ) {
+			_sortMode = SortMode::NetworkStation;
+		}
+		else if ( sortMode == "group" ) {
+			_sortMode = SortMode::Group;
+		}
+
+		restoreDefaultSorting();
 	}
 	catch ( ... ) {}
 
 	if ( Settings::global.autoApplyFilter ) {
 		toggleFilter();
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::restoreDefaultSorting() {
+	switch ( _sortMode ) {
+		case SortMode::Distance:
+			sortByOrigin(_sortLat, _sortLon);
+			break;
+		case SortMode::Station:
+			sortByStationCode();
+			break;
+		case SortMode::NetworkStation:
+			sortByNetworkStationCode();
+			break;
+		case SortMode::Group:
+			sortByGroup();
+			break;
+		default:
+			sortByConfig();
+			break;
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1494,38 +1528,50 @@ void MainWindow::setStationEnabled(const string& networkCode,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MainWindow::updateTraces(const std::string& networkCode,
-                              const std::string& stationCode,
+void MainWindow::updateTraces(const std::string &networkCode,
+                              const std::string &stationCode,
                               bool enable) {
 	QList<Seiscomp::Gui::RecordViewItem*> items;
 
-	foreach ( TraceView* view, _traceViews ) {
+	foreach ( TraceView *view, _traceViews ) {
 		items += view->stationStreams(networkCode, stationCode);
 	}
 
-	if ( items.empty() ) return;
+	if ( items.empty() ) {
+		return;
+	}
 
 	_statusBarFile->setText(QString("Station %1.%2 has been %3 at %4 (localtime)")
-	                        .arg(networkCode.c_str())
-	                        .arg(stationCode.c_str())
-	                        .arg(enable?"enabled":"disabled")
-	                        .arg(Seiscomp::Core::Time::LocalTime().toString("%F %T").c_str()));
+	                        .arg(networkCode.c_str(), stationCode.c_str(),
+	                             enable?"enabled":"disabled",
+	                             Seiscomp::Core::Time::LocalTime().toString("%F %T").c_str()));
 
 	if ( SCApp->nonInteractive() ) {
-		foreach ( Seiscomp::Gui::RecordViewItem* item, items )
-			if ( item->isInvisibilityForced() == enable )
+		foreach ( Seiscomp::Gui::RecordViewItem *item, items ) {
+			if ( item->isInvisibilityForced() == enable ) {
 				item->forceInvisibilty(!enable);
+			}
+		}
 	}
 	else {
-		Seiscomp::Gui::RecordView* targetView = _traceViews[enable?0:1];
+		auto targetView = _traceViews[enable ? 0 : 1];
 
-		foreach ( Seiscomp::Gui::RecordViewItem* item, items ) {
+		foreach ( Seiscomp::Gui::RecordViewItem *item, items ) {
 			if ( item->recordView() != targetView ) {
-				if ( item->recordView()->takeItem(item) )
+				if ( item->recordView()->takeItem(item) ) {
 					targetView->addItem(item);
-				else
+				}
+				else {
 					throw Core::GeneralException("Unable to take item");
+				}
 			}
+		}
+
+		if ( !_switchBack->isActive() ) {
+			restoreDefaultSorting();
+		}
+		else {
+			sortByOrigin(_originLat, _originLon);
 		}
 	}
 
@@ -2017,7 +2063,9 @@ void MainWindow::createOrigin(Gui::RecordViewItem* item, Core::Time time) {
 	SCApp->sendCommand(Gui::CM_OBSERVE_LOCATION, "", origin);
 
 	if ( Settings::global.automaticSortEnabled ) {
-		sortByOrigin(loc.latitude, loc.longitude);
+		_originLat = loc.latitude;
+		_originLon = loc.longitude;
+		sortByOrigin(_originLat, _originLon);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -3780,7 +3828,9 @@ void MainWindow::messageArrived(Seiscomp::Core::Message* msg, Seiscomp::Client::
 	}
 
 	if ( origin && Settings::global.automaticSortEnabled ) {
-		sortByOrigin(origin->latitude(), origin->longitude());
+		_originLat = origin->latitude();
+		_originLon = origin->longitude();
+		sortByOrigin(_originLat, _originLon);
 
 		try {
 			_switchBack->setInterval(Gui::Application::Instance()->configGetInt("autoResetDelay")*1000);
@@ -3843,7 +3893,9 @@ void MainWindow::objectAdded(const QString &parentID,
 		}
 
 		if ( Settings::global.automaticSortEnabled ) {
-			sortByOrigin(origin->latitude(), origin->longitude());
+			_originLat = origin->latitude();
+			_originLon = origin->longitude();
+			sortByOrigin(_originLat, _originLon);
 
 			try {
 				_switchBack->setInterval(Gui::Application::Instance()->configGetInt("autoResetDelay") * 1000);

@@ -231,6 +231,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		void sortByDistance();
 		void sortByConfig();
 		void sortByGroup();
+		void restoreDefaultSorting();
 		void colorByConfig();
 
 		void alignLeft();
@@ -418,16 +419,28 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		};
 
 		using WaveformStreamSet = std::set<WaveformStreamEntry, ltWaveformStreamID>;
-		WaveformStreamSet _waveformStreams;
-
 		using DecorationDescs = std::vector<DecorationDesc>;
-		DecorationDescs _decorationDescs;
-
 		using ChannelGroups = std::vector<ChannelGroup>;
-		ChannelGroups _channelGroups;
-
 		using ChannelGroupLookup = std::map<std::string, size_t>;
-		ChannelGroupLookup _channelGroupLookup;
+
+		WaveformStreamSet                         _waveformStreams;
+		DecorationDescs                           _decorationDescs;
+		ChannelGroups                             _channelGroups;
+		ChannelGroupLookup                        _channelGroupLookup;
+
+		enum class SortMode {
+			Config,
+			Distance,
+			Station,
+			NetworkStation,
+			Group
+		};
+
+		SortMode                                  _sortMode{SortMode::Config};
+		double                                    _sortLat{0.0};
+		double                                    _sortLon{0.0};
+		double                                    _originLat{999.0};
+		double                                    _originLon{999.0};
 
 	friend class TraceDecorator;
 };
