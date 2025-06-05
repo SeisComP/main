@@ -325,7 +325,7 @@ bool load(EventParametersPtr &ep, JournalingPtr &ej,
 class SC_SYSTEM_CORE_API PublicObjectCacheFeeder : protected Visitor {
 	public:
 		PublicObjectCacheFeeder(PublicObjectCache &cache)
-		 : _cache(cache), _root(NULL) {}
+		 : _cache(cache), _root(nullptr) {}
 
 		void feed(Object *o, bool skipRoot = false) {
 			_root = skipRoot ? o : NULL;
@@ -531,34 +531,41 @@ bool App::run() {
 
 			const string &epID = ep->publicID();
 
-			for ( size_t i = 0; i < ep->pickCount(); ++i )
+			for ( size_t i = 0; i < ep->pickCount(); ++i ) {
 				diffPO(ep->pick(i), epID, notifiers, logNode.get());
+			}
 
 			// Amplitudes
-			for ( size_t i = 0; i < ep->amplitudeCount(); ++i )
+			for ( size_t i = 0; i < ep->amplitudeCount(); ++i ) {
 				diffPO(ep->amplitude(i), epID, notifiers, logNode.get());
+			}
 
 			// Origins
-			for ( size_t i = 0; i < ep->originCount(); ++i )
+			for ( size_t i = 0; i < ep->originCount(); ++i ) {
 				diffPO(ep->origin(i), epID, notifiers, logNode.get());
+			}
 
 			// FocalMechanisms
-			for ( size_t i = 0; i < ep->focalMechanismCount(); ++i )
+			for ( size_t i = 0; i < ep->focalMechanismCount(); ++i ) {
 				diffPO(ep->focalMechanism(i), epID, notifiers, logNode.get());
+			}
 
 			// Events
-			for ( size_t i = 0; i < ep->eventCount(); ++i )
+			for ( size_t i = 0; i < ep->eventCount(); ++i ) {
 				diffPO(ep->event(i), epID, notifiers, logNode.get());
+			}
 
 			// log diffs
 			if ( logNode.get() && logNode->childCount() ) {
 				stringstream ss;
 				ss << endl;
 				logNode->write(ss);
-				if ( _baseSettings.logging.verbosity > 3 )
+				if ( _baseSettings.logging.verbosity > 3 ) {
 					SEISCOMP_DEBUG_S(ss.str());
-				else
+				}
+				else {
 					SEISCOMP_INFO_S(ss.str());
+				}
 			}
 
 			// No event routing, forward event attributes
@@ -569,11 +576,13 @@ bool App::run() {
 			cerr << "Notifiers: " << notifiers.size() << endl;
 			cerr << "Journals: " << journals.size() << endl;
 
-			for ( size_t i = 0; i < notifiers.size(); ++i )
+			for ( size_t i = 0; i < notifiers.size(); ++i ) {
 				applyNotifier(notifiers[i].get());
+			}
 
-			for ( size_t i = 0; i < journals.size(); ++i )
+			for ( size_t i = 0; i < journals.size(); ++i ) {
 				applyNotifier(journals[i].get());
+			}
 
 			ar.create("-");
 			ar.setFormattedOutput(true);
@@ -725,34 +734,40 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 	// check if routing for EventParameters exists
 	string epRouting;
 	rt_it = routing.find(ep->typeInfo().className());
-	if ( rt_it != routing.end() ) epRouting = rt_it->second;
+	if ( rt_it != routing.end() ) {
+		epRouting = rt_it->second;
+	}
 
 	// Picks
 	if ( !epRouting.empty() ||
 		 routing.find(Pick::TypeInfo().className()) != routing.end() ) {
-		for ( size_t i = 0; i < ep->pickCount(); ++i )
+		for ( size_t i = 0; i < ep->pickCount(); ++i ) {
 			diffPO(ep->pick(i), epID, notifiers, logNode.get());
+		}
 	}
 
 	// Amplitudes
 	if ( !epRouting.empty() ||
 		 routing.find(Amplitude::TypeInfo().className()) != routing.end() ) {
-		for ( size_t i = 0; i < ep->amplitudeCount(); ++i )
+		for ( size_t i = 0; i < ep->amplitudeCount(); ++i ) {
 			diffPO(ep->amplitude(i), epID, notifiers, logNode.get());
+		}
 	}
 
 	// Origins
 	if ( !epRouting.empty() ||
 		 routing.find(Origin::TypeInfo().className()) != routing.end() ) {
-		for ( size_t i = 0; i < ep->originCount(); ++i )
+		for ( size_t i = 0; i < ep->originCount(); ++i ) {
 			diffPO(ep->origin(i), epID, notifiers, logNode.get());
+		}
 	}
 
 	// FocalMechanisms
 	if ( !epRouting.empty() ||
 		 routing.find(FocalMechanism::TypeInfo().className()) != routing.end() ) {
-		for ( size_t i = 0; i < ep->focalMechanismCount(); ++i )
+		for ( size_t i = 0; i < ep->focalMechanismCount(); ++i ) {
 			diffPO(ep->focalMechanism(i), epID, notifiers, logNode.get());
+		}
 	}
 
 	// Events
@@ -761,8 +776,9 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 		RoutingTable::const_iterator it;
 		it = routing.find(Event::TypeInfo().className());
 		if ( it != routing.end() && !it->second.empty() ) {
-			for ( size_t i = 0; i < ep->eventCount(); ++i )
+			for ( size_t i = 0; i < ep->eventCount(); ++i ) {
 				diffPO(ep->event(i), epID, notifiers, logNode.get());
+			}
 		}
 	}
 
@@ -771,10 +787,12 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 		stringstream ss;
 		ss << endl;
 		logNode->write(ss);
-		if ( _baseSettings.logging.verbosity > 3 )
+		if ( _baseSettings.logging.verbosity > 3 ) {
 			SEISCOMP_DEBUG_S(ss.str());
-		else
+		}
+		else {
 			SEISCOMP_INFO_S(ss.str());
+		}
 	}
 
 	if ( !_test ) {
@@ -821,11 +839,10 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 		}
 	}
 	else {
-		for ( Notifiers::const_iterator it = notifiers.begin();
-		      it != notifiers.end(); ++it) {
-			Notifier *n = it->get();
-			if ( n->object() )
-				applyNotifier(n);
+		for ( auto &n : notifiers ) {
+			if ( n->object() ) {
+				applyNotifier(n.get());
+			}
 		}
 		client->setLastUpdate(msg->timestamp);
 		writeLastUpdates();
@@ -1421,10 +1438,7 @@ bool App::sendNotifiers(const Notifiers &notifiers, const RoutingTable &routing)
 
 	string group, prevGroup;
 	NotifierMessagePtr nm = new NotifierMessage();
-	for ( Notifiers::const_iterator it = notifiers.begin();
-	      it != notifiers.end(); ++it) {
-		Notifier *n = it->get();
-
+	for ( auto &n : notifiers ) {
 		// check if a route exists
 		if ( !resolveRouting(group, n->object(), routing) ) {
 			SEISCOMP_DEBUG("Skip %s of %s: no routing",
@@ -1449,11 +1463,13 @@ bool App::sendNotifiers(const Notifiers &notifiers, const RoutingTable &routing)
 		}
 
 		// apply notifier locally
-		if ( n->object() )
-			applyNotifier(n);
+		if ( n->object() ) {
+			applyNotifier(n.get());
+		}
 
 		prevGroup = group;
-		nm->attach(n);
+		nm->attach(n.get());
+
 		switch ( n->operation() ) {
 			case OP_ADD:    ++add;    break;
 			case OP_UPDATE: ++update; break;
@@ -1475,10 +1491,9 @@ bool App::sendNotifiers(const Notifiers &notifiers, const RoutingTable &routing)
 
 	if ( !groupMessages.empty() ) {
 		stringstream ss;
-		for ( map<string, int>::const_iterator it = groupMessages.begin();
-		      it != groupMessages.end(); ++it ) {
+		for ( auto &[name, count] : groupMessages ) {
 			++msgTotal;
-			ss << "  " << it->first << ": " << it->second << endl;
+			ss << "  " << name << ": " << count << endl;
 		}
 		SEISCOMP_INFO("send %i notifiers (ADD: %i, UPDATE: %i, REMOVE: %i) "
 		              "to the following message groups:\n%s",
@@ -1506,9 +1521,8 @@ bool App::sendJournals(const Notifiers &journals) {
 	}
 
 	NotifierMessagePtr nm = new NotifierMessage();
-	for ( Notifiers::const_iterator it = journals.begin();
-	      it != journals.end(); ++it) {
-		nm->attach(it->get());
+	for ( auto &n : journals ) {
+		nm->attach(n.get());
 	}
 
 	if ( !connection()->send(nm.get()) ) {

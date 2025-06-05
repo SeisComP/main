@@ -81,7 +81,7 @@ class App : public Client::Application {
 
 		template <class T>
 		void diffPO(T *remotePO, const std::string &parentID,
-		            Notifiers &notifiers, LogNode *logNode = NULL);
+		            Notifiers &notifiers, LogNode *logNode = nullptr);
 
 		void syncEvent(const DataModel::EventParameters *ep,
 		               const DataModel::Journaling *journals,
