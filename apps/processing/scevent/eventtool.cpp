@@ -35,6 +35,7 @@
 #include <seiscomp/core/genericmessage.h>
 #include <seiscomp/math/geo.h>
 #include <seiscomp/system/hostinfo.h>
+#include <seiscomp/wired/protocols/http.h>
 
 #include <functional>
 
@@ -42,8 +43,8 @@
 using namespace std;
 using namespace Seiscomp;
 using namespace Seiscomp::Core;
-using namespace Seiscomp::Client;
 using namespace Seiscomp::DataModel;
+using namespace Seiscomp::Client;
 using namespace Seiscomp::Private;
 
 #define DELAY_CHECK_INTERVAL 1
@@ -54,6 +55,7 @@ using namespace Seiscomp::Private;
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 namespace {
+
 
 void makeUpper(std::string &src) {
 	for ( size_t i = 0; i < src.size(); ++i )
@@ -175,6 +177,77 @@ bool isRejected(Magnitude *mag) {
 	return false;
 }
 
+
+class RESTAPISession : public Wired::HttpSession {
+	public:
+		RESTAPISession(Wired::Device *sock, const char *protocol, EventTool *app)
+		: Wired::HttpSession(sock, protocol), _app(app) {}
+
+	protected:
+		static inline const string ErrorContentType = "Invalid content type: only text/xml is supported.";
+		static inline const string ErrorInvalidXMLDocument = "Invalid input document: XML format expected.";
+		static inline const string ErrorInvalidInputDocument = "Invalid input document: EventParameters expected.";
+
+		bool handlePOSTRequest(Wired::HttpRequest &req) override {
+			if ( req.path == "/api/1/try-to-associate" ) {
+				if ( req.contentType != "text/xml" ) {
+					sendStatus(Wired::HTTP_400, ErrorContentType);
+					return true;
+				}
+
+				IO::XMLArchive ar;
+				InputStringViewBuf buf(req.data);
+				if ( !ar.open(&buf) ) {
+					sendStatus(Wired::HTTP_400, ErrorInvalidXMLDocument);
+					return true;
+				}
+				PublicObject::SetRegistrationEnabled(false);
+				EventParametersPtr ep;
+				ar >> ep;
+				if ( !ep ) {
+					sendStatus(Wired::HTTP_400, ErrorInvalidInputDocument);
+					return true;
+				}
+
+				try {
+					auto eventID = _app->tryToAssociate(ep.get());
+					if ( eventID.empty() ) {
+						sendStatus(Wired::HTTP_204);
+					}
+					else {
+						sendStatus(Wired::HTTP_200, eventID);
+					}
+				}
+				catch ( std::exception &e ) {
+					sendStatus(Wired::HTTP_400, e.what());
+				}
+
+				return true;
+			}
+
+			sendStatus(Wired::HTTP_404);
+			return true;
+		}
+
+	private:
+		EventTool *_app;
+};
+
+
+class RESTAPIEndpoint : public Wired::Endpoint {
+	public:
+		RESTAPIEndpoint(EventTool *app) : Wired::Endpoint(nullptr), _app(app) {}
+
+	protected:
+		Wired::Session *createSession(Wired::Socket *socket) override {
+			return new RESTAPISession(socket, "http", _app);
+		}
+
+	private:
+		EventTool *_app;
+};
+
+
 } // ns anonymous
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -183,8 +256,6 @@ bool isRejected(Magnitude *mag) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventTool::EventTool(int argc, char **argv) : Application(argc, argv) {
-	_fExpiry = 1.0; // one hour cache initially
-
 	setAutoApplyNotifierEnabled(true);
 	setInterpretNotifierEnabled(true);
 
@@ -200,6 +271,8 @@ EventTool::EventTool(int argc, char **argv) : Application(argc, argv) {
 	_cache.setPopCallback(bind(&EventTool::removedFromCache, this, placeholders::_1));
 
 	_infoChannel = SEISCOMP_DEF_LOGCHANNEL("processing/info", Logging::LL_INFO);
+
+	bindSettings(&_config);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -219,33 +292,8 @@ EventTool::~EventTool() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void EventTool::createCommandLineDescription() {
-	Application::createCommandLineDescription();
-
-	commandline().addOption("Messaging", "test", "Test mode, no messages are sent");
-	commandline().addOption("Messaging", "clear-cache", "Send a clear cache message and quit");
-	commandline().addOption("Database", "db-disable", "Do not use the database at all");
-	commandline().addOption("Generic", "expiry,x", "Time span in hours after which objects expire", &_fExpiry, true);
-	commandline().addOption("Generic", "origin-id,O", "Origin ID to associate (test only, no event updates)", &_originID, true);
-	commandline().addOption("Generic", "event-id,E", "Event ID to update preferred objects (test only, no event updates)", &_eventID, true);
-
-	commandline().addGroup("Input");
-	commandline().addOption("Input", "ep",
-	                        "Event parameters XML file for offline processing "
-	                        "of all contained origins. Use '-' to read from "
-	                        "stdin.", &_epFile);
-	commandline().addOption("Input", "reprocess",
-	                        "Reprocess event parameters ignoring all event and "
-	                        "journal objects in input file. Works only in "
-	                        "combination with '--ep'.");
-	commandline().addOption("Input", "update-event-id",
-	                        "Update IDs of events if they already exist. Works "
-	                        "only in combination with '--ep'.");
-	commandline().addGroup("Output");
-	commandline().addOption("Output", "formatted,f",
-	                        "Use formatted XML output. Otherwise XML is unformatted.");
-	commandline().addOption("Output", "disable-info-log",
-	                        "Do not populate the scevent-processing-info.log file.");
+std::string EventTool::tryToAssociate(const DataModel::EventParameters *ep) const {
+	return std::string();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -258,27 +306,16 @@ bool EventTool::validateParameters() {
 		return false;
 	}
 
-	_testMode = commandline().hasOption("test");
-	_reprocess = commandline().hasOption("reprocess");
-	_formatted = commandline().hasOption("formatted");
-	_updateEventID = commandline().hasOption("update-event-id");
-
-	_sendClearCache = commandline().hasOption("clear-cache");
-
-	if ( commandline().hasOption("disable-info-log") ) {
-		_config.logProcessing = false;
-	}
-
-	if ( commandline().hasOption("db-disable") ) {
+	if ( _config.dbDisable ) {
 		setDatabaseEnabled(false, false);
 	}
 
-	if ( _originID != "" || _eventID != "" ) {
+	if ( !_config.originID.empty() || !_config.eventID.empty() ) {
 		setMessagingEnabled(false);
 	}
 
 	// For offline processing messaging is disabled and database
-	if ( !_epFile.empty() ) {
+	if ( !_config.epFile.empty() ) {
 		setMessagingEnabled(false);
 		setDatabaseEnabled(false, false);
 	}
@@ -292,16 +329,9 @@ bool EventTool::validateParameters() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool EventTool::initConfiguration() {
-	if ( !Application::initConfiguration() )
+	if ( !Application::initConfiguration() ) {
 		return false;
-
-	try { _config.minStationMagnitudes = configGetInt("eventAssociation.minimumMagnitudes"); } catch (...) {}
-	try { _config.minMatchingPicks = configGetInt("eventAssociation.minimumMatchingArrivals"); } catch (...) {}
-	try { _config.maxMatchingPicksTimeDiff = configGetDouble("eventAssociation.maximumMatchingArrivalTimeDiff"); } catch (...) {}
-	try { _config.matchingPicksTimeDiffAND = configGetBool("eventAssociation.compareAllArrivalTimes"); } catch (...) {}
-	try { _config.matchingLooseAssociatedPicks = configGetBool("eventAssociation.allowLooseAssociatedArrivals"); } catch (...) {}
-	try { _config.minAutomaticArrivals = configGetInt("eventAssociation.minimumDefiningPhases"); } catch (...) {}
-	try { _config.minAutomaticScore = configGetDouble("eventAssociation.minimumScore"); } catch (...) {}
+	}
 
 	Config::RegionFilter regionFilter;
 	GlobalRegionPtr region = new GlobalRegion;
@@ -315,70 +345,27 @@ bool EventTool::initConfiguration() {
 
 	_config.regionFilter.push_back(regionFilter);
 
-	try { _config.eventTimeBefore = TimeSpan(configGetDouble("eventAssociation.eventTimeBefore")); } catch (...) {}
-	try { _config.eventTimeAfter = TimeSpan(configGetDouble("eventAssociation.eventTimeAfter")); } catch (...) {}
-	try { _config.maxTimeDiff = TimeSpan(configGetDouble("eventAssociation.maximumTimeSpan")); } catch (...) {}
-	try { _config.maxDist = configGetDouble("eventAssociation.maximumDistance"); } catch (...) {}
-
-	try { _config.minMwCount = configGetInt("eventAssociation.minMwCount"); } catch (...) {}
-	try { _config.mbOverMwCount = configGetInt("eventAssociation.mbOverMwCount"); } catch (...) {}
-	try { _config.mbOverMwValue = configGetDouble("eventAssociation.mbOverMwValue"); } catch (...) {}
-	try { _config.magPriorityOverStationCount = configGetBool("eventAssociation.magPriorityOverStationCount"); } catch (...) {}
-
-	try { _config.eventIDPrefix = configGetString("eventIDPrefix"); } catch (...) {}
-	try { _config.eventIDPattern = configGetString("eventIDPattern"); } catch (...) {}
-	try { _config.eventIDLookupMargin = configGetInt("eventIDLookupMargin"); } catch ( ... ) {}
-
-	try { _config.populateFERegion = configGetBool("populateFERegion"); } catch ( ... ) {}
-
-	try { _config.updatePreferredSolutionAfterMerge = configGetBool("eventAssociation.updatePreferredAfterMerge"); } catch (...) {}
-	try { _config.enableFallbackPreferredMagnitude = configGetBool("eventAssociation.enableFallbackMagnitude"); } catch (...) {}
-	try { _config.magTypes = configGetStrings("eventAssociation.magTypes"); } catch (...) {}
-	try { _config.agencies = configGetStrings("eventAssociation.agencies"); } catch (...) {}
-	try { _config.authors = configGetStrings("eventAssociation.authors"); } catch (...) {}
-	try { _config.methods = configGetStrings("eventAssociation.methods"); } catch (...) {}
-	try { _config.score = configGetString("eventAssociation.score"); } catch (...) {}
-	try { _config.priorities = configGetStrings("eventAssociation.priorities"); } catch (...) {}
-
-	for ( auto it = _config.priorities.begin(); it != _config.priorities.end(); ++it ) {
+	for ( auto &item : _config.eventAssociation.priorities ) {
 		bool validToken = false;
-		makeUpper(*it);
+		makeUpper(item);
 		for ( unsigned int t = 0; t < sizeof(PRIORITY_TOKENS) / sizeof(char*); ++t ) {
-			if ( *it == PRIORITY_TOKENS[t] ) {
+			if ( item == PRIORITY_TOKENS[t] ) {
 				validToken = true;
 				break;
 			}
 		}
 
 		if ( !validToken ) {
-			SEISCOMP_ERROR("Unexpected token in eventAssociation.priorities: %s", it->c_str());
+			SEISCOMP_ERROR("Unexpected token in eventAssociation.priorities: %s", item.c_str());
 			return false;
 		}
 
 		// SCORE requires a score method to be set up.
-		if ( *it == "SCORE" && _config.score.empty() ) {
+		if ( item == "SCORE" && _config.eventAssociation.score.empty() ) {
 			SEISCOMP_ERROR("eventAssociation.priorities defines SCORE but no score method is set up.");
 			return false;
 		}
 	}
-
-	try { _config.delayTimeSpan = configGetInt("eventAssociation.delayTimeSpan"); } catch (...) {}
-	try { _config.delayFilter.agencyID = configGetString("eventAssociation.delayFilter.agencyID"); } catch (...) {}
-	try { _config.delayFilter.author = configGetString("eventAssociation.delayFilter.author"); } catch (...) {}
-	try {
-		DataModel::EvaluationMode mode;
-		string strMode = configGetString("eventAssociation.delayFilter.evaluationMode");
-		if ( !mode.fromString(strMode.c_str()) ) {
-			SEISCOMP_ERROR("eventAssociation.delayFilter.evaluationMode: invalid mode");
-			return false;
-		}
-
-		_config.delayFilter.evaluationMode = mode;
-	} catch (...) {}
-
-	try { _config.delayPrefFocMech = configGetInt("eventAssociation.delayPrefFocMech"); } catch (...) {}
-	try { _config.ignoreMTDerivedOrigins = configGetBool("eventAssociation.ignoreFMDerivedOrigins"); } catch (...) {}
-	try { _config.setAutoEventTypeNotExisting = configGetBool("eventAssociation.declareFakeEventForRejectedOrigin"); } catch (...) {}
 
 	try {
 		Config::StringList blIDs = configGetStrings("processing.blacklist.eventIDs");
@@ -395,40 +382,6 @@ bool EventTool::initConfiguration() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool EventTool::init() {
-	_config.eventTimeBefore = TimeSpan(30 * 60, 0);
-	_config.eventTimeAfter = TimeSpan(30 * 60, 0);
-
-	_config.eventIDPrefix = "gfz";
-	_config.eventIDPattern = "%p%Y%04c";
-	_config.minAutomaticArrivals = 10;
-	_config.minStationMagnitudes = 4;
-	_config.minMatchingPicks = 3;
-	_config.maxMatchingPicksTimeDiff = -1;
-	_config.matchingLooseAssociatedPicks = false;
-	_config.maxTimeDiff = Core::TimeSpan(60.);
-	_config.maxDist = 5.0;
-	_config.minMwCount = 8;
-
-	_config.mbOverMwCount = 30;
-	_config.mbOverMwValue = 6.0;
-
-	_config.enableFallbackPreferredMagnitude = false;
-
-	_config.magTypes.push_back("mBc");
-	_config.magTypes.push_back("Mw(mB)");
-	_config.magTypes.push_back("Mwp");
-	_config.magTypes.push_back("ML");
-	_config.magTypes.push_back("MLh");
-	_config.magTypes.push_back("MLv");
-	_config.magTypes.push_back("mb");
-
-	_config.updatePreferredSolutionAfterMerge = false;
-	_config.delayTimeSpan = 0;
-	_config.delayPrefFocMech = 0;
-	_config.ignoreMTDerivedOrigins = true;
-	_config.setAutoEventTypeNotExisting = false;
-	_config.logProcessing = true;
-
 	if ( !Application::init() ) {
 		return false;
 	}
@@ -439,21 +392,21 @@ bool EventTool::init() {
 		_infoOutput->subscribe(_infoChannel);
 	}
 
-	if ( !_config.score.empty() || _config.minAutomaticScore ) {
-		if ( _config.score.empty() ) {
+	if ( !_config.eventAssociation.score.empty() || _config.eventAssociation.minAutomaticScore ) {
+		if ( _config.eventAssociation.score.empty() ) {
 			SEISCOMP_ERROR("No score processor configured, eventAssociation.score is empty or not set");
 			return false;
 		}
 
-		_score = ScoreProcessorFactory::Create(_config.score.c_str());
+		_score = ScoreProcessorFactory::Create(_config.eventAssociation.score);
 		if ( !_score ) {
 			SEISCOMP_ERROR("Score method '%s' is not available. Is the correct plugin loaded?",
-			               _config.score.c_str());
+			               _config.eventAssociation.score);
 			return false;
 		}
 
 		if ( !_score->setup(configuration()) ) {
-			SEISCOMP_ERROR("Score '%s' failed to initialize", _config.score.c_str());
+			SEISCOMP_ERROR("Score '%s' failed to initialize", _config.eventAssociation.score);
 			return false;
 		}
 	}
@@ -470,10 +423,12 @@ bool EventTool::init() {
 	_outputOriginRef = addOutputObjectLog("originref", primaryMessagingGroup());
 	_outputFMRef = addOutputObjectLog("focmechref", primaryMessagingGroup());
 
-	if ( _config.delayTimeSpan > 0 || _config.delayPrefFocMech > 0 )
+	if ( _config.eventAssociation.delayTimeSpan > 0
+	  || _config.eventAssociation.delayPrefFocMech > 0 ) {
 		enableTimer(DELAY_CHECK_INTERVAL);
+	}
 
-	_cache.setTimeSpan(TimeSpan(_fExpiry*3600.));
+	_cache.setTimeSpan(TimeSpan(_config.fExpiry * 3600.));
 	_cache.setDatabaseArchive(query());
 
 	_ep = new EventParameters;
@@ -483,21 +438,37 @@ bool EventTool::init() {
 	services = EventProcessorFactory::Services();
 
 	if ( services ) {
-		for ( auto it = services->begin(); it != services->end(); ++it ) {
-			EventProcessorPtr proc = EventProcessorFactory::Create(it->c_str());
+		for ( auto &service : *services ) {
+			EventProcessorPtr proc = EventProcessorFactory::Create(service.c_str());
 			if ( proc ) {
 				if ( !proc->setup(configuration()) ) {
 					SEISCOMP_WARNING("Event processor '%s' failed to initialize: skipping",
-					                 it->c_str());
+					                 service);
 					continue;
 				}
 
-				SEISCOMP_INFO("Processor '%s' added", it->c_str());
+				SEISCOMP_INFO("Processor '%s' added", service);
 				_processors.push_back(proc);
 			}
 		}
 
 		delete services;
+	}
+
+	if ( _config.restAPI.valid() ) {
+		_restAPI = new Wired::Server;
+		if ( !_restAPI->addEndpoint(_config.restAPI.address, _config.restAPI.port,
+		                            false, new RESTAPIEndpoint(this)) ) {
+			SEISCOMP_ERROR("Failed to add REST API endpoint");
+			return false;
+		}
+
+		if ( !_restAPI->init() ) {
+			return false;
+		}
+
+		SEISCOMP_INFO("Bound REST API to port %d", _config.restAPI.port);
+		_restAPIThread = thread([&] { _restAPI->run(); });
 	}
 
 	return true;
@@ -509,7 +480,7 @@ bool EventTool::init() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool EventTool::run() {
-	if ( _sendClearCache ) {
+	if ( _config.clearCache ) {
 		SEISCOMP_DEBUG("Sending clear cache request");
 		ClearCacheRequestMessage cc_msg;
 		connection()->send(&cc_msg);
@@ -524,16 +495,16 @@ bool EventTool::run() {
 		return false;
 	}
 
-	if ( !_epFile.empty() ) {
+	if ( !_config.epFile.empty() ) {
 		IO::XMLArchive ar;
-		if ( !ar.open(_epFile.c_str()) ) {
-			SEISCOMP_ERROR("Failed to open %s", _epFile.c_str());
+		if ( !ar.open(_config.epFile.c_str()) ) {
+			SEISCOMP_ERROR("Failed to open %s", _config.epFile);
 			return false;
 		}
 
 		_ep = nullptr;
 		ar >> _ep;
-		if ( !_reprocess ) {
+		if ( !_config.reprocess ) {
 			ar >> _journal;
 			if ( !_journal ) {
 				_journal = new Journaling;
@@ -543,12 +514,12 @@ bool EventTool::run() {
 		ar.close();
 
 		if ( !_ep ) {
-			SEISCOMP_ERROR("No event parameters found in %s", _epFile.c_str());
+			SEISCOMP_ERROR("No event parameters found in %s", _config.epFile);
 			return false;
 		}
 
 		// Ignore all event objects when reprocessing
-		if ( _reprocess ) {
+		if ( _config.reprocess ) {
 			while ( _ep->eventCount() ) {
 				_ep->removeEvent(0);
 			}
@@ -556,7 +527,7 @@ bool EventTool::run() {
 
 		for ( size_t i = 0; i < _ep->eventCount(); ++i ) {
 			EventPtr evt = _ep->event(i);
-			if ( _updateEventID ) {
+			if ( _config.updateEventID ) {
 				auto *origin = _ep->findOrigin(evt->preferredOriginID());
 				if ( origin ) {
 					string eventID = allocateEventID(query(), origin, _config);
@@ -632,7 +603,7 @@ bool EventTool::run() {
 		}
 
 		ar.create("-");
-		ar.setFormattedOutput(_formatted);
+		ar.setFormattedOutput(_config.formatted);
 		ar << _ep;
 		ar << _journal;
 		ar.close();
@@ -641,15 +612,15 @@ bool EventTool::run() {
 		return true;
 	}
 
-	if ( !_originID.empty() ) {
+	if ( !_config.originID.empty() ) {
 		if ( !query() ) {
-			std::cerr << "No database connection available" << std::endl;
+			cerr << "No database connection available" << endl;
 			return false;
 		}
 
-		OriginPtr origin = Origin::Cast(query()->getObject(Origin::TypeInfo(), _originID));
+		OriginPtr origin = Origin::Cast(query()->getObject(Origin::TypeInfo(), _config.originID));
 		if ( !origin ) {
-			std::cout << "Origin " << _originID << " has not been found, exiting" << std::endl;
+			cout << "Origin " << _config.originID << " has not been found, exiting" << endl;
 			return true;
 		}
 
@@ -657,22 +628,22 @@ bool EventTool::run() {
 
 		EventInformationPtr info = associateOrigin(origin.get(), true);
 		if ( !info ) {
-			std::cout << "Origin " << _originID << " has not been associated to any event (already associated?)" << std::endl;
+			cout << "Origin " << _config.originID << " has not been associated to any event (already associated?)" << endl;
 			return true;
 		}
 
-		std::cout << "Origin " << _originID << " has been associated to event " << info->event->publicID() << std::endl;
+		cout << "Origin " << _config.originID << " has been associated to event " << info->event->publicID() << endl;
 		updatePreferredOrigin(info.get());
 
 		return true;
 	}
 
-	if ( !_eventID.empty() ) {
+	if ( !_config.eventID.empty() ) {
 		EventInformationPtr info = new EventInformation(
-			&_cache, &_config, query(), _eventID, author()
+			&_cache, &_config, query(), _config.eventID, author()
 		);
 		if ( !info->event ) {
-			std::cout << "Event " << _eventID << " not found" << std::endl;
+			cout << "Event " << _config.eventID << " not found" << endl;
 			return false;
 		}
 
@@ -682,6 +653,21 @@ bool EventTool::run() {
 	}
 
 	return Application::run();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void EventTool::done() {
+	if ( _restAPI ) {
+		_restAPI->shutdown();
+		_restAPIThread.join();
+		_restAPI = nullptr;
+	}
+
+	Client::Application::done();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -708,7 +694,7 @@ void EventTool::handleMessage(Core::Message *msg) {
 
 	SEISCOMP_DEBUG("Work on TODO list");
 	for ( auto it = _adds.begin(); it != _adds.end(); ++it ) {
-		SEISCOMP_DEBUG("Check ID %s", (*it)->publicID().c_str());
+		SEISCOMP_DEBUG("Check ID %s", (*it)->publicID());
 		OriginPtr org = Origin::Cast(it->get());
 		if ( org ) {
 			if ( _originBlackList.find(org->publicID()) == _originBlackList.end() ) {
@@ -738,8 +724,7 @@ void EventTool::handleMessage(Core::Message *msg) {
 	for ( auto it = _updates.begin(); it != _updates.end(); ++it ) {
 		// Has this object already been added in the previous step or delayed?
 		bool delayed = false;
-		for ( auto dit = _delayBuffer.rbegin();
-		      dit != _delayBuffer.rend(); ++dit ) {
+		for ( auto dit = _delayBuffer.rbegin(); dit != _delayBuffer.rend(); ++dit ) {
 			if ( dit->obj == it->get() ) {
 				delayed = true;
 				break;
@@ -771,13 +756,14 @@ void EventTool::handleMessage(Core::Message *msg) {
 
 	NotifierMessagePtr nmsg = Notifier::GetMessage(true);
 	if ( nmsg ) {
-		SEISCOMP_DEBUG("%d notifier available", nmsg->size());
-		if ( !_testMode ) {
+		SEISCOMP_DEBUG("%d notifier available", static_cast<int>(nmsg->size()));
+		if ( !_config.testMode ) {
 			connection()->send(nmsg.get());
 		}
 	}
-	else
+	else {
 		SEISCOMP_DEBUG("No notifier available");
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -803,8 +789,10 @@ void EventTool::handleTimeout() {
 					// messages.
 					NotifierMessagePtr nmsg = Notifier::GetMessage(true);
 					if ( nmsg ) {
-						SEISCOMP_DEBUG("%d notifier available", (int)nmsg->size());
-						if ( !_testMode ) connection()->send(nmsg.get());
+						SEISCOMP_DEBUG("%d notifier available", static_cast<int>(nmsg->size()));
+						if ( !_config.testMode ) {
+							connection()->send(nmsg.get());
+						}
 					}
 				}
 			}
@@ -889,8 +877,10 @@ void EventTool::handleTimeout() {
 
 	NotifierMessagePtr nmsg = Notifier::GetMessage(true);
 	if ( nmsg ) {
-		SEISCOMP_DEBUG("%d notifier available", (int)nmsg->size());
-		if ( !_testMode ) connection()->send(nmsg.get());
+		SEISCOMP_DEBUG("%d notifier available", static_cast<int>(nmsg->size()));
+		if ( !_config.testMode ) {
+			connection()->send(nmsg.get());
+		}
 	}
 	else
 		SEISCOMP_DEBUG("No notifier available");
@@ -989,7 +979,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 			SEISCOMP_LOG(_infoChannel, "Received new momenttensor %s",
 			             mt->publicID().c_str());
 
-			if ( _config.ignoreMTDerivedOrigins ) {
+			if ( _config.eventAssociation.ignoreMTDerivedOrigins ) {
 				// Blacklist the derived originID to prevent event
 				// association.
 				_originBlackList.insert(mt->derivedOriginID());
@@ -1900,7 +1890,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventInformationPtr EventTool::associateOriginCheckDelay(DataModel::Origin *origin) {
-	if ( _config.delayTimeSpan > 0 ) {
+	if ( _config.eventAssociation.delayTimeSpan > 0 ) {
 		SEISCOMP_LOG(_infoChannel, "Checking delay filter for origin %s",
 		             origin->publicID().c_str());
 
@@ -1910,31 +1900,31 @@ EventInformationPtr EventTool::associateOriginCheckDelay(DataModel::Origin *orig
 		}
 		catch ( ValueException& ) {}
 
-		if ( _config.delayFilter.agencyID &&
-		     objectAgencyID(origin) != *_config.delayFilter.agencyID ) {
+		if ( _config.eventAssociation.delayFilter.agencyID &&
+		     objectAgencyID(origin) != *_config.eventAssociation.delayFilter.agencyID ) {
 			SEISCOMP_LOG(_infoChannel, " * agency does not match (%s != %s), process immediately",
-			             objectAgencyID(origin).c_str(), (*_config.delayFilter.agencyID).c_str());
+			             objectAgencyID(origin), *_config.eventAssociation.delayFilter.agencyID);
 			return associateOrigin(origin, true);
 		}
 
-		if ( _config.delayFilter.author &&
-		     objectAuthor(origin) != *_config.delayFilter.author ) {
+		if ( _config.eventAssociation.delayFilter.author &&
+		     objectAuthor(origin) != *_config.eventAssociation.delayFilter.author ) {
 			SEISCOMP_LOG(_infoChannel, " * author does not match (%s != %s), process immediately",
-			             objectAuthor(origin).c_str(), (*_config.delayFilter.author).c_str());
+			             objectAuthor(origin), *_config.eventAssociation.delayFilter.author);
 			return associateOrigin(origin, true);
 		}
 
-		if ( _config.delayFilter.evaluationMode &&
-		     mode != *_config.delayFilter.evaluationMode ) {
+		if ( _config.eventAssociation.delayFilter.evaluationMode &&
+		     mode != *_config.eventAssociation.delayFilter.evaluationMode ) {
 			SEISCOMP_LOG(_infoChannel, " * evaluationMode does not match (%s != %s), process immediately",
-			             mode.toString(), (*_config.delayFilter.evaluationMode).toString());
+			             mode.toString(), _config.eventAssociation.delayFilter.evaluationMode->toString());
 			return associateOrigin(origin, true);
 		}
 
 		// Filter to delay the origin passes
 		SEISCOMP_LOG(_infoChannel, "Origin %s delayed for %i s",
-		             origin->publicID().c_str(), _config.delayTimeSpan);
-		_delayBuffer.push_back(DelayedObject(origin, _config.delayTimeSpan));
+		             origin->publicID().c_str(), _config.eventAssociation.delayTimeSpan);
+		_delayBuffer.push_back(DelayedObject(origin, _config.eventAssociation.delayTimeSpan));
 
 		return nullptr;
 	}
@@ -1963,8 +1953,8 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 	// Find a matching (cached) event for this origin
 	EventInformationPtr info = findMatchingEvent(origin);
 	if ( !info ) {
-		Core::Time startTime = origin->time().value() - _config.eventTimeBefore;
-		Core::Time endTime = origin->time().value() + _config.eventTimeAfter;
+		Core::Time startTime = origin->time().value() - _config.eventAssociation.eventTimeBefore;
+		Core::Time endTime = origin->time().value() + _config.eventAssociation.eventTimeAfter;
 		MatchResult bestResult = Nothing;
 
 		SEISCOMP_DEBUG("... search for origin's %s event in database", origin->publicID().c_str());
@@ -2032,29 +2022,29 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 			}
 
 			if ( status == AUTOMATIC ) {
-				if ( _config.minAutomaticScore ) {
+				if ( _config.eventAssociation.minAutomaticScore ) {
 					double score = _score->evaluate(origin);
-					if ( score < *_config.minAutomaticScore ) {
+					if ( score < *_config.eventAssociation.minAutomaticScore ) {
 						SEISCOMP_DEBUG("... rejecting automatic origin %s (score: %f < %f)",
 						               origin->publicID().c_str(),
-						               score, *_config.minAutomaticScore);
+						               score, *_config.eventAssociation.minAutomaticScore);
 						SEISCOMP_LOG(_infoChannel,
 						             "Origin %s skipped: score too low (%f < %f) to create a new event",
 						             origin->publicID().c_str(),
-						             score, *_config.minAutomaticScore);
+						             score, *_config.eventAssociation.minAutomaticScore);
 						return nullptr;
 					}
 				}
-				else if ( definingPhaseCount(origin) < int(_config.minAutomaticArrivals) ) {
+				else if ( definingPhaseCount(origin) < int(_config.eventAssociation.minAutomaticArrivals) ) {
 					SEISCOMP_DEBUG("... rejecting automatic origin %s (phaseCount: %d < %zu)",
 					               origin->publicID().c_str(),
 					               definingPhaseCount(origin),
-					               _config.minAutomaticArrivals);
+					               _config.eventAssociation.minAutomaticArrivals);
 					SEISCOMP_LOG(_infoChannel,
 					             "Origin %s skipped: phaseCount too low (%d < %zu) to create a new event",
 					             origin->publicID().c_str(),
 					             definingPhaseCount(origin),
-					             _config.minAutomaticArrivals);
+					             _config.eventAssociation.minAutomaticArrivals);
 					return nullptr;
 				}
 			}
@@ -2236,28 +2226,28 @@ void EventTool::updatedOrigin(DataModel::Origin *org,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventInformationPtr EventTool::associateFocalMechanismCheckDelay(DataModel::FocalMechanism *fm) {
-	if ( _config.delayTimeSpan > 0 ) {
+	if ( _config.eventAssociation.delayTimeSpan > 0 ) {
 		EvaluationMode mode = AUTOMATIC;
 		try {
 			mode = fm->evaluationMode();
 		}
 		catch ( ValueException& ) {}
 
-		if ( _config.delayFilter.agencyID &&
-		     objectAgencyID(fm) != *_config.delayFilter.agencyID )
+		if ( _config.eventAssociation.delayFilter.agencyID &&
+		     objectAgencyID(fm) != *_config.eventAssociation.delayFilter.agencyID )
 			return associateFocalMechanism(fm);
 
-		if ( _config.delayFilter.author &&
-		     objectAuthor(fm) != *_config.delayFilter.author )
+		if ( _config.eventAssociation.delayFilter.author &&
+		     objectAuthor(fm) != *_config.eventAssociation.delayFilter.author )
 			return associateFocalMechanism(fm);
 
-		if ( _config.delayFilter.evaluationMode &&
-		     mode != *_config.delayFilter.evaluationMode )
+		if ( _config.eventAssociation.delayFilter.evaluationMode &&
+		     mode != *_config.eventAssociation.delayFilter.evaluationMode )
 			return associateFocalMechanism(fm);
 
 		// Filter to delay the origin passes
 		SEISCOMP_LOG(_infoChannel, "FocalMechanism %s delayed", fm->publicID().c_str());
-		_delayBuffer.push_back(DelayedObject(fm, _config.delayTimeSpan));
+		_delayBuffer.push_back(DelayedObject(fm, _config.eventAssociation.delayTimeSpan));
 
 		return nullptr;
 	}
@@ -2401,23 +2391,26 @@ EventTool::MatchResult EventTool::compare(EventInformation *info,
 
 	MatchResult result = Nothing;
 
-	if ( matchingPicks >= _config.minMatchingPicks )
+	if ( matchingPicks >= _config.eventAssociation.minMatchingPicks ) {
 		result = Picks;
+	}
 
-	if ( _config.maxMatchingPicksTimeDiff >= 0 )
+	if ( _config.eventAssociation.maxMatchingPicksTimeDiff >= 0 ) {
 		SEISCOMP_DEBUG("... compare pick times with threshold %.2fs",
-		               _config.maxMatchingPicksTimeDiff);
+		               _config.eventAssociation.maxMatchingPicksTimeDiff);
+	}
 	SEISCOMP_DEBUG("... matching picks of %s and %s = %lu/%lu, need at least %lu",
 	               origin->publicID().c_str(), info->event->publicID().c_str(),
 	               (unsigned long)matchingPicks, (unsigned long)origin->arrivalCount(),
-	               (unsigned long)_config.minMatchingPicks);
+	               (unsigned long)_config.eventAssociation.minMatchingPicks);
 	SEISCOMP_LOG(_infoChannel, "... matching picks of %s and %s = %lu/%lu, need at least %lu",
 	             origin->publicID().c_str(), info->event->publicID().c_str(),
 	             (unsigned long)matchingPicks, (unsigned long)origin->arrivalCount(),
-	             (unsigned long)_config.minMatchingPicks);
+	             (unsigned long)_config.eventAssociation.minMatchingPicks);
 
-	if ( !info->preferredOrigin )
+	if ( !info->preferredOrigin ) {
 		return Nothing;
+	}
 
 	double dist, azi1, azi2;
 
@@ -2429,21 +2422,21 @@ EventTool::MatchResult EventTool::compare(EventInformation *info,
 	// Dist out of range
 	SEISCOMP_DEBUG("... distance of %s to %s = %f, max = %f",
 	               origin->publicID().c_str(), info->event->publicID().c_str(),
-	               dist, _config.maxDist);
+	               dist, _config.eventAssociation.maxDist);
 	SEISCOMP_LOG(_infoChannel, "... distance of %s to %s = %f, max = %f",
 	             origin->publicID().c_str(), info->event->publicID().c_str(),
-	             dist, _config.maxDist);
-	if ( dist <= _config.maxDist ) {
+	             dist, _config.eventAssociation.maxDist);
+	if ( dist <= _config.eventAssociation.maxDist ) {
 		TimeSpan diffTime = info->preferredOrigin->time().value() - origin->time().value();
 
 		SEISCOMP_DEBUG("... time diff of %s to %s = %.2fs, max = %.2f",
 		               origin->publicID().c_str(), info->event->publicID().c_str(),
-		               (double)diffTime, (double)_config.maxTimeDiff);
+		               (double)diffTime, (double)_config.eventAssociation.maxTimeDiff);
 		SEISCOMP_LOG(_infoChannel, "... time diff of %s to %s = %f, max = %f",
 		             origin->publicID().c_str(), info->event->publicID().c_str(),
-		             (double)diffTime, (double)_config.maxTimeDiff);
+		             (double)diffTime, (double)_config.eventAssociation.maxTimeDiff);
 
-		if ( diffTime.abs() <= _config.maxTimeDiff ) {
+		if ( diffTime.abs() <= _config.eventAssociation.maxTimeDiff ) {
 
 			if ( result == Picks )
 				result = PicksAndLocation;
@@ -2651,7 +2644,7 @@ Magnitude *EventTool::preferredMagnitude(Origin *origin) {
 				continue;
 			}
 
-			if ( _config.magPriorityOverStationCount ) {
+			if ( _config.eventAssociation.magPriorityOverStationCount ) {
 				// Priority rules out the station count. A network
 				// magnitude with lower station count can become preferred if
 				// its priority is higher.
@@ -2710,7 +2703,7 @@ Magnitude *EventTool::preferredMagnitude(Origin *origin) {
 		return magMwInstance;
 	}
 
-	if ( !magFallbackInstance && _config.enableFallbackPreferredMagnitude ) {
+	if ( !magFallbackInstance && _config.eventAssociation.enableFallbackPreferredMagnitude ) {
 		// Find the network magnitude with the most station magnitudes according the
 		// magnitude priority and set this magnitude preferred
 		magFallbackCount = 0;
@@ -3006,11 +2999,11 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 				return;
 			}
 
-			if ( !_config.priorities.empty() ) {
+			if ( !_config.eventAssociation.priorities.empty() ) {
 				bool allowBadMagnitude = false;
 
 				// Run through the priority list and check the values
-				for ( auto &check : _config.priorities ) {
+				for ( auto &check : _config.eventAssociation.priorities ) {
 					if ( check == "AGENCY" ) {
 						int originAgencyPriority = agencyPriority(objectAgencyID(origin), _config);
 						int preferredOriginAgencyPriority = agencyPriority(objectAgencyID(info->preferredOrigin.get()), _config);
@@ -3565,7 +3558,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 
 	// If an preferred origin is set and the event type has not been fixed
 	// manually set it to 'not existing' if the preferred origin is rejected.
-	if ( _config.setAutoEventTypeNotExisting &&
+	if ( _config.eventAssociation.setAutoEventTypeNotExisting &&
 	     info->preferredOrigin &&
 	     !info->constraints.fixType ) {
 		bool isRejected = false;
@@ -3720,7 +3713,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 	               info->event->publicID().c_str(),
 	               fm->publicID().c_str());
 
-	if ( _config.delayPrefFocMech > 0 ) {
+	if ( _config.eventAssociation.delayPrefFocMech > 0 ) {
 		if ( !info->preferredOrigin ) {
 			SEISCOMP_DEBUG("No preferred origins set for event %s, cannot compute delay time, ignoring focal mechanism %s",
 			               info->event->publicID().c_str(), fm->publicID().c_str());
@@ -3729,7 +3722,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 			return;
 		}
 
-		Core::Time minTime = info->preferredOrigin->time().value() + Core::TimeSpan(_config.delayPrefFocMech,0);
+		Core::Time minTime = info->preferredOrigin->time().value() + Core::TimeSpan(_config.eventAssociation.delayPrefFocMech,0);
 		Core::Time now = Core::Time::UTC();
 
 		//SEISCOMP_LOG(_infoChannel, "Time to reach to set focal mechanism preferred is %s, now is %s",
@@ -3821,9 +3814,9 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 				return;
 			}
 
-			if ( !_config.priorities.empty() ) {
+			if ( !_config.eventAssociation.priorities.empty() ) {
 				// Run through the priority list and check the values
-				for ( auto &check : _config.priorities ) {
+				for ( auto &check : _config.eventAssociation.priorities ) {
 					if ( check == "AGENCY" ) {
 						int fmAgencyPriority = agencyPriority(objectAgencyID(fm), _config);
 						int preferredFMAgencyPriority = agencyPriority(objectAgencyID(info->preferredFocalMechanism.get()), _config);
@@ -4252,7 +4245,7 @@ bool EventTool::mergeEvents(EventInformation *target, EventInformation *source) 
 		}
 
 		// Update the preferred origin if configured to do so
-		if ( _config.updatePreferredSolutionAfterMerge )
+		if ( _config.eventAssociation.updatePreferredSolutionAfterMerge )
 			choosePreferred(target, org.get(), nullptr);
 	}
 
@@ -4302,7 +4295,7 @@ bool EventTool::mergeEvents(EventInformation *target, EventInformation *source) 
 		}
 
 		// Update the preferred focalfechanism
-		if ( _config.updatePreferredSolutionAfterMerge )
+		if ( _config.eventAssociation.updatePreferredSolutionAfterMerge )
 			choosePreferred(target, fm.get());
 	}
 
@@ -4339,7 +4332,7 @@ void EventTool::removedFromCache(Seiscomp::DataModel::PublicObject *po) {
 
 	// Only allow to detach objects from the EP instance if it hasn't been read
 	// from a file
-	if ( _epFile.empty() )
+	if ( _config.epFile.empty() )
 		po->detach();
 
 	DataModel::Notifier::SetEnabled(saveState);

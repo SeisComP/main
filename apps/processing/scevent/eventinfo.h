@@ -34,7 +34,6 @@
 
 
 namespace Seiscomp {
-
 namespace Client {
 
 
@@ -102,7 +101,6 @@ struct EventInformation : public Seiscomp::Core::BaseObject {
 
 
 }
-
 }
 
 

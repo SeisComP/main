@@ -218,7 +218,7 @@ string allocateEventID(DatabaseArchive *ar, const Origin *origin,
 
 	if ( config.eventIDLookupMargin < 0 ) {
 		// Auto mode, compute the number of slots based on half an hour.
-		eventIDLookupMargin = static_cast<int>(config.eventTimeAfter.length() * 1000 / width);
+		eventIDLookupMargin = static_cast<int>(config.eventAssociation.eventTimeAfter.length() * 1000 / width);
 		SEISCOMP_DEBUG("Using event ID slot ahead lookup of %d", eventIDLookupMargin);
 	}
 
@@ -239,7 +239,7 @@ string allocateEventID(DatabaseArchive *ar, const Origin *origin,
 
 	if ( config.eventIDLookupMargin < 0 ) {
 		// Auto mode, compute the number of slots based on half an hour.
-		eventIDLookupMargin = static_cast<int>(config.eventTimeBefore.length() * 1000 / width);
+		eventIDLookupMargin = static_cast<int>(config.eventAssociation.eventTimeBefore.length() * 1000 / width);
 		SEISCOMP_DEBUG("Using event ID slot back lookup of %d", eventIDLookupMargin);
 	}
 
@@ -546,8 +546,9 @@ eventFERegionDescription(DataModel::Event *ev) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int magnitudePriority(const std::string &magType, const Client::Config &config) {
-	int n = config.magTypes.size();
-	for ( auto it = config.magTypes.begin(); it != config.magTypes.end(); ++it, --n ) {
+	int n = config.eventAssociation.magTypes.size();
+	for ( auto it = config.eventAssociation.magTypes.begin();
+	      it != config.eventAssociation.magTypes.end(); ++it, --n ) {
 		if ( magType == *it ) {
 			break;
 		}
@@ -562,8 +563,9 @@ int magnitudePriority(const std::string &magType, const Client::Config &config) 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int agencyPriority(const std::string &agencyID, const Client::Config &config) {
-	int n = config.agencies.size();
-	for ( auto it = config.agencies.begin(); it != config.agencies.end(); ++it, --n ) {
+	int n = config.eventAssociation.agencies.size();
+	for ( auto it = config.eventAssociation.agencies.begin();
+	      it != config.eventAssociation.agencies.end(); ++it, --n ) {
 		if ( agencyID == *it ) {
 			break;
 		}
@@ -578,8 +580,9 @@ int agencyPriority(const std::string &agencyID, const Client::Config &config) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int authorPriority(const std::string &author, const Client::Config &config) {
-	int n = config.authors.size();
-	for ( auto it = config.authors.begin(); it != config.authors.end(); ++it, --n ) {
+	int n = config.eventAssociation.authors.size();
+	for ( auto it = config.eventAssociation.authors.begin();
+	      it != config.eventAssociation.authors.end(); ++it, --n ) {
 		if ( author == *it ) {
 			break;
 		}
@@ -594,8 +597,9 @@ int authorPriority(const std::string &author, const Client::Config &config) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int methodPriority(const std::string &methodID, const Client::Config &config) {
-	int n = config.methods.size();
-	for ( auto it = config.methods.begin(); it != config.methods.end(); ++it, --n ) {
+	int n = config.eventAssociation.methods.size();
+	for ( auto it = config.eventAssociation.methods.begin();
+	      it != config.eventAssociation.methods.end(); ++it, --n ) {
 		if ( methodID == *it ) {
 			break;
 		}
@@ -618,19 +622,19 @@ int goodness(const Magnitude *netmag, int mbcount,
 	size_t mcount = stationCount(netmag);
 	double mval = netmag->magnitude().value();
 
-	if ( mcount < config.minStationMagnitudes ) {
+	if ( mcount < config.eventAssociation.minStationMagnitudes ) {
 		return 0;
 	}
 
 	// Special Mw(mB) criterion
 
 	if ( isMw(netmag) ) {
-		if ( mcount < config.minMwCount ) {
+		if ( mcount < config.eventAssociation.minMwCount ) {
 			return 0;
 		}
 
-		if ( mcount < config.mbOverMwCount ) {
-			if ( (mval + mbval) / 2 < config.mbOverMwValue ) {
+		if ( mcount < config.eventAssociation.mbOverMwCount ) {
+			if ( (mval + mbval) / 2 < config.eventAssociation.mbOverMwValue ) {
 				return 0;
 			}
 

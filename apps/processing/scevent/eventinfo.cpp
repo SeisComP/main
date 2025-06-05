@@ -133,7 +133,7 @@ size_t EventInformation::matchingPicks(DataModel::DatabaseQuery *q,
 				catch ( ... ) {}
 
 				pickIDs.insert(org->arrival(j)->pickID());
-				if ( cfg->maxMatchingPicksTimeDiff >= 0 ) {
+				if ( cfg->eventAssociation.maxMatchingPicksTimeDiff >= 0 ) {
 					PickPtr p = cache->get<Pick>(org->arrival(j)->pickID());
 					if ( p )
 						insertPick(p.get());
@@ -147,11 +147,11 @@ size_t EventInformation::matchingPicks(DataModel::DatabaseQuery *q,
 	typedef pair<PickAssociation::const_iterator, PickAssociation::const_iterator> PickRange;
 	size_t matches = 0;
 
-	if ( cfg->maxMatchingPicksTimeDiff < 0 ) {
+	if ( cfg->eventAssociation.maxMatchingPicksTimeDiff < 0 ) {
 		for ( size_t i = 0; i < o->arrivalCount(); ++i ) {
 			if ( !o->arrival(i) ) continue;
 			// weight = 0 => raus
-			if ( !cfg->matchingLooseAssociatedPicks
+			if ( !cfg->eventAssociation.matchingLooseAssociatedPicks
 			  && Private::arrivalWeight(o->arrival(i)) == 0 ) continue;
 			if ( pickIDs.find(o->arrival(i)->pickID()) != pickIDs.end() )
 				++matches;
@@ -160,7 +160,7 @@ size_t EventInformation::matchingPicks(DataModel::DatabaseQuery *q,
 	else {
 		for ( size_t i = 0; i < o->arrivalCount(); ++i ) {
 			if ( !o->arrival(i) ) continue;
-			if ( !cfg->matchingLooseAssociatedPicks
+			if ( !cfg->eventAssociation.matchingLooseAssociatedPicks
 			  && Private::arrivalWeight(o->arrival(i)) == 0 ) continue;
 			PickPtr p = cache->get<Pick>(o->arrival(i)->pickID());
 			if ( !p ) {
@@ -194,7 +194,7 @@ size_t EventInformation::matchingPicks(DataModel::DatabaseQuery *q,
 				++cnt;
 				try {
 					double diff = fabs((double)(cmp->time().value() - p->time().value()));
-					if ( diff <= cfg->maxMatchingPicksTimeDiff )
+					if ( diff <= cfg->eventAssociation.maxMatchingPicksTimeDiff )
 						++hit;
 				}
 				catch ( ... ) {}
@@ -203,7 +203,7 @@ size_t EventInformation::matchingPicks(DataModel::DatabaseQuery *q,
 			// No picks checked, continue
 			if ( !hit ) continue;
 
-			if ( cfg->matchingPicksTimeDiffAND ) {
+			if ( cfg->eventAssociation.matchingPicksTimeDiffAND ) {
 				// Here AND is implemented. The distance to every single pick must
 				// lie within the configured threshold
 				if ( hit == cnt ) ++matches;
@@ -230,10 +230,10 @@ bool EventInformation::associate(DataModel::Origin *o) {
 	event->add(new OriginReference(o->publicID()));
 	for ( size_t i = 0; i < o->arrivalCount(); ++i ) {
 		if ( !o->arrival(i) ) continue;
-		if ( !cfg->matchingLooseAssociatedPicks
+		if ( !cfg->eventAssociation.matchingLooseAssociatedPicks
 		  && Private::arrivalWeight(o->arrival(i)) == 0 ) continue;
 		pickIDs.insert(o->arrival(i)->pickID());
-		if ( cfg->maxMatchingPicksTimeDiff >= 0 ) {
+		if ( cfg->eventAssociation.maxMatchingPicksTimeDiff >= 0 ) {
 			PickPtr p = cache->get<Pick>(o->arrival(i)->pickID());
 			if ( p )
 				insertPick(p.get());

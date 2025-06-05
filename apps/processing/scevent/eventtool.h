@@ -12,18 +12,22 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_APPLICATIONS_EVENTTOOL_H__
-#define SEISCOMP_APPLICATIONS_EVENTTOOL_H__
+#ifndef SEISCOMP_APPLICATIONS_EVENTTOOL_H
+#define SEISCOMP_APPLICATIONS_EVENTTOOL_H
 
 #include <seiscomp/client/application.h>
 #include <seiscomp/datamodel/publicobjectcache.h>
 #include <seiscomp/datamodel/eventparameters.h>
 #include <seiscomp/datamodel/journaling.h>
+#include <seiscomp/wired/server.h>
+
 #include <seiscomp/plugins/events/eventprocessor.h>
 #include <seiscomp/plugins/events/scoreprocessor.h>
 
 #define SEISCOMP_COMPONENT SCEVENT
 #include <seiscomp/logging/log.h>
+
+#include <thread>
 
 #include "eventinfo.h"
 #include "config.h"
@@ -48,13 +52,26 @@ class EventTool : public Application {
 		~EventTool();
 
 
+	public:
+		/**
+		 * @brief Tries to associate the only origin in the EventParameters
+		 *        structure and returns the eventID.
+		 * No new eventID will be created if the origin cannot be associated
+		 * with an event.
+		 * @param ep The input EventParameters to be checked. Only one origin
+		 *           is allowed.
+		 * @return The eventID or an empty string.
+		 */
+		std::string tryToAssociate(const DataModel::EventParameters *ep) const;
+
+
 	protected:
-		void createCommandLineDescription();
 		bool initConfiguration();
 		bool validateParameters();
 
 		bool init();
 		bool run();
+		void done();
 
 		void handleMessage(Core::Message *msg);
 		void handleTimeout();
@@ -220,17 +237,8 @@ class EventTool : public Application {
 
 		typedef std::list<EventProcessorPtr> EventProcessors;
 
-		double                        _fExpiry;
 		Cache                         _cache;
-		bool                          _testMode;
-		bool                          _sendClearCache;
 		Util::StopWatch               _timer;
-		std::string                   _originID;
-		std::string                   _eventID;
-		std::string                   _epFile;
-		bool                          _reprocess{false};
-		bool                          _formatted{false};
-		bool                          _updateEventID{false};
 
 		Config                        _config;
 		EventProcessors               _processors;
@@ -246,6 +254,9 @@ class EventTool : public Application {
 		IDSet                         _originBlackList;
 		DelayBuffer                   _delayBuffer;
 		DelayEventBuffer              _delayEventBuffer;
+
+		Seiscomp::Wired::ServerPtr    _restAPI;
+		std::thread                   _restAPIThread;
 
 		Logging::Channel             *_infoChannel{nullptr};
 		Logging::Output              *_infoOutput{nullptr};
