@@ -25,6 +25,7 @@
 #include <seiscomp/datamodel/pick.h>
 #include <seiscomp/datamodel/magnitude.h>
 #include <seiscomp/datamodel/origin.h>
+#include <seiscomp/datamodel/journaling.h>
 #include <seiscomp/datamodel/journalentry.h>
 #include <seiscomp/io/archive/xmlarchive.h>
 #include <seiscomp/logging/log.h>
@@ -796,7 +797,7 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 	}
 
 	if ( !_test ) {
-		if ( sendNotifiers(notifiers, routing) ) {
+		if ( sendNotifiers(config->syncEventAttributes ? ep.get() : nullptr, notifiers, routing) ) {
 			if ( config->syncEventAttributes ) {
 				if ( config->syncEventDelay > 0 ) {
 					for ( size_t i = 0; i < ep->eventCount(); ++i ) {
@@ -1426,7 +1427,8 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::sendNotifiers(const Notifiers &notifiers, const RoutingTable &routing) {
+bool App::sendNotifiers(const EventParameters *ep, const Notifiers &notifiers,
+                        const RoutingTable &routing) {
 	if ( notifiers.empty() ) {
 		SEISCOMP_INFO("no modification required");
 		return true;
@@ -1471,10 +1473,46 @@ bool App::sendNotifiers(const Notifiers &notifiers, const RoutingTable &routing)
 		nm->attach(n.get());
 
 		switch ( n->operation() ) {
-			case OP_ADD:    ++add;    break;
-			case OP_UPDATE: ++update; break;
-			case OP_REMOVE: ++remove; break;
-			default: break;
+			case OP_ADD:
+				++add;
+				if ( ep && Origin::Cast(n->object()) ) {
+					// If the object is an origin and if event attributes
+					// should be synchronized then we add a JournalEntry which
+					// add a hint of the remote eventID for this particular
+					// origin so that scevent can grab this hint and assign that
+					// eventID if an event has to be created.
+					auto org = static_cast<Origin*>(n->object());
+					for ( size_t i = 0; i < ep->eventCount(); ++i ) {
+						auto event = ep->event(i);
+						if ( event->preferredOriginID() == org->publicID()
+						  || event->originReference(org->publicID()) ) {
+							// The origin is either the preferred origin or it
+							// is associated -> use this eventID as hint
+							JournalEntryPtr hint = new JournalEntry;
+							hint->setObjectID(org->publicID());
+							hint->setSender(author());
+							hint->setAction("OrgEventIDHint");
+							hint->setParameters(event->publicID());
+							nm->attach(
+								new Notifier(
+									Journaling::ClassName(),
+									OP_ADD,
+									hint.get()
+								)
+							);
+							break;
+						}
+					}
+				}
+				break;
+			case OP_UPDATE:
+				++update;
+				break;
+			case OP_REMOVE:
+				++remove;
+				break;
+			default:
+				break;
 		}
 	}
 

@@ -89,7 +89,8 @@ class App : public Client::Application {
 		               const RoutingTable *routing,
 		               Notifiers &notifiers, bool syncPreferred);
 
-		bool sendNotifiers(const Notifiers &notifiers, const RoutingTable &routing);
+		bool sendNotifiers(const DataModel::EventParameters *ep,
+		                   const Notifiers &notifiers, const RoutingTable &routing);
 		bool sendJournals(const Notifiers &journals);
 		void applyNotifier(const DataModel::Notifier *n);
 		void readLastUpdates();
