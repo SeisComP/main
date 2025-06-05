@@ -85,7 +85,7 @@ class EventTool : public Application {
 
 		EventInformationPtr associateFocalMechanismCheckDelay(DataModel::FocalMechanism *);
 		EventInformationPtr associateFocalMechanism(DataModel::FocalMechanism *);
-		void updatedFocalMechanism(DataModel::FocalMechanism *);
+		void updatedFocalMechanism(DataModel::FocalMechanism *, bool realFMUpdate);
 
 		MatchResult compare(EventInformation *info, DataModel::Origin *origin);
 

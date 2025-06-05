@@ -340,8 +340,7 @@ bool EventTool::initConfiguration() {
 	try { _config.score = configGetString("eventAssociation.score"); } catch (...) {}
 	try { _config.priorities = configGetStrings("eventAssociation.priorities"); } catch (...) {}
 
-	for ( Config::StringList::iterator it = _config.priorities.begin();
-	      it != _config.priorities.end(); ++it ) {
+	for ( auto it = _config.priorities.begin(); it != _config.priorities.end(); ++it ) {
 		bool validToken = false;
 		makeUpper(*it);
 		for ( unsigned int t = 0; t < sizeof(PRIORITY_TOKENS) / sizeof(char*); ++t ) {
@@ -484,9 +483,7 @@ bool EventTool::init() {
 	services = EventProcessorFactory::Services();
 
 	if ( services ) {
-		EventProcessorFactory::ServiceNames::iterator it;
-
-		for ( it = services->begin(); it != services->end(); ++it ) {
+		for ( auto it = services->begin(); it != services->end(); ++it ) {
 			EventProcessorPtr proc = EventProcessorFactory::Create(it->c_str());
 			if ( proc ) {
 				if ( !proc->setup(configuration()) ) {
@@ -710,7 +707,7 @@ void EventTool::handleMessage(Core::Message *msg) {
 	}
 
 	SEISCOMP_DEBUG("Work on TODO list");
-	for ( TodoList::iterator it = _adds.begin(); it != _adds.end(); ++it ) {
+	for ( auto it = _adds.begin(); it != _adds.end(); ++it ) {
 		SEISCOMP_DEBUG("Check ID %s", (*it)->publicID().c_str());
 		OriginPtr org = Origin::Cast(it->get());
 		if ( org ) {
@@ -738,10 +735,10 @@ void EventTool::handleMessage(Core::Message *msg) {
 		SEISCOMP_DEBUG("* unhandled object of class %s", (*it)->className());
 	}
 
-	for ( TodoList::iterator it = _updates.begin(); it != _updates.end(); ++it ) {
+	for ( auto it = _updates.begin(); it != _updates.end(); ++it ) {
 		// Has this object already been added in the previous step or delayed?
 		bool delayed = false;
-		for ( DelayBuffer::reverse_iterator dit = _delayBuffer.rbegin();
+		for ( auto dit = _delayBuffer.rbegin();
 		      dit != _delayBuffer.rend(); ++dit ) {
 			if ( dit->obj == it->get() ) {
 				delayed = true;
@@ -763,7 +760,7 @@ void EventTool::handleMessage(Core::Message *msg) {
 
 			FocalMechanismPtr fm = FocalMechanism::Cast(it->get());
 			if ( fm ) {
-				updatedFocalMechanism(fm.get());
+				updatedFocalMechanism(fm.get(), _realUpdates.find(*it) != _realUpdates.end());
 				continue;
 			}
 		}
@@ -774,8 +771,10 @@ void EventTool::handleMessage(Core::Message *msg) {
 
 	NotifierMessagePtr nmsg = Notifier::GetMessage(true);
 	if ( nmsg ) {
-		SEISCOMP_DEBUG("%d notifier available", (int)nmsg->size());
-		if ( !_testMode ) connection()->send(nmsg.get());
+		SEISCOMP_DEBUG("%d notifier available", nmsg->size());
+		if ( !_testMode ) {
+			connection()->send(nmsg.get());
+		}
 	}
 	else
 		SEISCOMP_DEBUG("No notifier available");
@@ -788,8 +787,7 @@ void EventTool::handleMessage(Core::Message *msg) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventTool::handleTimeout() {
 	// First pass: decrease delay time and try to associate
-	for ( DelayBuffer::iterator it = _delayBuffer.begin();
-	      it != _delayBuffer.end(); ) {
+	for ( auto it = _delayBuffer.begin(); it != _delayBuffer.end(); ) {
 		it->timeout -= DELAY_CHECK_INTERVAL;
 		if ( it->timeout <= -DELAY_CHECK_INTERVAL ) {
 			OriginPtr org = Origin::Cast(it->obj);
@@ -826,8 +824,7 @@ void EventTool::handleTimeout() {
 	}
 
 	// Second pass: flush pending origins (if possible)
-	for ( DelayBuffer::iterator it = _delayBuffer.begin();
-	      it != _delayBuffer.end(); ) {
+	for ( auto it = _delayBuffer.begin(); it != _delayBuffer.end(); ) {
 		OriginPtr org = Origin::Cast(it->obj);
 		EventInformationPtr info;
 		if ( org ) {
@@ -853,8 +850,7 @@ void EventTool::handleTimeout() {
 	}
 
 	// Third pass: check pending event updates
-	for ( DelayEventBuffer::iterator it = _delayEventBuffer.begin();
-	      it != _delayEventBuffer.end(); ) {
+	for ( auto it = _delayEventBuffer.begin(); it != _delayEventBuffer.end(); ) {
 		it->timeout -= DELAY_CHECK_INTERVAL;
 		if ( it->timeout <= -DELAY_CHECK_INTERVAL ) {
 			if ( it->reason == SetPreferredFM ) {
@@ -906,8 +902,7 @@ void EventTool::handleTimeout() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventTool::cleanUpEventCache() {
-	EventMap::iterator it;
-	for ( it = _events.begin(); it != _events.end(); ) {
+	for ( auto it = _events.begin(); it != _events.end(); ) {
 		if ( it->second->aboutToBeRemoved ) {
 			SEISCOMP_DEBUG("... remove event %s from cache",
 			               it->second->event->publicID().c_str());
@@ -1025,7 +1020,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 
 		org = _cache.get<Origin>(ref->originID());
 
-		TodoList::iterator it = _adds.find(TodoEntry(org));
+		auto it = _adds.find(TodoEntry(org));
 		// If this origin has to be associated in this turn
 		if ( it != _adds.end() ) {
 			// Remove the origin from the association list
@@ -1061,7 +1056,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 
 		fm = _cache.get<FocalMechanism>(fm_ref->focalMechanismID());
 
-		TodoList::iterator it = _adds.find(TodoEntry(fm));
+		auto it = _adds.find(TodoEntry(fm));
 		// If this origin has to be associated in this turn
 		if ( it != _adds.end() ) {
 			// Remove the focal mechanism from the association list
@@ -1570,7 +1565,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 		SEISCOMP_DEBUG("...set event preferred focal mechanism");
 
 		if ( entry->parameters().empty() ) {
-			info->event->setPreferredFocalMechanismID("");
+			info->event->setPreferredFocalMechanismID(string());
 			response = createEntry(entry->objectID(), entry->action() + OK, ":unset:");
 		}
 		else {
@@ -1722,7 +1717,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 					if ( updatedPrefFM ) {
 						SEISCOMP_DEBUG("%s: removed focal mechanism reference was the preferred focal mechanism, set to NULL",
 						               sourceInfo->event->publicID().c_str());
-						sourceInfo->event->setPreferredFocalMechanismID("");
+						sourceInfo->event->setPreferredFocalMechanismID(string());
 						sourceInfo->preferredFocalMechanism = nullptr;
 						updatePreferredFocalMechanism(sourceInfo.get());
 					}
@@ -1740,8 +1735,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 				info->associate(org.get());
 				logObject(_outputOriginRef, Time::UTC());
 				// Associate focal mechanism references
-				list<string>::iterator it;
-				for ( it = fmIDsToMove.begin(); it != fmIDsToMove.end(); ++it ) {
+				for ( auto it = fmIDsToMove.begin(); it != fmIDsToMove.end(); ++it ) {
 					logObject(_outputFMRef, Time::UTC());
 					info->event->add(new FocalMechanismReference(*it));
 				}
@@ -1815,7 +1809,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 						if ( updatedPrefFM ) {
 							SEISCOMP_DEBUG("%s: removed focal mechanism reference was the preferred focal mechanism, set to NULL",
 							               info->event->publicID().c_str());
-							info->event->setPreferredFocalMechanismID("");
+							info->event->setPreferredFocalMechanismID(string());
 							info->preferredFocalMechanism = nullptr;
 							updatePreferredFocalMechanism(info.get());
 						}
@@ -1832,8 +1826,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 						newInfo->associate(org.get());
 						logObject(_outputOriginRef, Time::UTC());
 						// Associate focal mechanism references
-						list<string>::iterator it;
-						for ( it = fmIDsToMove.begin(); it != fmIDsToMove.end(); ++it ) {
+						for ( auto it = fmIDsToMove.begin(); it != fmIDsToMove.end(); ++it ) {
 							SEISCOMP_INFO("%s: associated focal mechanism %s", newInfo->event->publicID().c_str(),
 							              it->c_str());
 							newInfo->event->add(new FocalMechanismReference(*it));
@@ -2229,8 +2222,9 @@ void EventTool::updatedOrigin(DataModel::Origin *org,
 
 	Notifier::Enable();
 	if ( realOriginUpdate &&
-	     info->event->preferredOriginID() == origin->publicID() )
+	     info->event->preferredOriginID() == origin->publicID() ) {
 		updatePreferredOrigin(info.get());
+	}
 	else
 		choosePreferred(info.get(), origin, mag, realOriginUpdate);
 	Notifier::Disable();
@@ -2278,14 +2272,6 @@ EventInformationPtr EventTool::associateFocalMechanismCheckDelay(DataModel::Foca
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventInformationPtr EventTool::associateFocalMechanism(FocalMechanism *fm) {
 	EventInformationPtr info;
-
-	// Default origin status
-	EvaluationMode status = AUTOMATIC;
-	try {
-		status = fm->evaluationMode();
-	}
-	catch ( Core::ValueException &e ) {
-	}
 
 	OriginPtr triggeringOrigin = _cache.get<Origin>(fm->triggeringOriginID());
 	if ( !triggeringOrigin ) {
@@ -2349,7 +2335,7 @@ EventInformationPtr EventTool::associateFocalMechanism(FocalMechanism *fm) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void EventTool::updatedFocalMechanism(FocalMechanism *focalMechanism) {
+void EventTool::updatedFocalMechanism(FocalMechanism *focalMechanism, bool realFMUpdate) {
 	// Get the cached focal mechanism, not the one sent in this message
 	// If there is no cached origin the same instance is passed back
 	FocalMechanism *fm = FocalMechanism::Find(focalMechanism->publicID());
@@ -2392,7 +2378,15 @@ void EventTool::updatedFocalMechanism(FocalMechanism *focalMechanism) {
 	_cache.feed(fm);
 
 	Notifier::Enable();
-	choosePreferred(info.get(), fm);
+	if ( realFMUpdate && info->event->preferredFocalMechanismID() == fm->publicID() ) {
+		info->event->setPreferredFocalMechanismID(string());
+		info->event->setPreferredFocalMechanismID(string());
+		info->preferredFocalMechanism = nullptr;
+		updatePreferredFocalMechanism(info.get());
+	}
+	else {
+		choosePreferred(info.get(), fm);
+	}
 	Notifier::Disable();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2546,9 +2540,8 @@ EventInformationPtr EventTool::createEvent(Origin *origin) {
 EventInformationPtr EventTool::findMatchingEvent(Origin *origin) {
 	MatchResult bestResult = Nothing;
 	EventInformationPtr bestInfo = nullptr;
-	EventMap::iterator it;
 
-	for ( it = _events.begin(); it != _events.end(); ++it ) {
+	for ( auto it = _events.begin(); it != _events.end(); ++it ) {
 		if ( it->second->event && isAgencyIDBlocked(objectAgencyID(it->second->event.get())) ) {
 			continue;
 		}
@@ -2578,9 +2571,7 @@ EventInformationPtr EventTool::findMatchingEvent(Origin *origin) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventInformationPtr EventTool::findAssociatedEvent(DataModel::Origin *origin) {
-	EventMap::iterator it;
-
-	for ( it = _events.begin(); it != _events.end(); ++it ) {
+	for ( auto it = _events.begin(); it != _events.end(); ++it ) {
 		if ( it->second->event->originReference(origin->publicID()) ) {
 			SEISCOMP_DEBUG("... feeding cache with event %s",
 			               it->second->event->publicID().c_str());
@@ -2598,9 +2589,7 @@ EventInformationPtr EventTool::findAssociatedEvent(DataModel::Origin *origin) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventInformationPtr EventTool::findAssociatedEvent(DataModel::FocalMechanism *fm) {
-	EventMap::iterator it;
-
-	for ( it = _events.begin(); it != _events.end(); ++it ) {
+	for ( auto it = _events.begin(); it != _events.end(); ++it ) {
 		if ( it->second->event->focalMechanismReference(fm->publicID()) ) {
 			SEISCOMP_DEBUG("... feeding cache with event %s",
 			               it->second->event->publicID().c_str());
@@ -2618,12 +2607,12 @@ EventInformationPtr EventTool::findAssociatedEvent(DataModel::FocalMechanism *fm
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Magnitude *EventTool::preferredMagnitude(Origin *origin) {
-	int goodCount = 0;
-	int goodPriority = 0;
-	int fallbackCount = 0;
-	int fallbackPriority = 0;
-	Magnitude *goodMag = nullptr;
-	Magnitude *fallbackMag = nullptr;
+	int magMwCount = 0;
+	int magMwPriority = 0;
+	int magFallbackCount = 0;
+	int magFallbackPriority = 0;
+	Magnitude *magMwInstance = nullptr;
+	Magnitude *magFallbackInstance = nullptr;
 
 	int mbcount = 0;
 	double mbval = 0.0;
@@ -2669,20 +2658,20 @@ Magnitude *EventTool::preferredMagnitude(Origin *origin) {
 				// Station count is only taken into account if the priority is
 				// equal.
 				if ( isMw(mag) ) {
-					if ( (priority > goodPriority)
-					  || ((priority == goodPriority) && (stationCount(mag) > goodCount)) ) {
-						goodPriority = priority;
-						goodCount = stationCount(mag);
-						goodMag = mag;
+					if ( (priority > magMwPriority)
+					  || ((priority == magMwPriority) && (stationCount(mag) > magMwCount)) ) {
+						magMwPriority = priority;
+						magMwCount = stationCount(mag);
+						magMwInstance = mag;
 					}
 				}
 				else {
 					// No Mw
-					if ( (priority > fallbackPriority)
-					  || ((priority == fallbackPriority) && (stationCount(mag) > fallbackCount)) ) {
-						fallbackPriority = priority;
-						fallbackCount = stationCount(mag);
-						fallbackMag = mag;
+					if ( (priority > magFallbackPriority)
+					  || ((priority == magFallbackPriority) && (stationCount(mag) > magFallbackCount)) ) {
+						magFallbackPriority = priority;
+						magFallbackCount = stationCount(mag);
+						magFallbackInstance = mag;
 					}
 				}
 			}
@@ -2693,20 +2682,20 @@ Magnitude *EventTool::preferredMagnitude(Origin *origin) {
 				// Priority is only taken into account when the station count
 				// is equal.
 				if ( isMw(mag) ) {
-					if ( (stationCount(mag) > goodCount)
-					  || ((stationCount(mag) == goodCount) && (priority > goodPriority)) ) {
-						goodPriority = priority;
-						goodCount = stationCount(mag);
-						goodMag = mag;
+					if ( (stationCount(mag) > magMwCount)
+					  || ((stationCount(mag) == magMwCount) && (priority > magMwPriority)) ) {
+						magMwPriority = priority;
+						magMwCount = stationCount(mag);
+						magMwInstance = mag;
 					}
 				}
 				else {
 					// No Mw
-					if ( (stationCount(mag) > fallbackCount)
-					  || ((stationCount(mag) == fallbackCount) && (priority > fallbackPriority)) ) {
-						fallbackPriority = priority;
-						fallbackCount = stationCount(mag);
-						fallbackMag = mag;
+					if ( (stationCount(mag) > magFallbackCount)
+					  || ((stationCount(mag) == magFallbackCount) && (priority > magFallbackPriority)) ) {
+						magFallbackPriority = priority;
+						magFallbackCount = stationCount(mag);
+						magFallbackInstance = mag;
 					}
 				}
 			}
@@ -2716,14 +2705,16 @@ Magnitude *EventTool::preferredMagnitude(Origin *origin) {
 		}
 	}
 
-	if ( goodMag )
-		return goodMag;
+	// Prefer Mw magnitudes over "normal" magnitudes
+	if ( magMwInstance ) {
+		return magMwInstance;
+	}
 
-	if ( !fallbackMag && _config.enableFallbackPreferredMagnitude ) {
+	if ( !magFallbackInstance && _config.enableFallbackPreferredMagnitude ) {
 		// Find the network magnitude with the most station magnitudes according the
 		// magnitude priority and set this magnitude preferred
-		fallbackCount = 0;
-		fallbackPriority = 0;
+		magFallbackCount = 0;
+		magFallbackPriority = 0;
 
 		for ( size_t i = 0; i < origin->magnitudeCount(); ++i ) {
 			Magnitude *mag = origin->magnitude(i);
@@ -2732,16 +2723,16 @@ Magnitude *EventTool::preferredMagnitude(Origin *origin) {
 			}
 
 			int prio = magnitudePriority(mag->type(), _config);
-			if ( (stationCount(mag) > fallbackCount)
-			  || (stationCount(mag) == fallbackCount && prio > fallbackPriority ) ) {
-				fallbackPriority = prio;
-				fallbackCount = stationCount(mag);
-				fallbackMag = mag;
+			if ( (stationCount(mag) > magFallbackCount)
+			  || (stationCount(mag) == magFallbackCount && prio > magFallbackPriority ) ) {
+				magFallbackPriority = prio;
+				magFallbackCount = stationCount(mag);
+				magFallbackInstance = mag;
 			}
 		}
 	}
 
-	return fallbackMag;
+	return magFallbackInstance;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2750,8 +2741,7 @@ Magnitude *EventTool::preferredMagnitude(Origin *origin) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Event *EventTool::getEventForOrigin(const std::string &originID) {
-	EventMap::iterator it;
-	for ( it = _events.begin(); it != _events.end(); ++it ) {
+	for ( auto it = _events.begin(); it != _events.end(); ++it ) {
 		Event *evt = it->second->event.get();
 		if ( !evt ) continue;
 		if ( evt->originReference(originID) ) return evt;
@@ -2766,8 +2756,7 @@ Event *EventTool::getEventForOrigin(const std::string &originID) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Event *EventTool::getEventForFocalMechanism(const std::string &fmID) {
-	EventMap::iterator it;
-	for ( it = _events.begin(); it != _events.end(); ++it ) {
+	for ( auto it = _events.begin(); it != _events.end(); ++it ) {
 		Event *evt = it->second->event.get();
 		if ( !evt ) continue;
 		if ( evt->focalMechanismReference(fmID) ) return evt;
@@ -2839,7 +2828,7 @@ EventInformationPtr EventTool::cachedEvent(const std::string &eventID) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool EventTool::removeCachedEvent(const std::string &eventID) {
-	EventMap::iterator it = _events.find(eventID);
+	auto it = _events.find(eventID);
 	if ( it != _events.end() ) {
 		_events.erase(it);
 		return true;
@@ -4337,7 +4326,7 @@ void EventTool::removedFromCache(Seiscomp::DataModel::PublicObject *po) {
 	bool saveState = DataModel::Notifier::IsEnabled();
 	DataModel::Notifier::Disable();
 
-	EventMap::iterator it = _events.find(po->publicID());
+	auto it = _events.find(po->publicID());
 	if ( it != _events.end() ) {
 		// Remove EventInfo item for uncached event
 		// Don't erase the element but mark it. While iterating over the
