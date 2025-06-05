@@ -135,7 +135,7 @@ class App : public Client::Application {
 		Config                   _config;
 		QLClients                _clients;
 		NoCache                  _cache;
-		boost::mutex             _clientPublishMutex;
+		std::mutex               _clientPublishMutex;
 		std::string              _lastUpdateFile;
 		EventDelayBuffer         _eventDelayBuffer;
 		QLResponseBuffer         _qlDelayBuffer;

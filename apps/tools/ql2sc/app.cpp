@@ -30,19 +30,16 @@
 #include <seiscomp/logging/log.h>
 #include <seiscomp/utils/files.h>
 
-#include <boost/algorithm/string.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
-#include <boost/version.hpp>
 
 
 using namespace std;
 using namespace Seiscomp::DataModel;
 
 
-namespace al = boost::algorithm;
 namespace io = boost::iostreams;
 
 
@@ -136,7 +133,7 @@ class MyDiff : public Diff4 {
 
 			try {
 				Core::MetaValue v = prop->read(o);
-				Core::BaseObject *bo = boost::any_cast<Core::BaseObject*>(v);
+				Core::BaseObject *bo = Core::metaValueCast<Core::BaseObject*>(v);
 				CreationInfo *ci = CreationInfo::Cast(bo);
 				if ( ci ) {
 					agencyID = ci->agencyID();
@@ -180,10 +177,10 @@ class MyDiff : public Diff4 {
 				CreationInfo *ciLocal, *ciRemote;
 
 				v = prop->read(localO);
-				ciLocal = CreationInfo::Cast(boost::any_cast<Core::BaseObject*>(v));
+				ciLocal = CreationInfo::Cast(Core::metaValueCast<Core::BaseObject*>(v));
 
 				v = prop->read(remoteO);
-				ciRemote = CreationInfo::Cast(boost::any_cast<Core::BaseObject*>(v));
+				ciRemote = CreationInfo::Cast(Core::metaValueCast<Core::BaseObject*>(v));
 
 				if ( ciLocal && ciRemote ) {
 					if ( !checkUpdateOnTimeStamps(ciRemote, ciLocal) ) {
@@ -300,7 +297,9 @@ bool load(EventParametersPtr &ep, JournalingPtr &ej,
 	try {
 		io::filtering_istreambuf buf;
 		container_source<string> src(data);
-		if ( gzip ) buf.push(io::gzip_decompressor());
+		if ( gzip ) {
+			buf.push(io::gzip_decompressor());
+		}
 		buf.push(src);
 
 		IO::XMLArchive ar;
@@ -503,9 +502,9 @@ bool App::init() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::run() {
 	if ( _ep.empty() ) {
-		for ( QLClients::iterator it = _clients.begin();
-		      it != _clients.end(); ++it )
-			(*it)->run();
+		for ( auto &client : _clients ) {
+			client->run();
+		}
 
 		return Client::Application::run();
 	}
@@ -617,10 +616,6 @@ bool App::run() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::done() {
-	// Wait max. 10s for all threads to shutdown
-	Core::Time until = Core::Time::UTC();
-	until += 10.0;
-
 	// Flush delayed events
 	for ( auto &[eventID, item] : _eventDelayBuffer ) {
 		auto ep = item.ep;
@@ -636,15 +631,15 @@ void App::done() {
 		sendJournals(journals);
 	}
 
-	// Disconnect from messaging
-	Client::Application::done();
-
 	// Wait for threads to terminate
 	if ( _ep.empty() ) {
 		for ( auto client : _clients ) {
-			client->join(until);
+			client->join();
 		}
 	}
+
+	// Disconnect from messaging
+	Client::Application::done();
 
 	SEISCOMP_INFO("application finished");
 }
@@ -690,22 +685,19 @@ bool App::dispatchNotification(int type, Core::BaseObject *obj) {
 		return true;
 	}
 
-	bool res;
-
 	if ( client->config()->delay > 0 ) {
 		SEISCOMP_INFO("Delaying message from %s for %d seconds",
 		              client->config()->host, client->config()->delay);
 		_qlDelayBuffer.push_back({ client, msg, client->config()->delay });
-		res = true;
 	}
 	else {
-		res = handleQLMessage(client, msg);
+		handleQLMessage(client, msg);
 	}
 
 	// Allow new responses
 	_clientPublishMutex.unlock();
 
-	return res;
+	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -767,6 +759,10 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 		return false;
 	}
 
+	if ( isExitRequested() ) {
+		return false;
+	}
+
 	const string &epID = ep->publicID();
 
 	// check if routing for EventParameters exists
@@ -780,6 +776,9 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 	if ( !epRouting.empty() ||
 		 routing.find(Pick::TypeInfo().className()) != routing.end() ) {
 		for ( size_t i = 0; i < ep->pickCount(); ++i ) {
+			if ( isExitRequested() ) {
+				return false;
+			}
 			diffPO(ep->pick(i), epID, notifiers, logNode.get());
 		}
 	}
@@ -788,6 +787,9 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 	if ( !epRouting.empty() ||
 		 routing.find(Amplitude::TypeInfo().className()) != routing.end() ) {
 		for ( size_t i = 0; i < ep->amplitudeCount(); ++i ) {
+			if ( isExitRequested() ) {
+				return false;
+			}
 			diffPO(ep->amplitude(i), epID, notifiers, logNode.get());
 		}
 	}
@@ -796,6 +798,9 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 	if ( !epRouting.empty() ||
 		 routing.find(Origin::TypeInfo().className()) != routing.end() ) {
 		for ( size_t i = 0; i < ep->originCount(); ++i ) {
+			if ( isExitRequested() ) {
+				return false;
+			}
 			diffPO(ep->origin(i), epID, notifiers, logNode.get());
 		}
 	}
@@ -804,6 +809,9 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 	if ( !epRouting.empty() ||
 		 routing.find(FocalMechanism::TypeInfo().className()) != routing.end() ) {
 		for ( size_t i = 0; i < ep->focalMechanismCount(); ++i ) {
+			if ( isExitRequested() ) {
+				return false;
+			}
 			diffPO(ep->focalMechanism(i), epID, notifiers, logNode.get());
 		}
 	}
@@ -811,13 +819,19 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 	// Events
 	if ( !epRouting.empty() ||
 		 routing.find(Event::TypeInfo().className()) != routing.end() ) {
-		RoutingTable::const_iterator it;
-		it = routing.find(Event::TypeInfo().className());
+		auto it = routing.find(Event::TypeInfo().className());
 		if ( it != routing.end() && !it->second.empty() ) {
 			for ( size_t i = 0; i < ep->eventCount(); ++i ) {
+				if ( isExitRequested() ) {
+					return false;
+				}
 				diffPO(ep->event(i), epID, notifiers, logNode.get());
 			}
 		}
+	}
+
+	if ( isExitRequested() ) {
+		return false;
 	}
 
 	// log diffs
@@ -1858,12 +1872,12 @@ void App::readLastUpdates() {
 	}
 	ifs.close();
 
-	for ( QLClients::iterator it = _clients.begin(); it != _clients.end(); ++it) {
-		map<string, Core::Time>::const_iterator entry = hostTimes.find((*it)->config()->host);
+	for ( auto &client : _clients ) {
+		auto entry = hostTimes.find(client->config()->host);
 		if ( entry != hostTimes.end() ) {
 			SEISCOMP_DEBUG("setting last update time of host '%s' to %s",
 			               entry->first.c_str(), entry->second.iso().c_str());
-			(*it)->setLastUpdate(entry->second);
+			client->setLastUpdate(entry->second);
 		}
 	}
 }
@@ -1884,9 +1898,12 @@ void App::writeLastUpdates() {
 		return;
 	}
 
-	for ( QLClients::iterator it = _clients.begin();
-	      it != _clients.end() && ofs.good(); ++it )
-		ofs << (*it)->config()->host << " " << (*it)->lastUpdate().iso() << endl;
+	for ( auto &client : _clients ) {
+		if ( !client->lastUpdate() ) {
+			continue;
+		}
+		ofs << client->config()->host << " " << client->lastUpdate()->iso() << endl;
+	}
 
 	if ( !ofs.good() ) {
 		SEISCOMP_ERROR("could not write to file '%s'", tmpFile.c_str());

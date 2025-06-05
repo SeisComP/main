@@ -12,8 +12,8 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_QL2SC_QUAKELINK_H__
-#define SEISCOMP_QL2SC_QUAKELINK_H__
+#ifndef SEISCOMP_QL2SC_QUAKELINK_H
+#define SEISCOMP_QL2SC_QUAKELINK_H
 
 
 #include "config.h"
@@ -21,8 +21,7 @@
 #include <seiscomp/core/datetime.h>
 #include <seiscomp/io/quakelink/connection.h>
 
-#include <boost/thread.hpp>
-
+#include <thread>
 #include <string>
 #include <vector>
 
@@ -37,12 +36,13 @@ class QLClient : public IO::QuakeLink::Connection {
 		QLClient(int notificationID, const HostConfig *config, size_t backLog = 0);
 		virtual ~QLClient();
 
+	public:
 		void run();
-		void join(const Seiscomp::Core::Time &until);
+		void join();
 
-		const HostConfig* config() const { return _config; }
+		const HostConfig *config() const { return _config; }
 
-		Seiscomp::Core::Time lastUpdate() const;
+		OPT(Seiscomp::Core::Time) lastUpdate() const;
 		void setLastUpdate(const Seiscomp::Core::Time &time);
 
 		int notificationID() const { return _notificationID; }
@@ -60,14 +60,14 @@ class QLClient : public IO::QuakeLink::Connection {
 			size_t payloadBytes;
 		};
 
-		int                         _notificationID;
-		const HostConfig           *_config;
-		size_t                      _backLog;
-		boost::thread              *_thread;
+		int                        _notificationID;
+		const HostConfig          *_config;
+		size_t                     _backLog;
+		std::thread                _thread;
 
-		Seiscomp::Core::Time        _lastUpdate;
-		mutable boost::mutex        _mutex;
-		Statistics                  _stats;
+		OPT(Seiscomp::Core::Time)  _lastUpdate;
+		mutable std::mutex         _mutex;
+		Statistics                 _stats;
 };
 
 
