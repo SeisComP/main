@@ -44,7 +44,7 @@ class EventTypeProcessor : public Client::EventProcessor {
 	// Public EventProcessor interface
 	// ----------------------------------------------------------------------
 	public:
-		bool setup(const Config::Config &config) {
+		bool setup(const Config::Config &config) override {
 			try {
 				_setEventType = config.getBool("eventType.setEventType");
 			}
@@ -84,15 +84,13 @@ class EventTypeProcessor : public Client::EventProcessor {
 			return true;
 		}
 
-		/**
-		 * @brief Processes and modifies the event type. It checks the comment of the
-		 *        current preferredOrigin for ccloc:eventTypeHint and sets the event
-		 *        type to what is found in the comment text.
-		 * @param event The event to be processed
-		 * @return Update flag: true, if the event type has been updated, false
-		 *         otherwise.
-		 */
-		bool process(DataModel::Event *event, bool isNewEvent, const Journal &journal) {
+
+		DataModel::Magnitude *preferredMagnitude(const DataModel::Origin *) override {
+			return nullptr;
+		}
+
+
+		bool process(DataModel::Event *event, bool isNewEvent, const Journal &journal) override {
 			SEISCOMP_DEBUG("evtype plugin: working on event %s",
 			               event->publicID().c_str());
 

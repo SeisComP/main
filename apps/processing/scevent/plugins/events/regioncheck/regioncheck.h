@@ -43,25 +43,12 @@ class RegionCheckProcessor : public Seiscomp::Client::EventProcessor {
 	// Public EventProcessor interface
 	// ----------------------------------------------------------------------
 	public:
-		/**
-		 * @brief Setup the processor and read settings from the passed
-		 *        configuration.
-		 * @param config The config object to read settings from
-		 * @return Success flag
-		 */
-		bool setup(const Config::Config &config);
+		bool setup(const Config::Config &config) override;
 
+		//! Do nothing
+		DataModel::Magnitude *preferredMagnitude(const DataModel::Origin *) override;
 
-		/**
-		 * @brief Processes and modifies an event. It checks the current
-		 *        location against the configured regions and sets the
-		 *        type to OUTSIDE_OF_NETWORK_INTEREST if the location is not
-		 *        inside in any of the regions.
-		 * @param event The event to be processed
-		 * @return Update flag: true, if the event has been updated, false
-		 *         otherwise.
-		 */
-		bool process(DataModel::Event *event, bool isNewEvent, const Journal &journal);
+		bool process(DataModel::Event *event, bool isNewEvent, const Journal &journal) override;
 
 
 	// ----------------------------------------------------------------------

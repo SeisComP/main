@@ -2666,6 +2666,13 @@ EventInformationPtr EventTool::findAssociatedEvent(DataModel::FocalMechanism *fm
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Magnitude *EventTool::preferredMagnitude(Origin *origin) {
+	for ( EventProcessorPtr &proc : _processors ) {
+		auto mag = proc->preferredMagnitude(origin);
+		if ( mag ) {
+			return mag;
+		}
+	}
+
 	int magMwCount = 0;
 	int magMwPriority = 0;
 	int magFallbackCount = 0;
