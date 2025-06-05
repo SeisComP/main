@@ -118,11 +118,6 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="action" type="string" unit="">
-					<description>
-					Possible values: enableStream, disableStream
-					</description>
-				</parameter>
 				<group name="range">
 					<description>
 					Range parameters overriding parameters from the general
@@ -155,11 +150,6 @@
 						<parameter name="color" type="string" unit="">
 							<description>
 							A color defined by the color definitions below.
-							</description>
-						</parameter>
-						<parameter name="action" type="string" unit="">
-							<description>
-							Possible values: enableStream, disableStream
 							</description>
 						</parameter>
 					</struct>
@@ -204,11 +194,6 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="action" type="string" unit="">
-					<description>
-					Possible values: enableStream, disableStream
-					</description>
-				</parameter>
 				<group name="range">
 					<description>
 					Range parameters overriding parameters from the general
@@ -241,11 +226,6 @@
 						<parameter name="color" type="string" unit="">
 							<description>
 							A color defined by the color definitions below.
-							</description>
-						</parameter>
-						<parameter name="action" type="string" unit="">
-							<description>
-							Possible values: enableStream, disableStream
 							</description>
 						</parameter>
 					</struct>
@@ -289,11 +269,6 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="action" type="string" unit="">
-					<description>
-					Possible values: enableStream, disableStream
-					</description>
-				</parameter>
 				<group name="range">
 					<description>
 					Range parameters overriding parameters from the general
@@ -326,11 +301,6 @@
 						<parameter name="color" type="string" unit="">
 							<description>
 							A color defined by the color definitions below.
-							</description>
-						</parameter>
-						<parameter name="action" type="string" unit="">
-							<description>
-							Possible values: enableStream, disableStream
 							</description>
 						</parameter>
 					</struct>
@@ -375,11 +345,6 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="action" type="string" unit="">
-					<description>
-					Possible values: enableStream, disableStream
-					</description>
-				</parameter>
 				<group name="range">
 					<description>
 					Range parameters overriding parameters from the general
@@ -412,11 +377,6 @@
 						<parameter name="color" type="string" unit="">
 							<description>
 							A color defined by the color definitions below.
-							</description>
-						</parameter>
-						<parameter name="action" type="string" unit="">
-							<description>
-							Possible values: enableStream, disableStream
 							</description>
 						</parameter>
 					</struct>
@@ -461,11 +421,6 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="action" type="string" unit="">
-					<description>
-					Possible values: enableStream, disableStream.
-					</description>
-				</parameter>
 				<group name="range">
 					<description>
 					Range parameters overriding parameters from the general
@@ -498,11 +453,6 @@
 						<parameter name="color" type="string" unit="">
 							<description>
 							A color defined by the color definitions below.
-							</description>
-						</parameter>
-						<parameter name="action" type="string" unit="">
-							<description>
-							Possible values: enableStream, disableStream
 							</description>
 						</parameter>
 					</struct>
@@ -546,11 +496,6 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="action" type="string" unit="">
-					<description>
-					Possible values: enableStream, disableStream
-					</description>
-				</parameter>
 				<group name="range">
 					<description>
 					Range parameters overriding parameters from the general
@@ -583,11 +528,6 @@
 						<parameter name="color" type="string" unit="">
 							<description>
 							A color defined by the color definitions below.
-							</description>
-						</parameter>
-						<parameter name="action" type="string" unit="">
-							<description>
-							Possible values: enableStream, disableStream
 							</description>
 						</parameter>
 					</struct>
@@ -631,11 +571,6 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="action" type="string" unit="">
-					<description>
-					Possible values: enableStream, disableStream
-					</description>
-				</parameter>
 				<group name="range">
 					<description>
 					Range parameters overriding parameters from the general
@@ -668,11 +603,6 @@
 						<parameter name="color" type="string" unit="">
 							<description>
 							A color defined by the color definitions below.
-							</description>
-						</parameter>
-						<parameter name="action" type="string" unit="">
-							<description>
-							Possible values: enableStream, disableStream
 							</description>
 						</parameter>
 					</struct>
@@ -718,11 +648,6 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="action" type="string" unit="">
-					<description>
-					Possible values: enableStream, disableStream
-					</description>
-				</parameter>
 				<group name="range">
 					<description>
 					Range parameters overriding parameters from the general
@@ -755,11 +680,6 @@
 						<parameter name="color" type="string" unit="">
 							<description>
 							A color defined by the color definitions below.
-							</description>
-						</parameter>
-						<parameter name="action" type="string" unit="">
-							<description>
-							Possible values: enableStream, disableStream
 							</description>
 						</parameter>
 					</struct>
@@ -803,11 +723,6 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="action" type="string" unit="">
-					<description>
-					Possible values: enableStream, disableStream
-					</description>
-				</parameter>
 				<group name="range">
 					<description>
 					Range parameters overriding parameters from the general
@@ -840,11 +755,6 @@
 						<parameter name="color" type="string" unit="">
 							<description>
 							A color defined by the color definitions below.
-							</description>
-						</parameter>
-						<parameter name="action" type="string" unit="">
-							<description>
-							Possible values: enableStream, disableStream
 							</description>
 						</parameter>
 					</struct>
@@ -888,11 +798,6 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="action" type="string" unit="">
-					<description>
-					Possible values: enableStream, disableStream
-					</description>
-				</parameter>
 				<group name="range">
 					<description>
 					Range parameters overriding parameters from the general
@@ -925,11 +830,6 @@
 						<parameter name="color" type="string" unit="">
 							<description>
 							A color defined by the color definitions below.
-							</description>
-						</parameter>
-						<parameter name="action" type="string" unit="">
-							<description>
-							Possible values: enableStream, disableStream
 							</description>
 						</parameter>
 					</struct>
@@ -974,11 +874,6 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="action" type="string" unit="">
-					<description>
-					Possible values: enableStream, disableStream
-					</description>
-				</parameter>
 				<group name="range">
 					<description>
 					Range parameters overriding parameters from the general
@@ -1011,11 +906,6 @@
 						<parameter name="color" type="string" unit="">
 							<description>
 							A color defined by the color definitions below.
-							</description>
-						</parameter>
-						<parameter name="action" type="string" unit="">
-							<description>
-							Possible values: enableStream, disableStream
 							</description>
 						</parameter>
 					</struct>
@@ -1059,11 +949,6 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="action" type="string" unit="">
-					<description>
-					Possible values: enableStream, disableStream
-					</description>
-				</parameter>
 
 				<group name="range">
 					<description>
@@ -1097,11 +982,6 @@
 						<parameter name="color" type="string" unit="">
 							<description>
 							A color defined by the color definitions below.
-							</description>
-						</parameter>
-						<parameter name="action" type="string" unit="">
-							<description>
-							Possible values: enableStream, disableStream
 							</description>
 						</parameter>
 					</struct>
@@ -1146,11 +1026,6 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="action" type="string" unit="">
-					<description>
-					Possible values: enableStream, disableStream
-					</description>
-				</parameter>
 
 				<group name="range">
 					<description>
@@ -1184,11 +1059,6 @@
 						<parameter name="color" type="string" unit="">
 							<description>
 							A color defined by the color definitions below.
-							</description>
-						</parameter>
-						<parameter name="action" type="string" unit="">
-							<description>
-							Possible values: enableStream, disableStream
 							</description>
 						</parameter>
 					</struct>
@@ -1233,11 +1103,6 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="action" type="string" unit="">
-					<description>
-					Possible values: enableStream, disableStream
-					</description>
-				</parameter>
 				<group name="range">
 					<description>
 					Range parameters overriding parameters from the general
@@ -1270,11 +1135,6 @@
 						<parameter name="color" type="string" unit="">
 							<description>
 							A color defined by the color definitions below.
-							</description>
-						</parameter>
-						<parameter name="action" type="string" unit="">
-							<description>
-							Possible values: enableStream, disableStream
 							</description>
 						</parameter>
 					</struct>
@@ -1319,11 +1179,6 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="action" type="string" unit="">
-					<description>
-					Possible values: enableStream, disableStream
-					</description>
-				</parameter>
 				<group name="range">
 					<description>
 					Range parameters overriding parameters from the general
@@ -1356,11 +1211,6 @@
 						<parameter name="color" type="string" unit="">
 							<description>
 							A color defined by the color definitions below.
-							</description>
-						</parameter>
-						<parameter name="action" type="string" unit="">
-							<description>
-							Possible values: enableStream, disableStream
 							</description>
 						</parameter>
 					</struct>
@@ -1405,11 +1255,6 @@
 						Activate to display absolute values (modulus).
 					</description>
 				</parameter>
-				<parameter name="action" type="string" unit="">
-					<description>
-					Possible values: enableStream, disableStream
-					</description>
-				</parameter>
 				<group name="range">
 					<description>
 					Range parameters overriding parameters from the general
@@ -1442,11 +1287,6 @@
 						<parameter name="color" type="string" unit="">
 							<description>
 							A color defined by the color definitions below.
-							</description>
-						</parameter>
-						<parameter name="action" type="string" unit="">
-							<description>
-							Possible values: enableStream, disableStream
 							</description>
 						</parameter>
 					</struct>
@@ -1566,11 +1406,6 @@
 					<parameter name="color" type="string" unit="">
 						<description>
 						A color defined by the color definitions below.
-						</description>
-					</parameter>
-					<parameter name="action" type="string" unit="">
-						<description>
-						Possible values: enableStream, disableStream
 						</description>
 					</parameter>
 				</struct>
