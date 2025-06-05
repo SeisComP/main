@@ -23,7 +23,6 @@ SC_ADD_PYTHON_PROG(import_inv)
 SC_ADD_PYTHON_PROG(scml2inv)
 SC_ADD_PYTHON_PROG(scdumpcfg)
 SC_ADD_PYTHON_PROG(arclink2inv)
-SC_ADD_PYTHON_PROG(inv2dlsv)
 SC_ADD_PYTHON_PROG(scqueryqc)
 SC_ADD_PYTHON_PROG(sh2proc)
 
