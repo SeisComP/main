@@ -141,7 +141,7 @@ void QLClient::listen() {
 
 		// start request
 		try {
-			select(from.has_value(), Core::Time(), Core::Time(), rf, filter);
+			select(static_cast<bool>(from), Core::Time(), Core::Time(), rf, filter);
 		}
 		catch ( Core::GeneralException &e ) {
 			if ( interrupted() ) {
