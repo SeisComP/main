@@ -1097,13 +1097,13 @@ void App::checkUpdate(Notifiers &notifiers,
 
 	SEISCOMP_DEBUG("* check update of %s: '%s'", name, rR ? rR->toString() : "");
 
-	OPT(Core::Time) updateTime;
+	OPT(Core::Time) remoteChangeTime;
 	try {
-		updateTime = remote->creationInfo().modificationTime();
+		remoteChangeTime = remote->creationInfo().modificationTime();
 	}
 	catch ( ... ) {
 		try {
-			updateTime = remote->creationInfo().creationTime();
+			remoteChangeTime = remote->creationInfo().creationTime();
 		}
 		catch ( ... ) {}
 	}
@@ -1118,7 +1118,7 @@ void App::checkUpdate(Notifiers &notifiers,
 		}
 		else {
 			try {
-				updateTime = entry->created();
+				remoteChangeTime = entry->created();
 			}
 			catch ( ... ) {}
 		}
@@ -1126,11 +1126,26 @@ void App::checkUpdate(Notifiers &notifiers,
 
 	// Fetch last local journal entry to set the event type
 	entry = getLastJournalEntry(*query(), local->publicID(), action);
-	if ( !entry || entry->sender() == author() ) {
-		if ( updateTime && entry ) {
-			if ( *updateTime > entry->created() ) {
-				// The remote update time is more recent, apply it
-				entry = createJournalEntry(local->publicID(), action, rR ? rR->toString() : "", updateTime ? &updateTime.get() : nullptr);
+	if ( !entry ) {
+		// Not a local journal yet, apply the change
+		entry = createJournalEntry(local->publicID(), action, rR ? rR->toString() : "", remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+		notifiers.push_back(
+			new Notifier("Journaling", OP_ADD, entry.get())
+		);
+	}
+	else {
+		// There is a local journal entry
+		OPT(Core::Time) localChangeTime;
+
+		try {
+			localChangeTime = entry->created();
+		}
+		catch ( ... ) {}
+
+		if ( localChangeTime && remoteChangeTime ) {
+			if ( *remoteChangeTime > *localChangeTime ) {
+				// The remote change time is more recent, apply it
+				entry = createJournalEntry(local->publicID(), action, rR ? rR->toString() : "", remoteChangeTime ? &remoteChangeTime.get() : nullptr);
 				notifiers.push_back(
 					new Notifier("Journaling", OP_ADD, entry.get())
 				);
@@ -1141,11 +1156,17 @@ void App::checkUpdate(Notifiers &notifiers,
 				              name);
 			}
 		}
-	}
-	else {
-		SEISCOMP_INFO("* skipping %s update because it "
-		              "has been set already by %s",
-		              name, entry->sender());
+		else if ( entry->sender() == author() ) {
+			entry = createJournalEntry(local->publicID(), action, rR ? rR->toString() : "", remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+			notifiers.push_back(
+				new Notifier("Journaling", OP_ADD, entry.get())
+			);
+		}
+		else {
+			SEISCOMP_INFO("* skipping %s update because it "
+			              "has been set already by %s",
+			              name, entry->sender());
+		}
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
