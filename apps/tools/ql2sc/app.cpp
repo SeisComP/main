@@ -675,13 +675,35 @@ bool App::dispatchNotification(int type, Core::BaseObject *obj) {
 		return true;
 	}
 
-	bool res = dispatchResponse(client, msg);
-	// The cache is only maintained for one particular dispatch run because
-	// updates of all objects are not captured.
-	_cache.clear();
+	bool res;
+
+	if ( client->config()->delay > 0 ) {
+		SEISCOMP_INFO("Delaying message from %s for %d seconds",
+		              client->config()->host, client->config()->delay);
+		_qlDelayBuffer.push_back({ client, msg, client->config()->delay });
+		res = true;
+	}
+	else {
+		res = handleQLMessage(client, msg);
+	}
 
 	// Allow new responses
 	_clientPublishMutex.unlock();
+
+	return res;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool App::handleQLMessage(QLClient *client, const IO::QuakeLink::Response *msg) {
+	bool res = dispatchResponse(client, msg);
+
+	// The cache is only maintained for one particular dispatch run because
+	// updates of all objects are not captured.
+	_cache.clear();
 
 	return res;
 }
@@ -696,7 +718,7 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 	const RoutingTable &routing = config->routingTable;
 	RoutingTable::const_iterator rt_it;
 
-	SEISCOMP_INFO("processing message from host '%s'", config->host.c_str());
+	SEISCOMP_INFO("Processing message from host '%s'", config->host.c_str());
 
 	Notifiers notifiers;
 
@@ -912,6 +934,18 @@ void App::handleTimeout() {
 		}
 
 		return;
+	}
+
+	for ( auto it = _qlDelayBuffer.begin(); it != _qlDelayBuffer.end(); ) {
+		auto &item = *it;
+		--item.timeout;
+		if ( item.timeout <= 0 ) {
+			handleQLMessage(item.client, item.response.get());
+			it = _qlDelayBuffer.erase(it);
+		}
+		else {
+			++it;
+		}
 	}
 
 	for ( auto it = _eventDelayBuffer.begin(); it != _eventDelayBuffer.end(); ) {

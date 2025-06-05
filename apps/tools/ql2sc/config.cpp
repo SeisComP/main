@@ -120,6 +120,9 @@ bool Config::init() {
 		try { cfg.native = app->configGetBool(prefix + "native"); }
 		catch ( ... ) { cfg.native = false; }
 
+		try { cfg.delay = app->configGetInt(prefix + "delay"); }
+		catch ( ... ) { cfg.delay = 0; }
+
 		try { cfg.syncEventAttributes = app->configGetBool(prefix + "syncEventAttributes"); }
 		catch ( ... ) { cfg.syncEventAttributes = true; }
 

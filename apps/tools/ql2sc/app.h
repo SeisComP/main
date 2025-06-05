@@ -25,6 +25,7 @@
 #include <seiscomp/datamodel/publicobjectcache.h>
 #include <seiscomp/datamodel/diff.h>
 
+#include <list>
 #include <string>
 
 namespace Seiscomp {
@@ -60,10 +61,10 @@ class App : public Client::Application {
 		void feed(QLClient *client, IO::QuakeLink::Response *response);
 
 	protected:
-		typedef std::vector<QLClient*> QLClients;
-		typedef DataModel::Diff2::Notifiers Notifiers;
-		typedef DataModel::Diff2::LogNode LogNode;
-		typedef DataModel::Diff2::LogNodePtr LogNodePtr;
+		using QLClients = std::vector<QLClient*>;
+		using Notifiers = DataModel::Diff2::Notifiers;
+		using LogNode = DataModel::Diff2::LogNode;
+		using LogNodePtr = DataModel::Diff2::LogNodePtr;
 
 		void createCommandLineDescription() override;
 
@@ -77,6 +78,7 @@ class App : public Client::Application {
 		void removeObject(const std::string& parentID, DataModel::Object *obj) override;
 		void handleTimeout() override;
 
+		bool handleQLMessage(QLClient *client, const IO::QuakeLink::Response *msg);
 		bool dispatchResponse(QLClient *client, const IO::QuakeLink::Response *response);
 
 		template <class T>
@@ -115,12 +117,21 @@ class App : public Client::Application {
 
 		using EventDelayBuffer = std::map<std::string, EventDelayItem>;
 
+		struct QLMessage {
+			QLClient *client;
+			IO::QuakeLink::ResponsePtr response;
+			int timeout;
+		};
+
+		using QLResponseBuffer = std::list<QLMessage>;
+
 		Config                   _config;
 		QLClients                _clients;
 		NoCache                  _cache;
 		boost::mutex             _clientPublishMutex;
 		std::string              _lastUpdateFile;
 		EventDelayBuffer         _eventDelayBuffer;
+		QLResponseBuffer         _qlDelayBuffer;
 		std::string              _waitForEventIDOriginID;
 		std::string              _waitForEventIDResult;
 		int                      _waitForEventIDTimeout;
