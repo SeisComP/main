@@ -117,15 +117,16 @@ class MyDiff : public Diff4 {
 			}
 
 			const Core::MetaProperty *prop = 0;
-			PropertyIndex::const_iterator it = CreationInfoIndex.find(o->className());
+			auto it = CreationInfoIndex.find(o->className());
 			if ( it == CreationInfoIndex.end() ) {
 				if ( o->meta() ) {
 					prop = o->meta()->property("creationInfo");
 					CreationInfoIndex[o->className()] = prop;
 				}
 			}
-			else
+			else {
 				prop = it->second;
+			}
 
 			if ( !prop ) {
 				return false;
@@ -141,9 +142,10 @@ class MyDiff : public Diff4 {
 					agencyID = ci->agencyID();
 
 					if ( !SCCoreApp->isAgencyIDAllowed(agencyID) ) {
-						if ( node && node->level() >= LogNode::DIFFERENCES )
+						if ( node && node->level() >= LogNode::DIFFERENCES ) {
 							node->addChild(o2t(o), "SKIP (" + string(local?"local":"remote") +
 							               " agency '" + agencyID + "' blocked)");
+						}
 						return true;
 					}
 				}
@@ -1078,7 +1080,7 @@ template <typename R, typename T>
 void App::checkUpdate(Notifiers &notifiers,
                       R (T::*func)() const, const T *remote, const T *local,
                       const char *name, const Journaling *journals,
-                      const char *action) {
+                      const std::string &action) {
 	typename OPT(R) rR, lR;
 
 	try {
@@ -1092,18 +1094,23 @@ void App::checkUpdate(Notifiers &notifiers,
 	catch ( ... ) {}
 
 	if ( rR == lR ) {
+		SEISCOMP_DEBUG("* check update of %s: '%s' => equal", name, rR ? Core::toString(*rR) : "");
 		return;
 	}
 
-	SEISCOMP_DEBUG("* check update of %s: '%s'", name, rR ? rR->toString() : "");
+	SEISCOMP_DEBUG("* check update of %s: '%s'", name, rR ? Core::toString(*rR) : "");
 
 	OPT(Core::Time) remoteChangeTime;
 	try {
 		remoteChangeTime = remote->creationInfo().modificationTime();
+		SEISCOMP_DEBUG("  - remote change time is event modification time %s",
+		               remoteChangeTime->iso());
 	}
 	catch ( ... ) {
 		try {
 			remoteChangeTime = remote->creationInfo().creationTime();
+			SEISCOMP_DEBUG("  - remote change time is event creation time %s",
+			               remoteChangeTime->iso());
 		}
 		catch ( ... ) {}
 	}
@@ -1111,7 +1118,7 @@ void App::checkUpdate(Notifiers &notifiers,
 	// Fetch last remote journal entry to set the event type
 	auto entry = getLastJournalEntry(journals, remote->publicID(), action);
 	if ( entry ) {
-		const char *rStrR = rR ? rR->toString() : "\0";
+		auto rStrR = rR ? Core::toString(rR) : string();
 		if ( entry->parameters() != rStrR ) {
 			SEISCOMP_WARNING("%s: %s is not matching the last journal type, ignoring it",
 			                 remote->publicID(), name);
@@ -1119,6 +1126,8 @@ void App::checkUpdate(Notifiers &notifiers,
 		else {
 			try {
 				remoteChangeTime = entry->created();
+				SEISCOMP_DEBUG("  - remote change time is now journal creation time %s",
+				               remoteChangeTime->iso());
 			}
 			catch ( ... ) {}
 		}
@@ -1128,7 +1137,8 @@ void App::checkUpdate(Notifiers &notifiers,
 	entry = getLastJournalEntry(*query(), local->publicID(), action);
 	if ( !entry ) {
 		// Not a local journal yet, apply the change
-		entry = createJournalEntry(local->publicID(), action, rR ? rR->toString() : "", remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+		SEISCOMP_DEBUG("  => no local journal found, apply the update");
+		entry = createJournalEntry(local->publicID(), action, rR ? Core::toString(*rR) : string(), remoteChangeTime ? &remoteChangeTime.get() : nullptr);
 		notifiers.push_back(
 			new Notifier("Journaling", OP_ADD, entry.get())
 		);
@@ -1139,33 +1149,41 @@ void App::checkUpdate(Notifiers &notifiers,
 
 		try {
 			localChangeTime = entry->created();
+			SEISCOMP_DEBUG("  - local change time is %s", localChangeTime->iso());
 		}
 		catch ( ... ) {}
 
 		if ( localChangeTime && remoteChangeTime ) {
 			if ( *remoteChangeTime > *localChangeTime ) {
 				// The remote change time is more recent, apply it
-				entry = createJournalEntry(local->publicID(), action, rR ? rR->toString() : "", remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+				SEISCOMP_DEBUG("  => the remote change time is more recent, apply the update");
+				entry = createJournalEntry(local->publicID(), action, rR ? Core::toString(*rR) : string(), remoteChangeTime ? &remoteChangeTime.get() : nullptr);
 				notifiers.push_back(
 					new Notifier("Journaling", OP_ADD, entry.get())
 				);
 			}
 			else {
 				SEISCOMP_INFO("* skipping %s update because the "
-				              "local change is more recent than the remote one",
-				              name);
+				              "local change %s the remote one",
+				              name,
+				              *remoteChangeTime < *localChangeTime ?
+				                  "is more recent than" :
+				                  "happened at the same time as");
 			}
 		}
-		else if ( entry->sender() == author() ) {
-			entry = createJournalEntry(local->publicID(), action, rR ? rR->toString() : "", remoteChangeTime ? &remoteChangeTime.get() : nullptr);
-			notifiers.push_back(
-				new Notifier("Journaling", OP_ADD, entry.get())
-			);
-		}
 		else {
-			SEISCOMP_INFO("* skipping %s update because it "
-			              "has been set already by %s",
-			              name, entry->sender());
+			if ( entry->sender() == author() ) {
+				SEISCOMP_DEBUG("  => self is the last author of the journal, apply the update");
+				entry = createJournalEntry(local->publicID(), action, rR ? Core::toString(*rR) : "", remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+				notifiers.push_back(
+					new Notifier("Journaling", OP_ADD, entry.get())
+				);
+			}
+			else {
+				SEISCOMP_INFO("* skipping %s update because it "
+				              "has been set already by %s",
+				              name, entry->sender());
+			}
 		}
 	}
 }
@@ -1255,142 +1273,206 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 		}
 	}
 
-	JournalEntryPtr entry;
-
 	// Preferred origin
 	if ( syncPreferred ) {
-		if ( targetEvent->preferredOriginID() != event->preferredOriginID() ) {
-			Origin *org = ep->findOrigin(event->preferredOriginID());
-			if ( org ) {
-				if ( !routing || checkRouting(org, *routing) ) {
-					SEISCOMP_DEBUG("* check update of preferred origin: '%s'",
-					               org->publicID().c_str());
-
-					entry = getLastJournalEntry(*query(), targetEvent->publicID(), "EvPrefOrgID");
-					if ( !entry || entry->sender() == author() ) {
-						entry = createJournalEntry(targetEvent->publicID(), "EvPrefOrgID", org->publicID());
-						notifiers.push_back(
-							new Notifier("Journaling", OP_ADD, entry.get())
-						);
-					}
-					else {
-						SEISCOMP_INFO("* skipping fixing preferred origin because it "
-						              "has been fixed already by %s",
-						              entry->sender().c_str());
-					}
-				}
-				else {
-					SEISCOMP_DEBUG("* origins are not being routed, skip fixing it");
-				}
-			}
-			else {
-				SEISCOMP_WARNING("* preferred origin not found in input document, skip fixing it");
-			}
+		if ( !routing || checkRouting(origin, *routing) ) {
+			checkUpdate(notifiers, &Event::preferredOriginID, event, targetEvent.get(),
+			            "preferred origin", journals, "EvPrefOrgID");
+		}
+		else {
+			SEISCOMP_DEBUG("* origins are not being routed, skip checking it");
 		}
 
-		if ( targetEvent->preferredFocalMechanismID() != event->preferredFocalMechanismID() ) {
+		if ( !event->preferredFocalMechanismID().empty() ) {
 			FocalMechanism *fm = ep->findFocalMechanism(event->preferredFocalMechanismID());
 			if ( fm ) {
 				if ( !routing || checkRouting(fm, *routing) ) {
-					SEISCOMP_DEBUG("* check update of preferred focal mechanism: '%s'",
-					               fm->publicID().c_str());
-					entry = getLastJournalEntry(*query(), targetEvent->publicID(), "EvPrefFocMecID");
-					if ( !entry || entry->sender() == author() ) {
-						entry = createJournalEntry(targetEvent->publicID(), "EvPrefFocMecID", fm->publicID());
-						notifiers.push_back(
-							new Notifier("Journaling", OP_ADD, entry.get())
-						);
-					}
-					else {
-						SEISCOMP_INFO("* skipping fixing preferred focal mechanism because it "
-						              "has been fixed already by %s",
-						              entry->sender().c_str());
-					}
+					checkUpdate(notifiers, &Event::preferredFocalMechanismID, event, targetEvent.get(),
+					            "preferred focal mechanism", journals, "EvPrefFocMecID");
 				}
 				else {
-					SEISCOMP_DEBUG("* focalMechanisms are not being routed, skip fixing it");
+					SEISCOMP_DEBUG("* focalMechanisms are not being routed, skip checking it");
 				}
 			}
 			else {
-				SEISCOMP_WARNING("* preferred origin not found in input document, skip fixing it");
+				SEISCOMP_WARNING("* preferred focal mechanism not found in input document, skip checking it");
 			}
 		}
 
-		if ( targetEvent->preferredMagnitudeID() != event->preferredMagnitudeID() ) {
-			Magnitude *prefMag = 0;
-			for ( size_t i = 0; i < ep->originCount(); ++i ) {
-				Origin *org = ep->origin(i);
-				for ( size_t j = 0; j < org->magnitudeCount(); ++j ) {
-					Magnitude *mag = org->magnitude(j);
-					if ( mag->publicID() == event->preferredMagnitudeID() ) {
-						prefMag = mag;
-						i = ep->originCount();
-						break;
+		Magnitude *prefMag = nullptr;
+		for ( size_t i = 0; i < ep->originCount(); ++i ) {
+			Origin *org = ep->origin(i);
+			for ( size_t j = 0; j < org->magnitudeCount(); ++j ) {
+				Magnitude *mag = org->magnitude(j);
+				if ( mag->publicID() == event->preferredMagnitudeID() ) {
+					prefMag = mag;
+					i = ep->originCount();
+					break;
+				}
+			}
+		}
+
+		if ( prefMag ) {
+			bool isMw = false;
+
+			// Check if the preferred magnitude is part of a moment tensor
+			if ( prefMag->type() == "Mw" ) {
+				for ( size_t i = 0; i < ep->focalMechanismCount(); ++i ) {
+					auto fm = ep->focalMechanism(i);
+					for ( size_t j = 0; j < fm->momentTensorCount(); ++j ) {
+						auto mt = fm->momentTensor(j);
+						if ( mt->derivedOriginID() == prefMag->origin()->publicID() ) {
+							isMw = true;
+							i = ep->focalMechanismCount();
+							break;
+						}
 					}
 				}
 			}
 
-			if ( prefMag ) {
-				SEISCOMP_DEBUG("* check update of preferred magnitude type: '%s'",
-				               prefMag->type().c_str());
+			auto targetPrefMag = _cache.get<Magnitude>(targetEvent->preferredMagnitudeID());
+			if ( !targetPrefMag || (prefMag->type() != targetPrefMag->type()) ) {
+				SEISCOMP_DEBUG("* check update of preferred magnitude: '%s'",
+				               prefMag->type());
 
-				bool isMw = false;
+				OPT(Core::Time) remoteChangeTime;
 
-				// Check if the preferred magnitude is part of a moment tensor
-				if ( prefMag->type() == "Mw" ) {
-					for ( size_t i = 0; i < ep->focalMechanismCount(); ++i ) {
-						auto fm = ep->focalMechanism(i);
-						for ( size_t j = 0; j < fm->momentTensorCount(); ++j ) {
-							auto mt = fm->momentTensor(j);
-							if ( mt->derivedOriginID() == prefMag->origin()->publicID() ) {
-								isMw = true;
-								i = ep->focalMechanismCount();
-								break;
-							}
+				try {
+					remoteChangeTime = event->creationInfo().modificationTime();
+					SEISCOMP_DEBUG("  - remote change time is event modification time %s",
+					               remoteChangeTime->iso());
+				}
+				catch ( ... ) {
+					try {
+						remoteChangeTime = event->creationInfo().creationTime();
+						SEISCOMP_DEBUG("  - remote change time is event creation time %s",
+						               remoteChangeTime->iso());
+					}
+					catch ( ... ) {}
+				}
+
+				// Get last journal entry
+				auto entry = getLastJournalEntry(journals, event->publicID(), "EvPrefMagType");
+				if ( !entry && isMw ) {
+					SEISCOMP_DEBUG("  - no remote EvPrefMagType entry, trying EvPrefMw");
+					entry = getLastJournalEntry(journals, event->publicID(), "EvPrefMagType");
+				}
+
+				if ( entry ) {
+					if ( !isMw && (entry->parameters() != prefMag->type()) ) {
+						SEISCOMP_WARNING("%s: preferred magnitude is not matching the last journal type, ignoring it",
+						                 event->publicID());
+					}
+					else {
+						try {
+							remoteChangeTime = entry->created();
+							SEISCOMP_DEBUG("  - remote change time is now journal creation time %s",
+							               remoteChangeTime->iso());
 						}
+						catch ( ... ) {}
 					}
 				}
 
 				entry = getLastJournalEntry(*query(), targetEvent->publicID(), "EvPrefMagType");
-				if ( entry && entry->sender() != author() ) {
-					SEISCOMP_INFO("* skipping setting preferred magnitude type because it "
-					              "has been set already via EvPrefMagType by %s",
-					              entry->sender().c_str());
-				}
-				else {
+				if ( !entry ) {
+					SEISCOMP_DEBUG("  - no local EvPrefMagType entry, trying EvPrefMw");
 					entry = getLastJournalEntry(*query(), targetEvent->publicID(), "EvPrefMw");
-					if ( entry && entry->sender() != author() ) {
-						SEISCOMP_INFO("* skipping setting preferred magnitude type because it "
-						              "has been set already via EvPrefMw by %s",
-						              entry->sender().c_str());
+				}
+
+				if ( !entry ) {
+					// Not a local journal yet, apply the change
+					SEISCOMP_DEBUG("  => no local journal found, apply the update");
+					if ( isMw ) {
+						SEISCOMP_DEBUG("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
+						entry = createJournalEntry(targetEvent->publicID(), "EvPrefMw", "true",
+						                           remoteChangeTime ? &remoteChangeTime.get() : nullptr);
 					}
 					else {
-						if ( isMw ) {
-							SEISCOMP_DEBUG("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
-							entry = createJournalEntry(targetEvent->publicID(), "EvPrefMw", "true");
+						entry = createJournalEntry(targetEvent->publicID(), "EvPrefMagType", prefMag->type(),
+						                           remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+					}
+					notifiers.push_back(
+						new Notifier("Journaling", OP_ADD, entry.get())
+					);
+				}
+				else {
+					// There is a local journal entry
+					OPT(Core::Time) localChangeTime;
+
+					try {
+						localChangeTime = entry->created();
+						SEISCOMP_DEBUG("  - local change time is %s", localChangeTime->iso());
+					}
+					catch ( ... ) {}
+
+					if ( localChangeTime && remoteChangeTime ) {
+						if ( *remoteChangeTime > *localChangeTime ) {
+							// The remote change time is more recent, apply it
+							SEISCOMP_DEBUG("  => the remote change time is more recent, apply the update");
+							if ( isMw ) {
+								SEISCOMP_DEBUG("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
+								entry = createJournalEntry(targetEvent->publicID(), "EvPrefMw", "true",
+								                           remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+							}
+							else {
+								entry = createJournalEntry(targetEvent->publicID(), "EvPrefMagType", prefMag->type(),
+								                           remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+							}
+							notifiers.push_back(
+								new Notifier("Journaling", OP_ADD, entry.get())
+							);
 						}
 						else {
-							entry = createJournalEntry(targetEvent->publicID(), "EvPrefMagType", prefMag->type());
+							SEISCOMP_INFO("* skipping preferred magnitude type update because the "
+							              "local change %s the remote one",
+							              *remoteChangeTime < *localChangeTime ?
+							                  "is more recent than" :
+							                  "happened at the same time as");
 						}
-						notifiers.push_back(
-							new Notifier("Journaling", OP_ADD, entry.get())
-						);
+					}
+					else {
+						if ( entry->sender() == author() ) {
+							SEISCOMP_DEBUG("  => self is the last author of the journal, apply the update");
+							if ( isMw ) {
+								SEISCOMP_DEBUG("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
+								entry = createJournalEntry(targetEvent->publicID(), "EvPrefMw", "true",
+								                           remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+							}
+							else {
+								entry = createJournalEntry(targetEvent->publicID(), "EvPrefMagType", prefMag->type(),
+								                           remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+							}
+							notifiers.push_back(
+								new Notifier("Journaling", OP_ADD, entry.get())
+							);
+						}
+						else {
+							SEISCOMP_INFO("* skipping preferred magnitude type update because it "
+							              "has been set already by %s",
+							              entry->sender());
+						}
 					}
 				}
 			}
 			else {
-				SEISCOMP_WARNING("* preferred magnitude not found in input document, skip fixing the type");
+				SEISCOMP_DEBUG("* check update of preferred magnitude: '%s' => equal",
+				               prefMag->type());
 			}
+		}
+		else if ( !event->preferredMagnitudeID().empty() ) {
+
+			SEISCOMP_WARNING("* preferred magnitude %s not found in input document, skip checking the type",
+			                 event->preferredMagnitudeID());
 		}
 	}
 
 	// Event type
 	checkUpdate(notifiers, &Event::type, event, targetEvent.get(),
-	            "event type", journals, "EvTypeOK");
+	            "event type", journals, "EvType");
 
 	// Event type certainty
 	checkUpdate(notifiers, &Event::typeCertainty, event, targetEvent.get(),
-	            "event type certainty", journals, "EvTypeCertaintyOK");
+	            "event type certainty", journals, "EvTypeCertainty");
 
 	// Event name
 	{
@@ -1720,10 +1802,15 @@ void App::applyNotifier(const Notifier *n) {
 		switch ( n->operation() ) {
 			case OP_ADD:
 			{
-				obj->detach();
+				// Create a local copy which gets added to the local
+				// tree. As the notifier have been created from the input
+				// document, it will be kept
+				ObjectPtr clone = obj->clone();
+				obj = clone.get();
 				PublicObject *po = PublicObject::Cast(obj);
-				if ( po && !po->registered() )
+				if ( po && !po->registered() ) {
 					po->registerMe();
+				}
 				obj->attachTo(parent);
 				addObject(n->parentID(), obj);
 				break;

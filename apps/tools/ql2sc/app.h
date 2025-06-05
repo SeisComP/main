@@ -111,7 +111,7 @@ class App : public Client::Application {
 		void checkUpdate(Notifiers &notifiers,
 		                 R (T::*func)() const, const T *remote, const T *local,
 		                 const char *name, const DataModel::Journaling *journals,
-		                 const char *action);
+		                 const std::string &action);
 
 	private:
 		struct EventDelayItem {
