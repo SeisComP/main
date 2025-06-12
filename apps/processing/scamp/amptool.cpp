@@ -843,7 +843,7 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 		if ( origin ) {
 			try {
 				depth = origin->depth().value();
-				_report << "     + depth = " << depth.get() << std::endl;
+				_report << "     + depth = " << *depth << std::endl;
 			}
 			catch ( ... ) {
 				_report << "     - depth [not set]" << std::endl;

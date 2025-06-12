@@ -1095,7 +1095,7 @@ void App::checkUpdate(Notifiers &notifiers,
                       R (T::*func)() const, const T *remote, const T *local,
                       const char *name, const Journaling *journals,
                       const std::string &action) {
-	typename OPT(R) rR, lR;
+	typename OPT(remove_const_t<std::remove_reference_t<R>>) rR, lR;
 
 	try {
 		rR = (remote->*func)();
@@ -1117,13 +1117,13 @@ void App::checkUpdate(Notifiers &notifiers,
 	OPT(Core::Time) remoteChangeTime;
 	try {
 		remoteChangeTime = remote->creationInfo().modificationTime();
-		SEISCOMP_DEBUG("  - remote change time is event modification time %s",
+		SEISCOMP_DEBUG("  - remote change time is modification time %s",
 		               remoteChangeTime->iso());
 	}
 	catch ( ... ) {
 		try {
 			remoteChangeTime = remote->creationInfo().creationTime();
-			SEISCOMP_DEBUG("  - remote change time is event creation time %s",
+			SEISCOMP_DEBUG("  - remote change time is creation time %s",
 			               remoteChangeTime->iso());
 		}
 		catch ( ... ) {}
@@ -1152,7 +1152,7 @@ void App::checkUpdate(Notifiers &notifiers,
 	if ( !entry ) {
 		// Not a local journal yet, apply the change
 		SEISCOMP_DEBUG("  => no local journal found, apply the update");
-		entry = createJournalEntry(local->publicID(), action, rR ? Core::toString(*rR) : string(), remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+		entry = createJournalEntry(local->publicID(), action, rR ? Core::toString(*rR) : string(), remoteChangeTime ? std::addressof(*remoteChangeTime) : nullptr);
 		notifiers.push_back(
 			new Notifier("Journaling", OP_ADD, entry.get())
 		);
@@ -1171,7 +1171,7 @@ void App::checkUpdate(Notifiers &notifiers,
 			if ( *remoteChangeTime > *localChangeTime ) {
 				// The remote change time is more recent, apply it
 				SEISCOMP_DEBUG("  => the remote change time is more recent, apply the update");
-				entry = createJournalEntry(local->publicID(), action, rR ? Core::toString(*rR) : string(), remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+				entry = createJournalEntry(local->publicID(), action, rR ? Core::toString(*rR) : string(), remoteChangeTime ? std::addressof(*remoteChangeTime) : nullptr);
 				notifiers.push_back(
 					new Notifier("Journaling", OP_ADD, entry.get())
 				);
@@ -1188,7 +1188,7 @@ void App::checkUpdate(Notifiers &notifiers,
 		else {
 			if ( entry->sender() == author() ) {
 				SEISCOMP_DEBUG("  => self is the last author of the journal, apply the update");
-				entry = createJournalEntry(local->publicID(), action, rR ? Core::toString(*rR) : "", remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+				entry = createJournalEntry(local->publicID(), action, rR ? Core::toString(*rR) : "", remoteChangeTime ? std::addressof(*remoteChangeTime) : nullptr);
 				notifiers.push_back(
 					new Notifier("Journaling", OP_ADD, entry.get())
 				);
@@ -1399,11 +1399,11 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 					if ( isMw ) {
 						SEISCOMP_DEBUG("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
 						entry = createJournalEntry(targetEvent->publicID(), "EvPrefMw", "true",
-						                           remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+						                           remoteChangeTime ? std::addressof(*remoteChangeTime) : nullptr);
 					}
 					else {
 						entry = createJournalEntry(targetEvent->publicID(), "EvPrefMagType", prefMag->type(),
-						                           remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+						                           remoteChangeTime ? std::addressof(*remoteChangeTime) : nullptr);
 					}
 					notifiers.push_back(
 						new Notifier("Journaling", OP_ADD, entry.get())
@@ -1426,11 +1426,11 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 							if ( isMw ) {
 								SEISCOMP_DEBUG("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
 								entry = createJournalEntry(targetEvent->publicID(), "EvPrefMw", "true",
-								                           remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+								                           remoteChangeTime ? std::addressof(*remoteChangeTime) : nullptr);
 							}
 							else {
 								entry = createJournalEntry(targetEvent->publicID(), "EvPrefMagType", prefMag->type(),
-								                           remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+								                           remoteChangeTime ? std::addressof(*remoteChangeTime) : nullptr);
 							}
 							notifiers.push_back(
 								new Notifier("Journaling", OP_ADD, entry.get())
@@ -1450,11 +1450,11 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 							if ( isMw ) {
 								SEISCOMP_DEBUG("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
 								entry = createJournalEntry(targetEvent->publicID(), "EvPrefMw", "true",
-								                           remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+								                           remoteChangeTime ? std::addressof(*remoteChangeTime) : nullptr);
 							}
 							else {
 								entry = createJournalEntry(targetEvent->publicID(), "EvPrefMagType", prefMag->type(),
-								                           remoteChangeTime ? &remoteChangeTime.get() : nullptr);
+								                           remoteChangeTime ? std::addressof(*remoteChangeTime) : nullptr);
 							}
 							notifiers.push_back(
 								new Notifier("Journaling", OP_ADD, entry.get())
