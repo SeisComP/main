@@ -459,8 +459,6 @@ class Autoloc3 {
 
 		bool _rework(Origin *);
 
-		void _ensureConsistentArrivals(Origin *);
-
 		void _ensureAcceptableRMS(Origin *, bool keepDepth=false);
 
 		// Exclude PKP phases if there are enough P phases.

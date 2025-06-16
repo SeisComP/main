@@ -1664,24 +1664,6 @@ bool Autoloc3::_epicenterRequiresDefaultDepth(const Origin *origin) const
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::_ensureConsistentArrivals(Origin *origin)
-{
-	// ensure consistent distances/azimuths of the arrivals
-	for (Arrival& arr : origin->arrivals) {
-		double delta, az, baz;
-		delazi(&(origin->hypocenter), arr.pick->station(), delta, az, baz);
-		arr.distance = delta;
-		arr.azimuth = az;
-	}
-
-	origin->arrivals.sort();
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Autoloc3::_ensureAcceptableRMS(Origin *origin, bool keepDepth) {
 	size_t minPhaseCount = 20; // TODO: make this configurable
 
@@ -2037,7 +2019,7 @@ bool Autoloc3::_passedFilter(Origin *origin)
 	if ( ! _passedFinalCheck(origin))
 		return false;
 
-	_ensureConsistentArrivals(origin);
+	origin->arrivals.sort();
 
 	return true;
 }
