@@ -4,6 +4,7 @@
 # JWT-based authentication
 ################################################################################
 
+import json
 import jwt
 from twisted.cred.checkers import ICredentialsChecker
 from twisted.cred.credentials import ICredentials, IAnonymous
@@ -13,6 +14,8 @@ from twisted.web.guard import HTTPAuthSessionWrapper
 from twisted.web.iweb import ICredentialFactory
 from twisted.web.resource import IResource
 from zope.interface import implementer
+from urllib.request import urlopen
+from seiscomp import logging
 
 
 class IBearerToken(ICredentials):
@@ -39,13 +42,35 @@ class _CredentialFactory(object):
 
     scheme = b"bearer"
 
-    def __init__(self, jwksClient, audience, algorithms):
+    def __init__(self, issuers, audience, algorithms):
         """
-        algorithms  list. List of algorithms to check.
+        issuers     list. List of valid issuer URLs
+        audience    list. List of valid audiences
+        algorithms  list. List of algorithms to check
         """
-        self.__jwksClient = jwksClient
+        self.__issuers = issuers
         self.__audience = audience
         self.__algorithms = algorithms
+        self.__signing_keys = {}
+
+        for iss in issuers:
+            isscfg = json.loads(urlopen(iss.rstrip('/') + '/.well-known/openid-configuration').read())
+            aux = json.loads(urlopen(isscfg["jwks_uri"]).read())
+
+            for k in aux['keys']:
+                logging.notice(f"received JWT signing key {k['kid']} from issuer {iss}")
+                self.__signing_keys[iss, k['kid']] = jwt.PyJWK.from_dict(k)
+
+    def __get_signing_key_from_jwt(self, tok):
+        rawtoken = jwt.api_jwt.decode_complete(tok, options={"verify_signature": False})
+        kid = rawtoken["header"]["kid"]
+        iss = rawtoken["payload"]["iss"]
+
+        try:
+            return self.__signing_keys[iss, kid]
+
+        except KeyError:
+            raise Exception("No matching keys")
 
     @staticmethod
     def getChallenge(request):
@@ -71,7 +96,7 @@ class _CredentialFactory(object):
         request     obj. The request being processed
         """
         try:
-            signing_key = self.__jwksClient.get_signing_key_from_jwt(response)
+            signing_key = self.__get_signing_key_from_jwt(response)
             payload = jwt.decode(
                 response,
                 signing_key.key,
@@ -146,9 +171,8 @@ class _Realm(object):
 
 
 class JWT(object):
-    def __init__(self, jwksClientUrl, audience, algorithms):
-        jwksClient = jwt.PyJWKClient(jwksClientUrl, cache_keys=True)
-        self.__cf = _CredentialFactory(jwksClient, audience, algorithms)
+    def __init__(self, issuers, audience, algorithms):
+        self.__cf = _CredentialFactory(issuers, audience, algorithms)
 
     def getAuthSessionWrapper(self, service, *args, **kwargs):
         realm = _Realm(service, args, kwargs)

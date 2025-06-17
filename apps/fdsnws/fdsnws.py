@@ -420,9 +420,9 @@ class FDSNWS(seiscomp.client.Application):
         self._checker = None
 
         self._jwtEnabled = False
-        self._jwtJWKSClientURL = "https://geofon.gfz.de/eas2/jwk"
-        self._jwtAudience = ["fdsn", "eas"]  # currently not configurable
-        self._jwtAlgorithms = ["RS256"]  # currently not configurable
+        self._jwtIssuers = ["https://geofon.gfz.de/eas2", "https://login.earthscope.org/"]
+        self._jwtAudience = ["eas", "fdsn"]
+        self._jwtAlgorithms = ["RS256"]
         self._jwt = None
 
         self._requestLog = None
@@ -765,9 +765,21 @@ class FDSNWS(seiscomp.client.Application):
         except Exception:
             pass
 
-        # JWKS Client URL
+        # JWT issuers
         try:
-            self._jwtJWKSClientURL = self.configGetString("jwt.JWKSClientURL")
+            self._jwtIssuers = self.configGetStrings("jwt.issuers")
+        except Exception:
+            pass
+
+        # JWT audience
+        try:
+            self._jwtAudience = self.configGetStrings("jwt.audience")
+        except Exception:
+            pass
+
+        # JWT algorithms
+        try:
+            self._jwtAlgorithms = self.configGetStrings("jwt.algorithms")
         except Exception:
             pass
 
@@ -954,7 +966,9 @@ configuration read:
     gnupgHome              : {self._authGnupgHome}
   JWT
     enabled                : {self._jwtEnabled}
-    JWKSClientURL          : {self._jwtJWKSClientURL}
+    issuers                : {self._jwtIssuers}
+    audience               : {self._jwtAudience}
+    algorithms             : {self._jwtAlgorithms}
   requestLog               : {self._requestLogFile}"""
         )
 
@@ -974,7 +988,7 @@ configuration read:
                 return None
 
             self._jwt = JWT(
-                self._jwtJWKSClientURL, self._jwtAudience, self._jwtAlgorithms
+                self._jwtIssuers, self._jwtAudience, self._jwtAlgorithms
             )
 
         # access logger if requested

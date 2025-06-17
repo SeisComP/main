@@ -292,6 +292,28 @@
 					</description>
 				</parameter>
 			</group>
+			<group name="jwt">
+				<parameter name="enable" type="boolean" default="false">
+					<description>
+					Enable JWT extension.
+					</description>
+				</parameter>
+				<parameter name="issuers" type="list:string" default="https://geofon.gfz.de/eas2,https://login.earthscope.org/">
+					<description>
+					List of issuer URLs.
+					</description>
+				</parameter>
+				<parameter name="audience" type="list:string" default="eas,fdsn">
+					<description>
+					List of valid audience.
+					</description>
+				</parameter>
+				<parameter name="algorithms" type="list:string" default="RS256">
+					<description>
+					List of allowed algorithms.
+					</description>
+				</parameter>
+			</group>
 		</configuration>
 	</module>
 </seiscomp>
