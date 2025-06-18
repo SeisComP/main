@@ -423,6 +423,8 @@ class FDSNWS(seiscomp.client.Application):
         self._jwtIssuers = ["https://geofon.gfz.de/eas2", "https://login.earthscope.org/"]
         self._jwtAudience = ["eas", "fdsn"]
         self._jwtAlgorithms = ["RS256"]
+        self._jwtUpdateMin = 300
+        self._jwtUpdateMax = 86400
         self._jwt = None
 
         self._requestLog = None
@@ -783,6 +785,18 @@ class FDSNWS(seiscomp.client.Application):
         except Exception:
             pass
 
+        # JWT minimum update period
+        try:
+            self._jwtUpdateMin = self.configGetStrings("jwt.updateMinSeconds")
+        except Exception:
+            pass
+
+        # JWT maximum update period
+        try:
+            self._jwtUpdateMax = self.configGetStrings("jwt.updateMaxSeconds")
+        except Exception:
+            pass
+
         # If the database connection is passed via command line or
         # configuration file then messaging is disabled. Messaging is only used
         # to get the configured database connection URI.
@@ -988,7 +1002,7 @@ configuration read:
                 return None
 
             self._jwt = JWT(
-                self._jwtIssuers, self._jwtAudience, self._jwtAlgorithms
+                self._jwtIssuers, self._jwtAudience, self._jwtAlgorithms, self._jwtUpdateMin, self._jwtUpdateMax
             )
 
         # access logger if requested

@@ -6,6 +6,7 @@
 
 import json
 import jwt
+import time
 from twisted.cred.checkers import ICredentialsChecker
 from twisted.cred.credentials import ICredentials, IAnonymous
 from twisted.cred.error import LoginFailed
@@ -42,7 +43,7 @@ class _CredentialFactory(object):
 
     scheme = b"bearer"
 
-    def __init__(self, issuers, audience, algorithms):
+    def __init__(self, issuers, audience, algorithms, update_min, update_max):
         """
         issuers     list. List of valid issuer URLs
         audience    list. List of valid audiences
@@ -51,23 +52,43 @@ class _CredentialFactory(object):
         self.__issuers = issuers
         self.__audience = audience
         self.__algorithms = algorithms
-        self.__signing_keys = {}
+        self.__update_min = update_min
+        self.__update_max = update_max
+        self.__keys = {}
 
         for iss in issuers:
-            isscfg = json.loads(urlopen(iss.rstrip('/') + '/.well-known/openid-configuration').read())
-            aux = json.loads(urlopen(isscfg["jwks_uri"]).read())
+            self.__keys[iss] = (0, {})
 
-            for k in aux['keys']:
-                logging.notice(f"received JWT signing key {k['kid']} from issuer {iss}")
-                self.__signing_keys[iss, k['kid']] = jwt.PyJWK.from_dict(k)
+    def __update_keys(self, iss):
+        isscfg = json.loads(urlopen(iss.rstrip('/') + '/.well-known/openid-configuration').read())
+        aux = json.loads(urlopen(isscfg["jwks_uri"]).read())
+        keys = {}
+
+        for k in aux['keys']:
+            logging.notice(f"received JWT signing key {k['kid']} from issuer {iss}")
+            keys[k['kid']] = jwt.PyJWK.from_dict(k)
+
+        self.__keys[iss] = (time.time(), keys)
+        return keys
 
     def __get_signing_key_from_jwt(self, tok):
         rawtoken = jwt.api_jwt.decode_complete(tok, options={"verify_signature": False})
-        kid = rawtoken["header"]["kid"]
         iss = rawtoken["payload"]["iss"]
 
         try:
-            return self.__signing_keys[iss, kid]
+            t, keys = self.__keys[iss]
+
+        except KeyError:
+            raise Exception("No matching keys")
+
+        kid = rawtoken["header"]["kid"]
+
+        if t < time.time() - self.__update_max or \
+                (kid not in keys and t < time.time() - self.__update_min):
+            keys = self.__update_keys(iss)
+
+        try:
+            return keys[kid]
 
         except KeyError:
             raise Exception("No matching keys")
@@ -171,8 +192,8 @@ class _Realm(object):
 
 
 class JWT(object):
-    def __init__(self, issuers, audience, algorithms):
-        self.__cf = _CredentialFactory(issuers, audience, algorithms)
+    def __init__(self, issuers, audience, algorithms, update_min, update_max):
+        self.__cf = _CredentialFactory(issuers, audience, algorithms, update_min, update_max)
 
     def getAuthSessionWrapper(self, service, *args, **kwargs):
         realm = _Realm(service, args, kwargs)
