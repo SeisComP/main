@@ -134,8 +134,13 @@
 				</option>
 				<option flag="x" long-flag="extra">
 					<description>
-					Use a specially detailed autoloc3 format. This options works
-					only in combination with the autoloc3-flag.
+					Generate extra detailed output for specific output formats adding
+
+					- 3/autoloc3: IDs of preferred objects and creation information
+
+					- 4/FDSNWS event text: Additional columns
+
+					More information may be added in future versions.
 					</description>
 				</option>
 			</group>

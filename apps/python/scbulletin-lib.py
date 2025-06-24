@@ -1081,13 +1081,25 @@ class Bulletin(object):
 
         return txt
 
-    def _printOriginFDSN(self, org):
+    def _printOriginFDSN(self, org, extra=False):
         evt = self._evt
-
         if not evt and self._dbq:
             evt = self._dbq.getEvent(org.publicID())
 
         author, agencyID, eType, prefMagID = "", "", "", ""
+
+        try:
+            author = org.creationInfo().author()
+        except ValueError:
+            pass
+
+        if not self.useEventAgencyID:
+            try:
+                agencyID = org.creationInfo().agencyID()
+            except ValueError:
+                pass
+
+        fm = None
         if evt:
             evid = evt.publicID()
             pos = evid.find("#")  # XXX Hack!!!
@@ -1099,29 +1111,161 @@ class Bulletin(object):
             except ValueError:
                 pass
 
-            try:
-                author = org.creationInfo().author()
-            except ValueError:
-                pass
-
             if self.useEventAgencyID:
                 try:
                     agencyID = evt.creationInfo().agencyID()
                 except ValueError:
-                    pass
-            else:
-                try:
-                    agencyID = org.creationInfo().agencyID()
-                except ValueError:
-                    pass
+                    agencyID = ""
 
             try:
                 eType = QMLTypeMapper.EventTypeToString(evt.type())
             except ValueError:
                 pass
+            if extra:
+                fm = seiscomp.datamodel.FocalMechanism.Find(
+                    evt.preferredFocalMechanismID()
+                )
+                if not fm:
+                    fm = evt.preferredFocalMechanismID()
         else:
             evid = ""
             prefMagID = ""
+
+        if extra:
+            try:
+                status = seiscomp.datamodel.EEvaluationStatusNames.name(
+                    org.evaluationStatus()
+                )
+            except ValueError:
+                status = ""
+
+            try:
+                mode = seiscomp.datamodel.EEvaluationModeNames.name(
+                    org.evaluationMode()
+                )
+            except ValueError:
+                mode = ""
+
+            try:
+                value = org.quality().azimuthalGap()
+                if self.enhanced:
+                    gap = f"{value:.1f}"
+                else:
+                    gap = f"{value:.0f}"
+            except ValueError:
+                gap = ""
+
+            try:
+                value = org.quality().standardError()
+                if self.enhanced:
+                    rms = f"{value:.3f}"
+                else:
+                    rms = f"{value:.0f}"
+            except ValueError:
+                rms = ""
+
+            try:
+                value = org.quality().minimumDistance()
+                if self.distInKM:
+                    value = seiscomp.math.deg2km(value)
+                    if self.enhanced:
+                        minDist = f"{value:.3f}"
+                    else:
+                        minDist = f"{value:.0f}"
+                else:
+                    if self.enhanced:
+                        minDist = f"{value:.5f}"
+                    else:
+                        minDist = f"{value:.0f}"
+            except ValueError:
+                minDist = ""
+
+            try:
+                value = org.quality().maximumDistance()
+                if self.distInKM:
+                    value = seiscomp.math.deg2km(value)
+                    if self.enhanced:
+                        maxDist = f"{value:.3f}"
+                    else:
+                        maxDist = f"{value:.0f}"
+                else:
+                    if self.enhanced:
+                        maxDist = f"{value:.5f}"
+                    else:
+                        maxDist = f"{value:.0f}"
+            except ValueError:
+                maxDist = ""
+
+            pCount = 0
+            sCount = 0
+            for i in range(org.arrivalCount()):
+                if org.arrival(i).phase().code() == "P":
+                    pCount += 1
+                elif org.arrival(i).phase().code() == "S":
+                    sCount += 1
+                else:
+                    continue
+
+            np1Strike = ""
+            np1Dip = ""
+            np1Rake = ""
+            np2Strike = ""
+            np2Dip = ""
+            np2Rake = ""
+            if fm:
+                try:
+                    value = fm.nodalPlanes().nodalPlane1().strike().value()
+                    if self.enhanced:
+                        np1Strike = f"{value:.1f}"
+                    else:
+                        np1Strike = f"{value:.0f}"
+                except ValueError:
+                    pass
+
+                try:
+                    value = fm.nodalPlanes().nodalPlane1().dip().value()
+                    if self.enhanced:
+                        np1Dip = f"{value:.1f}"
+                    else:
+                        np1Dip = f"{value:.0f}"
+                except ValueError:
+                    pass
+
+                try:
+                    value = fm.nodalPlanes().nodalPlane1().rake().value()
+                    if self.enhanced:
+                        np1Rake = f"{value:.1f}"
+                    else:
+                        np1Rake = f"{value:.0f}"
+                except ValueError:
+                    pass
+
+                try:
+                    value = fm.nodalPlanes().nodalPlane2().strike().value()
+                    if self.enhanced:
+                        np2Strike = f"{value:.1f}"
+                    else:
+                        np2Strike = f"{value:.0f}"
+                except ValueError:
+                    pass
+
+                try:
+                    value = fm.nodalPlanes().nodalPlane2().dip().value()
+                    if self.enhanced:
+                        np2Dip = f"{value:.1f}"
+                    else:
+                        np2Dip = f"{value:.0f}"
+                except ValueError:
+                    pass
+
+                try:
+                    value = fm.nodalPlanes().nodalPlane2().rake().value()
+                    if self.enhanced:
+                        np2Rake = f"{value:.1f}"
+                    else:
+                        np2Rake = f"{value:.0f}"
+                except ValueError:
+                    pass
 
         if self.enhanced:
             depth = f"{org.depth().value():.3f}"
@@ -1167,7 +1311,7 @@ class Bulletin(object):
                 except ValueError:
                     pass
 
-        txt = "%s|%s|%s|%s|%s|%s||%s|%s|%s|%s|%s|%s|%s\n" % (
+        txt = "%s|%s|%s|%s|%s|%s||%s|%s|%s|%s|%s|%s|%s" % (
             evid,
             sTime,
             lat,
@@ -1183,9 +1327,16 @@ class Bulletin(object):
             eType,
         )
 
+        if extra:
+            txt = (
+                f"{txt}|{status}|{mode}|{pCount}|{sCount}|{gap}|{rms}|{minDist}|"
+                f"{maxDist}|{np1Strike}|{np1Dip}|{np1Rake}|{np2Strike}|{np2Dip}|{np2Rake}"
+            )
+        txt = f"{txt}\n"
+
         return txt
 
-    def printOrigin(self, origin):
+    def printOrigin(self, origin, extra=False):
         org = None
         if isinstance(origin, seiscomp.datamodel.Origin):
             org = origin
@@ -1199,19 +1350,17 @@ class Bulletin(object):
             raise TypeError("illegal type for origin")
 
         if self.format == "fdsnws":
-            return self._printOriginFDSN(org)
+            return self._printOriginFDSN(org, extra=extra)
         elif self.format == "autoloc1":
             return self._printOriginAutoloc1(org)
-        elif self.format == "autoloc3":
-            return self._printOriginAutoloc3(org, extra=False)
-        elif self.format == "autoloc3extra":
-            return self._printOriginAutoloc3(org, extra=True)
+        elif "autoloc3" in self.format:
+            return self._printOriginAutoloc3(org, extra=extra)
         if self.format == "kml":
             return self._printOriginKML(org)
         else:
             pass
 
-    def printEvent(self, event):
+    def printEvent(self, event, extra=False):
         try:
             evt = None
             if isinstance(event, seiscomp.datamodel.Event):
@@ -1219,7 +1368,7 @@ class Bulletin(object):
                 org = seiscomp.datamodel.Origin.Find(event.preferredOriginID())
                 if not org:
                     org = event.preferredOriginID()
-                return self.printOrigin(org)
+                return self.printOrigin(org, extra)
             elif isinstance(event, str):
                 if self._dbq:
                     evt = self._dbq.loadObject(
@@ -1229,7 +1378,7 @@ class Bulletin(object):
                     self._evt = evt
                 if evt is None:
                     raise KeyError("unknown event " + event)
-                return self.printOrigin(evt.preferredOriginID())
+                return self.printOrigin(evt.preferredOriginID(), extra)
             else:
                 raise TypeError("illegal type for event")
         finally:
@@ -1246,6 +1395,7 @@ class BulletinApp(seiscomp.client.Application):
         self.setLoadRegionsEnabled(True)
 
         self.format = "autoloc1"
+        self.extra = False
         self.inputFile = None
 
     def createCommandLineDescription(self):
@@ -1290,12 +1440,14 @@ class BulletinApp(seiscomp.client.Application):
             )
 
             self.commandline().addGroup("Output")
-            self.commandline().addOption("Output", "autoloc1,1", "Format: autoloc1.")
+            self.commandline().addOption(
+                "Output", "autoloc1,1", "Format: autoloc1 (default)."
+            )
             self.commandline().addOption("Output", "autoloc3,3", "Format: autoloc3.")
             self.commandline().addOption(
                 "Output",
                 "fdsnws,4",
-                "Format: FDSNWS event text, e.g., for generating catalogs.",
+                "Format: FDSNWS event text. One line per event like in catalogs.",
             )
             self.commandline().addOption(
                 "Output",
@@ -1305,7 +1457,8 @@ class BulletinApp(seiscomp.client.Application):
             self.commandline().addOption(
                 "Output",
                 "enhanced,e",
-                "Enhanced output precision for local earthquakes.",
+                "Enhanced output with hiher precision. Times: milliseconds, distances: "
+                "meter. Use for bulletins of local earthquakes.",
             )
             self.commandline().addOption(
                 "Output", "dist-in-km,k", "Print distances in km instead of degree."
@@ -1313,10 +1466,16 @@ class BulletinApp(seiscomp.client.Application):
             self.commandline().addStringOption(
                 "Output",
                 "output,o",
-                "Name of output file. If not given, all event parameters are printed to stdout.",
+                "Name of output file. If not given, all event parameters are printed "
+                "to stdout.",
             )
             self.commandline().addOption(
-                "Output", "extra,x", "Extra detailed autoloc3 format."
+                "Output",
+                "extra,x",
+                "Extra detailed output for specific output formats adding\n"
+                "- 3/autoloc3: IDs of preferred objects and creation information\n"
+                "- 4/FDSNWS event text: Additional columns\n"
+                "More information may be added in future versions.",
             )
         except RuntimeError:
             seiscomp.logging.warning(f"caught unexpected error {sys.exc_info()}")
@@ -1397,13 +1556,15 @@ Create a bulletin from event parameters in XML
         if mw != "" and mw is not None:
             bulletin.minArrivalWeight = float(mw)
 
+        try:
+            self.extra = self.commandline().hasOption("extra")
+        except RuntimeError:
+            pass
+
         if self.commandline().hasOption("autoloc1"):
             bulletin.format = "autoloc1"
         elif self.commandline().hasOption("autoloc3"):
-            if self.commandline().hasOption("extra"):
-                bulletin.format = "autoloc3extra"
-            else:
-                bulletin.format = "autoloc3"
+            bulletin.format = "autoloc3"
 
         if self.commandline().hasOption("fdsnws"):
             bulletin.format = "fdsnws"
@@ -1436,13 +1597,13 @@ Create a bulletin from event parameters in XML
                 if evid:
                     for ev in evid.split(","):
                         try:
-                            txt += bulletin.printEvent(ev)
+                            txt += bulletin.printEvent(ev, self.extra)
                         except ValueError:
                             seiscomp.logging.error(f"Unknown event '{ev}'")
                 elif orid:
                     for org in orid.split(","):
                         try:
-                            txt += bulletin.printOrigin(org)
+                            txt += bulletin.printOrigin(org, self.extra)
                         except ValueError:
                             seiscomp.logging.error(f"Unknown origin '{org}'")
                 else:
@@ -1493,7 +1654,7 @@ Create a bulletin from event parameters in XML
 
                     if self.commandline().hasOption("first-only"):
                         org = ep.origin(0)
-                        txt = bulletin.printOrigin(org)
+                        txt = bulletin.printOrigin(org, self.extra)
                     else:
                         txt = ""
                         for i in range(ep.originCount()):
@@ -1504,7 +1665,7 @@ Create a bulletin from event parameters in XML
                                     % (inputFile, org.publicID())
                                 )
                                 continue
-                            txt += bulletin.printOrigin(org)
+                            txt += bulletin.printOrigin(org, self.extra)
                 else:
                     if self.commandline().hasOption("first-only"):
                         ev = ep.event(0)
@@ -1520,7 +1681,7 @@ Create a bulletin from event parameters in XML
                         for oid in orid.split(","):
                             org = ep.findOrigin(oid)
                             if org:
-                                txt += bulletin.printOrigin(org)
+                                txt += bulletin.printOrigin(org, self.extra)
                             else:
                                 seiscomp.logging.error(
                                     f"{inputFile}: Skipping origin with ID {oid}"
@@ -1537,7 +1698,7 @@ Create a bulletin from event parameters in XML
                                 continue
 
                             try:
-                                txt += bulletin.printEvent(ev)
+                                txt += bulletin.printEvent(ev, self.extra)
                             except KeyError:
                                 raise TypeError("Unknown event")
 
@@ -1556,12 +1717,23 @@ Create a bulletin from event parameters in XML
             out = sys.stdout
 
         if bulletin.format == "fdsnws":
-            print(
+            header = (
                 "#EventID|Time|Latitude|Longitude|Depth/km|Author|"
                 "Catalog|Contributor|ContributorID|MagType|Magnitude|"
-                "MagAuthor|EventLocationName|EventType",
-                file=out,
+                "MagAuthor|EventLocationName|EventType"
             )
+            if bulletin.distInKM:
+                distUnit = "km"
+            else:
+                distUnit = "°"
+            if self.extra:
+                header = (
+                    f"{header}|Status|Mode|PPhaseCount|SPhaseCount|"
+                    f"AzimuthalGap/°|RMS/s|MinDistance/{distUnit}|MaxDistance/"
+                    f"{distUnit}|NP1_Strike|NP1_Dip|NP1_Rake|NP2_Strike|NP2_Dip|"
+                    "NP2_Rake"
+                )
+            print(f"{header}", file=out)
 
         if bulletin.format == "kml":
             text = createKML("open")
