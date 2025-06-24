@@ -156,7 +156,7 @@ void addEventWidgetRowData(EventTableWidget::RowData& rowData,
 
 void addEventWidgetRowData(EventTableWidget::RowData& rowData,
                            const DataModel::Magnitude* magnitude) {
-	QString magnitudeValue = QString("%1").arg(magnitude->magnitude(), 0, 'f', 2);
+	QString magnitudeValue = QString("%1").arg(magnitude->magnitude().value(), 0, 'f', 2);
 	QString magnitudeType(magnitude->type().c_str());
 
 	rowData[EventTableWidget::MAGNITUDE]      = magnitudeValue;
