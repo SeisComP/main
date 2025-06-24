@@ -58,7 +58,9 @@
 #include <map>
 #include <set>
 
+
 using namespace std;
+
 
 namespace Seiscomp {
 
@@ -2535,25 +2537,20 @@ bool Convert2SC::process(
 	// After collecting all channel epoch, check for overlapping
 	// time windows of different locations. If they overlap
 	// valid SensorLocation definitions cannot be formed.
-	EpochCodeMap::iterator it;
 
 	// Iterate over all location codes
-	for ( it = epochMap.begin(); it != epochMap.end(); ++it ) {
+	for ( auto &[locID, locationMap] : epochMap ) {
 		// Iterate over all locations (lat/lon/elev) of this sensor
-		EpochLocationMap::iterator lit, lit2;
-		Epochs::iterator eit, eit2;
-
 		set<FDSNXML::Channel *> overlappingEpochs;
 
 		// Check for location/channel epoch overlaps for each lat/lon/elev
 		// group
-		for ( lit = it->second.begin(); lit != it->second.end(); ++lit ) {
+		for ( auto lit = locationMap.begin(); lit != locationMap.end(); ++lit ) {
 			EpochEntry &entry = lit->second;
 
 			// Iterate over all channel epochs of a group
-			for ( eit = entry.epochs.begin(); eit != entry.epochs.end();
-			      ++eit ) {
-				FDSNXML::Channel *chaepoch = eit->second;
+			for ( auto &epoch : entry.epochs ) {
+				FDSNXML::Channel *chaepoch = epoch.second;
 
 				// Already checked?
 				if ( overlappingEpochs.find(chaepoch) !=
@@ -2562,7 +2559,7 @@ bool Convert2SC::process(
 				}
 
 				// Go through all other groups
-				for ( lit2 = it->second.begin(); lit2 != it->second.end();
+				for ( auto lit2 = locationMap.begin(); lit2 != locationMap.end();
 				      ++lit2 ) {
 					EpochEntry &entry2 = lit2->second;
 
@@ -2571,11 +2568,10 @@ bool Convert2SC::process(
 					}
 
 					// Iterate over all channel epochs of a group
-					for ( eit2 = entry2.epochs.begin();
-					      eit2 != entry2.epochs.end(); ++eit2 ) {
-						FDSNXML::Channel *chaepoch2 = eit2->second;
+					for ( auto &epoch2 : entry2.epochs ) {
+						FDSNXML::Channel *chaepoch2 = epoch2.second;
 
-						if ( eit->first != eit2->first ) {
+						if ( epoch.first != epoch2.first ) {
 							continue;
 						}
 
@@ -2590,15 +2586,14 @@ bool Convert2SC::process(
 
 		if ( !overlappingEpochs.empty() ) {
 			cerr << "C  " << sc_net->code() << "." << sta->code()
-			     << " location '" << it->first
+			     << " location '" << locID
 			     << "' has overlapping epochs: skipping" << endl;
 
-			for ( lit = it->second.begin(); lit != it->second.end(); ++lit ) {
+			for ( auto lit = locationMap.begin(); lit != locationMap.end(); ++lit ) {
 				EpochEntry &entry = lit->second;
 				bool firstHit = true;
-				for ( eit = entry.epochs.begin(); eit != entry.epochs.end();
-				      ++eit ) {
-					FDSNXML::Channel *cha = eit->second;
+				for ( auto &epoch : entry.epochs ) {
+					FDSNXML::Channel *cha = epoch.second;
 					if ( overlappingEpochs.find(cha) ==
 					     overlappingEpochs.end() ) {
 						continue;
@@ -2634,7 +2629,7 @@ bool Convert2SC::process(
 			continue;
 		}
 
-		for ( lit = it->second.begin(); lit != it->second.end(); ++lit ) {
+		for ( auto lit = locationMap.begin(); lit != locationMap.end(); ++lit ) {
 			EpochEntry &entry = lit->second;
 
 			entry.epochs.sort(epochLowerThan);
@@ -2645,9 +2640,8 @@ bool Convert2SC::process(
 			Core::Time sensorLocationStart;
 			OPT(Core::Time) sensorLocationEnd;
 			bool newTw = true;
-			for ( eit = entry.epochs.begin(); eit != entry.epochs.end();
-			      ++eit ) {
-				FDSNXML::Channel *cha = eit->second;
+			for ( auto &epoch : entry.epochs ) {
+				FDSNXML::Channel *cha = epoch.second;
 
 				// A new time window should be started
 				if ( newTw ) {
@@ -2690,13 +2684,13 @@ bool Convert2SC::process(
 
 					sc_loc =
 					    sc_sta->sensorLocation(DataModel::SensorLocationIndex(
-					        it->first, sensorLocationStart
+					        locID, sensorLocationStart
 					    ));
 					if ( !sc_loc ) {
 						sc_loc = createSensorLocation(
-						    sc_net->code(), sc_sta->code(), it->first
+						    sc_net->code(), sc_sta->code(), locID
 						);
-						sc_loc->setCode(it->first);
+						sc_loc->setCode(locID);
 						sc_loc->setStart(sensorLocationStart);
 						newInstance = true;
 					}
@@ -2718,7 +2712,7 @@ bool Convert2SC::process(
 					// Possible conflicting geo locations?
 					if ( !newInstance && needUpdate ) {
 						cerr << "W  " << sc_net->code() << "." << sta->code()
-						     << " location '" << it->first << "' starting "
+						     << " location '" << locID << "' starting "
 						     << sc_loc->start().toString("%Y-%m-%d %H:%M:%S")
 						     << " has conflicting coordinates: using the last "
 						        "read"
@@ -2750,7 +2744,7 @@ bool Convert2SC::process(
 								if ( overlaps2(ref_loc, sc_loc.get()) ) {
 									cerr << "W  " << sc_net->code() << "."
 									     << sta->code() << " " << cha->code()
-									     << " location '" << it->first
+									     << " location '" << locID
 									     << "' starting "
 									     << sc_loc->start().toString(
 									            "%Y-%m-%d %H:%M:%S"
