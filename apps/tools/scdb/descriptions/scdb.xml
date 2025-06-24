@@ -103,6 +103,18 @@
 					</description>
 				</option>
 			</group>
+
+			<group name="Operation">
+				<option flag="x" long-flag="wipe" argument="arg">
+					<description>
+					PublicObjects for which all child objects will be wiped out.
+					A PublicObject is defined as {type}[:{publicID}],
+					e.g. Origin:123.
+					If the colon and publicID is omitted then the publicID is
+					equal to the type, e.g. Inventory.
+					</description>
+				</option>
+			</group>
 		</command-line>
 	</module>
 </seiscomp>
