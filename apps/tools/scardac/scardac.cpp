@@ -1647,6 +1647,8 @@ bool SCARDAC::generateTestData() {
 		return false;
 	}
 
+	_dataAvailability = new ::DataAvailability();
+
 	auto end = Core::Time::UTC();
 	auto start = end - Core::TimeSpan(days * 86400.0, 0);
 	segments = gaps + overlaps + 1;
