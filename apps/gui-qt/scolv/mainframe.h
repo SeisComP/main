@@ -12,10 +12,9 @@
  ***************************************************************************/
 
 
+#ifndef APPS_SCOLV_MAINFRAME_H
+#define APPS_SCOLV_MAINFRAME_H
 
-
-#ifndef __MAINFRAME_H__
-#define __MAINFRAME_H__
 
 #include <seiscomp/gui/core/mainwindow.h>
 #ifndef Q_MOC_RUN

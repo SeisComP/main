@@ -272,61 +272,70 @@ MainFrame::MainFrame(){
 	catch ( ... ) {}
 
 	try { pickerConfig.showCrossHair = SCApp->configGetBool("picker.showCrossHairCursor"); }
-	catch ( ... ) { pickerConfig.showCrossHair = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.ignoreUnconfiguredStations = SCApp->configGetBool("picker.ignoreUnconfiguredStations"); }
-	catch ( ... ) { pickerConfig.ignoreUnconfiguredStations = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.loadAllComponents = SCApp->configGetBool("picker.loadAllComponents"); }
-	catch ( ... ) { pickerConfig.loadAllComponents = true; }
+	catch ( ... ) {}
 
 	try { pickerConfig.loadAllPicks = SCApp->configGetBool("picker.loadAllPicks"); }
-	catch ( ... ) { pickerConfig.loadAllPicks = true; }
+	catch ( ... ) {}
 
 	try { pickerConfig.showDataInSensorUnit = SCApp->configGetBool("picker.showDataInSensorUnit"); }
-	catch ( ... ) { pickerConfig.showDataInSensorUnit = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.loadStrongMotionData = SCApp->configGetBool("picker.loadStrongMotion"); }
-	catch ( ... ) { pickerConfig.loadStrongMotionData = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.limitStations = SCApp->configGetBool("picker.limitStationAcquisition"); }
-	catch ( ... ) { pickerConfig.limitStations = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.limitStationCount = SCApp->configGetInt("picker.limitStationAcquisitionCount"); }
-	catch ( ... ) { pickerConfig.limitStationCount = 10; }
+	catch ( ... ) {}
 
 	try { pickerConfig.showAllComponents = SCApp->configGetBool("picker.showAllComponents"); }
-	catch ( ... ) { pickerConfig.showAllComponents = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.allComponentsMaximumStationDistance = SCApp->configGetDouble("picker.allComponentsMaximumDistance"); }
-	catch ( ... ) { pickerConfig.allComponentsMaximumStationDistance = 10.0; }
+	catch ( ... ) {}
 
 	try { pickerConfig.usePerStreamTimeWindows = SCApp->configGetBool("picker.usePerStreamTimeWindows"); }
-	catch ( ... ) { pickerConfig.usePerStreamTimeWindows = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.removeAutomaticStationPicks = SCApp->configGetBool("picker.removeAutomaticPicksFromStationAfterManualReview"); }
-	catch ( ... ) { pickerConfig.removeAutomaticStationPicks = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.removeAutomaticPicks = SCApp->configGetBool("picker.removeAllAutomaticPicksAfterManualReview"); }
-	catch ( ... ) { pickerConfig.removeAutomaticPicks = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.preOffset = Core::TimeSpan(SCApp->configGetInt("picker.preOffset"), 0); }
-	catch ( ... ) { pickerConfig.preOffset = Core::TimeSpan(60, 0); }
+	catch ( ... ) {}
 
 	try { pickerConfig.postOffset = Core::TimeSpan(SCApp->configGetInt("picker.postOffset"), 0); }
-	catch ( ... ) { pickerConfig.postOffset = Core::TimeSpan(120, 0); }
+	catch ( ... ) {}
 
 	try { pickerConfig.minimumTimeWindow = Core::TimeSpan(SCApp->configGetInt("picker.minimumTimeWindow"), 0); }
-	catch ( ... ) { pickerConfig.minimumTimeWindow = Core::TimeSpan(1800, 0); }
+	catch ( ... ) {}
 
 	try { pickerConfig.alignmentPosition = SCApp->configGetDouble("picker.alignmentPosition"); }
-	catch ( ... ) { pickerConfig.alignmentPosition = 0.5; }
+	catch ( ... ) {}
 
 	try { pickerConfig.integrationFilter = SCApp->configGetString("picker.integration.preFilter").c_str(); }
 	catch ( ... ) {}
 
 	try { pickerConfig.onlyApplyIntegrationFilterOnce = SCApp->configGetBool("picker.integration.applyOnce"); }
-	catch ( ... ) { pickerConfig.onlyApplyIntegrationFilterOnce = true; }
+	catch ( ... ) {}
+
+	try { pickerConfig.initialRotation.fromString(SCApp->configGetString("picker.rotation")); }
+	catch ( ... ) {}
+
+	try { pickerConfig.initialUnit.fromString(SCApp->configGetString("picker.unit")); }
+	catch ( ... ) {}
+
+	try { pickerConfig.limitFilterToZoomTrace = SCApp->configGetBool("picker.limitFilterToZoomTrace"); }
+	catch ( ... ) {}
 
 	if ( pickerConfig.alignmentPosition < 0 )
 		pickerConfig.alignmentPosition = 0;
@@ -540,19 +549,22 @@ MainFrame::MainFrame(){
 	catch ( ... ) {}
 
 	try { pickerConfig.defaultAddStationsDistance = SCApp->configGetDouble("olv.defaultAddStationsDistance"); }
-	catch ( ... ) { pickerConfig.defaultAddStationsDistance = 15.0; }
+	catch ( ... ) {}
+
+	try { pickerConfig.loadStationsWithinDistanceInitially = SCApp->configGetBool("olv.loadAdditionalStations"); }
+	catch ( ... ) {}
 
 	try { pickerConfig.hideStationsWithoutData = SCApp->configGetBool("olv.hideStationsWithoutData"); }
-	catch ( ... ) { pickerConfig.hideStationsWithoutData = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.hideDisabledStations = SCApp->configGetBool("olv.hideDisabledStations"); }
-	catch ( ... ) { pickerConfig.hideDisabledStations = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.ignoreDisabledStations = SCApp->configGetBool("olv.ignoreDisabledStations"); }
-	catch ( ... ) { pickerConfig.hideDisabledStations = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.defaultDepth = SCApp->configGetDouble("olv.defaultDepth"); }
-	catch ( ... ) { pickerConfig.defaultDepth = 10; }
+	catch ( ... ) {}
 
 	try { amplitudeConfig.preOffset = Core::TimeSpan(SCApp->configGetInt("amplitudePicker.preOffset"), 0); }
 	catch ( ... ) { amplitudeConfig.preOffset = Core::TimeSpan(300, 0); }
