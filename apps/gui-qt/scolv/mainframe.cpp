@@ -310,10 +310,10 @@ MainFrame::MainFrame(){
 	try { pickerConfig.removeAutomaticPicks = SCApp->configGetBool("picker.removeAllAutomaticPicksAfterManualReview"); }
 	catch ( ... ) {}
 
-	try { pickerConfig.preOffset = Core::TimeSpan(SCApp->configGetInt("picker.preOffset"), 0); }
+	try { pickerConfig.preOffset = Core::TimeSpan(SCApp->configGetDouble("picker.preOffset")); }
 	catch ( ... ) {}
 
-	try { pickerConfig.postOffset = Core::TimeSpan(SCApp->configGetInt("picker.postOffset"), 0); }
+	try { pickerConfig.postOffset = Core::TimeSpan(SCApp->configGetDouble("picker.postOffset")); }
 	catch ( ... ) {}
 
 	try { pickerConfig.minimumTimeWindow = Core::TimeSpan(SCApp->configGetInt("picker.minimumTimeWindow"), 0); }
@@ -566,10 +566,10 @@ MainFrame::MainFrame(){
 	try { pickerConfig.defaultDepth = SCApp->configGetDouble("olv.defaultDepth"); }
 	catch ( ... ) {}
 
-	try { amplitudeConfig.preOffset = Core::TimeSpan(SCApp->configGetInt("amplitudePicker.preOffset"), 0); }
+	try { amplitudeConfig.preOffset = Core::TimeSpan(SCApp->configGetDouble("amplitudePicker.preOffset")); }
 	catch ( ... ) { amplitudeConfig.preOffset = Core::TimeSpan(300, 0); }
 
-	try { amplitudeConfig.postOffset = Core::TimeSpan(SCApp->configGetInt("amplitudePicker.postOffset"), 0); }
+	try { amplitudeConfig.postOffset = Core::TimeSpan(SCApp->configGetDouble("amplitudePicker.postOffset")); }
 	catch ( ... ) { amplitudeConfig.postOffset = Core::TimeSpan(300, 0); }
 
 	try { amplitudeConfig.defaultNoiseBegin = SCApp->configGetDouble("amplitudePicker.defaultNoiseBegin"); }
@@ -1105,8 +1105,8 @@ void MainFrame::configureAcquisition() {
 		SCApp->configSetBool("picker.showAllComponents", pc.showAllComponents);
 		SCApp->configSetDouble("picker.allComponentsMaximumDistance", pc.allComponentsMaximumStationDistance);
 		SCApp->configSetBool("picker.usePerStreamTimeWindows", pc.usePerStreamTimeWindows);
-		SCApp->configSetInt("picker.preOffset", pc.preOffset.seconds());
-		SCApp->configSetInt("picker.postOffset", pc.postOffset.seconds());
+		SCApp->configSetDouble("picker.preOffset", static_cast<double>(pc.preOffset));
+		SCApp->configSetDouble("picker.postOffset", static_cast<double>(pc.postOffset));
 		SCApp->configSetInt("picker.minimumTimeWindow", pc.minimumTimeWindow.seconds());
 		SCApp->configSetDouble("picker.alignmentPosition", pc.alignmentPosition);
 		SCApp->configSetBool("picker.removeAutomaticPicksFromStationAfterManualReview", pc.removeAutomaticStationPicks);
@@ -1139,8 +1139,8 @@ void MainFrame::configureAcquisition() {
 		SCApp->configSetString("picker.integration.preFilter", pc.integrationFilter.toStdString());
 		SCApp->configSetBool("picker.integration.applyOnce", pc.onlyApplyIntegrationFilterOnce);
 
-		SCApp->configSetInt("amplitudePicker.preOffset", ac.preOffset.seconds());
-		SCApp->configSetInt("amplitudePicker.postOffset", ac.postOffset.seconds());
+		SCApp->configSetDouble("amplitudePicker.preOffset", static_cast<double>(ac.preOffset));
+		SCApp->configSetDouble("amplitudePicker.postOffset", static_cast<double>(ac.postOffset));
 		SCApp->configSetStrings("amplitudePicker.filters", filters);
 
 		SCApp->saveConfiguration();
