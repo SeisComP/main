@@ -316,7 +316,7 @@ MainFrame::MainFrame(){
 	try { pickerConfig.postOffset = Core::TimeSpan(SCApp->configGetDouble("picker.postOffset")); }
 	catch ( ... ) {}
 
-	try { pickerConfig.minimumTimeWindow = Core::TimeSpan(SCApp->configGetInt("picker.minimumTimeWindow"), 0); }
+	try { pickerConfig.minimumTimeWindow = Core::TimeSpan(SCApp->configGetDouble("picker.minimumTimeWindow")); }
 	catch ( ... ) {}
 
 	try { pickerConfig.alignmentPosition = SCApp->configGetDouble("picker.alignmentPosition"); }
@@ -1107,7 +1107,7 @@ void MainFrame::configureAcquisition() {
 		SCApp->configSetBool("picker.usePerStreamTimeWindows", pc.usePerStreamTimeWindows);
 		SCApp->configSetDouble("picker.preOffset", static_cast<double>(pc.preOffset));
 		SCApp->configSetDouble("picker.postOffset", static_cast<double>(pc.postOffset));
-		SCApp->configSetInt("picker.minimumTimeWindow", pc.minimumTimeWindow.seconds());
+		SCApp->configSetDouble("picker.minimumTimeWindow", static_cast<double>(pc.minimumTimeWindow));
 		SCApp->configSetDouble("picker.alignmentPosition", pc.alignmentPosition);
 		SCApp->configSetBool("picker.removeAutomaticPicksFromStationAfterManualReview", pc.removeAutomaticStationPicks);
 		SCApp->configSetBool("picker.removeAllAutomaticPicksAfterManualReview", pc.removeAutomaticPicks);
