@@ -62,7 +62,7 @@ template <typename CollectionType>
 void removeDataOlderThan(CollectionType &collection, const Core::TimeSpan &objectLifeSpan) {
 	auto it = collection.begin();
 	for ( ; it != collection.end(); it++ ) {
-		Core::Time referenceTime = Core::Time::GMT() - objectLifeSpan;
+		Core::Time referenceTime = Core::Time::UTC() - objectLifeSpan;
 		if ( it->containerCreationTime() > referenceTime ) {
 			break;
 		}
@@ -171,7 +171,7 @@ bool EventDataRepository::addEvent(DataModel::Event* event,
 	DataModel::Origin* preferredOrigin = findOrigin(preferredOriginId);
 	Core::Time preferredOriginTime = preferredOrigin->time();
 
-	if ( preferredOriginTime < Core::Time::GMT() - _eventDataObjectLifeSpan ) {
+	if ( preferredOriginTime < Core::Time::UTC() - _eventDataObjectLifeSpan ) {
 		return false;
 	}
 
@@ -264,7 +264,7 @@ EventData* EventDataRepository::findEvent(const string &id) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventData *EventDataRepository::findNextExpiredEvent() {
-	Core::Time maxTime = Core::Time::GMT() - _eventDataObjectLifeSpan;
+	Core::Time maxTime = Core::Time::UTC() - _eventDataObjectLifeSpan;
 
 	for ( auto it = _eventDataCollection.begin(); it != _eventDataCollection.end(); ++it ) {
 		DataModel::Origin *origin = findOrigin(it->object()->preferredOriginID());

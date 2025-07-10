@@ -83,12 +83,23 @@ existing subtrees into a final inventory before synchronization.
 
 .. code-block:: sh
 
-   scinv merge net1.xml net2.xml -o inv.xml
+   scinv merge network1.xml network2.xml -o inventory.xml
 
 .. note::
 
    Merging inventory XML files is also supported by :ref:`scxmlmerge` but
    without the full :ref:`consistency checks <scinv_check>`.
+
+Along with :option:`--strip`, unreferenced data logger, sensors and responses
+are removed resulting in small XML files.
+
+.. code-block:: sh
+
+   scinv merge --strip network1.xml network2.xml -o inventory.xml
+
+.. note::
+
+   Removing such unreferenced objects is also achieved by :ref:`invextr`.
 
 
 .. _scinv_apply:
@@ -247,14 +258,16 @@ results.
    :delim: ;
 
    network       ; start time after end time        ; !;
-                 ; network without station          ; W;
                  ; empty start time                 ;  ; handled by SeisComP inventory reader: network is ignored
+                 ; overlapping epochs               ; C;
+                 ; network without station          ; W;
                  ; empty station                    ; W;
                  ; empty code                       ; W;
 
    station       ; start time after end time        ; !;
                  ; empty or no start time           ; W; station is ignored
                  ; start time after end time        ; !;
+                 ; overlapping epochs               ; C;
                  ; empty code                       ; W;
                  ; empty latitude                   ; W;
                  ; empty longitude                  ; W;
@@ -267,6 +280,7 @@ results.
                  ; elevation far away from station  ; W; :option:`--max-elevation-difference` and :confval:`check.maxElevationDifference` override default threshold (500 m)
                  ; epoch outside network epochs     ; C;
                  ; epoch outside station epochs     ; C;
+                 ; overlapping epochs               ; C;
                  ; empty or no start time           ; W; sensorLocation is ignored
                  ; empty latitude                   ; W;
                  ; empty longitude                  ; W;
@@ -276,11 +290,11 @@ results.
                  ; has no channel/stream            ; W;
 
    stream        ; empty or no start time           ;  ; handled by SeisComP inventory reader: stream is ignored
-                 ; empty azimuth                    ; C;
                  ; epoch outside sensorLocation     ; C;
                  ; epoch outside station            ; C;
                  ; epoch outside network            ; C;
                  ; start time after end time        ; C;
+                 ; overlapping epochs               ; C;
                  ; missing gain value               ; W; empty value is handled by SeisComP inventory reader
                  ; gain value = 0                   ; W;
                  ; gain < 0 and dip > 0             ; W; may result in unexpected behavior, consider positive gain and negative dip
@@ -292,9 +306,14 @@ results.
                  ; missing dip                      ; W;
                  ; empty azimuth                    ;  ; handled by SeisComP inventory reader
                  ; empty dip                        ;  ; handled by SeisComP inventory reader
-                 ; empty sensor ID                  ; I;
                  ; large depth                      ; W; :option:`--max-sensor-depth` and :confval:`check.maxSensorDepth` override default threshold (500 m)
+                 ; empty sensor ID                  ; I;
+                 ; sensor is unavailable            ; R;
+                 ; empty data logger ID             ; I;
+                 ; data logger is unavailable       ; R;
                  ; 2 or more than 3 streams exist   ; I;
                  ; 3C streams are not orthogonal    ; W; differences <= 5 degree are tolerated, applies to seismic sensors with codes G, H, L, N
 
-   sensor        ; referenced sensor not available  ; R;
+   sensor        ; referenced response not available; R;
+
+   data logger   ; referenced response not available; R;

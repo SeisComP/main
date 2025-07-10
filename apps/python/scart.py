@@ -13,8 +13,6 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
-from __future__ import print_function
-
 from getopt import gnu_getopt, GetoptError
 from collections import namedtuple
 
@@ -30,6 +28,13 @@ import seiscomp.client
 import seiscomp.config
 import seiscomp.io
 import seiscomp.system
+
+
+def recStreamID(rec):
+    return (
+        f"{rec.networkCode()}.{rec.stationCode()}."
+        f"{rec.locationCode()}.{rec.channelCode()}"
+    )
 
 
 class Archive:
@@ -149,13 +154,13 @@ class Archive:
                 else:
                     end_day = t_end[7]
 
-                files = glob.glob(directory + "*.%03d" % start_day)
+                files = glob.glob(f"{directory}*.{start_day :03d}")
 
                 # Find first day with data
                 while not files and start_day <= end_day:
                     start_day += 1
                     begin = seiscomp.core.Time.FromYearDay(year, start_day)
-                    files = glob.glob(directory + "*.%03d" % start_day)
+                    files = glob.glob(f"{directory}*.{start_day :03d}")
 
                 if not files:
                     t = time.gmtime(begin.seconds() - 86400)
@@ -299,10 +304,6 @@ class StreamIterator:
         if self.record:
             self.current = self.record.startTime()
             self.currentEnd = self.record.endTime()
-
-    def next(self):
-        # needed for Python 2 only
-        return self.__next__()
 
     def __next__(self):
         while True:
@@ -457,34 +458,33 @@ class RecordRenamer:
     def printRules(self):
         for r in self.renameRules:
             print(
-                "Renaming %s to %s.%s.%s.%s"
-                % (
-                    (r.pattern.pattern if r.pattern is not None else "*.*.*.*"),
-                    r.newNet,
-                    r.newSta,
-                    r.newLoc,
-                    r.newCha,
-                ),
+                "Renaming "
+                f"{(r.pattern.pattern if r.pattern is not None else '*.*.*.*')} "
+                f"to {r.newNet}.{r.newSta}.{r.newLoc}.{r.newCha}",
                 file=sys.stderr,
             )
 
     def applyRules(self, rec):
+        matchedRules = []
+        # find rules that match the record
         for rule in self.renameRules:
-            if rule.pattern is None or rule.pattern.fullmatch(
-                f"{rec.networkCode()}.{rec.stationCode()}."
-                f"{rec.locationCode()}.{rec.channelCode()}"
-            ):
-                if rule.newNet != "-":
-                    rec.setNetworkCode(rule.newNet)
-                if rule.newSta != "-":
-                    rec.setStationCode(rule.newSta)
-                if rule.newLoc != "-":
-                    rec.setLocationCode(rule.newLoc)
-                if rule.newCha != "-":
-                    if len(rule.newCha) == 3 and rule.newCha[2] == "-":
-                        rec.setChannelCode(rule.newCha[0:2] + rec.channelCode()[2])
-                    else:
-                        rec.setChannelCode(rule.newCha)
+            if rule.pattern is None or rule.pattern.fullmatch(recStreamID(rec)):
+                # do not apply the rule here, because it would affect
+                # subsequent matches
+                matchedRules.append(rule)
+        # apply matched rules
+        for rule in matchedRules:
+            if rule.newNet != "-":
+                rec.setNetworkCode(rule.newNet)
+            if rule.newSta != "-":
+                rec.setStationCode(rule.newSta)
+            if rule.newLoc != "-":
+                rec.setLocationCode(rule.newLoc)
+            if rule.newCha != "-":
+                if len(rule.newCha) == 3 and rule.newCha[2] == "-":
+                    rec.setChannelCode(rule.newCha[0:2] + rec.channelCode()[2])
+                else:
+                    rec.setChannelCode(rule.newCha)
 
 
 ####################################################################
@@ -581,7 +581,7 @@ def checkFilePrint(fileName, streamDict):
         if rec is None:
             continue
 
-        stream = f"{rec.networkCode()}.{rec.stationCode()}.{rec.locationCode()}.{rec.channelCode()}"
+        stream = recStreamID(rec)
         recStart = rec.startTime()
         recEnd = rec.endTime()
 
@@ -627,32 +627,7 @@ def checkFilePrint(fileName, streamDict):
 
 
 def str2time(timeString):
-    """
-    Liberally accept many time string formats and convert them to a
-    seiscomp.core.Time
-    """
-
-    timeString = timeString.strip()
-    for c in ["-", "/", ":", "T", "Z"]:
-        timeString = timeString.replace(c, " ")
-
-    toks = timeString.split()
-
-    assert 3 <= len(toks) <= 6
-
-    toks.extend((6 - len(toks)) * ["0"])
-    toks = " ".join(toks)
-    formatString = "%Y %m %d %H %M %S"
-    if toks.find(".") != -1:
-        formatString += ".%f"
-
-    t = seiscomp.core.Time()
-    t.fromString(toks, formatString)
-
-    if not t.fromString(toks, formatString):
-        raise ValueError()
-
-    return t
+    return seiscomp.core.Time.FromString(timeString)
 
 
 def time2str(scTime):
@@ -789,9 +764,8 @@ def readStreamTimeList(listFile):
             )
             return []
 
-        try:
-            tMin = str2time(toks[0])
-        except Exception:
+        tMin = str2time(toks[0])
+        if not tMin:
             f.close()
             print(
                 f"{listFile}:{lineNumber}: error: invalid time format (tmin)",
@@ -799,9 +773,8 @@ def readStreamTimeList(listFile):
             )
             return []
 
-        try:
-            tMax = str2time(toks[1])
-        except Exception:
+        tMax = str2time(toks[1])
+        if not tMax:
             f.close()
             print(
                 f"{listFile}:{lineNumber}: error: invalid time format (tMax)",
@@ -826,17 +799,16 @@ def readStreamTimeList(listFile):
     return streams
 
 
-usage_info = """
+usage_info = f"""
 Usage:
-  scart -I [RecordStream] [options] [archive]
-  scart -I [RecordStream] [options] --stdout
-  scart -d [options] [archive]
-  scart --check [options] [archive]
+  {os.path.basename(__file__)} -I [RecordStream] [options] [archive]
+  {os.path.basename(__file__)} -I [RecordStream] [options] --stdout
+  {os.path.basename(__file__)} -d [options] [archive]
+  {os.path.basename(__file__)} --check [options] [archive]
 
-Import miniSEED waveforms or dump records from an SDS structure, sort them,
-modify the time and replay them. Also check files and archives.
-For Import and Dump mode the data streams can be selected in three ways
-using the combinations of options: -n -c -t  or --nslc -t or --list
+Import or export miniSEED waveforms into/from an SDS structure. Also check files and
+archives. Data streams can be selected in three ways using the combinations of options:
+-n -c -t  or --nslc -t or --list.
 
 Verbosity:
   -h, --help       Display this help message.
@@ -848,7 +820,9 @@ Mode:
                    $SEISCOMP_ROOT/var/lib/archive is scanned. Checks are only
                    complete for files containing exactly one stream. More
                    complete checks are made with scmssort.
-  -d, --dump       Export (dump) mode. Read from SDS archive.
+  -d, --dump       Export (dump) mode. Read from SDS archive. The base directory of the
+                   SDS archive is the last argument to {os.path.basename(__file__)} or
+                   $SEISCOMP_ROOT/var/lib/archive/ if not given.
   -I arg           Import mode (default): Specify the recordstream URL to read the data
                    from for archiving. When using any other recordstream than file, a
                    stream list file is needed. Specifying - implies file://- (stdin).
@@ -869,7 +843,7 @@ Processing:
                         2007-03-28 15:48;2007-03-28 16:18;GE.LAST.*.*
                         2007-03-28 15:48;2007-03-28 16:18;GE.PMBI..BH?
   -m, --modify      Dump mode: Modify the record time for real time playback
-                    when dumping.
+                    when dumping. Implicitly sets the speed parameter to 1.
   -n arg            Import, dump mode: Data stream selection as a comma separated
                     list "stream1,stream2,streamX" where each stream can be NET or
                     NET.STA or NET.STA.LOC or NET.STA.LOC.CHA. If CHA is omitted,
@@ -884,20 +858,22 @@ Processing:
                     A rule is "[match-stream:]rename-stream" and match-stream
                     is optional. match-stream and rename-stream are in the
                     "NET.STA.LOC.CHA" format. match-stream supports special
-                    charactes "?" "*" "|" "(" ")". rename-stream supports the
+                    characters "?" "*" "|" "(" ")". rename-stream supports the
                     special character "-" that can be used in place of NET, STA,
                     LOC, CHA codes with the meaning of not renaming those.
                     "-" can also be used as the last character in CHA code.
                     Multiple rules can be provided as a comma separated list
                     or by providing multiple --rename options.
   -s, --sort        Dump mode: Sort records.
-  --speed arg       Dump mode: Specify the speed to dump the records. A value
-                    of 0 means no delay. Otherwise speed is a multiplier of
-                    the real time difference between the records.
+  --speed arg       Dump mode: Specify the speed to dump the records as a
+                    multiplier of the real time difference between the records.
+                    A value > 1 will speed up the playback while a value > 0
+                    and < 1 will slow the playback down. This option implies
+                    sorting of the records.
   -t, --time-window t1~t2
                     Import, dump mode: UTC time window filter to be applied to
                     the data streams. Format: "StartTime~EndTime". Example:
-                    "2022-12-20 12:00:00~2022-12-23 14:00:10".
+                    2022-12-20T12:00:00~2022-12-23T14:00:10.
 
 Output:
   -o, --output arg  Import mode: Write data to given file instead of creating
@@ -912,25 +888,31 @@ Output:
                     --print-streams.
   --with-filecheck  Import mode: Check all accessed files after import. Unsorted
                     or unreadable files are reported to stderr. Checks are only
-                    complete for files containing exactly one stream. More 
+                    complete for files containing exactly one stream. More
                     complete checks are made with scmssort.
   --with-filename   Import mode: Print all accessed files to sterr after import.
 
 Examples:
 Read from /archive, create a miniSEED file where records are sorted by end time
-  scart -dsv -t '2022-03-28 15:48~2022-03-28 16:18' /archive > sorted.mseed
+  {os.path.basename(__file__)} -dsE -t 2022-03-28T15:48~2022-03-28T16:18 /archive > sorted.mseed
 
 Import miniSEED data from file [your file], create a SDS archive
-  scart -I file.mseed $SEISCOMP_ROOT/var/lib/archive
+  {os.path.basename(__file__)} -I file.mseed $SEISCOMP_ROOT/var/lib/archive
 
 Import miniSEED data into a SDS archive, check all modified files for errors
-  scart -I file.mseed --with-filecheck $SEISCOMP_ROOT/var/lib/archive
+  {os.path.basename(__file__)} -I file.mseed --with-filecheck $SEISCOMP_ROOT/var/lib/archive
 
 Import miniSEED data from FDSNWS into a SDS archive for specific time range and streams
-  scart -I fdsnws://geofon.gfz-potsdam.de -t '2022-03-28 15:48~2022-03-28 16:18' --nslc list.file $SEISCOMP_ROOT/var/lib/archive
+  {os.path.basename(__file__)} -I fdsnws://geofon.gfz.de \
+-t 2022-03-28T15:48~2022-03-28T16:18 --nslc list.file $SEISCOMP_ROOT/var/lib/archive
 
-Check an archive for files with out-of order records
-  scart --check /archive
+Check an archive for files with out-of-order records
+  {os.path.basename(__file__)} --check /archive
+
+Play back miniSEED data from archive at normal speed as in real time and pipe \
+them into another application, here scrttv
+
+  {os.path.basename(__file__)} -dmv -t 2026-05-01~2026-05-02 /archive | scrttv -I - --offline --no-inventory
 """
 
 
@@ -989,7 +971,7 @@ def main():
     # default = stdin
     recordURL = "file://-"
 
-    speed = 0
+    speed = None
     stdout = False
     outputFile = None
     ignoreRecords = False
@@ -1003,13 +985,12 @@ def main():
 
     for flag, arg in opts:
         if flag in ["-t", "--time-window"]:
-            try:
-                tmin, tmax = list(map(str2time, arg.split("~")))
-            except Exception:
-                print(f"error: {arg}", file=sys.stderr)
+            tmin, tmax = list(map(str2time, arg.split("~")))
+            if tmin is None or tmax is None:
                 print(
-                    "       Provide correct time interval: -t 'startTime~endtime'\n"
-                    "       with valid time format, e.g.: 'YYYY-MM-DD hh:mm:ss'",
+                    f"""error: {arg}
+       Provide correct time interval: -t 'startTime~endtime'
+       with valid time format, e.g.: 'YYYY-MM-DD hh:mm:ss' or YYYY-MM-DDThh:mm:ss""",
                     file=sys.stderr,
                 )
 
@@ -1064,7 +1045,23 @@ def main():
         else:
             usage(exitcode=1)
 
-    if not dump and not checkSDS and not importMode:
+    if dump:
+        if modifyTime and speed is None:
+            speed = 1
+            sort = True
+        elif speed is not None:
+            if speed <= 0:
+                print("'--speed' must be greater than 0", file=sys.stderr)
+                return -1
+
+            sort = True
+            if modifyTime and speed != 1:
+                print(
+                    "Modify time requested with '--speed' value other than 1. Gaps "
+                    "or overlaps will be created.",
+                    file=sys.stderr,
+                )
+    elif not checkSDS and not importMode:
         importMode = True
 
     if files:
@@ -1142,18 +1139,21 @@ def main():
             print(f"Stream file: '{nslcFile}'", file=sys.stderr)
 
         if dump:
-            if not sort and not modifyTime:
-                print("Mode: DUMP", file=sys.stderr)
-            elif sort and not modifyTime:
-                print("Mode: DUMP & SORT", file=sys.stderr)
-            elif not sort and modifyTime:
-                print("Mode: DUMP & MODIFY_TIME", file=sys.stderr)
-            elif sort and modifyTime:
-                print("Mode: DUMP & SORT & MODIFY_TIME", file=sys.stderr)
+            flags = []
+            if speed:
+                flags.append(f"speed={speed}")
+            if sort:
+                flags.append("sort")
+            if modifyTime:
+                flags.append("modify time")
+            flagStr = ""
+            if flags:
+                flagStr = f" ({', '.join(flags)})"
+            print(f"Mode: DUMP{flagStr}", file=sys.stderr)
             print(f"Archive: {archiveDirectory}", file=sys.stderr)
 
         if checkSDS:
-            print("Mode: Check", file=sys.stderr)
+            print("Mode: CHECK", file=sys.stderr)
 
         if importMode:
             print("Mode: IMPORT", file=sys.stderr)
@@ -1171,18 +1171,19 @@ def main():
     if dump:
         stdout = True
 
-    if stdout:
-        out = sys.stdout.buffer
+    out = None
+    if not test:
+        if outputFile:
+            print(f"Output data to file: {outputFile}", file=sys.stderr)
+            try:
+                out = open(outputFile, "wb")
+            except Exception:
+                print("Cannot create output file {outputFile}", file=sys.stderr)
+                return -1
+        else:
+            out = sys.stdout.buffer
 
-    if not test and outputFile:
-        print(f"Output data to file: {outputFile}", file=sys.stderr)
-        try:
-            out = open(outputFile, "wb")
-        except Exception:
-            print("Cannot create output file {outputFile}", file=sys.stderr)
-            return -1
-
-    # list file witht times takes priority over nslc list
+    # list file with times takes priority over nslc list
     if listFile:
         nslcFile = None
 
@@ -1199,7 +1200,8 @@ def main():
         for stream in streamFilter:
             if stream.tmin >= stream.tmax:
                 print(
-                    f"Info: ignoring {stream.net}.{stream.sta}.{stream.loc}.{stream.cha} - "
+                    "Info: "
+                    f"ignoring {stream.net}.{stream.sta}.{stream.loc}.{stream.cha} - "
                     f"start {stream.tmin} after end {stream.tmax}",
                     file=sys.stderr,
                 )
@@ -1253,8 +1255,9 @@ def main():
                     f"{stream.cha} {stream.tmin} - {stream.tmax}",
                     file=sys.stderr,
                 )
-        stime = None
-        realTime = seiscomp.core.Time.GMT()
+
+        firstRecordEndTime = None
+        startTime = seiscomp.core.Time.UTC()
 
         if sort:
             records = Sorter(archiveIterator)
@@ -1270,41 +1273,39 @@ def main():
                 if ignoreRecords:
                     continue
 
-            etime = seiscomp.core.Time(rec.endTime())
+            etime = rec.endTime()
 
-            if stime is None:
-                stime = etime
+            if not firstRecordEndTime:
+                firstRecordEndTime = seiscomp.core.Time(etime)
                 if verbose:
-                    print(f"First record: {stime.iso()}", file=sys.stderr)
+                    print(
+                        f"First record end time: {firstRecordEndTime.iso()}",
+                        file=sys.stderr,
+                    )
 
-            dt = etime - stime
+            if speed:
+                dt = (etime - firstRecordEndTime).length()
+                playTime = startTime + seiscomp.core.TimeSpan(dt / speed)
 
-            now = seiscomp.core.Time.GMT()
+                if modifyTime:
+                    recLength = etime - rec.startTime()
+                    rec.setStartTime(seiscomp.core.Time(playTime) - recLength)
 
-            if speed > 0:
-                playTime = (realTime + dt).toDouble() / speed
-            else:
-                playTime = now.toDouble()
-
-            sleepTime = playTime - now.toDouble()
-            if sleepTime > 0:
-                time.sleep(sleepTime)
-
-            if modifyTime:
-                recLength = etime - rec.startTime()
-                rec.setStartTime(seiscomp.core.Time(playTime) - recLength)
+                sleepSeconds = (playTime - seiscomp.core.Time.UTC()).length()
+                if sleepSeconds > 0:
+                    time.sleep(sleepSeconds)
 
             if verbose:
-                etime = rec.endTime()
                 print(
-                    f"{rec.streamID()} time current: "
-                    f"{seiscomp.core.Time.LocalTime().iso()} start: "
-                    f"{rec.startTime().iso()} end: {etime.iso()}",
+                    f"{rec.streamID()} "
+                    f"current time: {seiscomp.core.Time.LocalTime().iso()}"
+                    f", rec start: {rec.startTime().iso()}"
+                    f", rec end: {rec.startTime().iso()}",
                     file=sys.stderr,
                 )
 
             if printStreams:
-                stream = f"{rec.networkCode()}.{rec.stationCode()}.{rec.locationCode()}.{rec.channelCode()}"
+                stream = recStreamID(rec)
                 recStart = rec.startTime()
                 recEnd = rec.endTime()
 
@@ -1351,7 +1352,7 @@ def main():
 
             recordRenamer.applyRules(rec)
 
-            if not test:
+            if out:
                 out.write(rec.raw().str())
 
             foundRecords += 1
@@ -1372,7 +1373,7 @@ def main():
     elif checkSDS:
         foundIssues = 0
         checkedFiles = 0
-        for path, subdirs, files in os.walk(archiveDirectory):
+        for path, _subdirs, files in os.walk(archiveDirectory):
             for name in files:
                 fileName = os.path.join(path, name)
                 checkedFiles += 1
@@ -1474,7 +1475,7 @@ def main():
                         continue
 
                 if printStreams:
-                    stream = f"{rec.networkCode()}.{rec.stationCode()}.{rec.locationCode()}.{rec.channelCode()}"
+                    stream = recStreamID(rec)
                     recStart = rec.startTime()
                     recEnd = rec.endTime()
 
@@ -1554,7 +1555,8 @@ def main():
                             f = open(archiveDirectory + file, "ab")
                         except BaseException:
                             print(
-                                f"File {archiveDirectory + file} could not be opened for writing",
+                                f"File {archiveDirectory + file} could not be opened "
+                                f"for writing",
                                 file=sys.stderr,
                             )
                             return -1
@@ -1630,8 +1632,8 @@ def main():
                     print(fileName, file=sys.stderr)
 
     if printStreams and streamDict:
-        minTime = seiscomp.core.Time.GMT()
-        maxTime = str2time("1970-01-01 00:00:00")
+        minTime = None
+        maxTime = None
         totalRecs = 0
         totalSamples = 0
         totalChans = set()
@@ -1649,11 +1651,12 @@ def main():
                 file=sys.stderr,
             )
 
-            if maxTime < str2time(end):
-                maxTime = str2time(end)
-
-            if minTime > str2time(start):
+            if minTime:
+                minTime = min(minTime, str2time(start))
+                maxTime = max(maxTime, str2time(end))
+            else:
                 minTime = str2time(start)
+                maxTime = str2time(end)
 
             totalChans.add(key)
             totalNetworks.add(key.split(".")[0])
@@ -1665,30 +1668,21 @@ def main():
             "# Summary",
             file=sys.stderr,
         )
+        if minTime and maxTime:
+            print(
+                f"#   time range: {minTime.iso()} - {maxTime.iso()}",
+                file=sys.stderr,
+            )
         print(
-            f"#   time range: {minTime.iso()} - {maxTime.iso()}",
+            f""""#   networks:   {len(totalNetworks)}
+#   stations:   {len(totalStations)}
+#   streams:    {len(totalChans)}
+#   records:    {totalRecs}
+#   samples:    {totalSamples}""",
             file=sys.stderr,
         )
-        print(
-            f"#   networks:   {len(totalNetworks)}",
-            file=sys.stderr,
-        )
-        print(
-            f"#   stations:   {len(totalStations)}",
-            file=sys.stderr,
-        )
-        print(
-            f"#   streams:    {len(totalChans)}",
-            file=sys.stderr,
-        )
-        print(
-            f"#   records:    {totalRecs}",
-            file=sys.stderr,
-        )
-        print(
-            f"#   samples:    {totalSamples}",
-            file=sys.stderr,
-        )
+
+    return 0
 
 
 if __name__ == "__main__":

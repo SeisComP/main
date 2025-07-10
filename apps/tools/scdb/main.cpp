@@ -28,6 +28,190 @@ using namespace Seiscomp::Client;
 using namespace Seiscomp::IO;
 
 
+
+bool deletePath(DatabaseInterface *db, const vector<string> &path,
+                const string &tableOverride, DatabaseInterface::OID oid) {
+	const string &table = tableOverride.empty() ? path.back() : tableOverride;
+	stringstream ss;
+
+	if ( tableOverride.empty() && path.size() == 2 ) {
+		ss << "DELETE FROM " << table
+		   << " WHERE " << path[1] << "._parent_oid=" << oid;
+	}
+	else {
+		if ( db->backend() != DatabaseInterface::MySQL ) {
+			ss << "DELETE FROM " << table << " WHERE _oid IN (" << endl;
+			ss << "  SELECT " << path.back() << "._oid" << endl
+			    << "  FROM ";
+			for ( size_t i = 1; i < path.size(); ++i ) {
+				if ( i > 1 ) {
+					ss << ", ";
+				}
+				ss << path[i];
+			}
+			ss << endl;
+
+			ss << "  WHERE ";
+
+			for ( size_t i = 1; i < path.size(); ++i ) {
+				if ( i > 1 ) {
+					ss << "    AND ";
+				}
+				ss << path[i] << "._parent_oid=";
+				if ( i > 1 ) {
+					ss << path[i-1] << "._oid";
+				}
+				else {
+					ss << oid;
+				}
+				ss << endl;
+			}
+
+			ss << ")";
+		}
+		else {
+			// Optimized MySQL version
+			auto tables = path.size();
+			ss << "DELETE " << table << " FROM ";
+			if ( !tableOverride.empty() ) {
+				ss << table << ", ";
+			}
+			for ( size_t i = 1; i < tables; ++i ) {
+				if ( i > 1 ) {
+					ss << ", ";
+				}
+				ss << path[i];
+			}
+			ss << " WHERE ";
+
+			if ( !tableOverride.empty() ) {
+				ss << table << "._oid=" << path.back() << "._oid AND ";
+			}
+
+			for ( size_t i = 1; i < path.size(); ++i ) {
+				if ( i > 1 ) {
+					ss << " AND ";
+				}
+				ss << path[i] << "._parent_oid=";
+				if ( i > 1 ) {
+					ss << path[i-1] << "._oid";
+				}
+				else {
+					ss << oid;
+				}
+			}
+		}
+	}
+
+	return db->execute(ss.str().c_str());
+}
+
+
+bool dumpPath(DatabaseInterface *db, vector<string> &path,
+              const string &type, DatabaseInterface::OID oid) {
+	auto f = Core::ClassFactory::FindByClassName(type.c_str());
+	if ( !f ) {
+		SEISCOMP_ERROR("Class %s not registered", type.c_str());
+		return false;
+	}
+
+	auto meta = f->meta();
+	if ( !meta ) {
+		SEISCOMP_ERROR("Class %s has no meta record", type.c_str());
+		return false;
+	}
+
+	path.push_back(type);
+
+	auto cnt = meta->propertyCount();
+	for ( decltype(meta->propertyCount()) i = 0; i < cnt; ++i ) {
+		auto p = meta->property(i);
+		if ( p->isArray() && p->isClass() ) {
+			if ( !dumpPath(db, path, p->type(), oid) ) {
+				return false;
+			}
+		}
+	}
+
+	bool isPublicObject = meta->rtti()->isTypeOf(DataModel::PublicObject::TypeInfo());
+
+	if ( !deletePath(db, path, "Object", oid) ) {
+		return false;
+	}
+
+	if ( isPublicObject ) {
+		if ( !deletePath(db, path, "PublicObject", oid) ) {
+			return false;
+		}
+	}
+
+	if ( !deletePath(db, path, string(), oid) ) {
+		return false;
+	}
+
+	path.pop_back();
+	return true;
+}
+
+bool deleteTree(DatabaseInterface *db,
+                const ClassFactory *factory,
+                DatabaseInterface::OID oid) {
+	auto *meta = factory->meta();
+
+	vector<string> typePath;
+	typePath.push_back(factory->className());
+
+	auto cnt = meta->propertyCount();
+	for ( decltype(meta->propertyCount()) i = 0; i < cnt; ++i ) {
+		auto p = meta->property(i);
+		if ( p->isArray() && p->isClass() ) {
+			if ( !dumpPath(db, typePath, p->type(), oid) ) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+bool deleteTree(DatabaseInterface *db, const ClassFactory *factory, const string &publicID) {
+	if ( !db || !factory ) {
+		return false;
+	}
+
+	DatabaseInterface::OID oid = DatabaseInterface::INVALID_OID;
+	stringstream ss;
+	string escapedPublicID;
+
+	bool status = true;
+	if ( db->escape(escapedPublicID, publicID) ) {
+		ss << "SELECT _oid FROM PublicObject WHERE "
+		   << db->convertColumnName("publicID") << "='" << escapedPublicID << "'";
+
+		if ( db->beginQuery(ss.str().c_str()) ) {
+			if ( db->fetchRow() ) {
+				if ( !Core::fromString(oid, static_cast<const char*>(db->getRowField(0))) ) {
+					SEISCOMP_ERROR("Invalid oid read from db: %s", static_cast<const char*>(db->getRowField(0)));
+					status = false;
+				}
+			}
+			else {
+				SEISCOMP_ERROR("Object with id %s not found", publicID);
+				status = false;
+			}
+
+			db->endQuery();
+
+			if ( status ) {
+				status = deleteTree(db, factory, oid);
+			}
+		}
+	}
+
+	return status;
+}
+
+
 class ObjectCounter : protected DataModel::Visitor {
 	public:
 		ObjectCounter(DataModel::Object* object) : DataModel::Visitor(), _count(0) {
@@ -42,7 +226,7 @@ class ObjectCounter : protected DataModel::Visitor {
 			++_count;
 			return true;
 		}
-		
+
 		void visit(DataModel::Object *) override {
 			++_count;
 		}
@@ -107,18 +291,24 @@ class DBTool : public Seiscomp::Client::Application {
 			setAutoApplyNotifierEnabled(false);
 			setInterpretNotifierEnabled(false);
 			setPrimaryMessagingGroup(Client::Protocol::LISTENER_GROUP);
+			setLoadConfigModuleEnabled(false);
+			setLoadInventoryEnabled(false);
 			addMessagingSubscription("*");
 		}
 
 
 	protected:
 		void createCommandLineDescription() override {
-			commandline().addOption("Messaging", "mode,m", "listen mode [none, notifier, all]", &_listenMode, "notifier");
-			commandline().addOption("Database", "output,o", "database connection to write to", &_databaseWriteConnection);
+			commandline().addOption("Messaging", "mode,m", "Listen mode [none, notifier, all]", &_listenMode, "notifier");
+			commandline().addOption("Database", "output,o", "The database connection to write to.", &_databaseWriteConnection);
 
 			commandline().addGroup("Import");
-			commandline().addOption("Import", "input,i", "file to import. Provide multiple times to import multiple files", &_importFiles);
-			commandline().addOption("Import", "remove,r", "remove objects found in import file");
+			commandline().addOption("Import", "input,i", "File to import. Provide multiple times to import multiple files.", &_importFiles);
+			commandline().addOption("Import", "remove,r", "Remove objects found in import file.");
+
+			commandline().addGroup("Operation");
+			commandline().addOption("Operation", "wipe,x", "PublicObjects for which all child objects will be wiped out. A PublicObject is defined as {type}[:{publicID}], e.g. Origin:123. "
+			                        "If the colon and publicID is omitted then the publicID is equal to the type, e.g. Inventory.", &_clearObjects);
 		}
 
 
@@ -130,18 +320,21 @@ class DBTool : public Seiscomp::Client::Application {
 			_remove = commandline().hasOption("remove");
 
 			if ( _listenMode != "none" ) {
-				if ( _listenMode == "all" )
+				if ( _listenMode == "all" ) {
 					_dbAllObjects = true;
-				else if ( _listenMode == "notifier" )
+				}
+				else if ( _listenMode == "notifier" ) {
 					_dbAllObjects = false;
+				}
 				else {
 					cout << "Error: unknown listen mode '" << _listenMode << "'" << endl;
 					return false;
 				}
 			}
 
-			if ( commandline().hasOption("input") )
+			if ( commandline().hasOption("input") || !_clearObjects.empty() ) {
 				setMessagingEnabled(false);
+			}
 
 			return true;
 		}
@@ -156,41 +349,46 @@ class DBTool : public Seiscomp::Client::Application {
 			try { dbType = configGetString("output.type"); } catch (...) {}
 			try { dbParams = configGetString("output.parameters"); } catch (...) {}
 
-			if ( !dbType.empty() && !dbParams.empty() )
+			if ( !dbType.empty() && !dbParams.empty() ) {
 				_databaseWriteConnection = dbType + "://" + dbParams;
+			}
 
 			return true;
 		}
 
 		bool initSubscriptions() override {
-			if ( _listenMode != "none" )
+			if ( _listenMode != "none" ) {
 				return Application::initSubscriptions();
+			}
 
 			return true;
 		}
 
 		bool initDatabase() override {
 			int errorCode = -1;
-			if ( _listenMode != "none" && !commandline().hasOption("input") ) {
+			if ( (_listenMode != "none") && !commandline().hasOption("input") && _clearObjects.empty() ) {
 				SEISCOMP_DEBUG("Checking database '%s'", _databaseWriteConnection.c_str());
-	
+
 				DatabaseInterfacePtr db = DatabaseInterface::Open(_databaseWriteConnection.c_str());
-				if ( db == NULL ) {
+				if ( !db ) {
 					SEISCOMP_ERROR("Could not open output database '%s'", _databaseWriteConnection.c_str());
 					Application::exit(errorCode);
 					return false;
 				}
+
 				--errorCode;
-		
+
 				SEISCOMP_DEBUG("Database check...ok");
-	
+
 				setDatabase(db.get());
 			}
-			else if ( commandline().hasOption("input") )
+			else if ( commandline().hasOption("input") || !_clearObjects.empty() ) {
 				return Application::initDatabase();
+			}
 			else {
-				if ( connection() )
+				if ( connection() ) {
 					connection()->subscribe(_serviceRequestGroup.c_str());
+				}
 			}
 
 			return true;
@@ -198,32 +396,86 @@ class DBTool : public Seiscomp::Client::Application {
 
 
 		bool run() override {
+			if ( _clearObjects.empty() && !commandline().hasOption("input") ) {
+				// Online mode
+				return Application::run();
+			}
+
+			for ( auto &objectID : _clearObjects ) {
+				string type, publicID;
+
+				// Find colon which is not escaped with '\'.
+				bool isEscaped = false;
+				size_t p = string::npos;
+				for ( size_t i = 0; i < objectID.size(); ++i ) {
+					if ( isEscaped ) {
+						type += objectID[i];
+						isEscaped = false;
+					}
+					else if ( objectID[i] == '\\' ) {
+						isEscaped = true;
+					}
+					else if ( objectID[i] == ':' ) {
+						p = i;
+						break;
+					}
+					else {
+						type += objectID[i];
+					}
+				}
+
+				if ( p != string::npos ) {
+					publicID = objectID.substr(p + 1);
+				}
+				else {
+					publicID = type;
+				}
+
+				SEISCOMP_INFO("Wiping childs of %s '%s'", type, publicID);
+
+				auto classInfo = ClassFactory::FindByClassName(type);
+				if ( !classInfo ) {
+					SEISCOMP_ERROR("Unknown object type: %s", type);
+					return false;
+				}
+
+				if ( !classInfo->meta() ) {
+					SEISCOMP_ERROR("No runtime type information for %s", type);
+					return false;
+				}
+
+				if ( !deleteTree(query()->driver(), classInfo, publicID) ) {
+					SEISCOMP_ERROR("Failed to wipe %s %s", type, publicID);
+					return false;
+				}
+			}
+
 			if ( commandline().hasOption("input") ) {
-				for ( std::string filename: _importFiles ) {
+				DataModel::PublicObject::SetIdGeneration(true);
+				for ( auto &filename : _importFiles ) {
 					if ( !importDatabase(filename) ) {
 						return false;
 					}
 				}
-				return true;
 			}
 
-			return Application::run();
+			return true;
 		}
 
 
 		ServiceProvideMessage *createServiceResponse(ServiceRequestMessage* msg) {
 			DatabaseRequestMessage *dbRequest = DatabaseRequestMessage::Cast(msg);
-			if ( dbRequest == NULL ) {
+			if ( !dbRequest ) {
 				SEISCOMP_DEBUG("Could not handle message of type '%s' -> ignoring", msg->className());
-				return NULL;
+				return nullptr;
 			}
-		
+
 			if ( !Core::isEmpty(dbRequest->service()) && _settings.database.type != dbRequest->service() )
-				return NULL;
-		
+				return nullptr;
+
 			if ( _settings.database.type.empty() || _settings.database.parameters.empty() )
-				return NULL;
-		
+				return nullptr;
+
 			return new DatabaseProvideMessage(_settings.database.type.c_str(), _settings.database.parameters.c_str());
 		}
 
@@ -235,20 +487,20 @@ class DBTool : public Seiscomp::Client::Application {
 				if ( serviceMsg ) {
 					connection()->send(_serviceProvideGroup.c_str(), serviceMsg.get());
 				}
-		
+
 				return;
 			}
 
 			DataModel::DatabaseObjectWriter writer(*query());
-			for ( MessageIterator it = msg->iter(); *it != NULL; ++it ) {
+			for ( MessageIterator it = msg->iter(); *it; ++it ) {
 				if ( _dbAllObjects ) {
 					DataModel::Object* object = DataModel::Object::Cast(*it);
-					if ( object != NULL ) {
+					if ( object ) {
 						writer(object);
 						continue;
 					}
 				}
-		
+
 				DataModel::Notifier* notifier = DataModel::Notifier::Cast(*it);
 				if ( notifier && notifier->object() ) {
 					DataModel::PublicObject *po = DataModel::PublicObject::Cast(notifier->object());
@@ -275,23 +527,16 @@ class DBTool : public Seiscomp::Client::Application {
 
 		bool importDatabase(std::string filename) {
 			XMLArchive ar;
-			if ( filename == "-" )
+			if ( filename == "-" ) {
 				ar.open(std::cin.rdbuf());
+			}
 			else if ( !ar.open(filename.c_str()) ) {
-				cout << "Error: could not open input file '" << filename << "'" << endl;
+				cerr << "Error: could not open input file '" << filename << "'" << endl;
 				return false;
 			}
-		
-			/*
-			DatabaseInterfacePtr db = DatabaseInterface::Open(_databaseWriteConnection.c_str());
-			if ( db == NULL ) {
-				cout << "Error: could not connect to database '" << _databaseWriteConnection << "'" << endl;
-				return false;
-			}
-			*/
-		
-			cout << "Parsing file '" << filename << "'..." << endl;
-		
+
+			cerr << "Parsing file '" << filename << "'..." << endl;
+
 			Util::StopWatch timer;
 			Core::BaseObjectPtr obj;
 			ar >> obj;
@@ -309,36 +554,38 @@ class DBTool : public Seiscomp::Client::Application {
 			}
 
 			DataModel::ObjectPtr doc = DataModel::Object::Cast(obj);
-		
+
 			if ( !doc ) {
-				cout << "Error: no valid object found in file '" << filename << "'" << endl;
+				cerr << "Error: no valid object found in file '" << filename << "'" << endl;
 				return false;
 			}
-		
+
 			ObjectWriter writer(*query(), !_remove, ObjectCounter(doc.get()).count(), 78);
-		
-			cout << "Time needed to parse XML: " << Core::Time(timer.elapsed()).toString("%T.%f") << endl;
+
+			cout << "Time needed to parse XML: " << timer.elapsed() << endl;
 			cout << "Document object type: " << doc->className() << endl;
 			cout << "Total number of objects: " << ObjectCounter(doc.get()).count() << endl;
-		
+
 			cout << "Writing " << doc->className() << " into database" << endl;
 			timer.restart();
-		
+
 			writer(doc.get());
 			cout << endl;
-		
+
 			cout << "While writing " << writer.count() << " objects " << writer.errors() << " errors occured" << endl;
-			cout << "Time needed to write " << writer.count() << " objects: " << Core::Time(timer.elapsed()).toString("%T.%f") << endl;
+			cout << "Time needed to write " << writer.count() << " objects: " << timer.elapsed() << endl;
 
 			if ( writer.errors() > 0 ) {
 				_returnCode = 1;
 			}
+
 			return true;
 		}
 
 
 	private:
 		std::vector<std::string> _importFiles;
+		std::vector<std::string> _clearObjects;
 		bool _remove;
 
 		std::string _listenMode;

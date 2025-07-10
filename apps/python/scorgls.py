@@ -21,19 +21,6 @@ import seiscomp.client
 import seiscomp.datamodel
 
 
-def _parseTime(timestring):
-    t = seiscomp.core.Time()
-    if t.fromString(timestring, "%F %T"):
-        return t
-    if t.fromString(timestring, "%FT%T"):
-        return t
-    if t.fromString(timestring, "%FT%TZ"):
-        return t
-    if t.fromString(timestring, "%F"):
-        return t
-    return None
-
-
 def readXML(self):
     ar = seiscomp.io.XMLArchive()
     if not ar.open(self._inputFile):
@@ -63,7 +50,7 @@ def readXML(self):
         if self.author:
             try:
                 author = org.creationInfo().author()
-            except:
+            except Exception:
                 continue
 
             if author != self.author:
@@ -71,7 +58,7 @@ def readXML(self):
 
         try:
             originIDs.append(org.publicID())
-        except:
+        except Exception:
             continue
 
     return originIDs
@@ -102,12 +89,14 @@ class OriginList(seiscomp.client.Application):
         self.commandline().addStringOption(
             "Origins",
             "begin",
-            "The lower bound of the time interval. Format: '1970-01-01 00:00:00'.",
+            "The lower bound of the time interval. Uses 1900-01-01T00:00:00 unless "
+            "given.",
         )
         self.commandline().addStringOption(
             "Origins",
             "end",
-            "The upper bound of the time interval. Format: '1970-01-01 00:00:00'.",
+            "The upper bound of the time interval. Format: 1970-01-01T00:00:00. Uses "
+            "2500-01-01T00:00:00 unless given.",
         )
         self.commandline().addStringOption(
             "Origins", "author", "The author of the origins."
@@ -117,7 +106,7 @@ class OriginList(seiscomp.client.Application):
         self.commandline().addStringOption(
             "Output",
             "delimiter,D",
-            "The delimiter of the resulting " "origin IDs. Default: '\\n')",
+            "The delimiter of the resulting origin IDs. Default: '\\n')",
         )
         return True
 
@@ -144,22 +133,26 @@ class OriginList(seiscomp.client.Application):
         except RuntimeError:
             start = "1900-01-01T00:00:00Z"
 
-        self._startTime = _parseTime(start)
+        self._startTime = seiscomp.core.Time.FromString(start)
         if self._startTime is None:
             seiscomp.logging.error(f"Wrong 'begin' format '{start}'")
             return False
-        seiscomp.logging.debug(f"Setting start to {self._startTime.toString('%FT%TZ')}")
 
         try:
             end = self.commandline().optionString("end")
         except RuntimeError:
             end = "2500-01-01T00:00:00Z"
 
-        self._endTime = _parseTime(end)
+        self._endTime = seiscomp.core.Time.FromString(end)
         if self._endTime is None:
             seiscomp.logging.error(f"Wrong 'end' format '{end}'")
             return False
-        seiscomp.logging.debug(f"Setting end to {self._endTime.toString('%FT%TZ')}")
+
+        if self._endTime <= self._startTime:
+            seiscomp.logging.error(
+                f"Invalid search interval: {self._startTime} - {self._endTime}"
+            )
+            return False
 
         try:
             self.author = self.commandline().optionString("author")
@@ -187,7 +180,8 @@ List origin IDs available in a given time range and print to stdout."""
         print(
             f"""Examples:
 Print all origin IDs from year 2022 and thereafter
-  {os.path.basename(__file__)} -d mysql://sysop:sysop@localhost/seiscomp --begin "2022-01-01 00:00:00"
+  {os.path.basename(__file__)} -d mysql://sysop:sysop@localhost/seiscomp \
+--begin 2022-01-01T00:00:00
 
 Print IDs of all events in XML file
   {os.path.basename(__file__)} -i origins.xml

@@ -46,17 +46,18 @@ class HCApp : public Gui::Application {
 		double findGain(const DataModel::WaveformStreamID &streamID,
 		               const Core::Time &refTime);
 
-		bool initConfiguration();
-		void createCommandLineDescription();
-		bool validateParameters();
+		bool initConfiguration() override;
+		void createCommandLineDescription() override;
+		bool validateParameters() override;
 		bool handleInitializationError(Stage stage);
-		bool init();
-		bool run();
+		bool init() override;
+		bool run() override;
+		void printUsage() const override;
 
 		void setupUi(MainWindow *w);
 
 	protected:
-		void timerEvent(QTimerEvent *);
+		void timerEvent(QTimerEvent *) override;
 		void saveSnapshots();
 
 	private slots:
@@ -68,9 +69,9 @@ class HCApp : public Gui::Application {
 		struct HeliStream {
 			HeliStream() {}
 			HeliStream(HeliCanvas *hc) : canvas(hc) {}
-			HeliCanvas *canvas;
-			QString     headline;
-			Core::Time  lastSample;
+			HeliCanvas      *canvas;
+			QString          headline;
+			OPT(Core::Time)  lastSample;
 		};
 
 		typedef QMap<std::string, HeliStream> HeliStreamMap;
@@ -78,7 +79,7 @@ class HCApp : public Gui::Application {
 		std::vector<std::string> _streamCodes;
 		std::vector<std::string> _streamIDs;
 		HeliStreamMap            _helis;
-		Core::Time               _endTime;
+		OPT(Core::Time)          _endTime;
 		std::string              _filterString;
 		std::string              _imagePostProcessingScript;
 		double                   _gain;

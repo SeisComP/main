@@ -10,11 +10,12 @@ The supported :ref:`SeisComP elements<api-datamodel-python>` are:
 * DataAvailability
 * EventParameters
 * Inventory
+* Journaling
 * QualityControl
 * Routing
 
-By default all supported elements will be parsed and merged. Duplicates are removed.
-Use options to restrict the element types.
+By default all supported elements will be parsed and merged. Duplicates are
+removed. Use options to restrict the element types.
 
 There are alternative modules for processing inventory XML files:
 

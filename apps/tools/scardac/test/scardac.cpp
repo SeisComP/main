@@ -529,7 +529,7 @@ BOOST_AUTO_TEST_CASE(multiday) {
 	auto lastScan = ext->lastScan();
 	lastScan.setUSecs(0);
 	auto future = lastScan + oneSecond;
-	boost::filesystem::last_write_time(mseedFile0, future);
+	boost::filesystem::last_write_time(mseedFile0, future.epochSeconds());
 	reader = runApp(dbURI, {appName});
 	ext->setUpdated(future);
 	attExt->setUpdated(future);
@@ -543,10 +543,10 @@ BOOST_AUTO_TEST_CASE(multiday) {
 	lastScan.setUSecs(0);
 	future = lastScan + oneSecond;
 	auto past = lastScan - oneSecond;
-	boost::filesystem::last_write_time(mseedFile0, past);
-	boost::filesystem::last_write_time(mseedFile1, future);
-	boost::filesystem::last_write_time(mseedFile2, past);
-	boost::filesystem::last_write_time(mseedFile3, past);
+	boost::filesystem::last_write_time(mseedFile0, past.epochSeconds());
+	boost::filesystem::last_write_time(mseedFile1, future.epochSeconds());
+	boost::filesystem::last_write_time(mseedFile2, past.epochSeconds());
+	boost::filesystem::last_write_time(mseedFile3, past.epochSeconds());
 	reader = runApp(dbURI, {appName});
 	ext->setUpdated(future);
 	attExt->setUpdated(future);
@@ -561,10 +561,10 @@ BOOST_AUTO_TEST_CASE(multiday) {
 	lastScan.setUSecs(0);
 	future = lastScan + oneSecond;
 	past = lastScan - oneSecond;
-	boost::filesystem::last_write_time(mseedFile0, past);
-	boost::filesystem::last_write_time(mseedFile1, past);
-	boost::filesystem::last_write_time(mseedFile2, future);
-	boost::filesystem::last_write_time(mseedFile3, past);
+	boost::filesystem::last_write_time(mseedFile0, past.epochSeconds());
+	boost::filesystem::last_write_time(mseedFile1, past.epochSeconds());
+	boost::filesystem::last_write_time(mseedFile2, future.epochSeconds());
+	boost::filesystem::last_write_time(mseedFile3, past.epochSeconds());
 	reader = runApp(dbURI, {appName});
 	ext->setUpdated(future);
 	attExt->setUpdated(future);
@@ -578,10 +578,10 @@ BOOST_AUTO_TEST_CASE(multiday) {
 	lastScan.setUSecs(0);
 	future = lastScan + oneSecond;
 	past = lastScan - oneSecond;
-	boost::filesystem::last_write_time(mseedFile0, past);
-	boost::filesystem::last_write_time(mseedFile1, past);
-	boost::filesystem::last_write_time(mseedFile2, past);
-	boost::filesystem::last_write_time(mseedFile3, future);
+	boost::filesystem::last_write_time(mseedFile0, past.epochSeconds());
+	boost::filesystem::last_write_time(mseedFile1, past.epochSeconds());
+	boost::filesystem::last_write_time(mseedFile2, past.epochSeconds());
+	boost::filesystem::last_write_time(mseedFile3, future.epochSeconds());
 	reader = runApp(dbURI, {appName});
 	ext->setUpdated(future);
 	attExt->setUpdated(future);
@@ -620,12 +620,12 @@ BOOST_AUTO_TEST_CASE(multiday) {
 	ctx = "restore mseedFile2";
 	BOOST_TEST_MESSAGE(ctx);
 	// make sure last file is not read
-	boost::filesystem::last_write_time(mseedFile3, past);
+	boost::filesystem::last_write_time(mseedFile3, past.epochSeconds());
 	fs::rename(pathTmp, path);
 	// file must be touched
 	lastScan = daFound->dataExtent(0)->lastScan() + Core::TimeSpan(1, 0);
 	lastScan.setUSecs(0);
-	boost::filesystem::last_write_time(mseedFile2, lastScan);
+	boost::filesystem::last_write_time(mseedFile2, lastScan.epochSeconds());
 
 	ext->removeDataSegment(2);
 	ext->removeDataSegment(2);

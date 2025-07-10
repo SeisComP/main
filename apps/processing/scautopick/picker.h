@@ -59,6 +59,8 @@ class App : public Processing::Application {
 
 		void handleNewStream(const Record *rec) override;
 
+		void printUsage() const override;
+
 
 	private:
 		// Initializes a single component of a processor.
@@ -78,9 +80,9 @@ class App : public Processing::Application {
 		                   const DataModel::WaveformStreamID &waveformID,
 		                   bool metaDataRequired);
 
-		bool initDetector( const std::string &streamID,
+		bool initDetector(const std::string &streamID,
 		                   const DataModel::WaveformStreamID &waveformID,
-		                   const Core::Time &time);
+		                   const Record *rec);
 
 		bool addFeatureExtractor(Seiscomp::DataModel::Pick *pick,
 		                         DataModel::Amplitude *amp,
@@ -106,7 +108,8 @@ class App : public Processing::Application {
 		                   const Record *rec, const Core::Time& time);
 
 		void emitPPick(const Processing::Picker *,
-		               const Processing::Picker::Result &);
+		               const Processing::Picker::Result &,
+		               double duration);
 
 		void emitSPick(const Processing::SecondaryPicker *,
 		               const Processing::SecondaryPicker::Result &);
@@ -155,6 +158,7 @@ class App : public Processing::Application {
 
 		StationConfig  _stationConfig;
 		EP             _ep;
+		bool           _formatted{false};
 
 		ObjectLog     *_logPicks;
 		ObjectLog     *_logAmps;

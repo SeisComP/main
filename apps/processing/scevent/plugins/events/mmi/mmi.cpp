@@ -58,7 +58,7 @@ class MMIProcessor : public Seiscomp::Client::EventProcessor {
 		}
 
 	public:
-		bool setup(const Seiscomp::Config::Config &config) {
+		bool setup(const Seiscomp::Config::Config &config) override {
 			config.getInt(minMM, "MMI.lowerBound");
 			config.getInt(maxMM, "MMI.upperBound");
 
@@ -81,8 +81,11 @@ class MMIProcessor : public Seiscomp::Client::EventProcessor {
 			return true;
 		}
 
+		Magnitude *preferredMagnitude(const Origin *) override {
+			return nullptr;
+		}
 
-		bool process(Event *event, const Journal &journal) {
+		bool process(Event *event, bool isNewEvent, const Journal &journal) override {
 			Origin *org = Origin::Find(event->preferredOriginID());
 			Magnitude *mag = Magnitude::Find(event->preferredMagnitudeID());
 
@@ -150,11 +153,11 @@ class MMIProcessor : public Seiscomp::Client::EventProcessor {
 
 			// Set the modification to current time
 			try {
-				mmiComment->creationInfo().setModificationTime(Time::GMT());
+				mmiComment->creationInfo().setModificationTime(Time::UTC());
 			}
 			catch ( ... ) {
 				CreationInfo ci;
-				ci.setModificationTime(Time::GMT());
+				ci.setModificationTime(Time::UTC());
 				mmiComment->setCreationInfo(ci);
 			}
 

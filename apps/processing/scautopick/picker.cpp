@@ -56,38 +56,47 @@ using namespace Seiscomp::Processing;
 
 namespace {
 
-char statusFlag(const Seiscomp::DataModel::Pick* pick) {
+
+char statusFlag(const Seiscomp::DataModel::Pick *pick) {
 	try {
-		if ( pick->evaluationMode() == Seiscomp::DataModel::AUTOMATIC )
+		if ( pick->evaluationMode() == Seiscomp::DataModel::AUTOMATIC ) {
 			return 'A';
-		else
+		}
+		else {
 			return 'M';
+		}
 	}
 	catch ( ... ) {}
 	return 'A';
 }
 
 
-bool contains(const Seiscomp::Core::TimeWindow &tw, const Seiscomp::Core::Time &time) {
-	if ( !time.valid() ) return false;
+bool contains(const Seiscomp::Core::TimeWindow &tw, const OPT(Seiscomp::Core::Time) &time) {
+	if ( !time ) {
+		return false;
+	}
 
-	if ( tw.startTime().valid() && tw.endTime().valid() )
-		return tw.contains(time);
+	if ( tw.startTime().valid() && tw.endTime().valid() ) {
+		return tw.contains(*time);
+	}
 
-	if ( tw.startTime().valid() )
-		return time >= tw.startTime();
+	if ( tw.startTime().valid() ) {
+		return *time >= tw.startTime();
+	}
 
-	if ( tw.endTime().valid() )
-		return time < tw.endTime();
+	if ( tw.endTime().valid() ) {
+		return *time < tw.endTime();
+	}
 
 	return true;
 }
 
-Seiscomp::DataModel::WaveformStreamID waveformStreamID(const Seiscomp::Record *rec)
-{
+
+Seiscomp::DataModel::WaveformStreamID waveformStreamID(const Seiscomp::Record *rec) {
 	return Seiscomp::DataModel::WaveformStreamID(
 		rec->networkCode(), rec->stationCode(), rec->locationCode(), rec->channelCode(), "");
 }
+
 
 std::string dotted(const Seiscomp::DataModel::WaveformStreamID &wf) {
 	return wf.networkCode() + "." + wf.stationCode() + "." + wf.locationCode() + "." + wf.channelCode();
@@ -156,9 +165,7 @@ ostream& operator<<(ostream& o, const Seiscomp::DataModel::Amplitude* amp) {
 
 
 namespace Seiscomp {
-
 namespace Applications {
-
 namespace Picker {
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -188,34 +195,66 @@ App::~App() {}
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::createCommandLineDescription() {
 	StreamApplication::createCommandLineDescription();
-	commandline().addOption("Database", "db-disable", "Do not use the database at all");
+	commandline().addOption("Database", "db-disable", "Do not use the database at all.");
 
 	commandline().addGroup("Mode");
-	commandline().addOption("Mode", "offline", "Do not connect to a messaging server");
-	commandline().addOption("Mode", "amplitudes", "Enable/disable computation of amplitudes", &_config.calculateAmplitudes);
-	commandline().addOption("Mode", "test", "Do not send any object");
-	commandline().addOption("Mode", "playback", "Use playback mode that does not set a request time window and works best with files");
-	commandline().addOption("Mode", "ep", "Same as offline but outputs all result as an event parameters XML file");
-	commandline().addOption("Mode", "dump-config", "Dump the configuration and exit");
-	commandline().addOption("Mode", "dump-records", "Dump records to ASCII when in offline mode");
+	commandline().addOption("Mode", "offline", "Do not connect to a messaging server.");
+	commandline().addOption("Mode", "amplitudes", "Enable/disable computation of amplitudes.",
+	                        &_config.calculateAmplitudes);
+	commandline().addOption("Mode", "test", "Do not send any object.");
+	commandline().addOption("Mode", "playback",
+	                        "Use playback mode that does not set a request time window and works best with files.");
+	commandline().addOption("Mode", "ep",
+	                        "Same as offline but outputs all result as an event "
+	                        "parameters XML file. Consider '--playback' or "
+	                        "configure accordingly for processing data from the past.");
+	commandline().addOption("Mode", "dump-config", "Dump the configuration and exit.");
+	commandline().addOption("Mode", "dump-records",
+	                        "Dump records to ASCII when in offline mode.");
 
 	commandline().addGroup("Settings");
-	commandline().addOption("Settings", "filter", "The filter used for picking", &_config.defaultFilter, false);
-	commandline().addOption("Settings", "time-correction", "The time correction in seconds for a pick", &_config.defaultTimeCorrection);
-	commandline().addOption("Settings", "buffer-size", "The waveform ringbuffer size in seconds", &_config.ringBufferSize);
-	commandline().addOption("Settings", "before", "The timespan in seconds before now to start picking", &_config.leadTime);
-	commandline().addOption("Settings", "init-time", "The initialization (inactive) time after the first record arrived per trace", &_config.initTime);
+	commandline().addOption("Settings", "filter", "The filter used for picking.",
+	                        &_config.defaultFilter, false);
+	commandline().addOption("Settings", "time-correction", "The time correction in seconds for a pick.",
+	                        &_config.defaultTimeCorrection);
+	commandline().addOption("Settings", "buffer-size", "The waveform ringbuffer size in seconds.",
+	                        &_config.ringBufferSize);
+	commandline().addOption("Settings", "before", "The timespan in seconds before now to start picking.",
+	                        &_config.leadTime);
+	commandline().addOption("Settings", "init-time",
+	                        "The initialization (inactive) time after the first record arrived per trace.",
+	                        &_config.initTime);
 
-	commandline().addOption("Settings", "trigger-on", "The trigger-on threshold", &_config.defaultTriggerOnThreshold);
-	commandline().addOption("Settings", "trigger-off", "The trigger-off threshold", &_config.defaultTriggerOffThreshold);
-	commandline().addOption("Settings", "trigger-dead-time", "The dead-time after a pick has been detected", &_config.triggerDeadTime);
-	commandline().addOption("Settings", "ampl-max-time-window", "The timewindow length after pick to calculate 'max' amplitude", &_config.amplitudeMaxTimeWindow);
-	commandline().addOption("Settings", "min-ampl-offset", "The amplitude offset for amplitude dependend dead time calculation", &_config.amplitudeMinOffset);
-	commandline().addOption("Settings", "gap-tolerance", "The maximum gap length to tolerate (reset otherwise)", &_config.maxGapLength);
-	commandline().addOption("Settings", "gap-interpolation", "Enables/disables the linear interpolation of gaps", &_config.interpolateGaps);
-	commandline().addOption("Settings", "any-stream", "Use all/configured received Z streams for picking", &_config.useAllStreams);
-	commandline().addOption("Settings", "send-detections", "If a picker is configured send detections as well");
-	commandline().addOption("Settings", "extra-comments", "Add extra comments to picks.\nSupported: SNR");
+	commandline().addOption("Settings", "trigger-on", "The trigger-on threshold.",
+	                        &_config.defaultTriggerOnThreshold);
+	commandline().addOption("Settings", "trigger-off", "The trigger-off threshold.",
+	                        &_config.defaultTriggerOffThreshold);
+	commandline().addOption("Settings", "trigger-dead-time",
+	                        "The dead-time after a pick has been detected.",
+	                        &_config.triggerDeadTime);
+	commandline().addOption("Settings", "ampl-max-time-window",
+	                        "The timewindow length after pick to calculate 'max' amplitude",
+	                        &_config.amplitudeMaxTimeWindow);
+	commandline().addOption("Settings", "min-ampl-offset",
+	                        "The amplitude offset for amplitude dependend dead time calculation.",
+	                        &_config.amplitudeMinOffset);
+	commandline().addOption("Settings", "gap-tolerance",
+	                        "The maximum gap length to tolerate (reset otherwise).",
+	                        &_config.maxGapLength);
+	commandline().addOption("Settings", "gap-interpolation",
+	                        "Enables/disables the linear interpolation of gaps",
+	                        &_config.interpolateGaps);
+	commandline().addOption("Settings", "any-stream",
+	                        "Use all/configured received Z streams for picking.",
+	                        &_config.useAllStreams);
+	commandline().addOption("Settings", "send-detections",
+	                        "If a picker is configured send detections as well.");
+	commandline().addOption("Settings", "extra-comments",
+	                        "Add extra comments to picks.\nSupported: SNR.");
+
+	commandline().addGroup("Output");
+	commandline().addOption("Output", "formatted,f",
+	                        "Use formatted XML output. Otherwise XML is unformatted.");
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -316,7 +355,7 @@ bool App::init() {
 		SEISCOMP_DEBUG("Starting in playback mode");
 	}
 	else {
-		recordStream()->setStartTime(Core::Time::GMT() - Core::TimeSpan(_config.leadTime));
+		recordStream()->setStartTime(Core::Time::UTC() - Core::TimeSpan(_config.leadTime));
 	}
 
 	if ( configModule() != NULL ) {
@@ -425,14 +464,13 @@ bool App::init() {
 		logAmplTypes += '\n';
 	}
 
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 	DataModel::Inventory *inv = Client::Inventory::Instance()->inventory();
 
 	StringSet subscribeStreams;
 
 	for ( StationConfig::const_iterator it = _stationConfig.begin();
 	      it != _stationConfig.end(); ++it ) {
-
 		// Ignore wildcards
 		if ( it->first.first == "*" ) continue;
 		if ( it->first.second == "*" ) continue;
@@ -443,7 +481,7 @@ bool App::init() {
 		// Ignore disabled channels
 		if ( !it->second.enabled ) {
 			SEISCOMP_INFO("Detector on station %s.%s disabled by config",
-			              it->first.first.c_str(), it->first.second.c_str());
+			              it->first.first, it->first.second);
 			continue;
 		}
 
@@ -564,6 +602,25 @@ bool App::init() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void App::printUsage() const {
+	cout << "Usage:"  << endl << "  " << name() << " [options]" << endl << endl
+	     << "Detect P and S phases creating phase picks and amplitudes" << endl;
+
+	Seiscomp::Client::Application::printUsage();
+
+	cout << "Examples:" << endl;
+	cout << "Real-time processing with informative debug output" << endl
+	     << "  " << name() << " --debug" << endl << endl;
+	cout << "Non-real-time playback of miniSEED data in a file. Picks and "
+	        "amplitudes are printed to stdout as SCML" << endl
+	     << "  " << name() << " -d localhost --playback --ep -I data.mseed" << endl << endl;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::run() {
 	if ( commandline().hasOption("dump-config") ) {
 		_config.dump();
@@ -572,8 +629,11 @@ bool App::run() {
 		return true;
 	}
 
-	if ( commandline().hasOption("ep") )
+	if ( commandline().hasOption("ep") ) {
 		_ep = new DataModel::EventParameters;
+	}
+
+	_formatted = commandline().hasOption("formatted");
 
 	return Processing::Application::run();
 }
@@ -587,7 +647,7 @@ void App::done() {
 	if ( _ep ) {
 		IO::XMLArchive ar;
 		ar.create("-");
-		ar.setFormattedOutput(true);
+		ar.setFormattedOutput(_formatted);
 		ar << _ep;
 		ar.close();
 		cerr << "Found "<< _ep->pickCount() << " picks and "
@@ -644,7 +704,7 @@ bool App::initComponent(Processing::WaveformProcessor *proc,
                         const std::string &streamID,
                         const DataModel::WaveformStreamID &waveformID,
                         bool metaDataRequired) {
-	StreamMap::iterator it = _streams.find(streamID);
+	auto it = _streams.find(streamID);
 	if ( it != _streams.end() && contains(it->second->epoch, time) ) {
 		proc->streamConfig(comp) = *it->second;
 		if ( proc->streamConfig(comp).gain == 0.0 && metaDataRequired ) {
@@ -847,7 +907,7 @@ bool App::initProcessor(Processing::WaveformProcessor *proc,
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::initDetector(const string &streamID,
                        const DataModel::WaveformStreamID &waveformID,
-                       const Core::Time &time) {
+                       const Record *rec) {
 	double trigOn = _config.defaultTriggerOnThreshold;
 	double trigOff = _config.defaultTriggerOffThreshold;
 	double tcorr = _config.defaultTimeCorrection;
@@ -905,13 +965,14 @@ bool App::initDetector(const string &streamID,
 		));
 
 	if ( !initProcessor(detector.get(), detector->usedComponent(),
-	                    time, streamID, waveformID, sensitivityCorrection) )
+	                    rec->startTime(), streamID, waveformID, sensitivityCorrection) )
 		return false;
 
 	SEISCOMP_DEBUG("%s: created detector with filter %s",
 	               streamID.c_str(), filter.c_str());
 
 	addProcessor(waveformID, detector.get());
+	detector->feed(rec);
 
 //	SEISCOMP_DEBUG("Number of processors: %lu", (unsigned long)processorCount());
 
@@ -925,7 +986,7 @@ bool App::initDetector(const string &streamID,
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::handleNewStream(const Record *rec) {
 	if ( _config.useAllStreams || _streamIDs.find(rec->streamID()) != _streamIDs.end() ) {
-		if ( !initDetector(rec->streamID(), waveformStreamID(rec), rec->startTime()) ) {
+		if ( !initDetector(rec->streamID(), waveformStreamID(rec), rec) ) {
 			SEISCOMP_ERROR("%s: initialization failed: abort operation",
 			               rec->streamID().c_str());
 			exit(1);
@@ -1238,7 +1299,7 @@ void App::emitTrigger(const Processing::Detector *pickProc,
 	}
 
 	proc->setTrigger(time);
-	proc->setPublishFunction(bind(&App::emitPPick, this, placeholders::_1, placeholders::_2));
+	proc->setPublishFunction(bind(&App::emitPPick, this, placeholders::_1, placeholders::_2, static_cast<const Detector*>(pickProc)->duration()));
 
 	const DataModel::WaveformStreamID waveformID(waveformStreamID(rec));
 
@@ -1258,7 +1319,8 @@ void App::emitTrigger(const Processing::Detector *pickProc,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::emitPPick(const Processing::Picker *proc,
-                    const Processing::Picker::Result &res)
+                    const Processing::Picker::Result &res,
+                    double duration)
 {
 	PickMap::iterator it = _lastPicks.find(res.record->streamID());
 	if ( it != _lastPicks.end() ) {
@@ -1271,16 +1333,8 @@ void App::emitPPick(const Processing::Picker *proc,
 	}
 
 	DataModel::PickPtr pick;
-	if ( hasCustomPublicIDPattern() ) {
-		pick = DataModel::Pick::Create();
-
-		if ( !pick ) {
-			SEISCOMP_WARNING("Duplicate pick ignored");
-			return;
-		}
-	}
-	else {
-		std::string pickID = res.time.toString("%Y%m%d.%H%M%S.%2f-") + _config.pickerType +
+	if ( _config.generateSimplifiedIDs ) {
+		std::string pickID = res.time.toString("%Y%m%d.%H%M%S.%f-") + _config.pickerType +
 		                     "-" + res.record->streamID();
 		pick = DataModel::Pick::Create(pickID);
 
@@ -1289,8 +1343,16 @@ void App::emitPPick(const Processing::Picker *proc,
 			return;
 		}
 	}
+	else {
+		pick = DataModel::Pick::Create();
 
-	Core::Time now = Core::Time::GMT();
+		if ( !pick ) {
+			SEISCOMP_WARNING("Duplicate pick ignored");
+			return;
+		}
+	}
+
+	Core::Time now = Core::Time::UTC();
 	DataModel::CreationInfo ci;
 	ci.setCreationTime(now);
 	ci.setAgencyID(agencyID());
@@ -1335,9 +1397,25 @@ void App::emitPPick(const Processing::Picker *proc,
 
 	if ( _config.extraPickComments && res.snr >= 0 ) {
 		DataModel::CommentPtr comment;
+
+		if ( duration >= 0 ) {
+			comment = new DataModel::Comment;
+			comment->setId("duration");
+			comment->setText(Core::toString(duration));
+			pick->add(comment.get());
+		}
+
 		comment = new DataModel::Comment;
 		comment->setId("SNR");
 		comment->setText(Core::toString(res.snr));
+		pick->add(comment.get());
+	}
+
+	if ( !_config.commentID.empty() && !_config.commentText.empty() ) {
+		DataModel::CommentPtr comment;
+		comment = new DataModel::Comment;
+		comment->setId(_config.commentID);
+		comment->setText(_config.commentText);
 		pick->add(comment.get());
 	}
 
@@ -1361,10 +1439,12 @@ void App::emitPPick(const Processing::Picker *proc,
 	tw.setEnd(res.timeWindowEnd);
 
 	DataModel::AmplitudePtr amp;
-	if ( hasCustomPublicIDPattern() )
-		amp = DataModel::Amplitude::Create();
-	else
+	if ( _config.generateSimplifiedIDs ) {
 		amp = DataModel::Amplitude::Create(pick->publicID() + ".snr");
+	}
+	else {
+		amp = DataModel::Amplitude::Create();
+	}
 
 	if ( amp ) {
 		amp->setCreationInfo(ci);
@@ -1398,16 +1478,9 @@ void App::emitPPick(const Processing::Picker *proc,
 void App::emitSPick(const Processing::SecondaryPicker *proc,
                     const Processing::SecondaryPicker::Result &res) {
 	DataModel::PickPtr pick;
-	if ( hasCustomPublicIDPattern() ) {
-		pick = DataModel::Pick::Create();
 
-		if ( !pick ) {
-			SEISCOMP_WARNING("Duplicate pick ignored");
-			return;
-		}
-	}
-	else {
-		std::string pickID = res.time.toString("%Y%m%d.%H%M%S.%2f-") + _config.secondaryPickerType +
+	if ( _config.generateSimplifiedIDs ) {
+		std::string pickID = res.time.toString("%Y%m%d.%H%M%S.%f-") + _config.secondaryPickerType +
 		                     "-" + res.record->streamID();
 		pick = DataModel::Pick::Create(pickID);
 
@@ -1416,8 +1489,16 @@ void App::emitSPick(const Processing::SecondaryPicker *proc,
 			return;
 		}
 	}
+	else {
+		pick = DataModel::Pick::Create();
 
-	Core::Time now = Core::Time::GMT();
+		if ( !pick ) {
+			SEISCOMP_WARNING("Duplicate pick ignored");
+			return;
+		}
+	}
+
+	Core::Time now = Core::Time::UTC();
 	DataModel::CreationInfo ci;
 	ci.setCreationTime(now);
 	ci.setAgencyID(agencyID());
@@ -1478,12 +1559,14 @@ void App::emitDetection(const Processing::Detector *proc, const Record *rec, con
 	}
 
 	bool isDetection = !_config.pickerType.empty() && _config.sendDetections;
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 	DataModel::PickPtr pick;
-	if ( hasCustomPublicIDPattern() )
+	if ( _config.generateSimplifiedIDs ) {
+		pick = DataModel::Pick::Create(time.toString("%Y%m%d.%H%M%S.%f-") + rec->streamID());
+	}
+	else {
 		pick = DataModel::Pick::Create();
-	else
-		pick = DataModel::Pick::Create(time.toString("%Y%m%d.%H%M%S.%2f-") + rec->streamID());
+	}
 
 	DataModel::CreationInfo ci;
 	ci.setCreationTime(now);
@@ -1492,6 +1575,13 @@ void App::emitDetection(const Processing::Detector *proc, const Record *rec, con
 	pick->setCreationInfo(ci);
 	pick->setTime(time);
 	pick->setMethodID(proc->methodID());
+	if ( !_config.commentID.empty() && !_config.commentText.empty() ) {
+		DataModel::CommentPtr comment;
+		comment = new DataModel::Comment;
+		comment->setId(_config.commentID);
+		comment->setText(_config.commentText);
+		pick->add(comment.get());
+	}
 
 	// Set filterID
 	string filter = _config.defaultFilter;
@@ -1511,6 +1601,15 @@ void App::emitDetection(const Processing::Detector *proc, const Record *rec, con
 	}
 	pick->setPhaseHint(DataModel::Phase(_config.phaseHint));
 	pick->setWaveformID(waveformStreamID(rec));
+
+	if ( _config.extraPickComments ) {
+		if ( static_cast<const Detector*>(proc)->duration() >= 0 ) {
+			auto comment = new DataModel::Comment;
+			comment->setId("duration");
+			comment->setText(Core::toString(static_cast<const Detector*>(proc)->duration()));
+			pick->add(comment);
+		}
+	}
 
 	SEISCOMP_DEBUG("Created detection %s", pick->publicID().c_str());
 
@@ -1563,7 +1662,7 @@ void App::sendPick(Seiscomp::DataModel::Pick *pick, DataModel::Amplitude *amp,
 	               pick->waveformID().locationCode().c_str(),
 	               pick->waveformID().channelCode().c_str(),
 	               pick->publicID().c_str());
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 
 	logObject(_logPicks, now);
 	if ( amp )
@@ -1632,13 +1731,15 @@ void App::emitAmplitude(const AmplitudeProcessor *ampProc,
 	tw.setEnd(res.time.end);
 
 	DataModel::AmplitudePtr amp = (DataModel::Amplitude*)ampProc->userData();
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 
-	if ( amp == NULL ) {
-		if ( hasCustomPublicIDPattern() )
-			amp = DataModel::Amplitude::Create();
-		else
+	if ( !amp ) {
+		if ( _config.generateSimplifiedIDs ) {
 			amp = DataModel::Amplitude::Create(ampProc->referencingPickID() + "." + ampProc->type());
+		}
+		else {
+			amp = DataModel::Amplitude::Create();
+		}
 
 		if ( !amp ) {
 			SEISCOMP_WARNING("Internal error: duplicate amplitudeID?");
@@ -1724,7 +1825,5 @@ void App::emitAmplitude(const AmplitudeProcessor *ampProc,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 }
-
 }
-
 }

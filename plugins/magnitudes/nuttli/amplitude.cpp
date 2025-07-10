@@ -28,7 +28,7 @@
 #include <seiscomp/datamodel/amplitude.h>
 #include <seiscomp/math/geo.h>
 #include <seiscomp/math/mean.h>
-#include <seiscomp/seismology/ttt/locsat.h>
+#include <seiscomp/seismology/ttt.h>
 
 #include <cmath>
 
@@ -220,7 +220,7 @@ bool MNAmplitude::setup(const Settings &settings) {
 	_locationCode = settings.locationCode;
 
 	if ( !_travelTimeTable ) {
-		_travelTimeTable = new Seiscomp::TTT::Locsat;
+		_travelTimeTable = Seiscomp::TravelTimeTableInterfaceFactory::Create("LOCSAT");
 
 		string vmodel = "iasp91";
 
@@ -356,7 +356,7 @@ OPT(double) MNAmplitude::getDefinedOnset(const PhaseOrVelocity *priorities,
 					}
 
 					// Phase and location matches, use it
-					double onset = pick->time().value() - _environment.hypocenter->time().value();
+					double onset = (pick->time().value() - _environment.hypocenter->time().value()).length();
 					double scale = left ? -1.0 : 1.0;
 					try {
 						onset += scale * pick->time().lowerUncertainty();
@@ -444,7 +444,7 @@ OPT(double) MNAmplitude::getEarliestOnset(double lat0, double lon0, double depth
 		}
 
 		// Phase and location matches, use it
-		double onset = pick->time().value() - _environment.hypocenter->time().value();
+		double onset = (pick->time().value() - _environment.hypocenter->time().value()).length();
 		try {
 			onset -= pick->time().lowerUncertainty();
 		}
@@ -505,6 +505,11 @@ void MNAmplitude::setEnvironment(const Seiscomp::DataModel::Origin *hypocenter,
 
 	double hypoLat, hypoLon, hypoDepth;
 	double recvLat, recvLon;
+
+	if ( !_trigger ) {
+		setStatus(MissingTime, 0);
+		return;
+	}
 
 	if ( _environment.hypocenter == NULL ) {
 		setStatus(MissingHypocenter, 0);
@@ -592,7 +597,7 @@ void MNAmplitude::setEnvironment(const Seiscomp::DataModel::Origin *hypocenter,
 
 	double noiseWindowStart = *noiseWindowEnd - _snrWindowSeconds;
 
-	double pickOffset = _trigger - _environment.hypocenter->time().value();
+	double pickOffset = (*_trigger - _environment.hypocenter->time().value()).length();
 	noiseWindowStart -= pickOffset;
 	*noiseWindowEnd -= pickOffset;
 	*signalWindowStart-= pickOffset;

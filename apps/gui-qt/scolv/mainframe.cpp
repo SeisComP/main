@@ -219,7 +219,7 @@ MainFrame::MainFrame(){
 	tabWidget->addTab(container, "Current");
 
 	layout = new QHBoxLayout(_ui.frameSummary);
-	layout->setMargin(0);
+	layout->setContentsMargins(0, 0, 0, 0);
 	//layout->addWidget(_eventSmallSummary);
 	layout->addWidget(tabWidget);
 	if ( !_exportScript.empty() ) {
@@ -272,58 +272,70 @@ MainFrame::MainFrame(){
 	catch ( ... ) {}
 
 	try { pickerConfig.showCrossHair = SCApp->configGetBool("picker.showCrossHairCursor"); }
-	catch ( ... ) { pickerConfig.showCrossHair = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.ignoreUnconfiguredStations = SCApp->configGetBool("picker.ignoreUnconfiguredStations"); }
-	catch ( ... ) { pickerConfig.ignoreUnconfiguredStations = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.loadAllComponents = SCApp->configGetBool("picker.loadAllComponents"); }
-	catch ( ... ) { pickerConfig.loadAllComponents = true; }
+	catch ( ... ) {}
 
 	try { pickerConfig.loadAllPicks = SCApp->configGetBool("picker.loadAllPicks"); }
-	catch ( ... ) { pickerConfig.loadAllPicks = true; }
+	catch ( ... ) {}
+
+	try { pickerConfig.showDataInSensorUnit = SCApp->configGetBool("picker.showDataInSensorUnit"); }
+	catch ( ... ) {}
 
 	try { pickerConfig.loadStrongMotionData = SCApp->configGetBool("picker.loadStrongMotion"); }
-	catch ( ... ) { pickerConfig.loadStrongMotionData = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.limitStations = SCApp->configGetBool("picker.limitStationAcquisition"); }
-	catch ( ... ) { pickerConfig.limitStations = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.limitStationCount = SCApp->configGetInt("picker.limitStationAcquisitionCount"); }
-	catch ( ... ) { pickerConfig.limitStationCount = 10; }
+	catch ( ... ) {}
 
 	try { pickerConfig.showAllComponents = SCApp->configGetBool("picker.showAllComponents"); }
-	catch ( ... ) { pickerConfig.showAllComponents = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.allComponentsMaximumStationDistance = SCApp->configGetDouble("picker.allComponentsMaximumDistance"); }
-	catch ( ... ) { pickerConfig.allComponentsMaximumStationDistance = 10.0; }
+	catch ( ... ) {}
 
-	try { pickerConfig.usePerStreamTimeWindows = Core::TimeSpan(SCApp->configGetBool("picker.usePerStreamTimeWindows")); }
-	catch ( ... ) { pickerConfig.usePerStreamTimeWindows = false; }
+	try { pickerConfig.usePerStreamTimeWindows = SCApp->configGetBool("picker.usePerStreamTimeWindows"); }
+	catch ( ... ) {}
 
 	try { pickerConfig.removeAutomaticStationPicks = SCApp->configGetBool("picker.removeAutomaticPicksFromStationAfterManualReview"); }
-	catch ( ... ) { pickerConfig.removeAutomaticStationPicks = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.removeAutomaticPicks = SCApp->configGetBool("picker.removeAllAutomaticPicksAfterManualReview"); }
-	catch ( ... ) { pickerConfig.removeAutomaticPicks = false; }
+	catch ( ... ) {}
 
-	try { pickerConfig.preOffset = Core::TimeSpan(SCApp->configGetInt("picker.preOffset")); }
-	catch ( ... ) { pickerConfig.preOffset = Core::TimeSpan(60); }
+	try { pickerConfig.preOffset = Core::TimeSpan(SCApp->configGetDouble("picker.preOffset")); }
+	catch ( ... ) {}
 
-	try { pickerConfig.postOffset = Core::TimeSpan(SCApp->configGetInt("picker.postOffset")); }
-	catch ( ... ) { pickerConfig.postOffset = Core::TimeSpan(120); }
+	try { pickerConfig.postOffset = Core::TimeSpan(SCApp->configGetDouble("picker.postOffset")); }
+	catch ( ... ) {}
 
-	try { pickerConfig.minimumTimeWindow = Core::TimeSpan(SCApp->configGetInt("picker.minimumTimeWindow")); }
-	catch ( ... ) { pickerConfig.minimumTimeWindow = Core::TimeSpan(1800); }
+	try { pickerConfig.minimumTimeWindow = Core::TimeSpan(SCApp->configGetDouble("picker.minimumTimeWindow")); }
+	catch ( ... ) {}
 
 	try { pickerConfig.alignmentPosition = SCApp->configGetDouble("picker.alignmentPosition"); }
-	catch ( ... ) { pickerConfig.alignmentPosition = 0.5; }
+	catch ( ... ) {}
 
 	try { pickerConfig.integrationFilter = SCApp->configGetString("picker.integration.preFilter").c_str(); }
 	catch ( ... ) {}
 
 	try { pickerConfig.onlyApplyIntegrationFilterOnce = SCApp->configGetBool("picker.integration.applyOnce"); }
-	catch ( ... ) { pickerConfig.onlyApplyIntegrationFilterOnce = true; }
+	catch ( ... ) {}
+
+	try { pickerConfig.initialRotation.fromString(SCApp->configGetString("picker.rotation")); }
+	catch ( ... ) {}
+
+	try { pickerConfig.initialUnit.fromString(SCApp->configGetString("picker.unit")); }
+	catch ( ... ) {}
+
+	try { pickerConfig.limitFilterToZoomTrace = SCApp->configGetBool("picker.limitFilterToZoomTrace"); }
+	catch ( ... ) {}
 
 	if ( pickerConfig.alignmentPosition < 0 )
 		pickerConfig.alignmentPosition = 0;
@@ -537,25 +549,28 @@ MainFrame::MainFrame(){
 	catch ( ... ) {}
 
 	try { pickerConfig.defaultAddStationsDistance = SCApp->configGetDouble("olv.defaultAddStationsDistance"); }
-	catch ( ... ) { pickerConfig.defaultAddStationsDistance = 15.0; }
+	catch ( ... ) {}
+
+	try { pickerConfig.loadStationsWithinDistanceInitially = SCApp->configGetBool("olv.loadAdditionalStations"); }
+	catch ( ... ) {}
 
 	try { pickerConfig.hideStationsWithoutData = SCApp->configGetBool("olv.hideStationsWithoutData"); }
-	catch ( ... ) { pickerConfig.hideStationsWithoutData = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.hideDisabledStations = SCApp->configGetBool("olv.hideDisabledStations"); }
-	catch ( ... ) { pickerConfig.hideDisabledStations = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.ignoreDisabledStations = SCApp->configGetBool("olv.ignoreDisabledStations"); }
-	catch ( ... ) { pickerConfig.hideDisabledStations = false; }
+	catch ( ... ) {}
 
 	try { pickerConfig.defaultDepth = SCApp->configGetDouble("olv.defaultDepth"); }
-	catch ( ... ) { pickerConfig.defaultDepth = 10; }
+	catch ( ... ) {}
 
-	try { amplitudeConfig.preOffset = Core::TimeSpan(SCApp->configGetInt("amplitudePicker.preOffset")); }
-	catch ( ... ) { amplitudeConfig.preOffset = Core::TimeSpan(300.0); }
+	try { amplitudeConfig.preOffset = Core::TimeSpan(SCApp->configGetDouble("amplitudePicker.preOffset")); }
+	catch ( ... ) { amplitudeConfig.preOffset = Core::TimeSpan(300, 0); }
 
-	try { amplitudeConfig.postOffset = Core::TimeSpan(SCApp->configGetInt("amplitudePicker.postOffset")); }
-	catch ( ... ) { amplitudeConfig.postOffset = Core::TimeSpan(300.0); }
+	try { amplitudeConfig.postOffset = Core::TimeSpan(SCApp->configGetDouble("amplitudePicker.postOffset")); }
+	catch ( ... ) { amplitudeConfig.postOffset = Core::TimeSpan(300, 0); }
 
 	try { amplitudeConfig.defaultNoiseBegin = SCApp->configGetDouble("amplitudePicker.defaultNoiseBegin"); }
 	catch ( ... ) {}
@@ -857,11 +872,6 @@ MainFrame::MainFrame(){
 	        this, SLOT(committedNewOrigin(Seiscomp::DataModel::Origin*, Seiscomp::DataModel::Event*)));
 #endif
 
-	/*
-	connect(_originLocator, SIGNAL(newOriginSet(Seiscomp::DataModel::Origin*, bool)),
-	        _eventSmallSummary, SLOT(showOrigin(Seiscomp::DataModel::Origin*)));
-	*/
-
 	connect(_originLocator, SIGNAL(waveformsRequested()),
 	        this, SLOT(showWaveforms()));
 	connect(_originLocator, SIGNAL(eventListRequested()),
@@ -910,12 +920,16 @@ MainFrame::MainFrame(){
 	connect(_ui.actionShowStationAnnotations, SIGNAL(toggled(bool)), _originLocator, SLOT(drawStationAnnotations(bool)));
 	connect(_ui.actionShowStations, SIGNAL(toggled(bool)), _magnitudes, SLOT(drawStations(bool)));
 	connect(_ui.actionShowStationAnnotations, SIGNAL(toggled(bool)), _magnitudes, SLOT(drawStationAnnotations(bool)));
+	connect(_ui.actionShowStations, SIGNAL(toggled(bool)), _eventEdit, SLOT(drawStations(bool)));
+	connect(_ui.actionShowStationAnnotations, SIGNAL(toggled(bool)), _eventEdit, SLOT(drawStationAnnotations(bool)));
 	connect(_ui.actionShowEventList, SIGNAL(triggered(bool)), this, SLOT(showEventList()));
 
 	_originLocator->drawStations(_ui.actionShowStations->isChecked());
 	_originLocator->drawStationAnnotations(_ui.actionShowStationAnnotations->isChecked());
 	_magnitudes->drawStations(_ui.actionShowStations->isChecked());
 	_magnitudes->drawStationAnnotations(_ui.actionShowStationAnnotations->isChecked());
+	_eventEdit->drawStations(_ui.actionShowStations->isChecked());
+	_eventEdit->drawStationAnnotations(_ui.actionShowStationAnnotations->isChecked());
 
 #ifdef WITH_SMALL_SUMMARY
 	_ui.frameSummary->setVisible(_ui.actionShowSummary->isChecked());
@@ -961,7 +975,7 @@ void MainFrame::loadEvents(float days) {
 
 	Core::TimeWindow tw;
 
-	tw.setEndTime(Core::Time::GMT());
+	tw.setEndTime(Core::Time::UTC());
 	tw.setStartTime(tw.endTime() - Core::TimeSpan(days*86400));
 
 	_eventList->setInterval(tw);
@@ -1084,15 +1098,16 @@ void MainFrame::configureAcquisition() {
 		SCApp->configSetBool("picker.ignoreUnconfiguredStations", pc.ignoreUnconfiguredStations);
 		SCApp->configSetBool("picker.loadAllComponents", pc.loadAllComponents);
 		SCApp->configSetBool("picker.loadAllPicks", pc.loadAllPicks);
+		SCApp->configSetBool("picker.showDataInSensorUnit", pc.showDataInSensorUnit);
 		SCApp->configSetBool("picker.loadStrongMotion", pc.loadStrongMotionData);
 		SCApp->configSetBool("picker.limitStationAcquisition", pc.limitStations);
 		SCApp->configSetInt("picker.limitStationAcquisitionCount", pc.limitStationCount);
 		SCApp->configSetBool("picker.showAllComponents", pc.showAllComponents);
 		SCApp->configSetDouble("picker.allComponentsMaximumDistance", pc.allComponentsMaximumStationDistance);
 		SCApp->configSetBool("picker.usePerStreamTimeWindows", pc.usePerStreamTimeWindows);
-		SCApp->configSetInt("picker.preOffset", pc.preOffset.seconds());
-		SCApp->configSetInt("picker.postOffset", pc.postOffset.seconds());
-		SCApp->configSetInt("picker.minimumTimeWindow", pc.minimumTimeWindow.seconds());
+		SCApp->configSetDouble("picker.preOffset", static_cast<double>(pc.preOffset));
+		SCApp->configSetDouble("picker.postOffset", static_cast<double>(pc.postOffset));
+		SCApp->configSetDouble("picker.minimumTimeWindow", static_cast<double>(pc.minimumTimeWindow));
 		SCApp->configSetDouble("picker.alignmentPosition", pc.alignmentPosition);
 		SCApp->configSetBool("picker.removeAutomaticPicksFromStationAfterManualReview", pc.removeAutomaticStationPicks);
 		SCApp->configSetBool("picker.removeAllAutomaticPicksAfterManualReview", pc.removeAutomaticPicks);
@@ -1101,14 +1116,14 @@ void MainFrame::configureAcquisition() {
 
 		std::vector<std::string> filters;
 		foreach ( const PickerView::Config::FilterEntry &entry, pc.filters ) {
-			filters.push_back(QString("%1;%2").arg(entry.first).arg(entry.second).toStdString());
+			filters.push_back(QString("%1;%2").arg(entry.first, entry.second).toStdString());
 		}
 
 		SCApp->configSetStrings("picker.filters", filters);
 
 		filters.clear();
 		foreach ( const AmplitudeView::Config::FilterEntry &entry, ac.filters ) {
-			filters.push_back(QString("%1;%2").arg(entry.first).arg(entry.second).toStdString());
+			filters.push_back(QString("%1;%2").arg(entry.first, entry.second).toStdString());
 		}
 
 		if ( pc.repickerSignalStart )
@@ -1124,8 +1139,8 @@ void MainFrame::configureAcquisition() {
 		SCApp->configSetString("picker.integration.preFilter", pc.integrationFilter.toStdString());
 		SCApp->configSetBool("picker.integration.applyOnce", pc.onlyApplyIntegrationFilterOnce);
 
-		SCApp->configSetInt("amplitudePicker.preOffset", ac.preOffset.seconds());
-		SCApp->configSetInt("amplitudePicker.postOffset", ac.postOffset.seconds());
+		SCApp->configSetDouble("amplitudePicker.preOffset", static_cast<double>(ac.preOffset));
+		SCApp->configSetDouble("amplitudePicker.postOffset", static_cast<double>(ac.postOffset));
 		SCApp->configSetStrings("amplitudePicker.filters", filters);
 
 		SCApp->saveConfiguration();
@@ -1554,7 +1569,7 @@ SEISCOMP_DEBUG("EventParametersPtr _createEventParametersForPublication(%s)",eve
 						ep->add(derivedOrigin.get());
 					}
 				}
-				
+
 			}
 
 		}
@@ -1605,7 +1620,7 @@ void MainFrame::publishEvent() {
 
 	string tmpFileName;
 	stringstream tmpss;
-	tmpss << "/tmp/seiscomp_" <<   event->publicID() <<  "." << Core::pid() << "." << Core::Time::GMT().iso() << ".xml";
+	tmpss << "/tmp/seiscomp_" <<   event->publicID() <<  "." << Core::pid() << "." << Core::Time::UTC().iso() << ".xml";
 	tmpFileName = tmpss.str();
 	IO::XMLArchive ar;
 	if( !ar.create(tmpFileName.c_str()) ) {
@@ -1627,7 +1642,7 @@ void MainFrame::publishEvent() {
 */
 	string tmpFileName;
 	stringstream tmpss;
-	tmpss << "/tmp/seiscomp_" <<   event->publicID() <<  "." << System::HostInfo().pid() << "." << Core::Time::GMT().iso() << ".xml";
+	tmpss << "/tmp/seiscomp_" <<   event->publicID() <<  "." << System::HostInfo().pid() << "." << Core::Time::UTC().iso() << ".xml";
 	tmpFileName = tmpss.str();
 	IO::XMLArchive ar;
 	if( !ar.create(tmpFileName.c_str()) ) {

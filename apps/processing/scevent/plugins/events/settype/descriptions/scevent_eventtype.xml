@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<plugin name="EventType">
+		<extends>scevent</extends>
+		<description>evtype plugin for scevent</description>
+		<configuration>
+			<group name="eventType">
+				<description>
+				Set the event type based on type comments of picks. Add the
+				plugin &quot;evtype&quot; to the list of plugins in the order
+				of priority to make this feature available.
+				</description>
+				<parameter name="setEventType" type="boolean" default="false">
+					<description>
+						Allow setting the event type.
+						The type of events which have manual origins will
+						not be changed unless configured explicitely by
+						&quot;overwriteManual&quot;.
+					</description>
+				</parameter>
+				<parameter name="overwriteEventType" type="boolean" default="true">
+					<description>
+						Allow overwriting existing event types set by other modules.
+					</description>
+				</parameter>
+				<parameter name="overwriteManual" type="boolean" default="false">
+					<description>
+						Allow setting the event type if the mode of the preferred
+						origin is manual or if the event type was set manually.
+					</description>
+				</parameter>
+				<parameter name="pickCommentIDs" type="list:string" default="scrttv:eventTypeHint,deepc:eventTypeHint">
+					<description>
+					Consider comments of picks which have one of the
+					given values. An empty list disables setting the type.
+					</description>
+				</parameter>
+			</group>
+		</configuration>
+	</plugin>
+</seiscomp>

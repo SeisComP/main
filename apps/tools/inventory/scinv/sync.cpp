@@ -28,7 +28,7 @@ class RemoveUntouchedObjects : public Visitor {
 	// ----------------------------------------------------------------------
 	public:
 		//! C'tor
-		RemoveUntouchedObjects(set<Object*> &registry, set<Object*> &out)
+		RemoveUntouchedObjects(const set<Object*> &registry, set<Object*> &out)
 		: Visitor(TM_TOPDOWN), _registry(registry), _out(out) {}
 
 
@@ -46,12 +46,13 @@ class RemoveUntouchedObjects : public Visitor {
 		}
 
 		void visit(Object *o) {
-			if ( _registry.find(o) == _registry.end() )
+			if ( _registry.find(o) == _registry.end() ) {
 				_out.insert(o);
+			}
 		}
 
 	private:
-		set<Object*> &_registry;
+		const set<Object*> &_registry;
 		set<Object*> &_out;
 };
 
@@ -159,7 +160,7 @@ bool Sync::push(const Seiscomp::DataModel::Inventory *inv) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Sync::process(const StationGroup *group) {
-	SEISCOMP_INFO("Synching station group %s", group->code().c_str());
+	SEISCOMP_INFO("Synchronizing station group %s", group->code().c_str());
 
 	bool newInstance = false;
 	bool needUpdate = false;
@@ -243,7 +244,7 @@ bool Sync::process(StationGroup *group, const StationReference *ref) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Sync::process(const Network *net) {
-	SEISCOMP_INFO("Synching network %s (%s)",
+	SEISCOMP_INFO("Synchronizing network %s (%s)",
 	              net->code().c_str(), net->start().toString("%F %T").c_str());
 
 	bool newInstance = false;
@@ -1127,9 +1128,9 @@ void Sync::cleanUp() {
 	_inv->accept(&cleaner);
 
 	// Detach/delete them
-	ObjectSet::iterator it;
-	for ( it = toBeRemoved.begin(); it != toBeRemoved.end(); ++it )
-		(*it)->detach();
+	for ( auto *obj : toBeRemoved ) {
+		obj->detach();
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

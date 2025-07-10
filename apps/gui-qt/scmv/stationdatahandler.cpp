@@ -38,9 +38,8 @@ bool RecordHandlerCompare(double a0, double a1) {
 
 
 RecordHandler::RecordHandler()
- : _recordLifespan(5*60),
-   _sampleLifespan(5*60){
-
+: _recordLifespan(5*60)
+, _sampleLifespan(5*60, 0) {
 	_velocityLimits[0] = 0;
 	_velocityLimits[1] = 200;
 	_velocityLimits[2] = 400;
@@ -85,18 +84,18 @@ void RecordHandler::handle(StationData* stationData, Record* record) {
 
 	double* begin = data;
 	double* maximumSample = std::max_element(begin, data + dataSize,
-	                                         std::ptr_fun(RecordHandlerCompare));
+	                                         RecordHandlerCompare);
 
 	*maximumSample = fabs(*maximumSample);
 
 	if ( stationData->gmMaximumSample < *maximumSample ||
-			Core::Time::GMT() - stationData->gmSampleReceiveTime > _sampleLifespan ) {
-		stationData->gmSampleReceiveTime = Core::Time::GMT();
+			Core::Time::UTC() - stationData->gmSampleReceiveTime > _sampleLifespan ) {
+		stationData->gmSampleReceiveTime = Core::Time::UTC();
 		stationData->gmMaximumSample= *maximumSample;
 	}
 
 	try { stationData->gmRecordReceiveTime = record->endTime(); }
-	catch ( Core::ValueException& ) { stationData->gmRecordReceiveTime = Core::Time::GMT(); }
+	catch ( Core::ValueException& ) { stationData->gmRecordReceiveTime = Core::Time::UTC(); }
 
 	double velocity = stationData->gmMaximumSample / stationData->gmGain * 1E9;
 
@@ -107,7 +106,7 @@ void RecordHandler::handle(StationData* stationData, Record* record) {
 
 
 void RecordHandler::update(StationData* stationData) {
-	if ( stationData->gmRecordReceiveTime + Core::TimeSpan(_recordLifespan) < Core::Time::GMT() )
+	if ( stationData->gmRecordReceiveTime + Core::TimeSpan(_recordLifespan, 0) < Core::Time::UTC() )
 		stationData->gmColor = SCApp->scheme().colors.gm.gmNotSet;
 }
 
@@ -209,7 +208,7 @@ void TriggerHandler::handle(StationData* stationData, DataModel::Amplitude* ampl
 	}
 
 	stationData->tAmplitude            = amplitude;
-	//stationData->tAmplitudeTime        = Core::Time::GMT();
+	//stationData->tAmplitudeTime        = Core::Time::UTC();
 	stationData->isTriggering          = true;
 
 	double amplitudeValue = amplitude->amplitude().value();
@@ -235,7 +234,7 @@ void TriggerHandler::handle(StationData* stationData, DataModel::Pick* pick) {
 	}
 
 	stationData->tPickCache.push_back(pick);
-	//stationData->tPickTime = Core::Time::GMT();
+	//stationData->tPickTime = Core::Time::UTC();
 
 	if ( isAmplitudeExpired(stationData) ) {
 		stationData->isTriggering = true;
@@ -274,7 +273,7 @@ void TriggerHandler::setPickLifeSpan(double timeSpan) {
 void TriggerHandler::cleanupPickCollection(StationData* stationData) {
 	std::list<DataModel::PickPtr>::iterator it = stationData->tPickCache.begin();
 	for ( ; it != stationData->tPickCache.end(); ++it ) {
-		if ( Core::Time::GMT() - (*it)->time() > _pickLifeSpan )
+		if ( Core::Time::UTC() - (*it)->time() > _pickLifeSpan )
 			it = stationData->tPickCache.erase(it);
 	}
 }
@@ -301,7 +300,7 @@ Core::TimeSpan TriggerHandler::calculateTriggerLifeSpanFromAmplitude(double ampl
 			exp((_minimumAmplitudeTriggerLifeSpan.seconds() + 177) * log(2.0) * 0.01) - minimumAmplitude
 	);
 	//fenlo: bugfix: check range before(!) assigning double value to TimeSpan to prevent throwing exception (range of TimeSpan is somewhat limited)
-	double triggerLifeSpanValue = 
+	double triggerLifeSpanValue =
 		static_cast<double>((100*log(amplitude + offset)/log(2.0)) - 177);
 
 	if( triggerLifeSpanValue < double(_minimumAmplitudeTriggerLifeSpan) )
@@ -328,7 +327,7 @@ Core::TimeSpan TriggerHandler::calculateTriggerLifeSpanFromAmplitude(double ampl
 
 
 bool TriggerHandler::isAmplitudeExpired(StationData* stationData) const {
-	Core::TimeSpan passedTime = Core::Time::GMT() - stationData->tAmplitudeTime;
+	Core::TimeSpan passedTime = Core::Time::UTC() - stationData->tAmplitudeTime;
 	return passedTime > stationData->tAmplitudeTriggerLifeSpan;
 }
 
@@ -336,7 +335,7 @@ bool TriggerHandler::isAmplitudeExpired(StationData* stationData) const {
 
 
 bool TriggerHandler::isPickExpired(StationData* stationData) const {
-	return Core::Time::GMT() - stationData->tPickTime > _defaultPickTriggerLifeSpan;
+	return Core::Time::UTC() - stationData->tPickTime > _defaultPickTriggerLifeSpan;
 }
 
 
@@ -390,7 +389,7 @@ void QCHandler::init(const Seiscomp::Config::Config &config) {
 		try { _thresholds[i].value[1] = config.getDouble(std::string("scmv.qc.") + QCParameter::EParameterNames::name(i) + ".WARNING"); }
 		catch ( ... ) {}
 	}
-	
+
 }
 
 

@@ -91,6 +91,25 @@ bool readWFIDFile(Collector::WaveformIDs &wids, const string &fileName) {
 	return true;
 }
 
+inline
+bool parseDate(OPT(Core::Time) &time, const string &timeStr, const char *desc) {
+	double daysAgo;
+	if ( Core::fromString(daysAgo, timeStr) ) {
+		time = Core::Time::UTC() - Core::TimeSpan(daysAgo * 86400.0);
+	}
+	else {
+		time = Core::Time();
+		if ( !Core::fromString(*time, timeStr) ) {
+			SEISCOMP_ERROR("Invalid %s time value, expected time span in days "
+			               "(float) before now or date "
+			               "(YYYY-mm-dd['T'HH:MM:SS])", desc);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 } // ns anonymous
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -674,10 +693,10 @@ bool Worker::readChunkSegments(Segments &segments, const std::string &chunk,
 	               "  availability         : %.2f%% (%.1fs)",
 	               _id, _sid.c_str(), chunk.c_str(),
 	               window.startTime().iso().c_str(),
-	               window.endTime().iso().c_str(), window.length(),
+	               window.endTime().iso().c_str(), static_cast<double>(window.length()),
 	               mtime.iso().c_str(), segments.size(), gaps, overlaps,
 	               outOfOrder, dropped, rateChanges, qualityChanges, records,
-	               availability/window.length()*100.0, availability);
+	               availability / static_cast<double>(window.length()) * 100.0, availability);
 
 	return true;
 }
@@ -1279,37 +1298,14 @@ bool SCARDAC::validateParameters() {
 		return false;
 	}
 
-	auto now = Core::Time::UTC();
-	double daysAgo;
-
 	// start time
-	if ( !_start.empty() ) {
-		_startTime = Core::Time();
-		if ( !Core::fromString(*_startTime, _start) ) {
-			if ( Core::fromString(daysAgo, _start) ) {
-				*_startTime = now - Core::TimeSpan(daysAgo * 86400.0);
-			}
-			else {
-				SEISCOMP_ERROR("Invalid start time value, expected "
-				               "YYYY-mm-dd['T'HH:MM:SS] | days before now");
-				return false;
-			}
-		}
+	if ( !_start.empty() && !parseDate(_startTime, _start, "start") ) {
+		return false;
 	}
 
 	// end time
-	if ( !_end.empty() ) {
-		_endTime = Core::Time();
-		if ( !Core::fromString(*_endTime, _end) ) {
-			if ( Core::fromString(daysAgo, _end) ) {
-				*_endTime = now - Core::TimeSpan(daysAgo * 86400.0);
-			}
-			else {
-				SEISCOMP_ERROR("Invalid end time value, expected "
-				               "YYYY-mm-dd['T'HH:MM:SS] | days before now");
-				return false;
-			}
-		}
+	if ( !_end.empty() && !parseDate(_endTime, _end, "start") ) {
+		return false;
 	}
 
 	// wfid filter
@@ -1323,19 +1319,8 @@ bool SCARDAC::validateParameters() {
 		if ( _deepScan ) {
 			SEISCOMP_WARNING("Modified-since option ignored in deep-scan mode");
 		}
-		else {
-			_mtimeStart = Core::Time();
-			if ( !Core::fromString(*_mtimeStart, _modifiedSince) ) {
-				if ( Core::fromString(daysAgo, _modifiedSince) ) {
-					*_mtimeStart = now - Core::TimeSpan(daysAgo * 86400.0);
-				}
-				else {
-					SEISCOMP_ERROR("Invalid modified-since time value, "
-					               "expected "
-					               "YYYY-mm-dd['T'HH:MM:SS] | days before now");
-					return false;
-				}
-			}
+		else if ( !parseDate(_mtimeStart, _modifiedSince, "modified-since") ) {
+			return false;
 		}
 	}
 
@@ -1344,19 +1329,8 @@ bool SCARDAC::validateParameters() {
 		if ( _deepScan ) {
 			SEISCOMP_WARNING("Modified-until option ignored in deep-scan mode");
 		}
-		else {
-			_mtimeEnd = Core::Time();
-			if ( !Core::fromString(*_mtimeEnd, _modifiedUntil) ) {
-				if ( Core::fromString(daysAgo, _modifiedUntil) ) {
-					*_mtimeEnd = now - Core::TimeSpan(daysAgo * 86400.0);
-				}
-				else {
-					SEISCOMP_ERROR("Invalid modified-until time value, "
-					               "expected "
-					               "YYYY-mm-dd['T'HH:MM:SS] | days before now");
-					return false;
-				}
-			}
+		else if ( !parseDate(_mtimeEnd, _modifiedUntil, "modified-until") ) {
+			return false;
 		}
 	}
 
@@ -1672,6 +1646,8 @@ bool SCARDAC::generateTestData() {
 		SEISCOMP_ERROR("Invalid format in parameter 'generate-test-data'");
 		return false;
 	}
+
+	_dataAvailability = new ::DataAvailability();
 
 	auto end = Core::Time::UTC();
 	auto start = end - Core::TimeSpan(days * 86400.0, 0);

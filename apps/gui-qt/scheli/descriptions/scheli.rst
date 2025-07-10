@@ -34,8 +34,8 @@ Examples
 
         scheli --debug
 
-   * Let :program:`scheli` show data from the CX station PB01 for the previous 5 hours
-     overriding configuration by command-line paramaters:
+   * Let :program:`scheli` show data from the CX station PB01 for the previous
+     5 hours overriding configuration by command-line paramaters:
 
      .. code-block:: sh
 

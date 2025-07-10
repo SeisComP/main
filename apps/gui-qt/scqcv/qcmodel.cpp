@@ -32,7 +32,7 @@ QString getStreamID(const DataModel::WaveformStreamID& wfid) {
 
 	std::string streamID = wfid.networkCode()+"."+wfid.stationCode()+"."+
 	                       wfid.locationCode()+"."+wfid.channelCode();
-	
+
 	return streamID.c_str();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -44,7 +44,7 @@ QString getStreamID(const DataModel::WaveformStreamID& wfid) {
 QcModel::QcModel(const QcViewConfig* config, QObject* parent)
 	: QAbstractTableModel(parent),
 	  _config(config) {
-	
+
 	// delete alertMsg after x sec time
 	_cleanUpTime = 300.0;
 	_dataChanged = false;
@@ -131,11 +131,13 @@ void QcModel::setCleanUpTime(double time) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool QcModel::hasAlerts(const QString &streamID) {
-	if (_streamMap.empty())
+	if ( _streamMap.empty() ) {
 		return false;
+	}
 
-	if (_streamMap.contains(streamID))
-		return  _streamMap.value(streamID).alert.count(NULL) != _columns.size();
+	if ( _streamMap.contains(streamID) ) {
+		return _streamMap.value(streamID).alert.count(nullptr) != _columns.size();
+	}
 
 	return false;
 }
@@ -158,7 +160,7 @@ void QcModel::setStreams(const std::list<std::pair<std::string, bool> > &streams
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void QcModel::setStationEnabled(const QString &network, const QString &station, bool enabled) {
-	QRegExp netSta("^"+network+"\\."+station+".*$");
+	QRegularExpression netSta("^"+network+"\\."+station+".*$");
 
 	SEISCOMP_DEBUG("Change station enable state: %s.%s: %s",
 	               network.toStdString().c_str(), station.toStdString().c_str(),
@@ -307,7 +309,7 @@ void QcModel::cleanUp() {
 			if ( !wfq ) continue;
 
 			try {
-				double dt = (double)(Core::Time::GMT() - wfq->end());
+				double dt = (double)(Core::Time::UTC() - wfq->end());
 				SEISCOMP_DEBUG("[%f s] cleaning up alert entries for: %s", dt, getStreamID(wfq->waveformID()).toLatin1().data());
 				if (dt > _cleanUpTime) {
 					QString streamID = getStreamID(wfq->waveformID());
@@ -405,7 +407,7 @@ const DataModel::WaveformQuality* QcModel::getData(const QModelIndex &index) con
 		return NULL;
 
 	DataModel::WaveformQuality* wfq = NULL;
-	
+
 	try {
 		wfq = (_streamMap.begin()+index.row()).value().report.value(index.column()).get();
 	}
@@ -418,9 +420,9 @@ const DataModel::WaveformQuality* QcModel::getData(const QModelIndex &index) con
 			return NULL;
 	}
 	catch(...) {;;}
-	
+
 	try {
-		if (_config->expired(_columns.at(index.column()), (double)(Core::Time::GMT() - wfq->end())))
+		if (_config->expired(_columns.at(index.column()), (double)(Core::Time::UTC() - wfq->end())))
 			return NULL;
 		else
 			return wfq;
@@ -509,7 +511,7 @@ QVariant QcModel::data(const QModelIndex &index, int role) const {
 
 
 	//!---------------------------------------------------------------------------------
-	else if ( role == Qt::BackgroundColorRole ) {
+	else if ( role == Qt::BackgroundRole ) {
 		if ( index.column() == 1 ) {
 			return streamEnabled(index)?QColor(0,255,0,255):QColor(255,0,0,255);
 		}
@@ -528,10 +530,10 @@ QVariant QcModel::data(const QModelIndex &index, int role) const {
 		if (wfq)
 			text1 = "Report Message:\n" + wfq2str(wfq);
 
-			
+
 		if ( (wfq = getAlertData(index)) )
 			text2 = "\nAlert Message:\n" + wfq2str(wfq);
-		
+
 		return text1 + text2;
 }
 	//!---------------------------------------------------------------------------------

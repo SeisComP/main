@@ -112,7 +112,7 @@ class MagTool {
 
 		bool feed(DataModel::Origin*);
 		bool feed(DataModel::Pick*);
-		bool feed(DataModel::Amplitude*, bool update, bool remove);
+		bool feed(DataModel::Amplitude*amp, bool update, bool remove);
 
 		void remove(DataModel::PublicObject *po);
 
@@ -132,9 +132,9 @@ class MagTool {
 		typedef std::vector<MagnitudeEntry> MagnitudeList;
 
 		void publicObjectRemoved(DataModel::PublicObject*);
-	
+
 		bool _feed(DataModel::Amplitude*, bool update);
-	
+
 		// Returns a StationMagnitude for the given Origin, WaveformStreamID
 		// and magnitude type. If an instance already exists, it is updated,
 		// otherwise a new instance is created.
@@ -166,13 +166,13 @@ class MagTool {
 		// retrieve them from the database (if configured) Returns the total
 		// number of retrieved objects.
 		int retrieveMissingPicksAndArrivalsFromDB(const DataModel::Origin*);
-	
+
 		//! process new or updated Origin
 		// if something changed, returns true, false otherwise
 		bool processOrigin(DataModel::Origin*);
 
 		bool processOriginUpdateOnly(DataModel::Origin*);
-	
+
 		//! process new or updated Pick
 		// if something changed, returns true, false otherwise
 		bool processPick(DataModel::Pick*) { return false; }
@@ -193,35 +193,40 @@ class MagTool {
 		                    std::vector<double> &weights,
 		                    std::string &method, double &value, double &stdev);
 
+		bool considerUnusedArrivals(const std::string &type);
+
 	private:
-		typedef Processing::MagnitudeProcessorFactory::ServiceNames MagnitudeTypeList;
-		typedef std::multimap<std::string, Processing::MagnitudeProcessorPtr> ProcessorList;
-		typedef std::set<std::string> TypeList;
-		typedef std::map<std::string, Util::KeyValuesPtr> ParameterMap;
+		using MagnitudeTypeList = Processing::MagnitudeProcessorFactory::ServiceNames;
+		using ProcessorList = std::multimap<std::string, Processing::MagnitudeProcessorPtr>;
+		using TypeList = std::set<std::string>;
+		using ParameterMap = std::map<std::string, Util::KeyValuesPtr>;
+		using ConsiderUnusedArrivals = std::map<std::string, bool>;
 
-		MagnitudeTypeList  _registeredMagTypes;
-		MagnitudeTypes     _magTypes;
-		ProcessorList      _processors;
-		ParameterMap       _parameters;
-		Core::TimeSpan     _cacheSize;
+		MagnitudeTypeList      _registeredMagTypes;
+		MagnitudeTypes         _magTypes;
+		ProcessorList          _processors;
+		ParameterMap           _parameters;
+		Core::TimeSpan         _cacheSize;
 
-		double             _minimumArrivalWeight{0.5};
-		bool               _summaryMagnitudeEnabled{true};
-		bool               _summaryMagnitudeSingleton{true};
-		int                _summaryMagnitudeMinStationCount{1};
-		std::string        _summaryMagnitudeType{"M"};
-		TypeList           _summaryMagnitudeBlacklist;
-		TypeList           _summaryMagnitudeWhitelist;
+		double                 _minimumArrivalWeight{0.5};
+		bool                   _summaryMagnitudeEnabled{true};
+		bool                   _summaryMagnitudeSingleton{true};
+		int                    _summaryMagnitudeMinStationCount{1};
+		std::string            _summaryMagnitudeType{"M"};
+		TypeList               _summaryMagnitudeBlacklist;
+		TypeList               _summaryMagnitudeWhitelist;
 
 		SummaryMagnitudeCoefficients _defaultCoefficients;
-		Coefficients       _magnitudeCoefficients;
-		AverageMethods     _magnitudeAverageMethods;
+		Coefficients           _magnitudeCoefficients;
+		AverageMethods         _magnitudeAverageMethods;
 
-		bool               _allowReprocessing{false};
-		bool               _staticUpdate{false};
-		bool               _keepWeights{false};
-		double             _warningLevel;
-		size_t             _dbAccesses;
+		bool                   _allowReprocessing{false};
+		bool                   _staticUpdate{false};
+		bool                   _keepWeights{false};
+		double                 _warningLevel;
+		size_t                 _dbAccesses;
+
+		ConsiderUnusedArrivals _considerUnusedArrivals;
 
 	public:
 		Client::Application::ObjectLog *inputPickLog;

@@ -6,7 +6,6 @@ import re
 import glob
 import shutil
 import sys
-import imp
 import random
 import fnmatch
 import seiscomp.core
@@ -21,7 +20,7 @@ DEBUG = 0
 
 
 def parseBindPort(bind):
-    bindToks = bind.split(':')
+    bindToks = bind.split(":")
     if len(bindToks) == 1:
         return int(bindToks[0])
     elif len(bindToks) == 2:
@@ -49,35 +48,40 @@ def collectParams(container):
 
     return params
 
+
 def logd(message):
-    '''
+    """
     Debugging method
-    '''
+    """
     if DEBUG:
         print(message, file=sys.stderr)
         sys.stderr.flush()
 
+
 def log(message):
-    '''
+    """
     Helper method for outputting with flushing
-    '''
+    """
     print(message, file=sys.stdout)
     sys.stdout.flush()
+
 
 class InventoryResolver(object):
     def __init__(self, inventory):
         self._inventory = inventory
         pass
 
-    '''
+    """
         Those should be internal methods only 
-    '''
+    """
+
     def _overlaps(self, pstart, pend, cstart, cend):
-        if cstart is None and cend is None: return True
-        
+        if cstart is None and cend is None:
+            return True
+
         if cstart is None:
             cstart = seiscomp.core.Time()
-        
+
         if pend is not None:
             if pend > cstart:
                 if cend is None or pstart < cend:
@@ -85,7 +89,7 @@ class InventoryResolver(object):
         else:
             if cend is None or pstart < cend:
                 return True
-    
+
         return False
 
     def _getEnd(self, obj):
@@ -95,8 +99,10 @@ class InventoryResolver(object):
             return None
 
     def _codeMatch(self, obj, code):
-        if not code: return True
-        if fnmatch.fnmatch(str(obj.code()).upper(), code.strip().upper()): return True
+        if not code:
+            return True
+        if fnmatch.fnmatch(str(obj.code()).upper(), code.strip().upper()):
+            return True
         return False
 
     def _collect(self, objs, count, code, start, end):
@@ -104,13 +110,15 @@ class InventoryResolver(object):
 
         for i in range(0, count):
             obj = objs(i)
-    
+
             # Check code
-            if not self._codeMatch(obj, code): continue 
-    
+            if not self._codeMatch(obj, code):
+                continue
+
             # Check time
-            if not self._overlaps(obj.start(), self._getEnd(obj), start, end): continue
-    
+            if not self._overlaps(obj.start(), self._getEnd(obj), start, end):
+                continue
+
             items.append(obj)
 
         return items
@@ -118,25 +126,41 @@ class InventoryResolver(object):
     def _findStreams(self, location, code, start, end):
         items = self._collect(location.stream, location.streamCount(), code, start, end)
         if len(items) == 0:
-            raise Exception("Location %s / %s does not have a stream named: %s in the time range %s / %s " % (location.code(), location.start(), code, start, end))
+            raise Exception(
+                "Location %s / %s does not have a stream named: %s in the time range %s / %s "
+                % (location.code(), location.start(), code, start, end)
+            )
         return items
 
     def _findLocations(self, station, code, start, end):
-        items = self._collect(station.sensorLocation, station.sensorLocationCount(), code, start, end)
+        items = self._collect(
+            station.sensorLocation, station.sensorLocationCount(), code, start, end
+        )
         if len(items) == 0:
-            raise Exception("Station %s / %s does not have a location named: %s in the time range %s / %s " % (station.code(), station.start(), code, start, end))
+            raise Exception(
+                "Station %s / %s does not have a location named: %s in the time range %s / %s "
+                % (station.code(), station.start(), code, start, end)
+            )
         return items
 
     def _findStations(self, network, code, start, end):
         items = self._collect(network.station, network.stationCount(), code, start, end)
         if len(items) == 0:
-            raise Exception("Network %s / %s does not have a station named: %s in the time range %s / %s " % (network.code(), network.start(), code, start, end))
+            raise Exception(
+                "Network %s / %s does not have a station named: %s in the time range %s / %s "
+                % (network.code(), network.start(), code, start, end)
+            )
         return items
 
     def _findNetworks(self, code, start, end):
-        items = self._collect(self._inventory.network, self._inventory.networkCount(), code, start, end)
+        items = self._collect(
+            self._inventory.network, self._inventory.networkCount(), code, start, end
+        )
         if len(items) == 0:
-            raise Exception("Inventory does not have a network named: %s in the time range %s / %s " % (code, start, end))
+            raise Exception(
+                "Inventory does not have a network named: %s in the time range %s / %s "
+                % (code, start, end)
+            )
         return items
 
     def _truncateDate(self, obj, currentDate):
@@ -147,9 +171,10 @@ class InventoryResolver(object):
             return end
         return currentDate
 
-    '''
+    """
         Public methods that should be used 
-    '''
+    """
+
     def findStartDate(self, network, start, end):
         if start is None:
             return network.start()
@@ -157,25 +182,31 @@ class InventoryResolver(object):
 
     def findEndDate(self, network, start, end):
         if end is None:
-            try: return network.end()
-            except ValueError: return None
+            try:
+                return network.end()
+            except ValueError:
+                return None
 
         return self._truncateDate(network, end)
 
     def expandStream(self, stations, streams, start, end):
         items = []
-    
-        for strm in streams.split(','):
-            (locationCode, streamCode) = ('.' + strm).split('.')[-2:]
+
+        for strm in streams.split(","):
+            (locationCode, streamCode) = ("." + strm).split(".")[-2:]
             for station in stations:
                 try:
-                    for location in self._findLocations(station, locationCode, start, end):
+                    for location in self._findLocations(
+                        station, locationCode, start, end
+                    ):
                         if locationCode:
                             currentLocCode = location.code()
                         else:
                             currentLocCode = ""
                         try:
-                            for stream in self._findStreams(location, streamCode, start, end):
+                            for stream in self._findStreams(
+                                location, streamCode, start, end
+                            ):
                                 try:
                                     items.index((currentLocCode, stream.code()))
                                 except:
@@ -184,7 +215,7 @@ class InventoryResolver(object):
                             pass
                 except Exception as e:
                     pass
-    
+
         return items
 
     def expandNetworkStation(self, ncode, scode, start, end):
@@ -194,16 +225,20 @@ class InventoryResolver(object):
 
             try:
                 stations = self._findStations(network, scode, start, end)
-            except Exception as  e:
+            except Exception as e:
                 logd(str(e))
                 continue
 
             # Append
             items.append((network, stations))
-    
+
         if len(items) == 0:
-            raise Exception("Cannot find suitable %s network with station code %s ranging from %s / %s" % (ncode, scode, start, end))
+            raise Exception(
+                "Cannot find suitable %s network with station code %s ranging from %s / %s"
+                % (ncode, scode, start, end)
+            )
         return items
+
 
 class AccessUpdater(seiscomp.client.Application):
     def __init__(self, argc, argv):
@@ -220,10 +255,10 @@ class AccessUpdater(seiscomp.client.Application):
         self.setPrimaryMessagingGroup(seiscomp.client.Protocol.LISTENER_GROUP)
 
     def send(self, *args):
-        '''
+        """
         A simple wrapper that sends a message and tries to resend it in case of
         an error.
-        '''
+        """
         while not self.connection().send(*args):
             log("sending failed, retrying")
             time.sleep(1)
@@ -253,11 +288,11 @@ class AccessUpdater(seiscomp.client.Application):
                     mcount += 1
                     if msg and mcount == maxmsg:
                         sent += mcount
-                        logd("sending message (%5.1f %%)" % (sent / float(Nsize) * 100.0))
+                        logd(f"sending message ({sent / float(Nsize) * 100.0:5.1f} %)")
                         self.send(group, msg)
                         msg.clear()
                         mcount = 0
-                        #self.sync("_sccfgupd_")
+                        # self.sync("_sccfgupd_")
 
                     it.next()
             except:
@@ -267,16 +302,16 @@ class AccessUpdater(seiscomp.client.Application):
                 logd("sending message (%5.1f %%)" % 100.0)
                 self.send(group, msg)
                 msg.clear()
-                #self.sync("_sccfgupd_")
+                # self.sync("_sccfgupd_")
 
     def run(self):
-        '''
+        """
         Reimplements the main loop of the application. This methods collects
         all bindings and updates the database. It searches for already existing
         objects and updates them or creates new objects. Objects that is didn't
         touched are removed. This tool is the only one that should writes the
         configuration into the database and thus manages the content.
-        '''
+        """
         # Initialize the basic directories
         filebase = seiscomp.system.Environment.Instance().installDir()
         descdir = os.path.join(filebase, "etc", "descriptions")
@@ -300,7 +335,7 @@ class AccessUpdater(seiscomp.client.Application):
 
         mod_access = model.module("access")
 
-        existingAccess  = {}
+        existingAccess = {}
 
         routing = self.query().loadRouting()
         inventory = self.query().loadInventory()
@@ -314,66 +349,106 @@ class AccessUpdater(seiscomp.client.Application):
             logd("Working on access bindings")
             for staid in mod_access.bindings.keys():
                 binding = mod_access.getBinding(staid)
-                if not binding: continue
+                if not binding:
+                    continue
 
                 params = {}
                 for i in range(binding.sectionCount()):
                     params.update(collectParams(binding.section(i)))
 
-                access_users = params.get('access.users')
-                access_start = params.get('access.start')
-                access_end = params.get('access.end')
-                access_netonly = params.get('access.disableStationCode')
-                access_streams = params.get('access.streams')
+                access_users = params.get("access.users")
+                access_start = params.get("access.start")
+                access_end = params.get("access.end")
+                access_netonly = params.get("access.disableStationCode")
+                access_streams = params.get("access.streams")
 
                 if access_netonly is None or access_netonly == "false":
                     access_netonly = False
                 else:
                     access_netonly = True
 
-                if not access_users: continue
+                if not access_users:
+                    continue
 
                 networkCode = staid.networkCode
                 stationCode = staid.stationCode
 
                 if access_start:
-                    access_start = seiscomp.core.Time.FromString(access_start, "%Y-%m-%d %H:%M:%S")
+                    access_start = seiscomp.core.Time.FromString(
+                        access_start, "%Y-%m-%d %H:%M:%S"
+                    )
 
                 if access_end:
-                    access_end = seiscomp.core.Time.FromString(access_end, "%Y-%m-%d %H:%M:%S")
+                    access_end = seiscomp.core.Time.FromString(
+                        access_end, "%Y-%m-%d %H:%M:%S"
+                    )
 
                 if access_netonly:
                     stationCode = ""
-                
+
                 ## Resolve Inventory
                 try:
-                    networkList = iResolver.expandNetworkStation(networkCode, stationCode, access_start, access_end)
-                except Exception as  e:
-                    #log("Access issue, cannot find network object for %s %s::\n\t %s" % (staid.networkCode, staid.stationCode, str(e)))
-                    for user in access_users.split(','):
-                        existingAccess[(networkCode, "", "", "", user, "1980-01-01 00:00:00")] = (None,)
+                    networkList = iResolver.expandNetworkStation(
+                        networkCode, stationCode, access_start, access_end
+                    )
+                except Exception as e:
+                    # log("Access issue, cannot find network object for %s %s::\n\t %s" % (staid.networkCode, staid.stationCode, str(e)))
+                    for user in access_users.split(","):
+                        existingAccess[
+                            (networkCode, "", "", "", user, "1980-01-01 00:00:00")
+                        ] = (None,)
                     continue
 
                 ## Generate routes for each network found
-                for (network, stations) in networkList:
-                    
+                for network, stations in networkList:
+
                     ## Resolve start date / end date of routing to be generated
                     aStart = iResolver.findStartDate(network, access_start, access_end)
-                    aEnd   = iResolver.findEndDate(network, access_start, access_end)
+                    aEnd = iResolver.findEndDate(network, access_start, access_end)
 
                     if not access_streams:
-                        for user in access_users.split(','):
-                            existingAccess[(networkCode, stationCode, "", "", user, aStart.toString("%Y-%m-%d %H:%M:%S"))] = (aEnd,)
+                        for user in access_users.split(","):
+                            existingAccess[
+                                (
+                                    networkCode,
+                                    stationCode,
+                                    "",
+                                    "",
+                                    user,
+                                    aStart.toString("%Y-%m-%d %H:%M:%S"),
+                                )
+                            ] = (aEnd,)
                         continue
-                    
+
                     ## Add the route or routes for this net
-                    for (locationCode, streamCode) in iResolver.expandStream(stations, access_streams, access_start, access_end):
-                        for user in access_users.split(','):
-                            existingAccess[(networkCode, stationCode, locationCode, streamCode, user, aStart.toString("%Y-%m-%d %H:%M:%S"))] = (aEnd,)
+                    for locationCode, streamCode in iResolver.expandStream(
+                        stations, access_streams, access_start, access_end
+                    ):
+                        for user in access_users.split(","):
+                            existingAccess[
+                                (
+                                    networkCode,
+                                    stationCode,
+                                    locationCode,
+                                    streamCode,
+                                    user,
+                                    aStart.toString("%Y-%m-%d %H:%M:%S"),
+                                )
+                            ] = (aEnd,)
 
-
-        for ((networkCode, stationCode, locationCode, streamCode, user, start), (end,)) in existingAccess.items():
-            access = routing.access(seiscomp.datamodel.AccessIndex(networkCode, stationCode, locationCode, streamCode, user, seiscomp.core.Time.FromString(start, "%Y-%m-%d %H:%M:%S")))
+        for (networkCode, stationCode, locationCode, streamCode, user, start), (
+            end,
+        ) in existingAccess.items():
+            access = routing.access(
+                seiscomp.datamodel.AccessIndex(
+                    networkCode,
+                    stationCode,
+                    locationCode,
+                    streamCode,
+                    user,
+                    seiscomp.core.Time.FromString(start, "%Y-%m-%d %H:%M:%S"),
+                )
+            )
             if not access:
                 access = seiscomp.datamodel.Access()
                 access.setNetworkCode(networkCode)
@@ -381,7 +456,9 @@ class AccessUpdater(seiscomp.client.Application):
                 access.setLocationCode(locationCode)
                 access.setStreamCode(streamCode)
                 access.setUser(user)
-                access.setStart(seiscomp.core.Time.FromString(start, "%Y-%m-%d %H:%M:%S"))
+                access.setStart(
+                    seiscomp.core.Time.FromString(start, "%Y-%m-%d %H:%M:%S")
+                )
                 access.setEnd(end)
                 routing.add(access)
             else:
@@ -395,15 +472,21 @@ class AccessUpdater(seiscomp.client.Application):
                     if end:
                         access.setEnd(end)
                         update = True
-                
+
                 if update:
                     access.update()
-
 
         i = 0
         while i < routing.accessCount():
             access = routing.access(i)
-            if (access.networkCode(), access.stationCode(), access.locationCode(), access.streamCode(), access.user(), access.start().toString("%Y-%m-%d %H:%M:%S")) not in existingAccess:
+            if (
+                access.networkCode(),
+                access.stationCode(),
+                access.locationCode(),
+                access.streamCode(),
+                access.user(),
+                access.start().toString("%Y-%m-%d %H:%M:%S"),
+            ) not in existingAccess:
                 routing.remove(access)
                 continue
 
@@ -411,6 +494,7 @@ class AccessUpdater(seiscomp.client.Application):
 
         self.sendNotifiers("ROUTING")
         return True
+
 
 class Module(seiscomp.kernel.Module):
     def __init__(self, env):
@@ -422,10 +506,12 @@ class Module(seiscomp.kernel.Module):
     def updateConfig(self):
         messaging = True
         messagingPort = 18180
-        messagingProtocol = 'scmp';
+        messagingProtocol = "scmp"
 
-        try: messaging = self.env.getBool("messaging.enable")
-        except: pass
+        try:
+            messaging = self.env.getBool("messaging.enable")
+        except:
+            pass
 
         # If messaging is disabled in kernel.cfg, do not do anything
         if not messaging:
@@ -443,14 +529,13 @@ class Module(seiscomp.kernel.Module):
 
             try:
                 bind = self.env.getString("messaging.bind")
-                bindToks = bind.split(':')
+                bindToks = bind.split(":")
                 if len(bindToks) == 1:
                     messagingPort = int(bindToks[0])
                 elif len(bindToks) == 2:
                     messagingPort = int(bindToks[1])
                 else:
-                    sys.stdout.write(
-                        "E invalid messaging bind parameter: %s\n" % bind)
+                    sys.stdout.write(f"E invalid messaging bind parameter: {bind}\n")
                     sys.stdout.write("  expected either 'port' or 'ip:port'\n")
                     return 1
             except:
@@ -461,11 +546,16 @@ class Module(seiscomp.kernel.Module):
             p = parseBindPort(cfg.getString("interface.ssl.bind"))
             if p > 0:
                 messagingPort = p
-                messagingProtocol = 'scmps'
+                messagingProtocol = "scmps"
 
         # Synchronize database configuration
-        params = [self.name, '--console', '1', '-H',
-                  '%s://localhost:%d' % (messagingProtocol, messagingPort)]
+        params = [
+            self.name,
+            "--console",
+            "1",
+            "-H",
+            "%s://localhost:%d" % (messagingProtocol, messagingPort),
+        ]
         # Create the database update app and run it
         # This app implements a seiscomp.client.Application and connects
         # to localhost regardless of connections specified in global.cfg to

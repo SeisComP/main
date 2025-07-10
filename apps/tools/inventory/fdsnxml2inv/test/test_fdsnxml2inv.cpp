@@ -47,6 +47,7 @@ BOOST_AUTO_TEST_CASE(CheckConvert2FDSNXML) {
 
 	FDSNXML::FDSNStationXML msg;
 	Convert2FDSNStaXML cnv(&msg);
+	msg.setCreated(Core::Time(1970, 1, 1, 0, 0, 0, 0));
 	cnv.push(inv.get());
 
 	FDSNXML::Exporter out;

@@ -21,27 +21,49 @@
 #include <seiscomp/qc/qcprocessor_availability.h>
 #include "qcplugin_availability.h"
 
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 namespace Seiscomp {
 
-namespace Private {
-int round(double val)
-{
-	return static_cast<int>(val + 0.5);
-}}
 
+namespace Private {
+
+int round(double val) {
+	return static_cast<int>(val + 0.5);
+}
+
+
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 namespace Applications {
 namespace Qc {
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 using namespace Seiscomp::Processing;
 using namespace Seiscomp::DataModel;
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #define REGISTERED_NAME "QcAvailability"
 
 IMPLEMENT_SC_CLASS_DERIVED(QcPluginAvailability, QcPlugin, "QcPluginAvailability");
 ADD_SC_PLUGIN("Qc Parameter Availability", "GFZ Potsdam <seiscomp-devel@gfz-potsdam.de>", 0, 1, 0)
 REGISTER_QCPLUGIN(QcPluginAvailability, REGISTERED_NAME);
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -53,15 +75,6 @@ QcPluginAvailability::QcPluginAvailability(): QcPlugin() {
 	_parameterNames.push_back("availability");
 	_parameterNames.push_back("gaps count");
 	_parameterNames.push_back("overlaps count");
-
-}
-
-std::string QcPluginAvailability::registeredName() const {
-	return _name;
-}
-
-std::vector<std::string> QcPluginAvailability::parameterNames() const {
-	return _parameterNames;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -70,7 +83,6 @@ std::vector<std::string> QcPluginAvailability::parameterNames() const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void QcPluginAvailability::timeoutTask() {
-
 	if (_qcBuffer->empty()) {
 		SEISCOMP_DEBUG("qcAvailability: Waveform buffer is empty");
 		return;
@@ -78,16 +90,16 @@ void QcPluginAvailability::timeoutTask() {
 
 	QcParameter* qcp = new QcParameter();
 	qcp->recordSamplingFrequency = -1;
-	qcp->recordEndTime = Core::Time::GMT();
-	
+	qcp->recordEndTime = Core::Time::UTC();
+
 	// origin of previous buffer item was a real record
 	if (_qcBuffer->back()->recordSamplingFrequency != -1) {
 		_lastRecordEndTime = _qcBuffer->back()->recordEndTime;
 	}
 
 	qcp->recordStartTime = _lastRecordEndTime;
-	qcp->parameter = (double)(qcp->recordEndTime - qcp->recordStartTime);
-	_qcBuffer->push_back(qcp);
+	qcp->parameter = static_cast<double>(qcp->recordEndTime - qcp->recordStartTime);
+	_qcBuffer->push_back(&_streamID, qcp);
 
 	Core::Time t;
 	sendMessages(t);
@@ -99,10 +111,12 @@ void QcPluginAvailability::timeoutTask() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void QcPluginAvailability::generateReport(const QcBuffer* buf) const {
-	if (buf->empty()) return;
+	if ( buf->empty() ) {
+		return;
+	}
 
 	std::vector<double> result = availability(buf);
-	WaveformQuality* obj;
+	WaveformQuality *obj;
 
 	SEISCOMP_DEBUG("%s: %s - availability: %f   gaps count: %f   overlaps count: %f",
 	               _streamID.c_str(), _name.c_str(),
@@ -111,7 +125,7 @@ void QcPluginAvailability::generateReport(const QcBuffer* buf) const {
 	obj = new WaveformQuality();
 	obj->setWaveformID(getWaveformID(_streamID));
 	obj->setCreatorID(_app->creatorID());
-	obj->setCreated(Core::Time::GMT());
+	obj->setCreated(Core::Time::UTC());
 	obj->setStart(buf->startTime());
 	obj->setEnd(buf->endTime());
 	obj->setType("report");
@@ -119,13 +133,13 @@ void QcPluginAvailability::generateReport(const QcBuffer* buf) const {
 	obj->setValue(result[0]);
 	obj->setLowerUncertainty(0.0);
 	obj->setUpperUncertainty(0.0);
-	obj->setWindowLength((double)buf->length());
+	obj->setWindowLength(static_cast<double>(buf->length()));
 	pushObject(Object::Cast(obj));
 
 	obj = new WaveformQuality();
 	obj->setWaveformID(getWaveformID(_streamID));
 	obj->setCreatorID(_app->creatorID());
-	obj->setCreated(Core::Time::GMT());
+	obj->setCreated(Core::Time::UTC());
 	obj->setStart(buf->startTime());
 	obj->setEnd(buf->endTime());
 	obj->setType("report");
@@ -133,13 +147,13 @@ void QcPluginAvailability::generateReport(const QcBuffer* buf) const {
 	obj->setValue(result[1]);
 	obj->setLowerUncertainty(0.0);
 	obj->setUpperUncertainty(0.0);
-	obj->setWindowLength((double)buf->length());
+	obj->setWindowLength(static_cast<double>(buf->length()));
 	pushObject(Object::Cast(obj));
 
 	obj = new WaveformQuality();
 	obj->setWaveformID(getWaveformID(_streamID));
 	obj->setCreatorID(_app->creatorID());
-	obj->setCreated(Core::Time::GMT());
+	obj->setCreated(Core::Time::UTC());
 	obj->setStart(buf->startTime());
 	obj->setEnd(buf->endTime());
 	obj->setType("report");
@@ -147,7 +161,7 @@ void QcPluginAvailability::generateReport(const QcBuffer* buf) const {
 	obj->setValue(result[2]);
 	obj->setLowerUncertainty(0.0);
 	obj->setUpperUncertainty(0.0);
-	obj->setWindowLength((double)buf->length());
+	obj->setWindowLength(static_cast<double>(buf->length()));
 	pushObject(Object::Cast(obj));
 
 }
@@ -157,8 +171,7 @@ void QcPluginAvailability::generateReport(const QcBuffer* buf) const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void QcPluginAvailability::generateAlert(const QcBuffer* shortBuffer, const QcBuffer* longBuffer) const {
-	if (shortBuffer->empty() || longBuffer->empty()) return;
+void QcPluginAvailability::generateAlert(const QcBuffer *, const QcBuffer *) const {
 	// NOOP
 	return;
 }
@@ -168,41 +181,47 @@ void QcPluginAvailability::generateAlert(const QcBuffer* shortBuffer, const QcBu
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-std::vector<double> QcPluginAvailability::availability(const QcBuffer* buf) const {
+std::vector<double> QcPluginAvailability::availability(const QcBuffer *buf) const {
 	std::vector<double> returnVector(3);
 	returnVector[0] = 0.0; // availability
 	returnVector[1] = 0.0; // gap count
 	returnVector[2] = 0.0; // overlap count
 
-	if (buf->empty())
+	if ( buf->empty() ) {
 		return returnVector;
+	}
 
 	int effectiveSamples = 0;
 	Core::TimeWindow tw(buf->startTime(), buf->endTime());
 	double samplingFrequency =  buf->front()->recordSamplingFrequency;
-	if (samplingFrequency == -1.0)
+
+	if ( samplingFrequency == -1.0 ) {
 		return returnVector; // a timeout entry
-	int estimatedSamples = Private::round(tw.length() * samplingFrequency);
+	}
+
+	int estimatedSamples = Private::round(static_cast<double>(tw.length()) * samplingFrequency);
 	int gapCount = 0;
 	int overlapCount = 0;
 	Core::Time lastTime = Core::Time();
 
-	for (QcBuffer::const_iterator it = buf->begin(); it != buf->end(); ++it) {
+	for ( auto it = buf->begin(); it != buf->end(); ++it ) {
 		QcParameterCPtr qcp = (*it);
 
 		double recordSamplingFrequency =  qcp->recordSamplingFrequency;
-		if (recordSamplingFrequency == -1.0)
+		if ( recordSamplingFrequency == -1.0 ) {
 			continue; // a timeout entry
+		}
 
 		Core::TimeWindow tw2(qcp->recordStartTime, qcp->recordEndTime);
-		int sampleCount = Private::round(tw2.length() * recordSamplingFrequency);
+		int sampleCount = Private::round(static_cast<double>(tw2.length()) * recordSamplingFrequency);
 
 		//! get gaps/overlaps
-		if (lastTime != Core::Time()) {
+		if ( lastTime != Core::Time() ) {
 			double diff = (double)(qcp->recordStartTime - lastTime);
-			if (diff > (0.5 / recordSamplingFrequency))
+			if ( diff > (0.5 / recordSamplingFrequency) ) {
 				gapCount++;
-			if (diff < (-0.5 / recordSamplingFrequency)) {
+			}
+			if ( diff < (-0.5 / recordSamplingFrequency) ) {
 				overlapCount++;
 			}
 		}
@@ -210,25 +229,27 @@ std::vector<double> QcPluginAvailability::availability(const QcBuffer* buf) cons
 
 		//! get availability
 		// record complete inside timeWindow
-		if (tw.contains(tw2)) {
+		if ( tw.contains(tw2) ) {
 			effectiveSamples += sampleCount;
 			continue;
 		}
+
 		// timeWindow complete inside record
-		if (tw2.contains(tw)) {
+		if ( tw2.contains(tw) ) {
 			effectiveSamples = estimatedSamples;
 			break;
 		}
+
 		// record at least overlaps timeWindow
-		if (tw.overlaps(tw2)) {
+		if ( tw.overlaps(tw2) ) {
 			// cut record's extra data at the beginning
-			double dt = (double)(tw.startTime() - qcp->recordStartTime);
-			if (dt > 0) {
+			double dt = static_cast<double>(tw.startTime() - qcp->recordStartTime);
+			if ( dt > 0 ) {
 				effectiveSamples += sampleCount - Private::round(dt * recordSamplingFrequency);
 				continue;
 			}
 			// cut record's extra data at the end
-			dt = (double)(qcp->recordEndTime - tw.endTime());
+			dt = static_cast<double>(qcp->recordEndTime - tw.endTime());
 			if (dt > 0) {
 				effectiveSamples += sampleCount - Private::round(dt * recordSamplingFrequency);
 				continue;
@@ -238,7 +259,10 @@ std::vector<double> QcPluginAvailability::availability(const QcBuffer* buf) cons
 
 	returnVector[0] = 100.0 * effectiveSamples / estimatedSamples;
 	// prevent availability > 100%
-	if (returnVector[0] > 100.0 ) returnVector[0] = 100.0;
+	if ( returnVector[0] > 100.0 ) {
+		returnVector[0] = 100.0;
+	}
+
 	returnVector[1] = gapCount;
 	returnVector[2] = overlapCount;
 	return returnVector;
@@ -246,7 +270,10 @@ std::vector<double> QcPluginAvailability::availability(const QcBuffer* buf) cons
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-}
-}
-}
 
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+}
+}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

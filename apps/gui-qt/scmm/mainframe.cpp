@@ -127,7 +127,7 @@ QString prettySize(double size) {
 
 QString prettyTimeSpan(const Seiscomp::Core::TimeSpan& span) {
 	int days, hours, minutes, seconds;
-	span.elapsedTime(&days, &hours, &minutes, &seconds);
+	span.get(&days, &hours, &minutes, &seconds);
 
 	if ( days > 0 )
 		return QString("%1d%2h%3m%4s")
@@ -168,7 +168,7 @@ class ClientItem : public QTreeWidgetItem {
 		ClientItem(QTreeWidget* parent) : QTreeWidgetItem(parent) { init(); }
 
 		void init() {
-			_lastReponse = Core::Time::GMT();
+			_lastReponse = Core::Time::UTC();
 		}
 
 		const Core::Time &lastResponse() const {
@@ -725,7 +725,7 @@ void MainFrame::onMessageSkipped(Seiscomp::Client::Packet *pkt) {
 			}
 
 			QStringList info = QString(pkt->payload.c_str()).split('&');
-			Core::Time now = Seiscomp::Core::Time::GMT();
+			Core::Time now = Seiscomp::Core::Time::UTC();
 			Seiscomp::Core::TimeSpan responseTime = now - item->lastResponse();
 			item->setLastResponse(now);
 
@@ -781,7 +781,7 @@ void MainFrame::onTimer() {
 	if ( header ) {
 		for ( int i = 0; i < _ui.treeActiveClients->topLevelItemCount(); ++i ) {
 			ClientItem *item = (ClientItem*)_ui.treeActiveClients->topLevelItem(i);
-			Core::Time now = Seiscomp::Core::Time::GMT();
+			Core::Time now = Seiscomp::Core::Time::UTC();
 			Seiscomp::Core::TimeSpan responseTime = now - item->lastResponse();
 			item->setValue(header, Client::Status::Tag(Client::Status::ResponseTime).toString(), prettyTimeSpan(responseTime));
 		}
@@ -796,7 +796,7 @@ void MainFrame::onLog(const QString &/*channelName*/,
                       const QString &msg,
                       int time) {
 	QDateTime dt;
-	dt.setTime_t(time);
+	dt.setSecsSinceEpoch(time);
 
 	_ui.textLog->setTextColor(QColor(0,0,0));
 	_ui.textLog->insertPlainText("[" + dt.toString(Qt::ISODate) + "] ");

@@ -159,7 +159,7 @@
 					separated by a tilde &quot;~&quot;. To dump one hour of
 					waveform data between 2008/01/01 00:00:00 and 2008/01/01
 					01:00:00 use
-					&lt;-t &quot;2008-01-01 00:00:00~2008-01-01 01:00:00&quot;&gt;.
+					&lt;-t 2008-01-01T00:00:00~2008-01-01T01:00:00&gt;.
 					</description>
 				</option>
 			</group>

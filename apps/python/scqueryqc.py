@@ -18,8 +18,8 @@
 ############################################################################
 
 import os
-import re
 import sys
+import re
 import seiscomp.core
 import seiscomp.client
 import seiscomp.io
@@ -105,10 +105,14 @@ class WfqQuery(seiscomp.client.Application):
 
         self.commandline().addGroup("Query")
         self.commandline().addStringOption(
-            "Query", "begin,b", "Begin time of query: 'YYYY-MM-DD hh:mm:ss'"
+            "Query",
+            "begin,b",
+            "Begin time of query. Uses 1900-01-01T00:00:00 unless given.",
         )
         self.commandline().addStringOption(
-            "Query", "end,e", "End time of query: 'YYYY-MM-DD hh:mm:ss'"
+            "Query",
+            "end,e",
+            "End time of query. Uses current time unless given.",
         )
         self.commandline().addStringOption(
             "Query",
@@ -116,7 +120,7 @@ class WfqQuery(seiscomp.client.Application):
             "Waveform stream ID to search for QC parameters: net.sta.loc.cha -"
             " [networkCode].[stationCode].[sensorLocationCode].[channelCode]. "
             "Provide a single ID or a comma-separated list. Overrides "
-            "--streams-from-inventory",
+            "--streams-from-inventory.",
         )
         self.commandline().addStringOption(
             "Query",
@@ -151,8 +155,8 @@ Query a database for waveform quality control (QC) parameters.""",
         print(
             f"""Examples:
 Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from \
-'2021-11-20 00:00:00' until current
-  {os.path.basename(__file__)} -d localhost -b '2021-11-20 00:00:00' -p rms,delay \
+2021-11-20 00:00:00 until current
+  {os.path.basename(__file__)} -d localhost -b 2021-11-20T00:00:00 -p rms,delay \
 -i AU.AS18..SHZ,AU.AS19..SHZ""",
             file=sys.stderr,
         )
@@ -257,12 +261,22 @@ Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from \
         # write parameters
         for parameter in self._parameter.split(","):
             for stream in streams:
+                start = seiscomp.core.Time.FromString(self._start)
+                if start is None:
+                    seiscomp.logging.error(f"Wrong 'start' format '{self._start}'")
+                    return False
+
+                end = seiscomp.core.Time.FromString(self._end)
+                if end is None:
+                    seiscomp.logging.error(f"Wrong 'end' format '{self._end}'")
+                    return False
+
                 (net, sta, loc, cha) = stream.split(".")
                 it = self.query().getWaveformQuality(
                     seiscomp.datamodel.WaveformStreamID(net, sta, loc, cha, ""),
                     parameter,
-                    seiscomp.core.Time.FromString(self._start, "%Y-%m-%d %H:%M:%S"),
-                    seiscomp.core.Time.FromString(self._end, "%Y-%m-%d %H:%M:%S"),
+                    start,
+                    end,
                 )
 
                 while it.get():

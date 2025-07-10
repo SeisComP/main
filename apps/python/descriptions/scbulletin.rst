@@ -1,10 +1,10 @@
-scbulletin transforms the parameters of events or origins either to various formats.
-Currently supported output formats are:
+scbulletin transforms the parameters of events or origins to various bulletin
+formats. Currently supported output formats are:
 
-* autoloc1,
-* autoloc3,
-* fdsnws,
-* kml.
+* 1: autoloc1,
+* 3: autoloc3,
+* 4: fdsnws,
+* 5: kml.
 
 
 Input Modes
@@ -14,7 +14,7 @@ Two modes of parameter input are possible:
 
 #. Dump mode: Fetch all necessary information from database directly. Either
    choose one or more event or origin IDs. The database connection must be given
-   with :option:`-o`.
+   with :option:`-d`.
 #. Input mode: Provide all event and origin information in XML (:term:`SCML`)
    format from file or stdin. You may filter further by event or origin ID.
 
@@ -32,22 +32,24 @@ information.
 Output Modes
 ============
 
-The generated content is written to stdout or, with option :option:`-o` to a
-file. Different output formats are available by command-line options:
+The generated content is written to stdout or to a file with option :option:`-o`.
+Different output formats are available by command-line options:
 
-* ``-1`` for **autoloc1**: Print one bulletin per event.
-* ``-3`` for **autoloc3**: Print one bulletin per event.
-* ``-3 -x`` for **extended autoloc3**.
-* ``-4`` or ``--fdsnws`` for FDSNWS event text: Print one line per event. Useful
-  for generating event catalogs. This option offers an alternative to generating
-  event catalogs by :ref:`fdsnws-event <sec-event>`.
-* ``-5`` or ``--kml`` for KML/GIS file format. The output can be viewed, e.g.,
-  in *Google Earth*.
+* :option:`-1` for **autoloc1**: Print one bulletin per event.
+* :option:`-3` for **autoloc3**: Print one bulletin per event.
+* :option:`-4` or :option:`--fdsnws` for FDSNWS event text: Print one line per
+  event. Useful for generating event catalogs. This option offers an alternative
+  to generating event catalogs compatible with :ref:`fdsnws-event <sec-event>`
+  CSV format defined by :cite:t:`fdsn`.
+* :option:`-5` or :option:`--kml` for KML/GIS file format. The output can be
+  viewed, e.g., in *Google Earth*.
 
 By default, the output precision of times or coordinates is optimized for events
 at teleseismic or regional distances. Use the option :option:`-e` for
-**enhanced** output at higher precision: All times  and distances are in units
-of milliseconds and meters, respectively.
+**enhanced** output at higher precision. Then all times and distances are given
+with precision of milliseconds and meters, respectively.
+Combine options :option:`-3` or :option:`-4` with :option:`-x` for printing more
+parameters in generated bulletins.
 
 
 Examples
@@ -84,4 +86,5 @@ Examples
 .. note::
 
    When considering a single event XML file containing many events, the
-   bulletins of all events will be generated unless ``--first-only`` is used.
+   bulletins of all events will be generated unless :option:`--first-only` is
+   used.

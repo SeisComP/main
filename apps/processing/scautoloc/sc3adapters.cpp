@@ -21,7 +21,6 @@
 #include <seiscomp/datamodel/pick.h>
 #include <seiscomp/datamodel/publicobject.h>
 
-#include <seiscomp/math/geo.h>
 #include <seiscomp/math/mean.h>
 
 #include <iostream>
@@ -34,57 +33,47 @@
 #include "sc3adapters.h"
 #include "app.h"
 #include "util.h"
+#include "scutil.h"
 #include "datamodel.h"
 
-namespace Autoloc {
 
-void delazi(double lat1, double lon1, double lat2, double lon2,
-	    double &delta, double &az1, double &az2)
-{
-	Seiscomp::Math::Geo::delazi(lat1, lon1, lat2, lon2, &delta, &az1, &az2);
-}
-
-void delazi(const Hypocenter *hypo, const Station *station,
-	    double &delta, double &az1, double &az2)
-{
-	Seiscomp::Math::Geo::delazi(
-		   hypo->lat,    hypo->lon,
-		station->lat, station->lon,
-		&delta, &az1, &az2);
-}
-
-Seiscomp::Core::Time sc3time(const Time &time)
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Seiscomp::Core::Time sctime(const Autoloc::Time &time)
 {
 	return Seiscomp::Core::Time() + Seiscomp::Core::TimeSpan(time);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-} // namespace Autoloc
 
-Seiscomp::DataModel::Origin *Autoloc::convertToSC3(const Autoloc::Origin* origin, bool allPhases)
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Seiscomp::DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases)
 {
-	Seiscomp::DataModel::Origin *sc3origin
+	using namespace Autoloc;
+
+	Seiscomp::DataModel::Origin *scorigin
 	    = Seiscomp::DataModel::Origin::Create();
 
-	Seiscomp::DataModel::TimeQuantity sc3tq;
-	Seiscomp::DataModel::RealQuantity sc3rq;
+	Seiscomp::DataModel::TimeQuantity sctq;
+	Seiscomp::DataModel::RealQuantity scrq;
 
-	sc3origin->setTime(Seiscomp::DataModel::TimeQuantity(Autoloc::sc3time(origin->time), origin->timeerr, Seiscomp::Core::None, Seiscomp::Core::None, Seiscomp::Core::None));
-	sc3origin->setLatitude(Seiscomp::DataModel::RealQuantity(origin->lat, origin->laterr, Seiscomp::Core::None, Seiscomp::Core::None, Seiscomp::Core::None));
-	sc3origin->setLongitude(Seiscomp::DataModel::RealQuantity(origin->lon, origin->lonerr, Seiscomp::Core::None, Seiscomp::Core::None, Seiscomp::Core::None));
-	sc3origin->setDepth(Seiscomp::DataModel::RealQuantity(origin->dep, origin->deperr, Seiscomp::Core::None, Seiscomp::Core::None, Seiscomp::Core::None));
+	scorigin->setTime(Seiscomp::DataModel::TimeQuantity(sctime(origin->time), origin->timeerr, Seiscomp::Core::None, Seiscomp::Core::None, Seiscomp::Core::None));
+	scorigin->setLatitude(Seiscomp::DataModel::RealQuantity(origin->hypocenter.lat, origin->hypocenter.laterr, Seiscomp::Core::None, Seiscomp::Core::None, Seiscomp::Core::None));
+	scorigin->setLongitude(Seiscomp::DataModel::RealQuantity(origin->hypocenter.lon, origin->hypocenter.lonerr, Seiscomp::Core::None, Seiscomp::Core::None, Seiscomp::Core::None));
+	scorigin->setDepth(Seiscomp::DataModel::RealQuantity(origin->hypocenter.dep, origin->hypocenter.deperr, Seiscomp::Core::None, Seiscomp::Core::None, Seiscomp::Core::None));
 
-	sc3origin->setMethodID(origin->methodID);
-	sc3origin->setEarthModelID(origin->earthModelID);
+	scorigin->setMethodID(origin->methodID);
+	scorigin->setEarthModelID(origin->earthModelID);
 
-	sc3origin->setEvaluationMode(Seiscomp::DataModel::EvaluationMode(Seiscomp::DataModel::AUTOMATIC));
+	scorigin->setEvaluationMode(Seiscomp::DataModel::EvaluationMode(Seiscomp::DataModel::AUTOMATIC));
 	if ( origin->preliminary ) {
-		sc3origin->setEvaluationStatus(Seiscomp::DataModel::EvaluationStatus(Seiscomp::DataModel::PRELIMINARY));
+		scorigin->setEvaluationStatus(Seiscomp::DataModel::EvaluationStatus(Seiscomp::DataModel::PRELIMINARY));
 	}
 
 	switch ( origin->depthType ) {
 	case Autoloc::Origin::DepthFree:
-			sc3origin->setDepthType(Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::FROM_LOCATION));
+			scorigin->setDepthType(Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::FROM_LOCATION));
 			break;
 
 	case Autoloc::Origin::DepthMinimum:
@@ -94,7 +83,7 @@ Seiscomp::DataModel::Origin *Autoloc::convertToSC3(const Autoloc::Origin* origin
 			break;
 
 	case Autoloc::Origin::DepthManuallyFixed:
-			sc3origin->setDepthType(Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::OPERATOR_ASSIGNED));
+			scorigin->setDepthType(Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::OPERATOR_ASSIGNED));
 			break;
 	default:
 			break;
@@ -104,16 +93,11 @@ Seiscomp::DataModel::Origin *Autoloc::convertToSC3(const Autoloc::Origin* origin
 	// origins with fixed depth, as this caused some problems at BMG
 	// where the fixed-depth checkbox was not unchecked and an incorrect
 	// depth was retained. Need a better way, though.
-//	sc3origin->setDepthType(Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::FROM_LOCATION));
+//	scorigin->setDepthType(Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::FROM_LOCATION));
 
+	size_t arrivalCount = origin->arrivals.size();
 
-	// Store SC3 Picks/Stations here so that they can be found
-	// via SC3 PublicObject lookup
-	std::vector<Seiscomp::DataModel::PublicObjectPtr> sc3objects;
-
-	int arrivalCount = origin->arrivals.size();
-
-	for ( int i=0; i<arrivalCount; i++ ) {
+	for ( size_t i=0; i<arrivalCount; i++ ) {
 		const Autoloc::Arrival &arr = origin->arrivals[i];
 
 		// If not all (automatic) phases are requested, only include P and PKP
@@ -125,55 +109,28 @@ Seiscomp::DataModel::Origin *Autoloc::convertToSC3(const Autoloc::Origin* origin
 		// Don't include arrivals with huge residuals as (unless by
 		// accident) these are excluded from the location anyway.
 /*
-		if (arr.excluded && fabs(arr.residual) > 30.) { // FIXME: quick+dirty fix
+		if (arr.excluded && std::abs(arr.residual) > 30.) { // FIXME: quick+dirty fix
 			SEISCOMP_DEBUG_S("SKIPPING 1  "+arr.pick->id);
 			continue;
 		}
 */
 		const Seiscomp::DataModel::Phase phase(arr.phase);
-		Seiscomp::DataModel::ArrivalPtr sc3arr
+		Seiscomp::DataModel::Arrival* scarr
 		        = new Seiscomp::DataModel::Arrival();
-		sc3arr->setPickID(arr.pick->id);
-		sc3arr->setDistance(arr.distance);
-		sc3arr->setAzimuth(arr.azimuth);
-		sc3arr->setTimeResidual( arr.residual);
-		sc3arr->setTimeUsed(arr.excluded == Arrival::NotExcluded);
-		sc3arr->setBackazimuthUsed(arr.excluded == Arrival::NotExcluded);
-		sc3arr->setHorizontalSlownessUsed(arr.excluded == Arrival::NotExcluded);
-		sc3arr->setWeight(arr.excluded == Arrival::NotExcluded ? 1. : 0.);
-		sc3arr->setPhase(phase);
+		scarr->setPickID(arr.pick->id);
+		scarr->setDistance(arr.distance);
+		scarr->setAzimuth(arr.azimuth);
+		scarr->setTimeResidual( arr.residual);
+		scarr->setTimeUsed(arr.excluded == Arrival::NotExcluded);
+		scarr->setBackazimuthUsed(arr.excluded == Arrival::NotExcluded);
+		scarr->setHorizontalSlownessUsed(arr.excluded == Arrival::NotExcluded);
+		scarr->setWeight(arr.excluded == Arrival::NotExcluded ? 1. : 0.);
+		scarr->setPhase(phase);
 
-		Seiscomp::DataModel::PickPtr sc3pick
-		        = Seiscomp::DataModel::Pick::Find(arr.pick->id);
-
-		if ( !sc3pick ) {
-			sc3pick = Seiscomp::DataModel::Pick::Create(arr.pick->id);
-			if ( !sc3pick ) {
-				// This should never occur - if it does we give up!
-				SEISCOMP_ERROR_S("Failed to create pick "+arr.pick->id);
-				return NULL;
-			}
-			const Autoloc::Station *sta = arr.pick->station();
-			Seiscomp::DataModel::WaveformStreamID wfid(sta->net, sta->code, "", "XYZ", "");
-			sc3pick->setWaveformID(wfid);
-			sc3tq.setValue(Autoloc::sc3time(arr.pick->time));
-			sc3pick->setTime(sc3tq);
-			sc3pick->setPhaseHint(phase);
-
-			if ( arr.pick->mode == Autoloc::Pick::Manual ) {
-				sc3pick->setEvaluationMode(Seiscomp::DataModel::EvaluationMode(Seiscomp::DataModel::MANUAL));
-			}
-			else {
-				sc3pick->setEvaluationMode(Seiscomp::DataModel::EvaluationMode(Seiscomp::DataModel::AUTOMATIC));
-			}
-		}
-		sc3objects.push_back(sc3pick);
-
-		sc3origin->add(sc3arr.get());
+		scorigin->add(scarr);
 	}
-
 	Seiscomp::DataModel::OriginQuality oq;
-	oq.setAssociatedPhaseCount(sc3origin->arrivalCount());
+	oq.setAssociatedPhaseCount(scorigin->arrivalCount());
 	oq.setUsedPhaseCount(origin->definingPhaseCount());
 	oq.setAssociatedStationCount(origin->associatedStationCount());
 	oq.setUsedStationCount(origin->definingStationCount());
@@ -185,87 +142,90 @@ Seiscomp::DataModel::Origin *Autoloc::convertToSC3(const Autoloc::Origin* origin
 
 	double minDist, maxDist, aziGap;
 	origin->geoProperties(minDist, maxDist, aziGap);
-
 	oq.setMinimumDistance(minDist);
 	oq.setMaximumDistance(maxDist);
 	oq.setAzimuthalGap(aziGap);
 
-	sc3origin->setQuality(oq);
+	scorigin->setQuality(oq);
 
-	return sc3origin;
+	return scorigin;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC3(const Seiscomp::DataModel::Origin *sc3origin)
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seiscomp::DataModel::Origin *scorigin)
 {
-	double lat = sc3origin->latitude().value();
-	double lon = sc3origin->longitude().value();
-	double dep = sc3origin->depth().value();
-	double time = double(sc3origin->time().value() - Seiscomp::Core::Time());
+	double lat = scorigin->latitude().value();
+	double lon = scorigin->longitude().value();
+	double dep = scorigin->depth().value();
+	double time = double(scorigin->time().value() - Seiscomp::Core::Time());
 
 	::Autoloc::Origin *origin = new ::Autoloc::Origin(lat, lon, dep, time);
 
 	try {
-		origin->laterr = 0.5 * (sc3origin->latitude().lowerUncertainty()
-		                        + sc3origin->latitude().upperUncertainty());
+		origin->hypocenter.laterr = 0.5 * (scorigin->latitude().lowerUncertainty()
+		                        + scorigin->latitude().upperUncertainty());
 	}
 	catch ( ... ) {
 		try {
-			origin->laterr = sc3origin->latitude().uncertainty();
+			origin->hypocenter.laterr = scorigin->latitude().uncertainty();
 		}
 		catch ( ... ) {
-			origin->laterr = 0;
+			origin->hypocenter.laterr = 0;
 		}
 	}
 
 	try {
-		origin->lonerr = 0.5 * (sc3origin->longitude().lowerUncertainty()
-		                        + sc3origin->longitude().upperUncertainty());
+		origin->hypocenter.lonerr = 0.5 * (scorigin->longitude().lowerUncertainty()
+		                        + scorigin->longitude().upperUncertainty());
 	}
 	catch ( ... ) {
 		try {
-			origin->lonerr = sc3origin->longitude().uncertainty();
+			origin->hypocenter.lonerr = scorigin->longitude().uncertainty();
 		}
 		catch ( ... ) {
-			origin->lonerr = 0;
+			origin->hypocenter.lonerr = 0;
 		}
 	}
 
 	try {
-		origin->deperr = 0.5 * (sc3origin->depth().lowerUncertainty()
-		                        + sc3origin->depth().upperUncertainty());
+		origin->hypocenter.deperr = 0.5 * (scorigin->depth().lowerUncertainty()
+		                        + scorigin->depth().upperUncertainty());
 	}
 	catch ( ... ) {
 		try {
-			origin->deperr = sc3origin->depth().uncertainty();
+			origin->hypocenter.deperr = scorigin->depth().uncertainty();
 		}
 		catch ( ... ) {
-			origin->deperr = 0;
+			origin->hypocenter.deperr = 0;
 		}
 	}
 
 	try {
-		origin->timeerr = 0.5 * (sc3origin->time().lowerUncertainty()
-		                         + sc3origin->time().upperUncertainty());
+		origin->timeerr = 0.5 * (scorigin->time().lowerUncertainty()
+		                         + scorigin->time().upperUncertainty());
 	}
 	catch ( ... ) {
 		try {
-			origin->timeerr = sc3origin->time().uncertainty();
+			origin->timeerr = scorigin->time().uncertainty();
 		}
 		catch ( ... ) {
 			origin->timeerr = 0;
 		}
 	}
 
-	int arrivalCount = sc3origin->arrivalCount();
+	int arrivalCount = scorigin->arrivalCount();
 	for ( int i=0; i<arrivalCount; i++ ) {
-		const std::string &pickID = sc3origin->arrival(i)->pickID();
+		const std::string &pickID = scorigin->arrival(i)->pickID();
 /*
-		Seiscomp::DataModel::Pick *sc3pick = Seiscomp::DataModel::Pick::Find(pickID);
-		if ( ! sc3pick) {
+		Seiscomp::DataModel::Pick *scpick = Seiscomp::DataModel::Pick::Find(pickID);
+		if ( ! scpick) {
 			SEISCOMP_ERROR_S("Pick " + pickID + " not found - cannot convert origin");
 			delete origin;
-			return NULL;
+			return nullptr;
 			// TODO:
 			// Trotzdem mal schauen, ob wir den Pick nicht
 			// als Autoloc-Pick schon haben
@@ -276,33 +236,50 @@ Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC3(const Seis
 // TODO: Use Cache here!
 			// XXX FIXME: This may also happen after Autoloc cleaned up older picks, so the pick isn't available any more!
 			SEISCOMP_ERROR_S("Pick " + pickID + " not found in internal pick pool - SKIPPING this pick");
-			if (Seiscomp::DataModel::PublicObject::Find(pickID))
-				SEISCOMP_ERROR("HOWEVER, this pick is present in pool of public objects");
+//			if (Seiscomp::DataModel::PublicObject::Find(pickID))
+//				SEISCOMP_ERROR("HOWEVER, this pick is present in pool of public objects");
 			// This actually IS an error but we try to work around
 			// it instead of giving up in this origin completely.
 			continue;
 //			delete origin;
-//			return NULL;
+//			return nullptr;
 		}
 
 		::Autoloc::Arrival arr(pick /* , const std::string &phase="P", double residual=0 */ );
-		try { arr.residual = sc3origin->arrival(i)->timeResidual(); }
-		catch(...) { arr.residual = 0; SEISCOMP_WARNING("got arrival with timeResidual not set"); }
-		try { arr.distance = sc3origin->arrival(i)->distance(); }
-		catch(...) { arr.distance = 0; SEISCOMP_WARNING("got arrival with distance not set"); }
-		try { arr.azimuth  = sc3origin->arrival(i)->azimuth(); }
-		catch(...) { arr.azimuth = 0; SEISCOMP_WARNING("got arrival with azimuth not set"); }
+		try {
+			arr.residual = scorigin->arrival(i)->timeResidual();
+		}
+		catch ( ... ) {
+			arr.residual = 0;
+			SEISCOMP_WARNING("got arrival with timeResidual not set");
+		}
 
-		if ( sc3origin->evaluationMode() == DataModel::MANUAL ) {
+		try {
+			arr.distance = scorigin->arrival(i)->distance();
+		}
+		catch ( ... ) {
+			arr.distance = 0;
+			SEISCOMP_WARNING("got arrival with distance not set");
+		}
+
+		try {
+			arr.azimuth  = scorigin->arrival(i)->azimuth();
+		}
+		catch ( ... ) {
+			arr.azimuth = 0;
+			SEISCOMP_WARNING("got arrival with azimuth not set");
+		}
+
+		if ( scorigin->evaluationMode() == DataModel::MANUAL ) {
 			// for manual origins we do allow secondary phases like pP
-			arr.phase = sc3origin->arrival(i)->phase();
+			arr.phase = scorigin->arrival(i)->phase();
 
 			try {
-				if ( !sc3origin->arrival(i)->timeUsed() ) {
+				if ( !scorigin->arrival(i)->timeUsed() ) {
 					arr.excluded = ::Autoloc::Arrival::ManuallyExcluded;
 				}
 			}
-			catch( ... ) {
+			catch ( ... ) {
 				// In a manual origin in which the time is not
 				// explicitly used we treat the arrival as if
 				// it was explicitly excluded.
@@ -313,10 +290,10 @@ Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC3(const Seis
 		origin->arrivals.push_back(arr);
 	}
 
-	origin->publicID = sc3origin->publicID();
+	origin->publicID = scorigin->publicID();
 	try {
 	// FIXME: In scolv the Origin::depthType is not set!
-	Seiscomp::DataModel::OriginDepthType dtype = sc3origin->depthType();
+	Seiscomp::DataModel::OriginDepthType dtype = scorigin->depthType();
 	if ( dtype == Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::FROM_LOCATION) ) {
 		origin->depthType = ::Autoloc::Origin::DepthFree;
 	}
@@ -325,9 +302,9 @@ Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC3(const Seis
 		origin->depthType = ::Autoloc::Origin::DepthManuallyFixed;
 	}
 	}
-	catch( ... ) {
+	catch ( ... ) {
 		SEISCOMP_WARNING("Origin::depthType is not set!");
-		if (sc3origin->evaluationMode() == DataModel::MANUAL &&
+		if (scorigin->evaluationMode() == DataModel::MANUAL &&
 		    _config.adoptManualDepth == true) {
 			// This is a hack! We cannot know wether the operator
 			// assigned a depth manually, but we can assume the
@@ -345,27 +322,31 @@ Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC3(const Seis
 
 	return origin;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-Autoloc::Pick *Seiscomp::Applications::Autoloc::App::convertFromSC3(const Seiscomp::DataModel::Pick *sc3pick)
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Autoloc::Pick *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seiscomp::DataModel::Pick *scpick)
 {
-	const std::string &id  = sc3pick->publicID();
-	const std::string &net = sc3pick->waveformID().networkCode();
-	const std::string &sta = sc3pick->waveformID().stationCode();
-	::Autoloc::Time time = ::Autoloc::Time(sc3pick->time().value());
+	const std::string &id  = scpick->publicID();
+	const std::string &label = pickLabel(scpick);
+	const std::string &net = scpick->waveformID().networkCode();
+	const std::string &sta = scpick->waveformID().stationCode();
+	::Autoloc::Time time = ::Autoloc::Time(scpick->time().value());
 
-	// FIXME: XXX XXX XXX   This will create duplicates if a pick with
-	// that ID exists already. Make sure this cannot happen!
-	::Autoloc::Pick* pick = new ::Autoloc::Pick(id,net,sta,time);
+	::Autoloc::Pick* pick = new ::Autoloc::Pick(id, label, net, sta, time);
 
-	pick->mode = ::Autoloc::Utils::mode(sc3pick);
-	pick->loc = sc3pick->waveformID().locationCode();
-	pick->cha = sc3pick->waveformID().channelCode();
+	pick->mode = ::Autoloc::Utils::mode(scpick);
+	pick->loc = scpick->waveformID().locationCode();
+	pick->cha = scpick->waveformID().channelCode();
 
 	if (pick->loc=="")
 		pick->loc = "__";
 
-	pick->attachment = sc3pick;
+	pick->attachment = scpick;
 
 	return pick;
 }
-
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

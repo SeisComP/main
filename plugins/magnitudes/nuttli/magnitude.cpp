@@ -53,13 +53,22 @@ namespace {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 MNMagnitude::MNMagnitude()
-: MagnitudeProcessor(MAG_TYPE)
-, _minSNR(2)
-, _minPeriod(0.01)
-, _maxPeriod(1.3)
-, _minDistance(0.5)
-, _maxDistance(30)
-{}
+: MagnitudeProcessor(MAG_TYPE) {
+	setDefaults();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MNMagnitude::setDefaults() {
+	_minimumSNR = 2.0;
+	_minimumPeriod = 0.01;
+	_maximumPeriod = 1.3;
+	_minimumDistanceDeg = 0.5;
+	_maximumDistanceDeg = 30;
+}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -67,27 +76,11 @@ MNMagnitude::MNMagnitude()
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool MNMagnitude::setup(const Settings &settings) {
-	if ( !MagnitudeProcessor::setup(settings) )
+	setDefaults();
+
+	if ( !MagnitudeProcessor::setup(settings) ) {
 		return false;
-
-	_minSNR = 2;
-	_minPeriod = 0.01;
-	_maxPeriod = 1.3;
-	_minDistance = 0.5;
-	_maxDistance = 30;
-
-	string prefix = string("magnitudes.") + type() + ".";
-
-	try { _minSNR = settings.getDouble(prefix + "minSNR"); }
-	catch ( ... ) {}
-	try { _minPeriod = settings.getDouble(prefix + "minPeriod"); }
-	catch ( ... ) {}
-	try { _maxPeriod = settings.getDouble(prefix + "maxPeriod"); }
-	catch ( ... ) {}
-	try { _minDistance = settings.getDouble(prefix + "minDist"); }
-	catch ( ... ) {}
-	try { _maxDistance = settings.getDouble(prefix + "maxDist"); }
-	catch ( ... ) {}
+	}
 
 	return Seiscomp::Magnitudes::MN::initialize(settings.localConfiguration);
 }
@@ -109,14 +102,11 @@ MNMagnitude::computeMagnitude(double amplitude,
                               double &value) {
 	Status status = OK;
 
-	// Reset the valid flag. The flag will be selectively enabled to
-	// forward the magnitude for association with weight 0.
-	_validValue = false;
-
 	// Both objects are required to make sure that they both lie inside the
 	// configured region.
-	if ( hypocenter == NULL || receiver == NULL )
+	if ( !hypocenter || !receiver ) {
 		return MetaDataRequired;
+	}
 
 	try {
 		// All attributes must be set
@@ -142,40 +132,34 @@ MNMagnitude::computeMagnitude(double amplitude,
 		return MetaDataRequired;
 	}
 
-	if ( dist > _maxDistance )
+	if ( _maximumDistanceDeg && (dist > *_maximumDistanceDeg) ) {
 		return DistanceOutOfRange;
+	}
 
 	if ( !Seiscomp::Magnitudes::MN::isInsideRegion(
 	         hypocenter->latitude(), hypocenter->longitude()
-	      ) )
+	      ) ) {
 		return EpicenterOutOfRegions;
+	}
 
 	if ( !Seiscomp::Magnitudes::MN::isInsideRegion(
 	         receiver->latitude(), receiver->longitude()
-	      ) )
+	      ) ) {
 		return ReceiverOutOfRegions;
+	}
 
 	if ( !Seiscomp::Magnitudes::MN::isInsideRegion(
 	         hypocenter->latitude(), hypocenter->longitude(),
 	         receiver->latitude(), receiver->longitude()
-	      ) )
+	      ) ) {
 		return RayPathOutOfRegions;
-
-	if ( period < _minPeriod || period > _maxPeriod ) {
-		status = PeriodOutOfRange;
-		_validValue = true;
 	}
 
-	if ( snr < _minSNR ) {
-		status = SNROutOfRange;
-		_validValue = true;
-	}
-
-	if ( dist < _minDistance ) {
+	if ( _minimumDistanceDeg && (dist < *_minimumDistanceDeg) ) {
 		// Forward close magnitudes but associate
 		// them with zero weight
 		status = DistanceOutOfRange;
-		_validValue = true;
+		_treatAsValidMagnitude = true;
 	}
 
 	// Convert m/s to um/s
@@ -184,7 +168,7 @@ MNMagnitude::computeMagnitude(double amplitude,
 	// The method correctMagnitude automatically scales and offsets the input
 	// value with the configured coefficients. They are by default 1 and 0.
 	// correctMagnitude(x) -> x * _linearCorrection + _constantCorrection
-	value = 3.3 + 1.66*log10(dist) + log10(amplitude / (2*M_PI));
+	value = 3.3 + 1.66 * log10(dist) + log10(amplitude / (2 * M_PI));
 
 	return status;
 }
@@ -216,15 +200,6 @@ void MNMagnitude::finalizeMagnitude(Seiscomp::DataModel::StationMagnitude *magni
 		ci.setVersion(MN_VERSION);
 		magnitude->setCreationInfo(ci);
 	}
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool MNMagnitude::treatAsValidMagnitude() const {
-	return _validValue;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

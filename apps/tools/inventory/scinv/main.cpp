@@ -48,7 +48,7 @@ bool lessID(const T *v1, const T *v2) {
 
 
 string timeToStr(const Core::Time &time) {
-	if ( time.microseconds() == 0 && time.seconds() % 86400 == 0 ) {
+	if ( time.microseconds() == 0 && time.epochSeconds() % 86400 == 0 ) {
 		return time.toString("%F");
 	}
 
@@ -978,7 +978,7 @@ class InventoryManager : public Client::Application,
 						// Notify about start of synchronization
 						DataModel::InventorySyncMessagePtr ismsg = new DataModel::InventorySyncMessage(false);
 						ismsg->setCreationInfo(DataModel::CreationInfo());
-						ismsg->creationInfo().setCreationTime(Core::Time::GMT());
+						ismsg->creationInfo().setCreationTime(Core::Time::UTC());
 						ismsg->creationInfo().setAuthor(author());
 						ismsg->creationInfo().setAgencyID(agencyID());
 						connection()->send(Client::Protocol::STATUS_GROUP, ismsg.get());
@@ -1026,7 +1026,7 @@ class InventoryManager : public Client::Application,
 						cerr << endl;
 
 						// Notify about end of synchronization
-						ismsg->creationInfo().setCreationTime(Core::Time::GMT());
+						ismsg->creationInfo().setCreationTime(Core::Time::UTC());
 						ismsg->isFinished = true;
 						connection()->send(Client::Protocol::STATUS_GROUP, ismsg.get());
 

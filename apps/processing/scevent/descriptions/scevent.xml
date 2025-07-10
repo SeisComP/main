@@ -2,8 +2,9 @@
 <seiscomp>
 	<module name="scevent" category="Processing">
 		<description>
-		Associates an Origin to an Event or forms a new Event if no match is found.
-		Selects the preferred origin, magnitude and focal mechanism.</description>
+		Associate an Origin to an Event or form a new Event if no match is found.
+		Select the preferred origin, magnitude and focal mechanism.
+		</description>
 		<configuration>
 			<parameter name="eventIDPrefix" type="string">
 				<description>Prefix for all Event IDs</description>
@@ -29,13 +30,14 @@
 					[w] is an optional width parameter.
 				</description>
 			</parameter>
-			<parameter name="eventIDLookupMargin" type="integer" default="-1">
+			<parameter name="eventIDLookupMargin" type="int" default="-1">
 				<description>
 					Configures the number of event ID slots to look back and
 					forth when an event ID is already taken. The default in
 					previous versions was 5. Now -1 means that the margin is
-					determined automatically based on "eventAssociation.eventTimeBefore"
-					and "eventAssociation.eventTimeAfter". According to the
+					determined automatically based on
+					&quot;eventAssociation.eventTimeBefore&quot; and
+					&quot;eventAssociation.eventTimeAfter&quot;. According to the
 					configured "eventIDPattern" a fixed time range per slot
 					can be computed and with that width the number of look
 					ahead slots and look back slots can be computed based on
@@ -44,9 +46,16 @@
 			</parameter>
 			<parameter name="populateFERegion" type="boolean" default="false">
 				<description>
-					If enabled, then the EventDescription with type
-					'Flinn-Engdahl region' will be populated with the
-					Flinn-Engdahl region name.
+				If enabled, then the EventDescription with type
+				'Flinn-Engdahl region' will be populated with the
+				Flinn-Engdahl region name.
+				</description>
+			</parameter>
+			<parameter name="restAPI" type="string">
+				<description>
+				Defines the bind adress of the REST API endpoint. This API
+				allows to query for possible event associations of origin
+				candidates.
 				</description>
 			</parameter>
 			<group name="processing">
@@ -71,306 +80,364 @@
 
 				<parameter name="minimumDefiningPhases" type="int" default="10">
 					<description>
-						Minimum number of Picks for an Origin that is automatic and cannot be
-						associated with an Event to be allowed to form an new Event.
+						Minimum number of Picks for an Origin that is automatic
+						and cannot be associated with an Event to be allowed to
+						form an new Event.
 					</description>
 				</parameter>
 
 				<parameter name="minimumScore" type="double">
 					<description>
-						Minimum score of an automatic Origin to be allowed to
-						form an new Event. This requires an activated score
-						plugin and a score processor. Configure &quot;score&quot;
-						for defining the score processor and the score processor
-						parameters. If minimumScore is defined, &quot;minimumDefiningPhases&quot;
-						has no effect on association as this phase check will be
-						superseded by the score check. It is the task of the score
-						processor to evaluate a proper score for all input Origins.
+					Minimum score of an automatic Origin to be allowed to
+					form an new Event. This requires an activated score
+					plugin and a score processor. Configure &quot;score&quot;
+					for defining the score processor and the score processor
+					parameters. If minimumScore is defined, &quot;minimumDefiningPhases&quot;
+					has no effect on association as this phase check will be
+					superseded by the score check. It is the task of the score
+					processor to evaluate a proper score for all input Origins.
 					</description>
 				</parameter>
 
 				<parameter name="ignoreFMDerivedOrigins" type="boolean" default="true">
 					<description>
-						Ignore and do not associate Origins derived
-						from CMT/MT inversions.
+					Ignore and do not associate Origins derived
+					from CMT/MT inversions.
 					</description>
 				</parameter>
 
 				<parameter name="eventTimeBefore" type="double" unit="s" default="1800">
 					<description>
-						Time range before the Origin time of an incoming Origin to search for
-						matching events.
+					Time range before the Origin time of an incoming Origin to
+					search for matching events.
 					</description>
 				</parameter>
 
 				<parameter name="eventTimeAfter" type="double" unit="s" default="1800">
 					<description>
-						Time range after the Origin time of an incoming Origin to search for
-						matching events.
+					Time range after the Origin time of an incoming Origin to
+					search for matching events.
 					</description>
 				</parameter>
 
 				<parameter name="minimumMatchingArrivals" type="int" default="3">
 					<description>
-						Minimum number of matching picks between two Origins to be associated
-						to the same event.
+					Minimum number of matching picks between two Origins to be
+					associated to the same event.
 					</description>
 				</parameter>
 
 				<parameter name="maximumMatchingArrivalTimeDiff" type="double" unit="s" default="-1">
 					<description>
-						Negative time window: compare only pickIDs to find
-						matching arrivals. A non negative
-						value (including 0) compares pick times regardless
-						of the pickID. Pass: |pick1.time - pick2.time| &lt;= threshold
+					Negative time window: compare only pickIDs to find
+					matching arrivals. A non negative
+					value (including 0) compares pick times regardless
+					of the pickID. Pass: |pick1.time - pick2.time| &lt;= threshold
 					</description>
 				</parameter>
 
 				<parameter name="compareAllArrivalTimes" type="boolean" default="true">
 					<description>
-						This parameter is only used in conjunction with
-						eventAssociation.maximumMatchingArrivalTimeDiff.
-						If a station has multiple associated arrivals for a
-						particular event, this flag defines if the time distance
-						of a new pick to all arrivals must be within
-						eventAssociation.maximumMatchingArrivalTimeDiff
-						or if one matching arrival is enough.
+					This parameter is only used in conjunction with
+					&quot;eventAssociation.maximumMatchingArrivalTimeDiff&quot;.
+					If a station has multiple associated arrivals for a
+					particular event, this flag defines if the time distance
+					of a new pick to all arrivals must be within
+					&quot;eventAssociation.maximumMatchingArrivalTimeDiff&quot;
+					or if one matching arrival is enough.
 					</description>
 				</parameter>
 
 				<parameter name="allowLooseAssociatedArrivals" type="boolean" default="false">
 					<description>
-						Allows to match picks that are associated with weight 0.
+					Allows to match picks that are associated with weight 0.
 					</description>
 				</parameter>
 
 				<parameter name="maximumTimeSpan" type="double" unit="s" default="60">
 					<description>
-					Associates an Origin with an existing event  if the Origin
-					time differs not more than 60 seconds unless the
-					minimumMatchingArrivals criteria matches.
+					Associates an Origin with an existing event if the Origin
+					time differs not more than 60 seconds unless
+					&quot;eventAssociation.minimumMatchingArrivals&quot; matches.
 					</description>
 				</parameter>
 
 				<parameter name="maximumDistance" type="double" unit="degrees" default="5">
 					<description>
-						Allowed location difference between an incoming Origin compared with
-						preferred Origins to get associated.
+					Allowed location difference between an incoming Origin
+					compared with preferred Origins to get associated.
 					</description>
 				</parameter>
 
 				<parameter name="magTypes" type="list:string" default="M">
 					<description>
-						Magnitude type priority list for becoming a preferred magnitude for an
-						event.
+					List of magnitude types considered for computing priorities
+					in order to declare the preferred magnitude of an event.
+					Magnitudes not listed have a priority of 0 and are ranked
+					by station count only.
 
-						Example:
+					Magnitudes must meet
+					&quot;eventAssociation.minimumMagnitudes&quot; and
+					&quot;eventAssociation.minMwCount&quot; unless
+					&quot;eventAssociation.enableFallbackMagnitude&quot; is true.
+					If listed, Mw-/Mw()-type magnitudes are preferred over all
+					others. Next, the magnitude type with the largest station
+					count wins (default) unless
+					&quot;eventAssociation.magPriorityOverStationCount&quot; is
+					true. If the station count is equal, priority is highest
+					for the magnitude earliest in the list.
 
-						M, mBc, Mw(mB), Mwp, ML, MLh, MLv, mb
-					</description>
-				</parameter>
+					If &quot;eventAssociation.magPriorityOverStationCount&quot; is
+					true, highest priority is first given to magnitude types
+					earliest in the list before testing the station count.
 
-				<parameter name="enableFallbackMagnitude" type="boolean" default="false">
-					<description>
-						If true, one magnitude will be preferred even if magnitude criteria are
-						not fullfilled.
+					Example:
+
+					M, mBc, Mw(mB), Mwp, ML, MLv, mb
 					</description>
 				</parameter>
 
 				<parameter name="minimumMagnitudes" type="int" default="4">
 					<description>
-						Minimum number of station magnitudes referenced to a network magnitude
-						to become a preferred magnitude.
+					Minimum number of station magnitudes required for
+					considering non-Mw or non-Mw() magnitudes, as
+					preferred magnitude.
+
+					Also consider
+					&quot;eventAssociation.enableFallbackMagnitude&quot;.
 					</description>
 				</parameter>
 
 				<parameter name="minMwCount" type="int" default="8">
 					<description>
-					Minimum number of station magnitudes required for Mw(mB) to be considered as
-					preferred magnitude.
+					Minimum number of station magnitudes required for
+					considering Mw or any derived moment magnitude, Mw(), as
+					preferred magnitude. The moment magnitudes must also meet
+					&quot;eventAssociation.minimumMagnitudes&quot;.
+
+					Also consider
+					&quot;eventAssociation.enableFallbackMagnitude&quot;.
+					</description>
+				</parameter>
+
+				<parameter name="enableFallbackMagnitude" type="boolean" default="false">
+					<description>
+					If true, one magnitude will be preferred even if magnitude
+					criteria (&quot;eventAssociation.minimumMagnitudes&quot;,
+					&quot;eventAssociation.minMwCount&quot;) are not fulfilled
+					by any magnitude.
 					</description>
 				</parameter>
 
 				<parameter name="mbOverMwCount" type="int" default="30">
 					<description>
-						Minimum number of station magnitudes which ensures that Mw(mB) will be
-						preferred and not mb.
+					Minimum number of station magnitudes which ensures that
+					Mw(mB) will be preferred and not mb.
 					</description>
 				</parameter>
 
 				<parameter name="mbOverMwValue" type="double" default="6">
 					<description>
-						Average between mb and Mw(mB) which must be exceeded to become Mw(mB)
-						preferred.
+					Average between mb and Mw(mB) which must be exceeded to
+					become Mw(mB) preferred.
 					</description>
 				</parameter>
 
 				<parameter name="magPriorityOverStationCount" type="boolean" default="false">
 					<description>
-						If false then the station count rules out the magnitude priority
-						which is only taken into account if two magnitudes have the
-						same station count.
+					If false, then the station count rules out the magnitude priority
+					which is only taken into account if two magnitudes have the
+					same station count.
 
-						If true then the priority rules out the station count
-						which is only taken into account if two magnitudes have the
-						same priority.
+					If true, then the priority rules out the station count
+					which is only taken into account if two magnitudes have the
+					same priority.
 					</description>
 				</parameter>
 
-				<parameter name="priorities" type="list:string" default="AGENCY, STATUS, PHASES_AUTOMATIC, TIME_AUTOMATIC">
+				<parameter name="priorities" type="list:string" default="AGENCY,STATUS,PHASES_AUTOMATIC,TIME_AUTOMATIC" values="'',AGENCY,AUTHOR,MODE,PHASES,PHASES_AUTOMATIC,RMS,RMS_AUTOMATIC,SCORE,STATUS,TIME,TIME_AUTOMATIC">
 					<description>
-						The general priority list to decide if an Origin becomes preferred.
-						The priority decreases in the order of the parameters.
-						This list is not used unless this parameter is activated.
+					The general priority list to decide if new Origins become
+					preferred.
 
-						Empty priority list: scevent replicates the default hard wired behaviour:
-							AGENCY, STATUS, PHASES_AUTOMATIC, TIME_AUTOMATIC
+					Tokens are processed in the given order. Each token in the
+					list corresponds to a check that is performed. Each check
+					computes a score of the incoming Origin (s1) and the
+					currently preferred Origin (s2). The origin with the higher
+					score becomes preferred for the event. If s1 equals s2, the
+					next check in the list is performed. Once a check prefers an
+					origin, all subsequent checks are ignored.
 
-						Each item in the list corresponds to a check that is performed.
-						Each check computes a score of the incoming Origin (s1) and the
-						current preferred Origin (s2). If the s1 is lower than s2,
-						the incoming Origin is rejected and does not become preferred.
-						All subsequent checks are ignored.
-						If s1 is equal to s2, the next check in the list is performed.
-						If s1 is larger than s2, the Origin becomes preferred and
-						all subsequent checks are ignored.
+					Available tokens (checks):
 
-						Available tokens:
+					* AGENCY: check based on agency priorities
 
-						AGENCY: check based on agency priorities
+					* AUTHOR: check based on author priorities
 
-						AUTHOR: check based on author priorities
+					* MODE: priority from evaluation mode. Priority values are
 
-						MODE: evaluation mode priority: 0 = unset, 1 = automatic, 2 = manual, manual over-rules automatic
+					0 : unset
 
-						STATUS: priority combined from evaluation status and evaluation mode:
-						-100 = status is rejected, -1 = status is reported,
-						0 = status is preliminary or status is unset and mode is automatic,
-						1 = status is confirmed or status is unset and mode is manual,
-						2 = status is reviewed, 3 = status is final,
+					1 : automatic
 
-						METHOD: check based on the method priorities
+					2 : manual, manual over-rules automatic
 
-						PHASES: higher phase count = higher priority
+					* STATUS: priority combined from evaluation status and
+					evaluation mode. Priority values are
 
-						PHASES_AUTOMATIC: only checks phase priorities for incoming automatic Origins
+					-100 : status is rejected
 
-						RMS: lower rms = higher priority
+					-1 : status is reported
 
-						RMS_AUTOMATIC: only check RMS on incoming automatic Origins
+					0 : status is preliminary or status is unset and mode is automatic
 
-						TIME: more recent Origins (creationTime) have higher priorities
+					1 : status is confirmed or status is unset and mode is manual
 
-						TIME_AUTOMATIC: only check creationTime priority on incoming automatic Origins
+					2 : status is reviewed
 
-						SCORE: evaluates the score according to a configured ScoreProcessor and
-							   prefers the Origin/Focalmechanism with the highest score.
+					3 : status is final
+
+					* METHOD: priority based on the methods defined in &quot;eventAssociation.methods&quot;
+
+					* PHASES: higher phase count = higher priority
+
+					* PHASES_AUTOMATIC: only checks phase priorities for incoming
+					automatic Origins. Higher phase count = higher priority.
+
+					* RMS: lower RMS = higher priority.
+
+					* RMS_AUTOMATIC: only check RMS on incoming automatic Origins.
+					Lower RMS = higher priority.
+
+					* TIME: more recent Origins (creationTime) have higher priorities.
+
+					* TIME_AUTOMATIC: only check creationTime of incoming
+					automatic Origins. More recent Origins (creationTime) have higher priorities.
+
+					* SCORE: priority based on the score according to a configured
+					ScoreProcessor and prefers the Origin/Focalmechanism with
+					the highest score.
+
+					Empty priority list replicates the hard-wired default
+					behaviour: AGENCY,STATUS,PHASES_AUTOMATIC,TIME_AUTOMATIC
 					</description>
 				</parameter>
 
 				<parameter name="agencies" type="list:string">
 					<description>
-						The agencyID priority list. When the eventtool comes to the point to
-						select a preferred Origin based on AGENCY it orders all Origins by its agency priority and
-						selects then the best one among the highest priority agency. It also defines the
-						agency priority for custom priority checks
-						(eventAssociation.priorities).
+					The priority list of agency IDs. When scevent comes to the
+					point to select a preferred Origin based on AGENCY it orders
+					all Origins by its agency priority selecting the best one
+					among the highest priority agency. It also defines the
+					agency priority for custom priority checks.
 
-						The parameter is only considered when defined in &quot;priorities&quot;.
+					The parameter is only considered when AGENCY is used in
+					&quot;eventAssociation.priorities&quot;.
 					</description>
 				</parameter>
 
 				<parameter name="authors" type="list:string">
 					<description>
-						The author priority list. When the eventtool comes to the point to
-						select a preferred Origin based on AUTHOR it orders all Origins by its author priority and
-						selects then the best one among the highest priority author. It also defines the
-						author priority for custom priority checks (eventAssociation.priorities).
+					The author priority list. When scevent comes to the
+					point to select a preferred Origin based on AUTHOR it orders
+					all Origins by its author priority and selects then the best
+					one among the highest priority author. It also defines the
+					author priority for custom priority checks.
 
-						The parameter is only considered when defined in &quot;priorities&quot;.
+					The parameter is only considered when AUTHOR is used
+					in &quot;eventAssociation.priorities&quot;.
 					</description>
 				</parameter>
 
 				<parameter name="methods" type="list:string">
 					<description>
-						The method priority list. When the eventtool comes to the point to
-						select a preferred Origin based on METHOD it orders all Origins by its methodID priority and
-						selects then the best one among the highest priority method. It also defines the
-						method priority for custom priority checks (eventAssociation.priorities).
-						A defined method string must match exactly the string in Origin.methodID.
+					The method priority list. When the scevent comes to the
+					point to select a preferred Origin based on METHOD it orders
+					all Origins by its methodID priority and selects then the
+					best one among the highest priority method. It also defines
+					the method priority for custom priority checks. A defined
+					method string must match exactly the string in
+					Origin.methodID.
 
-						The parameter is only considered when defined in &quot;priorities&quot;.
+					The parameter is only considered when METHODS is used
+					in &quot;eventAssociation.priorities&quot;.
 					</description>
 				</parameter>
 
 				<parameter name="score" type="string">
 					<description>
-						Defines the ScoreProcessor interface to be used along
-						with priority &quot;SCORE&quot;.
-
-						The parameter is only considered when defined in &quot;priorities&quot;.
+					Defines the ScoreProcessor interface to be used along
+					with priority &quot;SCORE&quot; when defined in
+					&quot;eventAssociation.priorities&quot;.
 					</description>
 				</parameter>
 
 				<parameter name="declareFakeEventForRejectedOrigin" type="boolean" default="false">
 					<description>
-						If the preferred Origin has evaluation status 'rejected', the
-						Event type will be set to 'not existing' unless the Event
-						type has been fixed by an operator or the preferred Origin
-						has been fixed.
+					If the preferred Origin has evaluation status 'rejected', the
+					Event type will be set to 'not existing' unless the Event
+					type has been fixed by an operator or the preferred Origin
+					has been fixed.
 					</description>
 				</parameter>
 
-				<parameter name="delayTimeSpan" type="int" unit="s">
+				<parameter name="delayTimeSpan" type="int" unit="s" default="0">
 					<description>
-						Configures a timespan to delay Event creation. If a new Origin arrives
-						which cannot be associated to an existing Event, delay the Event creation for a certain
-						timespan.
+					The timespan to delay Event creation from new Origins which
+					cannot be associated to an existing Event.
 					</description>
 				</parameter>
 
 				<group name="region">
 					<description>
 					Region filter for creating events. Use with care! Origins
-					outside may be ignored even if they would
-					become preferred otherwise.
+					outside may be ignored even if they would become preferred
+					otherwise. Empty value deactivates testing this parameter.
 					</description>
-					<parameter name="rect" type = "string" >
+					<parameter name="rect" type = "list:double" >
 						<description>
-						Region by geographic coordinates.
+						Region by geographic coordinates. Empty value
+						deactivates testing this parameter.
 
-						Format: "South, East, North, West"
+						Format: "South,East,North,West"
 						</description>
 					</parameter>
 
-					<parameter name="minDepth" type="double"  unit="km">
+					<parameter name="minDepth" type="double" unit="km">
 						<description>
-						Minimum depth.
+						Minimum depth. Empty value deactivates testing this
+						parameter.
 						</description>
 					</parameter>
 
 					<parameter name="maxDepth" type="double" unit="km">
 						<description>
-						Maximum depth.
+						Maximum depth. Empty value deactivates testing this
+						parameter.
 						</description>
 					</parameter>
 				</group>
 
 				<group name="delayFilter">
 					<description>
-						The delayFilter group configures an Origin filter to activate the delay feature for
-						this Origin. If more than one filter is given they are combined with AND.
+					Configure an Origin filter to delay Origin for being
+					processed. If more than one filter is given they are
+					combined with AND. The application requires
+					eventAssociation.delayTimeSpan > 0.
 					</description>
 					<parameter name="agencyID" type="string">
-						<description>The agencyID of the Origin to be delayed.</description>
+						<description>
+						The agency ID of the Origin to be delayed.
+						</description>
 					</parameter>
 					<parameter name="author" type="string">
-						<description>The author of the Origin to be delayed.</description>
-					</parameter>
-					<parameter name="evaluationMode" type="string">
 						<description>
-							The evaluation mode of the Origin to be delayed. Can be either &quot;manual&quot;
-							or &quot;automatic&quot;.
+						The author of the Origin to be delayed.
+						</description>
+					</parameter>
+					<parameter name="evaluationMode" type="string" values="automatic,manual">
+						<description>
+						The evaluation mode of the Origin to be delayed.
 						</description>
 					</parameter>
 				</group>
@@ -391,7 +458,7 @@
 				</option>
 				<option flag="O" long-flag="origin-id" argument="publicID">
 					<description>
-						OriginID to be associated. When given no messages are sent.
+						Origin ID to be associated. When given no messages are sent.
 						Only the status of the association is written to stdout.
 					</description>
 				</option>
@@ -425,6 +492,44 @@
 				<optionReference>database#config-module</optionReference>
 				<optionReference>database#inventory-db</optionReference>
 				<optionReference>database#db-disable</optionReference>
+			</group>
+			<group name="Input">
+				<option long-flag="ep">
+					<description>
+					Event parameters XML file for offline processing of all
+					contained origins. Use '-' to read from stdin.
+					</description>
+				</option>
+				<option long-flag="reprocess">
+					<description>
+					Reprocess event parameters ignoring all event and journal
+					objects in input file. Works only in combination with '--ep'.
+					</description>
+				</option>
+				<option long-flag="update-event-id">
+					<description>
+					Update IDs of events if they already exist. Works only in
+					combination with '--ep'.
+					</description>
+				</option>
+				<option long-flag="clear-cache">
+					<description>
+					Send a clear cache message and quit.
+					</description>
+				</option>
+				<option long-flag="disable-info-log">
+					<description>
+					Do not populate the scevent-processing-info.log file.
+					</description>
+				</option>
+			</group>
+			<group name="Output">
+				<option flag="f" long-flag="formatted">
+					<description>
+					Use formatted XML output along with '--ep'. Otherwise XML
+					is unformatted.
+					</description>
+				</option>
 			</group>
 		</command-line>
 	</module>

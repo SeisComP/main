@@ -10,41 +10,41 @@
 			</parameter>
 			<parameter name="leadTime" type="int" default="60" unit="s">
 				<description>
-					The leadTime defines the time in seconds to start picking on
-					waveforms before current time.
+				The leadTime defines the time in seconds to start picking on
+				waveforms before current time.
 				</description>
 			</parameter>
 			<parameter name="playback" type="boolean" default="false">
 				<description>
-					If enabled, picks can be made on waveforms which are older than
-					current time - &quot;leadTime&quot;. Current time is the time
-					when the module was started. This allows to pick
-					historic data in real-time playbacks which are preserving the
-					record times. See e.g. the &quot;msrtsimul&quot; module.
-					This option deactivates &quot;leadTime&quot;. Activate only for playbacks.
+				If enabled, picks can be made on waveforms which are older than
+				current time - &quot;leadTime&quot;. Current time is the time
+				when the module was started. This allows to pick
+				historic data in real-time playbacks which are preserving the
+				record times. See e.g. the &quot;msrtsimul&quot; module.
+				This option deactivates &quot;leadTime&quot;. Activate only for playbacks.
 				</description>
 			</parameter>
 			<parameter name="initTime" type="int" default="60" unit="s">
 				<description>
-					The initTime defines a time span in seconds for that the picker
-					is blind after initialization. This time is needed to initialize
-					the filter and depends on it.
+				The initTime defines a time span in seconds for that the picker
+				is blind after initialization. This time is needed to initialize
+				the filter and depends on it.
 				</description>
 			</parameter>
 			<parameter name="gapInterpolation" type="boolean" default="false">
 				<description>
-					Interpolate gaps linearly? This is valid for gaps shorter
-					than thresholds.maxGapLength.
+				Interpolate gaps linearly? This is valid for gaps shorter
+				than thresholds.maxGapLength.
 				</description>
 			</parameter>
 			<parameter name="useAllStreams" type="boolean" default="true">
 				<description>
-					If enabled, all streams that are received by the picker are
-					used for picking. This option has only effect if a
-					file is used as input which contains more data than the
-					picker requests. If connected to a waveform server such as
-					SeedLink, the picker will only receive the data it is
-					subscribed to.
+				If enabled, all streams that are received by the picker are
+				used for picking. This option has only effect if a
+				file is used as input which contains more data than the
+				picker requests. If connected to a waveform server such as
+				SeedLink, the picker will only receive the data it is
+				subscribed to.
 				</description>
 			</parameter>
 			<parameter name="filter" type="string" default="&quot;RMHP(10)>>ITAPER(30)>>BW(4,0.7,2)>>STALTA(2,80)&quot;">
@@ -108,29 +108,41 @@
 			</parameter>
 			<parameter name="extraPickComments" type="boolean" default="false">
 				<description>
-					If enabled and &quot;picker&quot; or &quot;spicker&quot; is
-					configured, extra comments will be added to the resulting pick.
+				If enabled and &quot;picker&quot; or &quot;spicker&quot; is
+				configured, extra comments will be added to the resulting pick.
 
-					Supported comments:
+				Supported comments:
 
-					SNR: added if SNR >= 0, comment id is &quot;SNR&quot;
+				SNR: added if SNR >= 0, comment id is &quot;SNR&quot;
+
+				duration: added if the duration has been computed at the time
+				          of the pick creation, which actually requires
+				          &quot;thresholds.maxDuration&quot; to be configured
+				          with a non-negative value.
+				</description>
+			</parameter>
+			<parameter name="simplifiedIDs" type="boolean" default="false">
+				<description>
+				If enabled then simplified pick and amplitude IDs will be created.
+				Rather than the configured publicID pattern, the following pattern
+				will be used: &quot;%Y%m%d.%H%M%S.%f-@net.sta.loc.cha@&quot;.
 				</description>
 			</parameter>
 			<parameter name="fx" type="string">
 				<description>
-					Configures the feature extraction type to use. Currently
-					available: &quot;DFX&quot;. Configure related parameters
-					in global bindings.
+				Configures the feature extraction type to use. Currently
+				available: &quot;DFX&quot;. Configure related parameters
+				in global bindings.
 
-					When configured, the usability of the features for locating
-					events depends on the used locator, e.g. LOCSAT. Read the
-					locator's documentation and configuration parameters.
+				When configured, the usability of the features for locating
+				events depends on the used locator, e.g. LOCSAT. Read the
+				locator's documentation and configuration parameters.
 				</description>
 			</parameter>
 			<parameter name="amplitudes" type="list:string" default="MLv, mb, mB">
 				<description>
-					The amplitude types to be computed by the picker based on
-					picks.
+				The amplitude types to be computed by the picker based on
+				picks.
 				</description>
 			</parameter>
 			<group name="thresholds">
@@ -139,35 +151,35 @@
 				</description>
 				<parameter name="triggerOn" type="double" default="3">
 					<description>
-						For which value on the filtered waveforms is a pick
-						detected. Station specific values override this value.
+					For which value on the filtered waveforms is a pick
+					detected. Station specific values override this value.
 					</description>
 				</parameter>
 				<parameter name="triggerOff" type="double" default="1.5">
 					<description>
-						The value the filtered waveforms must reach to enable
-						detection again. Between triggerOn and triggerOff the
-						picker is blind and does not produce picks. Station
-						specific values override this value.
+					The value the filtered waveforms must reach to enable
+					detection again. Between triggerOn and triggerOff the
+					picker is blind and does not produce picks. Station
+					specific values override this value.
 					</description>
 				</parameter>
 				<parameter name="maxGapLength" type="double" default="4.5" unit="s">
 					<description>
-						The maximum gap length in seconds to handle.
-						Gaps larger than this will cause the picker to be reset.
+					The maximum gap length in seconds to handle.
+					Gaps larger than this will cause the picker to be reset.
 					</description>
 				</parameter>
 				<parameter name="amplMaxTimeWindow" type="double" default="10" unit="s">
 					<description>
-						The time window used to compute a maximum (snr) amplitude
-						on the filtered waveforms.
+					The time window used to compute a maximum (snr) amplitude
+					on the filtered waveforms.
 					</description>
 				</parameter>
 				<parameter name="deadTime" type="double" default="30" unit="s">
 					<description>
-						The time used together with measured amplitude and
-						`thresholds.minAmplOffset` for scaling the amplitude below which
-						the picker is inactive after a P pick. Read the documentation!
+					The time used together with measured amplitude and
+					`thresholds.minAmplOffset` for scaling the amplitude below which
+					the picker is inactive after a P pick. Read the documentation!
 					</description>
 				</parameter>
 				<parameter name="minAmplOffset" type="double" default="3">
@@ -178,24 +190,65 @@
 					similar to the trigger threshold. Read the documentation!
 					</description>
 				</parameter>
+				<parameter name="minDuration" type="double" default="-1" unit="s">
+					<description>
+					The minimum duration to reach. The duration is measured as
+					the time between trigger on and trigger off. If this value
+					is configured, the detection (pick) will be delayed in order
+					to compute and check the duration.
+
+					The duration will be reported as comment to the pick when
+					activating &quot;extraPickComments&quot; allowing the tuning
+					of the acceptable duration range.
+					</description>
+				</parameter>
+				<parameter name="maxDuration" type="double" default="-1" unit="s">
+					<description>
+					The maximum duration allowed. The duration is measured as
+					the time between trigger on and trigger off. If this value
+					is configured, the detection (pick) will be delayed in order
+					to compute and check the duration. Negative values
+					deactivate the check.
+
+					The duration will be reported as comment to the pick when
+					activating &quot;extraPickComments&quot; allowing the tuning
+					of the acceptable duration range.
+					</description>
+				</parameter>
 			</group>
 			<group name="amplitudes">
 				<parameter name="enableUpdate" type="list:string" default="" unit="">
 					<description>
-						Configure a list of magnitude types.
-						Update and send amplitudes for these magnitudes as soon as data are
-						available. Do not wait for complete time windows.
-						Only magnitudes computed by scautopick as given by the amplitudes parameter are considered.
-						This option is for rapid magnitude estimation and EEW.
+					Configure a list of magnitude types.
+					Update and send amplitudes for these magnitudes as soon as data are
+					available. Do not wait for complete time windows.
+					Only magnitudes computed by scautopick as given by the amplitudes parameter are considered.
+					This option is for rapid magnitude estimation and EEW.
 
-						WARNING: This option increases the load on the system!
+					WARNING: This option increases the load on the system!
 					</description>
 				</parameter>
 			</group>
 			<group name="connection">
 				<parameter name="amplitudeGroup" type="string" default="AMPLITUDE">
 					<description>
-						Message group for sending amplitudes to.
+					Message group for sending amplitudes to.
+					</description>
+				</parameter>
+			</group>
+			<group name="comment">
+				<description>
+				Properties of a custom comment added to a pick. It requires both
+				ID and text to be configured.
+				</description>
+				<parameter name="ID" type="string" default="">
+					<description>
+					The ID of a custom comment.
+					</description>
+				</parameter>
+				<parameter name="text" type="string" default="">
+					<description>
+					The text of a custom comment.
 					</description>
 				</parameter>
 			</group>
@@ -266,8 +319,10 @@
 				</option>
 				<option flag="" long-flag="ep">
 					<description>
-						Outputs an XML event parameters file containing all picks and amplitudes.
-						This option implies offline.
+					Outputs an XML event parameters file containing all
+					picks and amplitudes. This option implies '--offline'.
+					Consider '--playback' or configure accordingly for
+					processing data from the past.
 					</description>
 				</option>
 				<option flag="" long-flag="amplitudes" argument="arg" default="1">
@@ -312,6 +367,14 @@
 				<option long-flag="send-detections" param-ref="sendDetections"/>
 				<option long-flag="extra-comments" param-ref="extraPickComments"/>
 			</group>
+			<group name="Output">
+				<option flag="f" long-flag="formatted">
+					<description>
+					Use formatted XML output along with '--ep'. Otherwise XML
+					is unformatted.
+					</description>
+				</option>
+			</group>
 		</command-line>
 	</module>
 
@@ -319,40 +382,40 @@
 	     into the core description to have everything in one place. -->
 	<binding module="scautopick">
 		<description>
-			Configures a station for picking. A station without a binding assigned
-			will not be picked unless the picker is in offline mode.
+		Configures a station for picking. A station without a binding assigned
+		will not be picked unless the picker is in offline mode.
 		</description>
 		<configuration>
 			<parameter name="detecEnable" type="boolean" default="true">
 				<description>
-					Enables/disables picking on a station.
+				Enables/disables picking on a station.
 				</description>
 			</parameter>
 			<parameter name="detecFilter" type="string" default="&quot;RMHP(10)>>ITAPER(30)>>BW(4,0.7,2)>>STALTA(2,80)&quot;">
 				<description>
-					Defines the filter to be used for picking.
+				Defines the filter to be used for picking.
 				</description>
 			</parameter>
 			<parameter name="trigOn" type="double" default="3">
 				<description>
-					For which value on the filtered waveform is a pick detected.
+				For which value on the filtered waveform is a pick detected.
 				</description>
 			</parameter>
 			<parameter name="trigOff" type="double" default="1.5">
 				<description>
-					The value the filtered waveform must reach to
-					enable a detection again.
+				The value the filtered waveform must reach to
+				enable a detection again.
 				</description>
 			</parameter>
 			<parameter name="timeCorr" type="double" default="-0.8" unit="s">
 				<description>
-					The time correction applied to a pick.
+				The time correction applied to a pick.
 				</description>
 			</parameter>
 			<parameter name="sensitivityCorrection" type="boolean" default="false">
 				<description>
-					Defines whether the detector applies sensitivity correction
-					(applying the gain) or not in advance to filter the data.
+				Defines whether the detector applies sensitivity correction
+				(applying the gain) or not in advance to filter the data.
 				</description>
 			</parameter>
 		</configuration>

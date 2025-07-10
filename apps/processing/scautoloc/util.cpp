@@ -21,7 +21,6 @@
 #include <seiscomp/math/mean.h>
 
 #include <assert.h>
-#include <math.h>
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -29,6 +28,8 @@
 #include <sstream>
 #include <string>
 #include <map>
+#include <algorithm>
+#include <cmath>
 
 #include "util.h"
 #include "nucleator.h"
@@ -38,61 +39,132 @@
 
 namespace Autoloc {
 
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void delazi(double lat1, double lon1, double lat2, double lon2,
+            double &delta, double &az1, double &az2)
+{
+	Seiscomp::Math::Geo::delazi(lat1, lon1, lat2, lon2, &delta, &az1, &az2);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void delazi(const Hypocenter *hypo, const Station *station,
+            double &delta, double &az1, double &az2)
+{
+	Seiscomp::Math::Geo::delazi(hypo->lat, hypo->lon, station->lat, station->lon, &delta, &az1, &az2);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 double distance(const Station* s1, const Station* s2)
 {
 	double delta, az, baz;
 	delazi(s1->lat, s1->lon, s2->lat, s2->lon, delta, az, baz);
 	return delta;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 std::string printDetailed(const Origin *origin)
 {
 	return printOrigin(origin, false);
 }
 
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 std::string printOneliner(const Origin *origin)
 {
 	return printOrigin(origin, true);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool automatic(const Pick *pick)
 {
 	return pick->mode == Pick::Automatic;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool ignored(const Pick *pick)
 {
 	return pick->mode == Pick::IgnoredAutomatic;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool manual(const Pick *pick)
 {
 	return pick->mode == Pick::Manual;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 char modeFlag(const Pick *pick)
 {
 	return automatic(pick) ? 'A' : 'M';
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool hasAmplitude(const Pick *pick)
 {
 	if (pick->amp <= 0)
 		return false;
 	return true;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-bool travelTimeP(double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta, TravelTime &tt)
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool travelTimeP(double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta, TravelTime &result)
 {
 	static Seiscomp::TravelTimeTable ttt;
 
-	Seiscomp::TravelTimeList
-		*ttlist = ttt.compute(lat1, lon1, dep1, lat2, lon2, alt2);
+	Seiscomp::TravelTimeList *ttlist { nullptr };
 
-	for (Seiscomp::TravelTimeList::iterator
-	     it = ttlist->begin(); it != ttlist->end(); ++it) {
-		tt = *it;
+	try {
+		ttlist = ttt.compute(lat1, lon1, std::max(dep1, 0.01), lat2, lon2, alt2);
+	}
+	catch ( std::out_of_range & ) {
+		return false;
+	}
+	if ( ! ttlist)
+		return false;
+
+	for (auto& tt : *ttlist) {
+		result = tt;
 		if (delta < 114)
 			// for  distances < 114, allways take 1st arrival
 			break;
@@ -106,67 +178,12 @@ bool travelTimeP(double lat1, double lon1, double dep1, double lat2, double lon2
 
 	return true;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-// 1st arrival P incl. Pdiff up to 130 deg, no PKP
-bool travelTimeP1(double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta, TravelTime &tt)
-{
-	if (delta > 130) // negotiable ;)
-		return false;
 
-	static Seiscomp::TravelTimeTable ttt;
 
-	Seiscomp::TravelTimeList
-		*ttlist = ttt.compute(lat1, lon1, dep1, lat2, lon2, alt2, alt2);
-	tt = *(ttlist->begin());
-	delete ttlist;
 
-	return true;
-}
-
-bool travelTimePK(double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta, TravelTime &tt)
-{
-	if (delta < 30) // negotiable ;)
-		return false;
-
-	static Seiscomp::TravelTimeTable ttt;
-
-	Seiscomp::TravelTimeList
-		*ttlist = ttt.compute(lat1, lon1, dep1, lat2, lon2, alt2);
-
-	for (Seiscomp::TravelTimeList::iterator
-	     it = ttlist->begin(); it != ttlist->end(); ++it) {
-		tt = *it;
-		if (tt.phase.substr(0,3) == "PKP" || tt.phase == "PKiKP")
-			break;
-	}
-	delete ttlist;
-
-	return true;
-}
-
-TravelTime travelTimePP(double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta)
-{
-	static Seiscomp::TravelTimeTable ttt;
-
-	Seiscomp::TravelTimeList
-		*ttlist = ttt.compute(lat1, lon1, dep1, lat2, lon2, alt2);
-	TravelTime tt;
-
-	for (Seiscomp::TravelTimeList::iterator
-	     it = ttlist->begin(); it != ttlist->end(); ++it) {
-		tt = *it;
-		if (tt.phase == "PP")
-			break;
-		if (tt.phase == "PnPn")
-			break;
-	}
-	delete ttlist;
-
-	// FIXME check if tt.phase == "PnPn" || tt.phase == "PP"
-	// Otherwise throw exception
-	return tt;
-}
-
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 static Time str2time(const std::string &s)
 {
 	Seiscomp::Core::Time t;
@@ -176,23 +193,31 @@ static Time str2time(const std::string &s)
 	}
 	return Time(t);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 std::string time2str(const Time &t)
 {
-	return sc3time(t).toString("%F %T.%f000000").substr(0,21);
+	return sctime(t).toString("%F %T.%f000000").substr(0,21);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 double meandev(const Origin* origin)
 {
-	int arrivalCount = origin->arrivals.size();
-	double cumresid = 0, cumweight = 0.;
+	double cumresid {0};
+	double cumweight {0};
 
-	for(int i=0; i<arrivalCount; i++) {
-		const Arrival &arr = origin->arrivals[i];
+	for (const Arrival &arr : origin->arrivals) {
 		if (arr.excluded)
 			continue;
-		cumresid  += fabs(arr.residual);
+		cumresid  += std::abs(arr.residual);
 		cumweight += 1;
 	}
 
@@ -201,7 +226,12 @@ double meandev(const Origin* origin)
 
 	return cumresid/cumweight;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 double avgfn(double x)
 {
 	if (x<-1 || x>1)
@@ -211,11 +241,15 @@ double avgfn(double x)
 	x = cos(x);
 	return x*x;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 std::string printOrigin(const Origin *origin, bool oneliner)
 {
-	assert(origin!=NULL);
+	assert(origin);
 
 	std::ostringstream out;
 
@@ -236,30 +270,29 @@ std::string printOrigin(const Origin *origin, bool oneliner)
 		double score = originScore(origin);
 		char s[200];
 		std::string tstr = time2str(origin->time).substr(11);
-		sprintf(s, "%-6lu %s %6.2f %7.2f %3.0f%c %4.1f %3d %3lu s=%5.1f",
+		sprintf(s, "%-6lu %s %6.2f %7.2f %3.0f%c %4.1f %3ld %3ld s=%6.1f",
 			origin->id, tstr.c_str(),
-			origin->lat, origin->lon, origin->dep, depthFlag,
+			origin->hypocenter.lat, origin->hypocenter.lon, origin->hypocenter.dep, depthFlag,
 			origin->rms(), origin->definingPhaseCount(),
-			(unsigned long)origin->arrivals.size(),score);
+			origin->arrivals.size(), score);
 		out << s;
 	}
 	else {
 		out << "Detailed info for Origin " << origin->id << std::endl
 		    << time2str(origin->time) << "  ";
 		out.precision(5);
-		out << origin->lat << "  " << origin->lon << "  ";
+		out << origin->hypocenter.lat << "  " << origin->hypocenter.lon << "  ";
 		out.precision(3);
-		out << origin->dep << depthFlag << std::endl;
+		out << origin->hypocenter.dep << depthFlag << std::endl;
 
 		out.setf(std::ios::right);
 
-		int arrivalCount = origin->arrivals.size();
-		for(int i=0; i<arrivalCount; i++) {
-			const Arrival &arr = origin->arrivals[i];
+		size_t lineno = 0;
+		for (const Arrival &arr : origin->arrivals) {
 			const Pick* pick = arr.pick.get();
 
 			std::string excludedFlag;
-			switch(arr.excluded) {
+			switch (arr.excluded) {
 			case Arrival::NotExcluded:          excludedFlag = "  "; break;
 			case Arrival::LargeResidual:        excludedFlag = "Xr"; break;
 			case Arrival::StationDistance:      excludedFlag = "Xd"; break;
@@ -278,7 +311,7 @@ std::string printOrigin(const Origin *origin, bool oneliner)
 			std::string sta = pick->station()->code;
 
 			out.precision(1);
-			out     << std::left << std::setw(4) << (i+1)
+			out     << std::left << std::setw(4) << (++lineno)
 				<< std::setw(6) << sta
 				<< std::setw(3) << net;
 			out.precision(2);
@@ -317,10 +350,14 @@ std::string printOrigin(const Origin *origin, bool oneliner)
 	}
 	return out.str();
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
 
 
 namespace Utils {
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 StationMap *readStationLocations(const std::string &fname)
 {
 	StationMap *stations = new StationMap;
@@ -340,24 +377,26 @@ StationMap *readStationLocations(const std::string &fname)
 	if ( stations->size() == 0) {
 		SEISCOMP_ERROR_S("No stations read from file " + fname);
 		delete stations;
-		return NULL;
+		return nullptr;
 	}
 
 	return stations;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::string &filename) {
                 // read inventory from station locations file
-                StationMap *stations = readStationLocations(filename);
+                StationMap *stationMap = readStationLocations(filename);
 
 		Seiscomp::DataModel::Inventory *inventory = new Seiscomp::DataModel::Inventory;
-                for (StationMap::iterator
-                     it=stations->begin(); it!=stations->end(); ++it) {
-                        std::string key = (*it).first;
-                        const Station *s = (*it).second.get();
+		for (auto& item : *stationMap) {
+
+                        std::string key = item.first;
+                        const Station *s = item.second.get();
 			std::string netId = "Network/"+s->net;
 			Seiscomp::DataModel::Network *network = inventory->findNetwork(netId);
                         if ( ! network) {
@@ -374,7 +413,7 @@ Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::stri
                         station->setElevation(s->alt);
                         network->add(station);
                 }
-                delete stations;
+                delete stationMap;
 
 		return inventory;
 }
@@ -383,8 +422,7 @@ Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::stri
 
 
 
-
-
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Pick* readPickLine()
 {
 	PickVector picks;
@@ -393,11 +431,12 @@ Pick* readPickLine()
 	char stat;
 
 	if ( ! (std::cin >>date >>time >>net >>sta >>cha >>loc >>snr >>amp >>per >>stat >>id) )
-		return NULL;
+		return nullptr;
 
 	std::string key = net + "." + sta;
+	std::string label = date + "." + time + "-" + net + "." + sta + "." + loc + "." + cha + "-" + stat;
 	Time ptime = str2time(date+" "+time);
-	Pick *pick = new Pick(id, net, sta, ptime);
+	Pick *pick = new Pick(id, label, net, sta, ptime);
 	pick->amp  = amp;
 	pick->per  = per;
 	pick->snr  = snr;
@@ -411,19 +450,28 @@ Pick* readPickLine()
 
 	return pick;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 PickVector readPickFile()
 {
 	PickVector picks;
 	PickPtr pick = 0;
 
-	while ( (pick = readPickLine()) != NULL)
+	while ( (pick = readPickLine()) != nullptr)
 		picks.push_back(pick);
 
 	return picks;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Pick::Mode mode(const Seiscomp::DataModel::Pick *pick) {
 	try {
 		switch ( pick->evaluationMode() ) {
@@ -441,6 +489,8 @@ Pick::Mode mode(const Seiscomp::DataModel::Pick *pick) {
 
 	return Pick::Automatic;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 } // namespace Autoloc::Utils
 } // namespace Autoloc
@@ -450,25 +500,26 @@ namespace Seiscomp {
 namespace Math {
 namespace Statistics {
 
-double rms(const std::vector<double> &v, double offset /* = 0 */)
+double rms(const std::vector<double> &v, double offset)
 {
-	unsigned int n = v.size();
-	const double *f = &v[0];
-	double fi, r=0;
+	double r{0};
 
-	if(offset) {
-		for(unsigned int i=0; i<n; i++, f++) {
-			fi = ((*f)-offset);
-			r += fi*fi;
+	if (v.empty())
+		return 0;
+
+	if (offset) {
+		for (double f : v) {
+			f -= offset;
+			r += f*f;
 		}
 	}
 	else {
-		for(unsigned int i=0; i<n; i++, f++) {
-			r += (*f)*(*f);
+		for (double f : v) {
+			r += f*f;
 		}
 	}
 
-	return sqrt(r/n);
+	return sqrt(r/v.size());
 }
 
 } // namespace Statistics

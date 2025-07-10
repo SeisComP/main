@@ -72,10 +72,11 @@
 			<parameter name="realtimeGap" type="int" unit="s">
 				<description>
 				Restrict end time of requests to current time - realtimeGap
-				seconds. Negative values allowed. Used in fdsnws-dataselect.
-				WARNING: If this value is unset and a realtime recordsource
-				(e.g. slink) is used, requests may block if end time in future
-				is requested.
+				seconds. Negative values are allowed. Used in fdsnws-dataselect.
+
+				WARNING: If this value is unset and a real-time RecordStream
+				(e.g. slink) is used, requests may block if end times in the
+				future are requested.
 				</description>
 			</parameter>
 			<parameter name="samplesM" type="float">
@@ -90,7 +91,7 @@
 				Set the number of bytes to buffer for each chunk of waveform data
 				served to the client. The lower the buffer the higher the overhead
 				of Python Twisted. The higher the buffer the higher the memory
-				usage per request. 100kB seems to be a good trade-off.
+				usage per request. 100 kB seems to be a good trade-off.
 				</description>
 			</parameter>
 			<parameter name="htpasswd" type="string" default="@CONFIGDIR@/fdsnws.htpasswd">
@@ -103,12 +104,12 @@
 			</parameter>
 			<parameter name="accessLog" type="string">
 				<description>
-				Path to access log file. If unset no access log is created.
+				Path to access log file. If unset, no access log is created.
 				</description>
 			</parameter>
 			<parameter name="requestLog" type="string">
 				<description>
-				Path to request log file. If unset no request log is created.
+				Path to request log file. If unset, no request log is created.
 				</description>
 			</parameter>
 			<parameter name="userSalt" type="string">
@@ -121,7 +122,10 @@
 				List of domain names Cross-Origin Resource Sharing (CORS)
 				request may originate from. A value of '*' allows any web page
 				to embed your service. An empty value will switch of CORS
-				requests entirely. An example of multiple domains might be:
+				requests entirely.
+
+				Example of multiple domains:
+
 				'https://test.domain.de, https://production.domain.de'.
 				</description>
 			</parameter>
@@ -154,7 +158,7 @@
 				If enabled, event comment elements are no longer accessible.
 				</description>
 			</parameter>
-			<parameter name="evaluationMode" type="string">
+			<parameter name="evaluationMode" type="string" values=",automatic,manual">
 				<description>
 				If set, the event service will only return events having a
 				preferred origin with a matching evaluationMode property.
@@ -168,7 +172,7 @@
 					<description>List of disabled event types</description>
 				</parameter>
 			</group>
-			<parameter name="eventFormats" type="list:string">
+			<parameter name="eventFormats" type="list:string" values="csv,qml,qml-rt,sc3ml,text,xml">
 				<description>
 				List of enabled event formats. If unspecified, all supported
 				formats are enabled.
@@ -195,12 +199,12 @@
 				standard FDSNWS extension served under fdsnws/ext/availability.
 				</description>
 			</parameter>
-			<parameter name="stationFilter" type="string">
+			<parameter name="stationFilter" type="file" options="read">
 				<description>
 				Path to station inventory filter file.
 				</description>
 			</parameter>
-			<parameter name="dataSelectFilter" type="string">
+			<parameter name="dataSelectFilter" type="file" options="read">
 				<description>
 				Path to dataselect inventory filter file.
 				</description>

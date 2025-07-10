@@ -124,16 +124,16 @@
 				<option long-flag="datetime" argument="arg">
 					<description>
 					Replaces the days:hours:minutes timespan definition by an
-					arbitrary absolute timestamp in UTC. The format is
-					%Y-%m-%d %H:%M:%S.
+					arbitrary absolute timestamp in UTC. Format:
+					%Y-%m-%dT%H:%M:%S.
 					</description>
 				</option>
 				<option flag="t" long-flag="time-window" argument="arg">
 					<description>
 					Delete objects in the specified time window.
 					Replaces the days:hours:minutes timespan definition by an
-					arbitrary absolute time range in UTC. The format is
-					startTime~endTime that is %Y-%m-%d %H:%M:%S~%Y-%m-%d %H:%M:%S
+					arbitrary absolute time range in UTC. Format:
+					startTime~endTime that is %Y-%m-%dT%H:%M:%S~%Y-%m-%dT%H:%M:%S
 					</description>
 				</option>
 				<option long-flag="invert" flag="i" param-ref="database.cleanup.invertMode"/>

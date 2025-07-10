@@ -27,8 +27,7 @@ class EventParameterLog(seiscomp.client.Application):
         self.setMessagingEnabled(True)
         self.setDatabaseEnabled(False, False)
         self.setMessagingUsername("")
-        self.setPrimaryMessagingGroup(
-            seiscomp.client.Protocol.LISTENER_GROUP)
+        self.setPrimaryMessagingGroup(seiscomp.client.Protocol.LISTENER_GROUP)
         self.addMessagingSubscription("EVENT")
         self.addMessagingSubscription("LOCATION")
         self.addMessagingSubscription("MAGNITUDE")
@@ -43,17 +42,21 @@ class EventParameterLog(seiscomp.client.Application):
 
     def printUsage(self):
 
-        print('''Usage:
+        print(
+            """Usage:
   sceplog [options]
 
-Receive event parameters from messaging and write them to stdout in SCML''')
+Receive event parameters from messaging and write them to stdout in SCML"""
+        )
 
         seiscomp.client.Application.printUsage(self)
 
-        print('''Examples:
+        print(
+            """Examples:
 Execute sceplog with debug output
   sceplog --debug
-''')
+"""
+        )
 
     def run(self):
         if not seiscomp.client.Application.run(self):
@@ -66,7 +69,7 @@ Execute sceplog with debug output
             ar.close()
             # Hack to avoid the "close failed in file object destructor"
             # exception
-#     print ""
+            #     print ""
             sys.stdout.write("\n")
 
         return True

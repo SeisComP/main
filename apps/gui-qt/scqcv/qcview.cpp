@@ -38,14 +38,16 @@ namespace Qc {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class QcSortFilterProxyModel : public QSortFilterProxyModel {
 	public:
-		QcSortFilterProxyModel(QObject* obj=0) 
+		QcSortFilterProxyModel(QObject* obj=0)
 		:	QSortFilterProxyModel(obj) {}
 
 		bool lessThan(const QModelIndex &left, const QModelIndex &right) const {
-			if ( sourceModel()->data(left).type() == QVariant::Invalid )
+			if ( !sourceModel()->data(left).isValid() ) {
 				return true;
-			if ( sourceModel()->data(right).type() == QVariant::Invalid )
+			}
+			if ( !sourceModel()->data(right).isValid() ) {
 				return false;
+			}
 
 			return QSortFilterProxyModel::lessThan(left, right);
 		}
@@ -56,8 +58,9 @@ class QcSortFilterProxyModel : public QSortFilterProxyModel {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-QcView::QcView(QcModel* qcModel, QWidget* parent, Qt::WindowFlags f)
-: QWidget(parent, f) {
+QcView::QcView(QcModel* qcModel, QString name, QWidget* parent,
+               Qt::WindowFlags f)
+: QWidget(parent, f), _name(std::move(name)) {
 	_qcModel = qcModel;
 	_qcProxyModel = new QcSortFilterProxyModel(this);
 	_qcProxyModel->setSourceModel(_qcModel);
@@ -66,10 +69,21 @@ QcView::QcView(QcModel* qcModel, QWidget* parent, Qt::WindowFlags f)
 	_qcProxyModel->setFilterKeyColumn(0);
 
 	_layout = new QVBoxLayout(this);
-	_layout->setMargin(2);
+	_layout->setContentsMargins(2, 2, 2, 2);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-QcView::~QcView(){}
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+QcView::~QcView() {
+	if ( !_name.isEmpty() ) {
+		SCApp->settings().beginGroup(_name);
+		SCApp->settings().setValue("streamIDFilter/text", _leFilter->text());
+		SCApp->settings().endGroup();
+	}
+}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -100,6 +114,15 @@ void QcView::init() {
 
 	connect(_leFilter, SIGNAL(textChanged(const QString&)), this, SLOT(filterRegExpChanged(const QString&)));
 	connect(_qcProxyModel, SIGNAL(layoutChanged()), this, SLOT(updateStreamCount()));
+
+	if ( !_name.isEmpty() ) {
+		SCApp->settings().beginGroup(_name);
+		auto filterStr = SCApp->settings().value("streamIDFilter/text").toString();
+		SCApp->settings().endGroup();
+		if ( !filterStr.isEmpty() ) {
+			_leFilter->setText(filterStr);
+		}
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -170,11 +193,19 @@ void QcView::setFilterRegExp(const QString& expr){
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void QcView::filterRegExpChanged(const QString& filter) {
-	QRegExp regExp(filter, Qt::CaseInsensitive, QRegExp::RegExp);
-	_qcProxyModel->setFilterRegExp(regExp);
+void QcView::filterRegExpChanged(const QString &filter) {
+	QRegularExpression regExp(filter, QRegularExpression::CaseInsensitiveOption);
+	_qcProxyModel->setFilterRegularExpression(regExp);
 
 	updateStreamCount();
+
+	QPalette palette;
+	if ( !filter.isEmpty() ) {
+		auto color = _qcProxyModel->rowCount() ? QColor(192, 255, 192) :
+		                                         QColor(255, 192, 192);
+		palette.setColor(QPalette::Base, color);
+	}
+	_leFilter->setPalette(palette);
  }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -193,8 +224,9 @@ void QcView::updateStreamCount() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-QcTableView::QcTableView(QcModel* qcModel, QWidget* parent, Qt::WindowFlags f)
-: QcView(qcModel, parent, f) {
+QcTableView::QcTableView(QcModel* qcModel, QString name, QWidget* parent,
+                         Qt::WindowFlags f)
+: QcView(qcModel, name, parent, f) {
 	init();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -214,7 +246,7 @@ void QcTableView::init() {
 	_qcTable = new QTableView();
 	_qcTable->verticalHeader()->hide();
 	_qcTable->setModel(_qcProxyModel);
-	_qcTable->sortByColumn(0, Qt::AscendingOrder); 
+	_qcTable->sortByColumn(0, Qt::AscendingOrder);
 	_qcTable->setSortingEnabled(true);
 	_qcTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 	_qcTable->horizontalHeader()->setSectionsMovable(true);
@@ -296,7 +328,7 @@ double QcTableView::streamWidgetLength() const {
 bool QcTableView::eventFilter(QObject* o, QEvent* e) {
 	if (e->type() == QEvent::Paint){
 		QcTableCornerButton* btn = qobject_cast<QcTableCornerButton*>(o);
-			
+
 		if (btn) {
 			btn->paintEvent(static_cast<QPaintEvent*>(e));
 			return true;
@@ -306,6 +338,10 @@ bool QcTableView::eventFilter(QObject* o, QEvent* e) {
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 void QcTableView::showDialog(const QModelIndex &index) {
 	QModelIndex idx(_qcProxyModel->mapToSource(index));
 
@@ -332,12 +368,15 @@ void QcTableView::showDialog(const QModelIndex &index) {
 		}
 	}
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-QcOverView::QcOverView(QcModel* qcModel, QWidget* parent, Qt::WindowFlags f)
-: QcView(qcModel, parent, f) {
+QcOverView::QcOverView(QcModel* qcModel, QString name, QWidget* parent,
+                       Qt::WindowFlags f)
+: QcView(qcModel, name, parent, f) {
 	init();
 }
 QcOverView::~QcOverView(){}

@@ -628,35 +628,6 @@ void Inventory::GetComments(ChannelIdentifier &ci, DataModel::Stream *stream) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-/*
-void Inventory::GetChannelComment(ChannelIdentifier& ci, DataModel::WaveformStreamID *wf) {
-	wf->setLocationCode(strip(ci.GetLocation()));
-	wf->setChannelCode(strip(ci.GetChannel()));
-	for ( unsigned int noc = 0; noc < ci.cc.size(); ++noc ) {
-		Comment comment = *ci.cc[noc];
-		int code_key = comment.GetCommentCodeKey();
-		for ( unsigned int j = 0; j < adc->cd.size(); ++j ) {
-			CommentDescription comm = *adc->cd[j];
-			if ( code_key == comm.GetCommentCodeKey() ) {
-				if ( comm.GetDescriptionOfComment().size() > 1 ) {
-					DataModel::QCLog *log = DataModel::QCLog::Create();
-					log->setWaveformID(*wf);
-					log->setMessage(comm.GetDescriptionOfComment());
-					log->setStart(GetTime(comment.GetBeginningEffectiveTime()));
-					if ( !comment.GetEndEffectiveTime().empty() )
-						log->setEnd(GetTime(comment.GetEndEffectiveTime()));
-				}
-			}
-		}
-	}
-}
-*/
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Core::Time Inventory::GetTime(string strTime, bool *ok) {
 	int year=0, yday=0, month=0, day=0, hour=0, minute=0, second=0, fraction=0;
 	int ondergrens, bovengrens;

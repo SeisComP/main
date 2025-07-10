@@ -13,8 +13,7 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
-from __future__ import absolute_import, division, print_function
-
+import os
 import re
 import sys
 import traceback
@@ -82,25 +81,20 @@ class MySQLDB(QueryInterface):
         return tmp_tables
 
     def deleteObjectQuery(self, *v):
-        if v[0]:
-            q = (
-                "delete "
-                + v[0]
-                + " from "
-                + ", ".join(v)
-                + " where "
-                + v[0]
-                + "._oid="
-                + v[1]
-                + "._oid and "
-            )
-        else:
-            q = "delete " + v[1] + " from " + ", ".join(v[1:]) + " where "
+        q = (
+            "delete "
+            + v[0]
+            + " from "
+            + ", ".join(v)
+            + " where "
+            + v[0]
+            + "._oid="
+            + v[1]
+            + "._oid"
+        )
 
         for i in range(1, len(v) - 1):
-            if i > 1:
-                q += " and "
-            q += v[i] + "._oid=" + v[i + 1] + "._oid"
+            q += " and " + v[i] + "._oid=" + v[i + 1] + "._oid"
 
         return q
 
@@ -212,25 +206,20 @@ class PostgresDB(QueryInterface):
         return tmp_tables
 
     def deleteObjectQuery(self, *v):
-        if v[0]:
-            q = (
-                "delete from "
-                + v[0]
-                + " using "
-                + ", ".join(v[1:])
-                + " where "
-                + v[0]
-                + "._oid="
-                + v[1]
-                + "._oid and "
-            )
-        else:
-            q = "delete from " + v[1] + " using " + ", ".join(v[2:]) + " where "
+        q = (
+            "delete from "
+            + v[0]
+            + " using "
+            + ", ".join(v[1:])
+            + " where "
+            + v[0]
+            + "._oid="
+            + v[1]
+            + "._oid"
+        )
 
         for i in range(1, len(v) - 1):
-            if i > 1:
-                q += " and "
-            q += v[i] + "._oid=" + v[i + 1] + "._oid"
+            q += " and " + v[i] + "._oid=" + v[i + 1] + "._oid"
 
         return q
 
@@ -346,7 +335,7 @@ class DBCleaner(seiscomp.client.Application):
             try:
                 self.commandline().addGroup("Mode")
                 self.commandline().addOption(
-                    "Mode", "check", "Checks if " "unreachable objects exist."
+                    "Mode", "check", "Checks if unreachable objects exist."
                 )
                 self.commandline().addOption(
                     "Mode",
@@ -360,19 +349,19 @@ class DBCleaner(seiscomp.client.Application):
                 self.commandline().addOption(
                     "Objects",
                     "ep-only,E",
-                    "Delete only event parameters" " but no waveform QC.",
+                    "Delete only event parameters. Combining with "
+                    "'qc-only' is invalid.",
                 )
                 self.commandline().addStringOption(
                     "Objects",
                     "keep-events",
-                    "Event-IDs to keep in the database. Combining with 'qc-only' is "
-                    "invalid.",
+                    "Event-IDs to keep in the database. Combining with 'qc-only' "
+                    "is invalid.",
                 )
                 self.commandline().addOption(
                     "Objects",
                     "qc-only,Q",
-                    "Delete only waveform QC but no event parameters. Combining with"
-                    "'ep-only' is invalid.",
+                    "Delete only waveform QC. Combining with 'ep-only' is invalid.",
                 )
 
                 self.commandline().addGroup("Timespan")
@@ -381,14 +370,14 @@ class DBCleaner(seiscomp.client.Application):
                     "datetime",
                     "Delete objects until the specified datetime (UTC). After that time "
                     "all events are kept. If given, days, minutes and hours are ignored. "
-                    "Format: '%Y-%m-%d %H:%M:%S'.",
+                    "Format: %Y-%m-%dT%H:%M:%S.",
                 )
                 self.commandline().addStringOption(
                     "Timespan",
                     "time-window,t",
                     "Delete objects in the specified time window. Before and after the "
                     "range all events are kept. If given, days, minutes and hours are "
-                    "ignored. Format: '[start-time]~[end-time]'.",
+                    "ignored. Format: [start-time]~[end-time].",
                 )
                 self.commandline().addIntOption(
                     "Timespan",
@@ -471,21 +460,22 @@ class DBCleaner(seiscomp.client.Application):
 
     def printUsage(self):
         print(
-            """Usage:
-  scbstrip [options]
+            f"""Usage:
+  {os.path.basename(__file__)} [options]
 
-Remove event and waveform quality parameters from the database in a timespan."""
+Remove event and waveform quality parameters from the database in a timespan. Use
+scardac for removing data availability parameters."""
         )
 
         seiscomp.client.Application.printUsage(self)
 
         print(
-            """Examples:
+            f"""Examples:
 Remove all event and waveform QC paramters older than 30 days
-  scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --days 30
+  {os.path.basename(__file__)} -d mysql://sysop:sysop@localhost/seiscomp --days 30
 
 Remove all waveform QC paramters older than 30 days but do not effect event parameters
-  scdbstrip -d mysql://sysop:sysop@localhost/seiscomp --days 30 -Q
+  {os.path.basename(__file__)} -d mysql://sysop:sysop@localhost/seiscomp --days 30 -Q
 """
         )
 
@@ -518,15 +508,17 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                 self._stripQC = False
                 epOnly = True
 
+            qcOnly = False
             if self.commandline().hasOption("qc-only"):
-                if epOnly:
-                    error.write(
-                        "ERROR: Option '--qc-only' conflicts with " "'--ep-only'\n"
-                    )
-                    return False
-                else:
-                    self._stripEP = False
-                    self._stripQC = True
+                self._stripEP = False
+                self._stripQC = True
+                qcOnly = True
+
+            if epOnly + qcOnly > 1:
+                error.write(
+                    "ERROR: Cannot combine the options: '--qc-only', '--ep-only'\n"
+                )
+                return False
 
             if not self._stripEP and not self._stripQC:
                 error.write(
@@ -534,6 +526,7 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                     " configuration\n"
                 )
                 return False
+
             try:
                 eventIDs = self.commandline().optionString("keep-events")
                 self._keepEvents = [id.strip() for id in eventIDs.split(",")]
@@ -555,49 +548,35 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                 self._hoursToKeep = None
                 self._minutesToKeep = None
 
-            if dateTime:
-                try:
-                    date = seiscomp.core.Time()
-                    if date.fromString(dateTime, "%Y-%m-%d %H:%M:%S"):
-                        self._datetime = date
-                except ValueError:
-                    pass
-                if self._datetime is None:
-                    error.write("ERROR: datetime has wrong format\n")
+            if dateTime is not None:
+                self._datetime = seiscomp.core.Time.FromString(dateTime)
+                if not self._datetime:
+                    error.write(
+                        f"ERROR: datetime '{dateTime}' has invalid time format\n"
+                    )
                     return False
-                error.write(
-                    "Using datetime option: %s\n" % date.toString("%Y-%m-%d %H:%M:%S")
-                )
 
-            if dateRange:
+            if dateRange is not None:
                 toks = dateRange.split("~")
                 if len(toks) != 2:
-                    error.write("ERROR: daterange has wrong format\n")
+                    error.write(f"ERROR: time-window '{dateRange}' has wrong format\n")
                     return False
-                try:
-                    rangeStart = seiscomp.core.Time()
-                    rangeEnd = seiscomp.core.Time()
-                    if (
-                        rangeStart.fromString(toks[0], "%Y-%m-%d %H:%M:%S")
-                        and rangeEnd.fromString(toks[1], "%Y-%m-%d %H:%M:%S")
-                        and rangeStart < rangeEnd
-                    ):
-                        self._daterange = (rangeStart, rangeEnd)
-                except ValueError:
-                    pass
+
+                rangeStart = seiscomp.core.Time.FromString(toks[0])
+                rangeEnd = seiscomp.core.Time.FromString(toks[1])
+                if rangeStart and rangeEnd and rangeStart < rangeEnd:
+                    self._daterange = (rangeStart, rangeEnd)
+
                 if self._daterange is None:
-                    error.write("ERROR: daterange has wrong format\n")
+                    error.write("ERROR: time-window has wrong format\n")
                     return False
-                error.write(
-                    "Using daterange option: %s~%s\n"
-                    % (
-                        rangeStart.toString("%Y-%m-%d %H:%M:%S"),
-                        rangeEnd.toString("%Y-%m-%d %H:%M:%S"),
-                    )
-                )
+
+                error.write(f"Using time-window option: {rangeStart}~{rangeEnd}\n")
 
             if self._datetime and self._daterange:
-                error.write("ERROR: datetime and daterange cannot be used together\n")
+                error.write(
+                    "ERROR: --datetime and --time-window cannot be used together\n"
+                )
                 return False
 
             # fall back to default if no times are given
@@ -609,7 +588,7 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                 and self._minutesToKeep is None
             ):
                 error.write(
-                    "ERROR: at least one of datetime, daterange, days, "
+                    "ERROR: at least one of datetime, time-window, days, "
                     "hours, minutes should be provided\n"
                 )
                 return False
@@ -670,8 +649,7 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                 timestamp = self._datetime
 
             output.write(
-                "[INFO] Check objects older than %s\n"
-                % timestamp.toString("%Y-%m-%d %H:%M:%S")
+                f"[INFO] Check objects older than {timestamp.toString('%Y-%m-%d %H:%M:%S')}\n"
             )
 
             tables = self._query.getTables()
@@ -698,17 +676,19 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
 
             # Skip the first 5 objects id' that are reserved for metaobjects
             #  (Config, QualityControl, inventory, EventParameters, routing)
-            tmp_object = (
-                "\
+            tmp_object = f"\
       create temporary table tmp_object as \
-        select _oid, 0 as used from Object where _oid > 5 and _timestamp < '%s'\
+        select _oid, 0 as used from Object where _oid > 5 and _timestamp < '{timestamp.toString('%Y-%m-%d %H:%M:%S')}'\
       "
-                % timestamp.toString("%Y-%m-%d %H:%M:%S")
-            )
 
             self.beginMessage("Search objects")
             if not self.runCommand(tmp_object):
                 return False
+
+            tmp_object = "create index idx_oid on tmp_object(_oid)"
+            if not self.runCommand(tmp_object):
+                return False
+
             self.endMessage(self.globalCount("tmp_object"))
 
             for table in tables:
@@ -725,7 +705,7 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                     "tmp_object",
                 )
 
-            self.beginMessage("%d unused objects found" % unusedObjects)
+            self.beginMessage(f"{unusedObjects} unused objects found")
             if not self.runCommand("drop table tmp_object"):
                 return False
             self.endMessage()
@@ -736,7 +716,7 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
             error.write(f"\nException: {str(e)}\n")
             return False
 
-        except:
+        except Exception:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
@@ -772,15 +752,18 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                         what,
                         self._daterange[1].toString("%Y-%m-%d %H:%M:%S"),
                     )
-                elif timestamp:
+
+                if timestamp:
                     if self._invertMode:
                         formatstr = "%s >= '%s'"
                     else:
                         formatstr = "%s < '%s'"
                     return formatstr % (what, timestamp.toString("%Y-%m-%d %H:%M:%S"))
 
+                return None
+
             output.write(
-                "[INFO] Delete %s - time in UTC\n" % timeRangeSelection("objects")
+                f"[INFO] Delete {timeRangeSelection('objects')} - time in UTC\n"
             )
 
             if len(self._keepEvents) > 0:
@@ -795,16 +778,13 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                 self.beginMessage("Deleting waveform quality parameters")
                 if not self.runCommand(
                     self._query.deleteObjectQuery("Object", "WaveformQuality")
-                    + timeRangeSelection(
-                        "%s.%s" % ("WaveformQuality", self.cnvCol("end"))
-                    )
+                    + " and "
+                    + timeRangeSelection(f"WaveformQuality.{self.cnvCol('end')}")
                 ):
                     return False
                 if not self.runCommand(
                     "delete from WaveformQuality where "
-                    + timeRangeSelection(
-                        "%s.%s" % ("WaveformQuality", self.cnvCol("end"))
-                    )
+                    + timeRangeSelection(f"WaveformQuality.{self.cnvCol('end')}")
                 ):
                     return False
                 self.endMessage()
@@ -841,6 +821,11 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
             self.beginMessage("Find old events")
             if not self.runCommand(old_events):
                 return False
+
+            old_events = "create index idx_oid on old_events(_oid)"
+            if not self.runCommand(old_events):
+                return False
+
             self.endMessage(self.globalCount("old_events"))
 
             # Delete OriginReferences of old events
@@ -898,6 +883,10 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
             if not self.runCommand(tmp_fm):
                 return False
 
+            tmp_fm = "create index idx_oid on tmp_fm(_oid)"
+            if not self.runCommand(tmp_fm):
+                return False
+
             tmp_fm = (
                 "\
       update tmp_fm set used=1 \
@@ -949,7 +938,8 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                 "tmp_fm",
             )
 
-            # Delete MomentTensor.StationContribution.ComponentContribution of unassociated focal mechanisms
+            # Delete MomentTensor.StationContribution.ComponentContribution of
+            # unassociated focal mechanisms
             self.delete(
                 "Delete moment tensor component contributions of unassociated focal mechanisms",
                 self.deleteUnusedChilds,
@@ -1008,12 +998,16 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
             if not self.runCommand(tmp_origin):
                 return False
 
+            tmp_origin = "create index idx_oid on tmp_origin(_oid)"
+            if not self.runCommand(tmp_origin):
+                return False
+
             tmp_origin = (
                 "\
       update tmp_origin set used=1 \
       where ("
                 + self.cnvCol("publicID")
-                + " in (select distinct "
+                + " in (select "
                 + self.cnvCol("originID")
                 + " from OriginReference)) \
       or ("
@@ -1111,6 +1105,10 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
             if not self.runCommand(tmp_pick):
                 return False
 
+            tmp_pick = "create index idx_oid on tmp_pick(_oid)"
+            if not self.runCommand(tmp_pick):
+                return False
+
             tmp_pick = (
                 "\
       update tmp_pick set used=1 \
@@ -1163,6 +1161,10 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
             if not self.runCommand(tmp_amp):
                 return False
 
+            tmp_amp = "create index idx_oid on tmp_amp(_oid)"
+            if not self.runCommand(tmp_amp):
+                return False
+
             tmp_amp = (
                 "\
       update tmp_amp set used=1 \
@@ -1198,7 +1200,7 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
             error.write(f"\nException: {str(e)}\n")
             return False
 
-        except:
+        except Exception:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
@@ -1215,7 +1217,7 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
 
     def endMessage(self, count=None):
         if not count is None:
-            output.write("done (%d)" % count)
+            output.write(f"done ({count})")
         else:
             output.write("done")
 
@@ -1302,30 +1304,27 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
             self._query.deleteJournalQuery("PublicObject", *v) + " and used=0"
         )
         self.runCommand(
-            self._query.deleteObjectQuery(None, "Object", *v) + " and used=0"
+            self._query.deleteObjectQuery("Object", *v) + " and used=0"
         )
         self.runCommand(
-            self._query.deleteObjectQuery(None, "PublicObject", *v) + " and used=0"
+            self._query.deleteObjectQuery("PublicObject", *v) + " and used=0"
         )
-        return None
 
     def deleteObjects(self, *v):
         self.runCommand(self._query.deleteJournalQuery("PublicObject", *v))
-        self.runCommand(self._query.deleteObjectQuery("Object", *v))
-        self.runCommand(self._query.deleteObjectQuery("PublicObject", *v))
-        self.runCommand(self._query.deleteObjectQuery(None, *v))
-        return None
+        self.runCommand(self._query.deleteObjectQuery(*v))
+        self.runCommand(self._query.deleteObjectQuery("PublicObject", *v[1:]))
+        self.runCommand(self._query.deleteObjectQuery("Object", *v[1:]))
 
     def deleteUnusedObjects(self, *v):
         self.runCommand(
             self._query.deleteJournalQuery("PublicObject", *v) + " and used=0"
         )
-        self.runCommand(self._query.deleteObjectQuery("Object", *v) + " and used=0")
+        self.runCommand(self._query.deleteObjectQuery(*v) + " and used=0")
         self.runCommand(
-            self._query.deleteObjectQuery("PublicObject", *v) + " and used=0"
+            self._query.deleteObjectQuery("PublicObject", *v[1:]) + " and used=0"
         )
-        self.runCommand(self._query.deleteObjectQuery(None, *v) + " and used=0")
-        return None
+        self.runCommand(self._query.deleteObjectQuery("Object", *v[1:]) + " and used=0")
 
     def delete(self, message, func, *v):
         self.beginMessage(message)

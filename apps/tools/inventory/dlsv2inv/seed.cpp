@@ -417,7 +417,7 @@ bool Parse(int blockette, C &container, bool merge, std::string record) {
 		res = container.back()->Merge(record);
 	}
 	else {
-		typename Seiscomp::Core::SmartPointer<T>::Impl rec = new T;
+		Seiscomp::Core::SmartPointer<T> rec = new T;
 		res = rec->Parse(record);
 		if ( res == PR_Error ) {
 			SEISCOMP_ERROR("Blockette %d: Parse error: %s", blockette, record.c_str());
@@ -446,7 +446,7 @@ bool ParseStage(int blockette, C &container, bool merge, std::string record) {
 		res = container.back()->Merge(record);
 	}
 	else {
-		typename Seiscomp::Core::SmartPointer<T>::Impl rec = new T;
+		Seiscomp::Core::SmartPointer<T> rec = new T;
 		res = rec->Parse(record);
 
 		if ( res == PR_Error ) {

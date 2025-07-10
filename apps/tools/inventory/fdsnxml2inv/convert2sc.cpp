@@ -11,7 +11,6 @@
  * https://www.gnu.org/licenses/agpl-3.0.html.                             *
  ***************************************************************************/
 
-
 #define SEISCOMP_COMPONENT STAXML
 #include "convert2sc.h"
 
@@ -67,18 +66,17 @@ namespace Seiscomp {
 
 namespace {
 
-
 #define UNDEFINED   ""
 #define VOLTAGE     "V"
 #define AMPERE      "A"
 #define DIGITAL     "COUNTS"
 
+typedef pair<double, double> Location;
+typedef pair<Location, double> LocationElevation;
+typedef pair<string, Location> EpochIndex;
+typedef pair<string, FDSNXML::Channel *> ChannelEpoch;
 
-typedef pair<double,double> Location;
-typedef pair<Location,double> LocationElevation;
-typedef pair<string,Location> EpochIndex;
-typedef pair<string,FDSNXML::Channel*> ChannelEpoch;
-
+Core::Time defaultStartTime(1902, 1, 1);
 
 bool epochLowerThan(const ChannelEpoch &e1, const ChannelEpoch &e2) {
 	try {
@@ -90,11 +88,11 @@ bool epochLowerThan(const ChannelEpoch &e1, const ChannelEpoch &e2) {
 			e2.second->startDate();
 			return true;
 		}
-		catch ( ... ) {}
+		catch ( ... ) {
+		}
 		return false;
 	}
 }
-
 
 typedef list<ChannelEpoch> Epochs;
 struct EpochEntry {
@@ -102,17 +100,15 @@ struct EpochEntry {
 	Epochs epochs;
 };
 
-
 inline bool leap(int y) {
 	return (y % 400 == 0 || (y % 4 == 0 && y % 100 != 0));
 }
 
-
 inline int doy(int y, int m) {
-	static const int DOY[] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
+	static const int DOY[] = {0,   31,  59,  90,  120, 151, 181,
+	                          212, 243, 273, 304, 334, 365};
 	return (DOY[m] + (leap(y) && m >= 2));
 }
-
 
 inline string date2str(const Core::Time &t) {
 	int year, month, day, hour, minute, second;
@@ -125,45 +121,49 @@ inline string date2str(const Core::Time &t) {
 	}
 
 	char buf[20];
-	snprintf(buf, sizeof(buf)-1, "%d.%03d.%02d.%02d.%02d", year, doy(year, month - 1) + day, hour, minute, second);
+	snprintf(
+	    buf, sizeof(buf) - 1, "%d.%03d.%02d.%02d.%02d", year,
+	    doy(year, month - 1) + day, hour, minute, second
+	);
 	return buf;
 }
 
-
 string timeToStr(const Core::Time &time) {
-	if ( time.microseconds() == 0 && time.seconds() % 86400 == 0 ) {
+	if ( time.microseconds() == 0 && time.epochSeconds() % 86400 == 0 ) {
 		return time.toString("%F");
 	}
 
 	return time.toString("%FT%T");
 }
 
-
-bool respLowerThan(const FDSNXML::ResponseStage *r1, const FDSNXML::ResponseStage *r2) {
+bool respLowerThan(
+    const FDSNXML::ResponseStage *r1, const FDSNXML::ResponseStage *r2
+) {
 	return r1->number() < r2->number();
 }
 
-
-typedef pair<int,int> Fraction;
+typedef pair<int, int> Fraction;
 
 Fraction double2frac(double d) {
 	double df = 1;
-	Fraction::first_type top = d >= 2.0 ? d-1 : 1, ctop = top;
-	Fraction::second_type bot = d <= 0.5 ? 1/d-1 : 1, cbot = bot;
-	double error = fabs(df-d);
-	double last_error = error*2;
+	Fraction::first_type top = d >= 2.0 ? d - 1 : 1, ctop = top;
+	Fraction::second_type bot = d <= 0.5 ? 1 / d - 1 : 1, cbot = bot;
+	double error = fabs(df - d);
+	double last_error = error * 2;
 	bool fixed_top = false;
 
-	if ( fabs(d) < 1E-20 )
-		return Fraction(0,1);
+	if ( fabs(d) < 1E-20 ) {
+		return Fraction(0, 1);
+	}
 
 	while ( error < last_error ) {
 		ctop = top;
 		cbot = bot;
 
-		//cerr << error << "  " << top << "/" << bot << endl;
-		if ( df < d )
+		// cerr << error << "  " << top << "/" << bot << endl;
+		if ( df < d ) {
 			++top;
+		}
 		else {
 			++bot;
 			top = Fraction::first_type(d * bot);
@@ -172,103 +172,170 @@ Fraction double2frac(double d) {
 		df = (double)top / (double)bot;
 		if ( top > 0 ) {
 			last_error = error;
-			error = fabs(df-d);
+			error = fabs(df - d);
 			fixed_top = false;
 		}
 		else if ( fixed_top ) {
 			cbot = 1;
 			break;
 		}
-		else
+		else {
 			fixed_top = true;
+		}
 
-		if ( top < 0 || bot < 0 )
-			return Fraction(0,0);
+		if ( top < 0 || bot < 0 ) {
+			return Fraction(0, 0);
+		}
 	}
 
-	return Fraction(ctop,cbot);
+	return Fraction(ctop, cbot);
 }
 
+class OpenTimeWindow {
+	public:
+		OpenTimeWindow() {}
+		OpenTimeWindow(
+		    Seiscomp::Core::Time startTime, OPT(Seiscomp::Core::Time) endTime
+		)
+		    : _startTime(startTime)
+		    , _endTime(endTime) {}
+
+	public:
+		void setStartTime(const Seiscomp::Core::Time &time) {
+			_startTime = time;
+		}
+		const Seiscomp::Core::Time &startTime() const {
+			return _startTime;
+		}
+		void setEndTime(const Seiscomp::Core::Time &time) {
+			_endTime = time;
+		}
+		const OPT(Seiscomp::Core::Time) & endTime() const {
+			return _endTime;
+		}
+
+	private:
+		Seiscomp::Core::Time _startTime;
+		OPT(Seiscomp::Core::Time) _endTime;
+};
 
 // Special overlap check for time windows where end time might be open
-bool overlaps(const Core::TimeWindow &tw1, const Core::TimeWindow &tw2) {
-    if ( tw2.startTime() < tw1.startTime() ) return overlaps(tw2, tw1);
-    return !tw1.endTime().valid() || tw1.endTime() > tw2.startTime();
+bool overlaps(const OpenTimeWindow &tw1, const OpenTimeWindow &tw2) {
+	if ( tw2.startTime() < tw1.startTime() ) {
+		return overlaps(tw2, tw1);
+	}
+	return !tw1.endTime() || *tw1.endTime() > tw2.startTime();
 }
-
-
 
 template <typename T>
 bool overlaps(const T *epoch1, const T *epoch2) {
-	Core::TimeWindow tw1, tw2;
-	try { tw1.setStartTime(epoch1->startDate()); }
-	catch ( ... ) { tw1.setStartTime(Core::Time(1980,1,1)); }
-	try { tw1.setEndTime(epoch1->endDate()); } catch ( ... ) {}
+	OpenTimeWindow tw1, tw2;
+	try {
+		tw1.setStartTime(epoch1->startDate());
+	}
+	catch ( ... ) {
+		tw1.setStartTime(defaultStartTime);
+	}
+	try {
+		tw1.setEndTime(epoch1->endDate());
+	}
+	catch ( ... ) {
+	}
 
-	try { tw2.setStartTime(epoch2->startDate()); }
-	catch ( ... ) { tw2.setStartTime(Core::Time(1980,1,1)); }
-	try { tw2.setEndTime(epoch2->endDate()); } catch ( ... ) {}
+	try {
+		tw2.setStartTime(epoch2->startDate());
+	}
+	catch ( ... ) {
+		tw2.setStartTime(defaultStartTime);
+	}
+	try {
+		tw2.setEndTime(epoch2->endDate());
+	}
+	catch ( ... ) {
+	}
 
 	return overlaps(tw1, tw2);
 }
-
 
 template <typename T>
 bool overlaps2(const T *epoch1, const T *epoch2) {
-	Core::TimeWindow tw1, tw2;
-	try { tw1.setStartTime(epoch1->start()); }
-	catch ( ... ) { tw1.setStartTime(Core::Time(1980,1,1)); }
-	try { tw1.setEndTime(epoch1->end()); } catch ( ... ) {}
+	OpenTimeWindow tw1, tw2;
+	try {
+		tw1.setStartTime(epoch1->start());
+	}
+	catch ( ... ) {
+		tw1.setStartTime(defaultStartTime);
+	}
+	try {
+		tw1.setEndTime(epoch1->end());
+	}
+	catch ( ... ) {
+	}
 
-	try { tw2.setStartTime(epoch2->start()); }
-	catch ( ... ) { tw2.setStartTime(Core::Time(1980,1,1)); }
-	try { tw2.setEndTime(epoch2->end()); } catch ( ... ) {}
+	try {
+		tw2.setStartTime(epoch2->start());
+	}
+	catch ( ... ) {
+		tw2.setStartTime(defaultStartTime);
+	}
+	try {
+		tw2.setEndTime(epoch2->end());
+	}
+	catch ( ... ) {
+	}
 
 	return overlaps(tw1, tw2);
 }
-
 
 void checkFIR(DataModel::ResponseFIR *rf) {
 	vector<double> &v = rf->coefficients().content();
 	int nc = v.size();
 
 	if ( rf->numberOfCoefficients() != nc ) {
-		SEISCOMP_WARNING("expected %d coefficients, found %d: will be corrected",
-		                 rf->numberOfCoefficients(), nc);
+		SEISCOMP_WARNING(
+		    "expected %d coefficients, found %d: will be corrected",
+		    rf->numberOfCoefficients(), nc
+		);
 		rf->setNumberOfCoefficients(nc);
 	}
 
-	if ( nc == 0 || rf->symmetry() != "A" ) return;
+	if ( nc == 0 || rf->symmetry() != "A" ) {
+		return;
+	}
 
 	int i = 0;
-	for ( ; 2 * i < nc; ++i )
-		if ( v[i] != v[nc - 1 - i] ) break;
+	for ( ; 2 * i < nc; ++i ) {
+		if ( v[i] != v[nc - 1 - i] ) {
+			break;
+		}
+	}
 
 	if ( 2 * i > nc ) {
 		rf->setNumberOfCoefficients(i);
 		rf->setSymmetry("B");
 		v.resize(i);
-		//SEISCOMP_DEBUG("A(%d) -> B(%d)", nc, i);
+		// SEISCOMP_DEBUG("A(%d) -> B(%d)", nc, i);
 	}
 	else if ( 2 * i == nc ) {
 		rf->setNumberOfCoefficients(i);
 		rf->setSymmetry("C");
 		v.resize(i);
-		//SEISCOMP_DEBUG("A(%d) -> C(%d)", nc, i);
+		// SEISCOMP_DEBUG("A(%d) -> C(%d)", nc, i);
 	}
 	else {
-		//SEISCOMP_DEBUG("A(%d) -> A(%d)", nc, nc);
+		// SEISCOMP_DEBUG("A(%d) -> A(%d)", nc, nc);
 	}
 }
-
 
 void checkIIR(DataModel::ResponseIIR *rf) {
 	vector<double> &nums = rf->numerators().content();
 	int nc = nums.size();
 
 	if ( rf->numberOfNumerators() != nc ) {
-		SEISCOMP_WARNING("expected %d numerators, found %d: will be corrected",
-		                 rf->numberOfNumerators(), nc);
+		SEISCOMP_WARNING(
+		    "expected %d numerators, found %d: will be corrected",
+		    rf->numberOfNumerators(), nc
+		);
 		rf->setNumberOfNumerators(nc);
 	}
 
@@ -276,78 +343,111 @@ void checkIIR(DataModel::ResponseIIR *rf) {
 	int dc = denoms.size();
 
 	if ( rf->numberOfDenominators() != dc ) {
-		SEISCOMP_WARNING("expected %d denominators, found %d: will be corrected",
-		                 rf->numberOfDenominators(), dc);
+		SEISCOMP_WARNING(
+		    "expected %d denominators, found %d: will be corrected",
+		    rf->numberOfDenominators(), dc
+		);
 		rf->setNumberOfDenominators(dc);
 	}
 }
 
-
 void checkPAZ(DataModel::ResponsePAZ *rp) {
 	if ( rp->numberOfPoles() != (int)rp->poles().content().size() ) {
-		SEISCOMP_WARNING("expected %d poles, found %lu", rp->numberOfPoles(),
-		                 (unsigned long)rp->poles().content().size());
+		SEISCOMP_WARNING(
+		    "expected %d poles, found %lu", rp->numberOfPoles(),
+		    (unsigned long)rp->poles().content().size()
+		);
 		rp->setNumberOfPoles(rp->poles().content().size());
 	}
 
 	if ( rp->numberOfZeros() != (int)rp->zeros().content().size() ) {
-		SEISCOMP_WARNING("expected %d zeros, found %lu", rp->numberOfZeros(),
-		                 (unsigned long)rp->zeros().content().size());
+		SEISCOMP_WARNING(
+		    "expected %d zeros, found %lu", rp->numberOfZeros(),
+		    (unsigned long)rp->zeros().content().size()
+		);
 		rp->setNumberOfZeros(rp->zeros().content().size());
 	}
 }
 
-
 void checkFAP(DataModel::ResponseFAP *rp) {
-	if ( rp->numberOfTuples() != (int)(rp->tuples().content().size()/3) ) {
-		SEISCOMP_WARNING("expected %d tuples, found %lu", rp->numberOfTuples(),
-		                 (unsigned long)(rp->tuples().content().size()/3));
-		rp->setNumberOfTuples(rp->tuples().content().size()/3);
+	if ( rp->numberOfTuples() != (int)(rp->tuples().content().size() / 3) ) {
+		SEISCOMP_WARNING(
+		    "expected %d tuples, found %lu", rp->numberOfTuples(),
+		    (unsigned long)(rp->tuples().content().size() / 3)
+		);
+		rp->setNumberOfTuples(rp->tuples().content().size() / 3);
 	}
 }
 
-
 void checkPoly(DataModel::ResponsePolynomial *rp) {
-	if ( rp->numberOfCoefficients() != (int)rp->coefficients().content().size() ) {
-		SEISCOMP_WARNING("expected %d coefficients, found %lu", rp->numberOfCoefficients(),
-		                 (unsigned long)rp->coefficients().content().size());
+	if ( rp->numberOfCoefficients() !=
+	     (int)rp->coefficients().content().size() ) {
+		SEISCOMP_WARNING(
+		    "expected %d coefficients, found %lu", rp->numberOfCoefficients(),
+		    (unsigned long)rp->coefficients().content().size()
+		);
 		rp->setNumberOfCoefficients(rp->coefficients().content().size());
 	}
 }
 
-
 // Macro to backup the result of an optional value
-#define BCK(name, type, query) \
-	OPT(type) name;\
-	try { name = query; } catch ( ... ) {}
+#define BCK(name, type, query)                                                 \
+	OPT(type) name;                                                            \
+	try {                                                                      \
+		name = query;                                                          \
+	}                                                                          \
+	catch ( ... ) {                                                            \
+	}
 
 // Macro to update the need-update state using the backup'd value
 // and the current value
-#define UPD(target, bck, type, query) \
-	if ( !target ) {\
-		OPT(type) tmp; try { tmp = query; } catch ( ... ) {}\
-		if ( tmp != bck ) target = true;\
+#define UPD(target, bck, type, query)                                          \
+	if ( !target ) {                                                           \
+		OPT(type) tmp;                                                         \
+		try {                                                                  \
+			tmp = query;                                                       \
+		}                                                                      \
+		catch ( ... ) {                                                        \
+		}                                                                      \
+		if ( tmp != bck )                                                      \
+			target = true;                                                     \
 	}
 
-#define UPD2(target, bck, type, query) \
-	if ( !target ) {\
-		OPT(type) tmp; try { tmp = query; } catch ( ... ) {}\
-		if ( tmp != bck ) { cout << #query" -> " << Core::toString(bck) << " != " << Core::toString(query) << endl; target = true;}\
+#define UPD2(target, bck, type, query)                                         \
+	if ( !target ) {                                                           \
+		OPT(type) tmp;                                                         \
+		try {                                                                  \
+			tmp = query;                                                       \
+		}                                                                      \
+		catch ( ... ) {                                                        \
+		}                                                                      \
+		if ( tmp != bck ) {                                                    \
+			cout << #query " -> " << Core::toString(bck)                       \
+			     << " != " << Core::toString(query) << endl;                   \
+			target = true;                                                     \
+		}                                                                      \
 	}
 
-
-#define UPD_DBG(bck, type, query) \
-	{ OPT(type) tmp; try { tmp = query; } catch ( ... ) {}\
-	  if ( tmp != bck ) { SEISCOMP_DEBUG(#query" changed"); } }
-
-
-#define COMPARE_AND_RETURN(type, inst1, inst2, query) \
-	{\
-		BCK(tmp1, type, inst1->query)\
-		BCK(tmp2, type, inst2->query)\
-		if ( tmp1 != tmp2 ) return false;\
+#define UPD_DBG(bck, type, query)                                              \
+	{                                                                          \
+		OPT(type) tmp;                                                         \
+		try {                                                                  \
+			tmp = query;                                                       \
+		}                                                                      \
+		catch ( ... ) {                                                        \
+		}                                                                      \
+		if ( tmp != bck ) {                                                    \
+			SEISCOMP_DEBUG(#query " changed");                                 \
+		}                                                                      \
 	}
 
+#define COMPARE_AND_RETURN(type, inst1, inst2, query)                          \
+	{                                                                          \
+		BCK(tmp1, type, inst1->query)                                          \
+		BCK(tmp2, type, inst2->query)                                          \
+		if ( tmp1 != tmp2 )                                                    \
+			return false;                                                      \
+	}
 
 bool equal(const DataModel::ResponseFIR *f1, const DataModel::ResponseFIR *f2) {
 	COMPARE_AND_RETURN(double, f1, f2, gain())
@@ -357,30 +457,48 @@ bool equal(const DataModel::ResponseFIR *f1, const DataModel::ResponseFIR *f2) {
 	COMPARE_AND_RETURN(double, f1, f2, correction())
 	COMPARE_AND_RETURN(int, f1, f2, numberOfCoefficients())
 
-	if ( f1->symmetry() != f2->symmetry() ) return false;
+	if ( f1->symmetry() != f2->symmetry() ) {
+		return false;
+	}
 
 	const DataModel::RealArray *coeff1 = NULL;
 	const DataModel::RealArray *coeff2 = NULL;
 
-	try { coeff1 = &f1->coefficients(); } catch ( ... ) {}
-	try { coeff2 = &f2->coefficients(); } catch ( ... ) {}
+	try {
+		coeff1 = &f1->coefficients();
+	}
+	catch ( ... ) {
+	}
+	try {
+		coeff2 = &f2->coefficients();
+	}
+	catch ( ... ) {
+	}
 
 	// One set and not the other?
-	if ( (!coeff1 && coeff2) || (coeff1 && !coeff2) ) return false;
+	if ( (!coeff1 && coeff2) || (coeff1 && !coeff2) ) {
+		return false;
+	}
 
 	// Both unset?
-	if ( !coeff1 && !coeff2 ) return true;
+	if ( !coeff1 && !coeff2 ) {
+		return true;
+	}
 
 	// Both set, compare content
 	const vector<double> &c1 = coeff1->content();
 	const vector<double> &c2 = coeff2->content();
-	if ( c1.size() != c2.size() ) return false;
-	for ( size_t i = 0; i < c1.size(); ++i )
-		if ( c1[i] != c2[i] ) return false;
+	if ( c1.size() != c2.size() ) {
+		return false;
+	}
+	for ( size_t i = 0; i < c1.size(); ++i ) {
+		if ( c1[i] != c2[i] ) {
+			return false;
+		}
+	}
 
 	return true;
 }
-
 
 bool equal(const DataModel::ResponseIIR *f1, const DataModel::ResponseIIR *f2) {
 	COMPARE_AND_RETURN(string, f1, f2, type())
@@ -395,47 +513,83 @@ bool equal(const DataModel::ResponseIIR *f1, const DataModel::ResponseIIR *f2) {
 	const DataModel::RealArray *numerator1 = NULL;
 	const DataModel::RealArray *numerator2 = NULL;
 
-	try { numerator1 = &f1->numerators(); } catch ( ... ) {}
-	try { numerator2 = &f2->numerators(); } catch ( ... ) {}
+	try {
+		numerator1 = &f1->numerators();
+	}
+	catch ( ... ) {
+	}
+	try {
+		numerator2 = &f2->numerators();
+	}
+	catch ( ... ) {
+	}
 
 	// One set and not the other?
-	if ( (!numerator1 && numerator2) || (numerator1 && !numerator2) ) return false;
+	if ( (!numerator1 && numerator2) || (numerator1 && !numerator2) ) {
+		return false;
+	}
 
 	// Both unset?
-	if ( !numerator1 && !numerator2 ) return true;
+	if ( !numerator1 && !numerator2 ) {
+		return true;
+	}
 
 	// Both set, compare content
 	const vector<double> &n1 = numerator1->content();
 	const vector<double> &n2 = numerator2->content();
-	if ( n1.size() != n2.size() ) return false;
-	for ( size_t i = 0; i < n1.size(); ++i )
-		if ( n1[i] != n2[i] ) return false;
+	if ( n1.size() != n2.size() ) {
+		return false;
+	}
+	for ( size_t i = 0; i < n1.size(); ++i ) {
+		if ( n1[i] != n2[i] ) {
+			return false;
+		}
+	}
 
 	const DataModel::RealArray *denominators1 = NULL;
 	const DataModel::RealArray *denominators2 = NULL;
 
-	try { denominators1 = &f1->denominators(); } catch ( ... ) {}
-	try { denominators2 = &f2->denominators(); } catch ( ... ) {}
+	try {
+		denominators1 = &f1->denominators();
+	}
+	catch ( ... ) {
+	}
+	try {
+		denominators2 = &f2->denominators();
+	}
+	catch ( ... ) {
+	}
 
 	// One set and not the other?
-	if ( (!denominators1 && denominators2) || (denominators1 && !denominators2) ) return false;
+	if ( (!denominators1 && denominators2) ||
+	     (denominators1 && !denominators2) ) {
+		return false;
+	}
 
 	// Both unset?
-	if ( !denominators1 && !denominators2 ) return true;
+	if ( !denominators1 && !denominators2 ) {
+		return true;
+	}
 
 	// Both set, compare content
 	const vector<double> &d1 = denominators1->content();
 	const vector<double> &d2 = denominators2->content();
-	if ( d1.size() != d2.size() ) return false;
-	for ( size_t i = 0; i < d1.size(); ++i )
-		if ( d1[i] != d2[i] ) return false;
+	if ( d1.size() != d2.size() ) {
+		return false;
+	}
+	for ( size_t i = 0; i < d1.size(); ++i ) {
+		if ( d1[i] != d2[i] ) {
+			return false;
+		}
+	}
 
 	return true;
 }
 
-
 bool equal(const DataModel::ResponsePAZ *p1, const DataModel::ResponsePAZ *p2) {
-	if ( p1->type() != p2->type() ) return false;
+	if ( p1->type() != p2->type() ) {
+		return false;
+	}
 
 	COMPARE_AND_RETURN(string, p1, p2, type())
 	COMPARE_AND_RETURN(double, p1, p2, gain())
@@ -452,48 +606,81 @@ bool equal(const DataModel::ResponsePAZ *p1, const DataModel::ResponsePAZ *p2) {
 	const DataModel::ComplexArray *poles1 = NULL;
 	const DataModel::ComplexArray *poles2 = NULL;
 
-	try { poles1 = &p1->poles(); } catch ( ... ) {}
-	try { poles2 = &p2->poles(); } catch ( ... ) {}
+	try {
+		poles1 = &p1->poles();
+	}
+	catch ( ... ) {
+	}
+	try {
+		poles2 = &p2->poles();
+	}
+	catch ( ... ) {
+	}
 
 	// One set and not the other?
-	if ( (!poles1 && poles2) || (poles1 && !poles2) ) return false;
+	if ( (!poles1 && poles2) || (poles1 && !poles2) ) {
+		return false;
+	}
 
 	// Both unset?
-	if ( !poles1 && !poles2 ) return true;
+	if ( !poles1 && !poles2 ) {
+		return true;
+	}
 
 	// Both set, compare content
-	const vector< complex<double> > &pc1 = poles1->content();
-	const vector< complex<double> > &pc2 = poles2->content();
+	const vector<complex<double>> &pc1 = poles1->content();
+	const vector<complex<double>> &pc2 = poles2->content();
 
-	if ( pc1.size() != pc2.size() ) return false;
-	for ( size_t i = 0; i < pc1.size(); ++i )
-		if ( pc1[i] != pc2[i] ) return false;
+	if ( pc1.size() != pc2.size() ) {
+		return false;
+	}
+	for ( size_t i = 0; i < pc1.size(); ++i ) {
+		if ( pc1[i] != pc2[i] ) {
+			return false;
+		}
+	}
 
 	// Compare zeros
 	const DataModel::ComplexArray *zeros1 = NULL;
 	const DataModel::ComplexArray *zeros2 = NULL;
 
-	try { zeros1 = &p1->zeros(); } catch ( ... ) {}
-	try { zeros2 = &p2->zeros(); } catch ( ... ) {}
+	try {
+		zeros1 = &p1->zeros();
+	}
+	catch ( ... ) {
+	}
+	try {
+		zeros2 = &p2->zeros();
+	}
+	catch ( ... ) {
+	}
 
 	// One set and not the other?
-	if ( (!zeros1 && zeros2) || (zeros1 && !zeros2) ) return false;
+	if ( (!zeros1 && zeros2) || (zeros1 && !zeros2) ) {
+		return false;
+	}
 
 	// Both unset?
-	if ( !zeros1 && !zeros2 ) return true;
+	if ( !zeros1 && !zeros2 ) {
+		return true;
+	}
 
 	// Both set, compare content
-	const vector< complex<double> > &zc1 = zeros1->content();
-	const vector< complex<double> > &zc2 = zeros2->content();
+	const vector<complex<double>> &zc1 = zeros1->content();
+	const vector<complex<double>> &zc2 = zeros2->content();
 
-	if ( zc1.size() != zc2.size() ) return false;
-	for ( size_t i = 0; i < zc1.size(); ++i )
-		if ( zc1[i] != zc2[i] ) return false;
+	if ( zc1.size() != zc2.size() ) {
+		return false;
+	}
+	for ( size_t i = 0; i < zc1.size(); ++i ) {
+		if ( zc1[i] != zc2[i] ) {
+			return false;
+		}
+	}
 
 	// Everything is equal
 	return true;
 }
-
 
 bool equal(const DataModel::ResponseFAP *p1, const DataModel::ResponseFAP *p2) {
 	COMPARE_AND_RETURN(double, p1, p2, gain())
@@ -504,32 +691,55 @@ bool equal(const DataModel::ResponseFAP *p1, const DataModel::ResponseFAP *p2) {
 	const DataModel::RealArray *tuples1 = NULL;
 	const DataModel::RealArray *tuples2 = NULL;
 
-	try { tuples1 = &p1->tuples(); } catch ( ... ) {}
-	try { tuples2 = &p2->tuples(); } catch ( ... ) {}
+	try {
+		tuples1 = &p1->tuples();
+	}
+	catch ( ... ) {
+	}
+	try {
+		tuples2 = &p2->tuples();
+	}
+	catch ( ... ) {
+	}
 
 	// One set and not the other?
-	if ( (!tuples1 && tuples2) || (tuples1 && !tuples2) ) return false;
+	if ( (!tuples1 && tuples2) || (tuples1 && !tuples2) ) {
+		return false;
+	}
 
 	// Both unset?
-	if ( !tuples1 && !tuples2 ) return true;
+	if ( !tuples1 && !tuples2 ) {
+		return true;
+	}
 
 	// Both set, compare content
 	const vector<double> &t1 = tuples1->content();
 	const vector<double> &t2 = tuples2->content();
-	if ( t1.size() != t2.size() ) return false;
-	for ( size_t i = 0; i < t1.size(); ++i )
-		if ( t1[i] != t2[i] ) return false;
+	if ( t1.size() != t2.size() ) {
+		return false;
+	}
+	for ( size_t i = 0; i < t1.size(); ++i ) {
+		if ( t1[i] != t2[i] ) {
+			return false;
+		}
+	}
 
 	return true;
 }
 
-
-bool equal(const DataModel::ResponsePolynomial *p1, const DataModel::ResponsePolynomial *p2) {
+bool equal(
+	const DataModel::ResponsePolynomial *p1,
+	const DataModel::ResponsePolynomial *p2
+) {
 	COMPARE_AND_RETURN(double, p1, p2, gain())
 	COMPARE_AND_RETURN(double, p1, p2, gainFrequency())
 
-	if ( p1->frequencyUnit() != p2->frequencyUnit() ) return false;
-	if ( p1->approximationType() != p2->approximationType() ) return false;
+	if ( p1->frequencyUnit() != p2->frequencyUnit() ) {
+		return false;
+	}
+	if ( p1->approximationType() != p2->approximationType() ) {
+		return false;
+	}
 
 	COMPARE_AND_RETURN(double, p1, p2, approximationLowerBound())
 	COMPARE_AND_RETURN(double, p1, p2, approximationUpperBound())
@@ -539,35 +749,67 @@ bool equal(const DataModel::ResponsePolynomial *p1, const DataModel::ResponsePol
 	const DataModel::RealArray *coeff1 = NULL;
 	const DataModel::RealArray *coeff2 = NULL;
 
-	try { coeff1 = &p1->coefficients(); } catch ( ... ) {}
-	try { coeff2 = &p2->coefficients(); } catch ( ... ) {}
+	try {
+		coeff1 = &p1->coefficients();
+	}
+	catch ( ... ) {
+	}
+	try {
+		coeff2 = &p2->coefficients();
+	}
+	catch ( ... ) {
+	}
 
 	// One set and not the other?
-	if ( (!coeff1 && coeff2) || (coeff1 && !coeff2) ) return false;
+	if ( (!coeff1 && coeff2) || (coeff1 && !coeff2) ) {
+		return false;
+	}
 
 	// Both unset?
-	if ( !coeff1 && !coeff2 ) return true;
+	if ( !coeff1 && !coeff2 ) {
+		return true;
+	}
 
 	// Both set, compare content
 	const vector<double> &c1 = coeff1->content();
 	const vector<double> &c2 = coeff2->content();
-	if ( c1.size() != c2.size() ) return false;
-	for ( size_t i = 0; i < c1.size(); ++i )
-		if ( c1[i] != c2[i] ) return false;
+	if ( c1.size() != c2.size() ) {
+		return false;
+	}
+	for ( size_t i = 0; i < c1.size(); ++i ) {
+		if ( c1[i] != c2[i] ) {
+			return false;
+		}
+	}
 
 	return true;
 }
 
-
 bool equal(const DataModel::Datalogger *d1, const DataModel::Datalogger *d2) {
-	if ( d1->description() != d2->description() ) return false;
-	if ( d1->digitizerModel() != d2->digitizerModel() ) return false;
-	if ( d1->digitizerManufacturer() != d2->digitizerManufacturer() ) return false;
-	if ( d1->recorderModel() != d2->recorderModel() ) return false;
-	if ( d1->recorderManufacturer() != d2->recorderManufacturer() ) return false;
-	if ( d1->clockModel() != d2->clockModel() ) return false;
-	if ( d1->clockManufacturer() != d2->clockManufacturer() ) return false;
-	if ( d1->clockType() != d2->clockType() ) return false;
+	if ( d1->description() != d2->description() ) {
+		return false;
+	}
+	if ( d1->digitizerModel() != d2->digitizerModel() ) {
+		return false;
+	}
+	if ( d1->digitizerManufacturer() != d2->digitizerManufacturer() ) {
+		return false;
+	}
+	if ( d1->recorderModel() != d2->recorderModel() ) {
+		return false;
+	}
+	if ( d1->recorderManufacturer() != d2->recorderManufacturer() ) {
+		return false;
+	}
+	if ( d1->clockModel() != d2->clockModel() ) {
+		return false;
+	}
+	if ( d1->clockManufacturer() != d2->clockManufacturer() ) {
+		return false;
+	}
+	if ( d1->clockType() != d2->clockType() ) {
+		return false;
+	}
 
 	COMPARE_AND_RETURN(double, d1, d2, gain())
 	COMPARE_AND_RETURN(double, d1, d2, maxClockDrift())
@@ -575,14 +817,25 @@ bool equal(const DataModel::Datalogger *d1, const DataModel::Datalogger *d2) {
 	return true;
 }
 
-
 bool equal(const DataModel::Sensor *s1, const DataModel::Sensor *s2) {
-	if ( s1->description() != s2->description() ) return false;
-	if ( s1->model() != s2->model() ) return false;
-	if ( s1->manufacturer() != s2->manufacturer() ) return false;
-	if ( s1->type() != s2->type() ) return false;
-	if ( s1->unit() != s2->unit() ) return false;
-	if ( s1->response() != s2->response() ) return false;
+	if ( s1->description() != s2->description() ) {
+		return false;
+	}
+	if ( s1->model() != s2->model() ) {
+		return false;
+	}
+	if ( s1->manufacturer() != s2->manufacturer() ) {
+		return false;
+	}
+	if ( s1->type() != s2->type() ) {
+		return false;
+	}
+	if ( s1->unit() != s2->unit() ) {
+		return false;
+	}
+	if ( s1->response() != s2->response() ) {
+		return false;
+	}
 
 	COMPARE_AND_RETURN(double, s1, s2, lowFrequency())
 	COMPARE_AND_RETURN(double, s1, s2, highFrequency())
@@ -590,58 +843,62 @@ bool equal(const DataModel::Sensor *s1, const DataModel::Sensor *s2) {
 	return true;
 }
 
-
 bool isElectric(const string &unit) {
 	return unit == AMPERE || unit == VOLTAGE;
 }
-
 
 bool isSensorStage(const string &inputUnit, const string &outputUnit) {
 	return !isElectric(inputUnit) && isElectric(outputUnit);
 }
 
-
-bool isAnalogDataloggerStage(const string &inputUnit, const string &outputUnit) {
+bool isAnalogDataloggerStage(
+    const string &inputUnit, const string &outputUnit
+) {
 	return isElectric(inputUnit) && isElectric(outputUnit);
 }
-
 
 bool isDigitalDataloggerStage(const string &, const string &outputUnit) {
 	return !isElectric(outputUnit);
 }
 
-
 bool isADCStage(const string &inputUnit, const string &outputUnit) {
 	return isElectric(inputUnit) && !isElectric(outputUnit);
 }
 
-
 bool IsDummy(const FDSNXML::ResponseStage *stage, ResponseType type) {
 	switch ( type ) {
 		case RT_FIR:
-			if ( stage->fIR().numeratorCoefficientCount() == 0 )
+			if ( stage->fIR().numeratorCoefficientCount() == 0 ) {
 				return true;
+			}
 			break;
 
 		case RT_RC:
 			if ( stage->coefficients().numeratorCount() == 0 &&
-			     stage->coefficients().denominatorCount() == 0 )
+			     stage->coefficients().denominatorCount() == 0 ) {
 				return true;
+			}
 
 			if ( stage->coefficients().numeratorCount() == 1 &&
 			     stage->coefficients().denominatorCount() == 0 &&
 			     stage->coefficients().numerator(0)->value() == 1.0 ) {
 				try {
-					if ( stage->coefficients().numerator(0)->lowerUncertainty() != 0 )
+					if ( stage->coefficients().numerator(0)->lowerUncertainty(
+					     ) != 0 ) {
 						return false;
+					}
 				}
-				catch ( ... ) {}
+				catch ( ... ) {
+				}
 
 				try {
-					if ( stage->coefficients().numerator(0)->upperUncertainty() != 0 )
+					if ( stage->coefficients().numerator(0)->upperUncertainty(
+					     ) != 0 ) {
 						return false;
+					}
 				}
-				catch ( ... ) {}
+				catch ( ... ) {
+				}
 
 				return true;
 			}
@@ -661,15 +918,16 @@ bool IsDummy(const FDSNXML::ResponseStage *stage, ResponseType type) {
 	return false;
 }
 
-
 string getBaseUnit(const string &unitText) {
 	size_t pos = unitText.find(' ');
-	if ( pos == string::npos ) return unitText;
+	if ( pos == string::npos ) {
+		return unitText;
+	}
 	return unitText.substr(0, pos);
 }
 
-
-const FDSNXML::BaseFilter *getFilter(const FDSNXML::ResponseStage *stage, ResponseType &type) {
+const FDSNXML::BaseFilter *
+getFilter(const FDSNXML::ResponseStage *stage, ResponseType &type) {
 	try {
 		type = RT_PAZ;
 		return &stage->polesZeros();
@@ -694,7 +952,8 @@ const FDSNXML::BaseFilter *getFilter(const FDSNXML::ResponseStage *stage, Respon
 						type = RT_Poly;
 						return &stage->polynomial();
 					}
-					catch ( ... ) {}
+					catch ( ... ) {
+					}
 				}
 			}
 		}
@@ -704,38 +963,42 @@ const FDSNXML::BaseFilter *getFilter(const FDSNXML::ResponseStage *stage, Respon
 	return NULL;
 }
 
-
 template <typename T>
 T *create(const FDSNXML::BaseFilter *n) {
 	T *o;
-	if ( n->resourceId().empty() )
+	if ( n->resourceId().empty() ) {
 		o = T::Create();
-	else if ( DataModel::PublicObject::Find(n->resourceId()) != NULL )
+	}
+	else if ( DataModel::PublicObject::Find(n->resourceId()) != NULL ) {
 		o = T::Create();
-	else
+	}
+	else {
 		o = T::Create(n->resourceId());
+	}
 
-	if ( n->name().empty() )
+	if ( n->name().empty() ) {
 		o->setName(o->publicID());
-	else
+	}
+	else {
 		o->setName(n->name());
+	}
 
 	return o;
 }
-
 
 template <typename T>
 void checkAmbigiousID(const T &obj, const FDSNXML::BaseFilter *n) {
 	if ( obj->publicID() != n->resourceId() ) {
 		cerr << "W  ambiguous resourceId '" << n->resourceId() << "' for "
 		     << obj->className() << endl;
-		cerr << "   generated new resourceId '" << obj->publicID() << "'" << endl;
+		cerr << "   generated new resourceId '" << obj->publicID() << "'"
+		     << endl;
 	}
 }
 
-
-DataModel::ResponseFIRPtr convert(const FDSNXML::ResponseStage *resp,
-                                  const FDSNXML::Coefficients *coeff) {
+DataModel::ResponseFIRPtr convert(
+    const FDSNXML::ResponseStage *resp, const FDSNXML::Coefficients *coeff
+) {
 	if ( coeff->cfTransferFunctionType() != FDSNXML::CFTFT_DIGITAL ) {
 		SEISCOMP_ERROR("only coefficient responses with transfer function "
 		               "type \"DIGITAL\" supported");
@@ -753,14 +1016,37 @@ DataModel::ResponseFIRPtr convert(const FDSNXML::ResponseStage *resp,
 
 	DataModel::ResponseFIRPtr rf = create<DataModel::ResponseFIR>(coeff);
 
-	try { rf->setGain(resp->stageGain().value()); } catch ( ... ) {}
-	try { rf->setGainFrequency(resp->stageGain().frequency()); } catch ( ... ) {}
-	try { rf->setDecimationFactor(resp->decimation().factor()); }
-	catch ( ... ) {}
-	try { rf->setDelay(resp->decimation().delay().value()*resp->decimation().inputSampleRate().value()); }
-	catch ( ... ) {}
-	try { rf->setCorrection(resp->decimation().correction().value()*resp->decimation().inputSampleRate().value()); }
-	catch ( ... ) {}
+	try {
+		rf->setGain(resp->stageGain().value());
+	}
+	catch ( ... ) {
+	}
+	try {
+		rf->setGainFrequency(resp->stageGain().frequency());
+	}
+	catch ( ... ) {
+	}
+	try {
+		rf->setDecimationFactor(resp->decimation().factor());
+	}
+	catch ( ... ) {
+	}
+	try {
+		rf->setDelay(
+		    resp->decimation().delay().value() *
+		    resp->decimation().inputSampleRate().value()
+		);
+	}
+	catch ( ... ) {
+	}
+	try {
+		rf->setCorrection(
+		    resp->decimation().correction().value() *
+		    resp->decimation().inputSampleRate().value()
+		);
+	}
+	catch ( ... ) {
+	}
 
 	rf->setNumberOfCoefficients(coeff->numeratorCount());
 	rf->setSymmetry("A");
@@ -774,9 +1060,9 @@ DataModel::ResponseFIRPtr convert(const FDSNXML::ResponseStage *resp,
 	return rf;
 }
 
-
-DataModel::ResponseIIRPtr convertIIR(const FDSNXML::ResponseStage *resp,
-                                     const FDSNXML::Coefficients *coeff) {
+DataModel::ResponseIIRPtr convertIIR(
+    const FDSNXML::ResponseStage *resp, const FDSNXML::Coefficients *coeff
+) {
 	DataModel::ResponseIIRPtr rp = create<DataModel::ResponseIIR>(coeff);
 
 	switch ( coeff->cfTransferFunctionType() ) {
@@ -793,14 +1079,37 @@ DataModel::ResponseIIRPtr convertIIR(const FDSNXML::ResponseStage *resp,
 			break;
 	}
 
-	try { rp->setGain(resp->stageGain().value()); } catch ( ... ) {}
-	try { rp->setGainFrequency(resp->stageGain().frequency()); } catch ( ... ) {}
-	try { rp->setDecimationFactor(resp->decimation().factor()); }
-	catch ( ... ) {}
-	try { rp->setDelay(resp->decimation().delay().value()*resp->decimation().inputSampleRate().value()); }
-	catch ( ... ) {}
-	try { rp->setCorrection(resp->decimation().correction().value()*resp->decimation().inputSampleRate().value()); }
-	catch ( ... ) {}
+	try {
+		rp->setGain(resp->stageGain().value());
+	}
+	catch ( ... ) {
+	}
+	try {
+		rp->setGainFrequency(resp->stageGain().frequency());
+	}
+	catch ( ... ) {
+	}
+	try {
+		rp->setDecimationFactor(resp->decimation().factor());
+	}
+	catch ( ... ) {
+	}
+	try {
+		rp->setDelay(
+		    resp->decimation().delay().value() *
+		    resp->decimation().inputSampleRate().value()
+		);
+	}
+	catch ( ... ) {
+	}
+	try {
+		rp->setCorrection(
+		    resp->decimation().correction().value() *
+		    resp->decimation().inputSampleRate().value()
+		);
+	}
+	catch ( ... ) {
+	}
 
 	rp->setNumberOfNumerators(coeff->numeratorCount());
 	rp->setNumberOfDenominators(coeff->denominatorCount());
@@ -824,19 +1133,41 @@ DataModel::ResponseIIRPtr convertIIR(const FDSNXML::ResponseStage *resp,
 	return rp;
 }
 
-
-DataModel::ResponseFIRPtr convert(const FDSNXML::ResponseStage *resp,
-                                  const FDSNXML::FIR *fir) {
+DataModel::ResponseFIRPtr
+convert(const FDSNXML::ResponseStage *resp, const FDSNXML::FIR *fir) {
 	DataModel::ResponseFIRPtr rf = create<DataModel::ResponseFIR>(fir);
 
-	try { rf->setGain(resp->stageGain().value()); } catch ( ... ) {}
-	try { rf->setGainFrequency(resp->stageGain().frequency()); } catch ( ... ) {}
-	try { rf->setDecimationFactor(resp->decimation().factor()); }
-	catch ( ... ) {}
-	try { rf->setDelay(resp->decimation().delay().value()*resp->decimation().inputSampleRate().value()); }
-	catch ( ... ) {}
-	try { rf->setCorrection(resp->decimation().correction().value()*resp->decimation().inputSampleRate().value()); }
-	catch ( ... ) {}
+	try {
+		rf->setGain(resp->stageGain().value());
+	}
+	catch ( ... ) {
+	}
+	try {
+		rf->setGainFrequency(resp->stageGain().frequency());
+	}
+	catch ( ... ) {
+	}
+	try {
+		rf->setDecimationFactor(resp->decimation().factor());
+	}
+	catch ( ... ) {
+	}
+	try {
+		rf->setDelay(
+		    resp->decimation().delay().value() *
+		    resp->decimation().inputSampleRate().value()
+		);
+	}
+	catch ( ... ) {
+	}
+	try {
+		rf->setCorrection(
+		    resp->decimation().correction().value() *
+		    resp->decimation().inputSampleRate().value()
+		);
+	}
+	catch ( ... ) {
+	}
 
 	rf->setNumberOfCoefficients(fir->numeratorCoefficientCount());
 
@@ -854,22 +1185,24 @@ DataModel::ResponseFIRPtr convert(const FDSNXML::ResponseStage *resp,
 				break;
 		}
 	}
-	catch ( ... ) {}
+	catch ( ... ) {
+	}
 
 	rf->setCoefficients(DataModel::RealArray());
 	vector<double> &numerators = rf->coefficients().content();
 
 	try {
 		// Sort coefficients according to its i attribute
-		vector< pair<int,int> > sortedIdx;
+		vector<pair<int, int>> sortedIdx;
 		for ( size_t n = 0; n < fir->numeratorCoefficientCount(); ++n ) {
 			FDSNXML::NumeratorCoefficient *num = fir->numeratorCoefficient(n);
-			sortedIdx.push_back(pair<int,int>(num->i(), n));
+			sortedIdx.push_back(pair<int, int>(num->i(), n));
 		}
 		sort(sortedIdx.begin(), sortedIdx.end());
 
 		for ( size_t n = 0; n < fir->numeratorCoefficientCount(); ++n ) {
-			FDSNXML::NumeratorCoefficient *num = fir->numeratorCoefficient(sortedIdx[n].second);
+			FDSNXML::NumeratorCoefficient *num =
+			    fir->numeratorCoefficient(sortedIdx[n].second);
 			numerators.push_back(num->value());
 		}
 	}
@@ -885,10 +1218,8 @@ DataModel::ResponseFIRPtr convert(const FDSNXML::ResponseStage *resp,
 	return rf;
 }
 
-
-
-DataModel::ResponsePAZPtr convert(const FDSNXML::ResponseStage *resp,
-                                  const FDSNXML::PolesAndZeros *paz) {
+DataModel::ResponsePAZPtr
+convert(const FDSNXML::ResponseStage *resp, const FDSNXML::PolesAndZeros *paz) {
 	DataModel::ResponsePAZPtr rp = create<DataModel::ResponsePAZ>(paz);
 
 	switch ( paz->pzTransferFunctionType() ) {
@@ -905,75 +1236,109 @@ DataModel::ResponsePAZPtr convert(const FDSNXML::ResponseStage *resp,
 			break;
 	}
 
-	try { rp->setGain(resp->stageGain().value()); } catch ( ... ) {}
-	try { rp->setGainFrequency(resp->stageGain().frequency()); }
-	catch ( ... ) {}
+	try {
+		rp->setGain(resp->stageGain().value());
+	}
+	catch ( ... ) {
+	}
+	try {
+		rp->setGainFrequency(resp->stageGain().frequency());
+	}
+	catch ( ... ) {
+	}
 
 	rp->setNormalizationFactor(paz->normalizationFactor());
 	rp->setNormalizationFrequency(paz->normalizationFrequency().value());
 	rp->setNumberOfZeros(paz->zeroCount());
 	rp->setNumberOfPoles(paz->poleCount());
 
-	try { rp->setDecimationFactor(resp->decimation().factor()); }
-	catch ( ... ) {}
-	try { rp->setDelay(resp->decimation().delay().value()*resp->decimation().inputSampleRate().value()); }
-	catch ( ... ) {}
-	try { rp->setCorrection(resp->decimation().correction().value()*resp->decimation().inputSampleRate().value()); }
-	catch ( ... ) {}
+	try {
+		rp->setDecimationFactor(resp->decimation().factor());
+	}
+	catch ( ... ) {
+	}
+	try {
+		rp->setDelay(
+		    resp->decimation().delay().value() *
+		    resp->decimation().inputSampleRate().value()
+		);
+	}
+	catch ( ... ) {
+	}
+	try {
+		rp->setCorrection(
+		    resp->decimation().correction().value() *
+		    resp->decimation().inputSampleRate().value()
+		);
+	}
+	catch ( ... ) {
+	}
 
 	rp->setZeros(DataModel::ComplexArray());
-	vector< complex<double> > &zeros = rp->zeros().content();
+	vector<complex<double>> &zeros = rp->zeros().content();
 
 	// Sort zeros according to its number attribute
-	vector< pair<int,int> > sortedIdx;
+	vector<pair<int, int>> sortedIdx;
 	for ( size_t z = 0; z < paz->zeroCount(); ++z ) {
 		FDSNXML::PoleAndZero *val = paz->zero(z);
-		sortedIdx.push_back(pair<int,int>(val->number(), z));
+		sortedIdx.push_back(pair<int, int>(val->number(), z));
 	}
 	sort(sortedIdx.begin(), sortedIdx.end());
 
 	for ( size_t z = 0; z < sortedIdx.size(); ++z ) {
 		FDSNXML::PoleAndZero *val = paz->zero(sortedIdx[z].second);
-		zeros.push_back(complex<double>(val->real().value(),val->imaginary().value()));
+		zeros.push_back(
+		    complex<double>(val->real().value(), val->imaginary().value())
+		);
 	}
 
 	rp->setPoles(DataModel::ComplexArray());
-	vector< complex<double> > &poles = rp->poles().content();
+	vector<complex<double>> &poles = rp->poles().content();
 
 	// Sort poles according to its number attribute
 	sortedIdx.clear();
 	for ( size_t p = 0; p < paz->poleCount(); ++p ) {
 		FDSNXML::PoleAndZero *val = paz->pole(p);
-		sortedIdx.push_back(pair<int,int>(val->number(), p));
+		sortedIdx.push_back(pair<int, int>(val->number(), p));
 	}
 	sort(sortedIdx.begin(), sortedIdx.end());
 
 	for ( size_t p = 0; p < sortedIdx.size(); ++p ) {
 		FDSNXML::PoleAndZero *val = paz->pole(sortedIdx[p].second);
-		poles.push_back(complex<double>(val->real().value(),val->imaginary().value()));
+		poles.push_back(
+		    complex<double>(val->real().value(), val->imaginary().value())
+		);
 	}
 
 	return rp;
 }
 
-
-bool orderByFreq(const FDSNXML::ResponseListElement *e1,
-                 const FDSNXML::ResponseListElement *e2) {
+bool orderByFreq(
+    const FDSNXML::ResponseListElement *e1,
+    const FDSNXML::ResponseListElement *e2
+) {
 	return e1->frequency().value() < e2->frequency().value();
 }
 
-
-DataModel::ResponseFAPPtr convert(const FDSNXML::ResponseStage *resp,
-                                  const FDSNXML::ResponseList *rl) {
+DataModel::ResponseFAPPtr
+convert(const FDSNXML::ResponseStage *resp, const FDSNXML::ResponseList *rl) {
 	DataModel::ResponseFAPPtr rp = create<DataModel::ResponseFAP>(rl);
 
-	try { rp->setGain(resp->stageGain().value()); } catch ( ... ) {}
-	try { rp->setGainFrequency(resp->stageGain().frequency()); }
-	catch ( ... ) {}
+	try {
+		rp->setGain(resp->stageGain().value());
+	}
+	catch ( ... ) {
+	}
+	try {
+		rp->setGainFrequency(resp->stageGain().frequency());
+	}
+	catch ( ... ) {
+	}
 
-	vector<FDSNXML::ResponseListElement*> sortedFAP;
-	for ( size_t i = 0; i < rl->elementCount(); ++i )
+	vector<FDSNXML::ResponseListElement *> sortedFAP;
+	for ( size_t i = 0; i < rl->elementCount(); ++i ) {
 		sortedFAP.push_back(rl->element(i));
+	}
 
 	sort(sortedFAP.begin(), sortedFAP.end(), orderByFreq);
 
@@ -992,13 +1357,21 @@ DataModel::ResponseFAPPtr convert(const FDSNXML::ResponseStage *resp,
 	return rp;
 }
 
+DataModel::ResponsePolynomialPtr
+convert(const FDSNXML::ResponseStage *resp, const FDSNXML::Polynomial *poly) {
+	DataModel::ResponsePolynomialPtr rp =
+	    create<DataModel::ResponsePolynomial>(poly);
 
-DataModel::ResponsePolynomialPtr convert(const FDSNXML::ResponseStage *resp,
-                                         const FDSNXML::Polynomial *poly) {
-	DataModel::ResponsePolynomialPtr rp = create<DataModel::ResponsePolynomial>(poly);
-
-	try { rp->setGain(resp->stageGain().value()); } catch ( ... ) {}
-	try { rp->setGainFrequency(resp->stageGain().frequency()); } catch ( ... ) {}
+	try {
+		rp->setGain(resp->stageGain().value());
+	}
+	catch ( ... ) {
+	}
+	try {
+		rp->setGainFrequency(resp->stageGain().frequency());
+	}
+	catch ( ... ) {
+	}
 
 	// Frequency unit is fixed at Hz.
 	// https://github.com/FDSN/StationXML/blob/v1.0/fdsn-station.xsd#L790
@@ -1008,8 +1381,10 @@ DataModel::ResponsePolynomialPtr convert(const FDSNXML::ResponseStage *resp,
 			rp->setApproximationType("M");
 			break;
 		default:
-			SEISCOMP_WARNING("Unknown polynomial response approximation type: %s: ignoring",
-			                 poly->approximationType().toString());
+			SEISCOMP_WARNING(
+			    "Unknown polynomial response approximation type: %s: ignoring",
+			    poly->approximationType().toString()
+			);
 			break;
 	}
 
@@ -1024,51 +1399,43 @@ DataModel::ResponsePolynomialPtr convert(const FDSNXML::ResponseStage *resp,
 	vector<double> &coeff = rp->coefficients().content();
 
 	// Sort zeros according to its number attribute
-	vector< pair<int,int> > sortedIdx;
+	vector<pair<int, int>> sortedIdx;
 	for ( size_t c = 0; c < poly->coefficientCount(); ++c ) {
 		FDSNXML::PolynomialCoefficient *val = poly->coefficient(c);
-		sortedIdx.push_back(pair<int,int>(val->number(), c));
+		sortedIdx.push_back(pair<int, int>(val->number(), c));
 	}
 	sort(sortedIdx.begin(), sortedIdx.end());
 
 	for ( size_t c = 0; c < sortedIdx.size(); ++c ) {
-		FDSNXML::PolynomialCoefficient *val = poly->coefficient(sortedIdx[c].second);
+		FDSNXML::PolynomialCoefficient *val =
+		    poly->coefficient(sortedIdx[c].second);
 		coeff.push_back(val->value());
 	}
 
 	return rp;
 }
 
-
-DataModel::Network *
-createNetwork(const string &code)
-{
+DataModel::Network *createNetwork(const string &code) {
 	string id = "NET/" + code + "/" +
-	            Core::Time::GMT().toString("%Y%m%d%H%M%S.%f") + "." +
+	            Core::Time::UTC().toString("%Y%m%d%H%M%S.%f") + "." +
 	            Core::toString(Core::BaseObject::ObjectCount());
 	return DataModel::Network::Create(id);
 }
 
-
-DataModel::Station *
-createStation(const string &net, const string &code)
-{
+DataModel::Station *createStation(const string &net, const string &code) {
 	string id = "STA/" + net + "/" + code + "/" +
-	            Core::Time::GMT().toString("%Y%m%d%H%M%S.%f") + "." +
+	            Core::Time::UTC().toString("%Y%m%d%H%M%S.%f") + "." +
 	            Core::toString(Core::BaseObject::ObjectCount());
 	return DataModel::Station::Create(id);
 }
 
-
 DataModel::SensorLocation *
-createSensorLocation(const string &net, const string &sta, const string &code)
-{
+createSensorLocation(const string &net, const string &sta, const string &code) {
 	string id = "LOC/" + net + "/" + sta + "/" + code + "/" +
-	            Core::Time::GMT().toString("%Y%m%d%H%M%S.%f") + "." +
+	            Core::Time::UTC().toString("%Y%m%d%H%M%S.%f") + "." +
 	            Core::toString(Core::BaseObject::ObjectCount());
 	return DataModel::SensorLocation::Create(id);
 }
-
 
 class MyIdentifier : public Core::BaseObject {
 	private:
@@ -1077,16 +1444,16 @@ class MyIdentifier : public Core::BaseObject {
 	public:
 		MyIdentifier() {}
 
-		MyIdentifier(FDSNXML::Identifier *identifier): _identifier(identifier) {}
+		MyIdentifier(FDSNXML::Identifier *identifier)
+		    : _identifier(identifier) {}
 
-		virtual void serialize(Core::Archive& ar) {
+		virtual void serialize(Core::Archive &ar) {
 			string type = _identifier->type();
 			string value = _identifier->value();
-			ar & NAMED_OBJECT("type", type);
-			ar & NAMED_OBJECT("value", value);
+			ar &NAMED_OBJECT("type", type);
+			ar &NAMED_OBJECT("value", value);
 		}
 };
-
 
 class MyContact : public Core::BaseObject {
 	private:
@@ -1095,16 +1462,17 @@ class MyContact : public Core::BaseObject {
 	public:
 		MyContact() {}
 
-		MyContact(FDSNXML::Person *person): _person(person) {}
+		MyContact(FDSNXML::Person *person)
+		    : _person(person) {}
 
-		virtual void serialize(Core::Archive& ar) {
+		virtual void serialize(Core::Archive &ar) {
 			if ( _person->nameCount() > 0 ) {
 				vector<string> name;
 				for ( size_t n = 0; n < _person->nameCount(); ++n ) {
 					name.push_back(_person->name(n)->text());
 				}
 
-				ar & NAMED_OBJECT("name", name);
+				ar &NAMED_OBJECT("name", name);
 			}
 
 			if ( _person->agencyCount() > 0 ) {
@@ -1113,7 +1481,7 @@ class MyContact : public Core::BaseObject {
 					agency.push_back(_person->agency(n)->text());
 				}
 
-				ar & NAMED_OBJECT("agency", agency);
+				ar &NAMED_OBJECT("agency", agency);
 			}
 
 			if ( _person->emailCount() > 0 ) {
@@ -1122,40 +1490,38 @@ class MyContact : public Core::BaseObject {
 					email.push_back(_person->email(n)->text());
 				}
 
-				ar & NAMED_OBJECT("email", email);
+				ar &NAMED_OBJECT("email", email);
 			}
 		}
 };
 
-
 void serializeJSON(const FDSNXML::Identifier *identifier, IO::JSONArchive &ar) {
 	try {
 		string type = identifier->type();
-		ar & NAMED_OBJECT("type", type);
+		ar &NAMED_OBJECT("type", type);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string value = identifier->value();
-		ar & NAMED_OBJECT("value", value);
+		ar &NAMED_OBJECT("value", value);
 	}
 	catch ( Core::ValueException & ) {
 	}
 }
 
-
 void serializeJSON(const FDSNXML::Operator *oper, IO::JSONArchive &ar) {
 	try {
 		string agency = oper->agency();
-		ar & NAMED_OBJECT("agency", agency);
+		ar &NAMED_OBJECT("agency", agency);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string webSite = oper->webSite();
-		ar & NAMED_OBJECT("webSite", webSite);
+		ar &NAMED_OBJECT("webSite", webSite);
 	}
 	catch ( Core::ValueException & ) {
 	}
@@ -1166,147 +1532,151 @@ void serializeJSON(const FDSNXML::Operator *oper, IO::JSONArchive &ar) {
 			contacts.push_back(oper->contact(n));
 		}
 
-		ar & NAMED_OBJECT_HINT("contact", contacts, Core::Archive::STATIC_TYPE);
+		ar &NAMED_OBJECT_HINT("contact", contacts, Core::Archive::STATIC_TYPE);
 	}
 }
-
 
 void serializeJSON(const FDSNXML::Equipment *equipment, IO::JSONArchive &ar) {
 	try {
 		string type = equipment->type();
-		ar & NAMED_OBJECT("type", type);
+		ar &NAMED_OBJECT("type", type);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string description = equipment->description();
-		ar & NAMED_OBJECT("description", description);
+		ar &NAMED_OBJECT("description", description);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string manufacturer = equipment->manufacturer();
-		ar & NAMED_OBJECT("manufacturer", manufacturer);
+		ar &NAMED_OBJECT("manufacturer", manufacturer);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string vendor = equipment->vendor();
-		ar & NAMED_OBJECT("vendor", vendor);
+		ar &NAMED_OBJECT("vendor", vendor);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string model = equipment->model();
-		ar & NAMED_OBJECT("model", model);
+		ar &NAMED_OBJECT("model", model);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string serialNumber = equipment->serialNumber();
-		ar & NAMED_OBJECT("serialNumber", serialNumber);
+		ar &NAMED_OBJECT("serialNumber", serialNumber);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string resourceId = equipment->resourceId();
-		ar & NAMED_OBJECT("resourceId", resourceId);
+		ar &NAMED_OBJECT("resourceId", resourceId);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string installationDate = equipment->installationDate().iso();
-		ar & NAMED_OBJECT("installationDate", installationDate);
+		ar &NAMED_OBJECT("installationDate", installationDate);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string removalDate = equipment->removalDate().iso();
-		ar & NAMED_OBJECT("removalDate", removalDate);
+		ar &NAMED_OBJECT("removalDate", removalDate);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
-	if (equipment->calibrationDateCount() > 0 ) {
+	if ( equipment->calibrationDateCount() > 0 ) {
 		vector<string> calibrationDates;
 		for ( size_t n = 0; n < equipment->calibrationDateCount(); ++n ) {
-			calibrationDates.push_back(equipment->calibrationDate(n)->value().iso());
+			calibrationDates.push_back(
+			    equipment->calibrationDate(n)->value().iso()
+			);
 		}
 
-		ar & NAMED_OBJECT("calibrationDate", calibrationDates);
+		ar &NAMED_OBJECT("calibrationDate", calibrationDates);
 	}
 
-	if (equipment->identifierCount() > 0 ) {
+	if ( equipment->identifierCount() > 0 ) {
 		vector<MyIdentifier> identifiers;
 		for ( size_t n = 0; n < equipment->identifierCount(); ++n ) {
 			identifiers.push_back(equipment->identifier(n));
 		}
 
-		ar & NAMED_OBJECT_HINT("identifier", identifiers, Core::Archive::STATIC_TYPE);
+		ar &NAMED_OBJECT_HINT(
+		    "identifier", identifiers, Core::Archive::STATIC_TYPE
+		);
 	}
 }
-
 
 void serializeJSON(const FDSNXML::FloatType *ft, IO::JSONArchive &ar) {
 	try {
 		double value = ft->value();
-		ar & NAMED_OBJECT("value", value);
+		ar &NAMED_OBJECT("value", value);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string unit = ft->unit();
-		ar & NAMED_OBJECT("unit", unit);
+		ar &NAMED_OBJECT("unit", unit);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		double upperUncertainty = ft->upperUncertainty();
-		ar & NAMED_OBJECT("upperUncertainty", upperUncertainty);
+		ar &NAMED_OBJECT("upperUncertainty", upperUncertainty);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		double lowerUncertainty = ft->lowerUncertainty();
-		ar & NAMED_OBJECT("lowerUncertainty", lowerUncertainty);
+		ar &NAMED_OBJECT("lowerUncertainty", lowerUncertainty);
 	}
 	catch ( Core::ValueException & ) {
 	}
 
 	try {
 		string measurementMethod = ft->measurementMethod();
-		ar & NAMED_OBJECT("measurementMethod", measurementMethod);
+		ar &NAMED_OBJECT("measurementMethod", measurementMethod);
 	}
 	catch ( Core::ValueException & ) {
 	}
 }
 
-
 void serializeJSON(const string *val, IO::JSONArchive &ar) {
 	string value = *val;
-	ar & NAMED_OBJECT("value", value);
+	ar &NAMED_OBJECT("value", value);
 }
 
-
-template<typename T1, typename T2, typename T3, typename T4>
-void populateJSON(const string &name, const T1 *sx, T2 sc, T3 (T4::*getObject)(size_t) const,
-                  size_t (T4::*objectCount)() const) {
+template <typename T1, typename T2, typename T3, typename T4>
+void populateJSON(
+    const string &name, const T1 *sx, T2 sc, T3 (T4::*getObject)(size_t) const,
+    size_t (T4::*objectCount)() const
+) {
 	for ( size_t n = 0; n < (sx->*objectCount)(); ++n ) {
 		std::string data;
 
 		{
-			boost::iostreams::stream_buffer<boost::iostreams::back_insert_device<std::string> > buf(data);
+			boost::iostreams::stream_buffer<
+			    boost::iostreams::back_insert_device<std::string>>
+			    buf(data);
 			IO::JSONArchive ar;
 			ar.create(&buf, false);
 			serializeJSON((sx->*getObject)(n), ar);
@@ -1326,13 +1696,16 @@ void populateJSON(const string &name, const T1 *sx, T2 sc, T3 (T4::*getObject)(s
 	}
 }
 
-
-template<typename T1, typename T2, typename T3, typename T4>
-void populateJSON(const string &name, const T1 *sx, T2 sc, T3 (T4::*getObject)() const) {
+template <typename T1, typename T2, typename T3, typename T4>
+void populateJSON(
+    const string &name, const T1 *sx, T2 sc, T3 (T4::*getObject)() const
+) {
 	std::string data;
 
 	{
-		boost::iostreams::stream_buffer<boost::iostreams::back_insert_device<std::string> > buf(data);
+		boost::iostreams::stream_buffer<
+		    boost::iostreams::back_insert_device<std::string>>
+		    buf(data);
 		IO::JSONArchive ar;
 		ar.create(&buf, false);
 
@@ -1358,28 +1731,46 @@ void populateJSON(const string &name, const T1 *sx, T2 sc, T3 (T4::*getObject)()
 	}
 }
 
-
 void populateJSON(const FDSNXML::Network *sx, DataModel::NetworkPtr sc) {
-	populateJSON("Identifier", sx, sc, &FDSNXML::Network::identifier, &FDSNXML::Network::identifierCount);
-	populateJSON("Operator", sx, sc, &FDSNXML::Network::operators, &FDSNXML::Network::operatorsCount);
+	populateJSON(
+	    "Identifier", sx, sc, &FDSNXML::Network::identifier,
+	    &FDSNXML::Network::identifierCount
+	);
+	populateJSON(
+	    "Operator", sx, sc, &FDSNXML::Network::operators,
+	    &FDSNXML::Network::operatorsCount
+	);
 	populateJSON("SourceID", sx, sc, &FDSNXML::Network::sourceID);
 }
 
-
 void populateJSON(const FDSNXML::Station *sx, DataModel::StationPtr sc) {
-	populateJSON("Identifier", sx, sc, &FDSNXML::Station::identifier, &FDSNXML::Station::identifierCount);
-	populateJSON("Operator", sx, sc, &FDSNXML::Station::operators, &FDSNXML::Station::operatorsCount);
-	populateJSON("Equipment", sx, sc, &FDSNXML::Station::equipment, &FDSNXML::Station::equipmentCount);
+	populateJSON(
+	    "Identifier", sx, sc, &FDSNXML::Station::identifier,
+	    &FDSNXML::Station::identifierCount
+	);
+	populateJSON(
+	    "Operator", sx, sc, &FDSNXML::Station::operators,
+	    &FDSNXML::Station::operatorsCount
+	);
+	populateJSON(
+	    "Equipment", sx, sc, &FDSNXML::Station::equipment,
+	    &FDSNXML::Station::equipmentCount
+	);
 	populateJSON("WaterLevel", sx, sc, &FDSNXML::Station::waterLevel);
 	populateJSON("SourceID", sx, sc, &FDSNXML::Station::sourceID);
 	populateJSON("Vault", sx, sc, &FDSNXML::Station::vault);
 	populateJSON("Geology", sx, sc, &FDSNXML::Station::geology);
 }
 
-
 void populateJSON(const FDSNXML::Channel *sx, DataModel::StreamPtr sc) {
-	populateJSON("Identifier", sx, sc, &FDSNXML::Channel::identifier, &FDSNXML::Channel::identifierCount);
-	populateJSON("Equipment", sx, sc, &FDSNXML::Channel::equipment, &FDSNXML::Channel::equipmentCount);
+	populateJSON(
+	    "Identifier", sx, sc, &FDSNXML::Channel::identifier,
+	    &FDSNXML::Channel::identifierCount
+	);
+	populateJSON(
+	    "Equipment", sx, sc, &FDSNXML::Channel::equipment,
+	    &FDSNXML::Channel::equipmentCount
+	);
 	populateJSON("Sensor", sx, sc, &FDSNXML::Channel::sensor);
 	populateJSON("PreAmplifier", sx, sc, &FDSNXML::Channel::preAmplifier);
 	populateJSON("DataLogger", sx, sc, &FDSNXML::Channel::dataLogger);
@@ -1387,8 +1778,7 @@ void populateJSON(const FDSNXML::Channel *sx, DataModel::StreamPtr sc) {
 	populateJSON("SourceID", sx, sc, &FDSNXML::Channel::sourceID);
 }
 
-
-template<typename T1, typename T2>
+template <typename T1, typename T2>
 void populateComments(const T1 *sx, T2 sc) {
 	for ( size_t c = 0; c < sx->commentCount(); ++c ) {
 		FDSNXML::Comment *comment = sx->comment(c);
@@ -1399,42 +1789,61 @@ void populateComments(const T1 *sx, T2 sc) {
 			std::string data;
 
 			{
-				boost::iostreams::stream_buffer<boost::iostreams::back_insert_device<std::string> > buf(data);
+				boost::iostreams::stream_buffer<
+				    boost::iostreams::back_insert_device<std::string>>
+				    buf(data);
 				IO::JSONArchive ar;
 				ar.create(&buf, false);
 
 				try {
 					int id = comment->id();
-					ar & NAMED_OBJECT("id", id);
+					ar &NAMED_OBJECT("id", id);
 				}
-				catch ( Core::ValueException & ) {}
+				catch ( Core::ValueException & ) {
+				}
 
-				ar & NAMED_OBJECT("subject", subject);
+				ar &NAMED_OBJECT("subject", subject);
 
 				try {
 					std::string value = comment->value();
-					ar & NAMED_OBJECT("value", value);
+					ar &NAMED_OBJECT("value", value);
 				}
-				catch ( Core::ValueException & ) {}
+				catch ( Core::ValueException & ) {
+				}
 			}
 
-			try { sc_comment->setId("FDSNXML:Comment/" + Core::toString(comment->id())); }
-			catch ( Core::ValueException & ) { sc_comment->setId("FDSNXML:Comment/" + Core::toString(c+1)); }
+			try {
+				sc_comment->setId(
+				    "FDSNXML:Comment/" + Core::toString(comment->id())
+				);
+			}
+			catch ( Core::ValueException & ) {
+				sc_comment->setId("FDSNXML:Comment/" + Core::toString(c + 1));
+			}
 
 			sc_comment->setText(data);
-
 		}
-		catch ( Core::ValueException & ) {  // comment has no subject
-			try { sc_comment->setId(Core::toString(comment->id())); }
-			catch ( Core::ValueException & ) { sc_comment->setId(Core::toString(c+1)); }
+		catch ( Core::ValueException & ) { // comment has no subject
+			try {
+				sc_comment->setId(Core::toString(comment->id()));
+			}
+			catch ( Core::ValueException & ) {
+				sc_comment->setId(Core::toString(c + 1));
+			}
 
 			sc_comment->setText(comment->value());
 		}
 
-		try { sc_comment->setStart(comment->beginEffectiveTime()); }
-		catch ( Core::ValueException & ) {}
-		try { sc_comment->setEnd(comment->endEffectiveTime()); }
-		catch ( Core::ValueException & ) {}
+		try {
+			sc_comment->setStart(comment->beginEffectiveTime());
+		}
+		catch ( Core::ValueException & ) {
+		}
+		try {
+			sc_comment->setEnd(comment->endEffectiveTime());
+		}
+		catch ( Core::ValueException & ) {
+		}
 
 		if ( comment->authorCount() > 0 ) {
 			FDSNXML::Person *author = comment->author(0);
@@ -1451,13 +1860,14 @@ void populateComments(const T1 *sx, T2 sc) {
 				useCI = true;
 			}
 
-			if (author->agencyCount() > 0 ) {
+			if ( author->agencyCount() > 0 ) {
 				ci.setAgencyID(author->agency(0)->text());
 				useCI = true;
 			}
 
-			if ( useCI )
+			if ( useCI ) {
 				sc_comment->setCreationInfo(ci);
+			}
 		}
 
 		sc->add(sc_comment.get());
@@ -1466,8 +1876,7 @@ void populateComments(const T1 *sx, T2 sc) {
 	populateJSON(sx, sc);
 }
 
-
-}
+} // namespace
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -1475,9 +1884,11 @@ void populateComments(const T1 *sx, T2 sc) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Convert2SC::Convert2SC(DataModel::Inventory *inv)
-: _inv(inv)
-, _logStages(false) {
-	if ( !_inv ) return;
+    : _inv(inv)
+    , _logStages(false) {
+	if ( !_inv ) {
+		return;
+	}
 
 	for ( size_t i = 0; i < _inv->dataloggerCount(); ++i ) {
 		DataModel::Datalogger *d = _inv->datalogger(i);
@@ -1521,9 +1932,12 @@ Convert2SC::Convert2SC(DataModel::Inventory *inv)
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 template <typename T>
-void add(DataModel::Inventory *inv,
-         std::map<std::string, const DataModel::Object*> &lookup, T *o) {
-	std::map<std::string, const DataModel::Object*>::iterator it = lookup.find(o->name());
+void add(
+    DataModel::Inventory *inv,
+    std::map<std::string, const DataModel::Object *> &lookup, T *o
+) {
+	std::map<std::string, const DataModel::Object *>::iterator it =
+	    lookup.find(o->name());
 	if ( it != lookup.end() ) {
 		cerr << "C  name '" << o->name() << "' of " << o->className()
 		     << " is not unique" << endl;
@@ -1541,7 +1955,8 @@ void add(DataModel::Inventory *inv,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 template <>
-void Convert2SC::addRespToInv<DataModel::ResponsePAZ>(DataModel::ResponsePAZ *o) {
+void Convert2SC::addRespToInv<DataModel::ResponsePAZ>(DataModel::ResponsePAZ *o
+) {
 	add(_inv, _respPAZLookup, o);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1551,7 +1966,8 @@ void Convert2SC::addRespToInv<DataModel::ResponsePAZ>(DataModel::ResponsePAZ *o)
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 template <>
-void Convert2SC::addRespToInv<DataModel::ResponseFAP>(DataModel::ResponseFAP *o) {
+void Convert2SC::addRespToInv<DataModel::ResponseFAP>(DataModel::ResponseFAP *o
+) {
 	add(_inv, _respFAPLookup, o);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1561,7 +1977,9 @@ void Convert2SC::addRespToInv<DataModel::ResponseFAP>(DataModel::ResponseFAP *o)
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 template <>
-void Convert2SC::addRespToInv<DataModel::ResponsePolynomial>(DataModel::ResponsePolynomial *o) {
+void Convert2SC::addRespToInv<DataModel::ResponsePolynomial>(
+    DataModel::ResponsePolynomial *o
+) {
 	add(_inv, _respPolyLookup, o);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1571,7 +1989,8 @@ void Convert2SC::addRespToInv<DataModel::ResponsePolynomial>(DataModel::Response
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 template <>
-void Convert2SC::addRespToInv<DataModel::ResponseFIR>(DataModel::ResponseFIR *o) {
+void Convert2SC::addRespToInv<DataModel::ResponseFIR>(DataModel::ResponseFIR *o
+) {
 	add(_inv, _respFIRLookup, o);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1581,7 +2000,8 @@ void Convert2SC::addRespToInv<DataModel::ResponseFIR>(DataModel::ResponseFIR *o)
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 template <>
-void Convert2SC::addRespToInv<DataModel::ResponseIIR>(DataModel::ResponseIIR *o) {
+void Convert2SC::addRespToInv<DataModel::ResponseIIR>(DataModel::ResponseIIR *o
+) {
 	add(_inv, _respIIRLookup, o);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1627,12 +2047,16 @@ void Convert2SC::setLogStages(bool state) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Convert2SC::push(const FDSNXML::FDSNStationXML *msg) {
-	if ( _inv == NULL ) return false;
+	if ( _inv == NULL ) {
+		return false;
+	}
 
 	// Process networks. All networks are then under our control and
 	// unprocessed epochs will be removed later
 	for ( size_t n = 0; n < msg->networkCount(); ++n ) {
-		if ( _interrupted ) return false;
+		if ( _interrupted ) {
+			return false;
+		}
 		FDSNXML::Network *net = msg->network(n);
 
 		string netCode = net->code();
@@ -1648,14 +2072,16 @@ bool Convert2SC::push(const FDSNXML::FDSNStationXML *msg) {
 			start = net->startDate();
 		}
 		catch ( ... ) {
-			start = Core::Time(1980,1,1);
+			start = defaultStartTime;
 		}
 
 		// Mark network as seen
 		_visitedStations.insert(StringTuple(netCode, ""));
 
-		SEISCOMP_INFO("Processing network %s (%s)",
-		              netCode.c_str(), start.toString("%F %T").c_str());
+		SEISCOMP_INFO(
+		    "Processing network %s (%s)", netCode.c_str(),
+		    start.toString("%F %T").c_str()
+		);
 
 		bool newInstance = false;
 		bool needUpdate = false;
@@ -1684,24 +2110,34 @@ bool Convert2SC::push(const FDSNXML::FDSNStationXML *msg) {
 
 		sc_net->setShared(true);
 
-		try { sc_net->setEnd(net->endDate()); }
-		catch ( ... ) { sc_net->setEnd(Core::None); }
+		try {
+			sc_net->setEnd(net->endDate());
+		}
+		catch ( ... ) {
+			sc_net->setEnd(Core::None);
+		}
 
 		sc_net->setDescription(net->description());
 
 		UPD(needUpdate, oldRestricted, bool, sc_net->restricted());
 		UPD(needUpdate, oldShared, bool, sc_net->shared());
 		UPD(needUpdate, oldEnd, Core::Time, sc_net->end());
-		if ( oldDescription != sc_net->description() ) needUpdate = true;
+		if ( oldDescription != sc_net->description() ) {
+			needUpdate = true;
+		}
 
 		if ( newInstance ) {
-			SEISCOMP_DEBUG("Added new network epoch: %s (%s)",
-			               sc_net->code().c_str(), sc_net->start().iso().c_str());
+			SEISCOMP_DEBUG(
+			    "Added new network epoch: %s (%s)", sc_net->code().c_str(),
+			    sc_net->start().iso().c_str()
+			);
 			_inv->add(sc_net.get());
 		}
 		else if ( needUpdate ) {
-			SEISCOMP_DEBUG("Updated network epoch: %s (%s)",
-			               sc_net->code().c_str(), sc_net->start().iso().c_str());
+			SEISCOMP_DEBUG(
+			    "Updated network epoch: %s (%s)", sc_net->code().c_str(),
+			    sc_net->start().iso().c_str()
+			);
 			sc_net->update();
 		}
 
@@ -1710,14 +2146,18 @@ bool Convert2SC::push(const FDSNXML::FDSNStationXML *msg) {
 		_touchedNetworks.insert(NetworkIndex(sc_net->code(), sc_net->start()));
 
 		for ( size_t s = 0; s < net->stationCount(); ++s ) {
-			if ( _interrupted ) break;
+			if ( _interrupted ) {
+				break;
+			}
 			FDSNXML::Station *sta = net->station(s);
 			string staCode = sta->code();
 			Core::trim(staCode);
 
 			if ( staCode.empty() ) {
-				SEISCOMP_WARNING("network[%d]/station[%d]: empty code: ignoring",
-				                 (int)n, (int)s);
+				SEISCOMP_WARNING(
+				    "network[%d]/station[%d]: empty code: ignoring", (int)n,
+				    (int)s
+				);
 				continue;
 			}
 
@@ -1741,15 +2181,21 @@ void Convert2SC::cleanUp() {
 
 	for ( size_t n = 0; n < _inv->networkCount(); ) {
 		DataModel::Network *net = _inv->network(n);
-		if ( _visitedStations.find(StringTuple(net->code(), "")) == _visitedStations.end() ) {
-			SEISCOMP_DEBUG("Leaving unknown network %s untouched", net->code().c_str());
+		if ( _visitedStations.find(StringTuple(net->code(), "")) ==
+		     _visitedStations.end() ) {
+			SEISCOMP_DEBUG(
+			    "Leaving unknown network %s untouched", net->code().c_str()
+			);
 			++n;
 			continue;
 		}
 
 		NetworkIndex net_idx(net->code(), net->start());
 		if ( _touchedNetworks.find(net_idx) == _touchedNetworks.end() ) {
-			SEISCOMP_INFO("Removing epoch %s (%s)", net->code().c_str(), net->start().iso().c_str());
+			SEISCOMP_INFO(
+			    "Removing epoch %s (%s)", net->code().c_str(),
+			    net->start().iso().c_str()
+			);
 			// TODO: Remove epoch
 			_inv->removeNetwork(n);
 			continue;
@@ -1759,18 +2205,24 @@ void Convert2SC::cleanUp() {
 
 		for ( size_t s = 0; s < net->stationCount(); ) {
 			DataModel::Station *sta = net->station(s);
-			if ( _visitedStations.find(StringTuple(net->code(), sta->code())) == _visitedStations.end() ) {
-				SEISCOMP_DEBUG("Leaving unknown station %s.%s untouched",
-				               net->code().c_str(), sta->code().c_str());
+			if ( _visitedStations.find(StringTuple(net->code(), sta->code())) ==
+			     _visitedStations.end() ) {
+				SEISCOMP_DEBUG(
+				    "Leaving unknown station %s.%s untouched",
+				    net->code().c_str(), sta->code().c_str()
+				);
 				++s;
 				continue;
 			}
 
-			StationIndex sta_idx(net_idx, EpochIndex(sta->code(), sta->start()));
+			StationIndex sta_idx(
+			    net_idx, EpochIndex(sta->code(), sta->start())
+			);
 			if ( _touchedStations.find(sta_idx) == _touchedStations.end() ) {
-				SEISCOMP_INFO("Removing epoch %s.%s (%s)",
-				              net->code().c_str(), sta->code().c_str(),
-				              sta->start().iso().c_str());
+				SEISCOMP_INFO(
+				    "Removing epoch %s.%s (%s)", net->code().c_str(),
+				    sta->code().c_str(), sta->start().iso().c_str()
+				);
 				// TODO: Remove epoch
 				net->removeStation(s);
 				continue;
@@ -1780,11 +2232,16 @@ void Convert2SC::cleanUp() {
 
 			for ( size_t l = 0; l < sta->sensorLocationCount(); ) {
 				DataModel::SensorLocation *loc = sta->sensorLocation(l);
-				LocationIndex loc_idx(sta_idx, EpochIndex(loc->code(), loc->start()));
-				if ( _touchedSensorLocations.find(loc_idx) == _touchedSensorLocations.end() ) {
-					SEISCOMP_INFO("Removing epoch %s.%s.%s (%s)",
-					              net->code().c_str(), sta->code().c_str(),
-					              loc->code().c_str(), loc->start().iso().c_str());
+				LocationIndex loc_idx(
+				    sta_idx, EpochIndex(loc->code(), loc->start())
+				);
+				if ( _touchedSensorLocations.find(loc_idx) ==
+				     _touchedSensorLocations.end() ) {
+					SEISCOMP_INFO(
+					    "Removing epoch %s.%s.%s (%s)", net->code().c_str(),
+					    sta->code().c_str(), loc->code().c_str(),
+					    loc->start().iso().c_str()
+					);
 					sta->removeSensorLocation(l);
 					continue;
 				}
@@ -1793,30 +2250,42 @@ void Convert2SC::cleanUp() {
 
 				for ( size_t c = 0; c < loc->streamCount(); ) {
 					DataModel::Stream *stream = loc->stream(c);
-					StreamIndex cha_idx(loc_idx, EpochIndex(stream->code(), stream->start()));
-					if ( _touchedStreams.find(cha_idx) == _touchedStreams.end() ) {
-						SEISCOMP_INFO("Removing epoch %s.%s.%s.%s (%s)",
-						              net->code().c_str(), sta->code().c_str(),
-						              loc->code().c_str(), stream->code().c_str(),
-						              stream->start().iso().c_str());
+					StreamIndex cha_idx(
+					    loc_idx, EpochIndex(stream->code(), stream->start())
+					);
+					if ( _touchedStreams.find(cha_idx) ==
+					     _touchedStreams.end() ) {
+						SEISCOMP_INFO(
+						    "Removing epoch %s.%s.%s.%s (%s)",
+						    net->code().c_str(), sta->code().c_str(),
+						    loc->code().c_str(), stream->code().c_str(),
+						    stream->start().iso().c_str()
+						);
 						loc->removeStream(c);
 					}
-					else
+					else {
 						++c;
+					}
 				}
 
 				for ( size_t c = 0; c < loc->auxStreamCount(); ++c ) {
 					DataModel::AuxStream *aux = loc->auxStream(c);
-					StreamIndex cha_idx(loc_idx, EpochIndex(aux->code(), aux->start()));
-					if ( _touchedAuxStreams.find(cha_idx) == _touchedAuxStreams.end() ) {
-						SEISCOMP_INFO("Removing epoch %s.%s.%s.%s (%s)",
-						              net->code().c_str(), sta->code().c_str(),
-						              loc->code().c_str(), aux->code().c_str(),
-						              aux->start().iso().c_str());
+					StreamIndex cha_idx(
+					    loc_idx, EpochIndex(aux->code(), aux->start())
+					);
+					if ( _touchedAuxStreams.find(cha_idx) ==
+					     _touchedAuxStreams.end() ) {
+						SEISCOMP_INFO(
+						    "Removing epoch %s.%s.%s.%s (%s)",
+						    net->code().c_str(), sta->code().c_str(),
+						    loc->code().c_str(), aux->code().c_str(),
+						    aux->start().iso().c_str()
+						);
 						loc->removeAuxStream(c);
 					}
-					else
+					else {
 						++c;
+					}
 				}
 			}
 		}
@@ -1828,77 +2297,77 @@ void Convert2SC::cleanUp() {
 	// Collect all publicID's of used responses so far
 	StringSet usedResponses;
 	for ( size_t s = 0; s < _inv->sensorCount(); ++s ) {
-		DataModel::Sensor *sensor = _inv->sensor(s);
-		if ( sensor->response().empty() ) continue;
-		usedResponses.insert(sensor->response());
+	    DataModel::Sensor *sensor = _inv->sensor(s);
+	    if ( sensor->response().empty() ) continue;
+	    usedResponses.insert(sensor->response());
 	}
 
 	for ( size_t d = 0; d < _inv->dataloggerCount(); ++d ) {
-		if ( _interrupted ) return;
+	    if ( _interrupted ) return;
 
-		DataModel::Datalogger *dl = _inv->datalogger(d);
-		for ( size_t i = 0; i < dl->decimationCount(); ++i ) {
-			DataModel::Decimation *deci = dl->decimation(i);
-			try {
-				const string &c = deci->analogueFilterChain().content();
-				if ( !c.empty() ) {
-					vector<string> ids;
-					Core::fromString(ids, c);
-					usedResponses.insert(ids.begin(), ids.end());
-				}
-			}
-			catch ( ... ) {}
+	    DataModel::Datalogger *dl = _inv->datalogger(d);
+	    for ( size_t i = 0; i < dl->decimationCount(); ++i ) {
+	        DataModel::Decimation *deci = dl->decimation(i);
+	        try {
+	            const string &c = deci->analogueFilterChain().content();
+	            if ( !c.empty() ) {
+	                vector<string> ids;
+	                Core::fromString(ids, c);
+	                usedResponses.insert(ids.begin(), ids.end());
+	            }
+	        }
+	        catch ( ... ) {}
 
-			try {
-				const string &c = deci->digitalFilterChain().content();
-				if ( !c.empty() ) {
-					vector<string> ids;
-					Core::fromString(ids, c);
-					usedResponses.insert(ids.begin(), ids.end());
-				}
-			}
-			catch ( ... ) {}
-		}
+	        try {
+	            const string &c = deci->digitalFilterChain().content();
+	            if ( !c.empty() ) {
+	                vector<string> ids;
+	                Core::fromString(ids, c);
+	                usedResponses.insert(ids.begin(), ids.end());
+	            }
+	        }
+	        catch ( ... ) {}
+	    }
 	}
 
 	if ( _interrupted ) return;
 
 	// Go through all available responses and remove unused ones
 	for ( size_t r = 0; r < _inv->responseFIRCount(); ) {
-		DataModel::ResponseFIR *resp = _inv->responseFIR(r);
-		// Response not used -> remove it
-		if ( usedResponses.find(resp->publicID()) == usedResponses.end() ) {
-			_inv->removeResponseFIR(r);
-			++unusedResponses;
-		}
-		else
-			++r;
+	    DataModel::ResponseFIR *resp = _inv->responseFIR(r);
+	    // Response not used -> remove it
+	    if ( usedResponses.find(resp->publicID()) == usedResponses.end() ) {
+	        _inv->removeResponseFIR(r);
+	        ++unusedResponses;
+	    }
+	    else
+	        ++r;
 	}
 
 	for ( size_t r = 0; r < _inv->responsePAZCount(); ) {
-		DataModel::ResponsePAZ *resp = _inv->responsePAZ(r);
-		// Response not used -> remove it
-		if ( usedResponses.find(resp->publicID()) == usedResponses.end() ) {
-			_inv->removeResponsePAZ(r);
-			++unusedResponses;
-		}
-		else
-			++r;
+	    DataModel::ResponsePAZ *resp = _inv->responsePAZ(r);
+	    // Response not used -> remove it
+	    if ( usedResponses.find(resp->publicID()) == usedResponses.end() ) {
+	        _inv->removeResponsePAZ(r);
+	        ++unusedResponses;
+	    }
+	    else
+	        ++r;
 	}
 
 	for ( size_t r = 0; r < _inv->responsePolynomialCount(); ) {
-		DataModel::ResponsePolynomial *resp = _inv->responsePolynomial(r);
-		// Response not used -> remove it
-		if ( usedResponses.find(resp->publicID()) == usedResponses.end() ) {
-			_inv->removeResponsePolynomial(r);
-			++unusedResponses;
-		}
-		else
-			++r;
+	    DataModel::ResponsePolynomial *resp = _inv->responsePolynomial(r);
+	    // Response not used -> remove it
+	    if ( usedResponses.find(resp->publicID()) == usedResponses.end() ) {
+	        _inv->removeResponsePolynomial(r);
+	        ++unusedResponses;
+	    }
+	    else
+	        ++r;
 	}
 
 	if ( unusedResponses )
-		SEISCOMP_INFO("Removed %d unused responses", unusedResponses);
+	    SEISCOMP_INFO("Removed %d unused responses", unusedResponses);
 	*/
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1907,8 +2376,9 @@ void Convert2SC::cleanUp() {
 // yet been created because this epoch comes from a station without a
 // network tag in the message.
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Convert2SC::process(DataModel::Network *sc_net,
-                          const FDSNXML::Station *sta) {
+bool Convert2SC::process(
+    DataModel::Network *sc_net, const FDSNXML::Station *sta
+) {
 	typedef map<LocationElevation, EpochEntry> EpochLocationMap;
 	typedef map<string, EpochLocationMap> EpochCodeMap;
 
@@ -1917,15 +2387,16 @@ bool Convert2SC::process(DataModel::Network *sc_net,
 		start = sta->startDate();
 	}
 	catch ( ... ) {
-		start = Core::Time(1980,1,1);
+		start = defaultStartTime;
 	}
 
 	string staCode = sta->code();
 	Core::trim(staCode);
 
-	SEISCOMP_INFO("Processing station %s/%s (%s)",
-		          sc_net->code().c_str(), staCode.c_str(),
-		          start.toString("%F %T").c_str());
+	SEISCOMP_INFO(
+	    "Processing station %s/%s (%s)", sc_net->code().c_str(),
+	    staCode.c_str(), start.toString("%F %T").c_str()
+	);
 
 	bool newInstance = false;
 	bool needUpdate = false;
@@ -1945,10 +2416,7 @@ bool Convert2SC::process(DataModel::Network *sc_net,
 	BCK(oldEnd, Core::Time, sc_sta->end());
 
 	try {
-		if ( sta->endDate().valid() )
-			sc_sta->setEnd(sta->endDate());
-		else
-			sc_sta->setEnd(Core::None);
+		sc_sta->setEnd(sta->endDate());
 	}
 	catch ( ... ) {
 		sc_sta->setEnd(Core::None);
@@ -1965,62 +2433,86 @@ bool Convert2SC::process(DataModel::Network *sc_net,
 	sc_sta->setLatitude(sta->latitude().value());
 	sc_sta->setLongitude(sta->longitude().value());
 	sc_sta->setElevation(sta->elevation().value());
-	if ( !sta->description().empty() )
+	if ( !sta->description().empty() ) {
 		sc_sta->setDescription(sta->description());
-	else if ( !sta->site().description().empty() )
+	}
+	else if ( !sta->site().description().empty() ) {
 		sc_sta->setDescription(sta->site().description());
-	else
+	}
+	else {
 		sc_sta->setDescription(sta->site().name());
+	}
 	sc_sta->setCountry(sta->site().country());
 	sc_sta->setType("");
 
 	string place;
-	if ( !sta->site().region().empty() )
+	if ( !sta->site().region().empty() ) {
 		place += sta->site().region();
+	}
 	if ( !sta->site().county().empty() ) {
-		if ( !place.empty() ) place += " / ";
+		if ( !place.empty() ) {
+			place += " / ";
+		}
 		place += sta->site().county();
 	}
 	if ( !sta->site().town().empty() ) {
-		if ( !place.empty() ) place += " / ";
+		if ( !place.empty() ) {
+			place += " / ";
+		}
 		place += sta->site().town();
 	}
 
 	sc_sta->setPlace(place);
-	try { sc_sta->setRestricted(sta->restrictedStatus() != FDSNXML::RST_OPEN); }
-	catch ( ... ) { sc_sta->setRestricted(Core::None); }
+	try {
+		sc_sta->setRestricted(sta->restrictedStatus() != FDSNXML::RST_OPEN);
+	}
+	catch ( ... ) {
+		sc_sta->setRestricted(Core::None);
+	}
 	sc_sta->setShared(true);
 
 	UPD(needUpdate, oldLat, double, sc_sta->latitude());
 	UPD(needUpdate, oldLon, double, sc_sta->longitude());
 	UPD(needUpdate, oldElev, double, sc_sta->elevation());
 	UPD(needUpdate, oldEnd, Core::Time, sc_sta->end());
-	if ( oldDesc != sc_sta->description() ) needUpdate = true;
-	if ( oldCountry != sc_sta->country() ) needUpdate = true;
+	if ( oldDesc != sc_sta->description() ) {
+		needUpdate = true;
+	}
+	if ( oldCountry != sc_sta->country() ) {
+		needUpdate = true;
+	}
 	UPD(needUpdate, oldRestricted, bool, sc_sta->restricted());
 	UPD(needUpdate, oldShared, bool, sc_sta->shared());
-	if ( oldPlace != sc_sta->place() ) needUpdate = true;
-	if ( oldAffiliation != sc_sta->affiliation() ) needUpdate = true;
-	if ( oldType != sc_sta->type() ) needUpdate = true;
+	if ( oldPlace != sc_sta->place() ) {
+		needUpdate = true;
+	}
+	if ( oldAffiliation != sc_sta->affiliation() ) {
+		needUpdate = true;
+	}
+	if ( oldType != sc_sta->type() ) {
+		needUpdate = true;
+	}
 
 	if ( newInstance ) {
 		sc_net->add(sc_sta.get());
-		SEISCOMP_DEBUG("Added new station epoch: %s (%s)",
-		               sc_sta->code().c_str(), sc_sta->start().iso().c_str());
+		SEISCOMP_DEBUG(
+		    "Added new station epoch: %s (%s)", sc_sta->code().c_str(),
+		    sc_sta->start().iso().c_str()
+		);
 	}
 	else if ( needUpdate ) {
 		sc_sta->update();
-		SEISCOMP_DEBUG("Updated station epoch: %s (%s)",
-		               sc_sta->code().c_str(), sc_sta->start().iso().c_str());
+		SEISCOMP_DEBUG(
+		    "Updated station epoch: %s (%s)", sc_sta->code().c_str(),
+		    sc_sta->start().iso().c_str()
+		);
 	}
 
 	// Register station
-	_touchedStations.insert(
-		StationIndex(
-			NetworkIndex(sc_net->code(), sc_net->start()),
-			EpochIndex(sc_sta->code(), sc_sta->start())
-		)
-	);
+	_touchedStations.insert(StationIndex(
+	    NetworkIndex(sc_net->code(), sc_net->start()),
+	    EpochIndex(sc_sta->code(), sc_sta->start())
+	));
 
 	populateComments(sta, sc_sta);
 
@@ -2033,51 +2525,55 @@ bool Convert2SC::process(DataModel::Network *sc_net,
 
 		// Create index based on code and location to form
 		// SensorLocation objects later
-		LocationElevation loc_loc(Location(cha->latitude().value(),
-		                                   cha->longitude().value()),
-		                                   cha->elevation().value());
+		LocationElevation loc_loc(
+		    Location(cha->latitude().value(), cha->longitude().value()),
+		    cha->elevation().value()
+		);
 
 		EpochEntry &entry = epochMap[locationCode][loc_loc];
-		entry.epochs.push_back(ChannelEpoch(cha->code(),cha));
+		entry.epochs.push_back(ChannelEpoch(cha->code(), cha));
 	}
 
 	// After collecting all channel epoch, check for overlapping
 	// time windows of different locations. If they overlap
 	// valid SensorLocation definitions cannot be formed.
-	EpochCodeMap::iterator it;
 
 	// Iterate over all location codes
-	for ( it = epochMap.begin(); it != epochMap.end(); ++it ) {
+	for ( auto &[locID, locationMap] : epochMap ) {
 		// Iterate over all locations (lat/lon/elev) of this sensor
-		EpochLocationMap::iterator lit, lit2;
-		Epochs::iterator eit, eit2;
-
-		set<FDSNXML::Channel*> overlappingEpochs;
+		set<FDSNXML::Channel *> overlappingEpochs;
 
 		// Check for location/channel epoch overlaps for each lat/lon/elev
 		// group
-		for ( lit = it->second.begin(); lit != it->second.end(); ++lit ) {
+		for ( auto lit = locationMap.begin(); lit != locationMap.end(); ++lit ) {
 			EpochEntry &entry = lit->second;
 
 			// Iterate over all channel epochs of a group
-			for ( eit = entry.epochs.begin(); eit != entry.epochs.end(); ++eit ) {
-				FDSNXML::Channel *chaepoch = eit->second;
+			for ( auto &epoch : entry.epochs ) {
+				FDSNXML::Channel *chaepoch = epoch.second;
 
 				// Already checked?
-				if ( overlappingEpochs.find(chaepoch) != overlappingEpochs.end() )
+				if ( overlappingEpochs.find(chaepoch) !=
+				     overlappingEpochs.end() ) {
 					continue;
+				}
 
 				// Go through all other groups
-				for ( lit2 = it->second.begin(); lit2 != it->second.end(); ++lit2 ) {
+				for ( auto lit2 = locationMap.begin(); lit2 != locationMap.end();
+				      ++lit2 ) {
 					EpochEntry &entry2 = lit2->second;
 
-					if ( lit == lit2 ) continue;
+					if ( lit == lit2 ) {
+						continue;
+					}
 
 					// Iterate over all channel epochs of a group
-					for ( eit2 = entry2.epochs.begin(); eit2 != entry2.epochs.end(); ++eit2 ) {
-						FDSNXML::Channel *chaepoch2 = eit2->second;
+					for ( auto &epoch2 : entry2.epochs ) {
+						FDSNXML::Channel *chaepoch2 = epoch2.second;
 
-						if ( eit->first != eit2->first ) continue;
+						if ( epoch.first != epoch2.first ) {
+							continue;
+						}
 
 						if ( overlaps(chaepoch, chaepoch2) ) {
 							overlappingEpochs.insert(chaepoch);
@@ -2090,20 +2586,25 @@ bool Convert2SC::process(DataModel::Network *sc_net,
 
 		if ( !overlappingEpochs.empty() ) {
 			cerr << "C  " << sc_net->code() << "." << sta->code()
-			     << " location '" << it->first << "' has overlapping epochs: skipping" << endl;
+			     << " location '" << locID
+			     << "' has overlapping epochs: skipping" << endl;
 
-			for ( lit = it->second.begin(); lit != it->second.end(); ++lit ) {
+			for ( auto lit = locationMap.begin(); lit != locationMap.end(); ++lit ) {
 				EpochEntry &entry = lit->second;
 				bool firstHit = true;
-				for ( eit = entry.epochs.begin(); eit != entry.epochs.end(); ++eit ) {
-					FDSNXML::Channel *cha = eit->second;
-					if ( overlappingEpochs.find(cha) == overlappingEpochs.end() )
+				for ( auto &epoch : entry.epochs ) {
+					FDSNXML::Channel *cha = epoch.second;
+					if ( overlappingEpochs.find(cha) ==
+					     overlappingEpochs.end() ) {
 						continue;
+					}
 
 					if ( firstHit ) {
-						cerr << "     " << Core::toString(lit->first.first.first) << "° "
-						                << Core::toString(lit->first.first.second) << "° "
-						                << Core::toString(lit->first.second) << "m" << endl;
+						cerr << "     "
+						     << Core::toString(lit->first.first.first) << "° "
+						     << Core::toString(lit->first.first.second) << "° "
+						     << Core::toString(lit->first.second) << "m"
+						     << endl;
 						firstHit = false;
 					}
 
@@ -2112,12 +2613,14 @@ bool Convert2SC::process(DataModel::Network *sc_net,
 						Core::Time start = cha->startDate();
 						cerr << timeToStr(start);
 					}
-					catch ( ... ) {}
+					catch ( ... ) {
+					}
 					try {
 						Core::Time end = cha->endDate();
 						cerr << " ~ " << timeToStr(end);
 					}
-					catch ( ... ) {}
+					catch ( ... ) {
+					}
 					cerr << endl;
 				}
 			}
@@ -2126,7 +2629,7 @@ bool Convert2SC::process(DataModel::Network *sc_net,
 			continue;
 		}
 
-		for ( lit = it->second.begin(); lit != it->second.end(); ++lit ) {
+		for ( auto lit = locationMap.begin(); lit != locationMap.end(); ++lit ) {
 			EpochEntry &entry = lit->second;
 
 			entry.epochs.sort(epochLowerThan);
@@ -2137,16 +2640,24 @@ bool Convert2SC::process(DataModel::Network *sc_net,
 			Core::Time sensorLocationStart;
 			OPT(Core::Time) sensorLocationEnd;
 			bool newTw = true;
-			for ( eit = entry.epochs.begin(); eit != entry.epochs.end(); ++eit) {
-				FDSNXML::Channel *cha = eit->second;
+			for ( auto &epoch : entry.epochs ) {
+				FDSNXML::Channel *cha = epoch.second;
 
 				// A new time window should be started
 				if ( newTw ) {
-					try { sensorLocationStart = cha->startDate(); }
-					catch ( ... ) { sensorLocationStart = Core::Time(1980,1,1); }
+					try {
+						sensorLocationStart = cha->startDate();
+					}
+					catch ( ... ) {
+						sensorLocationStart = defaultStartTime;
+					}
 
-					try { sensorLocationEnd = cha->endDate(); }
-					catch ( ... ) { sensorLocationEnd = Core::None; }
+					try {
+						sensorLocationEnd = cha->endDate();
+					}
+					catch ( ... ) {
+						sensorLocationEnd = Core::None;
+					}
 					newTw = false;
 					sc_loc = NULL;
 				}
@@ -2171,10 +2682,15 @@ bool Convert2SC::process(DataModel::Network *sc_net,
 					newInstance = false;
 					needUpdate = false;
 
-					sc_loc = sc_sta->sensorLocation(DataModel::SensorLocationIndex(it->first, sensorLocationStart));
+					sc_loc =
+					    sc_sta->sensorLocation(DataModel::SensorLocationIndex(
+					        locID, sensorLocationStart
+					    ));
 					if ( !sc_loc ) {
-						sc_loc = createSensorLocation(sc_net->code(), sc_sta->code(), it->first);
-						sc_loc->setCode(it->first);
+						sc_loc = createSensorLocation(
+						    sc_net->code(), sc_sta->code(), locID
+						);
+						sc_loc->setCode(locID);
 						sc_loc->setStart(sensorLocationStart);
 						newInstance = true;
 					}
@@ -2196,30 +2712,69 @@ bool Convert2SC::process(DataModel::Network *sc_net,
 					// Possible conflicting geo locations?
 					if ( !newInstance && needUpdate ) {
 						cerr << "W  " << sc_net->code() << "." << sta->code()
-						     << " location '" << it->first << "' starting " << sc_loc->start().toString("%Y-%m-%d %H:%M:%S") << " has conflicting coordinates: using the last read" << endl;
-						if ( *oldLat != sc_loc->latitude() )
-							cerr << "   lat " << *oldLat << " != " << sc_loc->latitude() << endl;
-						if ( *oldLon != sc_loc->longitude() )
-							cerr << "   lon " << *oldLon << " != " << sc_loc->longitude() << endl;
-						if ( *oldElev != sc_loc->elevation() )
-							cerr << "   elevation " << *oldElev << " != " << sc_loc->elevation() << endl;
+						     << " location '" << locID << "' starting "
+						     << sc_loc->start().toString("%Y-%m-%d %H:%M:%S")
+						     << " has conflicting coordinates: using the last "
+						        "read"
+						     << endl;
+						if ( *oldLat != sc_loc->latitude() ) {
+							cerr << "   lat " << *oldLat
+							     << " != " << sc_loc->latitude() << endl;
+						}
+						if ( *oldLon != sc_loc->longitude() ) {
+							cerr << "   lon " << *oldLon
+							     << " != " << sc_loc->longitude() << endl;
+						}
+						if ( *oldElev != sc_loc->elevation() ) {
+							cerr << "   elevation " << *oldElev
+							     << " != " << sc_loc->elevation() << endl;
+						}
 					}
 					else if ( newInstance ) {
-						for ( size_t l = 0; l < sc_sta->sensorLocationCount(); ++l ) {
-							DataModel::SensorLocation *ref_loc = sc_sta->sensorLocation(l);
-							if ( ref_loc->code() != sc_loc->code() ) continue;
+						for ( size_t l = 0; l < sc_sta->sensorLocationCount();
+						      ++l ) {
+							DataModel::SensorLocation *ref_loc =
+							    sc_sta->sensorLocation(l);
+							if ( ref_loc->code() != sc_loc->code() ) {
+								continue;
+							}
 							if ( ref_loc->latitude() != sc_loc->latitude() ||
 							     ref_loc->longitude() != sc_loc->longitude() ||
 							     ref_loc->elevation() != sc_loc->elevation() ) {
 								if ( overlaps2(ref_loc, sc_loc.get()) ) {
-									cerr << "W  " << sc_net->code() << "." << sta->code() << " " << cha->code()
-									     << " location '" << it->first << "' starting " << sc_loc->start().toString("%Y-%m-%d %H:%M:%S") << " has conflicting coordinates with location epoch starting " << ref_loc->start().toString("%Y-%m-%d %H:%M:%S") << endl;
-									if ( ref_loc->latitude() != sc_loc->latitude() )
-										cerr << "   lat " << ref_loc->latitude() << " != " << sc_loc->latitude() << endl;
-									if ( ref_loc->longitude() != sc_loc->longitude() )
-										cerr << "   lon " << ref_loc->longitude() << " != " << sc_loc->longitude() << endl;
-									if ( ref_loc->elevation() != sc_loc->elevation() )
-										cerr << "   elevation " << ref_loc->elevation() << " != " << sc_loc->elevation() << endl;
+									cerr << "W  " << sc_net->code() << "."
+									     << sta->code() << " " << cha->code()
+									     << " location '" << locID
+									     << "' starting "
+									     << sc_loc->start().toString(
+									            "%Y-%m-%d %H:%M:%S"
+									        )
+									     << " has conflicting coordinates with "
+									        "location epoch starting "
+									     << ref_loc->start().toString(
+									            "%Y-%m-%d %H:%M:%S"
+									        )
+									     << endl;
+									if ( ref_loc->latitude() !=
+									     sc_loc->latitude() ) {
+										cerr << "   lat " << ref_loc->latitude()
+										     << " != " << sc_loc->latitude()
+										     << endl;
+									}
+									if ( ref_loc->longitude() !=
+									     sc_loc->longitude() ) {
+										cerr << "   lon "
+										     << ref_loc->longitude()
+										     << " != " << sc_loc->longitude()
+										     << endl;
+									}
+									if ( ref_loc->elevation() !=
+									     sc_loc->elevation() ) {
+										cerr << "   elevation "
+										     << ref_loc->elevation()
+										     << " != " << sc_loc->elevation()
+										     << endl;
+									}
 									break;
 								}
 							}
@@ -2230,25 +2785,29 @@ bool Convert2SC::process(DataModel::Network *sc_net,
 
 					if ( newInstance ) {
 						sc_sta->add(sc_loc.get());
-						SEISCOMP_DEBUG("Added new sensor location epoch: %s (%s)",
-						               sc_loc->code().c_str(), sc_loc->start().iso().c_str());
+						SEISCOMP_DEBUG(
+						    "Added new sensor location epoch: %s (%s)",
+						    sc_loc->code().c_str(),
+						    sc_loc->start().iso().c_str()
+						);
 					}
 					else if ( needUpdate ) {
 						sc_loc->update();
-						SEISCOMP_DEBUG("Updated sensor location epoch: %s (%s)",
-						               sc_loc->code().c_str(), sc_loc->start().iso().c_str());
+						SEISCOMP_DEBUG(
+						    "Updated sensor location epoch: %s (%s)",
+						    sc_loc->code().c_str(),
+						    sc_loc->start().iso().c_str()
+						);
 					}
 
 					// Register sensor location
-					_touchedSensorLocations.insert(
-						LocationIndex(
-							StationIndex(
-								NetworkIndex(sc_net->code(), sc_net->start()),
-								EpochIndex(sc_sta->code(), sc_sta->start())
-							),
-							EpochIndex(sc_loc->code(), sc_loc->start())
-						)
-					);
+					_touchedSensorLocations.insert(LocationIndex(
+					    StationIndex(
+					        NetworkIndex(sc_net->code(), sc_net->start()),
+					        EpochIndex(sc_sta->code(), sc_sta->start())
+					    ),
+					    EpochIndex(sc_loc->code(), sc_loc->start())
+					));
 				}
 
 				process(sc_loc.get(), cha);
@@ -2264,14 +2823,19 @@ bool Convert2SC::process(DataModel::Network *sc_net,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
-                          const FDSNXML::Channel *cha) {
+bool Convert2SC::process(
+    DataModel::SensorLocation *sc_loc, const FDSNXML::Channel *cha
+) {
 	bool newInstance = false;
 	bool needUpdate = false;
 
 	Core::Time start;
-	try { start = cha->startDate(); }
-	catch ( ... ) { start = Core::Time(1980,1,1); }
+	try {
+		start = cha->startDate();
+	}
+	catch ( ... ) {
+		start = defaultStartTime;
+	}
 
 	string chaCode = cha->code();
 	Core::trim(chaCode);
@@ -2314,32 +2878,39 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 	string flags;
 
 	try {
-		if ( cha->endDate().valid() )
-			sc_stream->setEnd(cha->endDate());
-		else
-			sc_stream->setEnd(Core::None);
+		sc_stream->setEnd(cha->endDate());
 	}
-	catch ( ... ) { sc_stream->setEnd(Core::None); }
+	catch ( ... ) {
+		sc_stream->setEnd(Core::None);
+	}
 
 	sc_stream->setDepth(cha->depth().value());
 
-	for ( size_t i = 0; i < cha->typeCount(); ++i )
+	for ( size_t i = 0; i < cha->typeCount(); ++i ) {
 		flags += cha->type(i)->type().toString()[0];
+	}
 
 	/* Should it default to "GC"? Currently no.
 	if ( flags.empty() )
-		flags = "GC";
+	    flags = "GC";
 	*/
 
 	sc_stream->setFlags(flags);
 
-	try { sc_stream->setRestricted(cha->restrictedStatus() != FDSNXML::RST_OPEN); }
-	catch ( ... ) { sc_stream->setRestricted(Core::None); }
+	try {
+		sc_stream->setRestricted(cha->restrictedStatus() != FDSNXML::RST_OPEN);
+	}
+	catch ( ... ) {
+		sc_stream->setRestricted(Core::None);
+	}
 
 	// Set sample rate
 	try {
-		sc_stream->setSampleRateNumerator(cha->sampleRateRatio().numberSamples());
-		sc_stream->setSampleRateDenominator(cha->sampleRateRatio().numberSeconds());
+		sc_stream->setSampleRateNumerator(cha->sampleRateRatio().numberSamples()
+		);
+		sc_stream->setSampleRateDenominator(
+		    cha->sampleRateRatio().numberSeconds()
+		);
 	}
 	catch ( ... ) {
 		try {
@@ -2347,21 +2918,30 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 			sc_stream->setSampleRateNumerator(rat.first);
 			sc_stream->setSampleRateDenominator(rat.second);
 		}
-		catch ( ... ) {}
+		catch ( ... ) {
+		}
 	}
 
 	// Set orientation
-	try { sc_stream->setAzimuth(cha->azimuth().value()); }
-	catch ( ... ) {}
-	try { sc_stream->setDip(cha->dip().value()); }
-	catch ( ... ) {}
+	try {
+		sc_stream->setAzimuth(cha->azimuth().value());
+	}
+	catch ( ... ) {
+	}
+	try {
+		sc_stream->setDip(cha->dip().value());
+	}
+	catch ( ... ) {
+	}
 
 	// Set datalogger/sensor channel according to the component code
-	if ( sc_stream->code().substr(2,1) == "N" || sc_stream->code().substr(2,1) == "1" ) {
+	if ( sc_stream->code().substr(2, 1) == "N" ||
+	     sc_stream->code().substr(2, 1) == "1" ) {
 		sc_stream->setDataloggerChannel(1);
 		sc_stream->setSensorChannel(1);
 	}
-	else if ( sc_stream->code().substr(2,1) == "E" || sc_stream->code().substr(2,1) == "2" ) {
+	else if ( sc_stream->code().substr(2, 1) == "E" ||
+	          sc_stream->code().substr(2, 1) == "2" ) {
 		sc_stream->setDataloggerChannel(2);
 		sc_stream->setSensorChannel(2);
 	}
@@ -2377,50 +2957,72 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 
 	try {
 		resp0 = &cha->response();
-		for ( size_t i = 0; i < resp0->stageCount(); ++i )
+		for ( size_t i = 0; i < resp0->stageCount(); ++i ) {
 			stages.push_back(resp0->stage(i));
+		}
 	}
-	catch ( ... ) {}
+	catch ( ... ) {
+	}
 
 	stages.sort(respLowerThan);
 
 	if ( resp0 != NULL ) {
 		try {
 			sc_stream->setGain(resp0->instrumentSensitivity().value());
-			if ( _logStages )
+			if ( _logStages ) {
 				cerr << " + Gain " << sc_stream->gain() << endl;
+			}
 		}
-		catch ( ... ) { sc_stream->setGain(Core::None); }
-		try { sc_stream->setGainFrequency(resp0->instrumentSensitivity().frequency()); }
-		catch ( ... ) { sc_stream->setGainFrequency(Core::None); }
+		catch ( ... ) {
+			sc_stream->setGain(Core::None);
+		}
 		try {
-			sc_stream->setGainUnit(resp0->instrumentSensitivity().inputUnits().name());
-			if ( _logStages )
-				cerr << " + Unit " << sc_stream->gainUnit() << endl;
+			sc_stream->setGainFrequency(
+			    resp0->instrumentSensitivity().frequency()
+			);
 		}
-		catch ( ... ) { sc_stream->setGainUnit(""); }
+		catch ( ... ) {
+			sc_stream->setGainFrequency(Core::None);
+		}
+		try {
+			sc_stream->setGainUnit(
+			    resp0->instrumentSensitivity().inputUnits().name()
+			);
+			if ( _logStages ) {
+				cerr << " + Unit " << sc_stream->gainUnit() << endl;
+			}
+		}
+		catch ( ... ) {
+			sc_stream->setGainUnit("");
+		}
 	}
 	else {
 		sc_stream->setGain(Core::None);
-		SEISCOMP_WARNING("%s.%s.%s.%s: response stage 0 not found and "
-		                 "instrument sensitivity not set: gain undefined",
-		                 sc_loc->station()->network()->code().c_str(),
-		                 sc_loc->station()->code().c_str(),
-		                 sc_loc->code().c_str(), sc_stream->code().c_str());
+		SEISCOMP_WARNING(
+		    "%s.%s.%s.%s: response stage 0 not found and "
+		    "instrument sensitivity not set: gain undefined",
+		    sc_loc->station()->network()->code().c_str(),
+		    sc_loc->station()->code().c_str(), sc_loc->code().c_str(),
+		    sc_stream->code().c_str()
+		);
 
 		sc_stream->setGainFrequency(Core::None);
-		SEISCOMP_WARNING("%s.%s.%s.%s: response stage 0 not found and "
-		                 "instrument sensitivity freq not set: freq undefined",
-		                 sc_loc->station()->network()->code().c_str(),
-		                 sc_loc->station()->code().c_str(),
-		                 sc_loc->code().c_str(), sc_stream->code().c_str());
+		SEISCOMP_WARNING(
+		    "%s.%s.%s.%s: response stage 0 not found and "
+		    "instrument sensitivity freq not set: freq undefined",
+		    sc_loc->station()->network()->code().c_str(),
+		    sc_loc->station()->code().c_str(), sc_loc->code().c_str(),
+		    sc_stream->code().c_str()
+		);
 
 		sc_stream->setGainUnit("");
-		SEISCOMP_WARNING("%s.%s.%s.%s: response stage 0 not found and "
-		                 "instrument sensitivity unit not set: unit undefined",
-		                 sc_loc->station()->network()->code().c_str(),
-		                 sc_loc->station()->code().c_str(),
-		                 sc_loc->code().c_str(), sc_stream->code().c_str());
+		SEISCOMP_WARNING(
+		    "%s.%s.%s.%s: response stage 0 not found and "
+		    "instrument sensitivity unit not set: unit undefined",
+		    sc_loc->station()->network()->code().c_str(),
+		    sc_loc->station()->code().c_str(), sc_loc->code().c_str(),
+		    sc_stream->code().c_str()
+		);
 	}
 
 	sc_stream->setDataloggerSerialNumber("");
@@ -2428,12 +3030,14 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 	try {
 		sc_stream->setDataloggerSerialNumber(cha->dataLogger().serialNumber());
 	}
-	catch ( ... ) {}
+	catch ( ... ) {
+	}
 
 	try {
 		sc_stream->setSensorSerialNumber(cha->sensor().serialNumber());
 	}
-	catch ( ... ) {}
+	catch ( ... ) {
+	}
 
 	// Iterate over all response stages and create the datalogger
 	Stages::iterator it;
@@ -2460,11 +3064,83 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 
 	int numerator, denominator;
 
+	{
+		double finalSampleRate = -1;
+		for ( const auto stage : stages ) {
+			try {
+				if ( finalSampleRate > 0 ) {
+					if ( finalSampleRate !=
+					     stage->decimation().inputSampleRate() ) {
+						cerr << "W  inconsistent decimation stage #"
+						     << stage->number() << endl
+						     << "   computed input sample rate "
+						     << finalSampleRate
+						     << " does not match specified input sample rate "
+						     << static_cast<double>(
+						            stage->decimation().inputSampleRate()
+						        )
+						     << endl;
+					}
+				}
+
+				if ( stage->decimation().factor() > 0 ) {
+					finalSampleRate = stage->decimation().inputSampleRate() /
+					                  stage->decimation().factor();
+				}
+			}
+			catch ( ... ) {
+			}
+		}
+	}
+
+	try {
+		sc_stream->sampleRateNumerator();
+		sc_stream->sampleRateDenominator();
+	}
+	catch ( ... ) {
+		SEISCOMP_INFO(
+		    "%s: no sampling rate given, trying to derive from decimations",
+		    chaCode
+		);
+
+		OPT(Fraction) sr;
+
+		for ( const auto stage : stages ) {
+			try {
+				if ( stage->decimation().factor() > 0 ) {
+					double samplingRate =
+					    stage->decimation().inputSampleRate() /
+					    stage->decimation().factor();
+					sr = double2frac(samplingRate);
+				}
+				else {
+					SEISCOMP_WARNING(
+					    "%s: stage #%d has an invalid decimation factor",
+					    chaCode, stage->number()
+					);
+				}
+			}
+			catch ( ... ) {
+			}
+		}
+
+		if ( sr ) {
+			SEISCOMP_INFO(
+			    "%s: derived sampling rate with %d/%d sps", chaCode, sr->first,
+			    sr->second
+			);
+			sc_stream->setSampleRateNumerator(sr->first);
+			sc_stream->setSampleRateDenominator(sr->second);
+		}
+	}
+
 	try {
 		numerator = sc_stream->sampleRateNumerator();
 		denominator = sc_stream->sampleRateDenominator();
 
-		sc_deci = sc_dl->decimation(DataModel::DecimationIndex(numerator, denominator));
+		sc_deci =
+		    sc_dl->decimation(DataModel::DecimationIndex(numerator, denominator)
+		    );
 		if ( !sc_deci ) {
 			sc_deci = new DataModel::Decimation();
 			sc_deci->setSampleRateNumerator(numerator);
@@ -2473,18 +3149,28 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 			newDeciInstance = true;
 		}
 		else {
-			try { oldAnalogueChain = sc_deci->analogueFilterChain().content(); }
-			catch ( ... ) {}
-			try { oldDigitalChain = sc_deci->digitalFilterChain().content(); }
-			catch ( ... ) {}
+			try {
+				oldAnalogueChain = sc_deci->analogueFilterChain().content();
+			}
+			catch ( ... ) {
+			}
+			try {
+				oldDigitalChain = sc_deci->digitalFilterChain().content();
+			}
+			catch ( ... ) {
+			}
 			newDeciInstance = false;
-			SEISCOMP_DEBUG("Reused datalogger decimation for stream %s",
-			               sc_stream->code().c_str());
+			SEISCOMP_DEBUG(
+			    "Reused datalogger decimation for stream %s",
+			    sc_stream->code().c_str()
+			);
 		}
 	}
 	catch ( ... ) {
-		SEISCOMP_WARNING("%s: no sampling rate given, ignoring all decimation stages",
-		                 chaCode.c_str());
+		SEISCOMP_WARNING(
+		    "%s: no sampling rate given, ignoring all decimation stages",
+		    chaCode.c_str()
+		);
 	}
 
 	double dataloggerGainScale = 1.0;
@@ -2493,21 +3179,28 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 		const FDSNXML::ResponseStage *stage = *it;
 
 		OPT(double) stageGain;
-		try { stageGain = stage->stageGain().value(); }
-		catch ( ... ) {}
+		try {
+			stageGain = stage->stageGain().value();
+		}
+		catch ( ... ) {
+		}
 
 		ResponseType stageType;
 		const FDSNXML::BaseFilter *filter = getFilter(stage, stageType);
 		if ( filter == NULL ) {
 			if ( stageGain ) {
-				if ( _logStages )
-					cerr << " + D#" << stage->number() << " GAIN "
-					     << *stageGain << endl;
+				if ( _logStages ) {
+					cerr << " + D#" << stage->number() << " GAIN " << *stageGain
+					     << endl;
+				}
 				dataloggerGainScale *= *stageGain;
 				continue;
 			}
 			else {
-				cerr << "Channel " << chaCode << ", stage " << stage->number() << " has no filter and no gain. This is currently not supported" << endl;
+				cerr << "Channel " << chaCode << ", stage " << stage->number()
+				     << " has no filter and no gain. This is currently not "
+				        "supported"
+				     << endl;
 				return false;
 			}
 		}
@@ -2518,25 +3211,34 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 		bool isAnalogue;
 		if ( isSensorStage(inputUnit, outputUnit) ) {
 			if ( sc_sens ) {
-				SEISCOMP_ERROR("%s: found another sensor stage but only one is expected: bail out",
-				               chaCode.c_str());
+				SEISCOMP_ERROR(
+				    "%s: found another sensor stage but only one is expected: "
+				    "bail out",
+				    chaCode.c_str()
+				);
 				return false;
 			}
 
-			if ( _logStages )
-				cerr << " + S#" << stage->number() << " " << stageType.toString() << " "
-				     << inputUnit << " " << outputUnit << endl;
+			if ( _logStages ) {
+				cerr << " + S#" << stage->number() << " "
+				     << stageType.toString() << " " << inputUnit << " "
+				     << outputUnit << endl;
+			}
 
 			if ( inputUnit != sc_stream->gainUnit() ) {
-				SEISCOMP_WARNING("%s: sensor input unit does not match channel instrument unit: %s != %s",
-				                 chaCode.c_str(), inputUnit.c_str(), sc_stream->gainUnit().c_str());
+				SEISCOMP_WARNING(
+				    "%s: sensor input unit does not match channel instrument "
+				    "unit: %s != %s",
+				    chaCode.c_str(), inputUnit.c_str(),
+				    sc_stream->gainUnit().c_str()
+				);
 			}
 
 			// This is out sensor stage
 			// Update sensor information
 			string sensorName = sc_loc->station()->network()->code() + "." +
-			                    sc_loc->station()->code() + "." + sc_loc->code() +
-			                    sc_stream->code() + "." +
+			                    sc_loc->station()->code() + "." +
+			                    sc_loc->code() + sc_stream->code() + "." +
 			                    date2str(sc_stream->start());
 
 			sc_sens = updateSensor(sensorName, cha, stage, stageType, filter);
@@ -2545,30 +3247,40 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 				process(sc_sens.get(), sc_stream.get(), cha, stage);
 			}
 			else {
-				SEISCOMP_ERROR("Something wrong happened when creating a sensor, unsupported filter type %s?",
-				               stageType.toString());
+				SEISCOMP_ERROR(
+				    "Something wrong happened when creating a sensor, "
+				    "unsupported filter type %s?",
+				    stageType.toString()
+				);
 				return false;
 			}
 
 			continue;
 		}
-		else if ( isAnalogDataloggerStage(inputUnit, outputUnit) )
+		else if ( isAnalogDataloggerStage(inputUnit, outputUnit) ) {
 			isAnalogue = true;
-		else if ( isDigitalDataloggerStage(inputUnit, outputUnit) )
+		}
+		else if ( isDigitalDataloggerStage(inputUnit, outputUnit) ) {
 			isAnalogue = false;
+		}
 		else {
-			SEISCOMP_ERROR("%s: stage %d is neither an analogue nor a digital stage, don't know what to do",
-			               chaCode.c_str(), stage->number());
+			SEISCOMP_ERROR(
+			    "%s: stage %d is neither an analogue nor a digital stage, "
+			    "don't know what to do",
+			    chaCode.c_str(), stage->number()
+			);
 			return false;
 		}
 
 		if ( _logStages ) {
-			cerr << " + D#" << stage->number() << " " << stageType.toString() << " "
-			     << inputUnit << " " << outputUnit << " ";
-			if ( stageGain )
+			cerr << " + D#" << stage->number() << " " << stageType.toString()
+			     << " " << inputUnit << " " << outputUnit << " ";
+			if ( stageGain ) {
 				cerr << *stageGain;
-			else
+			}
+			else {
 				cerr << "-";
+			}
 		}
 
 		if ( IsDummy(stage, stageType) ) {
@@ -2576,8 +3288,9 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 
 			// Ignore dummy stages without a defining gain
 			if ( stageGain == 1.0 ) {
-				if ( _logStages )
+				if ( _logStages ) {
 					cerr << " (dummy)";
+				}
 				ignoreStage = true;
 			}
 
@@ -2585,14 +3298,16 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 			if ( !hasDigitizerGain && isADCStage(inputUnit, outputUnit) ) {
 				hasDigitizerGain = true;
 				sc_dl->setGain(stageGain);
-				if ( _logStages )
+				if ( _logStages ) {
 					cerr << " (digitizer gain)";
+				}
 				ignoreStage = true;
 			}
 
 			if ( ignoreStage ) {
-				if ( _logStages )
+				if ( _logStages ) {
 					cerr << endl;
+				}
 				continue;
 			}
 		}
@@ -2601,102 +3316,34 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 			if ( !hasDigitizerGain && isADCStage(inputUnit, outputUnit) ) {
 				hasDigitizerGain = true;
 				sc_dl->setGain(stageGain);
-				if ( _logStages )
+				if ( _logStages ) {
 					cerr << " (digitizer gain. forward filter with gain 1)";
+				}
 				stageGain = 1.0;
 			}
 		}
 
-		if ( _logStages )
+		if ( _logStages ) {
 			cerr << endl;
+		}
 
 		DataModel::PublicObject *abstractResponse = NULL;
 
 		switch ( stageType ) {
 			case RT_FIR:
-			{
-				bool newFIR = true;
-
-				DataModel::ResponseFIRPtr rf;
-				const FDSNXML::FIR *fir = &stage->fIR();
-				rf = convert(stage, fir);
-
-				if ( !rf ) {
-					SEISCOMP_ERROR("%s: stage %d contains an unsupported filter configuration",
-					               chaCode.c_str(), stage->number());
-					return false;
-				}
-
-				checkFIR(rf.get());
-
-				for ( size_t f = 0; f < _inv->responseFIRCount(); ++f ) {
-					DataModel::ResponseFIR *fir = _inv->responseFIR(f);
-					if ( equal(fir, rf.get()) ) {
-						rf = fir;
-						newFIR = false;
-						break;
-					}
-				}
-
-				if ( newFIR ) {
-					checkAmbigiousID(rf, fir);
-					addRespToInv(rf.get());
-					//SEISCOMP_DEBUG("Added new FIR filter from coefficients: %s", rf->publicID().c_str());
-				}
-				else {
-					//SEISCOMP_DEBUG("Reuse FIR filter from coefficients: %s", rf->publicID().c_str());
-				}
-
-				abstractResponse = rf.get();
-				break;
-			}
-			case RT_RC:
-			{
-				const FDSNXML::Coefficients *coeff = &stage->coefficients();
-
-				if ( (coeff->cfTransferFunctionType() != FDSNXML::CFTFT_DIGITAL) ||
-				     ((coeff->denominatorCount() > 0) &&
-				      (coeff->denominatorCount() > 1 || coeff->denominator(0)->value() != 1.0)) ) {
-					bool newIIR = true;
-					DataModel::ResponseIIRPtr iir;
-					iir = convertIIR(*it, coeff);
-
-					if ( !iir ) {
-						SEISCOMP_ERROR("%s: stage %d contains an unconvertible IIR coefficient filter configuration",
-						               chaCode.c_str(), stage->number());
-						return false;
-					}
-
-					checkIIR(iir.get());
-
-					for ( size_t f = 0; f < _inv->responseIIRCount(); ++f ) {
-						DataModel::ResponseIIR *iir_ = _inv->responseIIR(f);
-						if ( equal(iir_, iir.get()) ) {
-							iir = iir_;
-							newIIR = false;
-							break;
-						}
-					}
-
-					if ( newIIR ) {
-						checkAmbigiousID(iir, coeff);
-						addRespToInv(iir.get());
-						//SEISCOMP_DEBUG("Added new PAZ response from paz: %s", rp->publicID().c_str());
-					}
-					else {
-						//SEISCOMP_DEBUG("Reused PAZ response from paz: %s", rp->publicID().c_str());
-					}
-
-					abstractResponse = iir.get();
-				}
-				else {
+				{
 					bool newFIR = true;
+
 					DataModel::ResponseFIRPtr rf;
-					rf = convert(*it, coeff);
+					const FDSNXML::FIR *fir = &stage->fIR();
+					rf = convert(stage, fir);
 
 					if ( !rf ) {
-						SEISCOMP_ERROR("%s: stage %d contains an unconvertible FIR coefficient filter configuration",
-						               chaCode.c_str(), stage->number());
+						SEISCOMP_ERROR(
+						    "%s: stage %d contains an unsupported filter "
+						    "configuration",
+						    chaCode.c_str(), stage->number()
+						);
 						return false;
 					}
 
@@ -2712,119 +3359,220 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 					}
 
 					if ( newFIR ) {
-						checkAmbigiousID(rf, coeff);
+						checkAmbigiousID(rf, fir);
 						addRespToInv(rf.get());
-						//SEISCOMP_DEBUG("Added new FIR filter from coefficients: %s", rf->publicID().c_str());
+						// SEISCOMP_DEBUG("Added new FIR filter from
+						// coefficients: %s", rf->publicID().c_str());
 					}
 					else {
-						//SEISCOMP_DEBUG("Reuse FIR filter from coefficients: %s", rf->publicID().c_str());
+						// SEISCOMP_DEBUG("Reuse FIR filter from coefficients:
+						// %s", rf->publicID().c_str());
 					}
 
 					abstractResponse = rf.get();
+					break;
 				}
+			case RT_RC:
+				{
+					const auto *coeff = &stage->coefficients();
 
-				break;
-			}
+					if ( (coeff->cfTransferFunctionType() !=
+					      FDSNXML::CFTFT_DIGITAL) ||
+					     ((coeff->denominatorCount() > 0) &&
+					      (coeff->denominatorCount() > 1 ||
+					       coeff->denominator(0)->value() != 1.0)) ) {
+						bool newIIR = true;
+						DataModel::ResponseIIRPtr iir;
+						iir = convertIIR(*it, coeff);
+
+						if ( !iir ) {
+							SEISCOMP_ERROR(
+							    "%s: stage %d contains an unconvertible IIR "
+							    "coefficient filter configuration",
+							    chaCode.c_str(), stage->number()
+							);
+							return false;
+						}
+
+						checkIIR(iir.get());
+
+						for ( size_t f = 0; f < _inv->responseIIRCount();
+						      ++f ) {
+							auto *iir_ = _inv->responseIIR(f);
+							if ( equal(iir_, iir.get()) ) {
+								iir = iir_;
+								newIIR = false;
+								break;
+							}
+						}
+
+						if ( newIIR ) {
+							checkAmbigiousID(iir, coeff);
+							addRespToInv(iir.get());
+							// SEISCOMP_DEBUG("Added new PAZ response from paz:
+							// %s", rp->publicID().c_str());
+						}
+						else {
+							// SEISCOMP_DEBUG("Reused PAZ response from paz:
+							// %s", rp->publicID().c_str());
+						}
+
+						abstractResponse = iir.get();
+					}
+					else {
+						bool newFIR = true;
+						DataModel::ResponseFIRPtr rf;
+						rf = convert(*it, coeff);
+
+						if ( !rf ) {
+							SEISCOMP_ERROR(
+							    "%s: stage %d contains an unconvertible FIR "
+							    "coefficient filter configuration",
+							    chaCode.c_str(), stage->number()
+							);
+							return false;
+						}
+
+						checkFIR(rf.get());
+
+						for ( size_t f = 0; f < _inv->responseFIRCount();
+						      ++f ) {
+							auto *fir = _inv->responseFIR(f);
+							if ( equal(fir, rf.get()) ) {
+								rf = fir;
+								newFIR = false;
+								break;
+							}
+						}
+
+						if ( newFIR ) {
+							checkAmbigiousID(rf, coeff);
+							addRespToInv(rf.get());
+							// SEISCOMP_DEBUG("Added new FIR filter from
+							// coefficients: %s", rf->publicID().c_str());
+						}
+						else {
+							// SEISCOMP_DEBUG("Reuse FIR filter from
+							// coefficients: %s", rf->publicID().c_str());
+						}
+
+						abstractResponse = rf.get();
+					}
+
+					break;
+				}
 			case RT_PAZ:
-			{
-				const FDSNXML::PolesAndZeros *paz = &stage->polesZeros();
-				bool newPAZ = true;
+				{
+					const FDSNXML::PolesAndZeros *paz = &stage->polesZeros();
+					bool newPAZ = true;
 
-				// Create PAZ ...
-				DataModel::ResponsePAZPtr rp = convert(stage, paz);
-				checkPAZ(rp.get());
+					// Create PAZ ...
+					DataModel::ResponsePAZPtr rp = convert(stage, paz);
+					checkPAZ(rp.get());
 
-				for ( size_t f = 0; f < _inv->responsePAZCount(); ++f ) {
-					DataModel::ResponsePAZ *paz = _inv->responsePAZ(f);
-					if ( equal(paz, rp.get()) ) {
-						rp = paz;
-						newPAZ = false;
-						break;
+					for ( size_t f = 0; f < _inv->responsePAZCount(); ++f ) {
+						auto *paz = _inv->responsePAZ(f);
+						if ( equal(paz, rp.get()) ) {
+							rp = paz;
+							newPAZ = false;
+							break;
+						}
 					}
-				}
 
-				if ( newPAZ ) {
-					checkAmbigiousID(rp, paz);
-					addRespToInv(rp.get());
-					//SEISCOMP_DEBUG("Added new PAZ response from paz: %s", rp->publicID().c_str());
-				}
-				else {
-					//SEISCOMP_DEBUG("Reused PAZ response from paz: %s", rp->publicID().c_str());
-				}
+					if ( newPAZ ) {
+						checkAmbigiousID(rp, paz);
+						addRespToInv(rp.get());
+						// SEISCOMP_DEBUG("Added new PAZ response from paz: %s",
+						// rp->publicID().c_str());
+					}
+					else {
+						// SEISCOMP_DEBUG("Reused PAZ response from paz: %s",
+						// rp->publicID().c_str());
+					}
 
-				abstractResponse = rp.get();
-				break;
-			}
+					abstractResponse = rp.get();
+					break;
+				}
 			case RT_Poly:
-			{
-				const FDSNXML::Polynomial *poly = &stage->polynomial();
-				bool newPoly = true;
+				{
+					const auto *poly = &stage->polynomial();
+					bool newPoly = true;
 
-				DataModel::ResponsePolynomialPtr rp = convert(stage, poly);
-				checkPoly(rp.get());
+					DataModel::ResponsePolynomialPtr rp = convert(stage, poly);
+					checkPoly(rp.get());
 
-				for ( size_t f = 0; f < _inv->responsePolynomialCount(); ++f ) {
-					DataModel::ResponsePolynomial *poly = _inv->responsePolynomial(f);
-					if ( equal(poly, rp.get()) ) {
-						rp = poly;
-						newPoly = false;
-						break;
+					for ( size_t f = 0; f < _inv->responsePolynomialCount();
+					      ++f ) {
+						auto *poly =
+						    _inv->responsePolynomial(f);
+						if ( equal(poly, rp.get()) ) {
+							rp = poly;
+							newPoly = false;
+							break;
+						}
 					}
-				}
 
-				if ( newPoly ) {
-					checkAmbigiousID(rp, poly);
-					addRespToInv(rp.get());
-					//SEISCOMP_DEBUG("Added new polynomial response from poly: %s", rp->publicID().c_str());
-				}
-				else {
-					//SEISCOMP_DEBUG("reused polynomial response from poly: %s", rp->publicID().c_str());
-				}
+					if ( newPoly ) {
+						checkAmbigiousID(rp, poly);
+						addRespToInv(rp.get());
+						// SEISCOMP_DEBUG("Added new polynomial response from
+						// poly: %s", rp->publicID().c_str());
+					}
+					else {
+						// SEISCOMP_DEBUG("reused polynomial response from poly:
+						// %s", rp->publicID().c_str());
+					}
 
-				abstractResponse = rp.get();
-				break;
-			}
+					abstractResponse = rp.get();
+					break;
+				}
 			case RT_FAP:
-			{
-				const FDSNXML::ResponseList *rl = &stage->responseList();
-				bool newFAP = true;
+				{
+					const auto *rl = &stage->responseList();
+					bool newFAP = true;
 
-				// Create FAP ...
-				DataModel::ResponseFAPPtr rp = convert(stage, rl);
-				checkFAP(rp.get());
+					// Create FAP ...
+					DataModel::ResponseFAPPtr rp = convert(stage, rl);
+					checkFAP(rp.get());
 
-				for ( size_t f = 0; f < _inv->responseFAPCount(); ++f ) {
-					DataModel::ResponseFAP *fap = _inv->responseFAP(f);
-					if ( equal(fap, rp.get()) ) {
-						rp = fap;
-						newFAP = false;
-						break;
+					for ( size_t f = 0; f < _inv->responseFAPCount(); ++f ) {
+						auto *fap = _inv->responseFAP(f);
+						if ( equal(fap, rp.get()) ) {
+							rp = fap;
+							newFAP = false;
+							break;
+						}
 					}
-				}
 
-				if ( newFAP ) {
-					checkAmbigiousID(rp, rl);
-					addRespToInv(rp.get());
-					//SEISCOMP_DEBUG("Added new PAZ response from paz: %s", rp->publicID().c_str());
-				}
-				else {
-					//SEISCOMP_DEBUG("Reused PAZ response from paz: %s", rp->publicID().c_str());
-				}
+					if ( newFAP ) {
+						checkAmbigiousID(rp, rl);
+						addRespToInv(rp.get());
+						// SEISCOMP_DEBUG("Added new PAZ response from paz: %s",
+						// rp->publicID().c_str());
+					}
+					else {
+						// SEISCOMP_DEBUG("Reused PAZ response from paz: %s",
+						// rp->publicID().c_str());
+					}
 
-				abstractResponse = rp.get();
-				break;
-			}
+					abstractResponse = rp.get();
+					break;
+				}
 			default:
 				SEISCOMP_ERROR("Invalid response type");
 				continue;
 		}
 
 		if ( isAnalogue ) {
-			if ( !analogueChain.empty() ) analogueChain += " ";
+			if ( !analogueChain.empty() ) {
+				analogueChain += " ";
+			}
 			analogueChain += abstractResponse->publicID();
 		}
 		else {
-			if ( !digitalChain.empty() ) digitalChain += " ";
+			if ( !digitalChain.empty() ) {
+				digitalChain += " ";
+			}
 			digitalChain += abstractResponse->publicID();
 		}
 	}
@@ -2846,40 +3594,49 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 			needUpdate = true;
 		}
 
-		if ( !newDeciInstance && needUpdate )
+		if ( !newDeciInstance && needUpdate ) {
 			sc_deci->update();
+		}
 	}
 
 	// Set a default serial number if there is none
 	if ( sc_stream->dataloggerSerialNumber().empty() ) {
 		/*
 		sc_stream->setDataloggerSerialNumber(
-			sc_loc->station()->code() + "." + sc_loc->code() +
-			sc_stream->code() + "." +
-			date2str(sc_stream->start())
+		    sc_loc->station()->code() + "." + sc_loc->code() +
+		    sc_stream->code() + "." +
+		    date2str(sc_stream->start())
 		);
 		*/
 		sc_stream->setDataloggerSerialNumber("xxxx");
 	}
 
 	// Set a default serial number if there is none
-	if ( sc_stream->sensorSerialNumber().empty() )
+	if ( sc_stream->sensorSerialNumber().empty() ) {
 		sc_stream->setSensorSerialNumber("yyyy");
+	}
 
 	if ( dataloggerGainScale != 1.0 ) {
-		if ( _logStages )
-			cerr << "+ Scale datalogger gain by " << dataloggerGainScale << endl;
-		sc_dl->setGain(sc_dl->gain()*dataloggerGainScale);
+		if ( _logStages ) {
+			cerr << "+ Scale datalogger gain by " << dataloggerGainScale
+			     << endl;
+		}
+		sc_dl->setGain(sc_dl->gain() * dataloggerGainScale);
 	}
 
 	// All stages have been converted, finalize configuration
-	if ( sc_dl )
+	if ( sc_dl ) {
 		process(sc_dl.get(), sc_stream.get(), cha);
+	}
 
 	UPD(needUpdate, oldEnd, Core::Time, sc_stream->end());
 	UPD(needUpdate, oldDep, double, sc_stream->depth());
-	if ( oldFlags != sc_stream->flags() ) needUpdate = true;
-	if ( oldFormat != sc_stream->format() ) needUpdate = true;
+	if ( oldFlags != sc_stream->flags() ) {
+		needUpdate = true;
+	}
+	if ( oldFormat != sc_stream->format() ) {
+		needUpdate = true;
+	}
 	UPD(needUpdate, oldRestricted, bool, sc_stream->restricted());
 	UPD(needUpdate, oldsrNum, int, sc_stream->sampleRateNumerator());
 	UPD(needUpdate, oldsrDen, int, sc_stream->sampleRateDenominator());
@@ -2889,36 +3646,53 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 	UPD(needUpdate, oldSNcha, int, sc_stream->sensorChannel());
 	UPD(needUpdate, oldGain, double, sc_stream->gain());
 	UPD(needUpdate, oldGainFreq, double, sc_stream->gainFrequency());
-	if ( oldGainUnit != sc_stream->gainUnit() ) needUpdate = true;
-	if ( oldDL != sc_stream->datalogger() ) needUpdate = true;
-	if ( oldDLSN != sc_stream->dataloggerSerialNumber() ) needUpdate = true;
-	if ( oldSN != sc_stream->sensor() ) needUpdate = true;
-	if ( oldSNSN != sc_stream->sensorSerialNumber() ) needUpdate = true;
+	if ( oldGainUnit != sc_stream->gainUnit() ) {
+		needUpdate = true;
+	}
+	if ( oldDL != sc_stream->datalogger() ) {
+		needUpdate = true;
+	}
+	if ( oldDLSN != sc_stream->dataloggerSerialNumber() ) {
+		needUpdate = true;
+	}
+	if ( oldSN != sc_stream->sensor() ) {
+		needUpdate = true;
+	}
+	if ( oldSNSN != sc_stream->sensorSerialNumber() ) {
+		needUpdate = true;
+	}
 
 	if ( newInstance ) {
 		sc_loc->add(sc_stream.get());
-		SEISCOMP_DEBUG("Added new stream epoch: %s (%s)",
-		               sc_stream->code().c_str(), sc_stream->start().iso().c_str());
+		SEISCOMP_DEBUG(
+		    "Added new stream epoch: %s (%s)", sc_stream->code().c_str(),
+		    sc_stream->start().iso().c_str()
+		);
 	}
 	else if ( needUpdate ) {
 		sc_stream->update();
-		SEISCOMP_DEBUG("Updated stream epoch: %s (%s)",
-		               sc_stream->code().c_str(), sc_stream->start().iso().c_str());
+		SEISCOMP_DEBUG(
+		    "Updated stream epoch: %s (%s)", sc_stream->code().c_str(),
+		    sc_stream->start().iso().c_str()
+		);
 	}
 
 	// Register aux stream
-	_touchedStreams.insert(
-		StreamIndex(
-			LocationIndex(
-				StationIndex(
-					NetworkIndex(sc_loc->station()->network()->code(), sc_loc->station()->network()->start()),
-					EpochIndex(sc_loc->station()->code(), sc_loc->station()->start())
-				),
-				EpochIndex(sc_loc->code(), sc_loc->start())
-			),
-			EpochIndex(sc_stream->code(), sc_stream->start())
-		)
-	);
+	_touchedStreams.insert(StreamIndex(
+	    LocationIndex(
+	        StationIndex(
+	            NetworkIndex(
+	                sc_loc->station()->network()->code(),
+	                sc_loc->station()->network()->start()
+	            ),
+	            EpochIndex(
+	                sc_loc->station()->code(), sc_loc->station()->start()
+	            )
+	        ),
+	        EpochIndex(sc_loc->code(), sc_loc->start())
+	    ),
+	    EpochIndex(sc_stream->code(), sc_stream->start())
+	));
 
 	return true;
 }
@@ -2928,9 +3702,11 @@ bool Convert2SC::process(DataModel::SensorLocation *sc_loc,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Convert2SC::process(DataModel::Datalogger *sc_dl, DataModel::Stream *sc_stream,
-                          const FDSNXML::Channel *epoch) {
-	//updateDataloggerCalibration(sc_dl, sc_stream, epoch);
+bool Convert2SC::process(
+    DataModel::Datalogger *sc_dl, DataModel::Stream *sc_stream,
+    const FDSNXML::Channel *epoch
+) {
+	// updateDataloggerCalibration(sc_dl, sc_stream, epoch);
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2939,15 +3715,14 @@ bool Convert2SC::process(DataModel::Datalogger *sc_dl, DataModel::Stream *sc_str
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Convert2SC::process(DataModel::Sensor *, DataModel::Stream *,
-                          const FDSNXML::Channel *,
-                          const FDSNXML::ResponseStage *) {
+bool Convert2SC::
+    process(DataModel::Sensor *, DataModel::Stream *, const FDSNXML::Channel *, const FDSNXML::ResponseStage *) {
 	/*
 	 * Actually a sensor calibration should not be created automatically. That
 	 * be used from the historic values of the sensitivity blockette. In FDSN
 	 * StationXML this information is not available anymore.
-	*/
-	//updateSensorCalibration(sc_sens, sc_stream, epoch, resp);
+	 */
+	// updateSensorCalibration(sc_sens, sc_stream, epoch, resp);
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2956,32 +3731,47 @@ bool Convert2SC::process(DataModel::Sensor *, DataModel::Stream *,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-DataModel::Datalogger *
-Convert2SC::updateDatalogger(const std::string &name,
-                              const FDSNXML::Channel *epoch) {
+DataModel::Datalogger *Convert2SC::updateDatalogger(
+    const std::string &name, const FDSNXML::Channel *epoch
+) {
 	DataModel::DataloggerPtr sc_dl = DataModel::Datalogger::Create();
-	//sc_dl->setName(sc_dl->publicID());
+	// sc_dl->setName(sc_dl->publicID());
 	sc_dl->setName(name);
 
-	try { sc_dl->setDescription(epoch->dataLogger().description()); }
-	catch ( ... ) { sc_dl->setDescription(""); }
+	try {
+		sc_dl->setDescription(epoch->dataLogger().description());
+	}
+	catch ( ... ) {
+		sc_dl->setDescription("");
+	}
 
-	try { sc_dl->setDigitizerModel(epoch->dataLogger().model()); }
-	catch ( ... ) { sc_dl->setDigitizerModel(""); }
+	try {
+		sc_dl->setDigitizerModel(epoch->dataLogger().model());
+	}
+	catch ( ... ) {
+		sc_dl->setDigitizerModel("");
+	}
 
-	try { sc_dl->setDigitizerManufacturer(epoch->dataLogger().manufacturer()); }
-	catch ( ... ) { sc_dl->setDigitizerManufacturer(""); }
+	try {
+		sc_dl->setDigitizerManufacturer(epoch->dataLogger().manufacturer());
+	}
+	catch ( ... ) {
+		sc_dl->setDigitizerManufacturer("");
+	}
 
 	sc_dl->setGain(1.0);
 
 	try {
 		// Convert fdsnxml clockdrift (seconds/sample) to seconds/second
-		double drift = epoch->clockDrift().value() * epoch->sampleRateRatio().numberSamples() / epoch->sampleRateRatio().numberSeconds();
+		double drift = epoch->clockDrift().value() *
+		               epoch->sampleRateRatio().numberSamples() /
+		               epoch->sampleRateRatio().numberSeconds();
 		sc_dl->setMaxClockDrift(drift);
 	}
 	catch ( ... ) {
 		try {
-			double drift = epoch->clockDrift().value() * epoch->sampleRate().value();
+			double drift =
+			    epoch->clockDrift().value() * epoch->sampleRate().value();
 			sc_dl->setMaxClockDrift(drift);
 		}
 		catch ( ... ) {
@@ -2992,12 +3782,12 @@ Convert2SC::updateDatalogger(const std::string &name,
 	/*
 	bool newInstance = true;
 	for ( size_t d = 0; d < _inv->dataloggerCount(); ++d ) {
-		DataModel::Datalogger *dl = _inv->datalogger(d);
-		if ( equal(dl, sc_dl.get()) ) {
-			sc_dl = dl;
-			newInstance = false;
-			break;
-		}
+	    DataModel::Datalogger *dl = _inv->datalogger(d);
+	    if ( equal(dl, sc_dl.get()) ) {
+	        sc_dl = dl;
+	        newInstance = false;
+	        break;
+	    }
 	}
 	*/
 
@@ -3011,10 +3801,10 @@ Convert2SC::updateDatalogger(const std::string &name,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-DataModel::DataloggerCalibration *
-Convert2SC::updateDataloggerCalibration(DataModel::Datalogger *sc_dl,
-                                         DataModel::Stream *sc_stream,
-                                         const FDSNXML::Channel *epoch) {
+DataModel::DataloggerCalibration *Convert2SC::updateDataloggerCalibration(
+    DataModel::Datalogger *sc_dl, DataModel::Stream *sc_stream,
+    const FDSNXML::Channel *epoch
+) {
 	bool newInstance = false;
 	bool needUpdate = false;
 	bool gain;
@@ -3028,11 +3818,12 @@ Convert2SC::updateDataloggerCalibration(DataModel::Datalogger *sc_dl,
 	}
 
 	DataModel::DataloggerCalibrationIndex idx(
-		sc_stream->dataloggerSerialNumber(),
-		sc_stream->dataloggerChannel(), sc_stream->start()
+	    sc_stream->dataloggerSerialNumber(), sc_stream->dataloggerChannel(),
+	    sc_stream->start()
 	);
 
-	DataModel::DataloggerCalibrationPtr sc_cal = sc_dl->dataloggerCalibration(idx);
+	DataModel::DataloggerCalibrationPtr sc_cal =
+	    sc_dl->dataloggerCalibration(idx);
 	if ( sc_cal == NULL ) {
 		sc_cal = new DataModel::DataloggerCalibration();
 		sc_cal->setSerialNumber(sc_stream->dataloggerSerialNumber());
@@ -3046,8 +3837,12 @@ Convert2SC::updateDataloggerCalibration(DataModel::Datalogger *sc_dl,
 	BCK(oldGain, double, sc_cal->gain());
 	BCK(oldGainFreq, double, sc_cal->gainFrequency());
 
-	try { sc_cal->setEnd(sc_stream->end()); }
-	catch ( ... ) { sc_cal->setEnd(Core::None); }
+	try {
+		sc_cal->setEnd(sc_stream->end());
+	}
+	catch ( ... ) {
+		sc_cal->setEnd(Core::None);
+	}
 
 	sc_cal->setGain(gain);
 	sc_cal->setGainFrequency(Core::None);
@@ -3058,8 +3853,10 @@ Convert2SC::updateDataloggerCalibration(DataModel::Datalogger *sc_dl,
 
 	if ( !newInstance && needUpdate ) {
 		sc_cal->update();
-		SEISCOMP_DEBUG("Reused datalogger calibration for stream %s",
-		               sc_stream->code().c_str());
+		SEISCOMP_DEBUG(
+		    "Reused datalogger calibration for stream %s",
+		    sc_stream->code().c_str()
+		);
 	}
 
 	return sc_cal.get();
@@ -3070,38 +3867,44 @@ Convert2SC::updateDataloggerCalibration(DataModel::Datalogger *sc_dl,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-DataModel::Sensor *
-Convert2SC::updateSensor(const std::string &name,
-                          const FDSNXML::Channel *epoch,
-                          const FDSNXML::ResponseStage *resp,
-                          ResponseType stageType,
-                          const FDSNXML::BaseFilter *filter) {
+DataModel::Sensor *Convert2SC::updateSensor(
+    const std::string &name, const FDSNXML::Channel *epoch,
+    const FDSNXML::ResponseStage *resp, ResponseType stageType,
+    const FDSNXML::BaseFilter *filter
+) {
 	FDSNXML::UnitsType inputUnit = filter->inputUnits();
 
 	DataModel::SensorPtr sc_sens = DataModel::Sensor::Create();
-	//sc_sens->setName(sc_sens->publicID());
+	// sc_sens->setName(sc_sens->publicID());
 	sc_sens->setName(name);
 
 	bool emptySensor = true;
 
 	// No type yet: we use values as SM, SP, BB, VBB, ...
 	// but there is no equivalent to fdsnxml
-	//sc_sens->setType("...");
+	// sc_sens->setType("...");
 
-	try { epoch->sensor(); emptySensor = false; }
-	catch ( ... ) {}
+	try {
+		epoch->sensor();
+		emptySensor = false;
+	}
+	catch ( ... ) {
+	}
 
 	try {
 		sc_sens->setDescription(epoch->sensor().description());
 		sc_sens->setManufacturer(epoch->sensor().manufacturer());
 		sc_sens->setModel(epoch->sensor().model());
 
-		if ( sc_sens->description().empty() )
+		if ( sc_sens->description().empty() ) {
 			sc_sens->setDescription(epoch->sensor().type());
-		else if ( sc_sens->model().empty() )
+		}
+		else if ( sc_sens->model().empty() ) {
 			sc_sens->setModel(epoch->sensor().type());
+		}
 	}
-	catch ( ... ) {}
+	catch ( ... ) {
+	}
 
 	sc_sens->setUnit(inputUnit.name());
 	if ( !inputUnit.description().empty() ) {
@@ -3110,102 +3913,124 @@ Convert2SC::updateSensor(const std::string &name,
 		sc_sens->setRemark(blob);
 	}
 
-	if ( !sc_sens->unit().empty() ) emptySensor = false;
+	if ( !sc_sens->unit().empty() ) {
+		emptySensor = false;
+	}
 
 	switch ( stageType ) {
 		case RT_PAZ:
-		{
-			DataModel::ResponsePAZPtr rp = convert(resp, &resp->polesZeros());
-			checkPAZ(rp.get());
+			{
+				DataModel::ResponsePAZPtr rp =
+				    convert(resp, &resp->polesZeros());
+				checkPAZ(rp.get());
 
-			bool newPAZ = true;
-			for ( size_t f = 0; f < _inv->responsePAZCount(); ++f ) {
-				DataModel::ResponsePAZ *paz = _inv->responsePAZ(f);
-				if ( equal(paz, rp.get()) ) {
-					rp = paz;
-					newPAZ = false;
-					break;
+				bool newPAZ = true;
+				for ( size_t f = 0; f < _inv->responsePAZCount(); ++f ) {
+					DataModel::ResponsePAZ *paz = _inv->responsePAZ(f);
+					if ( equal(paz, rp.get()) ) {
+						rp = paz;
+						newPAZ = false;
+						break;
+					}
 				}
-			}
 
-			if ( newPAZ ) {
-				checkAmbigiousID(rp, &resp->polesZeros());
-				addRespToInv(rp.get());
-				SEISCOMP_DEBUG("Added new Sensor.ResponsePAZ from paz: %s", rp->publicID().c_str());
-			}
-			else {
-				SEISCOMP_DEBUG("Reused Sensor.ResponsePAZ from paz: %s", rp->publicID().c_str());
-			}
+				if ( newPAZ ) {
+					checkAmbigiousID(rp, &resp->polesZeros());
+					addRespToInv(rp.get());
+					SEISCOMP_DEBUG(
+					    "Added new Sensor.ResponsePAZ from paz: %s",
+					    rp->publicID().c_str()
+					);
+				}
+				else {
+					SEISCOMP_DEBUG(
+					    "Reused Sensor.ResponsePAZ from paz: %s",
+					    rp->publicID().c_str()
+					);
+				}
 
-			SEISCOMP_DEBUG("Update Sensor.response: %s -> %s",
-			               sc_sens->publicID().c_str(), rp->publicID().c_str());
+				SEISCOMP_DEBUG(
+				    "Update Sensor.response: %s -> %s",
+				    sc_sens->publicID().c_str(), rp->publicID().c_str()
+				);
 
-			sc_sens->setResponse(rp->publicID());
-			emptySensor = false;
-			break;
-		}
+				sc_sens->setResponse(rp->publicID());
+				emptySensor = false;
+				break;
+			}
 
 		case RT_FAP:
-		{
-			DataModel::ResponseFAPPtr rp = convert(resp, &resp->responseList());
-			checkFAP(rp.get());
+			{
+				DataModel::ResponseFAPPtr rp =
+				    convert(resp, &resp->responseList());
+				checkFAP(rp.get());
 
-			bool newFAP = true;
-			for ( size_t f = 0; f < _inv->responseFAPCount(); ++f ) {
-				DataModel::ResponseFAP *fap = _inv->responseFAP(f);
-				if ( equal(fap, rp.get()) ) {
-					rp = fap;
-					newFAP = false;
-					break;
+				bool newFAP = true;
+				for ( size_t f = 0; f < _inv->responseFAPCount(); ++f ) {
+					DataModel::ResponseFAP *fap = _inv->responseFAP(f);
+					if ( equal(fap, rp.get()) ) {
+						rp = fap;
+						newFAP = false;
+						break;
+					}
 				}
-			}
 
-			if ( newFAP ) {
-				checkAmbigiousID(rp, &resp->responseList());
-				addRespToInv(rp.get());
-				//SEISCOMP_DEBUG("Added new polynomial response from poly: %s", rp->publicID().c_str());
-			}
-			else {
-				//SEISCOMP_DEBUG("reused polynomial response from poly: %s", rp->publicID().c_str());
-			}
+				if ( newFAP ) {
+					checkAmbigiousID(rp, &resp->responseList());
+					addRespToInv(rp.get());
+					// SEISCOMP_DEBUG("Added new polynomial response from poly:
+					// %s", rp->publicID().c_str());
+				}
+				else {
+					// SEISCOMP_DEBUG("reused polynomial response from poly:
+					// %s", rp->publicID().c_str());
+				}
 
-			sc_sens->setResponse(rp->publicID());
-			emptySensor = false;
+				sc_sens->setResponse(rp->publicID());
+				emptySensor = false;
 
-			break;
-		}
+				break;
+			}
 
 		case RT_Poly:
-		{
-			DataModel::ResponsePolynomialPtr rp = convert(resp, &resp->polynomial());
-			checkPoly(rp.get());
+			{
+				DataModel::ResponsePolynomialPtr rp =
+				    convert(resp, &resp->polynomial());
+				checkPoly(rp.get());
 
-			bool newPoly = true;
-			for ( size_t f = 0; f < _inv->responsePolynomialCount(); ++f ) {
-				DataModel::ResponsePolynomial *poly = _inv->responsePolynomial(f);
-				if ( equal(poly, rp.get()) ) {
-					rp = poly;
-					newPoly = false;
-					break;
+				bool newPoly = true;
+				for ( size_t f = 0; f < _inv->responsePolynomialCount(); ++f ) {
+					DataModel::ResponsePolynomial *poly =
+					    _inv->responsePolynomial(f);
+					if ( equal(poly, rp.get()) ) {
+						rp = poly;
+						newPoly = false;
+						break;
+					}
 				}
-			}
 
-			if ( newPoly ) {
-				checkAmbigiousID(rp, &resp->polynomial());
-				addRespToInv(rp.get());
-				//SEISCOMP_DEBUG("Added new polynomial response from poly: %s", rp->publicID().c_str());
-			}
-			else {
-				//SEISCOMP_DEBUG("reused polynomial response from poly: %s", rp->publicID().c_str());
-			}
+				if ( newPoly ) {
+					checkAmbigiousID(rp, &resp->polynomial());
+					addRespToInv(rp.get());
+					// SEISCOMP_DEBUG("Added new polynomial response from poly:
+					// %s", rp->publicID().c_str());
+				}
+				else {
+					// SEISCOMP_DEBUG("reused polynomial response from poly:
+					// %s", rp->publicID().c_str());
+				}
 
-			sc_sens->setLowFrequency(resp->polynomial().frequencyLowerBound().value());
-			sc_sens->setHighFrequency(resp->polynomial().frequencyUpperBound().value());
-			sc_sens->setResponse(rp->publicID());
-			emptySensor = false;
+				sc_sens->setLowFrequency(
+				    resp->polynomial().frequencyLowerBound().value()
+				);
+				sc_sens->setHighFrequency(
+				    resp->polynomial().frequencyUpperBound().value()
+				);
+				sc_sens->setResponse(rp->publicID());
+				emptySensor = false;
 
-			break;
-		}
+				break;
+			}
 
 		default:
 			break;
@@ -3214,16 +4039,18 @@ Convert2SC::updateSensor(const std::string &name,
 	/*
 	bool newInstance = true;
 	for ( size_t s = 0; s < _inv->sensorCount(); ++s ) {
-		DataModel::Sensor *sens = _inv->sensor(s);
-		if ( equal(sens, sc_sens.get()) ) {
-			sc_sens = sens;
-			newInstance = false;
-			break;
-		}
+	    DataModel::Sensor *sens = _inv->sensor(s);
+	    if ( equal(sens, sc_sens.get()) ) {
+	        sc_sens = sens;
+	        newInstance = false;
+	        break;
+	    }
 	}
 	*/
 
-	if ( emptySensor ) return NULL;
+	if ( emptySensor ) {
+		return NULL;
+	}
 
 	SEISCOMP_DEBUG("Pushing new sensor: %s", sc_sens->publicID().c_str());
 	sc_sens = pushSensor(sc_sens.get());
@@ -3236,16 +4063,16 @@ Convert2SC::updateSensor(const std::string &name,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-DataModel::SensorCalibration *
-Convert2SC::updateSensorCalibration(DataModel::Sensor *sc_sens, DataModel::Stream *sc_stream,
-                                     const FDSNXML::Channel *epoch,
-                                     const FDSNXML::ResponseStage *resp) {
+DataModel::SensorCalibration *Convert2SC::updateSensorCalibration(
+	DataModel::Sensor *sc_sens, DataModel::Stream *sc_stream,
+	const FDSNXML::Channel *epoch, const FDSNXML::ResponseStage *resp
+) {
 	bool newInstance = false;
 	bool needUpdate = false;
 
 	DataModel::SensorCalibrationIndex idx(
-		sc_stream->sensorSerialNumber(),
-		sc_stream->sensorChannel(), sc_stream->start()
+	    sc_stream->sensorSerialNumber(), sc_stream->sensorChannel(),
+	    sc_stream->start()
 	);
 
 	DataModel::SensorCalibrationPtr sc_cal = sc_sens->sensorCalibration(idx);
@@ -3262,21 +4089,34 @@ Convert2SC::updateSensorCalibration(DataModel::Sensor *sc_sens, DataModel::Strea
 	BCK(oldGain, double, sc_cal->gain());
 	BCK(oldGainFreq, double, sc_cal->gainFrequency());
 
-	try { sc_cal->setEnd(sc_stream->end()); }
-	catch ( ... ) { sc_cal->setEnd(Core::None); }
+	try {
+		sc_cal->setEnd(sc_stream->end());
+	}
+	catch ( ... ) {
+		sc_cal->setEnd(Core::None);
+	}
 
 	sc_cal->setGain(Core::None);
 	sc_cal->setGainFrequency(Core::None);
 
-	try { sc_cal->setGain(fabs(resp->stageGain().value())); } catch ( ... ) {}
-	try { sc_cal->setGainFrequency(fabs(resp->stageGain().frequency())); }
-	catch ( ... ) {}
+	try {
+		sc_cal->setGain(fabs(resp->stageGain().value()));
+	}
+	catch ( ... ) {
+	}
+	try {
+		sc_cal->setGainFrequency(fabs(resp->stageGain().frequency()));
+	}
+	catch ( ... ) {
+	}
 
 	UPD(needUpdate, oldEnd, Core::Time, sc_cal->end());
 	UPD(needUpdate, oldGain, double, sc_cal->gain());
 	UPD(needUpdate, oldGainFreq, double, sc_cal->gainFrequency());
 
-	if ( !newInstance && needUpdate ) sc_cal->update();
+	if ( !newInstance && needUpdate ) {
+		sc_cal->update();
+	}
 
 	return sc_cal.get();
 }
@@ -3286,18 +4126,18 @@ Convert2SC::updateSensorCalibration(DataModel::Sensor *sc_sens, DataModel::Strea
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-DataModel::Datalogger *
-Convert2SC::pushDatalogger(DataModel::Datalogger *dl) {
-	ObjectLookup::iterator it = _dataloggerLookup.find(dl->name());
+DataModel::Datalogger *Convert2SC::pushDatalogger(DataModel::Datalogger *dl) {
+	auto it = _dataloggerLookup.find(dl->name());
 	if ( it != _dataloggerLookup.end() ) {
-		DataModel::Datalogger *cdl = (DataModel::Datalogger*)it->second;
+		DataModel::Datalogger *cdl = (DataModel::Datalogger *)it->second;
 		if ( !equal(cdl, dl) ) {
 			*cdl = *dl;
 			cdl->update();
 			SEISCOMP_DEBUG("Updated datalogger: %s", cdl->publicID().c_str());
 		}
-		else
+		else {
 			SEISCOMP_DEBUG("Reused datalogger: %s", cdl->publicID().c_str());
+		}
 		return cdl;
 	}
 
@@ -3313,16 +4153,17 @@ Convert2SC::pushDatalogger(DataModel::Datalogger *dl) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 DataModel::Sensor *Convert2SC::pushSensor(DataModel::Sensor *sens) {
-	ObjectLookup::iterator it = _sensorLookup.find(sens->name());
+	auto it = _sensorLookup.find(sens->name());
 	if ( it != _sensorLookup.end() ) {
-		DataModel::Sensor *csens = (DataModel::Sensor*)it->second;
+		DataModel::Sensor *csens = (DataModel::Sensor *)it->second;
 		if ( !equal(csens, sens) ) {
 			*csens = *sens;
 			csens->update();
 			SEISCOMP_DEBUG("Updated sensor: %s", csens->publicID().c_str());
 		}
-		else
+		else {
 			SEISCOMP_DEBUG("Reused sensor: %s", csens->publicID().c_str());
+		}
 		return csens;
 	}
 
@@ -3337,4 +4178,5 @@ DataModel::Sensor *Convert2SC::pushSensor(DataModel::Sensor *sens) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-}
+} // namespace Seiscomp
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

@@ -17,10 +17,6 @@ While importing the attribute :confval:`datacenterID` is read and written into
 the archive attribute of all networks and stations available in the dataless.
 The datacenterID can be overridden with the ``--dcid`` command-line option.
 
-.. note::
-
-   Conversion of inventory in |scname| XML to dataless SEED is provided by :ref:`inv2dlsv`.
-
 
 Examples
 ========

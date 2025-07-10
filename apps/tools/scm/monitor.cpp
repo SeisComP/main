@@ -288,7 +288,7 @@ void Monitor::handleStatusMessage(const Client::Packet *msg) {
 
 	status.values[Client::Status::Clientname] = msg->subject;
 
-	_responseTimes[status.values[Client::Status::Clientname]] = Core::Time::GMT();
+	_responseTimes[status.values[Client::Status::Clientname]] = Core::Time::UTC();
 
 	for ( auto &&client : _clientTable ) {
 		client.info[Client::Status::ResponseTime] = "0";
@@ -319,7 +319,7 @@ void Monitor::update() {
 	// Update response time
 	for ( auto && client : _clientTable )
 		client.info[Client::Status::ResponseTime] =
-			Core::toString<int>((Core::Time::GMT() - _responseTimes[client.info[Client::Status::Clientname]]).seconds());
+			Core::toString<int>((Core::Time::UTC() - _responseTimes[client.info[Client::Status::Clientname]]).seconds());
 
 	for ( auto && plugin : _outPlugins )
 		plugin->print(_clientTable);

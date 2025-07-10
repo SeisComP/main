@@ -21,6 +21,7 @@
 #include <seiscomp/datamodel/outage.h>
 
 #include <boost/visit_each.hpp>
+#include <functional>
 
 #include "qcmessenger.h"
 
@@ -32,6 +33,7 @@
 namespace Seiscomp {
 namespace Applications {
 namespace Qc {
+
 
 using namespace std;
 using namespace Seiscomp;
@@ -93,14 +95,18 @@ QcIndex toIndex(const DataModel::Object *obj) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-QcMessenger::QcMessenger(QcApp *app)
-: _notifierMsg(NULL), _dataMsg(NULL), _app(app) {
-
-	_sendInterval = 1.0;
-	_maxSize = 500;
-
-	QcApp::TimerSignal::slot_type slot = boost::bind(&QcMessenger::scheduler, this);
+QcMessenger::QcMessenger(QcApp *app) : _app(app) {
+	QcApp::TimerSignal::slot_type slot = bind(&QcMessenger::scheduler, this);
 	_app->addTimeout(slot);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void QcMessenger::setTestMode(bool enable) {
+	_testMode = enable;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -131,7 +137,9 @@ bool QcMessenger::attachObject(DataModel::Object *obj, bool notifier, Operation 
 	}
 	// send data msg
 	else {
-		if ( !_dataMsg ) _dataMsg = new DataMessage;
+		if ( !_dataMsg ) {
+			_dataMsg = new DataMessage;
+		}
 		_dataMsg->attach(obj);
 	}
 
@@ -146,16 +154,16 @@ bool QcMessenger::attachObject(DataModel::Object *obj, bool notifier, Operation 
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void QcMessenger::scheduler(){
-	bool msgSend = false;
+void QcMessenger::scheduler() {
+	bool msgSent = false;
 
 	if ( _notifierMsg ) {
 		try {
 			if ( ((_timer.elapsed() > _sendInterval) && (_notifierMsg->size() > 0))
 			  || (_notifierMsg->size() >=_maxSize) ) {
 // 				SEISCOMP_DEBUG("sending Qc NOTIFIER message with %d attachments", _notifierMsg->size());
-				sendMessage((Message*)_notifierMsg.get());
-				msgSend = true;
+				sendMessage(_notifierMsg.get());
+				msgSent = true;
 			}
 		}
 		catch ( ... ) { //FIXME error handling
@@ -170,8 +178,8 @@ void QcMessenger::scheduler(){
 		try {
 			if ( ((_timer.elapsed() > _sendInterval) && (_dataMsg->size() > 0)) || (_dataMsg->size() >=_maxSize) ) {
 // 				SEISCOMP_DEBUG("sending Qc DATA message with %d attachments", _dataMsg->size());
-				sendMessage((Message*)_dataMsg.get());
-				msgSend = true;
+				sendMessage(_dataMsg.get());
+				msgSent = true;
 			}
 		}
 		catch (...){ //FIXME error handling
@@ -182,8 +190,9 @@ void QcMessenger::scheduler(){
 		}
 	}
 
-	if ( msgSend )
+	if ( msgSent ) {
 		_timer.restart();
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -206,8 +215,9 @@ void QcMessenger::flushMessages(){
 bool QcMessenger::sendMessage(Message *msg) {
 	Client::Connection *con = _app->connection();
 	if ( msg && msg->size() > 0 ) {
-		if ( !con->send(msg) )
-			throw ConnectionException("Could not send Qc message");
+		if ( !_testMode && !con->send(msg) ) {
+			throw ConnectionException("Could not send QC message");
+		}
 
 		msg->clear();
 

@@ -97,7 +97,8 @@
 			<group name="Input">
 				<option long-flag="ep" argument="file">
 					<description>
-					Defines an event parameters XML file to be read and processed. This
+					Defines an event parameters XML file to be read and
+					processed. Use '-' to read from stdin. This
 					implies offline mode and only processes all origins contained
 					in that file. It computes amplitudes for all picks associated
 					with an origin and outputs an XML file that additionally
@@ -147,6 +148,14 @@
 					<description>
 						Send amplitude updates to the messaging otherwise an XML
 						document will be output.
+					</description>
+				</option>
+			</group>
+			<group name="Output">
+				<option flag="f" long-flag="formatted">
+					<description>
+					Use formatted XML output along with '--ep'. Otherwise XML
+					is unformatted.
 					</description>
 				</option>
 			</group>

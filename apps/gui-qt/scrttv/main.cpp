@@ -63,9 +63,10 @@ class App : public Kicker<MainWindow> {
 			     << endl
 			     << "  scrttv --debug"
 			     << endl << endl;
-			cout << "View data from default recordstream 3 hours before midnight"
+			cout << "View 3C data from default recordstream 3 hours before "
+			        "midnight. All available picks are mapped and displayed."
 			     << endl
-			     << "  scrttv --buffer-size 10800 --end-time '2022-06-01 00:00:00'"
+			     << "  scrttv --buffer-size 10800 --end-time 2026-05-01 --map-picks"
 			     << endl << endl;
 			cout << "View data from a miniSEED file in offline mode without messaging"
 			     << endl
@@ -75,6 +76,16 @@ class App : public Kicker<MainWindow> {
 			        "without messaging and inventory"
 			     << endl
 			     << "  scrttv --offline --no-inventory --channels CX.PB01.*.HH? --channels CX.PB02.*.HH?"
+			     << endl << endl;
+			cout << "View the miniSEED data from all file ending with .mseed "
+			        "which are read from stdin"
+			     << endl
+			     << "  cat *.mseed | scrttv -"
+			     << endl << endl;
+			cout << "View miniSEED data played back from archive at normal speed "
+			        "as in real time using scart"
+			     << endl
+			     << "  scart -dmv -t 2026-05-01~2026-05-02 /archive | scrttv -I - --offline --no-inventory"
 			     << endl;
 		}
 
@@ -118,20 +129,9 @@ class App : public Kicker<MainWindow> {
 				Settings::global.filters.push_back(Settings::global.filter);
 			}
 
-			try {
-				/*
-				string dt = SCApp->commandline().option<string>("end-time");
-				Settings::global.endTime = Seiscomp::Core::Time::FromString(dt.c_str(), "%F %T");
-				if ( !Settings::global.endTime.valid() ) {
-					cerr << "ERROR: passed endtime is not valid, expect format \"YYYY-mm-dd HH:MM:SS\"" << endl
-					     << "       example: --end-time \"2010-01-01 12:00:00\"" << endl;
-					return false;
-				}
-				*/
-
-				cout << "Set defined endtime: " << Settings::global.endTime.toString("%F %T") << endl;
+			if ( Settings::global.endTime ) {
+				cout << "Set defined endtime: " << Settings::global.endTime->toString("%F %T") << endl;
 			}
-			catch ( ... ) {}
 
 			return true;
 		}

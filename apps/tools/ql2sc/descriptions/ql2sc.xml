@@ -8,11 +8,6 @@
 				Number of seconds to fetch missed updates on start up.
 				</description>
 			</parameter>
-			<parameter name="cacheSize" type="int" default="5000">
-				<description>
-				Number of public objects to cache.
-				</description>
-			</parameter>
 			<parameter name="batchSize" type="int" default="2000">
 				<description>
 				Maximum number of notifiers to batch in one message. If set
@@ -117,7 +112,7 @@
 							<description>Include only preferred origin and magnitude information</description>
 						</parameter>
 					</group>
-					<parameter name="keepAlive" type="boolean" default="false">
+					<parameter name="keepAlive" type="boolean" default="true">
 						<description>
 						Request server to send keep alive message every 30s to
 						prevent connection reset by firewalls on long idle
@@ -127,12 +122,20 @@
 					</parameter>
 					<parameter name="filter" type="string">
 						<description>
-						SQL like WHERE clause to filter the result set.
+						Server-side SQL like WHERE clause to filter the result set. The actual
+						available parameters depend on the QuakeLink server version. Use
+						'telnet host port' followed by 'help select' to connect to a QuakeLink
+						server an request available parameters.
 
-						clause    := condition[ AND|OR [(]clause[)]] __
-						condition := MAG|DEPTH|LAT|LON|PHASES|OTIME|UPDATED [op float|time]|[IS [NOT] NULL] __
-						op        := =|&gt;|&gt;=|&lt;|&lt;=|eq|gt|ge|lt|ge __
-						time      := %Y,%m,%d[,%H,%M,%S,%f]
+						clause    := condition[ AND|OR [(]clause[)]]
+						condition := MAG|DEPTH|LAT|LON|PHASES|DIST(lat,lon) op {float} |
+						             DIST(lat,lon) IN [{float}, {float}] |
+						             UPDATED|OTIME op time |
+						             AGENCY|AUTHOR|STATUS|ESTATUS|EMODE|TYPE|CTYPE|DTYPE|REGION|MAG_T op 'string' |
+						             MAG|DEPTH|LAT|LON|PHASES|OTIME|UPDATED IS [NOT] NULL
+						             FELT|NOT FELT
+						op        := =|!=|&gt;|&gt;=|&lt;|&lt;=|eq|gt|ge|lt|ge
+						time      := %Y,%m,%d[,%H,%M,%S[,%f]]
 						</description>
 					</parameter>
 					<parameter name="routingTable" type="list:string" default="Pick:IMPORT_GROUP,Amplitude:IMPORT_GROUP,FocalMechanism:EVENT,Origin:EVENT">

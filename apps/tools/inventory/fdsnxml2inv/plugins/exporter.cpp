@@ -41,7 +41,7 @@ class ExporterFDSNStaXML : public Exporter {
 			if ( SCCoreApp )
 				msg.setSender(SCCoreApp->agencyID());
 
-			msg.setCreated(Core::Time::GMT());
+			msg.setCreated(Core::Time::UTC());
 			msg.setSource("SeisComP");
 			Convert2FDSNStaXML cnv(&msg);
 			cnv.push(inv);
@@ -85,7 +85,7 @@ class ExporterFDSNStaXML : public Exporter {
 			if ( SCCoreApp )
 				msg.setSender(SCCoreApp->agencyID());
 
-			msg.setCreated(Core::Time::GMT());
+			msg.setCreated(Core::Time::UTC());
 			msg.setSource("SeisComP");
 
 			Convert2FDSNStaXML cnv(&msg);

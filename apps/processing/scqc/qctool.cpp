@@ -58,9 +58,9 @@ QcTool::QcTool(int argc, char **argv)
 	_qcMessenger = new QcMessenger(this);
 
 	//! TODO
-	_ringBufferSize = Core::TimeSpan(5.*60.);
-	_leadTime = Core::TimeSpan(0.*60.);
-	_maxGapLength = Core::TimeSpan(1.*60.);
+	_ringBufferSize = 5. * 60.;
+	_leadTime = 0. * 60.;
+	_maxGapLength = 1. * 60.;
 	_archiveMode = false;
 	_autoTime = false;
 
@@ -100,12 +100,13 @@ string QcTool::creatorID() const {
 void QcTool::createCommandLineDescription() {
 	StreamApplication::createCommandLineDescription();
 
+	commandline().addOption("Messaging", "test", "Disable sending messages");
 	commandline().addGroup("Archive-Processing");
 	commandline().addOption("Archive-Processing", "archive", "Processing of archived data.");
 	commandline().addOption("Archive-Processing", "auto-time", "Automatic determination of start time for each stream from last db entries.\nend-time is set to future.");
-	commandline().addOption("Archive-Processing", "begin-time", "Begin time of record acquisition.\n[e.g.: \"2008-11-11 10:33:50\"]", (string*)NULL);
-	commandline().addOption("Archive-Processing", "end-time", "End time of record acquisition. If unset, current Time is used.", (string*)NULL);
-	commandline().addOption("Archive-Processing", "stream-mask", "Use this regexp for stream selection.\n[e.g. \"^GE.*BHZ$\"]", (string*)NULL);
+	commandline().addOption("Archive-Processing", "begin-time", "Begin time of record acquisition.\n[e.g.: \"2008-11-11 10:33:50\"]", (string*)nullptr);
+	commandline().addOption("Archive-Processing", "end-time", "End time of record acquisition. If unset, current Time is used.", (string*)nullptr);
+	commandline().addOption("Archive-Processing", "stream-mask", "Use this regexp for stream selection.\n[e.g. \"^GE.*BHZ$\"]", (string*)nullptr);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -119,28 +120,25 @@ bool QcTool::validateParameters() {
 	}
 
 	if ( (_archiveMode = commandline().hasOption("archive")) ) {
-		
-		if (!(_autoTime = commandline().hasOption("auto-time"))) {
-
+		if ( !(_autoTime = commandline().hasOption("auto-time")) ) {
 			try {
 				string begin = commandline().option<string>("begin-time");
 				cout << "begin-time = " << begin << endl;
 				_beginTime = Seiscomp::Core::Time::FromString(begin.c_str(), "%F %T");
 			}
 			catch ( ... ) {
-				_beginTime = Core::Time::GMT() - Core::TimeSpan(24*3600.0);
+				_beginTime = Core::Time::UTC() - Core::TimeSpan(24 * 3600, 0);
 				SEISCOMP_WARNING("using (current time - 24h) as begin time");
 			}
-
 		}
-	
+
 		try {
 			string end = commandline().option<string>("end-time");
 			cout << "end-time = " << end << endl;
 			_endTime = Seiscomp::Core::Time::FromString(end.c_str(), "%F %T");
 		}
 		catch ( ... ) {
-			_endTime = Core::Time::GMT();
+			_endTime = Core::Time::UTC();
 			SEISCOMP_WARNING("using current time as end time");
 		}
 
@@ -154,6 +152,9 @@ bool QcTool::validateParameters() {
 	}
 	catch ( ... ) {}
 
+	if ( commandline().hasOption("test") ) {
+		_qcMessenger->setTestMode(true);
+	}
 
 	//setMessagingEnabled(!commandline().hasOption("archive"));
 	//setDatabaseEnabled(!commandline().hasOption("archive"), true);
@@ -216,19 +217,21 @@ bool QcTool::initConfiguration() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool QcTool::init() {
-	if ( !StreamApplication::init() ) return false;
+	if ( !StreamApplication::init() ) {
+		return false;
+	}
 
-	QcPluginPtr qcPlugin; 
+	QcPluginPtr qcPlugin;
 	QcPluginFactory::ServiceNames* services = QcPluginFactory::Services();
 
-	if (services) {
+	if ( services ) {
 		for (QcPluginFactory::ServiceNames::iterator it = services->begin(); it != services->end(); ++it ) {
-			qcPlugin = QcPlugin::Cast(QcPluginFactory::Create(it->c_str())); 
-			if (!qcPlugin) { 
-				SEISCOMP_WARNING("QcPlugin %s not found!", it->c_str()); 
-				continue; 
-			} 
-	
+			qcPlugin = QcPlugin::Cast(QcPluginFactory::Create(it->c_str()));
+			if (!qcPlugin) {
+				SEISCOMP_WARNING("QcPlugin %s not found!", it->c_str());
+				continue;
+			}
+
 			vector<string> names = qcPlugin->parameterNames();
 			_allParameterNames.insert(names.begin(),names.end());
 
@@ -241,7 +244,8 @@ bool QcTool::init() {
 			}
 		}
 		delete services;
-	} else {
+	}
+	else {
 		SEISCOMP_ERROR("-------------------------------------------------------------");
 		SEISCOMP_ERROR(" ");
 		SEISCOMP_ERROR("ERROR! No QcPlugins found!");
@@ -259,9 +263,10 @@ bool QcTool::init() {
 
 	if (_archiveMode) {
 		SEISCOMP_INFO("*** ARCHIVE MODE ***");
-	} else {
-		_beginTime = Core::Time::GMT() - Core::TimeSpan(_leadTime);
-		_endTime = Core::Time();
+	}
+	else {
+		_beginTime = Core::Time::UTC() - Core::TimeSpan(_leadTime);
+		_endTime = Core::None;
 	}
 
 	if (!_streamMask.empty())
@@ -270,13 +275,13 @@ bool QcTool::init() {
 	if ( isDatabaseEnabled() ) {
 		if ( _useConfiguredStreams ) {
 			SEISCOMP_DEBUG("Reading configured streams:");
-			
+
 			DataModel::ConfigModule* module = configModule();
-			
+
 			if ( module ) {
 				for ( size_t j = 0; j < module->configStationCount(); ++j ) {
 					if ( _exitRequested ) break;
-					
+
 					DataModel::ConfigStation* station = module->configStation(j);
 					DataModel::Setup *setup = DataModel::findSetup(station, name());
 
@@ -301,7 +306,7 @@ bool QcTool::init() {
 							bool isFixedChannel = cha.size() > 2;
 
 							DataModel::SensorLocation *sloc =
-								Client::Inventory::Instance()->getSensorLocation(net, sta, loc, Core::Time::GMT());
+								Client::Inventory::Instance()->getSensorLocation(net, sta, loc, Core::Time::UTC());
 
 							if ( _use3Components ) {
 								std::string groupCode;
@@ -311,21 +316,21 @@ bool QcTool::init() {
 								else
 									groupCode = cha;
 
-								if ( sloc != NULL ) {
+								if ( sloc ) {
 									DataModel::ThreeComponents tc;
 
-									if ( DataModel::getThreeComponents(tc, sloc, groupCode.c_str(), Core::Time::GMT()) ) {
-										if ( tc.comps[DataModel::ThreeComponents::Vertical] != NULL )
+									if ( DataModel::getThreeComponents(tc, sloc, groupCode.c_str(), Core::Time::UTC()) ) {
+										if ( tc.comps[DataModel::ThreeComponents::Vertical] )
 											addStream(net, sta, loc, tc.comps[DataModel::ThreeComponents::Vertical]->code());
 										else
 											addStream(net, sta, loc, isFixedChannel ? cha : groupCode + 'Z');
 
-										if ( tc.comps[DataModel::ThreeComponents::FirstHorizontal] != NULL )
+										if ( tc.comps[DataModel::ThreeComponents::FirstHorizontal] )
 											addStream(net, sta, loc, tc.comps[DataModel::ThreeComponents::FirstHorizontal]->code());
 										else
 											addStream(net, sta, loc, groupCode+'N');
 
-										if ( tc.comps[DataModel::ThreeComponents::SecondHorizontal] != NULL )
+										if ( tc.comps[DataModel::ThreeComponents::SecondHorizontal] )
 											addStream(net, sta, loc, tc.comps[DataModel::ThreeComponents::SecondHorizontal]->code());
 										else
 											addStream(net, sta, loc, groupCode+'E');
@@ -345,9 +350,9 @@ bool QcTool::init() {
 							else {
 								// Only vertical
 								if ( !isFixedChannel ) {
-									if ( sloc != NULL ) {
-										DataModel::Stream *stream = DataModel::getVerticalComponent(sloc, cha.c_str(), Core::Time::GMT());
-										if ( stream != NULL )
+									if ( sloc ) {
+										DataModel::Stream *stream = DataModel::getVerticalComponent(sloc, cha.c_str(), Core::Time::UTC());
+										if ( stream )
 											addStream(net, sta, loc, stream->code());
 										else
 											addStream(net, sta, loc, cha+'Z');
@@ -362,10 +367,11 @@ bool QcTool::init() {
 					}
 				}
 			}
-			
+
 			if ( _streamIDs.empty() )
 				SEISCOMP_WARNING("[empty]");
-		} else { //! read all matching streams...
+		}
+		else { //! read all matching streams...
 			string mask = _streamMask;
 			boost::smatch what;
 			try {
@@ -373,18 +379,27 @@ bool QcTool::init() {
 				SEISCOMP_DEBUG("Reading those streams matching: %s", mask.c_str());
 
 				DataModel::Inventory* inv = Seiscomp::Client::Inventory::Instance()->inventory();
-				if (inv) {
-					for (size_t i = 0; i < inv->networkCount(); ++i) {
+				if ( inv ) {
+					for ( size_t i = 0; i < inv->networkCount(); ++i ) {
 						DataModel::NetworkPtr network = inv->network(i);
-						for (size_t j = 0; j < network->stationCount(); ++j) {
+
+						for ( size_t j = 0; j < network->stationCount(); ++j ) {
 							DataModel::StationPtr station = network->station(j);
-							try {if (station->end()) continue;} catch (...) {}
+							try {
+								station->end();
+								continue;
+							}
+							catch (...) {}
 
-							for (size_t l = 0; l < station->sensorLocationCount(); ++l) {
+							for ( size_t l = 0; l < station->sensorLocationCount(); ++l ) {
 								DataModel::SensorLocationPtr sloc = station->sensorLocation(l);
-								try {if (sloc->end()) continue;} catch (...) {}
+								try {
+									sloc->end();
+									continue;
+								}
+								catch (...) {}
 
-								for (size_t s = 0; s < sloc->streamCount(); ++s) {
+								for ( size_t s = 0; s < sloc->streamCount(); ++s ) {
 									DataModel::StreamPtr stream = sloc->stream(s);
 
 									string net, sta, loc, cha;
@@ -394,10 +409,11 @@ bool QcTool::init() {
 									cha = stream->code();
 
 									string streamID = net + "." + sta + "." + loc + "." + cha;
-									if (!boost::regex_match(streamID, what, streamMask)) {
-	// 				SEISCOMP_DEBUG("ignoring: %s", streamID.c_str());
+									if ( !boost::regex_match(streamID, what, streamMask) ) {
+										SEISCOMP_DEBUG("ignoring: %s", streamID.c_str());
 										continue;
 									}
+
 									addStream(net, sta, loc, cha);
 								}
 							}
@@ -411,12 +427,12 @@ bool QcTool::init() {
 			}
 		}
 	}
-	
+
 	SEISCOMP_DEBUG("number of streams: %ld", (long int)_streamIDs.size());
 
 	// Enable timeout callback every second
 	enableTimer(1);
-	
+
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -427,19 +443,18 @@ bool QcTool::init() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 //! Add stream for processing.
 void QcTool::addStream(string net, string sta, string loc, string cha) {
-
 	string streamID = net + "." + sta + "." + loc + "." + cha;
 	_streamIDs.insert(streamID);
 
 	Core::Time begin = _beginTime;
-	Core::Time end   = _endTime;
 
-	if (_autoTime) {
+	if ( _autoTime ) {
 		begin = findLast(net, sta, loc, cha);
 	}
 
-	SEISCOMP_INFO("adding stream: %s with timewindow: %s -- %s", streamID.c_str(), begin.iso().c_str(), end.iso().c_str());
-	recordStream()->addStream(net, sta, loc, cha, begin, end);
+	SEISCOMP_INFO("adding stream: %s with timewindow: %s -- %s",
+	              streamID, begin.iso(), _endTime ? _endTime->iso() : "[]");
+	recordStream()->addStream(net, sta, loc, cha, begin, _endTime);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -454,7 +469,7 @@ Core::Time QcTool::findLast(string net, string sta, string loc, string cha) {
 	DatabaseIterator dbit = query()->getWaveformQualityDescending(WaveformStreamID(net, sta, loc, cha, ""), "rms", "report");
 	DataModel::WaveformQuality* wfq;
 	int year, month, day;
-	Core::Time::GMT().get(&year, &month, &day);
+	Core::Time::UTC().get(&year, &month, &day);
 	Core::Time today(year, month, day);
 	Core::Time lastEndTime = today - Core::TimeSpan(_dbLookBack * 24 * 3600.0);
 	if ( dbit.valid() ) {
@@ -499,31 +514,34 @@ void QcTool::done() {
 void QcTool::initQc(const string &networkCode, const string &stationCode,
                     const string &locationCode, const string &channelCode) {
 
-	QcPlugin* qcPlugin;
+	QcPlugin *qcPlugin;
 
 	const string streamID = networkCode + "." + stationCode  + "." + locationCode  + "." + channelCode;
-	
-	for (map<string,QcConfigPtr>::iterator it = _plugins.begin(); it != _plugins.end(); ++it) {
+
+	for ( auto it = _plugins.begin(); it != _plugins.end(); ++it ) {
 		qcPlugin = QcPlugin::Cast(QcPluginFactory::Create(it->first.c_str()));
-		if (!qcPlugin) {
-			SEISCOMP_WARNING("QcPlugin %s not found!", it->first.c_str());
+		if ( !qcPlugin ) {
+			SEISCOMP_WARNING("QcPlugin %s not found!", it->first);
 			continue;
 		}
-		
-		if (!qcPlugin->init(this, it->second.get(), streamID)) {
-			SEISCOMP_WARNING("Initializing QcPlugin %s failed! Skipped.",qcPlugin->registeredName().c_str());
+
+		if ( !qcPlugin->init(this, it->second.get(), streamID) ) {
+			SEISCOMP_WARNING("Initializing QcPlugin %s failed! Skipped.",
+			                 qcPlugin->registeredName());
 			delete qcPlugin;
 			continue;
 		}
-		
+
 		_qcPluginMap.insert(pair<string, QcPluginCPtr>(streamID, qcPlugin));
 		addProcessor(networkCode, stationCode, locationCode, channelCode, qcPlugin->qcProcessor());
 	}
-	
-	if ( _plugins.size() > 0 )
-		SEISCOMP_DEBUG("number of Streams: %ld", (long int)(_qcPluginMap.size() / _plugins.size()));
-	else
-		SEISCOMP_ERROR("no Qc Plugins loaded!");
+
+	if ( _plugins.size() > 0 ) {
+		SEISCOMP_DEBUG("number of streams: %ld", static_cast<size_t>(_qcPluginMap.size() / _plugins.size()));
+	}
+	else {
+		SEISCOMP_ERROR("no QC plugins loaded!");
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -532,7 +550,7 @@ void QcTool::initQc(const string &networkCode, const string &stationCode,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 QcMessenger *QcTool::qcMessenger() const {
-	return _qcMessenger;
+	return _qcMessenger.get();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -550,9 +568,10 @@ bool QcTool::exitRequested() const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void QcTool::handleNewStream(const Record *rec) {
-	if ( _streamIDs.find(rec->streamID()) != _streamIDs.end() )
+	if ( _streamIDs.find(rec->streamID()) != _streamIDs.end() ) {
 		initQc(rec->networkCode(),rec->stationCode(),rec->locationCode(),rec->channelCode());
-	
+	}
+
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -561,9 +580,7 @@ void QcTool::handleNewStream(const Record *rec) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void QcTool::processorFinished(const Record *rec, Processing::WaveformProcessor *wp) {
-	cerr << "processor finished" << endl;
-
-// 	TODO detachQcPlugin(wp);
+	// TODO: detachQcPlugin(wp);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

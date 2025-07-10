@@ -54,27 +54,27 @@ namespace Qc {
 * @return: a WaveformStreamID object
 **/
 DataModel::WaveformStreamID getWaveformID(const std::string &streamID) {
+	std::string s = streamID;
+	std::string::size_type dot;
 
-std::string s = streamID;
-std::string::size_type dot;
+	DataModel::WaveformStreamID waveformID;
 
-DataModel::WaveformStreamID waveformID;
-
-if((dot = s.find('.')) != std::string::npos) {
-	waveformID.setNetworkCode(std::string(s, 0, dot));
-	s = std::string(s, dot + 1, std::string::npos);
-
-	if((dot = s.find('.')) != std::string::npos) {
-		waveformID.setStationCode(std::string(s, 0, dot));
+	if ( (dot = s.find('.')) != std::string::npos ) {
+		waveformID.setNetworkCode(std::string(s, 0, dot));
 		s = std::string(s, dot + 1, std::string::npos);
-	
-		if((dot = s.find('.')) != std::string::npos) {
-			waveformID.setLocationCode(std::string(s, 0, dot));
-			waveformID.setChannelCode(std::string(s, dot + 1, std::string::npos));
+
+		if ( (dot = s.find('.')) != std::string::npos ) {
+			waveformID.setStationCode(std::string(s, 0, dot));
+			s = std::string(s, dot + 1, std::string::npos);
+
+			if ( (dot = s.find('.')) != std::string::npos ) {
+				waveformID.setLocationCode(std::string(s, 0, dot));
+				waveformID.setChannelCode(std::string(s, dot + 1, std::string::npos));
+			}
 		}
 	}
-}
-return waveformID;
+
+	return waveformID;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -108,7 +108,7 @@ bool QcPlugin::init(QcApp* app, QcConfig *cfg, std::string streamID) {
 	_qcConfig = cfg;
 	_streamID = streamID;
 	_qcMessenger = _app->qcMessenger();
-	_firstRecord = true; 
+	_firstRecord = true;
 	_qcBuffer = new QcBuffer(_app->archiveMode() ? _qcConfig->archiveBuffer() : _qcConfig->buffer());
 
 	if (! _app->archiveMode() && _qcConfig->reportTimeout() != 0) {
@@ -127,22 +127,22 @@ bool QcPlugin::init(QcApp* app, QcConfig *cfg, std::string streamID) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void QcPlugin::generateNullReport() const {
-	for (size_t i = 0; i < _parameterNames.size(); ++i) {
+	for ( size_t i = 0; i < _parameterNames.size(); ++i ) {
 		SEISCOMP_DEBUG("%s: generateNullReport[%ld]: OK", _streamID.c_str(), (long int)i);
 
-		DataModel::WaveformQuality* obj = new DataModel::WaveformQuality();
+		auto obj = new DataModel::WaveformQuality();
 		obj->setWaveformID(getWaveformID(_streamID));
 		obj->setCreatorID(_app->creatorID());
-		obj->setCreated(Core::Time::GMT());
-		obj->setStart(Core::Time::GMT());
-		obj->setEnd(Core::Time::GMT());
+		obj->setCreated(Core::Time::UTC());
+		obj->setStart(Core::Time::UTC());
+		obj->setEnd(Core::Time::UTC());
 		obj->setType("report");
 		obj->setParameter(_parameterNames[i]);
 		obj->setValue(0.0);
 		obj->setLowerUncertainty(0.0);
 		obj->setUpperUncertainty(0.0);
 		obj->setWindowLength(-1.0);
-		
+
 		pushObject(DataModel::Object::Cast(obj));
 	}
 }
@@ -153,15 +153,17 @@ void QcPlugin::generateNullReport() const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void QcPlugin::generateReport(const QcBuffer *buf) const {
-	if ( buf->empty() ) return;
+	if ( buf->empty() ) {
+		return;
+	}
 
 	double mean_ = mean(buf);
 	double stdDev_ = stdDev(buf, mean_);
 
-	DataModel::WaveformQuality* obj = new DataModel::WaveformQuality();
+	auto obj = new DataModel::WaveformQuality();
 	obj->setWaveformID(getWaveformID(_streamID));
 	obj->setCreatorID(_app->creatorID());
-	obj->setCreated(Core::Time::GMT());
+	obj->setCreated(Core::Time::UTC());
 	obj->setStart(buf->startTime());
 	obj->setEnd(buf->endTime());
 	obj->setType("report");
@@ -181,7 +183,9 @@ void QcPlugin::generateReport(const QcBuffer *buf) const {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void QcPlugin::generateAlert(const QcBuffer *shortBuffer,
                              const QcBuffer *longBuffer) const {
-	if ( shortBuffer->empty() || longBuffer->empty() ) return;
+	if ( shortBuffer->empty() || longBuffer->empty() ) {
+		return;
+	}
 
 	//shortBuffer->info(); Short Term buffer info
 	//lta->info(); Long Term buffer info
@@ -195,17 +199,15 @@ void QcPlugin::generateAlert(const QcBuffer *shortBuffer,
 	double relative = 0.0;
 
 	//! HACK
-	if (ltaStdDev != 0.0)
+	if ( ltaStdDev != 0.0 ) {
 		relative =  100.0 - ( (ltaStdDev - fabs(lta - sta)) / ltaStdDev ) * 100.0;
+	}
 
-	string f = "\033[32m"; // green colour
-
-	if (fabs(relative) > *(_qcConfig->alertThresholds().begin())) { // HACK multi thresholds not yet implemented!
-		
-		DataModel::WaveformQuality* obj = new DataModel::WaveformQuality();
+	if ( fabs(relative) > *(_qcConfig->alertThresholds().begin()) ) { // HACK multi thresholds not yet implemented!
+		auto obj = new DataModel::WaveformQuality();
 		obj->setWaveformID(getWaveformID(_streamID));
 		obj->setCreatorID(_app->creatorID());
-		obj->setCreated(Core::Time::GMT());
+		obj->setCreated(Core::Time::UTC());
 		obj->setStart(shortBuffer->startTime());
 		obj->setEnd(shortBuffer->endTime());
 		obj->setType("alert");
@@ -216,9 +218,10 @@ void QcPlugin::generateAlert(const QcBuffer *shortBuffer,
 		obj->setWindowLength((double)shortBuffer->length());
 
 		pushObject(obj);
-	
-		f = "\033[31m"; // red colour
-		SEISCOMP_WARNING("%s %s %s %.0f%% \033[30m  %.3f %.3f", _streamID.c_str(), _parameterNames[0].c_str(), f.c_str(), relative, fabs(relative), lta);
+
+		SEISCOMP_WARNING("%s %s \033[31m %.0f%% \033[30m  %.3f %.3f",
+		                 _streamID, _parameterNames[0],
+		                 relative, fabs(relative), lta);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -250,13 +253,23 @@ void QcPlugin::sendObjects(bool notifier) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void QcPlugin::timeoutTask() {}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 double QcPlugin::mean(const QcBuffer *qcb) const {
-	if ( qcb->size() < 1 ) return 0.0;
+	if ( qcb->size() < 1 ) {
+		return 0.0;
+	}
 
 	double sum = 0.0;
 
-	for ( QcBuffer::const_iterator p = qcb->begin(); p != qcb->end(); ++p )
-		sum += boost::any_cast<double>((*p)->parameter);
+	for ( auto &p : *qcb ) {
+		sum += boost::any_cast<double>(p->parameter);
+	}
 
 	return sum / qcb->size();
 }
@@ -267,12 +280,15 @@ double QcPlugin::mean(const QcBuffer *qcb) const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 double QcPlugin::stdDev(const QcBuffer* qcb, double mean) const {
-	if ( qcb->size() < 2 ) return 0.0;
+	if ( qcb->size() < 2 ) {
+		return 0.0;
+	}
 
 	double sum = 0.0;
 
-	for ( QcBuffer::const_iterator p = qcb->begin(); p != qcb->end(); ++p )
-		sum += pow(boost::any_cast<double>((*p)->parameter) - mean, 2);
+	for ( auto &p : *qcb ) {
+		sum += pow(boost::any_cast<double>(p->parameter) - mean, 2);
+	}
 
 	return sqrt(sum / (qcb->size() - 1));
 }
@@ -285,8 +301,9 @@ double QcPlugin::stdDev(const QcBuffer* qcb, double mean) const {
 void QcPlugin::update() {
 	QcParameter *qcp = _qcProcessor->getState();
 
-	if ( _qcProcessor->isValid() )
-		_qcBuffer->push_back(qcp);
+	if ( _qcProcessor->isValid() ) {
+		_qcBuffer->push_back(&_streamID, qcp);
+	}
 
 	sendMessages(qcp->recordEndTime);
 }
@@ -306,8 +323,9 @@ void QcPlugin::sendMessages(const Core::Time &rectime) {
 		_firstRecord = false;
 	}
 
-	if ( _qcBuffer->empty() )
+	if ( _qcBuffer->empty() ) {
 		return;
+	}
 
 	//! DEBUG
 	if ( rectime == Core::Time() ) {
@@ -322,12 +340,14 @@ void QcPlugin::sendMessages(const Core::Time &rectime) {
 	//! A R C H I V E
 	if ( _qcConfig->archiveInterval() >= 0 && rectime != Core::Time() ) {
 		diff = rectime - _lastArchiveTime;
-		if ( diff > Core::TimeSpan(_qcConfig->archiveInterval()) || _app->exitRequested() ) {
-			QcBufferCPtr archiveBuffer = _qcBuffer->qcParameter(_qcConfig->archiveBuffer());
+		if ( diff > Core::TimeSpan(_qcConfig->archiveInterval(), 0) || _app->exitRequested() ) {
+			QcBufferCPtr archiveBuffer = _qcBuffer->qcParameter(Core::TimeSpan(_qcConfig->archiveBuffer(), 0));
 			if ( !archiveBuffer->empty() ) {
 				generateReport(archiveBuffer.get());
 				sendObjects(true); // as notifier msg
 				_lastArchiveTime = rectime;
+				SEISCOMP_DEBUG("ARCHIVE(%s): %s, %d values",
+				               registeredName(), _streamID, _qcBuffer->size());
 			}
 		}
 	}
@@ -335,26 +355,52 @@ void QcPlugin::sendMessages(const Core::Time &rectime) {
 	//! R E P O R T
 	if ( _qcConfig->reportInterval() >= 0 ) {
 		diff = rectime - _lastReportTime;
-		if ( diff > Core::TimeSpan(_qcConfig->reportInterval()) || rectime == Core::Time()) {
-			QcBufferCPtr reportBuffer = _qcBuffer->qcParameter(_qcConfig->reportBuffer());
+		if ( diff > Core::TimeSpan(_qcConfig->reportInterval(), 0) || rectime == Core::Time()) {
+			QcBufferCPtr reportBuffer = _qcBuffer->qcParameter(Core::TimeSpan(_qcConfig->reportBuffer(), 0));
 			generateReport(reportBuffer.get());
 			sendObjects(false);
 			_lastReportTime = rectime;
+			SEISCOMP_DEBUG("REPORT(%s): %s, %d values",
+			               registeredName(), _streamID, _qcBuffer->size());
 		}
 	}
-	
+
 	//! A L E R T
 	// in archive mode we don't want alert msg
 	if ( !_app->archiveMode() && _qcConfig->alertInterval() >= 0 ) {
 		diff = rectime - _lastAlertTime;
-		if ( ( diff > Core::TimeSpan(_qcConfig->alertInterval()) && (int)_qcBuffer->length() >= _qcConfig->alertBuffer() ) || rectime == Core::Time()) {
-			QcBufferCPtr alertBuffer = _qcBuffer->qcParameter(_qcConfig->alertBuffer());
-			if (alertBuffer->empty()) return;
+		if ( ( diff > Core::TimeSpan(_qcConfig->alertInterval(), 0)
+		    && static_cast<int>(_qcBuffer->length().seconds()) >= _qcConfig->alertBuffer() )
+		  || rectime == Core::Time()) {
+			QcBufferCPtr alertBuffer = _qcBuffer->qcParameter(Core::TimeSpan(_qcConfig->alertBuffer(), 0));
+			if ( alertBuffer->empty() ) {
+				return;
+			}
 			generateAlert(alertBuffer.get(), _qcBuffer.get());
 			sendObjects(false);
 			_lastAlertTime = rectime;
+			SEISCOMP_DEBUG("ALERT(%s): %s, %d values",
+			               registeredName(), _streamID, _qcBuffer->size());
 		}
 	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string QcPlugin::registeredName() const {
+	return _name;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::vector<std::string> QcPlugin::parameterNames() const {
+	return _parameterNames;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

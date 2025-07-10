@@ -34,7 +34,7 @@ class Data {
 	public:
 		Data(T* object)
 		: _objectPtr(object)
-		, _containerCreationTime(Seiscomp::Core::Time::GMT()) {
+		, _containerCreationTime(Seiscomp::Core::Time::UTC()) {
 		}
 
 		virtual ~Data() {}
@@ -55,8 +55,8 @@ class Data {
 		}
 
 	private:
-		typename Seiscomp::Core::SmartPointer<T>::Impl _objectPtr;
-		Seiscomp::Core::Time                           _containerCreationTime;
+		Seiscomp::Core::SmartPointer<T> _objectPtr;
+		Seiscomp::Core::Time            _containerCreationTime;
 
 };
 

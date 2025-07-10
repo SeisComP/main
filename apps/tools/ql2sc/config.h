@@ -36,6 +36,7 @@ struct HostConfig {
 	bool         gzip;
 	bool         native;
 	int          options;
+	int          delay{0};
 	std::string  filter;
 	RoutingTable routingTable;
 	bool         syncEventAttributes;

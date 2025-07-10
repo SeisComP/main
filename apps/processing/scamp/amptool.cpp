@@ -126,7 +126,7 @@ void AmpTool::createCommandLineDescription() {
 	commandline().addGroup("Input");
 	commandline().addOption("Input", "ep",
 	                        "Event parameters XML file for offline processing of "
-	                        "all contained origins.",
+	                        "all contained origins. Use '-' to read from stdin.",
 	                        &_epFile);
 	commandline().addOption("Input", "picks,p",
 	                        "Force measuring amplitudes for picks only. Origins "
@@ -148,6 +148,10 @@ void AmpTool::createCommandLineDescription() {
 	commandline().addOption("Reprocess", "commit",
 	                        "Send amplitude updates to the messaging otherwise"
 	                        "an XML document will be output.");
+
+	commandline().addGroup("Output");
+	commandline().addOption("Output", "formatted,f",
+	                        "Use formatted XML output. Otherwise XML is unformatted.");
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -182,8 +186,9 @@ bool AmpTool::validateParameters() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool AmpTool::initConfiguration() {
-	if ( !Client::StreamApplication::initConfiguration() )
+	if ( !Client::StreamApplication::initConfiguration() ) {
 		return false;
+	}
 
 	try {
 		std::vector<std::string> amplitudes = configGetStrings("amplitudes");
@@ -209,6 +214,7 @@ bool AmpTool::initConfiguration() {
 	_picks = commandline().hasOption("picks");
 	_forceReprocessing = commandline().hasOption("force");
 
+	_formatted = commandline().hasOption("formatted");
 
 	return true;
 }
@@ -307,40 +313,50 @@ bool AmpTool::run() {
 			return false;
 		}
 
-		Core::Time startTime, endTime;
+		OPT(Core::Time) startTime, endTime;
 
-		if ( !_strTimeWindowStartTime.empty()
-		  && !startTime.fromString(_strTimeWindowStartTime.c_str(), "%F %T") ) {
-			cerr << "Invalid start time: " << _strTimeWindowStartTime << endl;
-			return false;
+		if ( !_strTimeWindowStartTime.empty() ) {
+			Core::Time tmp;
+			if ( !tmp.fromString(_strTimeWindowStartTime.c_str(), "%F %T") ) {
+				cerr << "Invalid start time: " << _strTimeWindowStartTime << endl;
+				return false;
+			}
+			startTime = tmp;
 		}
 
-		if ( !_strTimeWindowEndTime.empty()
-		  && !endTime.fromString(_strTimeWindowEndTime.c_str(), "%F %T") ) {
-			cerr << "Invalid end time: " << _strTimeWindowEndTime << endl;
-			return false;
+		if ( !_strTimeWindowEndTime.empty() ) {
+			Core::Time tmp;
+			if ( !tmp.fromString(_strTimeWindowEndTime.c_str(), "%F %T") ) {
+				cerr << "Invalid end time: " << _strTimeWindowEndTime << endl;
+				return false;
+			}
+			endTime = tmp;
 		}
 
 		std::string dbQuery;
 		dbQuery += "select PPick." + _T("publicID") + ", Pick.* from Pick,PublicObject as PPick,Amplitude "
 		           "where Pick._oid=PPick._oid and Amplitude." + _T("pickID") + "=PPick." + _T("publicID");
 
-		if ( startTime.valid() )
-			 dbQuery += " and Pick." + _T("time_value") + ">='" + startTime.toString("%F %T") + "'";
+		if ( startTime ) {
+			 dbQuery += " and Pick." + _T("time_value") + ">='" + startTime->toString("%F %T") + "'";
+		}
 
-		if ( endTime.valid() )
-			 dbQuery += " and Pick." + _T("time_value") + "<'" + endTime.toString("%F %T") + "'";
+		if ( endTime ) {
+			 dbQuery += " and Pick." + _T("time_value") + "<'" + endTime->toString("%F %T") + "'";
+		}
 
 		dbQuery += " group by PPick." + _T("publicID") + ", Pick._oid";
 
-		if ( !commandline().hasOption("commit") )
+		if ( !commandline().hasOption("commit") ) {
 			_testMode = true;
+		}
 
 		EventParametersPtr ep;
-		if ( _testMode )
+		if ( _testMode ) {
 			ep = new EventParameters;
+		}
 
-		typedef list<PickPtr> PickList;
+		using PickList = list<PickPtr>;
 		PickList picks;
 
 		cerr << "Collecting picks ... " << flush;
@@ -558,7 +574,7 @@ bool AmpTool::run() {
 		}
 
 		ar.create("-");
-		ar.setFormattedOutput(true);
+		ar.setFormattedOutput(_formatted);
 		ar << _ep;
 		ar.close();
 
@@ -602,14 +618,14 @@ void AmpTool::addObject(const std::string& parentID, DataModel::Object* object) 
 void AmpTool::updateObject(const std::string &parentID, Object* object) {
 	Pick *pick = Pick::Cast(object);
 	if ( pick ) {
-		logObject(_inputPicks, Time::GMT());
+		logObject(_inputPicks, Time::UTC());
 		feed(pick);
 		return;
 	}
 
 	Amplitude *amp = Amplitude::Cast(object);
 	if ( amp && !amp->pickID().empty() ) {
-		logObject(_inputAmps, Time::GMT());
+		logObject(_inputAmps, Time::UTC());
 		PickPtr pick = _cache.get<Pick>(amp->pickID());
 		// No pick, no amplitude
 		if ( !pick )
@@ -626,7 +642,7 @@ void AmpTool::updateObject(const std::string &parentID, Object* object) {
 
 	Origin *origin = Origin::Cast(object);
 	if ( origin ) {
-		logObject(_inputOrgs, Time::GMT());
+		logObject(_inputOrgs, Time::UTC());
 		process(origin, nullptr);
 		return;
 	}
@@ -640,7 +656,7 @@ void AmpTool::updateObject(const std::string &parentID, Object* object) {
 void AmpTool::removeObject(const std::string &parentID, Object* object) {
 	Pick *pick = Pick::Cast(object);
 	if ( pick ) {
-		logObject(_inputPicks, Time::GMT());
+		logObject(_inputPicks, Time::UTC());
 		Pick *cachedPick = Pick::Find(pick->publicID());
 		if ( cachedPick )
 			_cache.remove(cachedPick);
@@ -649,7 +665,7 @@ void AmpTool::removeObject(const std::string &parentID, Object* object) {
 
 	Amplitude *amp = Amplitude::Cast(object);
 	if ( amp && !amp->pickID().empty() ) {
-		logObject(_inputAmps, Time::GMT());
+		logObject(_inputAmps, Time::UTC());
 		Amplitude *cachedAmplitude = Amplitude::Find(amp->publicID());
 		if ( cachedAmplitude ) {
 			AmplitudeRange range = _pickAmplitudes.equal_range(cachedAmplitude->pickID());
@@ -707,10 +723,26 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 
 	// Typedef a pickmap entry containing the pick and
 	// the distance of the station from the origin
-	typedef pair<PickCPtr, double> PickStreamEntry;
+	struct PickStreamEntry {
+		PickCPtr pick;
+		double distance;
+		bool used{false};
+	};
 
 	// Typedef a pickmap that maps a streamcode to a pick
-	typedef map<string, PickStreamEntry> PickStreamMap;
+	using PickStreamMap = map<string, PickStreamEntry>;
+	std::map<std::string, bool> considerUnusedArrivals;
+
+	for ( const auto &type : _amplitudeTypes ) {
+		bool consider = false;
+		try {
+			consider = configGetBool(
+				fmt::format("amplitudes.{}.considerUnusedArrivals", type)
+			);
+		}
+		catch ( ... ) {}
+		considerUnusedArrivals[type] = consider;
+	}
 
 	// This map is needed to find the earliest P pick of
 	// a certain stream
@@ -735,7 +767,7 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 
 			double weight = Private::arrivalWeight(arr);
 
-			if ( Private::shortPhaseName(arr->phase().code()) != 'P' || weight < _minWeight ) {
+			if ( Private::shortPhaseName(arr->phase().code()) != 'P' ) {
 				SEISCOMP_INFO("Ignoring pick '%s' weight=%.1f phase=%s",
 				              pickID.c_str(), weight, arr->phase().code().c_str());
 				continue;
@@ -754,16 +786,31 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 			wfid.setChannelCode(wfid.channelCode().substr(0,2));
 
 			string streamID = Private::toStreamID(wfid);
-			PickStreamEntry &e = pickStreamMap[streamID];
 
-			// When there is already a pick registered for this stream which has
-			// been picked earlier, ignore the current pick
-			if ( e.first && e.first->time().value() < pick->time().value() ) {
+			double distance;
+			try {
+				distance = Private::arrivalDistance(arr);
+			}
+			catch ( Core::ValueException& ) {
+				SEISCOMP_LOG(_errorChannel, "Arrival.distance not set for %s pick %s: skip it",
+				                 streamID.c_str(), pickID.c_str());
+				_report << "   - " << pickID << " [Arrival.distance not set]" << std::endl;
 				continue;
 			}
 
-			e.first = pick;
-			e.second = Private::arrivalDistance(arr);
+			auto &e = pickStreamMap[streamID];
+
+			// When there is already a pick registered for this stream which has
+			// been picked earlier, ignore the current pick
+			if ( e.pick && e.pick->time().value() < pick->time().value() ) {
+				continue;
+			}
+
+			e.pick = pick;
+			e.distance = distance;
+			if ( !e.used ) {
+				e.used = weight >= _minWeight;
+			}
 		}
 	}
 	else if ( pick ) {
@@ -771,22 +818,23 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 		_report << "Processing report for Pick: " << pick->publicID() << std::endl;
 		_report << "-----------------------------------------------------------------" << std::endl;
 
-		DataModel::WaveformStreamID wfid = pick->waveformID();
+		auto wfid = pick->waveformID();
 		// Strip the component code because every AmplitudeProcessor
 		// will use its own component to pick the amplitude on
 		wfid.setChannelCode(wfid.channelCode().substr(0,2));
 		string streamID = Private::toStreamID(wfid);
-		PickStreamEntry &e = pickStreamMap[streamID];
-		e.first = pick;
+		auto &e = pickStreamMap[streamID];
+		e.pick = pick;
 		// there is no distance for picks without origins
-		e.second = 0.0;
+		e.distance = 0.0;
+		e.used = true;
 	}
 
-	for ( PickStreamMap::iterator it = pickStreamMap.begin(); it != pickStreamMap.end(); ++it ) {
-		PickCPtr pick = it->second.first;
+	for ( auto &[streamID, e] : pickStreamMap ) {
+		PickCPtr pick = e.pick;
 		const string &pickID = pick->publicID();
 		const Time &pickTime = pick->time().value();
-		double distance = it->second.second;
+		double distance = e.distance;
 		OPT(double) depth;
 
 		AmplitudeRange amps = getAmplitudes(pickID);
@@ -795,7 +843,7 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 		if ( origin ) {
 			try {
 				depth = origin->depth().value();
-				_report << "     + depth = " << depth.get() << std::endl;
+				_report << "     + depth = " << *depth << std::endl;
 			}
 			catch ( ... ) {
 				_report << "     - depth [not set]" << std::endl;
@@ -803,16 +851,23 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 			_report << "     + distance = " << distance << std::endl;
 		}
 
-		for ( AmplitudeList::iterator ait = _amplitudeTypes.begin();
-		      ait != _amplitudeTypes.end(); ++ait ) {
+		for ( const auto &type : _amplitudeTypes ) {
+			// Station is disabled, check if amplitude type is overriden
+			if ( !e.used ) {
+				if ( auto ait = considerUnusedArrivals.find(type);
+				     ait == considerUnusedArrivals.end() || !ait->second ) {
+					_report << "     - " << type << " [arrival is disabled]" << std::endl;
+					continue;
+				}
+			}
 
-			AmplitudePtr existingAmp = hasAmplitude(amps, *ait);
+			AmplitudePtr existingAmp = hasAmplitude(amps, type);
 
 			if ( existingAmp ) {
 				if ( !_reprocessAmplitudes ) {
 					SEISCOMP_INFO("Skipping %s calculation for pick %s, amplitude exists already",
-					              ait->c_str(), pickID.c_str());
-					_report << "     - " << *ait << " [amplitude exists already]" << std::endl;
+					              type.c_str(), pickID.c_str());
+					_report << "     - " << type << " [amplitude exists already]" << std::endl;
 					continue;
 				}
 
@@ -820,8 +875,8 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 					if ( existingAmp->evaluationMode() == DataModel::MANUAL ) {
 						if ( !_forceReprocessing ) {
 							SEISCOMP_INFO("Skipping %s calculation for pick %s, amplitude exists already and is manual (use --force)",
-							              ait->c_str(), pickID.c_str());
-							_report << "     - " << *ait << " [manual amplitude exists already]" << std::endl;
+							              type.c_str(), pickID.c_str());
+							_report << "     - " << type << " [manual amplitude exists already]" << std::endl;
 							continue;
 						}
 					}
@@ -829,10 +884,10 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 				catch ( ... ) {}
 			}
 
-			AmplitudeProcessorPtr proc = AmplitudeProcessorFactory::Create(ait->c_str());
+			AmplitudeProcessorPtr proc = AmplitudeProcessorFactory::Create(type.c_str());
 			if ( !proc ) {
-				SEISCOMP_LOG(_errorChannel, "Failed to create AmplitudeProcessor %s", ait->c_str());
-				_report << "     - " << *ait << " [amplitudeprocessor NULL]" << std::endl;
+				SEISCOMP_LOG(_errorChannel, "Failed to create AmplitudeProcessor %s", type.c_str());
+				_report << "     - " << type << " [amplitudeprocessor NULL]" << std::endl;
 				continue;
 			}
 
@@ -849,7 +904,7 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 			}
 			else {
 				SC_FMT_DEBUG("Measuring {} amplitude for pick {} independent of origin",
-				             ait->c_str(), pick->publicID().c_str());
+				             type.c_str(), pick->publicID().c_str());
 				res = addProcessor(proc.get(), nullptr, pick.get(), None, None, None);
 			}
 
@@ -1125,10 +1180,12 @@ int AmpTool::addProcessor(Processing::AmplitudeProcessor *proc,
 
 		// Update processors station time window
 		StationRequest &req = _stationRequests[stationID];
-		if ( (bool)req.timeWindow == true )
+		if ( req.timeWindow.length() > TimeSpan(0, 0) ) {
 			req.timeWindow = req.timeWindow | proc->safetyTimeWindow();
-		else
+		}
+		else {
 			req.timeWindow = proc->safetyTimeWindow();
+		}
 
 		// The second value of the pair describes whether a new entry has been inserted or not
 		if ( handle.second ) {
@@ -1284,24 +1341,26 @@ AmpTool::createAmplitude(const Seiscomp::Processing::AmplitudeProcessor *proc,
 		DataModel::TimeWindow(res.time.reference, res.time.begin, res.time.end)
 	);
 
-	if ( res.component <= WaveformProcessor::SecondHorizontal )
+	if ( res.component <= WaveformProcessor::SecondHorizontal ) {
 		amp->setWaveformID(
 			WaveformStreamID(
 				res.record->networkCode(), res.record->stationCode(),
 				res.record->locationCode(), proc->streamConfig((WaveformProcessor::Component)res.component).code(), ""
 			)
 		);
-	else
+	}
+	else {
 		amp->setWaveformID(
 			WaveformStreamID(
 				res.record->networkCode(), res.record->stationCode(),
 				res.record->locationCode(), res.record->channelCode().substr(0,2), ""
 			)
 		);
+	}
 
 	amp->setPickID(proc->referencingPickID());
 
-	Time now = Time::GMT();
+	Time now = Time::UTC();
 	ci.setAgencyID(agencyID());
 	ci.setAuthor(author());
 	ci.setCreationTime(now);

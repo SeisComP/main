@@ -202,9 +202,9 @@ bool isStreamBlacklisted(const vector<string> &blacklist,
 
 
 #define _T(name) q->driver()->convertColumnName(name)
-DatabaseIterator loadPicks(const Core::Time &start, const Core::Time &end) {
+DatabaseIterator loadPicks(const Core::Time &start, const OPT(Core::Time) &end) {
 	SEISCOMP_DEBUG("Loading picks from %s to %s",
-	               start.iso().c_str(), end.iso().c_str());
+	               start.iso(), (end ? *end : Core::Time()).iso());
 
 	// Assumed to be valid => check at caller
 	auto q = SCApp->query();
@@ -214,8 +214,8 @@ DatabaseIterator loadPicks(const Core::Time &start, const Core::Time &end) {
 	       "from Pick join PublicObject as PPick"
 	       " on Pick._oid=PPick._oid"
 	       " and Pick." << _T("time_value") << ">='" << q->toString(start) << "' ";
-	if ( end.valid() ) {
-		oss << "and Pick." << _T("time_value") << "<='" << q->toString(end) << "' ";
+	if ( end ) {
+		oss << "and Pick." << _T("time_value") << "<='" << q->toString(*end) << "' ";
 	}
 	oss << "left join Arrival"
 	       " on Arrival." << _T("pickID") << "=PPick." << _T("publicID") << " "
@@ -768,11 +768,16 @@ void TraceTabWidget::checkActiveTab(const QPoint& p) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool TraceTabWidget::checkDraging(QDropEvent *event) {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	checkActiveTab(event->pos());
+#else
+	checkActiveTab(event->position().toPoint());
+#endif
 
 	Seiscomp::Gui::RecordView* view = dynamic_cast<Seiscomp::Gui::RecordView*>(event->source());
-	if ( view == widget(currentIndex()) )
+	if ( view == widget(currentIndex()) ) {
 		return false;
+	}
 
 	return true;
 }
@@ -783,7 +788,11 @@ bool TraceTabWidget::checkDraging(QDropEvent *event) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void TraceTabWidget::dragEnterEvent(QDragEnterEvent *event) {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	checkActiveTab(event->pos());
+#else
+	checkActiveTab(event->position().toPoint());
+#endif
 	event->acceptProposedAction();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -894,9 +903,35 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 	_statusBarFile       = new QLabel;
 	_statusBarFilter     = new QComboBox;
 	_statusBarFilter->addItem(tr("No filter"));
-	for ( auto filter : Settings::global.filters ) {
-		_statusBarFilter->addItem(filter.c_str());
+	for ( const auto &filter : Settings::global.filters ) {
+		QStringList tokens = QString(filter.c_str()).split(";");
+		QString name, def;
+
+		if ( tokens.size() == 1 ) {
+			name = tokens[0];
+			def = tokens[0];
+		}
+		else {
+			name = tokens[0];
+			def = tokens[1];
+		}
+
+		if ( name.isEmpty() ) {
+			name = def;
+		}
+
+		if ( def.isEmpty() ) {
+			SEISCOMP_WARNING("Ignoring invalid filter: %s", filter);
+			continue;
+		}
+
+		if ( name[0] == '@' ) {
+			name.remove(0, 1);
+		}
+
+		_statusBarFilter->addItem(name, def);
 	}
+
 	connect(_statusBarFilter, SIGNAL(currentIndexChanged(int)),
 	        this, SLOT(filterSelectionChanged()));
 
@@ -905,7 +940,7 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 
 	if ( !SCApp->nonInteractive() ) {
 		_associator = new Associator(this);
-		_dockAssociator = new QDockWidget(tr("Manual associator"), this);
+		_dockAssociator = new QDockWidget(tr("Associator/locator control"), this);
 		_dockAssociator->setObjectName("Dock" + _associator->objectName());
 		_dockAssociator->setWidget(_associator);
 		_dockAssociator->setAllowedAreas(Qt::AllDockWidgetAreas);
@@ -1095,7 +1130,7 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 	_switchBack->setSingleShot(true);
 
 	connect(_timer, SIGNAL(timeout()), this, SLOT(step()));
-	connect(_switchBack, SIGNAL(timeout()), this, SLOT(sortByConfig()));
+	connect(_switchBack, SIGNAL(timeout()), this, SLOT(restoreDefaultSorting()));
 
 	connect(&RecordStreamState::Instance(), SIGNAL(connectionClosed(RecordStreamThread*)),
 	        this, SLOT(recordStreamClosed(RecordStreamThread*)));
@@ -1322,34 +1357,68 @@ void MainWindow::start() {
 		openAcquisition();
 	}
 
-	double lat = 0.0;
-	double lon = 0.0;
+	_sortMode = SortMode::Config;
+	_sortLat = 0.0;
+	_sortLon = 0.0;
+
 	try {
-		lat = Gui::Application::Instance()->configGetDouble("streams.sort.latitude");
+		_sortLat = Gui::Application::Instance()->configGetDouble("streams.sort.latitude");
 	}
 	catch ( ... ) {}
 	try {
-		lon = Gui::Application::Instance()->configGetDouble("streams.sort.longitude");
+		_sortLon = Gui::Application::Instance()->configGetDouble("streams.sort.longitude");
 	}
 	catch ( ... ) {}
 
 	try {
 		string sortMode = SCApp->configGetString("streams.sort.mode");
-		if ( sortMode == "config" )
-			sortByConfig();
-		else if ( sortMode == "distance" )
-			sortByOrigin(lat, lon);
-		else if ( sortMode == "station" )
-			sortByStationCode();
-		else if ( sortMode == "network" )
-			sortByNetworkStationCode();
-		else if ( sortMode == "group" )
-			sortByGroup();
+		if ( sortMode == "config" ) {
+			_sortMode = SortMode::Config;
+		}
+		else if ( sortMode == "distance" ) {
+			_sortMode = SortMode::Distance;
+		}
+		else if ( sortMode == "station" ) {
+			_sortMode = SortMode::Station;
+		}
+		else if ( sortMode == "network" ) {
+			_sortMode = SortMode::NetworkStation;
+		}
+		else if ( sortMode == "group" ) {
+			_sortMode = SortMode::Group;
+		}
+
+		restoreDefaultSorting();
 	}
 	catch ( ... ) {}
 
 	if ( Settings::global.autoApplyFilter ) {
 		toggleFilter();
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::restoreDefaultSorting() {
+	switch ( _sortMode ) {
+		case SortMode::Distance:
+			sortByOrigin(_sortLat, _sortLon);
+			break;
+		case SortMode::Station:
+			sortByStationCode();
+			break;
+		case SortMode::NetworkStation:
+			sortByNetworkStationCode();
+			break;
+		case SortMode::Group:
+			sortByGroup();
+			break;
+		default:
+			sortByConfig();
+			break;
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1410,7 +1479,7 @@ void MainWindow::setStationEnabled(const string& networkCode,
 		CreationInfo ci;
 		ci.setAuthor(SCApp->author());
 		ci.setAgencyID(SCApp->agencyID());
-		ci.setCreationTime(Core::Time::GMT());
+		ci.setCreationTime(Core::Time::UTC());
 
 		newCs->setCreationInfo(ci);
 
@@ -1431,12 +1500,12 @@ void MainWindow::setStationEnabled(const string& networkCode,
 		CreationInfo *ci;
 		try {
 			ci = &cs->creationInfo();
-			ci->setModificationTime(Core::Time::GMT());
+			ci->setModificationTime(Core::Time::UTC());
 		}
 		catch ( ... ) {
 			cs->setCreationInfo(CreationInfo());
 			ci = &cs->creationInfo();
-			ci->setCreationTime(Core::Time::GMT());
+			ci->setCreationTime(Core::Time::UTC());
 		}
 
 		ci->setAuthor(SCApp->author());
@@ -1459,38 +1528,50 @@ void MainWindow::setStationEnabled(const string& networkCode,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MainWindow::updateTraces(const std::string& networkCode,
-                              const std::string& stationCode,
+void MainWindow::updateTraces(const std::string &networkCode,
+                              const std::string &stationCode,
                               bool enable) {
 	QList<Seiscomp::Gui::RecordViewItem*> items;
 
-	foreach ( TraceView* view, _traceViews ) {
+	foreach ( TraceView *view, _traceViews ) {
 		items += view->stationStreams(networkCode, stationCode);
 	}
 
-	if ( items.empty() ) return;
+	if ( items.empty() ) {
+		return;
+	}
 
 	_statusBarFile->setText(QString("Station %1.%2 has been %3 at %4 (localtime)")
-	                        .arg(networkCode.c_str())
-	                        .arg(stationCode.c_str())
-	                        .arg(enable?"enabled":"disabled")
-	                        .arg(Seiscomp::Core::Time::LocalTime().toString("%F %T").c_str()));
+	                        .arg(networkCode.c_str(), stationCode.c_str(),
+	                             enable?"enabled":"disabled",
+	                             Seiscomp::Core::Time::LocalTime().toString("%F %T").c_str()));
 
 	if ( SCApp->nonInteractive() ) {
-		foreach ( Seiscomp::Gui::RecordViewItem* item, items )
-			if ( item->isInvisibilityForced() == enable )
+		foreach ( Seiscomp::Gui::RecordViewItem *item, items ) {
+			if ( item->isInvisibilityForced() == enable ) {
 				item->forceInvisibilty(!enable);
+			}
+		}
 	}
 	else {
-		Seiscomp::Gui::RecordView* targetView = _traceViews[enable?0:1];
+		auto targetView = _traceViews[enable ? 0 : 1];
 
-		foreach ( Seiscomp::Gui::RecordViewItem* item, items ) {
+		foreach ( Seiscomp::Gui::RecordViewItem *item, items ) {
 			if ( item->recordView() != targetView ) {
-				if ( item->recordView()->takeItem(item) )
+				if ( item->recordView()->takeItem(item) ) {
 					targetView->addItem(item);
-				else
+				}
+				else {
 					throw Core::GeneralException("Unable to take item");
+				}
 			}
+		}
+
+		if ( !_switchBack->isActive() ) {
+			restoreDefaultSorting();
+		}
+		else {
+			sortByOrigin(_originLat, _originLon);
 		}
 	}
 
@@ -1556,7 +1637,7 @@ TraceView* MainWindow::createTraceView() {
 	traceView->setSelectionEnabled(false);
 	traceView->setSelectionMode(Seiscomp::Gui::RecordView::ExtendedSelection);
 	traceView->setDefaultItemColumns(4);
-	traceView->layout()->setMargin(6);
+	traceView->layout()->setContentsMargins(6, 6, 6, 6);
 	traceView->showScrollBar(!SCApp->nonInteractive());
 
 	// determine the required label width
@@ -1643,30 +1724,35 @@ void MainWindow::listHiddenStreams() {
 
 	int numberOfLines = 0;
 
-	Core::Time now = Core::Time::GMT();
+	Core::Time now = Core::Time::UTC();
 	foreach ( TraceView* view, _traceViews ) {
 		for ( int i = 0; i < view->rowCount(); ++i ) {
 			Seiscomp::Gui::RecordViewItem* item = view->itemAt(i);
 
 			if ( item->isVisible() ) continue;
 
-			Seiscomp::Gui::RecordWidget *w = item->widget();
-			Seiscomp::Core::Time lastSample;
-			if ( w->records() != NULL ) lastSample = w->records()->timeWindow().endTime();
+			Gui::RecordWidget *w = item->widget();
+			OPT(Core::Time) lastSample;
+			if ( w->records() ) {
+				lastSample = w->records()->timeWindow().endTime();
+			}
 
 			QString state;
 
-			if ( item->isInvisibilityForced() )
+			if ( item->isInvisibilityForced() ) {
 				state = "disabled";
+			}
 
-			if ( !lastSample.valid() )
+			if ( !lastSample ) {
 				data += QString("<tr><td>%1</td><td></td><td>%2</td></tr>")
 				                .arg(waveformIDToString(item->streamID())).arg(state);
-			else
+			}
+			else {
 				data += QString("<tr><td>%1</td><td align=right>%2</td><td>%3</td></tr>")
 				                .arg(waveformIDToString(item->streamID()))
-				                .arg(strTimeSpan((now - lastSample).seconds()))
+				                .arg(strTimeSpan((now - *lastSample).seconds()))
 				                .arg(state);
+			}
 
 			++numberOfLines;
 		}
@@ -1828,7 +1914,7 @@ void MainWindow::setupItem(const Record*, Gui::RecordViewItem *item) {
 			double scale = 1.0 / Client::Inventory::Instance()->getGain(
 					streamID.networkCode(), streamID.stationCode(),
 					streamID.locationCode(), streamID.channelCode(),
-					Settings::global.endTime.valid() ? Settings::global.endTime : Core::Time::GMT()
+					Settings::global.endTime ? *Settings::global.endTime : Core::Time::UTC()
 				);
 
 			_scaleMap[streamID] = scale;
@@ -1857,9 +1943,11 @@ void MainWindow::setupItem(const Record*, Gui::RecordViewItem *item) {
 
 	item->setContextMenuPolicy(Qt::CustomContextMenu);
 
-	applySpectrogramSettings(static_cast<TraceWidget*>(item->widget()));
+	if ( SCApp->nonInteractive() ) {
+		return;
+	}
 
-	if ( SCApp->nonInteractive() ) return;
+	applySpectrogramSettings(static_cast<TraceWidget*>(item->widget()));
 
 	item->setDraggingEnabled(true);
 	connect(item, SIGNAL(customContextMenuRequested(const QPoint &)),
@@ -1918,8 +2006,8 @@ void MainWindow::changeTraceState() {
 
 	_questionApplyChanges.setInfo("Stations to be changed:\n" +
 	                              QString(" - %1.%2")
-	                               .arg(item->streamID().networkCode().c_str())
-	                               .arg(item->streamID().stationCode().c_str()));
+	                               .arg(item->streamID().networkCode().c_str(),
+	                                    item->streamID().stationCode().c_str()));
 
 	if ( _questionApplyChanges.exec() == QDialog::Rejected )
 		return;
@@ -1935,11 +2023,15 @@ void MainWindow::changeTraceState() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::createOrigin(Gui::RecordViewItem* item, Core::Time time) {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	if ( item->data().type() == QVariant::Invalid ) {
+#else
+	if ( item->data().typeId() == QVariant::Invalid ) {
+#endif
 		if ( !_statusBarFile ) return;
 
 		const double *v = item->widget()->value(time);
-		if ( v == NULL ) {
+		if ( !v ) {
 			_statusBarFile->setText("");
 		}
 		else {
@@ -1959,7 +2051,7 @@ void MainWindow::createOrigin(Gui::RecordViewItem* item, Core::Time time) {
 	DataModel::CreationInfo ci;
 	ci.setAgencyID(SCApp->agencyID());
 	ci.setAuthor(SCApp->author());
-	ci.setCreationTime(Core::Time::GMT());
+	ci.setCreationTime(Core::Time::UTC());
 	origin->setCreationInfo(ci);
 	origin->setLongitude(dlg.longitude());
 	origin->setLatitude(dlg.latitude());
@@ -1971,7 +2063,9 @@ void MainWindow::createOrigin(Gui::RecordViewItem* item, Core::Time time) {
 	SCApp->sendCommand(Gui::CM_OBSERVE_LOCATION, "", origin);
 
 	if ( Settings::global.automaticSortEnabled ) {
-		sortByOrigin(loc.latitude, loc.longitude);
+		_originLat = loc.latitude;
+		_originLon = loc.longitude;
+		sortByOrigin(_originLat, _originLon);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1995,12 +2089,13 @@ void MainWindow::loadFiles() {
 
 	_traceViews.front()->setUpdatesEnabled(false);
 
-	_lastRecordTime = Core::Time();
+	_lastRecordTime = Core::None;
 
 	for ( size_t i = 0; i < _dataFiles.size(); ++i ) {
 		RecordStream::File file;
 		file.setRecordType("mseed");
-		file.setTimeWindow(_dataTimeWindow);
+		file.setStartTime(_dataTimeStart);
+		file.setEndTime(_dataTimeEnd);
 
 		if ( !file.setSource(_dataFiles[i]) ) {
 			cerr << "could not open file '" << _dataFiles[i] << "'" << endl;
@@ -2023,7 +2118,7 @@ void MainWindow::loadFiles() {
 
 		for ( Record *rec : input ) {
 			if ( _traceViews.front()->feed(rec) ) {
-				if ( !_lastRecordTime.valid() || _lastRecordTime < rec->endTime() ) {
+				if ( !_lastRecordTime || *_lastRecordTime < rec->endTime() ) {
 					_lastRecordTime = rec->endTime();
 				}
 			}
@@ -2039,7 +2134,7 @@ void MainWindow::loadFiles() {
 	TRACEVIEWS(setAlignment(_originTime));
 	TRACEVIEWS(setBufferSize(tw.length()));
 	TRACEVIEWS(setTimeSpan(tw.length()));
-	TRACEVIEWS(setTimeRange(-tw.length(), 0));
+	TRACEVIEWS(setTimeRange(-static_cast<double>(tw.length()), 0));
 
 	alignRight();
 	colorByConfig();
@@ -2053,14 +2148,9 @@ void MainWindow::loadFiles() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::openAcquisition() {
-	if ( !Settings::global.endTime ) {
-		_originTime = Core::Time::GMT();
-	}
-	else {
-		_originTime = Settings::global.endTime;
-	}
-
-	_dataTimeWindow.set(_originTime - _bufferSize, Settings::global.endTime);
+	_originTime = Settings::global.endTime ? *Settings::global.endTime : Core::Time::UTC();
+	_dataTimeStart = _originTime - _bufferSize;
+	_dataTimeEnd = Settings::global.endTime;
 
 	TRACEVIEWS(setBufferSize(_bufferSize));
 	TRACEVIEWS(setTimeSpan(_bufferSize));
@@ -2149,7 +2239,7 @@ void MainWindow::openAcquisition() {
 			cout << "using configured streams of config module" << endl;
 			//streamMap["*"]["*"].insert("*", ChannelEntry("*",0));
 
-			DataModel::ConfigModule* module = SCApp->configModule();
+			auto module = SCApp->configModule();
 
 			if ( module ) {
 				int index = 0;
@@ -2174,28 +2264,56 @@ void MainWindow::openAcquisition() {
 						params.getString(loc, "detecLocid");
 						params.getString(cha, "detecStream");
 
-						if ( !cha.empty() ) {
-							if ( cha.size() < 3 ) {
-								char compCode = 'Z';
-
-								//cerr << " * " << net << "." << sta << "." << loc << "." << cha << 'Z' << endl;
-								SensorLocation *sloc = Client::Inventory::Instance()->getSensorLocation(net, sta, loc, _originTime);
-								if ( sloc ) {
-									Stream *stream = getVerticalComponent(sloc, cha.c_str(), _originTime);
-									if ( stream && !stream->code().empty() )
-										cha = stream->code();
-									else
-										cha += compCode;
-								}
-								else
-									cha += compCode;
-							}
-
-							if ( isStreamBlacklisted(streamsBlackList, net, sta, loc, cha) )
-								continue;
-
-							requestMap.append(WIDWithIndex(WaveformStreamID(net, sta, loc, cha, ""), index++));
+						if ( cha.empty() ) {
+							continue;
 						}
+
+						SensorLocation *sloc = Client::Inventory::Instance()->getSensorLocation(net, sta, loc, _originTime);
+
+						if ( Settings::global.threeComponents ) {
+							if ( !sloc ) {
+								SEISCOMP_WARNING("%s.%s.%s: meta data not found: cannot resolve 3C",
+								                 net, sta, loc);
+							}
+							else {
+								ThreeComponents tc;
+								getThreeComponents(tc, sloc, cha.substr(0, 2).data(), _originTime);
+								for ( size_t i = 0; i < 3; ++i ) {
+									if ( tc.comps[i] ) {
+										cha = tc.comps[i]->code();
+										if ( isStreamBlacklisted(streamsBlackList, net, sta, loc, cha) ) {
+											continue;
+										}
+										requestMap.append(WIDWithIndex(WaveformStreamID(net, sta, loc, cha, ""), index++));
+									}
+								}
+								continue;
+							}
+						}
+
+						if ( cha.size() < 3 ) {
+							char compCode = 'Z';
+
+							//cerr << " * " << net << "." << sta << "." << loc << "." << cha << 'Z' << endl;
+							if ( sloc ) {
+								auto stream = getVerticalComponent(sloc, cha.c_str(), _originTime);
+								if ( stream && !stream->code().empty() ) {
+									cha = stream->code();
+								}
+								else {
+									cha += compCode;
+								}
+							}
+							else {
+								cha += compCode;
+							}
+						}
+
+						if ( isStreamBlacklisted(streamsBlackList, net, sta, loc, cha) ) {
+							continue;
+						}
+
+						requestMap.append(WIDWithIndex(WaveformStreamID(net, sta, loc, cha, ""), index++));
 					}
 				}
 			}
@@ -2674,7 +2792,7 @@ void MainWindow::addTabulator() {
 void MainWindow::filterChanged(const QString &s) {
 	Settings::global.filters.push_back(s.toStdString());
 	_statusBarFilter->blockSignals(true);
-	_statusBarFilter->addItem(s);
+	_statusBarFilter->addItem(s, s);
 	_statusBarFilter->setCurrentIndex(_statusBarFilter->count() - 1);
 	_statusBarFilter->blockSignals(false);
 	filterSelectionChanged();
@@ -2707,16 +2825,19 @@ void MainWindow::enableSearch() {
 void MainWindow::searchByText(const QString &text) {
 	if ( text.isEmpty() ) return;
 
-	QRegExp rx(text + "*");
-	rx.setPatternSyntax(QRegExp::Wildcard);
-	rx.setCaseSensitivity(Qt::CaseInsensitive);
+	QRegularExpression rx = QRegularExpression(
+		QRegularExpression::wildcardToRegularExpression(text + "*"),
+		QRegularExpression::CaseInsensitiveOption
+	);
 
-	TraceView *current = NULL, *found = NULL;
+	TraceView *current = nullptr, *found = nullptr;
 
-	if ( _tabWidget )
+	if ( _tabWidget ) {
 		current = _traceViews[_tabWidget->currentIndex()];
-	else
+	}
+	else {
 		current = _traceViews[0];
+	}
 
 	foreach ( TraceView *view, _traceViews ) {
 		view->deselectAllItems();
@@ -2869,16 +2990,24 @@ void MainWindow::checkTraceDelay() {
 		return;
 	}
 
-	Core::Time now = Core::Time::GMT();
-	Core::TimeSpan maxDelay = Core::TimeSpan(Settings::global.maxDelay);
+	Core::Time now = Core::Time::UTC();
+	Core::TimeSpan maxDelay = Core::TimeSpan(Settings::global.maxDelay, 0);
 	foreach ( TraceView* view, _traceViews ) {
 		for ( int i = 0; i < view->rowCount(); ++i ) {
 			Seiscomp::Gui::RecordViewItem* item = view->itemAt(i);
 			Seiscomp::Gui::RecordWidget *w = item->widget();
-			Seiscomp::Core::Time lastSample;
+			OPT(Seiscomp::Core::Time) lastSample;
 
-			if ( w->records() != NULL ) lastSample = w->records()->timeWindow().endTime();
-			item->setVisible(now - (!lastSample.valid()?_dataTimeWindow.startTime():lastSample) <= maxDelay);
+			if ( w->records() ) {
+				lastSample = w->records()->timeWindow().endTime();
+			}
+
+			if ( lastSample ) {
+				item->setVisible(now - *lastSample <= maxDelay);
+			}
+			else {
+				item->setVisible(now - _dataTimeStart <= maxDelay);
+			}
 		}
 	}
 }
@@ -2989,7 +3118,7 @@ void MainWindow::selectMode(int mode) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::filterSelectionChanged() {
 	if ( _statusBarFilter->currentIndex() > 0 ) {
-		TRACEVIEWS(setFilterByName(Settings::global.filters[_statusBarFilter->currentIndex() - 1].c_str()));
+		TRACEVIEWS(setFilterByName(_statusBarFilter->currentData().toString().toStdString().c_str()));
 		TRACEVIEWS(enableFilter(true));
 		TRACEVIEWS(toggleFilter(true));
 		_lastFilterIndex = _statusBarFilter->currentIndex();
@@ -3018,7 +3147,7 @@ void MainWindow::reload() {
 		if ( QMessageBox::question(this, "Load data",
 		                           tr("Data range exceeds %1.\n"
 		                              "Do you want to continue?")
-		                           .arg(prettyTimeRange(Settings::global.warnDataTimeRange)),
+		                           .arg(prettyTimeRange(Settings::global.warnDataTimeRange.seconds())),
 		                           QMessageBox::Yes, QMessageBox::No) == QMessageBox::No ) {
 			return;
 		}
@@ -3033,16 +3162,17 @@ void MainWindow::reload() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::switchToRealtime() {
-	Settings::global.endTime = Core::Time();
+	Settings::global.endTime = Core::None;
 	// Reset buffer size to initial config
 	_bufferSize = Core::TimeSpan(Settings::global.bufferSize, 0);
-	_originTime = Core::Time::GMT();
-	_dataTimeWindow.set(_originTime - _bufferSize, Settings::global.endTime);
+	_originTime = Core::Time::UTC();
+	_dataTimeStart = _originTime - _bufferSize;
+	_dataTimeEnd = Settings::global.endTime;
 
 	TRACEVIEWS(setBufferSize(_bufferSize));
 	TRACEVIEWS(setTimeSpan(_bufferSize));
 	TRACEVIEWS(setAlignment(_originTime));
-	TRACEVIEWS(setTimeRange(-_bufferSize, 0));
+	TRACEVIEWS(setTimeRange(-_bufferSize.length(), 0));
 	_wantReload = true;
 
 	if ( _recordStreamThread ) {
@@ -3060,15 +3190,16 @@ void MainWindow::switchToRealtime() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::reloadTimeWindow(const Core::TimeWindow &tw) {
-	_dataTimeWindow = tw;
-	Settings::global.endTime = _dataTimeWindow.endTime();
-	_bufferSize = _dataTimeWindow.length();
-	_originTime = Settings::global.endTime;
+	_dataTimeStart = tw.startTime();
+	_dataTimeEnd = tw.endTime();
+	Settings::global.endTime = _dataTimeEnd;
+	_bufferSize = *_dataTimeEnd - _dataTimeStart;
+	_originTime = *_dataTimeEnd;
 
 	TRACEVIEWS(setBufferSize(_bufferSize));
 	TRACEVIEWS(setTimeSpan(_bufferSize));
 	TRACEVIEWS(setAlignment(_originTime));
-	TRACEVIEWS(setTimeRange(-_dataTimeWindow.length(), 0));
+	TRACEVIEWS(setTimeRange(-static_cast<double>(_bufferSize), 0));
 	_wantReload = true;
 
 	if ( _recordStreamThread ) {
@@ -3087,7 +3218,7 @@ void MainWindow::reloadTimeWindow(const Core::TimeWindow &tw) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::reloadData() {
 	_wantReload = false;
-	_ui.actionSwitchToRealtime->setEnabled(Settings::global.endTime.valid());
+	_ui.actionSwitchToRealtime->setEnabled(static_cast<bool>(Settings::global.endTime));
 
 	_statusBarFile->setText(tr("Loading picks"));
 
@@ -3096,10 +3227,7 @@ void MainWindow::reloadData() {
 
 	if ( Settings::global.showPicks && SCApp->query() ) {
 		SCApp->showMessage("Loading picks");
-		DatabaseIterator it = loadPicks(
-			_dataTimeWindow.startTime(),
-			_dataTimeWindow.endTime()
-		);
+		DatabaseIterator it = loadPicks(_dataTimeStart, _dataTimeEnd);
 
 		auto db = SCApp->query()->driver();
 		int picks = 0, arrivals = 0;
@@ -3143,14 +3271,16 @@ void MainWindow::reloadData() {
 	}
 	else {
 		if ( !Settings::global.disableTimeWindowRequest ) {
-			auto tw = _dataTimeWindow;
-			if ( Settings::global.initStartTime && !tw.endTime().valid() ) {
-				tw.setStartTime(Core::Time::GMT());
+			if ( Settings::global.initStartTime && !_dataTimeEnd ) {
+				_recordStreamThread->setStartTime(Core::Time::UTC());
 			}
-			_recordStreamThread->setTimeWindow(tw);
+			else {
+				_recordStreamThread->setStartTime(_dataTimeStart);
+			}
+			_recordStreamThread->setEndTime(_dataTimeEnd);
 		}
 
-		for ( auto item : _channelRequests ) {
+		for ( auto &item : _channelRequests ) {
 			_recordStreamThread->addStream(
 				item.networkCode(), item.stationCode(),
 				item.locationCode(), item.channelCode()
@@ -3193,12 +3323,12 @@ void MainWindow::advance() {
 	CURRENT_TRACEVIEW_RET(dataTimeWindow, visibleTimeRange());
 	dataTimeWindow.setEndTime(dataTimeWindow.endTime() + Core::TimeSpan(0, 500000));
 
-	auto remainder = dataTimeWindow.endTime().seconds() % Settings::global.bufferSize;
+	auto remainder = dataTimeWindow.endTime().epochSeconds() % Settings::global.bufferSize;
 	if ( remainder ) {
-		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().seconds() + Settings::global.bufferSize - remainder, 0));
+		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().epochSeconds() + Settings::global.bufferSize - remainder, 0));
 	}
 	else {
-		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().seconds() + Settings::global.bufferSize, 0));
+		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().epochSeconds() + Settings::global.bufferSize, 0));
 	}
 	dataTimeWindow.setStartTime(dataTimeWindow.endTime() - Core::TimeSpan(Settings::global.bufferSize, 0));
 
@@ -3215,12 +3345,12 @@ void MainWindow::reverse() {
 	CURRENT_TRACEVIEW_RET(dataTimeWindow, visibleTimeRange());
 	dataTimeWindow.setEndTime(dataTimeWindow.endTime() + Core::TimeSpan(0, 500000));
 
-	auto remainder = dataTimeWindow.endTime().seconds() % Settings::global.bufferSize;
+	auto remainder = dataTimeWindow.endTime().epochSeconds() % Settings::global.bufferSize;
 	if ( remainder ) {
-		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().seconds() - remainder, 0));
+		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().epochSeconds() - remainder, 0));
 	}
 	else {
-		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().seconds() - Settings::global.bufferSize, 0));
+		dataTimeWindow.setEndTime(Core::Time(dataTimeWindow.endTime().epochSeconds() - Settings::global.bufferSize, 0));
 	}
 	dataTimeWindow.setStartTime(dataTimeWindow.endTime() - Core::TimeSpan(Settings::global.bufferSize, 0));
 
@@ -3348,16 +3478,13 @@ void MainWindow::showScaledValues(bool enable) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::receivedRecord(Seiscomp::Record* r) {
 	RecordPtr rec = r;
-	/*
-	std::cout << rec->streamID() << ": " << rec->startTime().iso() << " ~ "
-	          << rec->endTime().iso() << ", " << (1.0 / rec->samplingFrequency()) << std::endl;
-	*/
-
-	foreach( TraceView* view, _traceViews )
+	foreach( TraceView* view, _traceViews ) {
 		if ( view->feed(rec) ) {
-			if ( _lastRecordTime < rec->endTime() )
+			if ( !_lastRecordTime || (*_lastRecordTime < rec->endTime()) ) {
 				_lastRecordTime = rec->endTime();
+			}
 		}
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -3365,10 +3492,8 @@ void MainWindow::receivedRecord(Seiscomp::Record* r) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MainWindow::selectedTime(Seiscomp::Gui::RecordWidget* widget,
-                              Seiscomp::Core::Time time) {
-	//widget->setAlignment(time);
-}
+void MainWindow::selectedTime(Seiscomp::Gui::RecordWidget *,
+                              Seiscomp::Core::Time) {}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -3448,7 +3573,7 @@ void MainWindow::scrollRight() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::alignOriginTime() {
-	SEISCOMP_DEBUG("OriginTime = %s", _originTime.iso().c_str());
+	SEISCOMP_DEBUG("OriginTime = %s", _originTime.iso());
 	TRACEVIEWS(setAlignment(_originTime));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -3459,7 +3584,7 @@ void MainWindow::alignOriginTime() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::sortByStationCode() {
 	_switchBack->stop();
-	TRACEVIEWS(sortByText(0));
+	TRACEVIEWS(sortByText(0, 1, 3, 2));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -3469,7 +3594,7 @@ void MainWindow::sortByStationCode() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::sortByNetworkStationCode() {
 	_switchBack->stop();
-	TRACEVIEWS(sortByText(1, 0));
+	TRACEVIEWS(sortByText(1, 0, 2, 3));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -3566,9 +3691,9 @@ void MainWindow::alignRight() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::jumpToLastRecord() {
 	if ( _lastRecordTime ) {
-		SEISCOMP_DEBUG("LastRecordTime = %s", _lastRecordTime.iso().c_str());
+		SEISCOMP_DEBUG("LastRecordTime = %s", _lastRecordTime->iso());
 		TRACEVIEWS(align());
-		TRACEVIEWS(move(_lastRecordTime - _traceViews.front()->alignment()));
+		TRACEVIEWS(move((*_lastRecordTime - _traceViews.front()->alignment()).length()));
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -3606,7 +3731,7 @@ void MainWindow::step() {
 	colorByConfig();
 
 	if ( _ui.actionToggleAutoMove->isChecked() && !Settings::global.endTime ) {
-		TRACEVIEWS(setAlignment(Core::Time::GMT()));
+		TRACEVIEWS(setAlignment(Core::Time::UTC()));
 	}
 
 	// Check every 10 seconds the traces delay
@@ -3703,7 +3828,9 @@ void MainWindow::messageArrived(Seiscomp::Core::Message* msg, Seiscomp::Client::
 	}
 
 	if ( origin && Settings::global.automaticSortEnabled ) {
-		sortByOrigin(origin->latitude(), origin->longitude());
+		_originLat = origin->latitude();
+		_originLon = origin->longitude();
+		sortByOrigin(_originLat, _originLon);
 
 		try {
 			_switchBack->setInterval(Gui::Application::Instance()->configGetInt("autoResetDelay")*1000);
@@ -3766,7 +3893,9 @@ void MainWindow::objectAdded(const QString &parentID,
 		}
 
 		if ( Settings::global.automaticSortEnabled ) {
-			sortByOrigin(origin->latitude(), origin->longitude());
+			_originLat = origin->latitude();
+			_originLon = origin->longitude();
+			sortByOrigin(_originLat, _originLon);
 
 			try {
 				_switchBack->setInterval(Gui::Application::Instance()->configGetInt("autoResetDelay") * 1000);
@@ -3924,7 +4053,7 @@ bool MainWindow::addPick(Pick* pick, int refCount) {
 		return false;
 	}
 
-	if ( Settings::global.endTime.valid() && age < Core::TimeSpan(0, 0) ) {
+	if ( Settings::global.endTime && age < Core::TimeSpan(0, 0) ) {
 		return false;
 	}
 

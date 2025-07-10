@@ -1,9 +1,6 @@
-fdsnws is a server that provides event and station information by FDSN Web Services
-(:cite:t:`fdsn`)
-from a SeisComP database and waveforms from a :ref:`global_recordstream` source.
-Also it may be configured to serve data
-availability information as described in the IRIS DMC FDSNWS availability Web
-Service Documentation (:cite:t:`iris-dmc`).
+fdsnws is a server that provides event, station and data availability
+information by FDSN Web Services (:cite:t:`fdsn`) from a SeisComP database and
+waveforms from a :ref:`global_recordstream` source.
 
 .. caution::
    If you expose the FDSN Web Service as a public service, make sure that
@@ -247,10 +244,6 @@ The data availability web service returns detailed time span information of
 what time series data is available at the DMC archive. The availability information
 can be created by :ref:`scardac` in the |scname| database from where it is
 fetched by fdsnws.
-
-The availability service is no official standard yet. This implementation aims
-to be compatible with the IRIS DMC availability FDSN Web Service
-(:cite:t:`iris-dmc`) implementation.
 
 * request type: HTTP-GET, HTTP-POST
 * results may be filtered e.g. by channel code, time and quality
@@ -526,16 +519,16 @@ station AAI (assuming that we are authorized to get data of this station).
 
   .. code-block:: sh
 
-     sysop@host:~$ wget --post-file token.asc https://geofon.gfz-potsdam.de/fdsnws/dataselect/1/auth -O cred.txt
-     sysop@host:~$ curl --data-binary @token.asc https://geofon.gfz-potsdam.de/fdsnws/dataselect/1/auth -o cred.txt
+     sysop@host:~$ wget --post-file token.asc https://geofon.gfz.de/fdsnws/dataselect/1/auth -O cred.txt
+     sysop@host:~$ curl --data-binary @token.asc https://geofon.gfz.de/fdsnws/dataselect/1/auth -o cred.txt
 
 * The resulting file "cred.txt" contains username and password separated by
   a colon, so one can conveniently use a shell expansion:
 
   .. code-block:: sh
 
-     sysop@host:~$ wget "http://`cat cred.txt`@geofon.gfz-potsdam.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -O data.mseed
-     sysop@host:~$ curl --digest "http://`cat cred.txt`@geofon.gfz-potsdam.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -o data.mseed
+     sysop@host:~$ wget "http://`cat cred.txt`@geofon.gfz.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -O data.mseed
+     sysop@host:~$ curl --digest "http://`cat cred.txt`@geofon.gfz.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -o data.mseed
 
 * Using the :ref:`fdsnws_fetch <sec-fdsnws-related>` utility, the two steps above can be combined into
   one:

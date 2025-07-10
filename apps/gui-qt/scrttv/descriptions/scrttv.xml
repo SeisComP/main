@@ -22,7 +22,7 @@
 			<parameter name="maxDelay" type="int" unit="s" default="0">
 				<description>
 					If greater than 0, then all traces for which the data latency is
-					higher than this value are hidden.
+					higher than this value are hidden. 0 disables the feature.
 				</description>
 			</parameter>
 			<parameter name="resortAutomatically" type="boolean" default="true">
@@ -47,16 +47,25 @@
 			<parameter name="filter" type="string">
 				<description>
 				Define the filter to be used when filtering is activated. This
-				is only being used if filters is not set otherwise it is
-				overridden. This option is mainly for backward compatibility.
+				parameter is ignored if &quot;filters&quot; is configured.
+				This parameter exists mainly for backward compatibility.
 				</description>
 			</parameter>
-			<parameter name="filters" type="list:string" default="&quot;RMHP(2)>>ITAPER(5)>>BW(3,0.5,8.0)&quot;,&quot;RMHP(2)>>ITAPER(5)>>BW_HP(3, 3)&quot;">
+			<parameter name="filters" type="list:string" default="&quot;BW 0.5 - 8.0 Hz;RMHP(2)>>ITAPER(5)>>BW(3, 0.5, 8.0)&quot;,&quot;HP 3.0 Hz;RMHP(2)>>ITAPER(5)>>BW_HP(3, 3)&quot;">
 				<description>
-					Define a list of filters that is cycles through when pressing 'f'.
-					This options supersedes the filter option. If not defined then
-					filter is used instead. If defined then this filter list is
-					used exclusively and the filter option is ignored.
+					Define a list of filters that is cycles through when pressing
+					'G' or 'D'. Filtering is toggled with 'F'.
+					This parameter supersedes &quot;filter&quot;. If undefined,
+					&quot;filter&quot; is used instead. If defined, this filter
+					list is used exclusively and the filter option is ignored.
+
+					Formats:
+
+					&quot;filter grammar&quot;: filter grammar is shown in
+					the scrttv filter selection and applied.
+
+					&quot;name;filter grammar&quot;: name is shown in the scrttv
+					filter selection but filter grammar is applied.
 				</description>
 			</parameter>
 			<parameter name="autoApplyFilter" type="boolean" default="false">
@@ -82,15 +91,22 @@
 				caused resorting. The default is 15 min.
 				</description>
 			</parameter>
+			<parameter name="3c" type="boolean" default="false">
+				<description>
+				If enabled, all three components (vertical, 1st and 2nd horizontal)
+				related to the detecStream will be shown rather than only the
+				component configured in global bindings. The option is ignored
+				when using --no-inventory.
+				</description>
+			</parameter>
 			<group name="streams">
 				<group name="sort">
 					<description>
 					Configure the initial stream sorting.
 					</description>
-					<parameter name="mode" type="string" default="distance">
+					<parameter name="mode" type="string" default="distance" values="config,distance,station,network,group">
 						<description>
-						The sort mode applied initially. Allowed values
-						are: config, distance, station, network, group.
+						The mode applied initially for sorting traces.
 						</description>
 					</parameter>
 					<parameter name="latitude" type="double" unit="deg" default="0.0">
@@ -141,7 +157,7 @@
 					e.g. &quot;GE.MORC..BHZ&quot;.
 					</description>
 				</parameter>
-				<parameter name="rows" type="integer">
+				<parameter name="rows" type="int">
 					<description>
 					Number of rows to show at once in one windows. If more traces
 					than rows are loaded, the are accessible by a scroll bar.
@@ -211,7 +227,8 @@
 						</parameter>
 						<group name="pen">
 							<description>
-							Define the trace pen of the group.
+							Define the trace pen of the group. Read the SeisComP
+							GUI documenation for full details.
 							</description>
 							<parameter name="color" type="color">
 								<description>
@@ -242,16 +259,14 @@
 								0:FFBF00,1:C70039
 								</description>
 							</parameter>
-							<parameter name="style" type="string" default="SolidLine">
+							<parameter name="style" type="string" default="solidline" values="nopen,solidline,dashline,dotline,dashdotline,dashdotdotline">
 								<description>
-								The style of the pen. Supported values are: NoPen,
-								SolidLine, DashLine, DotLine, DashDotLine,
-								DashDotDotLine.
+								The line style of the pen.
 								</description>
 							</parameter>
 							<parameter name="width" type="double" default="1.0" unit="px">
 								<description>
-								The width of the pen.
+								The line width of the pen.
 								</description>
 							</parameter>
 						</group>
@@ -319,7 +334,7 @@
 									<description>
 									</description>
 								</parameter>
-								<parameter name="style" type="string" default="solidline">
+								<parameter name="style" type="string" default="solidline" values="nopen,solidline,dashline,dotline,dashdotline,dashdotdotline">
 									<description>
 									</description>
 								</parameter>
@@ -330,9 +345,10 @@
 							</group>
 							<group name="brush">
 								<description>
-								Properties of the area below the minimum.
+								Properties of the area below the minimum. Read
+								the SeisComP GUI documenation for full details.
 								</description>
-								<parameter name="style" type="string" default="nobrush">
+								<parameter name="style" type="string" default="nobrush" values="solid,dense1,dense2,dense3,dense4,dense5,dense6,dense7,nobrush,horizontal,vertical,cross,bdiag,fdiag,diagross">
 									<description>
 									</description>
 								</parameter>
@@ -353,13 +369,14 @@
 							</parameter>
 							<group name="pen">
 								<description>
-								Line properties.
+								Line properties. Read the SeisComP GUI
+								documenation for full details.
 								</description>
 								<parameter name="width" type="string" default="1" unit="">
 									<description>
 									</description>
 								</parameter>
-								<parameter name="style" type="string" default="solidline">
+								<parameter name="style" type="string" default="solidline" values="nopen,solidline,dashline,dotline,dashdotline,dashdotdotline">
 									<description>
 									</description>
 								</parameter>
@@ -370,9 +387,10 @@
 							</group>
 							<group name="brush">
 								<description>
-								Properties of the area above the maximum.
+								Properties of the area above the maximum. Read
+								the SeisComP GUI documenation for full details.
 								</description>
-								<parameter name="style" type="string" default="nobrush">
+								<parameter name="style" type="string" default="nobrush" values="solid,dense1,dense2,dense3,dense4,dense5,dense6,dense7,nobrush,horizontal,vertical,cross,bdiag,fdiag,diagross">
 									<description>
 									</description>
 								</parameter>
@@ -422,15 +440,14 @@
 					Whether to use logarithmic frequency scale.
 					</description>
 				</parameter>
-				<parameter name="normalization" type="string" default="fixed">
+				<parameter name="normalization" type="string" default="fixed" values="fixed,frequency,time">
 					<description>
-					Which amplitude normalization mode to use: &quot;fixed&quot;,
-					&quot;frequency&quot; or &quot;time&quot;.
+					The amplitude normalization mode to use.
 					</description>
 				</parameter>
 				<parameter name="axis" type="boolean" default="false">
 					<description>
-					Whether to show the frequency axis.
+					Show the frequency axis.
 					</description>
 				</parameter>
 				<parameter name="minimumAmplitude" type="double" default="-15" unit="log(ps)">
@@ -557,17 +574,9 @@
 					default: 'gmt'.
 					</description>
 				</option>
-				<option long-flag="buffer-size" argument="arg" publicID="mode#buffer-size">
-					<description>
-					Set the size of the waveform buffer in seconds, default: 1800
-					</description>
-				</option>
-				<option long-flag="max-delay" argument="arg" publicID="mode#max-delay">
-					<description>
-					The maximum delay in seconds to keep a trace visible
-					(0 to disable).
-					</description>
-				</option>
+
+				<option flag="" long-flag="buffer-size" argument="arg" param-ref="bufferSize" publicID="mode#buffer-size"/>
+				<option long-flag="max-delay" argument="arg"  param-ref="maxDelay" publicID="mode#max-delay"/>
 				<option long-flag="start-at-now" argument="" publicID="mode#start-at-now">
 					<description>
 					Subscribe to data starting at now rather than now - bufferSize
@@ -580,24 +589,20 @@
 					extraction.
 					</description>
 				</option>
-				<option long-flag="map-picks" argument="" publicID="mode#map-picks">
-					<description>
-					Map picks to best matching rows. This is important
-					if picks created on BHN should be shown but only the BHZ trace
-					is part of the list. Network code, station code and location code
-					must match anyway.
-					</description>
-				</option>
+				<option long-flag="map-picks" argument="" param-ref="mapPicks" publicID="mode#map-picks"/>
+				<option flag="" long-flag="3c" argument="" param-ref="3c"/>
 				<option long-flag="channels" argument="" publicID="mode#channels">
 					<description>
-					Channel(s) to display. The channel code may contain wildcards
-					at any position but the support of wildcards depends on
-					RecordStream. Repeat the option for multiple
-					channel groups. Examples:
+					Channel(s) to display. The corresponding rows are only shown
+					when data for the considered time window is available.
+
+					The channel code may contain wildcards at any position but
+					the support of wildcards depends on RecordStream.
+					Repeat the option for multiple channel groups. Examples:
 
 					default : all streams configured by global bindings.
 
-					GE.*.*.HH? : all HH streams of all stations from GE network.
+					GE.*.*.HH? : all HH channels of all stations from GE network.
 					</description>
 				</option>
 			</group>

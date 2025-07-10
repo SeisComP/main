@@ -12,41 +12,40 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_QC_QCSPIKE_H__
-#define SEISCOMP_QC_QCSPIKE_H__
+#ifndef SEISCOMP_QC_QCSPIKE_H
+#define SEISCOMP_QC_QCSPIKE_H
 
-#include <vector>
 
 #include <seiscomp/plugins/qc/qcplugin.h>
+#include <vector>
 
 
 namespace Seiscomp {
 namespace Applications {
 namespace Qc {
 
+
 typedef Processing::QcProcessorSpike::Spikes Spikes;
 
 
 DEFINE_SMARTPOINTER(QcPluginSpike);
-
 class QcPluginSpike : public QcPlugin {
 	DECLARE_SC_CLASS(QcPluginSpike);
 
-public:
-	QcPluginSpike();
-	std::string registeredName() const override;
-	std::vector<std::string> parameterNames() const override;
-	void timeoutTask() override {};
+	public:
+		QcPluginSpike();
 
-private:
-	void generateReport(const QcBuffer* reportBuffer) const override;
-	void generateAlert(const QcBuffer* staBuffer, const QcBuffer* ltaBuffer) const override;
-	std::vector<double> _mean(const QcBuffer* sta) const;
-	std::vector<double> _stdDev(const QcBuffer* sta, double iMean, double aMean) const;
+	private:
+		void generateReport(const QcBuffer* reportBuffer) const override;
+		void generateAlert(const QcBuffer* staBuffer, const QcBuffer* ltaBuffer) const override;
+		std::vector<double> _mean(const QcBuffer* sta) const;
+		std::vector<double> _stdDev(const QcBuffer* sta, double iMean, double aMean) const;
 };
 
 
 }
 }
 }
+
+
 #endif

@@ -24,47 +24,6 @@
 
 namespace Seiscomp {
 namespace Applications {
-
-
-Picker::Config::Config() {
-	amplitudeGroup = "AMPLITUDE";
-	phaseHint = "P";
-
-	test = false;
-	offline = false;
-
-	useAllStreams = false;
-	calculateAmplitudes = true;
-	interpolateGaps = false;
-	maxGapLength = 4.5;
-
-	defaultChannel = "BH";
-	defaultFilter = "RMHP(10)>>ITAPER(30)>>BW(4,0.7,2)>>STALTA(2,80)";
-	defaultTriggerOnThreshold = 3.0;
-	defaultTriggerOffThreshold = 1.5;
-
-	minDuration = -1;
-	maxDuration = -1;
-
-	triggerDeadTime = 30.0;
-	amplitudeMaxTimeWindow = 10.0;
-	amplitudeMinOffset = 3.0;
-
-	defaultTimeCorrection = Core::TimeSpan(-0.8);
-	ringBufferSize = Core::TimeSpan(5.*60.);
-	leadTime = 60.;
-	initTime = 60.;
-
-	pickerType = "";
-	killPendingSecondaryProcessors = true;
-	sendDetections = false;
-	extraPickComments = false;
-	playback = false;
-
-	amplitudeList.insert("MLv");
-	amplitudeList.insert("mb");
-	amplitudeList.insert("mB");
-}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -76,6 +35,12 @@ void Picker::Config::init(const Client::Application *app) {
 	catch ( ... ) {}
 
 	try { phaseHint = app->configGetString("phaseHint"); }
+	catch ( ... ) {}
+
+	try { commentID = app->configGetString("comment.ID"); }
+	catch ( ... ) {}
+
+	try { commentText = app->configGetString("comment.text"); }
 	catch ( ... ) {}
 
 	try { calculateAmplitudes = app->configGetBool("calculateAmplitudes"); }
@@ -106,12 +71,10 @@ void Picker::Config::init(const Client::Application *app) {
 	catch (...) {}
 	try { triggerDeadTime = app->configGetDouble("thresholds.deadTime"); }
 	catch (...) {}
-	/* TODO: Needs support in detector
 	try { minDuration = app->configGetDouble("thresholds.minDuration"); }
 	catch (...) {}
 	try { maxDuration = app->configGetDouble("thresholds.maxDuration"); }
 	catch (...) {}
-	*/
 
 	try { amplitudeMaxTimeWindow = app->configGetDouble("thresholds.amplMaxTimeWindow"); }
 	catch (...) {}
@@ -152,6 +115,9 @@ void Picker::Config::init(const Client::Application *app) {
 
 	try { playback = app->configGetBool("playback"); }
 	catch ( ... ) {}
+
+	try { generateSimplifiedIDs = app->configGetBool("simplifiedIDs"); }
+	catch ( ... ) {}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -180,24 +146,41 @@ void Picker::Config::dump() const {
 	printf("useAllStreams                    %s\n",     useAllStreams ? "true":"false");
 	printf("calculateAmplitudes              %s\n",     calculateAmplitudes ? "true":"false");
 	printf("calculateAmplitudeTypes          ");
-	if ( amplitudeList.empty() )
+	if ( amplitudeList.empty() ) {
 		printf("[]\n");
+	}
 	else {
 		for ( StringSet::const_iterator it = amplitudeList.begin();
 		      it != amplitudeList.end(); ++it ) {
-			if ( it != amplitudeList.begin() )
+			if ( it != amplitudeList.begin() ) {
 				printf(", ");
+			}
 			printf("%s", it->c_str());
 		}
 		printf("\n");
 	}
-	printf("interpolateGaps                  %s\n",     interpolateGaps ? "true":"false");
-	printf("maxGapLength                     %.2f s\n", maxGapLength);
-	printf("defaultFilter                    %s\n",     defaultFilter.c_str());
-	printf("defaultTriggerOnThreshold        %.2f\n",   defaultTriggerOnThreshold);
-	printf("defaultTriggerOffThreshold       %.2f\n",   defaultTriggerOffThreshold);
-	//printf("minDuration                      %.2f\n",   minDuration);
-	//printf("maxDuration                      %.2f\n",   maxDuration);
+
+	printf("update amplitude types           ");
+	if ( amplitudeUpdateList.empty() ) {
+		printf("[]\n");
+	}
+	else {
+		for ( StringSet::const_iterator it = amplitudeUpdateList.begin();
+		      it != amplitudeUpdateList.end(); ++it ) {
+			if ( it != amplitudeUpdateList.begin() ) {
+				printf(", ");
+			}
+			printf("%s", it->c_str());
+		}
+		printf("\n");
+	}
+	printf("interpolateGaps                  %s\n",    interpolateGaps ? "true":"false");
+	printf("maxGapLength                     %.2fs\n", maxGapLength);
+	printf("defaultFilter                    %s\n",    defaultFilter.c_str());
+	printf("defaultTriggerOnThreshold        %.2f\n",  defaultTriggerOnThreshold);
+	printf("defaultTriggerOffThreshold       %.2fs\n", defaultTriggerOffThreshold);
+	printf("minDuration                      %.2fs\n", minDuration);
+	printf("maxDuration                      %.2f\n",  maxDuration);
 	printf("triggerDeadTime                  %.2fs\n", triggerDeadTime);
 	printf("amplitudeMaxTimeWindow           %.2fs\n", amplitudeMaxTimeWindow);
 	printf("amplitudeMinOffset               %.2fs\n", amplitudeMinOffset);

@@ -430,7 +430,7 @@ bool MagTool::init(const MagnitudeTypes &mags, const Core::TimeSpan &expiry,
 	// Fill the origin cache
 	if ( SCCoreApp->query() ) {
 		auto db = SCCoreApp->query()->driver();
-		Core::Time startTime = Core::Time::GMT() - expiry;
+		Core::Time startTime = Core::Time::UTC() - expiry;
 		string query;
 		query += "select POrigin." + _T("publicID") + ",Origin.* from Origin,PublicObject as POrigin where Origin._oid=POrigin._oid and Origin." +
 		         _T("time_value") + ">='";
@@ -510,7 +510,7 @@ DataModel::StationMagnitude *MagTool::getStationMagnitude(
 			return nullptr;
 		}
 
-		Time now = Time::GMT();
+		Time now = Time::UTC();
 		SCCoreApp->logObject(outputMagLog, now);
 
 		DataModel::CreationInfo ci;
@@ -530,7 +530,7 @@ DataModel::StationMagnitude *MagTool::getStationMagnitude(
 	else {
 		DataModel::touch(mag);
 		mag->update();
-		SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+		SCCoreApp->logObject(outputMagLog, Core::Time::UTC());
 	}
 
 	if ( origin != mag->parent() ) {
@@ -585,7 +585,7 @@ DataModel::Magnitude *MagTool::getMagnitude(DataModel::Origin *origin,
 			return nullptr;
 		}
 
-		Time now = Time::GMT();
+		Time now = Time::UTC();
 		SCCoreApp->logObject(outputMagLog, now);
 
 		DataModel::CreationInfo ci;
@@ -655,7 +655,7 @@ DataModel::Magnitude *MagTool::getMagnitude(DataModel::Origin *origin,
 		if ( !tmpNewInstance ) {
 			DataModel::touch(mag);
 			mag->update();
-			SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+			SCCoreApp->logObject(outputMagLog, Core::Time::UTC());
 			SC_FMT_DEBUG("U NETMAG {}: {}", mag->publicID(), value);
 		}
 
@@ -1094,7 +1094,7 @@ bool MagTool::computeSummaryMagnitude(DataModel::Origin *origin) {
 
 		DataModel::touch(mag.get());
 		mag->update();
-		SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+		SCCoreApp->logObject(outputMagLog, Core::Time::UTC());
 		SC_FMT_DEBUG("U NETMAG {}: {}", mag->publicID(), value);
 	}
 
@@ -1116,20 +1116,22 @@ int MagTool::retrieveMissingPicksAndArrivalsFromDB(const DataModel::Origin *orig
 
 	// see if any picks are missing; if so, query DB
 	set<string> missingPicks;
-	for (int i=0, arrivalCount = origin->arrivalCount();
-	     i < arrivalCount; i++) {
-
-		const DataModel::Arrival *arr = origin->arrival(i);
-		if ( !validArrival(arr, _minimumArrivalWeight) ) continue;
+	for (int i = 0, arrivalCount = origin->arrivalCount(); i < arrivalCount; ++i ) {
+		const auto *arr = origin->arrival(i);
+		if ( getShortPhaseName(arr->phase().code()) != 'P' ) {
+			continue;
+		}
 
 		const string &pickID = arr->pickID();
 
 		// Is the pick already cached?
-		if ( DataModel::Pick::Find(pickID) ) continue;
+		if ( DataModel::Pick::Find(pickID) ) {
+			continue;
+		}
 
 		// In the case of an uncached pick a amplitude pickID
 		// association is maybe available
-		StaAmpMap::iterator it = _ampl.find(pickID);
+		auto it = _ampl.find(pickID);
 		if ( it != _ampl.end() ) {
 			SEISCOMP_WARNING("Pick '%s' is not cached but associated to amplitudes",
 			                 pickID.c_str());
@@ -1139,8 +1141,9 @@ int MagTool::retrieveMissingPicksAndArrivalsFromDB(const DataModel::Origin *orig
 		missingPicks.insert(pickID);
 	}
 
-	if (missingPicks.size() == 0)
+	if ( missingPicks.empty() ) {
 		return 0;
+	}
 
 	if ( !SCCoreApp->query() ) {
 		SEISCOMP_WARNING("retrieveMissingPicksAndArrivalsFromDB: DB not configured");
@@ -1150,43 +1153,45 @@ int MagTool::retrieveMissingPicksAndArrivalsFromDB(const DataModel::Origin *orig
 	SEISCOMP_INFO("RETRIEVING %lu MISSING PICKS", (unsigned long)missingPicks.size());
 
 	DataModel::DatabaseIterator dbit;
-	DataModel::Object* object;
+	DataModel::Object *object;
 
 	dbit = SCCoreApp->query()->getPicks(origin->publicID());
 	for ( ; (object = *dbit); ++dbit ) {
-
-		DataModel::PickPtr pick =
-			DataModel::Pick::Cast(object);
-		if ( ! pick)
-			continue; // actually a bad error!
+		DataModel::PickPtr pick = DataModel::Pick::Cast(object);
+		if ( ! pick) {
+			continue;
+		}
 
 		const string &id = pick->publicID();
-		if (missingPicks.find(id) == missingPicks.end())
+		if ( missingPicks.find(id) == missingPicks.end() ) {
 			continue;
+		}
 
-		if ( !feed(pick.get()))
+		if ( !feed(pick.get()) ) {
 			continue;
+		}
 
-		count++;
+		++count;
 	}
 	dbit.close();
 
 	dbit = SCCoreApp->query()->getAmplitudesForOrigin(origin->publicID());
-	for ( ; (object=*dbit); ++dbit ) {
-
-		DataModel::AmplitudePtr ampl =
-			DataModel::Amplitude::Cast(object);
-		if ( !ampl )
-			continue; // actually a bad error!
+	for ( ; (object = *dbit); ++dbit ) {
+		DataModel::AmplitudePtr ampl = DataModel::Amplitude::Cast(object);
+		if ( !ampl ) {
+			continue;
+		}
 
 		const string &id = ampl->pickID();
-		if ( missingPicks.find(id) == missingPicks.end() )
+		if ( missingPicks.find(id) == missingPicks.end() ) {
 			continue;
+		}
 
-		if ( !_feed(ampl.get(), false) )
+		if ( !_feed(ampl.get(), false) ) {
 			continue;
+		}
 
-		count++;
+		++count;
 	}
 	dbit.close();
 
@@ -1369,6 +1374,31 @@ bool MagTool::computeAverage(AverageDescription &avg,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool MagTool::considerUnusedArrivals(const std::string &type) {
+	if ( auto cit = _considerUnusedArrivals.find(type);
+	     cit != _considerUnusedArrivals.end() ) {
+		return cit->second;
+	}
+
+	bool consider = false;
+
+	try {
+		consider = SCCoreApp->configGetBool(
+			fmt::format("amplitudes.{}.considerUnusedArrivals", type)
+		);
+	}
+	catch ( ... ) {}
+
+	_considerUnusedArrivals[type] = consider;
+
+	return consider;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool MagTool::processOrigin(DataModel::Origin* origin) {
 	SEISCOMP_INFO("working on origin %s", origin->publicID().c_str());
 
@@ -1388,9 +1418,14 @@ bool MagTool::processOrigin(DataModel::Origin* origin) {
 	}
 
 	set<string> magTypes;
-	typedef pair<DataModel::SensorLocation*, double> LocationAndDistance;
-	typedef pair<DataModel::PickCPtr, LocationAndDistance> PickStreamEntry;
-	typedef map<string, PickStreamEntry> PickStreamMap;
+	struct PickStreamEntry {
+		DataModel::PickCPtr        pick;
+		DataModel::SensorLocation *loc;
+		double                     dist;
+		bool                       used{false};
+	};
+	using PickStreamMap = map<string, PickStreamEntry>;
+
 	PickStreamMap pickStreamMap;
 
 	// find associated picks and amplitudes:
@@ -1416,7 +1451,9 @@ bool MagTool::processOrigin(DataModel::Origin* origin) {
 		//      the expiration of cache lifetime.
 		bind(pickID, origin);
 
-		if ( !validArrival(arr, _minimumArrivalWeight) ) continue;
+		if ( getShortPhaseName(arr->phase().code()) != 'P' ) {
+			continue;
+		}
 
 		SEISCOMP_DEBUG("arrival #%3d  pick='%s'", i, pickID.c_str());
 
@@ -1427,10 +1464,10 @@ bool MagTool::processOrigin(DataModel::Origin* origin) {
 		string        cha = wfid.channelCode().substr(0,2);
 
 		string strStream = net + "." + sta + "." + loc + "." + cha;
-		PickStreamEntry &e = pickStreamMap[strStream];
+		auto &e = pickStreamMap[strStream];
 		// When there is already a pick registered for this (abstract) stream
 		// which has been picked earlier, ignore the current pick
-		if ( e.first && e.first->time().value() < pick->time().value() ) {
+		if ( e.pick && e.pick->time().value() < pick->time().value() ) {
 			SEISCOMP_DEBUG("Already used pick for P phase");
 			continue;
 		}
@@ -1443,18 +1480,31 @@ bool MagTool::processOrigin(DataModel::Origin* origin) {
 		catch ( ... ) {}
 
 		if ( !sloc ) {
-			SEISCOMP_WARNING("No sensor location meta data for pick %s",
-			                 pick->publicID().c_str());
+			SEISCOMP_WARNING("No sensor location meta data for %s pick %s",
+			                 strStream.c_str(), pick->publicID().c_str());
 		}
 
-		e.first = pick;
-		e.second = LocationAndDistance(sloc, arr->distance());
+		e.pick = pick;
+		e.loc = sloc;
+
+		try {
+			e.dist = arr->distance();
+		}
+		catch ( Core::ValueException& ) {
+			SEISCOMP_WARNING("Arrival.distance not set for %s pick %s: skip it",
+				             strStream.c_str(), pick->publicID().c_str());
+			continue;
+		}
+
+		if ( !e.used ) {
+			e.used = arrivalWeight(arr) >= _minimumArrivalWeight;
+		}
 	}
 
-	for ( auto &it : pickStreamMap ) {
-		const string &pickID = it.second.first->publicID();
-		DataModel::SensorLocation *loc = it.second.second.first;
-		double distance = it.second.second.second;
+	for ( auto &[streamID, e] : pickStreamMap ) {
+		const string &pickID = e.pick->publicID();
+		DataModel::SensorLocation *loc = e.loc;
+		double distance = e.dist;
 
 		SEISCOMP_DEBUG("using pick %s", pickID.c_str());
 
@@ -1463,21 +1513,26 @@ bool MagTool::processOrigin(DataModel::Origin* origin) {
 
 		// Collect all amplitudes of certain type with highest priority
 		map<string, const DataModel::Amplitude*> usedAmplitudes;
-		
+
 		for ( auto itpi = itp.first; itpi != itp.second; ++itpi ) {
-			const DataModel::Amplitude *ampl  = itpi->second.get();
-			auto amp_it = usedAmplitudes.find(ampl->type());
+			const auto amp  = itpi->second.get();
+
+			if ( !e.used && !considerUnusedArrivals(amp->type()) ) {
+				continue;
+			}
+
+			auto amp_it = usedAmplitudes.find(amp->type());
 
 			if ( amp_it == usedAmplitudes.end() ) {
 				// New entry -> store amplitude
-				usedAmplitudes[ampl->type()] = ampl;
+				usedAmplitudes[amp->type()] = amp;
 			}
 			else {
 				// If an amplitude for a particular type is stored already check
 				// its priority and replace it
 				const DataModel::Amplitude *stored_ampl = amp_it->second;
-				if ( hasHigherPriority(ampl, stored_ampl) ) {
-					amp_it->second = ampl;
+				if ( hasHigherPriority(amp, stored_ampl) ) {
+					amp_it->second = amp;
 				}
 			}
 
@@ -1488,9 +1543,9 @@ bool MagTool::processOrigin(DataModel::Origin* origin) {
 
 				for ( size_t i = 0; i < origin->stationMagnitudeCount(); ++i ) {
 					StaMag *stamag = origin->stationMagnitude(i);
-					if ( stamag->type() == ampl->type()
-					  && stamag->amplitudeID() == ampl->publicID() ) {
-						amp_it->second = ampl;
+					if ( stamag->type() == amp->type()
+					  && stamag->amplitudeID() == amp->publicID() ) {
+						amp_it->second = amp;
 						ok = true;
 						break;
 					}
@@ -1535,7 +1590,7 @@ bool MagTool::processOrigin(DataModel::Origin* origin) {
 			if ( !newInstance ) {
 				DataModel::touch(netMag.get());
 				netMag->update();
-				SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+				SCCoreApp->logObject(outputMagLog, Core::Time::UTC());
 				SC_FMT_DEBUG("U NETMAG {}: {}", netMag->publicID(), netMag->magnitude().value());
 			}
 		}
@@ -1566,7 +1621,7 @@ bool MagTool::processOriginUpdateOnly(DataModel::Origin *origin) {
 
 	vector<double> mv, weights;
 
-	Time now = Time::GMT();
+	Time now = Time::UTC();
 
 	try { depth = origin->depth().value(); }
 	catch ( ... ) {
@@ -1893,11 +1948,11 @@ bool MagTool::processOriginUpdateOnly(DataModel::Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
+bool MagTool::feed(DataModel::Amplitude* amp, bool update, bool remove) {
 	SEISCOMP_DEBUG("Received amplitude %s, update = %d, remove = %d",
-	               ampl->publicID().c_str(), update, remove);
+	               amp->publicID().c_str(), update, remove);
 
-	auto agencyID = objectAgencyID(ampl);
+	auto agencyID = objectAgencyID(amp);
 
 	if ( SCCoreApp->isAgencyIDBlocked(agencyID) ) {
 		SEISCOMP_DEBUG(" -> agency '%s' is blocked", agencyID.c_str());
@@ -1905,17 +1960,17 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 	}
 
 	// Has a magnitude processor for this type been configured?
-	if ( _processors.find(ampl->type()) == _processors.end() ) {
+	if ( _processors.find(amp->type()) == _processors.end() ) {
 		SEISCOMP_DEBUG(" -> no magnitude configured for amplitude type '%s'",
-		               ampl->type().c_str());
+		               amp->type().c_str());
 		return false;
 	}
 
-	if ( !remove && !_feed(ampl, update) ) {
+	if ( !remove && !_feed(amp, update) ) {
 		return false;
 	}
 
-	const std::string &pickID = ampl->pickID();
+	const std::string &pickID = amp->pickID();
 
 	OriginList *origins = originsForPick(pickID);
 
@@ -1942,10 +1997,10 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 		//   origin from the database and start to compute magnitudes which are
 		//   probably already part of that origin and will arrive with the next message.
 
-		Core::Time now = Core::Time::GMT();
+		Core::Time now = Core::Time::UTC();
 
 		SEISCOMP_DEBUG("Fetch origins to be updated from database");
-		auto dbit = SCCoreApp->query()->getOriginsForAmplitude(ampl->publicID());
+		auto dbit = SCCoreApp->query()->getOriginsForAmplitude(amp->publicID());
 
 		for ( ; *dbit; ++dbit ) {
 			DataModel::OriginPtr origin = DataModel::Origin::Cast(*dbit);
@@ -2012,15 +2067,15 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 
 	try {
 		loc = Client::Inventory::Instance()->getSensorLocation(
-			ampl->waveformID().networkCode(),
-			ampl->waveformID().stationCode(),
-			ampl->waveformID().locationCode(),
-			ampl->timeWindow().reference()
+			amp->waveformID().networkCode(),
+			amp->waveformID().stationCode(),
+			amp->waveformID().locationCode(),
+			amp->timeWindow().reference()
 		);
 	}
 	catch ( ... ) {
 		SEISCOMP_WARNING("No sensor location meta data for amplitude %s",
-		                 ampl->publicID().c_str());
+		                 amp->publicID().c_str());
 	}
 
 	for ( auto origin : *origins ) {
@@ -2041,11 +2096,10 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 			DataModel::Pick *pPick = nullptr;
 			DataModel::Arrival *arr = nullptr;
 			bool anotherFirst = false;
-			bool invalidWeightArrival = false;
+			bool invalidArrivalWeight = false;
 
 			for ( size_t i = 0; i < arrivalCount; ++i ) {
 				DataModel::Arrival *a = origin->arrival(i);
-
 				DataModel::PickPtr p = _objectCache.get<DataModel::Pick>(a->pickID());
 				if ( !p ) {
 					SEISCOMP_WARNING("Pick %s not found -> skipping arrival %s[%lu]",
@@ -2053,14 +2107,19 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 					continue;
 				}
 
-				if ( ampl->waveformID().networkCode() != p->waveformID().networkCode() ||
-				     ampl->waveformID().stationCode() != p->waveformID().stationCode() ||
-				     ampl->waveformID().locationCode() != p->waveformID().locationCode() ) {
+				if ( amp->waveformID().networkCode() != p->waveformID().networkCode() ||
+				     amp->waveformID().stationCode() != p->waveformID().stationCode() ||
+				     amp->waveformID().locationCode() != p->waveformID().locationCode() ) {
 					continue;
 				}
 
-				if ( !validArrival(a, _minimumArrivalWeight) ) {
-					invalidWeightArrival = true;
+				if ( getShortPhaseName(a->phase().code()) != 'P' ) {
+					continue;
+				}
+
+				if ( (arrivalWeight(a) < _minimumArrivalWeight)
+				  && !considerUnusedArrivals(amp->type()) ) {
+					invalidArrivalWeight = true;
 					continue;
 				}
 
@@ -2076,7 +2135,7 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 
 				// When the ID's match and the "first" p pick is the same as
 				// the arrival pick then set the arrival to use
-				if ( ampl->pickID() == a->pickID() ) {
+				if ( amp->pickID() == a->pickID() ) {
 					if ( pPick == p ) {
 						arr = a;
 					}
@@ -2094,19 +2153,19 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 
 			if ( !arr ) {
 				if ( !anotherFirst ) {
-					if ( !invalidWeightArrival )
+					if ( !invalidArrivalWeight )
 						SEISCOMP_WARNING("No matching arrival for pickID '%s' found, "
 						                 "but origin '%s' has been returned in query",
-						                 ampl->pickID().c_str(), origin->publicID().c_str());
+						                 amp->pickID().c_str(), origin->publicID().c_str());
 				}
 				else {
 					SEISCOMP_INFO("There is another first P arrival than %s for amp %s",
-					              ampl->pickID().c_str(), ampl->publicID().c_str());
+					              amp->pickID().c_str(), amp->publicID().c_str());
 				}
 				continue;
 			}
 
-			const DataModel::WaveformStreamID &wfid = ampl->waveformID();
+			const DataModel::WaveformStreamID &wfid = amp->waveformID();
 			double del, dep;
 
 			try {
@@ -2120,7 +2179,7 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 
 			MagnitudeList mags;
 
-			if ( !computeStationMagnitude(ampl, origin.get(), loc, del, dep, mags) ) {
+			if ( !computeStationMagnitude(amp, origin.get(), loc, del, dep, mags) ) {
 				continue;
 			}
 
@@ -2131,7 +2190,7 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 				}
 
 				entry.proc->finalizeMagnitude(staMag.get());
-				staMag->setAmplitudeID(ampl->publicID());
+				staMag->setAmplitudeID(amp->publicID());
 				staMag->setPassedQC(entry.passedQC);
 
 				const string &mtype = staMag->type();
@@ -2142,7 +2201,7 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 					if ( !newInstance ) {
 						DataModel::touch(netMag.get());
 						netMag->update();
-						SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+						SCCoreApp->logObject(outputMagLog, Core::Time::UTC());
 						SC_FMT_DEBUG("U NETMAG {}: {}", netMag->publicID(), netMag->magnitude().value());
 					}
 
@@ -2163,7 +2222,7 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 			set<string> mtypes;
 
 			for ( size_t i = 0; i < origin->stationMagnitudeCount(); ++i ) {
-				if ( origin->stationMagnitude(i)->amplitudeID() == ampl->publicID() ) {
+				if ( origin->stationMagnitude(i)->amplitudeID() == amp->publicID() ) {
 					mtypes.insert(origin->stationMagnitude(i)->type());
 					origin->removeStationMagnitude(i);
 					break;
@@ -2178,7 +2237,7 @@ bool MagTool::feed(DataModel::Amplitude* ampl, bool update, bool remove) {
 					if ( !newInstance ) {
 						DataModel::touch(netMag.get());
 						netMag->update();
-						SCCoreApp->logObject(outputMagLog, Core::Time::GMT());
+						SCCoreApp->logObject(outputMagLog, Core::Time::UTC());
 						SC_FMT_DEBUG("U NETMAG {}: {}", netMag->publicID(), netMag->magnitude().value());
 					}
 

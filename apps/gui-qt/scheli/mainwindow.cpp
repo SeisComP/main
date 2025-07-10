@@ -49,7 +49,7 @@ MainWindow::MainWindow() {
 	_ui.frameSpacer->setFixedWidth(_heliWidget->canvas().labelWidth());
 
 	QVBoxLayout *layout = new QVBoxLayout(_ui.frameHeli);
-	layout->setMargin(0);
+	layout->setContentsMargins(0, 0, 0, 0);
 	_ui.frameHeli->setLayout(layout);
 	layout->addWidget(_heliWidget);
 
@@ -195,7 +195,7 @@ void MainWindow::setLineWidth(int lw) {
 void MainWindow::setLayout(int rows, int secondsPerRow) {
 	_rowTimeSpan = secondsPerRow;
 	_heliWidget->canvas().setLayout(rows, secondsPerRow);
-	_fullTimeSpan = Core::TimeSpan(rows * secondsPerRow);
+	_fullTimeSpan = Core::TimeSpan(rows * secondsPerRow, 0);
 }
 
 
@@ -285,7 +285,7 @@ void MainWindow::startAcquisition() {
 	                         _streamID.stationCode(),
 	                         _streamID.locationCode(),
 	                         _streamID.channelCode(),
-	                         (_referenceTime.valid()?_referenceTime:Core::Time::GMT()) - _heliWidget->canvas().recordsTimeSpan(),
+	                         (_referenceTime ? *_referenceTime : Core::Time::UTC()) - _heliWidget->canvas().recordsTimeSpan(),
 	                         _referenceTime);
 
 	_streamThread->start();
@@ -327,22 +327,26 @@ void MainWindow::updateTimeLabel(const Core::Time &time) {
 	QString from = (time-_fullTimeSpan).toString(_timeFormat.c_str()).c_str();
 	QString to = (time-Core::TimeSpan(0,1)).toString(_timeFormat.c_str()).c_str();
 
-	if ( from != to && !from.isEmpty() && !to.isEmpty() )
-		_ui.labelDate->setText(QString("%1 - %2").arg(from).arg(to));
-	else
+	if ( from != to && !from.isEmpty() && !to.isEmpty() ) {
+		_ui.labelDate->setText(QString("%1 - %2").arg(from, to));
+	}
+	else {
 		_ui.labelDate->setText(QString("%1").arg(to));
+	}
 }
 
 
 void MainWindow::advanceTime() {
-	if ( _fixCurrentTimeToLastRecord ) return;
+	if ( _fixCurrentTimeToLastRecord ) {
+		return;
+	}
 
-	if ( _referenceTime.valid() ) {
-		_heliWidget->setCurrentTime(_referenceTime - Core::TimeSpan(0,1));
-		updateTimeLabel(_referenceTime);
+	if ( _referenceTime ) {
+		_heliWidget->setCurrentTime(*_referenceTime - Core::TimeSpan(0,1));
+		updateTimeLabel(*_referenceTime);
 	}
 	else {
-		Core::Time now = Core::Time::GMT();
+		Core::Time now = Core::Time::UTC();
 		_heliWidget->setCurrentTime(now);
 		updateTimeLabel(now);
 	}

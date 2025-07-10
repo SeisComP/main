@@ -70,7 +70,8 @@ class MagToolApp : public Seiscomp::Client::Application {
 			commandline().addGroup("Input");
 			commandline().addOption("Input", "ep",
 			                        "Event parameters XML file to be read and "
-			                        "processed. This implies offline mode and "
+			                        "processed. Use '-' to read from stdin. "
+			                        "This implies offline mode and "
 			                        "only processes all origins contained in "
 			                        "that file. It computes station magnitudes "
 			                        "for all picks associated with an origin "
@@ -100,6 +101,10 @@ class MagToolApp : public Seiscomp::Client::Application {
 			                        "accumulation function of the network magnitude.");
 			commandline().addOption("Reprocess", "keep-weights",
 			                        "Reuse the original weights in combintation with --static.");
+			commandline().addGroup("Output");
+			commandline().addOption("Output", "formatted,f",
+			                        "Use formatted XML output along with '--ep'. "
+			                        "Otherwise XML is unformatted.");
 		}
 
 		bool validateParameters() {
@@ -158,7 +163,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 					return false;
 				}
 
-				if ( percent < 0 || percent > 100 ) {
+				if ( (percent < 0) || (percent > 100) ) {
 					SEISCOMP_ERROR("magnitudes.average(%s): 'trimmedMean' parameter with %.2f is out of bounds", type, percent);
 					return false;
 				}
@@ -181,7 +186,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 					return false;
 				}
 
-				if ( percent < 0 || percent > 100 ) {
+				if ( (percent < 0) || (percent > 100) ) {
 					SEISCOMP_ERROR("magnitudes.average(%s): 'trimmedMedian' parameter with %.2f is out of bounds", type, percent);
 					return false;
 				}
@@ -196,7 +201,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 					return false;
 				}
 
-				if ( distance < 0 || distance > 100 ) {
+				if ( (distance < 0) || (distance > 100) ) {
 					SEISCOMP_ERROR("magnitudes.average(%s): 'medianTrimmedMean' parameter with %.2f is out of bounds", type, distance);
 					return false;
 				}
@@ -375,8 +380,9 @@ class MagToolApp : public Seiscomp::Client::Application {
 		}
 
 		bool init() {
-			if ( !Application::init() )
+			if ( !Application::init() ) {
 				return false;
+			}
 
 			_magtool.inputPickLog = addInputObjectLog("pick");
 			_magtool.inputAmpLog = addInputObjectLog("amplitude");
@@ -391,8 +397,11 @@ class MagToolApp : public Seiscomp::Client::Application {
 			              commandline().hasOption("keep-weights"),
 			              _warningLevel);
 
-			if ( _interval > 0 )
+			if ( _interval > 0 ) {
 				enableTimer(_interval);
+			}
+
+			_formatted = commandline().hasOption("formatted");
 
 			return true;
 		}
@@ -432,7 +441,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 				}
 
 				ar.create("-");
-				ar.setFormattedOutput(true);
+				ar.setFormattedOutput(_formatted);
 				ar << ep;
 				ar.close();
 
@@ -480,14 +489,14 @@ class MagToolApp : public Seiscomp::Client::Application {
 		void addObject(const std::string &parentID, DataModel::Object *object) {
 			Pick *pick = Pick::Cast(object);
 			if ( pick != NULL ) {
-				logObject(_magtool.inputPickLog, Time::GMT());
+				logObject(_magtool.inputPickLog, Time::UTC());
 				_magtool.feed(pick);
 				return;
 			}
 
 			Amplitude *ampl = Amplitude::Cast(object);
 			if ( ampl != NULL ) {
-				logObject(_magtool.inputAmpLog, Time::GMT());
+				logObject(_magtool.inputAmpLog, Time::UTC());
 				Notifier::Enable();
 				_magtool.feed(ampl, false, false);
 				Notifier::Disable();
@@ -496,7 +505,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 
 			Origin *origin = Origin::Cast(object);
 			if ( origin != NULL ) {
-				logObject(_magtool.inputOrgLog, Time::GMT());
+				logObject(_magtool.inputOrgLog, Time::UTC());
 				// When an origins arrives the initial magnitudes
 				// have to be sent out immediately
 				_sendImmediately = true;
@@ -510,7 +519,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 		void updateObject(const std::string &, DataModel::Object *object) {
 			Amplitude *ampl = Amplitude::Cast(object);
 			if ( ampl != NULL ) {
-				logObject(_magtool.inputAmpLog, Time::GMT());
+				logObject(_magtool.inputAmpLog, Time::UTC());
 				Notifier::Enable();
 				_magtool.feed(ampl, true, false);
 				Notifier::Disable();
@@ -519,7 +528,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 
 			Origin *origin = Origin::Cast(object);
 			if ( origin != NULL ) {
-				logObject(_magtool.inputOrgLog, Time::GMT());
+				logObject(_magtool.inputOrgLog, Time::UTC());
 				// When an origins arrives the initial magnitudes
 				// have to be sent out immediately
 				_sendImmediately = true;
@@ -554,7 +563,8 @@ class MagToolApp : public Seiscomp::Client::Application {
 		MagTool _magtool;
 
 		std::string _epFile;
-		double _warningLevel;
+		bool        _formatted{false};
+		double      _warningLevel;
 };
 
 

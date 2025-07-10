@@ -40,7 +40,7 @@ import seiscomp.logging
 import seiscomp.client
 import seiscomp.system
 
-from seiscomp.math import KM_OF_DEGREE
+from seiscomp.math import WGS84_KM_OF_DEGREE
 
 from seiscomp.fdsnws.utils import isRestricted, u_str, b_str
 from seiscomp.fdsnws.dataselect import (
@@ -68,7 +68,6 @@ from seiscomp.fdsnws.http import (
     NoResource,
     Site,
     ServiceVersion,
-    AuthResource,
     WADLFilter,
 )
 from seiscomp.fdsnws.log import Log
@@ -163,7 +162,7 @@ class UserDB:
     # -------------------------------------------------------------------------
     def checkPassword(self, cred):
         try:
-            pw = self.__users[cred.username][0]
+            pw = self.__users[u_str(cred.username)][0]
 
         except KeyError:
             return False
@@ -179,7 +178,7 @@ class UserDB:
         seiscomp.logging.info("known users:")
 
         for name, user in list(self.__users.items()):
-            seiscomp.logging.info(f" {u_str(name)} {user[1]} {user[2]}")
+            seiscomp.logging.info(f" {name} {user[1]} {user[2]}")
 
 
 ###############################################################################
@@ -879,7 +878,7 @@ Execute on command line with debug output
         if self._invCoordinatePrecision is not None:
             invCoordinatePrecisionStr = (
                 f"{self._invCoordinatePrecision} decimal places (≅"
-                f"{int(KM_OF_DEGREE * 1000 / 10**self._invCoordinatePrecision)}m)"
+                f"{int(WGS84_KM_OF_DEGREE * 1000 / 10**self._invCoordinatePrecision)}m)"
             )
         else:
             invCoordinatePrecisionStr = "unlimited"
@@ -946,9 +945,9 @@ configuration read:
         stationInv = dataSelectInv = None
         if self._serveDataSelect or self._serveStation:
             retn = False
-            stationInv = (
-                dataSelectInv
-            ) = seiscomp.client.Inventory.Instance().inventory()
+            stationInv = dataSelectInv = (
+                seiscomp.client.Inventory.Instance().inventory()
+            )
             seiscomp.logging.info("inventory loaded")
 
             if self._serveDataSelect and self._serveStation:
@@ -1051,6 +1050,8 @@ configuration read:
             dataselect1.putChild(b"builder", fileRes)
 
             if self._authEnabled:
+                from seiscomp.fdsnws.authresource import AuthResource
+
                 dataselect1.putChild(
                     b"auth",
                     AuthResource(DataSelectVersion, self._authGnupgHome, self._userdb),

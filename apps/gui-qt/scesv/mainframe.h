@@ -12,10 +12,9 @@
  ***************************************************************************/
 
 
+#ifndef MAINFRAME_H
+#define MAINFRAME_H
 
-
-#ifndef __MAINFRAME_H__
-#define __MAINFRAME_H__
 
 #include <QtGui>
 #include <seiscomp/gui/core/mainwindow.h>
@@ -23,7 +22,6 @@
 #include <seiscomp/datamodel/databasequery.h>
 #endif
 #include "ui_mainframe.h"
-#include <seiscomp/gui/datamodel/magnitudeview.h>
 
 
 namespace Seiscomp {
@@ -46,8 +44,9 @@ class MainFrame : public Gui::MainWindow {
 		MainFrame();
 		~MainFrame();
 
-		Gui::EventSummaryView* eventSummaryView() const;
 
+	public:
+		Gui::EventSummaryView* eventSummaryView() const;
 		void loadEvents(float days);
 
 
@@ -73,5 +72,6 @@ class MainFrame : public Gui::MainWindow {
 }
 }
 }
+
 
 #endif

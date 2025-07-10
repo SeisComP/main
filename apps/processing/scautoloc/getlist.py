@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 import sys
+import traceback
+
 import seiscomp.core
 import seiscomp.client
-import seiscomp.dataModel
+import seiscomp.datamodel
 
 
 class InvApp(seiscomp.client.Application):
@@ -15,16 +17,16 @@ class InvApp(seiscomp.client.Application):
 
     def validateParameters(self):
         try:
-            if seiscomp.client.Application.validateParameters(self) == False:
+            if not seiscomp.client.Application.validateParameters(self):
                 return False
-
-            return True
 
         except:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
             sys.exit(-1)
+
+        return True
 
     def run(self):
         now = seiscomp.core.Time.GMT()
@@ -41,8 +43,13 @@ class InvApp(seiscomp.client.Application):
                 for ista in range(nsta):
                     sta = net.station(ista)
                     line = "%-2s %-5s %9.4f %9.4f %6.1f" % (
-                        net.code(), sta.code(), sta.latitude(), sta.longitude(), sta.elevation())
-#                   print dir(sta)
+                        net.code(),
+                        sta.code(),
+                        sta.latitude(),
+                        sta.longitude(),
+                        sta.elevation(),
+                    )
+                    #                   print dir(sta)
                     try:
                         start = sta.start()
                     except:

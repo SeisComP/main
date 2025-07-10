@@ -6,12 +6,14 @@
 			<group name="heli">
 				<parameter name="streams" type="list:string" default="" unit="">
 					<description>
-					List of stream codes to be plotted (net.sta.loc.cha).
-					If not in capture mode only the first stream is shown.
+					List of stream codes to be plotted.
+					If not in capture mode, only the first stream is shown.
 					When using a list, the first entry is considered.
 					Use commas for separating streams.
 
-					Example: GR.MOX..BHZ
+					Format: NET.STA.LOC.CHA
+
+					Example: GR.CLL..BHZ,GR.MOX..BHZ
 					</description>
 				</parameter>
 				<parameter name="filter" type="string" default="" unit="">
@@ -62,7 +64,7 @@
 					Gain-corrected amplitudes given in units of the sensor.
 					For example: m/s.
 					</description>
-					<parameter name="scaling" type="string" default="minmax">
+					<parameter name="scaling" type="string" default="minmax" values="minmax,row">
 						<description>
 						Define the method to scale traces within rows. Possible
 						values are: 

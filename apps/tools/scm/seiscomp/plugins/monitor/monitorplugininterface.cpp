@@ -34,11 +34,13 @@ IMPLEMENT_SC_ABSTRACT_CLASS(MonitorPluginInterface, "MonitorPluginInterface");
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool findName(ClientInfoData clientData, std::string name) {
-	ClientInfoData::const_iterator it = clientData.find(Client::Status::Clientname);
-	if ( it == clientData.end() )
+	auto it = clientData.find(Client::Status::Clientname);
+	if ( it == clientData.end() ) {
 		return false;
-	if ( name != it->second )
+	}
+	if ( name != it->second ) {
 		return false;
+	}
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -48,8 +50,8 @@ bool findName(ClientInfoData clientData, std::string name) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 MonitorPluginInterface::MonitorPluginInterface(const std::string& name)
-	: _filterMeanInterval(10*60),
-	  _filterMeanTimeMark(Core::Time::GMT()),
+	: _filterMeanInterval(10*60, 0),
+	  _filterMeanTimeMark(Core::Time::UTC()),
 	  _name(name),
 	  _operational(false),
 	  _isFilteringEnabled(false),
@@ -173,14 +175,16 @@ const ClientTable* MonitorPluginInterface::filter(const ClientTable& clientTable
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-const ClientTable* MonitorPluginInterface::filterMean(const ClientTable& clientTable) {
+const ClientTable* MonitorPluginInterface::filterMean(const ClientTable &clientTable) {
 	// Delete already disconnected clients
 	ClientTable::iterator fmIt = _filterMeanClientTable.begin();
 	while ( fmIt != _filterMeanClientTable.end() ) {
-		ClientTable::const_iterator found = std::find_if(
+		auto found = std::find_if(
 				clientTable.begin(),
 				clientTable.end(),
-				std::bind2nd(std::ptr_fun(findName), fmIt->info[Client::Status::Clientname])
+				[&fmIt](const ClientTableEntry &entry) -> bool {
+					return findName(entry, fmIt->info[Client::Status::Clientname]);
+				}
 		);
 		if ( found == clientTable.end() ) {
 			_filterMeanMessageCount.erase(fmIt->info[Client::Status::Clientname]);
@@ -194,10 +198,13 @@ const ClientTable* MonitorPluginInterface::filterMean(const ClientTable& clientT
 	// Add newly connected clients
 	ClientTable::const_iterator ctIt = clientTable.begin();
 	for ( ; ctIt != clientTable.end(); ++ctIt ) {
-		ClientTable::iterator found = std::find_if(
+		auto &name = ctIt->info.find(Client::Status::Clientname)->second;
+		auto found = std::find_if(
 				_filterMeanClientTable.begin(),
 				_filterMeanClientTable.end(),
-				std::bind2nd(std::ptr_fun(findName), ctIt->info.find(Client::Status::Clientname)->second)
+				[name](const ClientTableEntry &entry) -> bool {
+					return findName(entry, name);
+				}
 		);
 
 		if ( found != _filterMeanClientTable.end() ) {
@@ -227,8 +234,8 @@ const ClientTable* MonitorPluginInterface::filterMean(const ClientTable& clientT
 		}
 	}
 
-	if ( Core::Time::GMT() - _filterMeanTimeMark >= _filterMeanInterval ) {
-		_filterMeanTimeMark = Core::Time::GMT();
+	if ( Core::Time::UTC() - _filterMeanTimeMark >= _filterMeanInterval ) {
+		_filterMeanTimeMark = Core::Time::UTC();
 		// Calculate mean
 		for ( ClientTable::iterator it = _filterMeanClientTable.begin();
 			 it != _filterMeanClientTable.end(); ++it ) {

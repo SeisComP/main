@@ -92,6 +92,8 @@ class SyncStationXML : public Client::Application {
 			                        "Add more output to stderr for all channel "
 			                        "response stages when converting from "
 			                        "StationXML.");
+			commandline().addOption("Convert", "only-instruments",
+			                        "Convert only instruments and ignore networks.");
 		}
 
 		bool validateParameters() {
@@ -102,6 +104,14 @@ class SyncStationXML : public Client::Application {
 
 			if ( commandline().hasOption("to-staxml") )
 				_convertBack = true;
+
+			if ( commandline().hasOption("only-instruments") ) {
+				if ( _convertBack ) {
+					cout << "--only-instruments is not supported in combination with --to-staxml" << endl;
+					return false;
+				}
+				_onlyInstruments = true;
+			}
 
 			const vector<string> &args = commandline().unrecognizedOptions();
 			if ( args.size() < 1 ) {
@@ -137,9 +147,9 @@ class SyncStationXML : public Client::Application {
 
 			cout << "Examples:" << endl;
 			cout << "Convert FDSN StationXML to SCML" << endl
-			     << "  fdnsxml2inv fdsn-station.xml inventory.xml" << endl;
+			     << "  fdsnxml2inv fdsn-station.xml inventory.xml" << endl;
 			cout  << endl << "Convert SCML to FDSN StationXML" << endl
-			     << "  fdnsxml2inv --to-staxml inventory.xml fdsn-station.xml" << endl;
+			     << "  fdsnxml2inv --to-staxml inventory.xml fdsn-station.xml" << endl;
 		}
 
 
@@ -150,7 +160,7 @@ class SyncStationXML : public Client::Application {
 				_activeConverter->interrupt();
 		}
 
-		bool convertToSC3() {
+		bool convertToSC() {
 			DataModel::InventoryPtr inv;
 
 			inv = Client::Inventory::Instance()->inventory();
@@ -165,7 +175,9 @@ class SyncStationXML : public Client::Application {
 
 			_activeConverter = &cnv;
 
-			if ( _exitRequested ) return false;
+			if ( _exitRequested ) {
+				return false;
+			}
 
 			FDSNXML::Importer imp;
 			imp.setStrictNamespaceCheck(_strictNsCheck);
@@ -195,6 +207,12 @@ class SyncStationXML : public Client::Application {
 			if ( _exitRequested ) {
 				cerr << "Exit requested" << endl;
 				return false;
+			}
+
+			if ( _onlyInstruments ) {
+				while ( inv->networkCount() > 0 ) {
+					inv->removeNetwork(0);
+				}
 			}
 
 			cerr << "Finished processing" << endl;
@@ -242,7 +260,7 @@ class SyncStationXML : public Client::Application {
 
 			FDSNXML::FDSNStationXML msg;
 			msg.setSender(agencyID());
-			msg.setCreated(Core::Time::GMT());
+			msg.setCreated(Core::Time::UTC());
 			msg.setSource("SeisComP");
 			Convert2FDSNStaXML cnv(&msg);
 			_activeConverter = &cnv;
@@ -272,7 +290,7 @@ class SyncStationXML : public Client::Application {
 			if ( _convertBack )
 				return convertToStaXML();
 			else
-				return convertToSC3();
+				return convertToSC();
 		}
 
 
@@ -282,6 +300,7 @@ class SyncStationXML : public Client::Application {
 		string     _inputFile;
 		string     _outputFile;
 		bool       _strictNsCheck;
+		bool       _onlyInstruments{false};
 };
 
 

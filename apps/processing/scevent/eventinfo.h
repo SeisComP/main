@@ -34,14 +34,14 @@
 
 
 namespace Seiscomp {
-
 namespace Client {
 
 
 DEFINE_SMARTPOINTER(EventInformation);
 
 struct EventInformation : public Seiscomp::Core::BaseObject {
-	typedef DataModel::PublicObjectCache Cache;
+	using Cache = DataModel::PublicObjectCache;
+	using PickCache = std::map<std::string, DataModel::PickPtr>;
 
 	EventInformation(Cache *cache, Config *cfg);
 
@@ -67,7 +67,8 @@ struct EventInformation : public Seiscomp::Core::BaseObject {
 	void loadAssocations(DataModel::DatabaseQuery *q);
 
 	//! Returns the number of matching picks
-	size_t matchingPicks(DataModel::DatabaseQuery *q, DataModel::Origin *o);
+	size_t matchingPicks(DataModel::DatabaseQuery *q, DataModel::Origin *o,
+	                     const PickCache *cache);
 
 	bool valid() const;
 
@@ -85,7 +86,7 @@ struct EventInformation : public Seiscomp::Core::BaseObject {
 	Config                                *cfg;
 
 	typedef std::multimap<std::string, DataModel::PickPtr> PickAssociation;
-	bool                                   created;
+	bool                                   created{false};
 	std::set<std::string>                  pickIDs;
 	PickAssociation                        picks;
 	DataModel::EventPtr                    event;
@@ -96,13 +97,12 @@ struct EventInformation : public Seiscomp::Core::BaseObject {
 
 	Constraints                            constraints;
 
-	bool                                   aboutToBeRemoved;
-	bool                                   dirtyPickSet;
+	bool                                   aboutToBeRemoved{false};
+	bool                                   dirtyPickSet{false};
 };
 
 
 }
-
 }
 
 

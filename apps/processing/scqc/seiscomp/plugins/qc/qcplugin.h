@@ -50,8 +50,8 @@ class SC_QCPLUGIN_API QcApp : public Processing::Application {
 		QcApp(int argc, char **argv) : Processing::Application(argc, argv) {}
 
 		virtual bool exitRequested() const { return false; }
-		virtual const QcConfig* qcConfig() const { return NULL; }
-		virtual QcMessenger* qcMessenger() const { return NULL; }
+		virtual const QcConfig *qcConfig() const { return nullptr; }
+		virtual QcMessenger *qcMessenger() const { return nullptr; }
 
 		typedef bsig::signal<void()> TimerSignal;
 		virtual void addTimeout(const TimerSignal::slot_type& onTimeout) const {}
@@ -80,20 +80,20 @@ class QcPlugin : public Processing::QcProcessorObserver {
 		virtual void update();
 
 		//! Returns the plugin specific name given to plugin registry
-		virtual std::string registeredName() const = 0;
+		virtual std::string registeredName() const;
 
 		//! Returns the plugin specific parameter names
-		virtual std::vector<std::string> parameterNames() const = 0;
+		virtual std::vector<std::string> parameterNames() const;
 
 		//! Returns the corresponding QcProcessor object
 		Processing::QcProcessor* qcProcessor();
 
 		//! Finish the work
 		void done();
-	
+
 	protected:
 		void onTimeout();
-		virtual void timeoutTask() = 0;
+		virtual void timeoutTask();
 
 		virtual double mean(const QcBuffer* qcb) const;
 		virtual double stdDev(const QcBuffer* qcb, double mean) const;
@@ -111,22 +111,23 @@ class QcPlugin : public Processing::QcProcessorObserver {
 
 		void sendMessages(const Core::Time &rectime);
 
-		mutable std::queue<DataModel::ObjectPtr> _objects;
-		std::string _name;
-		std::vector<std::string> _parameterNames;
-		std::string _streamID;
-		QcApp* _app;
-		QcMessenger* _qcMessenger;
-		const QcConfig* _qcConfig;
-		mutable QcBufferPtr _qcBuffer;
-		Processing::QcProcessorPtr _qcProcessor;
+	protected:
+		mutable std::queue<DataModel::ObjectPtr>  _objects;
+		std::string                               _name;
+		std::vector<std::string>                  _parameterNames;
+		std::string                               _streamID;
+		QcApp                                    *_app;
+		QcMessenger                              *_qcMessenger;
+		const QcConfig                           *_qcConfig;
+		mutable QcBufferPtr                       _qcBuffer;
+		Processing::QcProcessorPtr                _qcProcessor;
 
 	private:
-		mutable Core::Time _lastArchiveTime;
-		mutable Core::Time _lastReportTime;
-		mutable Core::Time _lastAlertTime;
-		mutable bool _firstRecord;
-		mutable Util::StopWatch _timer;
+		mutable Core::Time                        _lastArchiveTime;
+		mutable Core::Time                        _lastReportTime;
+		mutable Core::Time                        _lastAlertTime;
+		mutable bool                              _firstRecord;
+		mutable Util::StopWatch                   _timer;
 };
 
 

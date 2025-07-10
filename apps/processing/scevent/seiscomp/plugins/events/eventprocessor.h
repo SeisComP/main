@@ -11,8 +11,9 @@
  * https://www.gnu.org/licenses/agpl-3.0.html.                             *
  ***************************************************************************/
 
-#ifndef SEISCOMP_APPLICATIONS_EVENTPROCESSOR_H__
-#define SEISCOMP_APPLICATIONS_EVENTPROCESSOR_H__
+
+#ifndef SEISCOMP_APPLICATIONS_EVENTPROCESSOR_H
+#define SEISCOMP_APPLICATIONS_EVENTPROCESSOR_H
 
 
 #include <string>
@@ -27,13 +28,17 @@
 /******************************************************************************
  scevent API Changelog
  ******************************************************************************
+ 4
+   - Added preferredMagnitude()
+ 3
+   - Added newEvent flag to process()
  2
    - Added list of event journal entries to process()
 
  <undefined>
    - Initial API
  */
-#define SCEVENT_EVENTPROCESSOR_API_VERSION 2
+#define SCEVENT_EVENTPROCESSOR_API_VERSION 4
 
 
 namespace Seiscomp {
@@ -41,6 +46,8 @@ namespace Seiscomp {
 
 namespace DataModel {
 
+class Magnitude;
+class Origin;
 class Event;
 DEFINE_SMARTPOINTER(JournalEntry);
 
@@ -72,15 +79,34 @@ class SC_EVPLUGIN_API EventProcessor : public Seiscomp::Core::BaseObject {
 	// Virtual public interface
 	// ----------------------------------------------------------------------
 	public:
-		//! Setup all configuration parameters
+		/**
+		 * @brief Setup all configuration parameters
+		 * @param config The application configuration
+		 * @return Success flag
+		 */
 		virtual bool setup(const Config::Config &config) = 0;
 
-		//! Processes an event. The preferred object (Origin, Magnitude,
-		//! FocalMechanism) are guaranteed to be found with *::Find(id)
-		//! methods.
-		//! This method should return true if the event objects needs
-		//! an update.
+
+		/**
+		 * @brief Selects the preferred magnitude of an origin.
+		 * @param origin The origin to be processed.
+		 * @return Either the preferred magnitude or nullptr.
+		 */
+		virtual DataModel::Magnitude *preferredMagnitude(const DataModel::Origin *origin) = 0;
+
+
+		/**
+		 * @brief Processes an event.
+		 * The preferred object (Origin, Magnitude, FocalMechanism) are
+		 * guaranteed to be found with *::Find(id) methods.
+		 * This method should return true if the event objects needs an
+		 * update.
+		 * @param event The event to be processed.
+		 * @param isNewEvent Whether the event is a new event or an updated event.
+		 * @param journals The list of current event journals.
+		 */
 		virtual bool process(DataModel::Event *event,
+		                     bool isNewEvent,
 		                     const Journal &journals) = 0;
 };
 

@@ -73,19 +73,19 @@ MainFrame::MainFrame() {
 	// create the views and associate them with the model
 
 	//! REPORT MESSAGES
-	_qcReportView = new QcTableView(_qcModel);
+	_qcReportView = new QcTableView(_qcModel, "QcReport");
 	_qcReportView->setRecordStreamURL(SCApp->recordStreamURL());
 	_qcReportView->setDatabaseQueryInterface(SCApp->query());
 	QLayout *Rlayout = new QVBoxLayout(_ui.tabQcReport);
-	Rlayout->setMargin(2);
+	Rlayout->setContentsMargins(2, 2, 2, 2);
 	Rlayout->addWidget(_qcReportView);
 
 	//! OVERVIEW
-	_qcOverView = new QcOverView(_qcModel, this);
+	_qcOverView = new QcOverView(_qcModel, "QcOverview", this);
 	_qcOverView->setRecordStreamURL(SCApp->recordStreamURL());
 	_qcOverView->setDatabaseQueryInterface(SCApp->query());
 	QLayout *Olayout = new QVBoxLayout(_ui.tabQcOver);
-	Olayout->setMargin(2);
+	Olayout->setContentsMargins(2, 2, 2, 2);
 	Olayout->addWidget(_qcOverView);
 
 	connect(SCApp, SIGNAL(messageAvailable(Seiscomp::Core::Message*, Seiscomp::Client::Packet*)),
@@ -159,7 +159,10 @@ void MainFrame::readMessage(Core::Message *msg, Client::Packet *) {
 
 
 bool compareChannelCode(const QString& left, const QString& right) {
-	if ( left.count() < 2 || right.count() < 2 ) return false;
+	if ( (left.size() < 2) || (right.size() < 2) ) {
+		return false;
+	}
+
 	return (left[0] == right[0] || left[0] == '?' || right[0] == '?') &&
 	       (left[1] == right[1] || left[1] == '?' || right[1] == '?');
 }
@@ -265,10 +268,10 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 
 						if ( !isFixedChannel ) {
 							DataModel::SensorLocation *sloc =
-								Client::Inventory::Instance()->getSensorLocation(net, sta, loc, Core::Time::GMT());
+								Client::Inventory::Instance()->getSensorLocation(net, sta, loc, Core::Time::UTC());
 
 							if ( sloc ) {
-								DataModel::Stream *stream = DataModel::getVerticalComponent(sloc, cha.c_str(), Core::Time::GMT());
+								DataModel::Stream *stream = DataModel::getVerticalComponent(sloc, cha.c_str(), Core::Time::UTC());
 								if ( stream ) {
 									cha = stream->code();
 								}
@@ -300,7 +303,7 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 	for ( size_t i = 0; i < inv->networkCount(); ++i ) {
 		Network* net = inv->network(i);
 		try {
-			if ( net->end() < Core::Time::GMT() ) {
+			if ( net->end() < Core::Time::UTC() ) {
 				continue;
 			}
 		}
@@ -329,7 +332,7 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 		for ( size_t j = 0; j < net->stationCount(); ++j ) {
 			Station* sta = net->station(j);
 			try {
-				if ( sta->end() < Core::Time::GMT() ) {
+				if ( sta->end() < Core::Time::UTC() ) {
 					continue;
 				}
 			}
@@ -361,7 +364,7 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 				SensorLocation *loc = sta->sensorLocation(l);
 
 				try {
-					if ( loc->end() < Core::Time::GMT() ){
+					if ( loc->end() < Core::Time::UTC() ){
 						continue;
 					}
 				}
@@ -379,7 +382,7 @@ std::list<std::pair<std::string, bool> > MainFrame::streams() {
 					Stream* stream = loc->stream(s);
 
 					try {
-						if ( stream->end() < Core::Time::GMT() ) {
+						if ( stream->end() < Core::Time::UTC() ) {
 							continue;
 						}
 					}
@@ -463,7 +466,7 @@ void MainFrame::prepareNotifier(QString streamID, bool enable) {
 		CreationInfo ci;
 		ci.setAuthor(SCApp->author());
 		ci.setAgencyID(SCApp->agencyID());
-		ci.setCreationTime(Core::Time::GMT());
+		ci.setCreationTime(Core::Time::UTC());
 
 		newCs->setCreationInfo(ci);
 
@@ -481,12 +484,12 @@ void MainFrame::prepareNotifier(QString streamID, bool enable) {
 		CreationInfo *ci;
 		try {
 			ci = &cs->creationInfo();
-			ci->setModificationTime(Core::Time::GMT());
+			ci->setModificationTime(Core::Time::UTC());
 		}
 		catch ( ... ) {
 			cs->setCreationInfo(CreationInfo());
 			ci = &cs->creationInfo();
-			ci->setCreationTime(Core::Time::GMT());
+			ci->setCreationTime(Core::Time::UTC());
 		}
 
 		ci->setAuthor(SCApp->author());

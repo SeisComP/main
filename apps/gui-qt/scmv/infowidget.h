@@ -278,12 +278,16 @@ class InfoWidgetRegistry {
 				_infoWidgetRegistryImpl.erase(it);
 		}
 
-		T* find(const std::string& id) {
-			iterator it = std::find_if(begin(), end(),
-			                           std::bind2nd(std::ptr_fun(__compareInfoWidgetIds), id));
-			if ( it != end() )
+		T *find(const std::string &id) {
+			iterator it = std::find_if(begin(), end(), [id](const InfoWidget* infoWidget) {
+				return infoWidget->id() == id;
+			});
+
+			if ( it != end() ) {
 				return *it;
-			return NULL;
+			}
+
+			return nullptr;
 		}
 
 		size_t count() const {

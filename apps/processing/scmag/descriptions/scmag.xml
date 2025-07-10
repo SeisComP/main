@@ -21,18 +21,18 @@
 				General parameters for computing magnitudes. Others are configured
 				by global binding parameters for specific magnitude types.
 				</description>
-				<parameter name="average" type="list:string" default="default" values="default,mean,median,trimmedMean(25),trimmedMedian(25),medianTrimmedMean(0.5)">
+				<parameter name="average" type="list:string" default="default" values="*default,*mean,*median,*trimmedMean(*),*trimmedMedian(*),*medianTrimmedMean(*)">
 					<description>
-						The methods for computing the network magnitude
-						from station magnitudes. Exactly one method per
-						magnitude can be configured.
-						To define the averaging method per magnitude type append
-						the type after colon, e.g.:
-						&quot;magnitudes.average = default, MLv:median&quot;
+					The methods for computing the network magnitude from station
+					magnitudes. Exactly one method per magnitude can be
+					configured. To define the averaging method per magnitude
+					type append the type after colon. Example:
 
-						default: Compute the mean if less than 4 contributed
-						station magnitudes exist. Otherwise apply trimmedMean(25),
-						trimmed mean with 25%.
+					&quot;magnitudes.average = default, MLv:median&quot;
+
+					default: Compute the mean if less than 4 contributed station
+					magnitudes exist. Otherwise apply trimmedMean(25), trimmed
+					mean with 25%.
 					</description>
 				</parameter>
 			</group>
@@ -52,10 +52,14 @@
 				summed up. The resulting sum is divided by the sum of all weights.
 				</description>
 				<parameter name="enabled" type="boolean" default="true">
-					<description>Enables summary magnitude calculation.</description>
+					<description>
+					Enables summary magnitude calculation.
+					</description>
 				</parameter>
 				<parameter name="type" type="string" default="M">
-					<description>Define the type/name of the summary magnitude.</description>
+					<description>
+					Define the type/name of the summary magnitude.
+					</description>
 				</parameter>
 				<parameter name="minStationCount" type="int" default="1">
 					<description>
@@ -94,14 +98,14 @@
 					for calculating the summary magnitude.
 					Weight = a * magnitudeStationCount + b.
 					</description>
-					<parameter name="a" type="list:string" default="0, Mw(mB):0.4, Mw(Mwp):0.4">
+					<parameter name="a" type="list:string" default="0,Mw(mB):0.4,Mw(Mwp):0.4">
 						<description>
 						Define the coefficients a. To define the value per magnitude
 						type append the type after colon. A value without a
 						type defines the default value.
 						</description>
 					</parameter>
-					<parameter name="b" type="list:string" default="1, MLv:2, Mw(mB):-1, Mw(Mwp):-1">
+					<parameter name="b" type="list:string" default="1,MLv:2, Mw(mB):-1,Mw(Mwp):-1">
 						<description>
 						Define the coefficients b. To define the value per magnitude
 						type append the type after colon. A value without a
@@ -159,7 +163,8 @@
 			<group name="Input">
 				<option long-flag="ep" argument="file" type="string">
 					<description>
-					Defines an event parameters XML file to be read and processed. This
+					Defines an event parameters XML file to be read and
+					processed. Use '-' to read from stdin. This
 					implies offline mode and only processes all origins contained
 					in that file. It computes station magnitudes for all picks associated
 					with an origin where amplitudes are available and the corresponding
@@ -197,6 +202,14 @@
 				<option long-flag="keep-weights">
 					<description>
 					Keep the original weights in combination with --static.
+					</description>
+				</option>
+			</group>
+			<group name="Output">
+				<option flag="f" long-flag="formatted">
+					<description>
+					Use formatted XML output along with '--ep'. Otherwise XML
+					is unformatted.
 					</description>
 				</option>
 			</group>

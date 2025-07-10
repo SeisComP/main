@@ -2,7 +2,7 @@
 <seiscomp>
 	<module name="scxmldump" category="Utilities">
 		<description>
-			Dump database objects to XML files.
+			Dump objects from database or messaging to XML.
 		</description>
 		<command-line>
 		<synopsis>
@@ -50,12 +50,6 @@
 			</group>
 
 			<group name="Dump">
-				<option long-flag="listen">
-					<description>
-					Enable server mode which listens to the message server for
-					incoming events and dumps each received add/update.
-					</description>
-				</option>
 				<option flag="I" long-flag="inventory">
 					<description>
 					Dump the inventory.
@@ -68,24 +62,24 @@
 				</option>
 				<option long-flag="stations" argument="sta-list">
 					<description>
-					If inventory is exported filter the stations to export where
-					each item is in format net[.{sta|*}].
+					If inventory is dumped, filter the stations to dump.
+					Wildcards are supported. Format of each item: net[.{sta|*}].
 					</description>
 				</option>
 				<option flag="C" long-flag="config">
 					<description>
-						Dump the configuration database.
+					Dump the configuration (bindings).
 					</description>
 				</option>
 				<option flag="J" long-flag="journal">
 					<description>
-					Dump the journal. In combination with -E only corresponding 
+					Dump the journal. In combination with -E only corresponding
 					journal entries are included.
 					</description>
 				</option>
 				<option flag="R" long-flag="routing">
 					<description>
-					Dump the routing database.
+					Dump the routing.
 					</description>
 				</option>
 				<option flag="Y" long-flag="availability">
@@ -95,63 +89,99 @@
 				</option>
 				<option long-flag="with-segments">
 					<description>
-					Dump individual data segments.
+					Dump individual data segments. Requires
+					&quot;--availability&quot;.
 					</description>
 				</option>
-				<option flag="O" long-flag="origin" argument="ID">
+				<option long-flag="listen">
 					<description>
-					Origin public ID(s) to dump. Multiple origins may be specified
-					as a comma-separated list.
+					Listen to the message server for incoming events. Otherwise
+					scxmldump reads from database.
 					</description>
 				</option>
 				<option flag="E" long-flag="event" argument="ID">
 					<description>
 					Event public ID(s) to dump. Multiple events may be specified
-					as a comma-separated list.
+					as a comma-separated list. Use "-" for reading the IDs as
+					individual lines from stdin.
+					</description>
+				</option>
+				<option flag="O" long-flag="origin" argument="ID">
+					<description>
+					Origin public ID(s) to dump. Multiple origins may be specified
+					as a comma-separated list. Use "-" for reading the IDs as
+					individual lines from stdin
 					</description>
 				</option>
 				<option flag="P" long-flag="with-picks">
 					<description>
-					Dump associated picks along with origins.
+					Add picks associated to origins.
 					</description>
 				</option>
 				<option flag="A" long-flag="with-amplitudes">
 					<description>
-					Dump associated amplitudes along with magnitudes.
+					Add amplitudes associated to magnitudes.
 					</description>
 				</option>
 				<option flag="M" long-flag="with-magnitudes">
 					<description>
-					Dump station magnitudes.
+					Add station magnitudes associated to origins.
 					</description>
 				</option>
 				<option flag="F" long-flag="with-focal-mechanism">
 					<description>
-					Dump focal mechanisms of events.
+					Add focal mechanisms associated to events.
 					</description>
 				</option>
 				<option flag="a" long-flag="ignore-arrivals">
 					<description>
-					Do not dump arrivals part of origins.
+					Do not dump arrivals of origins.
 					</description>
 				</option>
 				<option long-flag="ignore-magnitudes">
 					<description>
-					Do not export (network) magnitudes of origins. This
+					Do not dump (network) magnitudes of origins. This
 					option is most useful in combination with -O to only
-					export the location information.
+					dump the location information.
 					</description>
 				</option>
 				<option flag="p" long-flag="preferred-only">
 					<description>
-					When exporting events only the preferred origin, the preferred
+					When dumping events only the preferred origin, the preferred
 					magnitude and the preferred focal mechanism will be dumped.
 					</description>
 				</option>
 				<option flag="m" long-flag="all-magnitudes">
 					<description>
-					If only the preferred origin is exported, all magnitudes for
+					If only the preferred origin is dumped, all magnitudes for
 					this origin will be dumped.
+					</description>
+				</option>
+				<option flag="" long-flag="pick" argument="ID">
+					<description>
+					ID(s) of pick(s) to dump. Use '-' to read the IDs as
+					individual lines from stdin.
+					</description>
+				</option>
+				<option flag="" long-flag="public-id" argument="ID">
+					<description>
+					ID(s) of any object(s) to dump. Use '-' to read the IDs as
+					individual lines from stdin. No parent objects are dumped.
+					</description>
+				</option>
+				<option flag="" long-flag="with-childs">
+					<description>
+					Dump also all child objects of dumped objects. Valid only in
+					combination with --public-id.
+					</description>
+				</option>
+				<option flag="" long-flag="with-root">
+					<description>
+					Whether to add the container of exported PublicObjects or
+					not. Objects which are not a direct child of
+					EventParameters, Inventory and so on, also referred to as
+					top-level objects, will not be exported.
+					Valid in combination with --public-id.
 					</description>
 				</option>
 			</group>
@@ -164,7 +194,8 @@
 				</option>
 				<option flag="o" long-flag="output">
 					<description>
-						The output file. Default is stdout.
+						Name of output file. If not given, output is sent to
+						stdout.
 					</description>
 				</option>
 				<option long-flag="prepend-datasize">

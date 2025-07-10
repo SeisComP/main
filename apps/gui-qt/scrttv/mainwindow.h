@@ -116,7 +116,7 @@ class TraceView : public Seiscomp::Gui::RecordView {
 			setUpdatesEnabled(false);
 			Seiscomp::Gui::RecordView::setDefaultDisplay();
 			setJustification(1.0);
-			setTimeRange(-_timeSpan,0);
+			setTimeRange(-_timeSpan.length(), 0);
 			setUpdatesEnabled(true);
 		}
 
@@ -129,7 +129,7 @@ class TraceView : public Seiscomp::Gui::RecordView {
 		) const override;
 
 	private:
-		double _timeSpan;
+		Core::TimeSpan _timeSpan;
 };
 
 
@@ -231,6 +231,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		void sortByDistance();
 		void sortByConfig();
 		void sortByGroup();
+		void restoreDefaultSorting();
 		void colorByConfig();
 
 		void alignLeft();
@@ -349,8 +350,9 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		Gui::ProgressBar                         *_statusBarProg;
 		Core::TimeSpan                            _bufferSize;
 		Core::Time                                _originTime;
-		Core::Time                                _lastRecordTime;
-		Core::TimeWindow                          _dataTimeWindow;
+		OPT(Core::Time)                           _lastRecordTime;
+		Core::Time                                _dataTimeStart;
+		OPT(Core::Time)                           _dataTimeEnd;
 
 		QMap<DataModel::WaveformStreamID, double> _scaleMap;
 		QColor                                    _searchBase, _searchError;
@@ -417,16 +419,28 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		};
 
 		using WaveformStreamSet = std::set<WaveformStreamEntry, ltWaveformStreamID>;
-		WaveformStreamSet _waveformStreams;
-
 		using DecorationDescs = std::vector<DecorationDesc>;
-		DecorationDescs _decorationDescs;
-
 		using ChannelGroups = std::vector<ChannelGroup>;
-		ChannelGroups _channelGroups;
-
 		using ChannelGroupLookup = std::map<std::string, size_t>;
-		ChannelGroupLookup _channelGroupLookup;
+
+		WaveformStreamSet                         _waveformStreams;
+		DecorationDescs                           _decorationDescs;
+		ChannelGroups                             _channelGroups;
+		ChannelGroupLookup                        _channelGroupLookup;
+
+		enum class SortMode {
+			Config,
+			Distance,
+			Station,
+			NetworkStation,
+			Group
+		};
+
+		SortMode                                  _sortMode{SortMode::Config};
+		double                                    _sortLat{0.0};
+		double                                    _sortLon{0.0};
+		double                                    _originLat{999.0};
+		double                                    _originLon{999.0};
 
 	friend class TraceDecorator;
 };

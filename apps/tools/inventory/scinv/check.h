@@ -33,8 +33,8 @@ class Check : public InventoryTask {
 	//  Public interface
 	// ------------------------------------------------------------------
 	public:
-		typedef std::list<Seiscomp::Core::TimeWindow> TimeWindows;
-		typedef std::map<std::string, TimeWindows> EpochMap;
+		using Epochs = std::list<OpenTimeWindow>;
+		using EpochMap = std::map<std::string, Epochs>;
 
 		bool check();
 
@@ -51,10 +51,13 @@ class Check : public InventoryTask {
 		void checkEpoch(const T *obj);
 
 		template <typename T>
-		void checkOverlap(TimeWindows &epochs, const T *obj);
+		void checkOverlap(Epochs &epochs, const T *obj);
 
 		template <typename T1, typename T2>
 		void checkOutside(const T1 *parent, const T2 *obj);
+
+		template <typename T>
+		void checkDescription(const T *obj);
 
 		Seiscomp::DataModel::Sensor *findSensor(const std::string &) const;
 		Seiscomp::DataModel::ResponsePAZ *findPAZ(const std::string &) const;

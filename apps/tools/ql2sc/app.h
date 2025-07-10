@@ -21,9 +21,11 @@
 #include <seiscomp/client/application.h>
 #include <seiscomp/core/datetime.h>
 #include <seiscomp/datamodel/eventparameters.h>
+#include <seiscomp/datamodel/journaling.h>
 #include <seiscomp/datamodel/publicobjectcache.h>
 #include <seiscomp/datamodel/diff.h>
 
+#include <list>
 #include <string>
 
 namespace Seiscomp {
@@ -59,10 +61,10 @@ class App : public Client::Application {
 		void feed(QLClient *client, IO::QuakeLink::Response *response);
 
 	protected:
-		typedef std::vector<QLClient*> QLClients;
-		typedef DataModel::Diff2::Notifiers Notifiers;
-		typedef DataModel::Diff2::LogNode LogNode;
-		typedef DataModel::Diff2::LogNodePtr LogNodePtr;
+		using QLClients = std::vector<QLClient*>;
+		using Notifiers = DataModel::Diff2::Notifiers;
+		using LogNode = DataModel::Diff2::LogNode;
+		using LogNodePtr = DataModel::Diff2::LogNodePtr;
 
 		void createCommandLineDescription() override;
 
@@ -76,18 +78,21 @@ class App : public Client::Application {
 		void removeObject(const std::string& parentID, DataModel::Object *obj) override;
 		void handleTimeout() override;
 
+		bool handleQLMessage(QLClient *client, const IO::QuakeLink::Response *msg);
 		bool dispatchResponse(QLClient *client, const IO::QuakeLink::Response *response);
 
 		template <class T>
 		void diffPO(T *remotePO, const std::string &parentID,
-		            Notifiers &notifiers, LogNode *logNode = NULL);
+		            Notifiers &notifiers, LogNode *logNode = nullptr);
 
 		void syncEvent(const DataModel::EventParameters *ep,
+		               const DataModel::Journaling *journals,
 		               const DataModel::Event *event,
 		               const RoutingTable *routing,
 		               Notifiers &notifiers, bool syncPreferred);
 
-		bool sendNotifiers(const Notifiers &notifiers, const RoutingTable &routing);
+		bool sendNotifiers(const DataModel::EventParameters *ep,
+		                   const Notifiers &notifiers, const RoutingTable &routing);
 		bool sendJournals(const Notifiers &journals);
 		void applyNotifier(const DataModel::Notifier *n);
 		void readLastUpdates();
@@ -95,15 +100,23 @@ class App : public Client::Application {
 
 		DataModel::JournalEntry *createJournalEntry(const std::string &id,
 		                                            const std::string &action,
-		                                            const std::string &params);
+		                                            const std::string &params,
+		                                            const Core::Time *created = nullptr);
 
 		std::string waitForEventAssociation(const std::string &originID, int timeout);
 		void originAssociatedWithEvent(const std::string &eventID,
 		                               const std::string &originID);
 
+		template <typename R, typename T>
+		void checkUpdate(Notifiers &notifiers,
+		                 R (T::*func)() const, const T *remote, const T *local,
+		                 const char *name, const DataModel::Journaling *journals,
+		                 const std::string &action);
+
 	private:
 		struct EventDelayItem {
 			DataModel::EventParametersPtr ep;
+			DataModel::JournalingPtr ej;
 			DataModel::Event *event; // Pointer from ep
 			const HostConfig *config;
 			int timeout;
@@ -111,12 +124,21 @@ class App : public Client::Application {
 
 		using EventDelayBuffer = std::map<std::string, EventDelayItem>;
 
+		struct QLMessage {
+			QLClient *client;
+			IO::QuakeLink::ResponsePtr response;
+			int timeout;
+		};
+
+		using QLResponseBuffer = std::list<QLMessage>;
+
 		Config                   _config;
 		QLClients                _clients;
 		NoCache                  _cache;
-		boost::mutex             _clientPublishMutex;
+		std::mutex               _clientPublishMutex;
 		std::string              _lastUpdateFile;
 		EventDelayBuffer         _eventDelayBuffer;
+		QLResponseBuffer         _qlDelayBuffer;
 		std::string              _waitForEventIDOriginID;
 		std::string              _waitForEventIDResult;
 		int                      _waitForEventIDTimeout;

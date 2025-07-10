@@ -22,7 +22,6 @@
 
 
 namespace Seiscomp {
-
 namespace Client {
 
 
@@ -48,7 +47,6 @@ struct Constraints {
 
 
 }
-
 }
 
 

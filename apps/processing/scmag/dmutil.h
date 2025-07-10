@@ -21,10 +21,8 @@ bool dumpOrigin(const Seiscomp::DataModel::Origin *origin);
 
 bool equivalent(const Seiscomp::DataModel::WaveformStreamID&, const Seiscomp::DataModel::WaveformStreamID&);
 
-double arrivalWeight(const Seiscomp::DataModel::ArrivalPtr *arr, double defaultWeight=1.);
+double arrivalWeight(const Seiscomp::DataModel::Arrival *arr, double defaultWeight = 1.);
 char getShortPhaseName(const std::string &phase);
-
-bool validArrival(const Seiscomp::DataModel::Arrival *arr, double minWeight = 0.5);
 
 Seiscomp::DataModel::EvaluationStatus
 status(const Seiscomp::DataModel::Origin *origin);

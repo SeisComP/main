@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
 import sys
+import traceback
+
 import seiscomp.core
 import seiscomp.client
 import seiscomp.datamodel
-import seis.geo
+import seiscomp.math
 
 nearestStations = 300
 
@@ -18,32 +20,34 @@ class _GridPoint:
 
 
 def readGrid(gridfile):
-    gridfile = file(gridfile)
     grid = []
-    for line in gridfile:
-        line = line.strip()
-        if line.startswith("#"):
-            continue
-        line = line.split()
 
-        p = _GridPoint()
-        p.lat, p.lon, p.dep, p.rad, p.dist = tuple(map(float, line[:5]))
-        p.nmin = int(line[5])
+    with open(gridfile, "r", encoding="utf8") as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("#"):
+                continue
 
-#       print p.lat,p.lon,p.dep,p.rad,p.dist,p.nmin
-        grid.append(p)
+            line = line.split()
+
+            p = _GridPoint()
+            p.lat, p.lon, p.dep, p.rad, p.dist = tuple(map(float, line[:5]))
+            p.nmin = int(line[5])
+
+            grid.append(p)
+
     return grid
 
 
 def writeGrid(grid, gridfile):
-    gridfile = file(gridfile, "w")
-    for p in grid:
-        dist = int(p.dist+1)
-        if dist > 180:
-            dist = 180
-        gridfile.write("%6.2f %6.2f %5.1f %5.2f %5.1f %d\n" %
-                       (p.lat, p.lon, p.dep, p.rad, dist, p.nmin))
-    gridfile.close()
+    with open(gridfile, "w", encoding="utf8") as f:
+        for p in grid:
+            dist = min(int(p.dist + 1), 180)
+            print(
+                "%6.2f %6.2f %5.1f %5.2f %5.1f %d"
+                % (p.lat, p.lon, p.dep, p.rad, dist, p.nmin),
+                file=f,
+            )
 
 
 class InvApp(seiscomp.client.Application):
@@ -55,16 +59,16 @@ class InvApp(seiscomp.client.Application):
 
     def validateParameters(self):
         try:
-            if seiscomp.client.Application.validateParameters(self) == False:
+            if not seiscomp.client.Application.validateParameters(self):
                 return False
-
-            return True
 
         except:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
             sys.exit(-1)
+
+        return True
 
     def run(self):
 
@@ -83,9 +87,14 @@ class InvApp(seiscomp.client.Application):
                 nsta = net.stationCount()
                 for ista in range(nsta):
                     sta = net.station(ista)
-                    line = "%-2s %-5s %9.4f %9.4f %6.1f" % (
-                        net.code(), sta.code(), sta.latitude(), sta.longitude(), sta.elevation())
-#                   print dir(sta)
+                    # line = "%-2s %-5s %9.4f %9.4f %6.1f" % (
+                    #     net.code(),
+                    #     sta.code(),
+                    #     sta.latitude(),
+                    #     sta.longitude(),
+                    #     sta.elevation(),
+                    # )
+
                     try:
                         start = sta.start()
                     except:
@@ -108,7 +117,7 @@ class InvApp(seiscomp.client.Application):
             for p in grid:
                 distances = []
                 for s in _stations:
-                    d, a, b = seis.geo.delazi(p.lat, p.lon, s.lat, s.lon)
+                    d = seiscomp.math.delta(p.lat, p.lon, s.lat, s.lon)
                     distances.append(d)
                 distances.sort()
                 if len(distances) >= nearestStations:

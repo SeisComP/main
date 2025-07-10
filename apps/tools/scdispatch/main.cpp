@@ -175,14 +175,14 @@ class BaseObjectDispatcher : protected Visitor {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-class ObjectDispatcher : public BaseObjectDispatcher {
+class ObjectDispatcherV1 : public BaseObjectDispatcher {
 	// ----------------------------------------------------------------------
 	//  X'struction
 	// ----------------------------------------------------------------------
 	public:
-		ObjectDispatcher(Client::Connection *connection,
-		                 Operation op, bool test)
-		: BaseObjectDispatcher(op != OP_REMOVE?Visitor::TM_TOPDOWN:Visitor::TM_BOTTOMUP,
+		ObjectDispatcherV1(Client::Connection *connection,
+		                   Operation op, bool test)
+		: BaseObjectDispatcher(op == OP_REMOVE ? Visitor::TM_BOTTOMUP : Visitor::TM_TOPDOWN,
 		                       connection, test)
 		, _operation(op) {}
 
@@ -223,7 +223,9 @@ class ObjectDispatcher : public BaseObjectDispatcher {
 	// ----------------------------------------------------------------------
 	private:
 		bool write(Object *object) {
-			if ( SCCoreApp->isExitRequested() ) return false;
+			if ( SCCoreApp->isExitRequested() ) {
+				return false;
+			}
 
 			PublicObject *parent = object->parent();
 
@@ -232,9 +234,9 @@ class ObjectDispatcher : public BaseObjectDispatcher {
 				return false;
 			}
 
-			RoutingTable::iterator targetIt = _routingTable.find(object->className());
-			PublicObject *p = parent;
-			while ( (targetIt == _routingTable.end()) && (p != nullptr) ) {
+			auto targetIt = _routingTable.find(object->className());
+			auto p = parent;
+			while ( (targetIt == _routingTable.end()) && p ) {
 				targetIt = _routingTable.find(p->className());
 				p = p->parent();
 			}
@@ -250,7 +252,9 @@ class ObjectDispatcher : public BaseObjectDispatcher {
 
 			++_count;
 
-			if ( _test ) return true;
+			if ( _test ) {
+				return true;
+			}
 
 			NotifierPtr notif = new Notifier(_parentID, _operation, object);
 
@@ -262,15 +266,145 @@ class ObjectDispatcher : public BaseObjectDispatcher {
 			NotifierMessage notifierMessage;
 			notifierMessage.attach(notif.get());
 
-			unsigned int counter = 0;
+			size_t counter = 0;
 			while ( counter <= 4 ) {
-				if ( _connection->send(targetIt->second, &notifierMessage) )
+				if ( _connection->send(targetIt->second, &notifierMessage) ) {
 					return true;
+				}
 
-				SEISCOMP_ERROR("Could not send object %s to %s@%s", 
+				SEISCOMP_ERROR("Could not send object %s to %s@%s",
 				               object->className(), targetIt->second.c_str(),
 				               _connection->source().c_str());
-				if ( _connection->isConnected() ) break;
+				if ( _connection->isConnected() ) {
+					break;
+				}
+
+				++counter;
+				sleep(1);
+			}
+
+			++_errors;
+			return false;
+		}
+
+
+	// ----------------------------------------------------------------------
+	// Private data members
+	// ----------------------------------------------------------------------
+	private:
+		string    _parentID;
+		Operation _operation;
+};
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+class ObjectDispatcherV2 : public BaseObjectDispatcher {
+	// ----------------------------------------------------------------------
+	//  X'struction
+	// ----------------------------------------------------------------------
+	public:
+		ObjectDispatcherV2(Client::Connection *connection,
+		                   Operation op, bool test)
+		: BaseObjectDispatcher(Visitor::TM_TOPDOWN, connection, test)
+		, _operation(op) {}
+
+
+	// ----------------------------------------------------------------------
+	//  Public interface
+	// ----------------------------------------------------------------------
+	public:
+		bool operator()(Object *object) {
+			_parentID = "";
+			return BaseObjectDispatcher::operator()(object);
+		}
+
+		void setOperation(Operation op) {
+			_operation = op;
+		}
+
+		Operation operation() const {
+			return _operation;
+		}
+
+
+	// ----------------------------------------------------------------------
+	//  Visitor interface
+	// ----------------------------------------------------------------------
+	protected:
+		bool visit(PublicObject* publicObject) {
+			return write(publicObject);
+		}
+
+		void visit(Object* object) {
+			write(object);
+		}
+
+
+	// ----------------------------------------------------------------------
+	//  Implementation
+	// ----------------------------------------------------------------------
+	private:
+		bool write(Object *object) {
+			if ( SCCoreApp->isExitRequested() ) {
+				return false;
+			}
+
+			PublicObject *parent = object->parent();
+
+			if ( !parent ) {
+				SEISCOMP_ERROR("No parent found for object %s", object->className());
+				return false;
+			}
+
+			auto targetIt = _routingTable.find(object->className());
+			auto p = parent;
+			while ( (targetIt == _routingTable.end()) && p ) {
+				targetIt = _routingTable.find(p->className());
+				p = p->parent();
+			}
+
+			if ( targetIt == _routingTable.end() ) {
+				SEISCOMP_ERROR("! No routing for %s", object->className());
+				return false;
+			}
+
+			logObject(object, _operation, targetIt->second);
+
+			_parentID = parent->publicID();
+
+			++_count;
+
+			if ( _test ) {
+				return _operation != OP_REMOVE;
+			}
+
+			NotifierPtr notif = new Notifier(_parentID, _operation, object);
+
+			if ( _createNotifier ) {
+				_outputNotifier->attach(notif.get());
+				return _operation != OP_REMOVE;
+			}
+
+			NotifierMessage notifierMessage;
+			notifierMessage.attach(notif.get());
+
+			size_t counter = 0;
+			while ( counter <= 4 ) {
+				if ( _connection->send(targetIt->second, &notifierMessage) ) {
+					return _operation != OP_REMOVE;
+				}
+
+				SEISCOMP_ERROR("Could not send object %s to %s@%s",
+				               object->className(), targetIt->second.c_str(),
+				               _connection->source().c_str());
+				if ( _connection->isConnected() ) {
+					break;
+				}
+
 				++counter;
 				sleep(1);
 			}
@@ -637,20 +771,10 @@ class DispatchTool : public Seiscomp::Client::Application {
 					}
 				}
 			}
-			else if ( commandline().hasOption("print-objects") ) {
-				for ( auto &kv : _routingTable ) {
-					cout << kv.first << endl;
-				}
+			else if ( commandline().hasOption("print-objects")
+			       || commandline().hasOption("print-routingtable") ) {
 				setMessagingEnabled(false);
-				setDatabaseEnabled(false ,false);
-				return true;
-			}
-			else if ( commandline().hasOption("print-routingtable") ) {
-				for ( auto &kv : _routingTable ) {
-					cout << kv.first << ":" << kv.second << endl;
-				}
-				setMessagingEnabled(false);
-				setDatabaseEnabled(false ,false);
+				setDatabaseEnabled(false, false);
 				return true;
 			}
 
@@ -720,12 +844,21 @@ class DispatchTool : public Seiscomp::Client::Application {
 			}
 
 			BaseObjectDispatcher *dispatcher = nullptr;
-			if ( _notifierOperation == "merge" )
+			if ( _notifierOperation == "merge" ) {
 				dispatcher = new ObjectMerger(connection(), query(), commandline().hasOption("test"), true);
-			else if ( _notifierOperation == "merge-without-remove" )
+			}
+			else if ( _notifierOperation == "merge-without-remove" ) {
 				dispatcher = new ObjectMerger(connection(), query(), commandline().hasOption("test"), false);
-			else
-				dispatcher = new ObjectDispatcher(connection(), _operation, commandline().hasOption("test"));
+			}
+			else {
+				if ( _connection->isDeleteTreeSupported() ) {
+					dispatcher = new ObjectDispatcherV2(connection(), _operation, commandline().hasOption("test"));
+					SEISCOMP_INFO("Enable DeleteTree optimization");
+				}
+				else {
+					dispatcher = new ObjectDispatcherV1(connection(), _operation, commandline().hasOption("test"));
+				}
+			}
 
 			dispatcher->setRoutingTable(_routingTable);
 
@@ -740,7 +873,7 @@ class DispatchTool : public Seiscomp::Client::Application {
 
 			unsigned int totalCount = ObjectCounter(doc.get()).count();
 
-			SEISCOMP_INFO("Time needed to parse XML: %s", Core::Time(timer.elapsed()).toString("%T.%f"));
+			SEISCOMP_INFO("Time needed to parse XML: %s", (Core::Time() + timer.elapsed()).toString("%T.%f"));
 			SEISCOMP_INFO("Document object type: %s", doc->className());
 			SEISCOMP_INFO("Total number of objects: %d", totalCount);
 
@@ -761,10 +894,11 @@ class DispatchTool : public Seiscomp::Client::Application {
 				ar.close();
 			}
 
-			SEISCOMP_INFO("While dispatching %d/%d objects %d errors occured", 
+			SEISCOMP_INFO("While dispatching %d/%d objects %d errors occured",
 			              dispatcher->count(), totalCount, dispatcher->errors());
 			SEISCOMP_INFO("Time needed to dispatch %d objects: %s",
-			              dispatcher->count(), Core::Time(timer.elapsed()).toString("%T.%f"));
+			              dispatcher->count(),
+			              (Core::Time() + timer.elapsed()).toString("%T.%f"));
 
 			delete dispatcher;
 

@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="invextr" category="Inventory">
-		<description>Extract channels from inventory.</description>
+		<description>
+		Extract and clean or remove streams from inventory.
+		</description>
 
 		<configuration>
 		</configuration>
@@ -52,11 +54,15 @@
 				</option>
 				<option flag="" long-flag="chans" argument="arg">
 					<description>
-						A comma separated list of channel IDs to extract
-						which can contain wildcards. Default: *.*.*.* meaning
-						all streams.
+					A comma separated list of streams to extract or remove (--rm)
+					which can contain wildcards. Avoiding confusion with files
+					names due to SHELL extension requires to enclose stream codes
+					by quotes. Default: *.*.*.* meaning all streams. Unreferenced
+					sensors, data loggers and resonses are removed when extracting.
+					A comma separated list of channel IDs to extract which may
+					contain wildcards. Default: *.*.*.* meaning all streams.
 
-						Example: invextr --chans &quot;GE.*.*.BHZ,GE.MORC.*.*&quot; inv.xml
+					Example: invextr --chans &quot;GE.*.*.BHZ,GE.MORC.*.*&quot; inventory.xml
 					</description>
 				</option>
 				<option flag="" long-flag="nslc" argument="arg">
@@ -73,14 +79,24 @@
 				</option>
 				<option flag="" long-flag="rm" argument="arg">
 					<description>
-						Removes all channels given with '--chans' instead of
-						extracting them.
+					Removes all channels given with '--chans' instead of
+					extracting them.
 
-						Example: invextr --rm --chans &quot;GE.*&quot; inv.xml
+					Example: invextr --rm --chans &quot;GE.*&quot; inv.xml
 					</description>
 				</option>
+			</group>
+			<group name="Output">
 				<option flag="f" long-flag="formatted">
-					<description>Enables formatted XML output.</description>
+					<description>
+					Enable formatted XML output.
+					</description>
+				</option>
+				<option flag="o" long-flag="output">
+					<description>
+					Name of output file. If not given or '-', output is sent to
+					stdout.
+					</description>
 				</option>
 			</group>
 		</command-line>

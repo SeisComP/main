@@ -78,11 +78,11 @@ def parse_args():
 Read data from multiple files, extract streams by time, sort records by start time, \
 ignore duplicated and empty records
   cat f1.mseed f2.mseed f3.mseed | \
-scmssort -v -t '2007-03-28 15:48~2007-03-28 16:18' -ui > sorted.mseed
+scmssort -v -t 2007-03-28T15:48~2007-03-28T16:18' -ui > sorted.mseed
 
 Extract streams by time, stream code and sort records by end time
   echo CX.PB01..BH? | \
-scmssort -v -E -t '2007-03-28 15:48~2007-03-28 16:18' \
+scmssort -v -E -t '2007-03-28T15:48~2007-03-28T16:18' \
 -u -l - test.mseed > sorted.mseed
 """
 
@@ -174,38 +174,8 @@ def rec2id(record):
     )
 
 
-def str2time(string):
-    """
-    Liberally accept many time string formats and convert them to a seiscomp.core.Time
-    """
-
-    if not string:
-        return None
-
-    string = string.strip()
-    if not string:
-        return None
-
-    for c in ["-", "/", ":", "T", "Z"]:
-        string = string.replace(c, " ")
-
-    toks = string.split()
-    if len(toks) < 3:
-        raise ValueError("Too few date components")
-    if len(toks) > 6:
-        raise ValueError("Too many date/time components")
-
-    toks.extend((6 - len(toks)) * ["0"])
-    string = " ".join(toks)
-    time_format = "%Y %m %d %H %M %S"
-    if "." in string:
-        time_format += ".%f"
-
-    time = core.Time()
-    if not time.fromString(string, time_format):
-        raise ValueError(f"Invalid time format: {string}")
-
-    return time
+def str2time(timeString):
+    return core.Time.FromString(timeString)
 
 
 def time2str(time):
@@ -215,24 +185,26 @@ def time2str(time):
     if not time:
         return ""
 
-    return time.toString("%Y-%m-%d %H:%M:%S.%f000")[:23]
+    return time.toString("%Y-%m-%dT%H:%M:%S.%f000")[:23]
 
 
 def read_time_window(opt):
     if not opt.time_window:
         return None, None
 
-    try:
-        toks = opt.time_window.split("~")
-        if len(toks) != 2:
-            if len(toks) < 2:
-                raise ValueError("No tilde (~) found")
-            raise ValueError("To many tilde (~) found")
+    toks = opt.time_window.split("~")
+    if len(toks) != 2:
+        if len(toks) < 2:
+            raise ValueError(
+                "Time window has wrong format: Use (~) for separating start and end time"
+            )
+        raise ValueError("Time window has wrong format: Too many tildes (~) found")
 
-        start, end = map(str2time, toks)
-        info(f"Filtering records by time window: {time2str(start)}~{time2str(end)}")
-    except Exception as e:
-        error(f"Could not read time window: {e}")
+    start = core.Time.FromString(toks[0])
+    end = core.Time.FromString(toks[1])
+
+    if start is None or end is None:
+        error(f"Could not read time window: {toks}")
         if debug_enabled():
             debug(traceback.format_exc())
         sys.exit(1)
@@ -243,14 +215,13 @@ def read_time_window(opt):
 def read_lines(file):
     # read from stdin
     if file == "-":
-        for line in sys.stdin:
-            yield line
+        yield from sys.stdin
         return
 
     # read from file
     with open(file, "r", encoding="utf-8") as f:
-        for line in f:
-            yield line
+        yield from f
+        return
 
 
 def compile_stream_pattern(opt):
@@ -313,7 +284,7 @@ def record_input(file, datatype=core.Array.INT):
         raise FileNotFoundError("Could not find file")
 
     if not stream.setSource(file):
-        raise Exception("Could not set record stream source")
+        raise ValueError("Could not set record stream source")
 
     it = io.RecordInput(stream, datatype, core.Record.SAVE_RAW)
 
@@ -348,6 +319,14 @@ def main():
 
     # time window
     t_min, t_max = read_time_window(opt)
+    if t_max and t_min and t_max <= t_min:
+        error(
+            f"Invalid time window: {time2str(t_min)}~{time2str(t_max)}\n"
+            "  + end time must be greater than start time"
+        )
+        return False
+
+    info(f"Filtering records by time window: {time2str(t_min)}~{time2str(t_max)}")
 
     # stream filter
     pattern = compile_stream_pattern(opt)
@@ -397,6 +376,7 @@ def main():
         try:
             for rec in record_input(file):
                 records_file += 1
+                stream_id = ""
 
                 # skip record if outside time window
                 if (t_min and rec.endTime() < t_min) or (

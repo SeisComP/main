@@ -12,18 +12,23 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_APPLICATIONS_EVENTTOOL_H__
-#define SEISCOMP_APPLICATIONS_EVENTTOOL_H__
+#ifndef SEISCOMP_APPLICATIONS_EVENTTOOL_H
+#define SEISCOMP_APPLICATIONS_EVENTTOOL_H
 
 #include <seiscomp/client/application.h>
 #include <seiscomp/datamodel/publicobjectcache.h>
 #include <seiscomp/datamodel/eventparameters.h>
 #include <seiscomp/datamodel/journaling.h>
+#include <seiscomp/wired/server.h>
+
 #include <seiscomp/plugins/events/eventprocessor.h>
 #include <seiscomp/plugins/events/scoreprocessor.h>
 
 #define SEISCOMP_COMPONENT SCEVENT
 #include <seiscomp/logging/log.h>
+
+#include <mutex>
+#include <thread>
 
 #include "eventinfo.h"
 #include "config.h"
@@ -48,13 +53,26 @@ class EventTool : public Application {
 		~EventTool();
 
 
+	public:
+		/**
+		 * @brief Tries to associate the only origin in the EventParameters
+		 *        structure and returns the eventID.
+		 * No new eventID will be created if the origin cannot be associated
+		 * with an event.
+		 * @param ep The input EventParameters to be checked. Only one origin
+		 *           is allowed.
+		 * @return The eventID or an empty string.
+		 */
+		std::string tryToAssociate(const DataModel::EventParameters *ep);
+
+
 	protected:
-		void createCommandLineDescription();
 		bool initConfiguration();
 		bool validateParameters();
 
 		bool init();
 		bool run();
+		void done();
 
 		void handleMessage(Core::Message *msg);
 		void handleTimeout();
@@ -80,17 +98,20 @@ class EventTool : public Application {
 
 		EventInformationPtr associateOriginCheckDelay(DataModel::Origin *);
 		EventInformationPtr associateOrigin(DataModel::Origin *, bool allowEventCreation,
-		                                    bool *createdEvent = nullptr);
+		                                    bool *createdEvent = nullptr,
+		                                    const EventInformation::PickCache *pickCache = nullptr);
 		void updatedOrigin(DataModel::Origin *, DataModel::Magnitude *, bool realOriginUpdate);
 
 		EventInformationPtr associateFocalMechanismCheckDelay(DataModel::FocalMechanism *);
 		EventInformationPtr associateFocalMechanism(DataModel::FocalMechanism *);
-		void updatedFocalMechanism(DataModel::FocalMechanism *);
+		void updatedFocalMechanism(DataModel::FocalMechanism *, bool realFMUpdate);
 
-		MatchResult compare(EventInformation *info, DataModel::Origin *origin);
+		MatchResult compare(EventInformation *info, DataModel::Origin *origin,
+		                    const EventInformation::PickCache *cache = nullptr) const;
 
 		EventInformationPtr createEvent(DataModel::Origin *origin);
-		EventInformationPtr findMatchingEvent(DataModel::Origin *origin);
+		EventInformationPtr findMatchingEvent(DataModel::Origin *origin,
+		                                      const EventInformation::PickCache *cache = nullptr) const;
 		EventInformationPtr findAssociatedEvent(DataModel::Origin *origin);
 		EventInformationPtr findAssociatedEvent(DataModel::FocalMechanism *fm);
 
@@ -220,14 +241,8 @@ class EventTool : public Application {
 
 		typedef std::list<EventProcessorPtr> EventProcessors;
 
-		double                        _fExpiry;
 		Cache                         _cache;
-		bool                          _testMode;
-		bool                          _sendClearCache;
 		Util::StopWatch               _timer;
-		std::string                   _originID;
-		std::string                   _eventID;
-		std::string                   _epFile;
 
 		Config                        _config;
 		EventProcessors               _processors;
@@ -244,8 +259,12 @@ class EventTool : public Application {
 		DelayBuffer                   _delayBuffer;
 		DelayEventBuffer              _delayEventBuffer;
 
-		Logging::Channel             *_infoChannel;
-		Logging::Output              *_infoOutput;
+		Seiscomp::Wired::ServerPtr    _restAPI;
+		std::thread                   _restAPIThread;
+		mutable std::mutex            _associationMutex;
+
+		Logging::Channel             *_infoChannel{nullptr};
+		Logging::Output              *_infoOutput{nullptr};
 
 		ObjectLog                    *_inputOrigin;
 		ObjectLog                    *_inputMagnitude;

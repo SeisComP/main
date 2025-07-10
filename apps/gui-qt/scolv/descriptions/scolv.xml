@@ -146,6 +146,12 @@
 						The default value for adding unassociated stations in the picker.
 					</description>
 				</parameter>
+				<parameter name="loadAdditionalStations" type="boolean" default="false">
+					<description>
+						If enabled then all station within the configured distance will
+						be loaded if a new origin is loaded.
+					</description>
+				</parameter>
 				<parameter name="hideStationsWithoutData" type="boolean" default="false">
 					<description>
 						If enabled, all traces without data and arrivals are
@@ -266,6 +272,12 @@
 						</description>
 					</parameter>
 				</group>
+				<parameter name="originAgencyIDs" type="list:string">
+					<description>
+					Define a list of agencyIDs which can be used as override
+					for the origin agencyID when committing with options.
+					</description>
+				</parameter>
 				<parameter name="originComments" type="list:string">
 					<description>
 					A list of origin comment profiles. These profiles will be
@@ -470,7 +482,7 @@
 				</parameter>
 				<parameter name="limitStationAcquisitionCount" type="int" default="10">
 					<description>
-						Limit the data acquisituion to the given number of
+						Limit the data acquisition to the given number of
 						the nearest stations. Requires to activate
 						&quot;picker.limitStationAcquisition&quot;.
 					</description>
@@ -542,6 +554,16 @@
 						side of the trace window.
 					</description>
 				</parameter>
+				<parameter name="rotation" type="string" default="123" values="123,ZNE,ZRT,LQT,ZH(L2)">
+					<description>
+					The initially applied rotation component waveform rotation.
+					</description>
+				</parameter>
+				<parameter name="unit" type="string" default="Sensor" values="Sensor,Acceleration,Velocity,Displacement">
+					<description>
+					The unit the waveform data is converted to initially.
+					</description>
+				</parameter>
 				<parameter name="repickerStart" type="double" unit="s">
 					<description>
 						Start of the re-picker time window relative the cursor position on the trace.
@@ -556,6 +578,15 @@
 					<description>
 						List of filters available in the picker. Format:
 						"name1;filter-definition1", "name2;filter-definition2"
+					</description>
+				</parameter>
+				<parameter name="limitFilterToZoomTrace" type="boolean" default="false">
+					<description>
+					Whether to apply the current filter only to the zoom trace or
+					all traces. If enabled then the current filter will only be
+					applied to another trace if it becomes the current trace. This
+					is mainly for performance reasons as filtering hundreds or
+					thousands of channels can take much time.
 					</description>
 				</parameter>
 				<parameter name="velocityChannelCodes" type="list:string">
