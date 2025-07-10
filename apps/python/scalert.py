@@ -750,6 +750,13 @@ class ObjectAlert(seiscomp.client.Application):
 
             seiscomp.logging.debug(f"desc: {dsc}")
 
+            evtype = ""
+            try:
+                evtype = seiscomp.datamodel.EEventTypeNames.name(evt.type())
+            except ValueError:
+                evtype = "earthquake"
+ 
+
             dep = org.depth().value()
             now = seiscomp.core.Time.GMT()
             otm = org.time().value()
@@ -769,7 +776,8 @@ class ObjectAlert(seiscomp.client.Application):
             if preliminary:
                 message = f"earthquake, XXL, preliminary, {dt}, {dsc}"
             else:
-                message = "earthquake, %s, %s, %s, depth %d kilometers" % (
+                message = "%s, %s, %s, %s, depth %d kilometers" % (
+                    evtype,
                     dt,
                     dsc,
                     mag,
