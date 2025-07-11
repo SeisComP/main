@@ -754,7 +754,7 @@ class ObjectAlert(seiscomp.client.Application):
             try:
                 evType = seiscomp.datamodel.EEventTypeNames.name(evt.type())
             except Exception:
-                 evType = "earthquake"
+                evType = "earthquake"
 
             dep = org.depth().value()
             now = seiscomp.core.Time.GMT()
