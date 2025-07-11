@@ -750,7 +750,6 @@ class ObjectAlert(seiscomp.client.Application):
 
             seiscomp.logging.debug(f"desc: {dsc}")
 
-
             try:
                 evType = seiscomp.datamodel.EEventTypeNames.name(evt.type())
             except Exception:
