@@ -17,6 +17,7 @@
 #include "mainframe.h"
 #include <seiscomp/gui/core/application.h>
 #include <seiscomp/gui/core/messages.h>
+#include <seiscomp/gui/core/processmanager.h>
 #include <seiscomp/gui/datamodel/eventsummary.h>
 #include <seiscomp/gui/datamodel/eventsummaryview.h>
 #include <seiscomp/gui/datamodel/originlocatorview.h>
@@ -157,7 +158,7 @@ MainFrame::MainFrame(){
 	connect(_actionConfigureAcquisition, SIGNAL(triggered(bool)),
 	        this, SLOT(configureAcquisition()));
 
-	_ui.menuView->addAction(_actionToggleFullScreen);
+	_ui.menuView->insertAction(_ui.actionProcessManager, _actionToggleFullScreen);
 
 	_ui.menuView->addSeparator();
 	QMenu *toolBars = _ui.menuView->addMenu("Toolbars");
@@ -923,6 +924,9 @@ MainFrame::MainFrame(){
 	connect(_ui.actionShowStations, SIGNAL(toggled(bool)), _eventEdit, SLOT(drawStations(bool)));
 	connect(_ui.actionShowStationAnnotations, SIGNAL(toggled(bool)), _eventEdit, SLOT(drawStationAnnotations(bool)));
 	connect(_ui.actionShowEventList, SIGNAL(triggered(bool)), this, SLOT(showEventList()));
+	connect(_ui.actionProcessManager, &QAction::triggered, []() {
+		SCApp->processManager()->show();
+	});
 
 	_originLocator->drawStations(_ui.actionShowStations->isChecked());
 	_originLocator->drawStationAnnotations(_ui.actionShowStationAnnotations->isChecked());

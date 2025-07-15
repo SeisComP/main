@@ -118,6 +118,7 @@
     <addaction name="actionShowStations" />
     <addaction name="actionShowStationAnnotations" />
     <addaction name="actionShowEventList" />
+    <addaction name="actionProcessManager" />
    </widget>
    <widget class="QMenu" name="menuEdit" >
     <property name="title" >
@@ -209,6 +210,20 @@
    </property>
    <property name="shortcut" >
     <string>F10</string>
+   </property>
+  </action>
+  <action name="actionProcessManager" >
+   <property name="text" >
+    <string>Process manager</string>
+   </property>
+   <property name="icon" >
+    <iconset resource="../../../../common/libs/seiscomp/gui/core/core_icons.qrc" >:/sc/icons/manufacturing.svg</iconset>
+   </property>
+   <property name="iconText" >
+    <string>Show process manager</string>
+   </property>
+   <property name="toolTip" >
+    <string>Show process manager</string>
    </property>
   </action>
   <action name="actionAutoSelect" >
