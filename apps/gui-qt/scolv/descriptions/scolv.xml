@@ -419,21 +419,20 @@
 						</parameter>
 					</struct>
 				</group>
-				<parameter name="commandMenuActions" type="list:string">
-					<description>
-						Registration of command menu actions shown when pressing the
-						Run button next to the custom script buttons. Actions
-						listed here will appear in order of listing. A dash may be
-						use to insert a separator.
-					</description>
-				</parameter>
 				<group name="commandMenuAction">
 					<description>
 						Configuration of custom commands shown in a menu when pressing
-						the Run button next to the custom script buttons.
+						the Run button next to the custom script buttons. Actions
+						defined here will appear in order of listing. A dash may be
+						use to insert a separator.
 					</description>
-					<struct type="commandMenuAction profile" title="TODO">
+					<struct type="commandMenuAction profile">
 						<description>Definition of a command menu action.</description>
+						<parameter name="enable" type="boolean" default="true">
+							<description>
+								Controls whether this action will be available.
+							</description>
+						</parameter>
 						<parameter name="command" type="file" options="read,exec">
 							<description>
 								Command to be executed. Similar to the custom script
@@ -444,22 +443,17 @@
 								defined.
 							</description>
 						</parameter>
-						<parameter name="exporter" type="string">
+						<parameter name="exporter" type="string" values="scml,json,csv,binary">
 							<description>
-								Name of the SeisComP exporter used to
-								serialize event parameters before passing
-								them to the filter stages. The value 'trunk'
-								will export SCML. Other options like 'binary',
-								'json' or 'qml1.2' exist. See
-								'sccnv --format-list' for a list of available
-								options.
+								Name of the SeisComP exporter used to serialize
+								the current origin when writing it to stdin of
+								the specified command. If empty no data will be
+								send to stdin. See 'sccnv --list-formats' for a
+								list of available options.
 
 								Note: Some of the exporters are implemented
 								as plugins which need to be loaded before they
-								can be used. For maximum performance, you may
-								also decide to write your own exporter in C++
-								which will then generate your bulletin directly
-								instead of invoking a filter command.
+								can be used.
 							</description>
 						</parameter>
 						<parameter name="showProcess" type="boolean" default="false">
