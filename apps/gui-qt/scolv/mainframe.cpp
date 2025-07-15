@@ -16,6 +16,7 @@
 
 #include "mainframe.h"
 #include <seiscomp/gui/core/application.h>
+#include <seiscomp/gui/core/icon.h>
 #include <seiscomp/gui/core/messages.h>
 #include <seiscomp/gui/core/processmanager.h>
 #include <seiscomp/gui/datamodel/eventsummary.h>
@@ -227,7 +228,7 @@ MainFrame::MainFrame(){
 		QPushButton *btn = _eventSmallSummary->exportButton();
 		btn->setVisible(true);
 		btn->setText("");
-		btn->setIcon(QIcon(":/icons/icons/publish.png"));
+		btn->setIcon(icon("share"));
 		btn->setFlat(true);
 		btn->setToolTip("Publish event");
 
