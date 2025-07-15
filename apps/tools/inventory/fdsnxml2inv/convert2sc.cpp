@@ -40,6 +40,7 @@
 #include <fdsnxml/responselistelement.h>
 #include <fdsnxml/output.h>
 
+#include <seiscomp/core/strings.h>
 #include <seiscomp/core/timewindow.h>
 #include <seiscomp/datamodel/inventory_package.h>
 #include <seiscomp/datamodel/utils.h>
@@ -2718,16 +2719,16 @@ bool Convert2SC::process(
 						        "read"
 						     << endl;
 						if ( *oldLat != sc_loc->latitude() ) {
-							cerr << "   lat " << *oldLat
-							     << " != " << sc_loc->latitude() << endl;
+							cerr << "   lat " << Core::number(*oldLat)
+							     << " != " << Core::number(sc_loc->latitude()) << endl;
 						}
 						if ( *oldLon != sc_loc->longitude() ) {
-							cerr << "   lon " << *oldLon
-							     << " != " << sc_loc->longitude() << endl;
+							cerr << "   lon " << Core::number(*oldLon)
+							     << " != " << Core::number(sc_loc->longitude()) << endl;
 						}
 						if ( *oldElev != sc_loc->elevation() ) {
-							cerr << "   elevation " << *oldElev
-							     << " != " << sc_loc->elevation() << endl;
+							cerr << "   elevation " << Core::number(*oldElev)
+							     << " != " << Core::number(sc_loc->elevation()) << endl;
 						}
 					}
 					else if ( newInstance ) {
@@ -2757,22 +2758,22 @@ bool Convert2SC::process(
 									     << endl;
 									if ( ref_loc->latitude() !=
 									     sc_loc->latitude() ) {
-										cerr << "   lat " << ref_loc->latitude()
-										     << " != " << sc_loc->latitude()
+										cerr << "   lat " << Core::number(ref_loc->latitude())
+										     << " != " << Core::number(sc_loc->latitude())
 										     << endl;
 									}
 									if ( ref_loc->longitude() !=
 									     sc_loc->longitude() ) {
 										cerr << "   lon "
-										     << ref_loc->longitude()
-										     << " != " << sc_loc->longitude()
+										     << Core::number(ref_loc->longitude())
+										     << " != " << Core::number(sc_loc->longitude())
 										     << endl;
 									}
 									if ( ref_loc->elevation() !=
 									     sc_loc->elevation() ) {
 										cerr << "   elevation "
-										     << ref_loc->elevation()
-										     << " != " << sc_loc->elevation()
+										     << Core::number(ref_loc->elevation())
+										     << " != " << Core::number(sc_loc->elevation())
 										     << endl;
 									}
 									break;
