@@ -1,7 +1,9 @@
 sccnv reads input given in a supported format, converts the content to another
-format and writes the output. Use the command-line option :confval:`format-list`
+format and writes the output. Use the command-line option :option:`--format-list`
 for a list of supported formats.
 
+
+.. _sec-sccnv-formats:
 
 Formats
 =======
@@ -12,18 +14,22 @@ Different formats are supported for input and output files.
    :widths: 10, 60, 10, 10
    :header: Name, Description, Input, Output
    :align: left
+   :delim: ;
 
-   arclink    , `Arclink XML <https://www.seiscomp.de/seiscomp3/doc/applications/arclink-status-xml.html>`_ ,    X    ,    X
-   bson       ,                                                                                             ,    X    ,    X
-   bson-json  ,                                                                                             ,         ,    X
-   csv        , comma-separated values                                                                      ,         ,    X
-   hyp71sum2k , Hypo71 format                                                                               ,         ,    X
-   ims10      ,                                                                                             ,         ,    X
-   json       , `JSON <https://www.json.org/>`_ format                                                      ,    X    ,    X
-   qml1.2     , :term:`QuakeML` format                                                                      ,   \*    ,    X
-   qml1.2rt   , :term:`QuakeML` real time (RT) format                                                       ,   \*    ,    X
-   scdm0.51   ,                                                                                             ,    X    ,    X
-   trunk      , SeisComP XML (:term:`SCML`) - :ref:`SCML API <api-datamodel-python>`                        ,    X    ,    X
+   arclink    ; `Arclink XML <https://www.seiscomp.de/seiscomp3/doc/applications/arclink-status-xml.html>`_ ;    X    ;    X
+   binary     ; :ref:`SeisComP data model <api-datamodel-python>` in binary format: low-weight and fast     ;    X    ;    X
+   bson       ;                                                                                             ;    X    ;    X
+   bson-json  ;                                                                                             ;         ;    X
+   csv        ; comma-separated values                                                                      ;         ;    X
+   hyp71sum2k ; Hypo71 format                                                                               ;         ;    X
+   ims10      ;                                                                                             ;         ;    X
+   json       ; :cite:t:`json` format                                                                       ;    X    ;    X
+   qml1.2     ; :term:`QuakeML` format                                                                      ;   \*    ;    X
+   qml1.2rt   ; :term:`QuakeML` real time (RT) format                                                       ;   \*    ;    X
+   scdm0.51   ;                                                                                             ;    X    ;    X
+   scml       ; SeisComP XML (:term:`SCML`) - :ref:`SCML API <api-datamodel-python>`                        ;    X    ;    X
+   trunk      ; same as scml, classic way of stating this format                                            ;    X    ;    X
+   vbson      ;                                                                                             ;    X    ;    X
 
 **\***: The conversion from files in QuakeML format is not supported by sccnv
 but can be realized by system tools. Read section :ref:`sec-sccnv-quakeml` for
@@ -94,7 +100,7 @@ Examples
 
   .. code-block:: sh
 
-     $ sccnv -i trunk:event.xml -o ims10:event.ims
+     $ sccnv -i scml:event.xml -o ims10:event.ims
 
 * Convert QuakeML in version 1.2 to SCML in data schema version 0.12:
 

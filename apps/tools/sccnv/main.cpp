@@ -41,17 +41,20 @@ class ConvertApp : public Application {
 		void createCommandLineDescription() {
 			commandline().addGroup("Formats");
 			commandline().addOption("Formats", "format-list",
-			                        "list all supported formats");
+			                        "List all supported formats.");
+			commandline().addOption("Formats", "list-formats",
+			                        "Same as --format-list.");
 			commandline().addGroup("Input");
 			commandline().addOption("Input", "input,i",
-			                        "input stream [format:][file], default: trunk:-",
+			                        "Input stream [format:][file]. Default: scml:-",
 			                        &_inputStream, false);
 			commandline().addGroup("Output");
 			commandline().addOption("Output", "output,o",
-			                        "output stream [format:][file], default trunk:-",
+			                        "Output stream [format:][file]. Default scml:-",
 			                        &_outputStream, false);
-			commandline().addOption("Output", "formatted,f", "use formatted output");
-			commandline().addOption("Output", "indent", "formatted line indent",
+			commandline().addOption("Output", "formatted,f",
+			                        "Use formatted output.");
+			commandline().addOption("Output", "indent", "Formatted line indent.",
 			                        &_indentation);
 		}
 
@@ -63,8 +66,8 @@ class ConvertApp : public Application {
 
 			Client::Application::printUsage();
 
-			std::cout << "Examples:" << std::endl;
-			std::cout << "Print the list of supported formats"
+			std::cout << "Examples:" << std::endl
+			          << "Print the list of supported formats"
 			          << std::endl
 			          << "  sccnv --format-list"
 			          << std::endl << std::endl
@@ -75,7 +78,7 @@ class ConvertApp : public Application {
 		}
 
 		bool run() {
-			if ( commandline().hasOption("format-list") ) {
+			if (( commandline().hasOption("format-list") ) || ( commandline().hasOption("list-formats") )) {
 				ImporterFactory::ServiceNames *importFormats = ImporterFactory::Services();
 				ExporterFactory::ServiceNames *exportFormats = ExporterFactory::Services();
 
@@ -83,8 +86,9 @@ class ConvertApp : public Application {
 					std::cout << "Input formats: ";
 					for ( ImporterFactory::ServiceNames::iterator it = importFormats->begin();
 					      it != importFormats->end(); ++it ) {
-						if ( it != importFormats->begin() )
+						if ( it != importFormats->begin() ) {
 							std::cout << ", ";
+						}
 						std::cout << *it;
 					}
 					std::cout << std::endl;
@@ -95,8 +99,9 @@ class ConvertApp : public Application {
 					std::cout << "Output formats: ";
 					for ( ExporterFactory::ServiceNames::iterator it = exportFormats->begin();
 					      it != exportFormats->end(); ++it ) {
-						if ( it != exportFormats->begin() )
+						if ( it != exportFormats->begin() ) {
 							std::cout << ", ";
+						}
 						std::cout << *it;
 					}
 					std::cout << std::endl;
@@ -105,7 +110,6 @@ class ConvertApp : public Application {
 
 				return true;
 			}
-
 
 			if ( _inputStream.empty() && _outputStream.empty() ) {
 				SEISCOMP_ERROR("No input and output stream given, nothing to do");
@@ -128,14 +132,21 @@ class ConvertApp : public Application {
 			}
 			*/
 
-			if ( inputFormat.empty() ) inputFormat = "trunk";
-			if ( outputFormat.empty() ) outputFormat = "trunk";
+			if ( inputFormat.empty() ) {
+				inputFormat = "scml";
+			}
+			if ( outputFormat.empty() ) {
+				outputFormat = "scml";
+			}
 
-			if ( inputFile.empty() ) inputFile = "-";
-			if ( outputFile.empty() ) outputFile = "-";
+			if ( inputFile.empty() ) {
+				inputFile = "-";
+			}
+			if ( outputFile.empty() ) {
+				outputFile = "-";
+			}
 
 			BaseObjectPtr obj;
-
 			ImporterPtr imp = ImporterFactory::Create(inputFormat.c_str());
 			if ( !imp ) {
 				SEISCOMP_ERROR("Unknown input format %s", inputFormat.c_str());
@@ -150,7 +161,6 @@ class ConvertApp : public Application {
 				SEISCOMP_ERROR("Input empty, nothing to do");
 				return false;
 			}
-
 
 			ExporterPtr exp = ExporterFactory::Create(outputFormat.c_str());
 			if ( !exp ) {

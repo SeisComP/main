@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
 	<module name="sccnv" category="Utilities" standalone="true">
-		<description>Converts data in different formats.</description>
+		<description>
+		Converts data from/to different formats.
+		</description>
 		<command-line>
 			<synopsis>
 				sccnv -i format:file -o format:file
 			</synopsis>
 			<description>
-				sccnv reads the input given in a supported format, converts the content
-				and writes the output in another format. Use the option `format-list`
-				for a list of supported formats.
+			sccnv reads the input given in a supported format, converts the
+			content and writes the output in another format. Use the option
+			`format-list` for a list of supported formats.
 			</description>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
@@ -20,33 +22,38 @@
 				<optionReference>verbosity#debug</optionReference>
 			</group>
 			<group name="Formats">
-				<option flag="" long-flag="format-list" argument="">
+				<option flag="" long-flag="format-list">
 					<description>
-					List all supported formats
+					List all supported formats.
+					</description>
+				</option>
+				<option flag="" long-flag="list-formats">
+					<description>
+					Same as --format-list.
 					</description>
 				</option>
 			</group>
 			<group name="Input">
-				<option flag="i" long-flag="input" argument="arg">
+				<option flag="i" long-flag="input" argument="arg" default="scml:-">
 					<description>
-					Input stream [format:][file], default: trunk:-
+					Input stream [format:][file].
 					</description>
 				</option>
 			</group>
 			<group name="Output">
-				<option flag="o" long-flag="output" argument="arg">
+				<option flag="o" long-flag="output" argument="arg" default="scml:-">
 					<description>
-					Output stream [format:][file], default trunk:-
+					Output stream [format:][file].
 					</description>
 				</option>
-				<option flag="f" long-flag="formatted" argument="">
+				<option flag="f" long-flag="formatted">
 					<description>
-					Use formatted output
+					Use formatted output.
 					</description>
 				</option>
-				<option flag="" long-flag="indent" argument="arg">
+				<option flag="" long-flag="indent" argument="arg" default="2">
 					<description>
-					Formatted line indent. Default: 2
+					Formatted line indent.
 					</description>
 				</option>
 			</group>
