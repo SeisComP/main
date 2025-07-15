@@ -32,7 +32,9 @@ namespace EventSummaryView {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-MainFrame::MainFrame() {
+MainFrame::MainFrame()
+: _cache(SCApp->query(), 500)
+{
 	_ui.setupUi(this);
 
 	_ui.menuOptions->insertAction(_ui.actionAutoSelect, _actionShowSettings);
@@ -40,6 +42,7 @@ MainFrame::MainFrame() {
 
 	// action buttons
 	addAction(_ui.actionAutoSelect);
+	addAction(_ui.actionShowStationAnnotations);
 	addAction(_ui.actionShowStations);
 	addAction(_ui.actionToggleEventList);
 	addAction(_ui.actionToggleWaveformPropagation);
@@ -48,6 +51,8 @@ MainFrame::MainFrame() {
 
 	// create SummaryView tab
 	_eventSummary = new Gui::EventSummaryView(SCApp->mapsDesc(), SCApp->query());
+	_eventSummary->setCache(&_cache);
+	_eventSummary->setDrawStationAnnotations(_ui.actionShowStationAnnotations->isChecked());
 
 	// create EventListView tab
 	_listPage = new Gui::EventListView(SCApp->query(), false, false, this);
@@ -77,6 +82,7 @@ MainFrame::MainFrame() {
 	// connect action buttons
 	connect(_ui.actionShowBeachballs, SIGNAL(toggled(bool)), _eventSummary, SLOT(drawBeachballs(bool)));
 	connect(_ui.actionShowFullTensor, SIGNAL(toggled(bool)), _eventSummary, SLOT(drawFullTensor(bool)));
+	connect(_ui.actionShowStationAnnotations, SIGNAL(toggled(bool)), _eventSummary, SLOT(setDrawStationAnnotations(bool)));
 	connect(_ui.actionShowStations, SIGNAL(toggled(bool)), _eventSummary, SLOT(drawStations(bool)));
 	connect(_ui.actionAutoSelect, SIGNAL(triggered(bool)), _eventSummary, SLOT(setAutoSelect(bool)));
 	connect(_ui.actionToggleEventList, SIGNAL(triggered(bool)), this, SLOT(toggleEventList()));

@@ -20,6 +20,7 @@
 #include <seiscomp/gui/core/mainwindow.h>
 #ifndef Q_MOC_RUN
 #include <seiscomp/datamodel/databasequery.h>
+#include <seiscomp/datamodel/publicobjectcache.h>
 #endif
 #include "ui_mainframe.h"
 
@@ -64,6 +65,7 @@ class MainFrame : public Gui::MainWindow {
 	private:
 		Ui::MainFrame _ui;
 		QLabel *_wt;
+		DataModel::PublicObjectRingBuffer _cache;
 		Gui::EventSummaryView *_eventSummary;
 		Gui::EventListView    *_listPage;
 };

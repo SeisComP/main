@@ -107,6 +107,7 @@
     <addaction name="actionShowBeachballs" />
     <addaction name="actionShowFullTensor" />
     <addaction name="actionShowStations" />
+	<addaction name="actionShowStationAnnotations" />
     <addaction name="actionToggleEventList" />
    </widget>
    <addaction name="menuOptions" />
@@ -160,16 +161,36 @@
     <bool>true</bool>
    </property>
    <property name="text" >
-    <string>Show Stations</string>
+    <string>Show stations</string>
    </property>
    <property name="iconText" >
-    <string>Show Stations</string>
+    <string>Show stations</string>
    </property>
    <property name="toolTip" >
-    <string>Show Stations (F9)</string>
+    <string>Show stations</string>
    </property>
    <property name="shortcut" >
     <string>F9</string>
+   </property>
+  </action>
+  <action name="actionShowStationAnnotations" >
+   <property name="checkable" >
+    <bool>true</bool>
+   </property>
+   <property name="checked" >
+    <bool>false</bool>
+   </property>
+   <property name="text" >
+    <string>Show station annotations</string>
+   </property>
+   <property name="iconText" >
+    <string>Show station annotations</string>
+   </property>
+   <property name="toolTip" >
+    <string>Show station annotations</string>
+   </property>
+   <property name="shortcut" >
+    <string>Shift+F9</string>
    </property>
   </action>
   <action name="actionToggleEventList" >
