@@ -137,9 +137,23 @@
 					</description>
 				</option>
 				<option long-flag="invert" flag="i" param-ref="database.cleanup.invertMode"/>
-				<option long-flag="keep-events">
+				<option long-flag="keep-events" argument="events">
 					<description>
 					IDs of events to keep in the database separated with comma.
+					</description>
+				</option>
+				<option long-flag="keep-event-modes" argument="modes">
+					<description>
+					Do not delete events where the evaluation mode of the
+					preferred origin is one of the passed modes. Modes are
+					given as a list with comma as separator.
+					</description>
+				</option>
+				<option long-flag="keep-event-status" argument="status">
+					<description>
+					Do not delete events where the evaluation status of the
+					preferred origin is one of the passed status. Status are
+					given as a list with comma as separator.
 					</description>
 				</option>
 			</group>
