@@ -11,24 +11,246 @@
   <script type="text/javascript">
     A_TCALCONF['format'] = 'Y-m-dT00:00:00';
 
-    window.onload = fdsnwsInitQueryForm;
+    // Event ID functionality
+    let currentOriginTime = null;
+    let eventIdTimeout = null;
+
+    async function fetchEventOriginTime(eventId) {
+      if (!eventId.trim()) {
+        return null;
+      }
+
+      try {
+        const eventUrl = `/fdsnws/event/1/query?eventid=${encodeURIComponent(eventId)}&format=text&nodata=404`;
+        
+        const response = await fetch(eventUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const textData = await response.text();
+        const lines = textData.trim().split('\n');
+        
+        if (lines.length < 2) {
+          throw new Error('No event data found in response');
+        }
+
+        // Parse pipe-delimited text format
+        const fields = lines[1].split('|');
+        if (fields.length < 2) {
+          throw new Error('Invalid event data format - not enough fields');
+        }
+
+        const originTimeStr = fields[1].trim();
+        
+        // Parse as UTC to avoid timezone conversion
+        let originTime;
+        if (originTimeStr.endsWith('Z')) {
+          originTime = new Date(originTimeStr);
+        } else {
+          originTime = new Date(originTimeStr + 'Z');
+        }
+        
+        if (isNaN(originTime.getTime())) {
+          throw new Error(`Invalid origin time format: ${originTimeStr}`);
+        }
+
+        return originTime;
+      } catch (error) {
+        console.error('Error fetching event:', error);
+        return null;
+      }
+    }
+
+    function updateTimeFields() {
+      if (!currentOriginTime) return;
+
+      const beforeMinutes = parseFloat(document.getElementById('before-time').value) || 0;
+      const afterMinutes = parseFloat(document.getElementById('after-time').value) || 0;
+
+      const startTime = new Date(currentOriginTime.getTime() - beforeMinutes * 60000);
+      const endTime = new Date(currentOriginTime.getTime() + afterMinutes * 60000);
+
+      // Format times for the input fields (UTC format)
+      const startTimeStr = startTime.toISOString().replace(/\.\d{3}Z$/, '');
+      const endTimeStr = endTime.toISOString().replace(/\.\d{3}Z$/, '');
+
+      document.querySelector('input[name="starttime"]').value = startTimeStr;
+      document.querySelector('input[name="endtime"]').value = endTimeStr;
+
+      // Trigger URL update
+      updateQueryURL();
+    }
+
+    async function onEventIdChange() {
+      const eventId = document.getElementById('event-id').value.trim();
+      const statusDiv = document.getElementById('event-status');
+      
+      // Clear previous timeout
+      if (eventIdTimeout) {
+        clearTimeout(eventIdTimeout);
+      }
+      
+      if (!eventId) {
+        currentOriginTime = null;
+        statusDiv.textContent = '';
+        statusDiv.className = '';
+        return;
+      }
+
+      // Only fetch if event ID looks complete (at least 3 characters)
+      if (eventId.length < 3) {
+        statusDiv.textContent = 'Enter complete Event ID...';
+        statusDiv.className = 'event-status loading';
+        return;
+      }
+
+      // Debounce: wait 800ms after user stops typing
+      eventIdTimeout = setTimeout(async () => {
+        statusDiv.textContent = 'Fetching event...';
+        statusDiv.className = 'event-status loading';
+
+        currentOriginTime = await fetchEventOriginTime(eventId);
+        
+        if (currentOriginTime) {
+          statusDiv.textContent = `Origin time: ${currentOriginTime.toISOString().replace(/\.\d{3}Z$/, '')}`;
+          statusDiv.className = 'event-status success';
+          updateTimeFields();
+        } else {
+          statusDiv.textContent = `Event '${eventId}' not found`;
+          statusDiv.className = 'event-status error';
+        }
+      }, 800);
+    }
+
+    function clearEventData() {
+      document.getElementById('event-id').value = '';
+      document.getElementById('before-time').value = '';
+      document.getElementById('after-time').value = '';
+      document.querySelector('input[name="starttime"]').value = '';
+      document.querySelector('input[name="endtime"]').value = '';
+      document.getElementById('event-status').textContent = '';
+      document.getElementById('event-status').className = '';
+      currentOriginTime = null;
+      updateQueryURL();
+    }
+
+    window.onload = function() {
+      fdsnwsInitQueryForm();
+      
+      // Add event listeners for event ID functionality
+      document.getElementById('event-id').addEventListener('input', onEventIdChange);
+      document.getElementById('before-time').addEventListener('input', updateTimeFields);
+      document.getElementById('after-time').addEventListener('input', updateTimeFields);
+      document.getElementById('clear-event').addEventListener('click', clearEventData);
+    };
   </script>
+  <style>
+    .event-section {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    
+    .event-status {
+      margin-top: 5px;
+      padding: 5px;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+    
+    .event-status.loading {
+      background-color: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+    
+    .event-status.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .event-status.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .time-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .time-controls input {
+      width: 80px;
+    }
+    
+    .clear-button {
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.8em;
+      transition: background-color 0.2s;
+    }
+    
+    .clear-button:hover {
+      background-color: #545b62;
+    }
+    
+    /* Improve time input visibility */
+    input[name="starttime"], input[name="endtime"] {
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+      padding: 3px 5px;
+      min-width: 160px;
+    }
+  </style>
 </head>
 <body>
   <p><a href="./">Parent Directory</a></p>
   <h1>SeisComP FDSNWS DataSelect - URL Builder</h1>
   <form id="query-form" action="query" method="GET">
+  
+  <!-- Event ID Section -->
+  <fieldset class="event-section">
+    <legend>Event-based Time Selection</legend>
+    <table class="builder">
+      <tbody>
+        <tr>
+          <td>Event ID</td>
+          <td>
+            <input type="text" id="event-id" placeholder="Enter event ID" style="width: 150px;"/>
+            <button type="button" id="clear-event" class="clear-button">Clear</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div id="event-status"></div>
+    <div class="time-controls">
+      <label>Before: <input type="number" id="before-time" min="0" step="0.1" placeholder="5"/> minutes</label>
+      <label>After: <input type="number" id="after-time" min="0" step="0.1" placeholder="5"/> minutes</label>
+    </div>
+  </fieldset>
+
   <fieldset>
     <legend>Time constraints</legend>
     <table class="builder">
       <tbody>
         <tr>
           <td>Start Time</td>
-          <td><input type="text" size="10"  maxlength="26" name="starttime" value="" class="tcal"/></td>
+          <td><input type="text" size="20" maxlength="26" name="starttime" value="" class="tcal" placeholder="YYYY-MM-DDTHH:MM:SS"/></td>
         </tr>
         <tr>
           <td>End Time</td>
-          <td><input type="text" size="10" maxlength="26" name="endtime" value="" class="tcal"/></td>
+          <td><input type="text" size="20" maxlength="26" name="endtime" value="" class="tcal" placeholder="YYYY-MM-DDTHH:MM:SS"/></td>
         </tr>
       </tbody>
     </table>
