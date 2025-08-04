@@ -278,6 +278,7 @@ bool EventTool::initConfiguration() {
 	try { _config.matchingPicksTimeDiffAND = configGetBool("eventAssociation.compareAllArrivalTimes"); } catch (...) {}
 	try { _config.matchingLooseAssociatedPicks = configGetBool("eventAssociation.allowLooseAssociatedArrivals"); } catch (...) {}
 	try { _config.minAutomaticArrivals = configGetInt("eventAssociation.minimumDefiningPhases"); } catch (...) {}
+	try { _config.minAutomaticScore = configGetDouble("eventAssociation.minimumScore"); } catch (...) {}
 
 	Config::RegionFilter regionFilter;
 	GlobalRegionPtr region = new GlobalRegion;
