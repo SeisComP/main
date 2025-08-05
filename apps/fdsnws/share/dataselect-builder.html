@@ -11,20 +11,108 @@
   <script type="text/javascript">
     A_TCALCONF['format'] = 'Y-m-dT00:00:00';
 
+    // Service availability state
+    let eventServiceAvailable = null; // null = unknown, true/false = detected
+    let serviceCheckInProgress = false;
+
     // Event ID functionality
     let currentOriginTime = null;
     let eventIdTimeout = null;
 
+    // Utility function for fetch with timeout
+    function fetchWithTimeout(url, options = {}) {
+      const { timeout = 10000, ...fetchOptions } = options;
+      
+      return new Promise((resolve, reject) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+          reject(new Error(`Request timeout after ${timeout}ms`));
+        }, timeout);
+
+        fetch(url, { ...fetchOptions, signal: controller.signal })
+          .then(response => {
+            clearTimeout(timeoutId);
+            resolve(response);
+          })
+          .catch(error => {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+              reject(new Error(`Request timeout after ${timeout}ms`));
+            } else {
+              reject(error);
+            }
+          });
+      });
+    }
+
+    // Service Detection
+    async function checkEventServiceAvailability() {
+      if (serviceCheckInProgress || eventServiceAvailable !== null) {
+        return eventServiceAvailable;
+      }
+
+      serviceCheckInProgress = true;
+      const statusDiv = document.getElementById('service-status');
+      
+      try {
+        statusDiv.textContent = 'Checking event service availability...';
+        statusDiv.className = 'service-status checking';
+
+        const response = await fetchWithTimeout('../../event/1/version', {
+          method: 'GET',
+          timeout: 5000,
+          headers: {
+            'Accept': 'text/plain'
+          }
+        });
+
+        if (response.ok) {
+          eventServiceAvailable = true;
+          statusDiv.textContent = '✓ Event service available';
+          statusDiv.className = 'service-status available';
+          document.getElementById('event-section').style.display = 'block';
+        } else {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+      } catch (error) {
+        console.warn('Event service check failed:', error.message);
+        eventServiceAvailable = false;
+        statusDiv.textContent = '⚠ Event service not available - manual time entry only';
+        statusDiv.className = 'service-status unavailable';
+        document.getElementById('event-section').style.display = 'none';
+      } finally {
+        serviceCheckInProgress = false;
+      }
+
+      return eventServiceAvailable;
+    }
+
     async function fetchEventOriginTime(eventId) {
+      // Check service availability first
+      const isAvailable = await checkEventServiceAvailability();
+      if (!isAvailable) {
+        return null;
+      }
+
       if (!eventId.trim()) {
         return null;
       }
 
       try {
-        const eventUrl = `../event/1/query?eventid=${encodeURIComponent(eventId)}&format=text&nodata=404`;
+        const eventUrl = `../../event/1/query?eventid=${encodeURIComponent(eventId)}&format=text&nodata=404`;
         
-        const response = await fetch(eventUrl);
+        const response = await fetchWithTimeout(eventUrl, {
+          timeout: 10000,
+          headers: {
+            'Accept': 'text/plain'
+          }
+        });
+
         if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Event not found');
+          }
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
@@ -38,7 +126,7 @@
         // Parse pipe-delimited text format
         const fields = lines[1].split('|');
         if (fields.length < 2) {
-          throw new Error('Invalid event data format - not enough fields');
+          throw new Error('Invalid event data format - insufficient fields');
         }
 
         const originTimeStr = fields[1].trim();
@@ -58,7 +146,7 @@
         return originTime;
       } catch (error) {
         console.error('Error fetching event:', error);
-        return null;
+        throw error; // Re-throw to handle in caller
       }
     }
 
@@ -79,7 +167,9 @@
       document.querySelector('input[name="endtime"]').value = endTimeStr;
 
       // Trigger URL update
-      updateQueryURL();
+      if (typeof updateQueryURL === 'function') {
+        updateQueryURL();
+      }
     }
 
     async function onEventIdChange() {
@@ -89,12 +179,21 @@
       // Clear previous timeout
       if (eventIdTimeout) {
         clearTimeout(eventIdTimeout);
+        eventIdTimeout = null;
       }
       
       if (!eventId) {
         currentOriginTime = null;
         statusDiv.textContent = '';
         statusDiv.className = '';
+        return;
+      }
+
+      // Check if event service is available
+      const isAvailable = await checkEventServiceAvailability();
+      if (!isAvailable) {
+        statusDiv.textContent = 'Event service not available';
+        statusDiv.className = 'event-status error';
         return;
       }
 
@@ -110,20 +209,39 @@
         statusDiv.textContent = 'Fetching event...';
         statusDiv.className = 'event-status loading';
 
-        currentOriginTime = await fetchEventOriginTime(eventId);
-        
-        if (currentOriginTime) {
-          statusDiv.textContent = `Origin time: ${currentOriginTime.toISOString().replace(/\.\d{3}Z$/, '')}`;
-          statusDiv.className = 'event-status success';
-          updateTimeFields();
-        } else {
-          statusDiv.textContent = `Event '${eventId}' not found`;
+        try {
+          currentOriginTime = await fetchEventOriginTime(eventId);
+          
+          if (currentOriginTime) {
+            statusDiv.textContent = `Origin time: ${currentOriginTime.toISOString().replace(/\.\d{3}Z$/, '')}`;
+            statusDiv.className = 'event-status success';
+            updateTimeFields();
+          } else {
+            statusDiv.textContent = `Event '${eventId}' not found`;
+            statusDiv.className = 'event-status error';
+          }
+        } catch (error) {
+          let errorMessage = `Event '${eventId}' not found`;
+          if (error.message.includes('timeout')) {
+            errorMessage = 'Request timeout - try again';
+          } else if (error.message.includes('network')) {
+            errorMessage = 'Network error - check connection';
+          }
+          
+          statusDiv.textContent = errorMessage;
           statusDiv.className = 'event-status error';
         }
       }, 800);
     }
 
     function clearEventData() {
+      // Clear timeout
+      if (eventIdTimeout) {
+        clearTimeout(eventIdTimeout);
+        eventIdTimeout = null;
+      }
+
+      // Clear form fields
       document.getElementById('event-id').value = '';
       document.getElementById('before-time').value = '';
       document.getElementById('after-time').value = '';
@@ -131,26 +249,136 @@
       document.querySelector('input[name="endtime"]').value = '';
       document.getElementById('event-status').textContent = '';
       document.getElementById('event-status').className = '';
+      
+      // Hide manual entry section
+      document.getElementById('manual-event-section').style.display = 'none';
+      
       currentOriginTime = null;
-      updateQueryURL();
+      
+      // Update URL
+      if (typeof updateQueryURL === 'function') {
+        updateQueryURL();
+      }
     }
 
-    window.onload = function() {
-      fdsnwsInitQueryForm();
-      
-      // Add event listeners for event ID functionality
-      document.getElementById('event-id').addEventListener('input', onEventIdChange);
-      document.getElementById('before-time').addEventListener('input', updateTimeFields);
-      document.getElementById('after-time').addEventListener('input', updateTimeFields);
-      document.getElementById('clear-event').addEventListener('click', clearEventData);
+    // Alternative: Manual Event Time Entry
+    function showManualEventEntry() {
+      const manualSection = document.getElementById('manual-event-section');
+      manualSection.style.display = manualSection.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function applyManualEventTime() {
+      const manualOriginTime = document.getElementById('manual-origin-time').value.trim();
+      if (!manualOriginTime) {
+        alert('Please enter an origin time');
+        return;
+      }
+
+      try {
+        // Support multiple date formats
+        let originTime;
+        if (manualOriginTime.includes('T')) {
+          originTime = new Date(manualOriginTime.endsWith('Z') ? manualOriginTime : manualOriginTime + 'Z');
+        } else {
+          // Assume date only, add time
+          originTime = new Date(manualOriginTime + 'T00:00:00Z');
+        }
+        
+        if (isNaN(originTime.getTime())) {
+          throw new Error('Invalid date');
+        }
+
+        currentOriginTime = originTime;
+        document.getElementById('event-status').textContent = `Manual origin time: ${originTime.toISOString().replace(/\.\d{3}Z$/, '')}`;
+        document.getElementById('event-status').className = 'event-status success';
+        
+        updateTimeFields();
+      } catch (error) {
+        alert('Invalid date format. Please use YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS format.');
+      }
+    }
+
+    // Cleanup function
+    function cleanup() {
+      if (eventIdTimeout) {
+        clearTimeout(eventIdTimeout);
+        eventIdTimeout = null;
+      }
+    }
+
+    // Initialize on page load
+    window.onload = async function() {
+      try {
+        // Initialize form
+        if (typeof fdsnwsInitQueryForm === 'function') {
+          fdsnwsInitQueryForm();
+        }
+        
+        // Check event service availability on load
+        await checkEventServiceAvailability();
+        
+        // Add event listeners for event ID functionality
+        const eventIdInput = document.getElementById('event-id');
+        const beforeTimeInput = document.getElementById('before-time');
+        const afterTimeInput = document.getElementById('after-time');
+        const clearEventBtn = document.getElementById('clear-event');
+        const manualToggleBtn = document.getElementById('manual-event-toggle');
+        const applyManualBtn = document.getElementById('apply-manual-time');
+
+        if (eventIdInput) eventIdInput.addEventListener('input', onEventIdChange);
+        if (beforeTimeInput) beforeTimeInput.addEventListener('input', updateTimeFields);
+        if (afterTimeInput) afterTimeInput.addEventListener('input', updateTimeFields);
+        if (clearEventBtn) clearEventBtn.addEventListener('click', clearEventData);
+        if (manualToggleBtn) manualToggleBtn.addEventListener('click', showManualEventEntry);
+        if (applyManualBtn) applyManualBtn.addEventListener('click', applyManualEventTime);
+
+      } catch (error) {
+        console.error('Initialization error:', error);
+        // Graceful degradation - show manual entry
+        const serviceStatus = document.getElementById('service-status');
+        if (serviceStatus) {
+          serviceStatus.textContent = '⚠ Initialization error - manual time entry available';
+          serviceStatus.className = 'service-status unavailable';
+        }
+      }
     };
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', cleanup);
   </script>
   <style>
+    .service-status {
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 0.9em;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+    
+    .service-status.checking {
+      background-color: #e2e3e5;
+      color: #495057;
+      border: 1px solid #ced4da;
+    }
+    
+    .service-status.available {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .service-status.unavailable {
+      background-color: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+    
     .event-section {
       background-color: #f9f9f9;
       border: 1px solid #ddd;
       border-radius: 4px;
       margin-bottom: 10px;
+      display: none; /* Hidden by default until service check */
     }
     
     .event-status {
@@ -190,7 +418,7 @@
       width: 80px;
     }
     
-    .clear-button {
+    .clear-button, .action-button {
       background-color: #6c757d;
       color: white;
       border: none;
@@ -199,10 +427,28 @@
       cursor: pointer;
       font-size: 0.8em;
       transition: background-color 0.2s;
+      margin-left: 5px;
     }
     
-    .clear-button:hover {
+    .clear-button:hover, .action-button:hover {
       background-color: #545b62;
+    }
+    
+    .action-button.primary {
+      background-color: #007bff;
+    }
+    
+    .action-button.primary:hover {
+      background-color: #0056b3;
+    }
+    
+    .manual-event-section {
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 10px;
+      margin-top: 10px;
+      display: none;
     }
     
     /* Improve time input visibility */
@@ -212,27 +458,93 @@
       padding: 3px 5px;
       min-width: 160px;
     }
+    
+    .collapsible-header {
+      background-color: #e9ecef;
+      padding: 8px 12px;
+      border: 1px solid #ced4da;
+      border-radius: 4px 4px 0 0;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .collapsible-content {
+      border: 1px solid #ced4da;
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      padding: 15px;
+    }
+
+    /* Loading states */
+    .loading {
+      position: relative;
+    }
+
+    .loading::after {
+      content: '';
+      position: absolute;
+      right: 5px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12px;
+      height: 12px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: translateY(-50%) rotate(0deg); }
+      100% { transform: translateY(-50%) rotate(360deg); }
+    }
   </style>
 </head>
 <body>
   <p><a href="./">Parent Directory</a></p>
   <h1>SeisComP FDSNWS DataSelect - URL Builder</h1>
+  
+  <!-- Service Status Indicator -->
+  <div id="service-status" class="service-status checking">Checking event service availability...</div>
+  
   <form id="query-form" action="query" method="GET">
   
-  <!-- Event ID Section -->
-  <fieldset class="event-section">
+  <!-- Event-based Time Selection (conditionally shown) -->
+  <fieldset id="event-section" class="event-section">
     <legend>Event-based Time Selection</legend>
     <table class="builder">
       <tbody>
         <tr>
           <td>Event ID</td>
           <td>
-            <input type="text" id="event-id" placeholder="Enter event ID" style="width: 150px;"/>
+            <input type="text" id="event-id" placeholder="Enter event ID" style="width: 150px;" autocomplete="off"/>
             <button type="button" id="clear-event" class="clear-button">Clear</button>
+            <button type="button" id="manual-event-toggle" class="action-button">Manual Entry</button>
           </td>
         </tr>
       </tbody>
     </table>
+    
+    <!-- Manual Event Entry (fallback) -->
+    <div id="manual-event-section" class="manual-event-section">
+      <h4>Manual Event Time Entry</h4>
+      <p><em>Use this when you know the origin time but the event service is unavailable or doesn't have the event.</em></p>
+      <table class="builder">
+        <tbody>
+          <tr>
+            <td>Origin Time</td>
+            <td>
+              <input type="text" id="manual-origin-time" placeholder="YYYY-MM-DDTHH:MM:SS" class="tcal" style="width: 160px;" autocomplete="off"/>
+              <button type="button" id="apply-manual-time" class="action-button primary">Apply</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
     <div id="event-status"></div>
     <div class="time-controls">
       <label>Before: <input type="number" id="before-time" min="0" step="0.1" placeholder="5"/> minutes</label>
@@ -255,6 +567,7 @@
       </tbody>
     </table>
   </fieldset>
+  
   <fieldset>
     <legend>Channel constraints</legend>
     <table class="builder">
@@ -278,6 +591,7 @@
       </tbody>
     </table>
   </fieldset>
+  
   <fieldset>
     <legend>Service specific constraints</legend>
     <table class="builder">
@@ -301,6 +615,7 @@
       </tbody>
     </table>
   </fieldset>
+  
   <fieldset>
     <legend>Output control</legend>
     <table class="builder">
@@ -317,6 +632,7 @@
     </table>
   </fieldset>
   </form>
+  
   <fieldset>
     <legend>URL</legend>
     <p><a id="query-url" href=""></a></p>
