@@ -21,7 +21,7 @@
       }
 
       try {
-        const eventUrl = `/fdsnws/event/1/query?eventid=${encodeURIComponent(eventId)}&format=text&nodata=404`;
+        const eventUrl = `../event/1/query?eventid=${encodeURIComponent(eventId)}&format=text&nodata=404`;
         
         const response = await fetch(eventUrl);
         if (!response.ok) {
