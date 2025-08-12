@@ -72,6 +72,14 @@ from seiscomp.fdsnws.http import (
 )
 from seiscomp.fdsnws.log import Log
 
+try:
+    from seiscomp.fdsnws.jwt import JWT
+
+    _jwtSupported = True
+
+except ImportError:
+    _jwtSupported = False
+
 
 def logSC3(entry):
     try:
@@ -411,6 +419,14 @@ class FDSNWS(seiscomp.client.Application):
         self._access = None
         self._checker = None
 
+        self._jwtEnabled = False
+        self._jwtIssuers = ["https://geofon.gfz.de/eas2", "https://login.earthscope.org/"]
+        self._jwtAudience = ["eas", "fdsn"]
+        self._jwtAlgorithms = ["RS256"]
+        self._jwtUpdateMin = 300
+        self._jwtUpdateMax = 86400
+        self._jwt = None
+
         self._requestLog = None
         self.__reloadRequested = False
         self.__timeInventoryLoaded = None
@@ -745,6 +761,42 @@ class FDSNWS(seiscomp.client.Application):
         except Exception:
             pass
 
+        # enable JWT extension?
+        try:
+            self._jwtEnabled = self.configGetBool("jwt.enable")
+        except Exception:
+            pass
+
+        # JWT issuers
+        try:
+            self._jwtIssuers = self.configGetStrings("jwt.issuers")
+        except Exception:
+            pass
+
+        # JWT audience
+        try:
+            self._jwtAudience = self.configGetStrings("jwt.audience")
+        except Exception:
+            pass
+
+        # JWT algorithms
+        try:
+            self._jwtAlgorithms = self.configGetStrings("jwt.algorithms")
+        except Exception:
+            pass
+
+        # JWT minimum update period
+        try:
+            self._jwtUpdateMin = self.configGetStrings("jwt.updateMinSeconds")
+        except Exception:
+            pass
+
+        # JWT maximum update period
+        try:
+            self._jwtUpdateMax = self.configGetStrings("jwt.updateMaxSeconds")
+        except Exception:
+            pass
+
         # If the database connection is passed via command line or
         # configuration file then messaging is disabled. Messaging is only used
         # to get the configured database connection URI.
@@ -926,6 +978,13 @@ configuration read:
   auth
     enabled                : {self._authEnabled}
     gnupgHome              : {self._authGnupgHome}
+  JWT
+    enabled                : {self._jwtEnabled}
+    issuers                : {self._jwtIssuers}
+    audience               : {self._jwtAudience}
+    algorithms             : {self._jwtAlgorithms}
+    updateMinSeconds       : {self._jwtUpdateMin}
+    updateMaxSeconds       : {self._jwtUpdateMax}
   requestLog               : {self._requestLogFile}"""
         )
 
@@ -936,6 +995,17 @@ configuration read:
         ):
             seiscomp.logging.error("all services disabled through configuration")
             return None
+
+        if self._jwtEnabled:
+            if not _jwtSupported:
+                seiscomp.logging.error(
+                    "JWT is not supported due to missing dependencies"
+                )
+                return None
+
+            self._jwt = JWT(
+                self._jwtIssuers, self._jwtAudience, self._jwtAlgorithms, self._jwtUpdateMin, self._jwtUpdateMax
+            )
 
         # access logger if requested
         if self._accessLogFile:
@@ -1019,9 +1089,16 @@ configuration read:
             dataselect.putChild(b"1", dataselect1)
 
             # query
-            dataselect1.putChild(
-                b"query", FDSNDataSelect(dataSelectInv, self._recordBulkSize)
-            )
+            if self._jwtEnabled:
+                authSession = self._jwt.getAuthSessionWrapper(
+                    FDSNDataSelect, dataSelectInv, self._recordBulkSize, self._access
+                )
+                dataselect1.putChild(b"query", authSession)
+
+            else:
+                dataselect1.putChild(
+                    b"query", FDSNDataSelect(dataSelectInv, self._recordBulkSize)
+                )
 
             # queryauth
             if self._authEnabled:
@@ -1181,7 +1258,13 @@ configuration read:
             availability.putChild(b"1", availability1)
 
             # query
-            availability1.putChild(b"query", FDSNAvailabilityQuery())
+            if self._jwtEnabled:
+                authSession = self._jwt.getAuthSessionWrapper(
+                    FDSNAvailabilityQuery, self._access
+                )
+                availability1.putChild(b"query", authSession)
+            else:
+                availability1.putChild(b"query", FDSNAvailabilityQuery())
 
             # queryauth
             if self._authEnabled:
@@ -1193,7 +1276,13 @@ configuration read:
             availability1.putChild(b"queryauth", authSession)
 
             # extent
-            availability1.putChild(b"extent", FDSNAvailabilityExtent())
+            if self._jwtEnabled:
+                authSession = self._jwt.getAuthSessionWrapper(
+                    FDSNAvailabilityExtent, self._access
+                )
+                availability1.putChild(b"extent", authSession)
+            else:
+                availability1.putChild(b"extent", FDSNAvailabilityExtent())
 
             # extentauth
             if self._authEnabled:
