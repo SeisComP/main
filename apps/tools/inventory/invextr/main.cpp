@@ -71,7 +71,7 @@ class InventoryExtractor : public Client::Application {
 			                        "is ignored.", &_nslc);
 			commandline().addOption("Extract", "region,r",
 			                        "Filter streams by geographic region given as "
-			                        "\"South,East,North,West\". Region is "
+			                        "\"South,West,North,East\". Region is "
 			                        "unused by default.", &_region);
 			commandline().addOption("Extract", "rm",
 			                        "Remove the given channels instead of "
@@ -106,17 +106,17 @@ class InventoryExtractor : public Client::Application {
 			cout << "Examples:" << endl;
 			cout << "Clean inventory from unreferenced objects keeping all "
 			        "streams. XML is written to a file." << endl
-			     << "  " << name() << " inventory_all.xml -o inventory_all_cleaned.xml"
+			     << "  " << name() << " inventory.xml -o inventory_cleaned.xml"
 			     << endl << endl;
 			cout << "Extract inventory for entire GR network. XML is written to "
 			        "stdout" << endl
-			     << "  " << name() << " --chans GR.*.*.* inventory_all.xml > inventory_GR.xml"
+			     << "  " << name() << " --chans GR.*.*.* inventory.xml > inventory_GR.xml"
 			     << endl << endl;
 			cout << "Extract inventory for all stations within the given region" << endl
-			     << "  " << name() << " -r -10,0,50,15 inventory_all.xml > inventory_GR.xml"
+			     << "  " << name() << " -r -47.1,5.5,55.1,15.0 inventory.xml > inventory_GR.xml"
 			     << endl << endl;
 			cout << "Remove inventory for entire GR network" << endl
-			     << "  " << name() << " --rm --chans GR.*.*.* inventory_all.xml > inventory_others.xml"
+			     << "  " << name() << " --rm --chans GR.*.*.* inventory.xml > inventory_others.xml"
 			     << endl << endl;
 		}
 
