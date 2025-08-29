@@ -74,7 +74,7 @@
 				<option flag="r" long-flag="region" argument="arg">
 					<description>
 					Filter streams by geographic region given as
-					"South, East, North, West". Region is unused by default.
+					"South,West,North,East". Region is unused by default.
 					</description>
 				</option>
 				<option flag="" long-flag="rm" argument="arg">
