@@ -406,6 +406,26 @@ class MagToolApp : public Seiscomp::Client::Application {
 			return true;
 		}
 
+		void printUsage() const {
+			   cout << "Usage:"  << endl << "  " << name() << " [options]" << endl << endl
+			        << "Calculates magnitudes of different types."
+			        << endl;
+
+			   Seiscomp::Client::Application::printUsage();
+
+			   cout << "Examples:" << endl;
+			   cout << "Real-time processing with informative debug output." << endl
+			        << "  " << name() << " --debug" << endl;
+			   cout << endl
+			        << "None-real-time XML playback of origins with amplitudes. "
+			           "Resulting objects are "
+			        << endl
+			        << "sent to stdout and redirected to an XML file."
+			        << endl
+			        << "  " << name() << " -d localhost --ep amplitudes.xml > magnitudes.xml"
+			        << endl << endl;
+		}
+
 		bool run() {
 			if ( !_epFile.empty() ) {
 				_sendImmediately = true;

@@ -293,6 +293,35 @@ bool AmpTool::init() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+void AmpTool::printUsage() const {
+	   cout << "Usage:"  << endl << "  " << name() << " [options]" << endl << endl
+	        << "Calculates amplitudes on basis of incoming origins and "
+	           "associated picks."
+	        << endl;
+
+	   Seiscomp::Client::Application::printUsage();
+
+	   cout << "Examples:" << endl;
+	   cout << "Real-time processing with informative debug output." << endl
+	        << "  " << name() << " --debug" << endl;
+	   cout << endl
+	        << "None-real-time XML playback of origins with picks. Waveforms "
+	           "are read from a "
+	        << endl
+	        << "miniSEED file. Resulting objects are sent to stdout and "
+	           "redirected to an XML file."
+	        << endl
+	        << "  " << name() << " -d localhost --ep origins.xml -I data.mseed "
+	                             "> amplitudes.xml"
+	        << endl << endl;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool AmpTool::run() {
 	if ( !_originID.empty() ) {
 		OriginPtr org = Origin::Cast(query()->getObject(Origin::TypeInfo(), _originID));

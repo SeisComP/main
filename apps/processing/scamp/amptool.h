@@ -60,6 +60,7 @@ class AmpTool : public Seiscomp::Client::StreamApplication {
 		bool init();
 		bool run();
 		void done();
+		void printUsage() const;
 
 		bool storeRecord(Seiscomp::Record *rec);
 		void handleRecord(Seiscomp::Record *rec);
