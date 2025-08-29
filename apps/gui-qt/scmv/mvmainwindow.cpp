@@ -143,7 +143,9 @@ void addEventWidgetRowData(EventTableWidget::RowData& rowData,
 	QString longitudeValue = QString("%1").arg((longitude <= 0) ? longitude * (-1.0) : longitude);
 	QString longitudeOrientation = QString("%1").arg((longitude <= 0) ? "W" : "E");
 
-	QString depth = QString("%1 km").arg(static_cast<int>(round(origin->depth())));
+	QString depth;
+	try { depth = QString("%1 km").arg(static_cast<int>(round(origin->depth()))); }
+	catch ( ... ) { depth = "-"; }
 
 	rowData[EventTableWidget::EVENT_ID]     = eventId;
 	rowData[EventTableWidget::ORIGIN_TIME]  = originTime;
@@ -257,7 +259,9 @@ void setInfoWidgetContent(OriginInfoWidget* infoWidget, const std::string &event
 	QString longitude = QString("%1").arg(origin->longitude());
 	infoWidget->setLongitude(longitude);
 
-	QString depth = QString("%1").arg(origin->depth());
+	QString depth;
+	try { depth = QString("%1").arg(origin->depth()); }
+	catch ( ... ) {}
 	infoWidget->setDepth(depth);
 
 	QString magnitude;
@@ -1861,8 +1865,14 @@ Gui::OriginSymbol* MvMainWindow::createOriginSymbolFromEvent(DataModel::Event* e
 		return NULL;
 	}
 
+	OPT(double) depth;
+	try {
+		depth = origin->depth();
+	}
+	catch ( Core::ValueException & ) {}
+
 	Gui::TTDecorator *ttDecorator = new Gui::TTDecorator();
-	ttDecorator->setDepth(origin->depth());
+	ttDecorator->setDepth(depth ? *depth : 0.0);
 	ttDecorator->setOriginTime(origin->time());
 	ttDecorator->setLatitude(origin->latitude());
 	ttDecorator->setLongitude(origin->longitude());
@@ -1880,7 +1890,7 @@ Gui::OriginSymbol* MvMainWindow::createOriginSymbolFromEvent(DataModel::Event* e
 	originSymbol->setLatitude(origin->latitude());
 	originSymbol->setLongitude(origin->longitude());
 	originSymbol->setID(event->publicID());
-	originSymbol->setDepth(origin->depth());
+	originSymbol->setDepth(depth ? *depth : 0.0);
 	originSymbol->setPreferredMagnitudeValue(magnitudeValue);
 	originSymbol->setPriority(Gui::Map::Symbol::MEDIUM);
 
