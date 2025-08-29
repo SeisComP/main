@@ -81,6 +81,8 @@ class EventTool : public Application {
 		void updateObject(const std::string&, DataModel::Object* object);
 		void removeObject(const std::string&, DataModel::Object* object);
 
+		void printUsage() const;
+
 
 	private:
 		enum MatchResult {

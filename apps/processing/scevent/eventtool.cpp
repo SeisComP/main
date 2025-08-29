@@ -516,6 +516,35 @@ bool EventTool::init() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void EventTool::printUsage() const {
+	cout << "Usage:"  << endl << "  " << name() << " [options]" << endl << endl
+	     << "Associates Origins to Events or forms new Events if no match is "
+	        "found. Selects "
+	        << endl << "preferred origins, magnitudes and focal mechanisms "
+	        "and sets event types."
+	     << endl;
+
+	Seiscomp::Client::Application::printUsage();
+
+	cout << "Examples:" << endl;
+	cout << "Real-time processing with informative debug output." << endl
+	     << "  " << name() << " --debug" << endl;
+	cout << endl << "None-real-time XML playback of origins."
+	     << endl
+	     << "  " << name() << " --ep origins.xml > events.xml"
+	     << endl;
+	cout << endl << "None-real-time XML playback for re-processing events "
+	                "with origins."
+	     << endl
+	     << "  " << name() << " --ep origins.xml --reprocess > events.xml"
+	     << endl << endl;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool EventTool::run() {
 	if ( _config.clearCache ) {
 		SEISCOMP_DEBUG("Sending clear cache request");
