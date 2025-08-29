@@ -3742,7 +3742,12 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 				SEISCOMP_DEBUG("  + do not set event type");
 			}
 		}
-		SEISCOMP_DEBUG("  + current event type: '%s'", info->event->type().toString());
+		try {
+			SEISCOMP_DEBUG("  + current event type: '%s'", info->event->type().toString());
+		}
+		catch ( ... ) {
+			SEISCOMP_DEBUG("  + current event type: none");
+		}
 	}
 
 	if ( update ) {
