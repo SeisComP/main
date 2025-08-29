@@ -3638,9 +3638,14 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		bool isRejected = false;
 		bool notExistingEvent = false;
 
+		SEISCOMP_DEBUG("%s: Try setting event type from evaluation status of "
+		               "preferred origin %s",
+		               info->event->publicID().c_str(),
+		               info->preferredOrigin->publicID());
 		try {
-			if ( info->preferredOrigin->evaluationStatus() == REJECTED )
+			if ( info->preferredOrigin->evaluationStatus() == REJECTED ) {
 				isRejected = true;
+			}
 		}
 		catch ( ... ) {}
 
@@ -3650,20 +3655,26 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		catch ( ... ) {}
 
 		if ( isRejected ) {
-			SEISCOMP_INFO("%s: preferred origin has evalution status 'rejected'",
-			              info->event->publicID().c_str());
+			SEISCOMP_DEBUG("  + origin evaluation status: 'rejected'");
 
 			// User has manually fixed an origin, don't touch the event type
 			if ( !info->constraints.fixedOrigin() && !notExistingEvent ) {
-				SEISCOMP_INFO("%s: set event type to 'not existing' since "
-				              "preferred origin has evaluation status 'rejected'",
-				              info->event->publicID().c_str());
-				SEISCOMP_LOG(_infoChannel, "Set event type to 'not existing' since "
+				SEISCOMP_DEBUG("  + set event type to 'not existing' since "
+				               "preferred origin has evaluation status 'rejected'");
+				SEISCOMP_LOG(_infoChannel, "Set event type to 'not existing': "
 				                           "preferred origin has evaluation "
 				                           "status 'rejected' in event %s",
 				             info->event->publicID().c_str());
 				info->event->setType(EventType(NOT_EXISTING));
 				update = true;
+			}
+			else {
+				if ( info->constraints.fixedOrigin() ) {
+					SEISCOMP_DEBUG("  + do not set event type: preferred origin is fixed");
+				}
+				else {
+					SEISCOMP_DEBUG("  + do not set event type again");
+				}
 			}
 		}
 		else {
@@ -3671,9 +3682,8 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			// Preferred origin is not rejected, remove the event type if it was
 			// previously 'not existing'
 			if ( !info->constraints.fixedOrigin() && notExistingEvent ) {
-				SEISCOMP_INFO("%s: remove event type since evaluation status of "
-				              "preferred origin changed from 'rejected'",
-				              info->event->publicID().c_str());
+				SEISCOMP_INFO("  + remove event type: evaluation status of "
+				              "preferred origin changed from 'rejected'");
 				SEISCOMP_LOG(_infoChannel, "Remove event type since evaluation "
 				                           "status of preferred origin "
 				                           "changed from 'rejected' in event %s",
@@ -3681,7 +3691,11 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 				info->event->setType(None);
 				update = true;
 			}
+			else {
+				SEISCOMP_DEBUG("  + do not set event type");
+			}
 		}
+		SEISCOMP_DEBUG("  + current event type: '%s'", info->event->type().toString());
 	}
 
 	if ( update ) {
@@ -3689,8 +3703,9 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		               info->event->publicID().c_str(), info->created,
 		               Notifier::IsEnabled());
 
-		if ( !info->created )
+		if ( !info->created ) {
 			updateEvent(info, callProcessors);
+		}
 		else {
 			// Call registered processors
 			for ( EventProcessorPtr &proc : _processors ) {
