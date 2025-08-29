@@ -623,7 +623,13 @@ MainFrame::MainFrame(){
 	try {
 		if ( !_magnitudes->setDefaultAggregationType(SCApp->configGetString("olv.defaultMagnitudeAggregation")) ) {
 			SEISCOMP_ERROR("Unknown aggregation in olv.defaultMagnitudeAggregation: %s",
-			               SCApp->configGetString("olv.defaultMagnitudeAggregation").c_str());
+			               SCApp->configGetString("olv.defaultMagnitudeAggregation"));
+			QMessageBox::critical(
+				nullptr,
+				tr("Invalid configuration"),
+				tr("Unknown aggregation in olv.defaultMagnitudeAggregation:\n%1\nFalling back to default.")
+				.arg(SCApp->configGetString("olv.defaultMagnitudeAggregation").c_str())
+			);
 		}
 	}
 	catch ( ... ) {}

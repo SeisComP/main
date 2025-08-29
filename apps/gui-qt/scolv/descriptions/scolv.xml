@@ -92,9 +92,11 @@
 				<parameter name="defaultMagnitudeAggregation" type="string">
 					<description>
 					Sets the default magnitude aggregation method. It can be either &quot;mean&quot;,
-					&quot;trimmed mean&quot; or &quot;median&quot;. If not set, the default
-					behavior is used which computes the mean if less than 4 stations are available,
-					trimmed mean otherwise.
+					&quot;trimmedMean&quot;, &quot;median&quot; or &quot;medianTrimmedMean&quot;.
+					If not set, the default behavior is used which computes the mean if less than
+					4 stations are available, trimmed mean otherwise.
+					Neither of the above values can take an additional parameter.
+					The default parameter values (if supported) will be used.
 					</description>
 				</parameter>
 				<parameter name="computeMagnitudesAfterRelocate" type="boolean" default="false">
