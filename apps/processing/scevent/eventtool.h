@@ -67,19 +67,20 @@ class EventTool : public Application {
 
 
 	protected:
-		bool initConfiguration();
-		bool validateParameters();
+		bool initConfiguration() override;
+		bool validateParameters() override;
 
-		bool init();
-		bool run();
-		void done();
+		bool init() override;
+		bool run() override;
+		void done() override;
 
-		void handleMessage(Core::Message *msg);
-		void handleTimeout();
+		void handleNetworkMessage(const Client::Packet *msg) override;
+		void handleMessage(Core::Message *msg) override;
+		void handleTimeout() override;
 
-		void addObject(const std::string&, DataModel::Object* object);
-		void updateObject(const std::string&, DataModel::Object* object);
-		void removeObject(const std::string&, DataModel::Object* object);
+		void addObject(const std::string&, DataModel::Object* object)  override;
+		void updateObject(const std::string&, DataModel::Object* object)  override;
+		void removeObject(const std::string&, DataModel::Object* object)  override;
 
 		void printUsage() const;
 
@@ -243,6 +244,7 @@ class EventTool : public Application {
 
 		typedef std::list<EventProcessorPtr> EventProcessors;
 
+		Client::PacketCPtr            _lastNetworkMessage;
 		Cache                         _cache;
 		Util::StopWatch               _timer;
 
