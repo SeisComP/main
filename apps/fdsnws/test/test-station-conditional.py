@@ -3,9 +3,11 @@
 import sys
 import time
 
-from twisted.web.http import datetimeToString, stringToDatetime
+from twisted.web.http import datetimeToString
 
 from station import TestStationBase
+
+from seiscomp.fdsnws.utils import stringToDatetime
 
 
 ###############################################################################
