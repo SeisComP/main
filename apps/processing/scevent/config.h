@@ -187,6 +187,7 @@ struct Config : System::Application::AbstractSettings {
 
 			& cfg(delayPrefFocMech, "delayPrefFocMech")
 			& cfg(ignoreMTDerivedOrigins, "ignoreFMDerivedOrigins")
+			& cfg(enablePreferredFMSelection, "enablePreferredFMSelection")
 			& cfg(setAutoEventTypeNotExisting, "declareFakeEventForRejectedOrigin")
 
 			& cfg(delayTimeSpan, "delayTimeSpan")
@@ -221,6 +222,7 @@ struct Config : System::Application::AbstractSettings {
 		EventFilter        delayFilter;
 		int                delayPrefFocMech{0};
 		bool               ignoreMTDerivedOrigins{true};
+		bool               enablePreferredFMSelection{true};
 		bool               setAutoEventTypeNotExisting{false};
 	}                  eventAssociation;
 };
