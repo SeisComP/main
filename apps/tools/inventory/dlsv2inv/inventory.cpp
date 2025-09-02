@@ -24,6 +24,7 @@
 #include "inventory.h"
 
 #include <seiscomp/client/inventory.h>
+#include <seiscomp/math/math.h>
 #include <seiscomp/utils/replace.h>
 #include <seiscomp/core/system.h>
 #include <seiscomp/core/strings.h>
@@ -134,51 +135,6 @@ inline string date2str(const Core::Time& t) {
 	char buf[20];
 	snprintf(buf, sizeof(buf)-1, "%d.%03d.%02d.%02d.%02d", year, _ldoy(year, month - 1) + day, hour, minute, second);
 	return string(buf);
-}
-
-typedef pair<int,int> Fraction;
-
-Fraction double2frac(double d) {
-	double df = 1;
-	Fraction::first_type top = d >= 2.0 ? d-1 : 1, ctop = top;
-	Fraction::second_type bot = d <= 0.5 ? 1/d-1 : 1, cbot = bot;
-	double error = fabs(df-d);
-	double last_error = error*2;
-	bool fixed_top = false;
-
-	if ( fabs(d) < 1E-20 )
-		return Fraction(0,1);
-
-	while ( error < last_error ) {
-		ctop = top;
-		cbot = bot;
-
-		//cerr << error << "  " << top << "/" << bot << endl;
-		if ( df < d )
-			++top;
-		else {
-			++bot;
-			top = Fraction::first_type(d * bot);
-		}
-
-		df = (double)top / (double)bot;
-		if ( top > 0 ) {
-			last_error = error;
-			error = fabs(df-d);
-			fixed_top = false;
-		}
-		else if ( fixed_top ) {
-			cbot = 1;
-			break;
-		}
-		else
-			fixed_top = true;
-
-		if ( top < 0 || bot < 0 )
-			return Fraction(0,0);
-	}
-
-	return Fraction(ctop,cbot);
 }
 
 inline void check_fir(DataModel::ResponseFIRPtr rf, int &errors) {
@@ -1084,12 +1040,12 @@ void Inventory::UpdateSensorLocation(ChannelIdentifier& ci,
 DataModel::StreamPtr
 Inventory::InsertStream(ChannelIdentifier& ci, DataModel::SensorLocationPtr loc,
                         bool restricted, bool shared) {
-	Fraction samprate = double2frac(ci.GetSampleRate());
+	auto samprate = Math::double2frac(ci.GetSampleRate());
 	if ( samprate.first == 0 || samprate.second == 0 ) {
 		SEISCOMP_WARNING("%s: invalid sample rate %.2f -> checking for valid decimations",
 		                 ci.GetChannel().c_str(), ci.GetSampleRate());
 
-		samprate = double2frac(ci.GetMinimumInputDecimationSampleRate());
+		samprate = Math::double2frac(ci.GetMinimumInputDecimationSampleRate());
 		if ( samprate.first == 0 || samprate.second == 0 ) {
 			SEISCOMP_WARNING("%s: invalid sample rate %.2f, keeping it",
 			                 ci.GetChannel().c_str(), ci.GetSampleRate());
@@ -1204,7 +1160,7 @@ void Inventory::UpdateStream(ChannelIdentifier& ci, DataModel::StreamPtr strm,
 	strm->setDataloggerSerialNumber("xxxx");
 	strm->setSensorSerialNumber("yyyy");
 
-	Fraction samprate = double2frac(ci.GetSampleRate());
+	auto samprate = Math::double2frac(ci.GetSampleRate());
 	strm->setSampleRateNumerator(samprate.first);
 	strm->setSampleRateDenominator(samprate.second);
 
