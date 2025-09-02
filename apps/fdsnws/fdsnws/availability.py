@@ -33,7 +33,7 @@ from . import utils
 
 
 DBMaxUInt = 18446744073709551615  # 2^64 - 1
-VERSION = "1.0.2"
+VERSION = "1.0.3"
 
 
 ###############################################################################
@@ -771,79 +771,81 @@ class FDSNAvailabilityExtent(_Availability):
     # --------------------------------------------------------------------------
     @staticmethod
     def _sortLines(lines, ro):
-        def compareNSLC(l1, l2):
-            if l1[0] is not l2[0]:
-                # The lines are expected to be sorted according NSLC
-                return 0
 
-            e1 = l1[1]
-            e2 = l2[1]
-
-            if e1.start() < e2.start():
-                return -1
-            if e1.start() > e2.start():
-                return 1
-            if e1.end() < e2.end():
-                return -1
-            if e1.end() > e2.end():
-                return 1
-
-            if not ro.mergeQuality:
-                if e1.quality() < e2.quality():
-                    return -1
-                if e1.quality() > e2.quality():
-                    return 1
-
-            if not ro.mergeSampleRate:
-                if e1.sampleRate() < e2.sampleRate():
-                    return -1
-                if e1.sampleRate() > e2.sampleRate():
-                    return 1
-
-            return 0
-
-        def compareCount(l1, l2):
-            c1 = l1[1].segmentCount()
-            c2 = l2[1].segmentCount()
-
-            return -1 if c1 < c2 else 1 if c1 > c2 else compareNSLC(l1, l2)
-
-        def compareCountDesc(l1, l2):
-            c1 = l1[1].segmentCount()
-            c2 = l2[1].segmentCount()
-
-            return -1 if c1 > c2 else 1 if c1 < c2 else compareNSLC(l1, l2)
-
-        def compareUpdate(l1, l2):
-            c1 = l1[1].updated()
-            c2 = l2[1].updated()
-
-            return -1 if c1 < c2 else 1 if c1 > c2 else compareNSLC(l1, l2)
-
-        def compareUpdateDesc(l1, l2):
-            c1 = l1[1].updated()
-            c2 = l2[1].updated()
-
-            return -1 if c1 > c2 else 1 if c1 < c2 else compareNSLC(l1, l2)
-
-        comparator = (
-            compareNSLC
-            if ro.orderBy == ro.VOrderByNSLC
-            else (
-                compareCount
-                if ro.orderBy == ro.VOrderByCount
-                else (
-                    compareCountDesc
-                    if ro.orderBy == ro.VOrderByCountDesc
-                    else (
-                        compareUpdate
-                        if ro.orderBy == ro.VOrderByUpdate
-                        else compareUpdateDesc
-                    )
+        # Sort by segment count followed by NSLC
+        if ro.orderBy == ro.VOrderByCount:
+            lines.sort(
+                key=lambda x: (
+                    x[1].segmentCount(),
+                    x[0].waveformID().networkCode(),
+                    x[0].waveformID().stationCode(),
+                    x[0].waveformID().locationCode(),
+                    x[0].waveformID().channelCode(),
+                    x[1].start(),
+                    x[1].end(),
+                    x[1].quality(),
+                    x[1].sampleRate(),
                 )
             )
-        )
-        lines.sort(key=cmp_to_key(comparator))
+        # Sort by segment count in descending order followed by NSLC
+        elif ro.orderBy == ro.VOrderByCountDesc:
+            lines.sort(
+                key=lambda x: (
+                    -x[1].segmentCount(),
+                    x[0].waveformID().networkCode(),
+                    x[0].waveformID().stationCode(),
+                    x[0].waveformID().locationCode(),
+                    x[0].waveformID().channelCode(),
+                    x[1].start(),
+                    x[1].end(),
+                    x[1].quality(),
+                    x[1].sampleRate(),
+                )
+            )
+        # Sort by update time followed by NSLC
+        elif ro.orderBy == ro.VOrderByUpdate:
+            lines.sort(
+                key=lambda x: (
+                    x[1].updated().epoch(),
+                    x[0].waveformID().networkCode(),
+                    x[0].waveformID().stationCode(),
+                    x[0].waveformID().locationCode(),
+                    x[0].waveformID().channelCode(),
+                    x[1].start(),
+                    x[1].end(),
+                    x[1].quality(),
+                    x[1].sampleRate(),
+                )
+            )
+        # Sort by update time in descending order followed by NSLC
+        elif ro.orderBy == ro.VOrderByUpdateDesc:
+            lines.sort(
+                key=lambda x: (
+                    -x[1].updated().epoch(),
+                    x[0].waveformID().networkCode(),
+                    x[0].waveformID().stationCode(),
+                    x[0].waveformID().locationCode(),
+                    x[0].waveformID().channelCode(),
+                    x[1].start(),
+                    x[1].end(),
+                    x[1].quality(),
+                    x[1].sampleRate(),
+                )
+            )
+        # Sort by NSLC
+        else:
+            lines.sort(
+                key=lambda x: (
+                    x[0].waveformID().networkCode(),
+                    x[0].waveformID().stationCode(),
+                    x[0].waveformID().locationCode(),
+                    x[0].waveformID().channelCode(),
+                    x[1].start(),
+                    x[1].end(),
+                    x[1].quality(),
+                    x[1].sampleRate(),
+                )
+            )
 
 
 ###############################################################################
