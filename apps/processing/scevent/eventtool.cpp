@@ -3850,10 +3850,6 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 		return;
 	}
 
-	SEISCOMP_DEBUG("%s: testing focal mechanism(%s)",
-	               info->event->publicID(),
-	               fm->publicID());
-
 	if ( _config.eventAssociation.delayPrefFocMech > 0 ) {
 		if ( !info->preferredOrigin ) {
 			SEISCOMP_DEBUG("No preferred origins set for event %s, cannot compute delay time, ignoring focal mechanism %s",
@@ -3885,10 +3881,15 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 		}
 	}
 
+	SEISCOMP_DEBUG("%s: testing focal mechanism(%s)",
+	               info->event->publicID(),
+	               fm->publicID());
+
 	bool update = false;
+	bool isAutomaticFMElligible = _config.eventAssociation.enablePreferredFMSelection && isAgencyIDAllowed(objectAgencyID(fm));
 
 	if ( !info->preferredFocalMechanism ) {
-		if ( isAgencyIDAllowed(objectAgencyID(fm)) || info->constraints.fixFocalMechanism(fm) ) {
+		if ( isAutomaticFMElligible || info->constraints.fixFocalMechanism(fm) ) {
 			if ( isRejected(fm) ) {
 				SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, '%s' is rejected",
 				               info->event->publicID(), fm->publicID());
@@ -3907,11 +3908,19 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 			update = true;
 		}
 		else {
-			if ( !isAgencyIDAllowed(objectAgencyID(fm)) ) {
-				SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, agencyID '%s' is blocked",
-				               info->event->publicID(), objectAgencyID(fm));
-				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: agencyID %s is blocked",
-				             fm->publicID(), objectAgencyID(fm));
+			if ( !isAutomaticFMElligible ) {
+				if ( !isAgencyIDAllowed(objectAgencyID(fm)) ) {
+					SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, agencyID '%s' is blocked",
+					               info->event->publicID(), objectAgencyID(fm));
+					SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: agencyID %s is blocked",
+					             fm->publicID(), objectAgencyID(fm));
+				}
+				else {
+					SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, feature disabled",
+					               info->event->publicID());
+					SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: feature disabled",
+					             fm->publicID());
+				}
 			}
 			else {
 				SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, preferredFocalMechanismID is fixed to '%s'",
@@ -3946,6 +3955,13 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 		}
 		// No fixed focal mechanism => select it using the automatic rules
 		else {
+			if ( !_config.eventAssociation.enablePreferredFMSelection ) {
+				SEISCOMP_DEBUG("... skipping potential preferred focal mechanism, feature disabled");
+				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: feature disabled",
+				             fm->publicID(), info->event->publicID());
+				return;
+			}
+
 			if ( isAgencyIDBlocked(objectAgencyID(fm)) ) {
 				SEISCOMP_DEBUG("... skipping potential preferred focal mechanism, agencyID '%s' is blocked",
 				               objectAgencyID(fm));

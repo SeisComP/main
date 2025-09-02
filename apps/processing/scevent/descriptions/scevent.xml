@@ -372,6 +372,15 @@
 					</description>
 				</parameter>
 
+				<parameter name="enablePreferredFMSelection" type="boolean" default="true">
+					<description>
+					Enables the selection of the preferred focalmechanism. If set
+					to false then only explicit commands will have effect on the
+					preferred focalmechanism selection, namely the EvPrefFocMecID
+					command.
+					</description>
+				</parameter>
+
 				<parameter name="declareFakeEventForRejectedOrigin" type="boolean" default="false">
 					<description>
 					If the preferred Origin has evaluation status 'rejected', the
