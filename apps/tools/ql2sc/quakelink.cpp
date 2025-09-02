@@ -44,7 +44,7 @@ QLClient::QLClient(int notificationID, const HostConfig *config, size_t backLog)
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 QLClient::~QLClient() {
 	SEISCOMP_INFO("%sterminated, messages/bytes received: %lu/%lu",
-	              _logPrefix.c_str(), _stats.messages, _stats.payloadBytes);
+	              _logPrefix, _stats.messages, _stats.payloadBytes);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -53,8 +53,7 @@ QLClient::~QLClient() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void QLClient::run() {
-	SEISCOMP_INFO("%sconnecting to URL '%s'", _logPrefix.c_str(),
-	              _config->url.c_str());
+	SEISCOMP_INFO("%sconnecting to URL '%s'", _logPrefix, _config->url);
 	_thread = thread(bind(&QLClient::listen, this));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -65,7 +64,7 @@ void QLClient::run() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void QLClient::join() {
 	if ( _thread.joinable() ) {
-		SEISCOMP_DEBUG("%swaiting for thread to terminate", _logPrefix.c_str());
+		SEISCOMP_DEBUG("%swaiting for thread to terminate", _logPrefix);
 		_thread.join();
 	}
 }
@@ -96,7 +95,7 @@ void QLClient::setLastUpdate(const Core::Time &time) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void QLClient::processResponse(IO::QuakeLink::Response *response) {
-	SEISCOMP_INFO("%sreceived message, size: %lu)", _logPrefix.c_str(),
+	SEISCOMP_INFO("%sreceived message, size: %lu)", _logPrefix,
 	              (unsigned long)response->length);
 	((App*)SCCoreApp)->feed(this, response);
 	++_stats.messages;
@@ -118,7 +117,7 @@ void QLClient::listen() {
 			_sock->setTimeout(60);
 		}
 		else {
-			SEISCOMP_ERROR("%sinstance not initialized", _logPrefix.c_str());
+			SEISCOMP_ERROR("%sinstance not initialized", _logPrefix);
 			return;
 		}
 	}
@@ -147,12 +146,12 @@ void QLClient::listen() {
 			if ( interrupted() ) {
 				break;
 			}
-			SEISCOMP_DEBUG("%sselect exception: %s", _logPrefix.c_str(), e.what());
+			SEISCOMP_DEBUG("%sselect exception: %s", _logPrefix, e.what());
 		}
 
 		_sock->close(); // clears interrupt flag
 		SEISCOMP_WARNING("%sQuakeLink connection closed, trying to reconnect "
-		                 "in 5s", _logPrefix.c_str());
+		                 "in 5s", _logPrefix);
 
 		for ( int i = 0; i < 50; ++i ) {
 			usleep(100000); // 100ms
@@ -164,7 +163,7 @@ void QLClient::listen() {
 	}
 
 	if ( interrupted() ) {
-		SEISCOMP_INFO("%sQuakeLink connection interrupted", _logPrefix.c_str());
+		SEISCOMP_INFO("%sQuakeLink connection interrupted", _logPrefix);
 	}
 
 	_sock->close();
