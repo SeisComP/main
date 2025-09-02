@@ -312,7 +312,7 @@ bool load(EventParametersPtr &ep, JournalingPtr &ej,
 		}
 	}
 	catch (string &e) {
-		SEISCOMP_ERROR("[xml] %s", e.c_str());
+		SEISCOMP_ERROR("[xml] %s", e);
 	}
 	catch (exception &e) {
 		SEISCOMP_ERROR("[xml] %s", e.what());
@@ -473,11 +473,11 @@ bool App::init() {
 	int notificationID = -2;
 	for ( HostConfigs::const_iterator it = _config.hosts.begin();
 	      it != _config.hosts.end(); ++it, --notificationID ) {
-		SEISCOMP_INFO("Initializing host '%s'", it->host.c_str());
+		SEISCOMP_INFO("Initializing host '%s'", it->host);
 		QLClient *client = new QLClient(notificationID, &*it, _config.backLog);
 		_clients.push_back(client);
 		if ( !client->init(it->url, it->options) ) {
-			SEISCOMP_ERROR("Failed to initialize host '%s'", it->host.c_str());
+			SEISCOMP_ERROR("Failed to initialize host '%s'", it->host);
 			return false;
 		}
 	}
@@ -510,7 +510,7 @@ bool App::run() {
 	}
 	else {
 		for ( size_t ei = 0; ei < _ep.size(); ++ei ) {
-			SEISCOMP_INFO("---- %s", _ep[ei].c_str());
+			SEISCOMP_INFO("---- %s", _ep[ei]);
 
 			// Offline processing
 			EventParametersPtr ep;
@@ -681,7 +681,7 @@ bool App::dispatchNotification(int type, Core::BaseObject *obj) {
 	auto msg = IO::QuakeLink::Response::Cast(obj);
 	if ( !msg ) {
 		SEISCOMP_ERROR("received invalid message from host '%s'",
-		               client->config()->host.c_str());
+		               client->config()->host);
 		return true;
 	}
 
@@ -725,7 +725,7 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 	const RoutingTable &routing = config->routingTable;
 	RoutingTable::const_iterator rt_it;
 
-	SEISCOMP_INFO("Processing message from host '%s'", config->host.c_str());
+	SEISCOMP_INFO("Processing message from host '%s'", config->host);
 
 	Notifiers notifiers;
 
@@ -1219,15 +1219,15 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 	auto origin = ep->findOrigin(event->preferredOriginID());
 	if ( !origin ) {
 		SEISCOMP_ERROR("Remote preferred origin '%s' not found: skipping event synchronization",
-		               event->preferredOriginID().c_str());
+		               event->preferredOriginID());
 		return;
 	}
 
 	try {
 		if ( isAgencyIDBlocked(origin->creationInfo().agencyID()) ) {
 			SEISCOMP_DEBUG("Remote preferred origin '%s' agencyID '%s' is blocked: skipping event synchronization",
-			               origin->publicID().c_str(),
-			               origin->creationInfo().agencyID().c_str());
+			               origin->publicID(),
+			               origin->creationInfo().agencyID());
 			return;
 		}
 	}
@@ -1236,22 +1236,22 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 	EventPtr targetEvent = query()->getEvent(event->preferredOriginID());
 	if ( !targetEvent ) {
 		SEISCOMP_DEBUG("No event found for origin %s, need to wait",
-		               event->preferredOriginID().c_str());
+		               event->preferredOriginID());
 		string eventID = waitForEventAssociation(event->preferredOriginID(),
 		                                         _config.maxWaitForEventIDTimeout);
 		if ( eventID.empty() ) {
 			SEISCOMP_ERROR("Event association timeout reached, skipping event synchronisation for input event %s",
-			               event->publicID().c_str());
+			               event->publicID());
 			return;
 		}
 
 		SEISCOMP_DEBUG("Origin %s has been associated with event %s",
-		               event->preferredOriginID().c_str(), eventID.c_str());
+		               event->preferredOriginID(), eventID);
 
 		targetEvent = static_cast<Event*>(query()->getObject(Event::TypeInfo(), eventID));
 		if ( !targetEvent ) {
 			SEISCOMP_ERROR("Failed to read target event %s from database, skipping event synchronisation for input event %s",
-			               eventID.c_str(), event->publicID().c_str());
+			               eventID, event->publicID());
 			return;
 		}
 	}
@@ -1259,7 +1259,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 	query()->loadComments(targetEvent.get());
 	query()->loadEventDescriptions(targetEvent.get());
 
-	SEISCOMP_INFO("Sync with event %s", targetEvent->publicID().c_str());
+	SEISCOMP_INFO("Sync with event %s", targetEvent->publicID());
 
 	// Associate all focal mechanisms
 	for ( size_t i = 0; i < event->focalMechanismReferenceCount(); ++i ) {
@@ -1267,7 +1267,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 		auto fm = ep->findFocalMechanism(fmRef->focalMechanismID());
 		if ( !fm ) {
 			SEISCOMP_WARNING("* referenced focal mechanism not found in event: '%s'",
-			                 fmRef->focalMechanismID().c_str());
+			                 fmRef->focalMechanismID());
 			continue;
 		}
 
@@ -1283,7 +1283,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 			);
 
 			SEISCOMP_DEBUG("* force association of focal mechanism: '%s'",
-			               fm->publicID().c_str());
+			               fm->publicID());
 		}
 	}
 
@@ -1495,7 +1495,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 
 		if ( desc ) {
 			if ( !targetDesc || desc->text() != targetDesc->text() ) {
-				SEISCOMP_DEBUG("* check update of event name: '%s'", desc->text().c_str());
+				SEISCOMP_DEBUG("* check update of event name: '%s'", desc->text());
 
 				JournalEntryPtr entry = getLastJournalEntry(*query(), targetEvent->publicID(), "EvName");
 				if ( !entry || entry->sender() == author() ) {
@@ -1536,7 +1536,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 		Comment *targetCmt = targetEvent->comment(string("Operator"));
 		if ( cmt ) {
 			if ( !targetCmt || cmt->text() != targetCmt->text() ) {
-				SEISCOMP_DEBUG("* check update of operator comment: %s", cmt->text().c_str());
+				SEISCOMP_DEBUG("* check update of operator comment: %s", cmt->text());
 
 				JournalEntryPtr entry = getLastJournalEntry(*query(), targetEvent->publicID(), "EvOpComment");
 				if ( !entry || entry->sender() == author() ) {
@@ -1577,11 +1577,11 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 			continue;
 		}
 
-		SEISCOMP_DEBUG("> %s", localCmt->id().c_str());
+		SEISCOMP_DEBUG("> %s", localCmt->id());
 
 		Comment *remoteCmt = event->comment(localCmt->id());
 		if ( !remoteCmt ) {
-			SEISCOMP_DEBUG("* remove comment '%s'", localCmt->id().c_str());
+			SEISCOMP_DEBUG("* remove comment '%s'", localCmt->id());
 			// Remove comment
 			notifiers.push_back(
 				new Notifier(targetEvent->publicID(), OP_REMOVE, localCmt)
@@ -1590,7 +1590,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 		else {
 			if ( remoteCmt->text() != localCmt->text() ) {
 				if ( checkUpdateOnTimeStamps(remoteCmt, localCmt) ) {
-					SEISCOMP_DEBUG("* update comment '%s'", localCmt->id().c_str());
+					SEISCOMP_DEBUG("* update comment '%s'", localCmt->id());
 					*localCmt = *remoteCmt;
 					// Update comment
 					notifiers.push_back(
@@ -1612,11 +1612,11 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 			continue;
 		}
 
-		SEISCOMP_DEBUG("< %s", remoteCmt->id().c_str());
+		SEISCOMP_DEBUG("< %s", remoteCmt->id());
 
 		Comment *localCmt = targetEvent->comment(remoteCmt->id());
 		if ( !localCmt ) {
-			SEISCOMP_DEBUG("* add comment '%s'", remoteCmt->id().c_str());
+			SEISCOMP_DEBUG("* add comment '%s'", remoteCmt->id());
 			// Add comment
 			notifiers.push_back(
 				new Notifier(targetEvent->publicID(), OP_ADD, remoteCmt)
@@ -1656,7 +1656,7 @@ bool App::sendNotifiers(const EventParameters *ep, const Notifiers &notifiers,
 		if ( (nm->size() > 0 && group != prevGroup) ||
 		     (_config.batchSize > 0 && nm->size() >= _config.batchSize) ) {
 			SEISCOMP_DEBUG("sending notifier message (#%i) to group '%s'",
-			               nm->size(), prevGroup.c_str());
+			               nm->size(), prevGroup);
 			if ( !connection()->send(prevGroup, nm.get()) ) {
 				SEISCOMP_ERROR("sending message to '%s' failed with error: %s",
 				               prevGroup, connection()->lastError().toString());
@@ -1723,7 +1723,7 @@ bool App::sendNotifiers(const EventParameters *ep, const Notifiers &notifiers,
 	// send last message
 	if ( nm->size() > 0 ) {
 		SEISCOMP_DEBUG("sending notifier message (#%i) to group '%s'",
-		               nm->size(), group.c_str());
+		               nm->size(), group);
 		if ( !connection()->send(group, nm.get()) ) {
 			SEISCOMP_ERROR("sending message to '%s' failed with error: %s",
 			               group, connection()->lastError().toString());
@@ -1742,7 +1742,7 @@ bool App::sendNotifiers(const EventParameters *ep, const Notifiers &notifiers,
 		SEISCOMP_INFO("sent %i notifiers (ADD: %i, UPDATE: %i, REMOVE: %i) "
 		              "to the following message groups:\n%s",
 		              add + update + remove, add, update, remove,
-		              ss.str().c_str());
+		              ss.str());
 	}
 
 	// Sync with messaging
@@ -1777,7 +1777,7 @@ bool App::sendJournals(const Notifiers &journals) {
 
 	SEISCOMP_INFO("send %i journal entries "
 	              "to the message group: %s", int(nm->size()),
-	              primaryMessagingGroup().c_str());
+	              primaryMessagingGroup());
 
 	return true;
 }
@@ -1853,7 +1853,7 @@ void App::applyNotifier(const Notifier *n) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::readLastUpdates() {
 	SEISCOMP_INFO("reading last update timestamps from file '%s'",
-	              _lastUpdateFile.c_str());
+	              _lastUpdateFile);
 	int i = 0;
 	ifstream ifs(_lastUpdateFile.c_str());
 	string line;
@@ -1868,7 +1868,7 @@ void App::readLastUpdates() {
 		}
 		else {
 			SEISCOMP_ERROR("line %i of last update file '%s' invalid",
-			               i, _lastUpdateFile.c_str());
+			               i, _lastUpdateFile);
 			break;
 		}
 	}
@@ -1878,7 +1878,7 @@ void App::readLastUpdates() {
 		auto entry = hostTimes.find(client->config()->host);
 		if ( entry != hostTimes.end() ) {
 			SEISCOMP_DEBUG("setting last update time of host '%s' to %s",
-			               entry->first.c_str(), entry->second.iso().c_str());
+			               entry->first, entry->second.iso());
 			client->setLastUpdate(entry->second);
 		}
 	}
@@ -1896,7 +1896,7 @@ void App::writeLastUpdates() {
 	string tmpFile = _lastUpdateFile + ".tmp";
 	ofstream ofs(tmpFile.c_str(), ios::trunc);
 	if ( !ofs.good() ) {
-		SEISCOMP_ERROR("could not open file '%s' for writing", tmpFile.c_str());
+		SEISCOMP_ERROR("could not open file '%s' for writing", tmpFile);
 		return;
 	}
 
@@ -1908,7 +1908,7 @@ void App::writeLastUpdates() {
 	}
 
 	if ( !ofs.good() ) {
-		SEISCOMP_ERROR("could not write to file '%s'", tmpFile.c_str());
+		SEISCOMP_ERROR("could not write to file '%s'", tmpFile);
 		return;
 	}
 	ofs.close();
@@ -1916,7 +1916,7 @@ void App::writeLastUpdates() {
 	// move temporary file
 	if ( ::rename(tmpFile.c_str(), _lastUpdateFile.c_str()) ) {
 		SEISCOMP_ERROR("Could not rename temporary file '%s' to '%s'",
-		               tmpFile.c_str(), _lastUpdateFile.c_str());
+		               tmpFile, _lastUpdateFile);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
