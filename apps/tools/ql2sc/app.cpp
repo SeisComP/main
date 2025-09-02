@@ -1658,8 +1658,8 @@ bool App::sendNotifiers(const EventParameters *ep, const Notifiers &notifiers,
 			SEISCOMP_DEBUG("sending notifier message (#%i) to group '%s'",
 			               nm->size(), prevGroup.c_str());
 			if ( !connection()->send(prevGroup, nm.get()) ) {
-				SEISCOMP_ERROR("sending message failed with error: %s",
-				               connection()->lastError().toString());
+				SEISCOMP_ERROR("sending message to '%s' failed with error: %s",
+				               prevGroup, connection()->lastError().toString());
 				return false;
 			}
 
@@ -1722,9 +1722,11 @@ bool App::sendNotifiers(const EventParameters *ep, const Notifiers &notifiers,
 
 	// send last message
 	if ( nm->size() > 0 ) {
+		SEISCOMP_DEBUG("sending notifier message (#%i) to group '%s'",
+		               nm->size(), group.c_str());
 		if ( !connection()->send(group, nm.get()) ) {
-			SEISCOMP_ERROR("sending message failed with error: %s",
-			               connection()->lastError().toString());
+			SEISCOMP_ERROR("sending message to '%s' failed with error: %s",
+			               group, connection()->lastError().toString());
 			return false;
 		}
 
@@ -1737,7 +1739,7 @@ bool App::sendNotifiers(const EventParameters *ep, const Notifiers &notifiers,
 			++msgTotal;
 			ss << "  " << name << ": " << count << endl;
 		}
-		SEISCOMP_INFO("send %i notifiers (ADD: %i, UPDATE: %i, REMOVE: %i) "
+		SEISCOMP_INFO("sent %i notifiers (ADD: %i, UPDATE: %i, REMOVE: %i) "
 		              "to the following message groups:\n%s",
 		              add + update + remove, add, update, remove,
 		              ss.str().c_str());
@@ -1768,7 +1770,7 @@ bool App::sendJournals(const Notifiers &journals) {
 	}
 
 	if ( !connection()->send(nm.get()) ) {
-		SEISCOMP_ERROR("sending message failed with error: %s",
+		SEISCOMP_ERROR("sending message to primary group failed with error: %s",
 		               connection()->lastError().toString());
 		return false;
 	}
