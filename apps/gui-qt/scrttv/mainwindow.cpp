@@ -35,6 +35,7 @@
 #include <seiscomp/gui/core/scheme.h>
 #include <seiscomp/gui/core/infotext.h>
 #include <seiscomp/gui/core/flowlayout.h>
+#include <seiscomp/gui/core/spectrogramsettings.h>
 #include <seiscomp/gui/datamodel/origindialog.h>
 #include <seiscomp/gui/datamodel/inventorylistview.h>
 
@@ -50,7 +51,6 @@
 
 #include "associator.h"
 #include "settings.h"
-#include "spectrogramsettings.h"
 #include "tracemarker.h"
 
 
@@ -959,83 +959,7 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 		addDockWidget(Qt::LeftDockWidgetArea, dockSpec);
 		dockSpec->toggleViewAction()->setShortcut(QKeySequence("ctrl+shift+s"));
 		_ui.menuWindow->addAction(dockSpec->toggleViewAction());
-
-		try {
-			_spectrogramSettings->ui.cbSmoothing->setChecked(
-				SCApp->configGetBool("spectrogram.smoothing")
-			);
-		}
-		catch ( ... ) {}
-
-		try {
-			_spectrogramSettings->ui.cbLogScale->setChecked(
-				SCApp->configGetBool("spectrogram.logScale")
-			);
-		}
-		catch ( ... ) {}
-
-		try {
-			auto mode = SCApp->configGetString("spectrogram.normalization");
-			if ( mode == "fixed" ) {
-				_spectrogramSettings->ui.cbNormalization->setCurrentIndex(0);
-			}
-			else if ( mode == "frequency" ) {
-				_spectrogramSettings->ui.cbNormalization->setCurrentIndex(1);
-			}
-			else if ( mode == "time" ) {
-				_spectrogramSettings->ui.cbNormalization->setCurrentIndex(2);
-			}
-		}
-		catch ( ... ) {}
-
-		try {
-			_spectrogramSettings->ui.cbShowAxis->setChecked(
-				SCApp->configGetBool("spectrogram.axis")
-			);
-		}
-		catch ( ... ) {}
-
-		try {
-			_spectrogramSettings->ui.spinMinAmp->setValue(
-				SCApp->configGetDouble("spectrogram.minimumAmplitude")
-			);
-		}
-		catch ( ... ) {}
-
-		try {
-			_spectrogramSettings->ui.spinMaxAmp->setValue(
-				SCApp->configGetDouble("spectrogram.maximumAmplitude")
-			);
-		}
-		catch ( ... ) {}
-
-		try {
-			_spectrogramSettings->ui.spinMinFrequency->setValue(
-				SCApp->configGetDouble("spectrogram.minimumFrequency")
-			);
-		}
-		catch ( ... ) {}
-
-		try {
-			_spectrogramSettings->ui.spinMaxFrequency->setValue(
-				SCApp->configGetDouble("spectrogram.maximumFrequency")
-			);
-		}
-		catch ( ... ) {}
-
-		try {
-			_spectrogramSettings->ui.spinTimeWindow->setValue(
-				SCApp->configGetDouble("spectrogram.timeSpan")
-			);
-		}
-		catch ( ... ) {}
-
-		try {
-			_spectrogramSettings->ui.spinOverlap->setValue(
-				SCApp->configGetDouble("spectrogram.overlap") * 100
-			);
-		}
-		catch ( ... ) {}
+		_spectrogramSettings->init(SCApp, "spectrogram.");
 	}
 	else {
 		_statusBarSelectMode->setVisible(false);
