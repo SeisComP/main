@@ -714,6 +714,9 @@
 						A list of wildcard patterns to identify auxiliary
 						channels. A pattern is simply checked against a stream
 						ID, the concatenation of NSLC separated by a period.
+
+						This is an obsolete and deprecated setting. Please use
+						profiles.
 						</description>
 					</parameter>
 					<parameter name="minimumDistance" type="double" unit="deg" default="0">
@@ -722,6 +725,9 @@
 						unassociated auxiliary channel. Loading a
 						channel / station explicitely (F3) will not respect
 						this setting.
+
+						This is an obsolete and deprecated setting. Please use
+						profiles.
 						</description>
 					</parameter>
 					<parameter name="maximumDistance" type="double" unit="deg" default="1000">
@@ -730,8 +736,43 @@
 						unassociated auxiliary channel. Loading a
 						channel / station explicitely (F3) will not respect
 						this setting.
+
+						This is an obsolete and deprecated setting. Please use
+						profiles.
+					</description>
+					</parameter>
+					<parameter name="profiles" type="list:string">
+						<description>
+						A list of auxiliary channel profiles which are enabled.
 						</description>
 					</parameter>
+					<group name="profiles">
+						<struct name="AuxiliaryChannelProfile" link="picker.auxiliary.profiles">
+							<parameter name="channels" type="list:string">
+								<description>
+								A list of wildcard patterns to identify auxiliary
+								channels. A pattern is simply checked against a stream
+								ID, the concatenation of NSLC separated by a period.
+								</description>
+							</parameter>
+							<parameter name="minimumDistance" type="double" unit="deg" default="0">
+								<description>
+								The minimum distance in degrees from origin to load an
+								unassociated auxiliary channel. Loading a
+								channel / station explicitely (F3) will not respect
+								this setting.
+								</description>
+							</parameter>
+							<parameter name="maximumDistance" type="double" unit="deg" default="1000">
+								<description>
+								The maximum distance in degrees from origin to load an
+								unassociated auxiliary channel. Loading a
+								channel / station explicitely (F3) will not respect
+								this setting.
+								</description>
+							</parameter>
+						</struct>
+					</group>
 				</group>
 				<group name="phases">
 					<description>
