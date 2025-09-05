@@ -568,6 +568,42 @@ MainFrame::MainFrame(){
 	try { pickerConfig.defaultDepth = SCApp->configGetDouble("olv.defaultDepth"); }
 	catch ( ... ) {}
 
+	// Old configuration
+	try {
+		auto patterns = SCApp->configGetStrings("picker.auxiliary.channels");
+		double minDist = 0, maxDist = 1000;
+		try {
+			minDist = SCApp->configGetDouble("picker.auxiliary.minimumDistance");
+		}
+		catch ( ... ) {}
+		try {
+			maxDist = SCApp->configGetDouble("picker.auxiliary.maximumDistance");
+		}
+		catch ( ... ) {}
+
+		pickerConfig.auxiliaryChannelProfiles.push_back({ patterns, minDist, maxDist });
+	}
+	catch ( ... ) {}
+
+	try {
+		auto profiles = SCApp->configGetStrings("picker.auxiliary.profiles");
+		for ( const auto &profile : profiles ) {
+			auto patterns = SCApp->configGetStrings("picker.auxiliary.profiles." + profile + ".channels");
+			double minDist = 0, maxDist = 1000;
+			try {
+				minDist = SCApp->configGetDouble("picker.auxiliary.profiles." + profile + ".minimumDistance");
+			}
+			catch ( ... ) {}
+			try {
+				maxDist = SCApp->configGetDouble("picker.auxiliary.profiles." + profile + ".maximumDistance");
+			}
+			catch ( ... ) {}
+
+			pickerConfig.auxiliaryChannelProfiles.push_back({ patterns, minDist, maxDist });
+		}
+	}
+	catch ( ... ) {}
+
 	try { amplitudeConfig.preOffset = Core::TimeSpan(SCApp->configGetDouble("amplitudePicker.preOffset")); }
 	catch ( ... ) { amplitudeConfig.preOffset = Core::TimeSpan(300, 0); }
 
@@ -604,6 +640,7 @@ MainFrame::MainFrame(){
 
 	OriginDialog::SetDefaultDepth(pickerConfig.defaultDepth);
 
+	amplitudeConfig.auxiliaryChannelProfiles = pickerConfig.auxiliaryChannelProfiles;
 	amplitudeConfig.defaultAddStationsDistance = pickerConfig.defaultAddStationsDistance;
 	amplitudeConfig.hideStationsWithoutData = pickerConfig.hideStationsWithoutData;
 	amplitudeConfig.loadStrongMotionData = pickerConfig.loadStrongMotionData;
