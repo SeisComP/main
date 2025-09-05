@@ -8,31 +8,106 @@
   <link rel="stylesheet" type="text/css" href="../../js/tcal/tcal.css">
   <script type="text/javascript" src="../../js/tcal/tcal.js"></script>
   <script type="text/javascript" src="../../js/fdsnws-query.js"></script>
+  <script type="text/javascript" src="../../js/event-time-selection.js"></script>
   <script type="text/javascript">
     A_TCALCONF['format'] = 'Y-m-dT00:00:00';
-
-    window.onload = fdsnwsInitQueryForm;
+    
+    window.onload = function() {
+      fdsnwsInitQueryForm();
+      initializeEventTimeSelection();
+    };
   </script>
+  <style>
+    .event-section {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .event-section:disabled,
+    .event-section[disabled] {
+      opacity: 0.6;
+      background: #f5f5f5;
+    }
+
+    .time-controls {
+      display: flex;
+      gap: 15px;
+      margin-top: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .time-controls input {
+      width: 70px;
+    }
+
+    .status {
+      padding: 8px;
+      margin-top: 8px;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+
+    .status.loading { background: #fff3cd; color: #856404; }
+    .status.success { background: #d4edda; color: #155724; }
+    .status.error { background: #f8d7da; color: #721c24; }
+
+    .clear-btn {
+      background: #6c757d;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+
+    .clear-btn:hover:not(:disabled) { background: #545b62; }
+    .clear-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  </style>
 </head>
 <body>
   <p><a href="./">Parent Directory</a></p>
   <h1>SeisComP FDSNWS DataSelect - URL Builder</h1>
+  
   <form id="query-form" action="query" method="GET">
+  
+  <!-- Event-based Time Selection -->
+  <fieldset class="event-section">
+    <legend>Event-based Time Selection</legend>
+    <div>
+      <label>Event ID: </label>
+      <input type="text" id="event-id" placeholder="Enter event ID" style="width: 150px;"/>
+      <button type="button" id="clear-event" class="clear-btn">Clear</button>
+    </div>
+    
+    <div id="event-status"></div>
+    
+    <div class="time-controls">
+      <label>Before: <input type="number" id="before-time" min="0" step="1.0" placeholder="0"/> min</label>
+      <label>After: <input type="number" id="after-time" min="0" step="1.0" placeholder="0"/> min</label>
+    </div>
+  </fieldset>
+
   <fieldset>
     <legend>Time constraints</legend>
     <table class="builder">
       <tbody>
         <tr>
           <td>Start Time</td>
-          <td><input type="text" size="10"  maxlength="26" name="starttime" value="" class="tcal"/></td>
+          <td><input type="text" size="20" maxlength="26" name="starttime" value="" class="tcal" placeholder="YYYY-MM-DDTHH:MM:SS"/></td>
         </tr>
         <tr>
           <td>End Time</td>
-          <td><input type="text" size="10" maxlength="26" name="endtime" value="" class="tcal"/></td>
+          <td><input type="text" size="20" maxlength="26" name="endtime" value="" class="tcal" placeholder="YYYY-MM-DDTHH:MM:SS"/></td>
         </tr>
       </tbody>
     </table>
   </fieldset>
+  
   <fieldset>
     <legend>Channel constraints</legend>
     <table class="builder">
@@ -56,6 +131,7 @@
       </tbody>
     </table>
   </fieldset>
+  
   <fieldset>
     <legend>Service specific constraints</legend>
     <table class="builder">
@@ -79,6 +155,7 @@
       </tbody>
     </table>
   </fieldset>
+  
   <fieldset>
     <legend>Output control</legend>
     <table class="builder">
@@ -95,6 +172,7 @@
     </table>
   </fieldset>
   </form>
+  
   <fieldset>
     <legend>URL</legend>
     <p><a id="query-url" href=""></a></p>
