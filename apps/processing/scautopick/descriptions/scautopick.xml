@@ -59,14 +59,11 @@
 				values (bindings) override this value.
 				</description>
 			</parameter>
-			<parameter name="picker" type="string">
+			<parameter name="picker" type="string" default="" values="AIC,BK,GFZ">
 				<description>
 				The re-picker to use. By default only simple detections
 				are emitted as picks. To enable re-picking on a time window around
 				the detection, an algorithm (plugin) can be defined with this parameter.
-
-				Currently available: &quot;AIC&quot;, &quot;BK&quot; or
-				&quot;GFZ&quot;.
 
 				More options may be available by plugins. Configure related
 				parameters in global bindings.
@@ -87,12 +84,12 @@
 				their evaluation status.
 				</description>
 			</parameter>
-			<parameter name="spicker" type="string">
+			<parameter name="spicker" type="string" default="" values="S-L2,S-V">
 				<description>
 				The secondary picker to use, e.g., for picking S-phases.
-				Currently available is: &quot;S-L2&quot;. More options may
-				be available by plugins. Configure related parameters
-				in global bindings.
+
+				More options may be available by plugins. Configure related
+				parameters in global bindings.
 				</description>
 			</parameter>
 			<parameter name="killPendingSPickers" type="boolean" default="true">
@@ -128,14 +125,15 @@
 				will be used: &quot;%Y%m%d.%H%M%S.%f-@net.sta.loc.cha@&quot;.
 				</description>
 			</parameter>
-			<parameter name="fx" type="string">
+			<parameter name="fx" type="string" default="" values="DFX">
 				<description>
 				Configures the feature extraction type to use. Currently
 				available: &quot;DFX&quot;. Configure related parameters
 				in global bindings.
 
 				When configured, the usability of the features for locating
-				events depends on the used locator, e.g. LOCSAT. Read the
+				events depends on the used locator, e.g. LOCSAT will by default
+				consider slowness and backazimuth when measured. Read the
 				locator's documentation and configuration parameters.
 				</description>
 			</parameter>
