@@ -629,7 +629,7 @@ MainFrame::MainFrame(){
 			QStringList tokens = filter.split(";");
 			if ( tokens.size() != 2 ) {
 				SEISCOMP_ERROR("Wrong filter string, expecting ';' to seperate name and definition: %s",
-				               (const char*)filter.toLatin1());
+				               static_cast<const char*>(filter.toLatin1()));
 				continue;
 			}
 

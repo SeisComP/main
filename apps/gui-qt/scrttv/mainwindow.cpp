@@ -615,7 +615,7 @@ void TraceWidget::drawSpectrogramAxis(QPainter &painter) {
 
 	painter.save();
 
-	QPair<double, double> range = _spectrogram->range();
+	QPair<double, double> range = _spectrogram->frequencyRange();
 	_spectrogramAxis->setRange(Seiscomp::Gui::Range(range.first, range.second));
 
 	r.setRight(r.left());
