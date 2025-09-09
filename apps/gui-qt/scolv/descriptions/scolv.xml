@@ -244,6 +244,44 @@
 						</description>
 					</parameter>
 				</group>
+				<group name="import">
+					<description>
+					Set default options for the &quot;Import picks&quot; dialog.
+					</description>
+					<parameter name="mode" type="string" default="latest" values="latest,latest-automatic,phases,all">
+						<description>
+						Defines the default mode of import picks. For more information
+						see the &quot;Import picks&quot; dialog.
+						</description>
+					</parameter>
+					<parameter name="acceptedPhases" type="list:string">
+						<description>
+						Defines a list of accepted or denied phases when importing picks.
+						This list will be used to populate the corresponding input
+						field in the &quot;Import picks&quot; dialog.
+
+						A phase which is prepended with a minus, e.g. &quot;-P&quot;,
+						will be denied.
+						</description>
+					</parameter>
+					<group name="options">
+						<parameter name="allAgencies" type="boolean" default="false">
+							<description>
+							Configures the default for &quot;Import picks from all agencies ...&quot;.
+							</description>
+						</parameter>
+						<parameter name="allPhases" type="boolean" default="true">
+							<description>
+							Configures the default for &quot;Import all phases ...&quot;.
+							</description>
+						</parameter>
+						<parameter name="preferTargetPhases" type="boolean" default="true">
+							<description>
+							Configures the default for &quot;Prefer phases of target ...&quot;.
+							</description>
+						</parameter>
+					</group>
+				</group>
 				<group name="commit">
 					<parameter name="forceEventAssociation" type="boolean" default="false">
 						<description>
