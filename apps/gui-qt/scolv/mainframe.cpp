@@ -581,7 +581,7 @@ MainFrame::MainFrame(){
 		}
 		catch ( ... ) {}
 
-		pickerConfig.auxiliaryChannelProfiles.push_back({ patterns, minDist, maxDist });
+		pickerConfig.auxiliaryChannelProfiles.push_back({ QString(), patterns, minDist, maxDist });
 	}
 	catch ( ... ) {}
 
@@ -599,7 +599,7 @@ MainFrame::MainFrame(){
 			}
 			catch ( ... ) {}
 
-			pickerConfig.auxiliaryChannelProfiles.push_back({ patterns, minDist, maxDist });
+			pickerConfig.auxiliaryChannelProfiles.push_back({ profile.data(), patterns, minDist, maxDist });
 		}
 	}
 	catch ( ... ) {}
