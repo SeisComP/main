@@ -1646,7 +1646,13 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 		SEISCOMP_DEBUG("...set event preferred focal mechanism");
 
 		if ( entry->parameters().empty() ) {
-			info->event->setPreferredFocalMechanismID(string());
+			Notifier::Enable();
+			if ( !info->event->preferredFocalMechanismID().empty() ) {
+				info->event->setPreferredFocalMechanismID(string());
+				info->event->update();
+				info->preferredFocalMechanism = nullptr;
+			}
+			Notifier::Disable();
 			response = createEntry(entry->objectID(), entry->action() + OK, ":unset:");
 		}
 		else {
