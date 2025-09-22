@@ -15,6 +15,7 @@
 #include "constraints.h"
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 using namespace Seiscomp;
 using namespace Seiscomp::DataModel;
 using namespace Seiscomp::Client;
@@ -79,8 +80,9 @@ bool Constraints::fixFocalMechanism(const DataModel::FocalMechanism *fm) const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Constraints::fixFocalMechanismMode(const DataModel::FocalMechanism *fm) const {
-	if ( !preferredFocalMechanismEvaluationMode )
+	if ( !preferredFocalMechanismEvaluationMode ) {
 		return false;
+	}
 
 	try {
 		return *preferredFocalMechanismEvaluationMode == fm->evaluationMode();
@@ -89,3 +91,4 @@ bool Constraints::fixFocalMechanismMode(const DataModel::FocalMechanism *fm) con
 
 	return false;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

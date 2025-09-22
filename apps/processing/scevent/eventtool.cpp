@@ -1675,6 +1675,40 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 		updateEvent(info.get());
 		Notifier::Disable();
 	}
+	else if ( entry->action() == "EvPrefFocEvalMode" ) {
+		SEISCOMP_DEBUG("...set preferred focal mechanism by evaluation mode");
+
+		DataModel::EvaluationMode em;
+		if ( !em.fromString(entry->parameters().c_str()) && !entry->parameters().empty() ) {
+			// If a mode is requested but an invalid mode identifier has been submitted
+			response = createEntry(entry->objectID(), entry->action() + Failed, string(":mode '") + entry->parameters() + "' unknown:");
+		}
+		else {
+			// Release fixed focal mechanism mode and choose the best one automatically
+			if ( !info->constraints.preferredFocalMechanismEvaluationMode ) {
+				response = createEntry(entry->objectID(), entry->action() + OK, ":automatic:");
+			}
+			else {
+				response = createEntry(entry->objectID(), entry->action() + OK, entry->parameters());
+			}
+
+			Notifier::Enable();
+			if ( !info->event->preferredFocalMechanismID().empty() ) {
+				info->event->setPreferredFocalMechanismID({});
+				info->event->update();
+				info->preferredFocalMechanism = nullptr;
+			}
+			updatePreferredFocalMechanism(info.get());
+			Notifier::Disable();
+		}
+	}
+	else if ( entry->action() == "EvPrefFocAutomatic" ) {
+		response = createEntry(entry->objectID(), entry->action() + OK, ":automatic mode:");
+
+		Notifier::Enable();
+		updatePreferredFocalMechanism(info.get());
+		Notifier::Disable();
+	}
 	else if ( entry->action() == "EvPrefMw" ) {
 		SEISCOMP_DEBUG("...set Mw from focal mechanism as preferred magnitude");
 		if ( entry->parameters().empty() ) {
@@ -2479,7 +2513,6 @@ void EventTool::updatedFocalMechanism(FocalMechanism *focalMechanism, bool realF
 
 	Notifier::Enable();
 	if ( realFMUpdate && info->event->preferredFocalMechanismID() == fm->publicID() ) {
-		info->event->setPreferredFocalMechanismID(string());
 		info->event->setPreferredFocalMechanismID(string());
 		info->preferredFocalMechanism = nullptr;
 		updatePreferredFocalMechanism(info.get());
@@ -3895,6 +3928,16 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 				               info->event->publicID(), fm->publicID());
 				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: status is REJECTED",
 				             fm->publicID());
+				return;
+			}
+
+			if ( info->constraints.preferredFocalMechanismEvaluationMode &&
+			     !info->constraints.fixFocalMechanismMode(fm) ) {
+				SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, evaluation mode is not '%s'",
+				               info->event->publicID(),
+				               info->constraints.preferredFocalMechanismEvaluationMode->toString());
+				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: evaluation mode is not '%s'",
+				             fm->publicID(), info->constraints.preferredFocalMechanismEvaluationMode->toString());
 				return;
 			}
 
