@@ -159,7 +159,7 @@ class SC_SYSTEM_CLIENT_API ClearCacheResponseMessage : public Seiscomp::Core::Me
 		ClearCacheResponseMessage() {}
 
 		//! Implemented interface from Message
-		virtual bool empty() const  { return false; }
+		bool empty() const override { return false; }
 };
 
 void ClearCacheResponseMessage::serialize(Archive& ar) {}
@@ -1645,41 +1645,47 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 	else if ( entry->action() == "EvPrefFocMecID" ) {
 		SEISCOMP_DEBUG("...set event preferred focal mechanism");
 
-		if ( entry->parameters().empty() ) {
-			Notifier::Enable();
-			if ( !info->event->preferredFocalMechanismID().empty() ) {
-				info->event->setPreferredFocalMechanismID(string());
-				info->event->update();
-				info->preferredFocalMechanism = nullptr;
-			}
-			Notifier::Disable();
-			response = createEntry(entry->objectID(), entry->action() + OK, ":unset:");
-		}
-		else {
-			if ( !info->event->focalMechanismReference(info->constraints.preferredFocalMechanismID) ) {
-				response = createEntry(entry->objectID(), entry->action() + Failed, ":unreferenced:");
+		if ( info->constraints.preferredOptFocalMechanismID ) {
+			if ( info->constraints.preferredOptFocalMechanismID->empty() ) {
+				Notifier::Enable();
+				if ( !info->event->preferredFocalMechanismID().empty() ) {
+					info->event->setPreferredFocalMechanismID(string());
+					info->event->update();
+					info->preferredFocalMechanism = nullptr;
+				}
+				Notifier::Disable();
+				response = createEntry(entry->objectID(), entry->action() + OK, ":unset:");
 			}
 			else {
-				FocalMechanismPtr fm = _cache.get<FocalMechanism>(info->constraints.preferredFocalMechanismID);
-				if ( fm ) {
-					if ( !fm->momentTensorCount() && query() ) {
-						SEISCOMP_DEBUG("... loading moment tensors for focal mechanism %s", fm->publicID());
-						query()->loadMomentTensors(fm.get());
-					}
-
-					response = createEntry(entry->objectID(), entry->action() + OK, info->constraints.preferredFocalMechanismID);
-					Notifier::Enable();
-					choosePreferred(info.get(), fm.get());
-					Notifier::Disable();
+				if ( !info->event->focalMechanismReference(*info->constraints.preferredOptFocalMechanismID) ) {
+					response = createEntry(entry->objectID(), entry->action() + Failed, ":unreferenced:");
 				}
 				else {
-					response = createEntry(entry->objectID(), entry->action() + Failed, ":not available:");
+					FocalMechanismPtr fm = _cache.get<FocalMechanism>(*info->constraints.preferredOptFocalMechanismID);
+					if ( fm ) {
+						if ( !fm->momentTensorCount() && query() ) {
+							SEISCOMP_DEBUG("... loading moment tensors for focal mechanism %s", fm->publicID());
+							query()->loadMomentTensors(fm.get());
+						}
+
+						response = createEntry(entry->objectID(), entry->action() + OK, *info->constraints.preferredOptFocalMechanismID);
+						Notifier::Enable();
+						choosePreferred(info.get(), fm.get());
+						Notifier::Disable();
+					}
+					else {
+						response = createEntry(entry->objectID(), entry->action() + Failed, ":not available:");
+					}
 				}
 			}
+
+			Notifier::Enable();
+			updateEvent(info.get());
+			Notifier::Disable();
 		}
-		Notifier::Enable();
-		updateEvent(info.get());
-		Notifier::Disable();
+		else {
+			response = createEntry(entry->objectID(), entry->action() + OK, ":disabled:");
+		}
 	}
 	else if ( entry->action() == "EvPrefFocEvalMode" ) {
 		SEISCOMP_DEBUG("...set preferred focal mechanism by evaluation mode");
@@ -3956,29 +3962,28 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 			             fm->publicID(), info->event->publicID());
 			update = true;
 		}
-		else {
-			if ( !isAutomaticFMElligible ) {
-				if ( !isAgencyIDAllowed(objectAgencyID(fm)) ) {
-					SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, agencyID '%s' is blocked",
-					               info->event->publicID(), objectAgencyID(fm));
-					SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: agencyID %s is blocked",
-					             fm->publicID(), objectAgencyID(fm));
-				}
-				else {
-					SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, feature disabled",
-					               info->event->publicID());
-					SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: feature disabled",
-					             fm->publicID());
-				}
+		else if ( !isAutomaticFMElligible ) {
+			// Another focal mechanism is fixed
+			if ( !isAgencyIDAllowed(objectAgencyID(fm)) ) {
+				SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, agencyID '%s' is blocked",
+				               info->event->publicID(), objectAgencyID(fm));
+				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: agencyID %s is blocked",
+				             fm->publicID(), objectAgencyID(fm));
 			}
 			else {
-				SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, preferredFocalMechanismID is fixed to '%s'",
-				               info->event->publicID(), info->constraints.preferredFocalMechanismID);
-				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: preferredFocalMechanismID is fixed to %s",
-				             fm->publicID(), info->constraints.preferredFocalMechanismID);
+				SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, feature disabled",
+				               info->event->publicID());
+				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: feature disabled",
+				             fm->publicID());
 			}
-			return;
 		}
+		else {
+			SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, preferredFocalMechanismID is fixed to '%s'",
+			               info->event->publicID(), *info->constraints.preferredOptFocalMechanismID);
+			SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: preferredFocalMechanismID is fixed to %s",
+			             fm->publicID(), *info->constraints.preferredOptFocalMechanismID);
+		}
+		return;
 	}
 	else if ( info->preferredFocalMechanism->publicID() != fm->publicID() ) {
 		SEISCOMP_DEBUG("... checking whether focal mechanism %s can become preferred",
@@ -3995,10 +4000,10 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 		if ( info->constraints.fixedFocalMechanism() ) {
 			if ( !info->constraints.fixFocalMechanism(fm) ) {
 				SEISCOMP_DEBUG("... skipping potential preferred focal mechanism, focal mechanism '%s' is fixed",
-				               info->constraints.preferredFocalMechanismID);
+				               *info->constraints.preferredOptFocalMechanismID);
 				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: focal mechanism %s is fixed",
 				             fm->publicID(), info->event->publicID(),
-				             info->constraints.preferredFocalMechanismID);
+				             *info->constraints.preferredOptFocalMechanismID);
 				return;
 			}
 		}

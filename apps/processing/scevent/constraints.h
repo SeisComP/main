@@ -30,7 +30,7 @@ struct Constraints {
 
 	std::string                    preferredMagnitudeType;
 	std::string                    preferredOriginID;
-	std::string                    preferredFocalMechanismID;
+	OPT(std::string)               preferredOptFocalMechanismID;
 	bool                           fixMw;
 	bool                           fixType;
 	OPT(DataModel::EvaluationMode) preferredOriginEvaluationMode;
