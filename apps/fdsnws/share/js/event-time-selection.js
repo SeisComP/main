@@ -22,15 +22,16 @@ async function checkEventService() {
 
 // Event functionality
 let currentOriginTime = null;
+let currentController = null; // Track current request for cancellation
 
-async function fetchEventOriginTime(eventId) {
+async function fetchEventOriginTime(eventId, signal = null) {
   const params = new URLSearchParams({
     eventid: eventId,
     format: 'text',
     nodata: '404'
   });
   
-  const response = await fetch(`../../event/1/query?${params}`);
+  const response = await fetch(`../../event/1/query?${params}`, { signal });
   
   if (!response.ok) {
     throw new Error(response.status === 404 ? 'Event not found' : 'Failed to fetch event');
@@ -72,7 +73,13 @@ function updateTimeFields() {
 const debouncedEventLookup = debounce(async function(eventId) {
   const statusDiv = document.getElementById('event-status');
   
+  // Cancel previous request if still running
+  if (currentController) {
+    currentController.abort();
+  }
+  
   if (!eventId.trim()) {
+    currentController = null;
     currentOriginTime = null;
     statusDiv.textContent = '';
     statusDiv.className = '';
@@ -85,22 +92,39 @@ const debouncedEventLookup = debounce(async function(eventId) {
     return;
   }
 
+  // Create new controller - this becomes the "current" request
+  currentController = new AbortController();
+  const signal = currentController.signal;
+
   statusDiv.textContent = 'Fetching event...';
   statusDiv.className = 'status loading';
 
   try {
-    currentOriginTime = await fetchEventOriginTime(eventId);
-    statusDiv.textContent = `Origin Time: ${currentOriginTime.toISOString().replace(/\.\d{3}Z$/, '')}`;
-    statusDiv.className = 'status success';
-    updateTimeFields();
+    currentOriginTime = await fetchEventOriginTime(eventId, signal);
+    
+    // Only update UI if this request wasn't cancelled
+    if (!signal.aborted) {
+      statusDiv.textContent = `Origin Time: ${currentOriginTime.toISOString().replace(/\.\d{3}Z$/, '')}`;
+      statusDiv.className = 'status success';
+      updateTimeFields();
+    }
   } catch (error) {
-    statusDiv.textContent = error.message;
-    statusDiv.className = 'status error';
-    currentOriginTime = null;
+    // Don't show error if request was just cancelled
+    if (!signal.aborted && error.name !== 'AbortError') {
+      statusDiv.textContent = error.message;
+      statusDiv.className = 'status error';
+      currentOriginTime = null;
+    }
   }
 }, 800);
 
 function clearEventData() {
+  // Cancel any pending request
+  if (currentController) {
+    currentController.abort();
+    currentController = null;
+  }
+  
   document.getElementById('event-id').value = '';
   document.getElementById('before-time').value = '';
   document.getElementById('after-time').value = '';

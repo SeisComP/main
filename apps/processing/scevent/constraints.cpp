@@ -61,7 +61,7 @@ bool Constraints::fixedOrigin() const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Constraints::fixedFocalMechanism() const {
-	return !preferredFocalMechanismID.empty();
+	return preferredOptFocalMechanismID.has_value();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -70,8 +70,8 @@ bool Constraints::fixedFocalMechanism() const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Constraints::fixFocalMechanism(const DataModel::FocalMechanism *fm) const {
-	return !preferredFocalMechanismID.empty() &&
-	       fm->publicID() == preferredFocalMechanismID;
+	return preferredOptFocalMechanismID && !preferredOptFocalMechanismID->empty() &&
+	       fm->publicID() == *preferredOptFocalMechanismID;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

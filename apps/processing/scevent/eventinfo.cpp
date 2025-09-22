@@ -366,7 +366,7 @@ bool EventInformation::addJournalEntry(DataModel::JournalEntry *e,
 		constraints.preferredOriginEvaluationMode = Core::None;
 	}
 	else if ( e->action() == "EvPrefFocMecID" ) {
-		constraints.preferredFocalMechanismID = e->parameters();
+		constraints.preferredOptFocalMechanismID = e->parameters();
 		constraints.preferredFocalMechanismEvaluationMode = Core::None;
 	}
 	else if ( e->action() == "EvPrefOrgEvalMode" ) {
@@ -392,12 +392,12 @@ bool EventInformation::addJournalEntry(DataModel::JournalEntry *e,
 	else if ( e->action() == "EvPrefFocEvalMode" ) {
 		if ( e->parameters().empty() ) {
 			constraints.preferredFocalMechanismEvaluationMode = Core::None;
-			constraints.preferredFocalMechanismID = "";
+			constraints.preferredOptFocalMechanismID = Core::None;
 		}
 		else {
 			DataModel::EvaluationMode em;
 			if ( em.fromString(e->parameters().c_str()) ) {
-				constraints.preferredFocalMechanismID = "";
+				constraints.preferredOptFocalMechanismID = Core::None;
 				constraints.preferredFocalMechanismEvaluationMode = em;
 			}
 			else {
@@ -407,7 +407,7 @@ bool EventInformation::addJournalEntry(DataModel::JournalEntry *e,
 	}
 	else if ( e->action() == "EvPrefFocAutomatic" ) {
 		constraints.preferredFocalMechanismEvaluationMode = Core::None;
-		constraints.preferredFocalMechanismID = "";
+		constraints.preferredOptFocalMechanismID = Core::None;
 	}
 	else if ( e->action() == "EvPrefMw" ) {
 		if ( e->parameters() == "true" ) {
