@@ -18,13 +18,26 @@
 #include <seiscomp/core/datetime.h>
 #include <seiscomp/config/config.h>
 #include <seiscomp/datamodel/types.h>
+#include <seiscomp/wired/server.h>
 #include <vector>
 #include <string>
 
 
 namespace Seiscomp {
-
 namespace Client {
+
+
+struct BindAddress {
+	BindAddress() = default;
+	BindAddress(const Seiscomp::Wired::Socket::IPAddress &addr, int port)
+	: address(addr), port(port) {}
+
+	Seiscomp::Wired::Socket::IPAddress address;
+	int                                port{-1};
+};
+
+
+bool fromString(BindAddress &bind, const std::string &str);
 
 
 struct Config {
@@ -91,13 +104,13 @@ struct Config {
 	bool            ignoreMTDerivedOrigins;
 	bool            setAutoEventTypeNotExisting;
 	bool            populateFERegion{false};
+	BindAddress     restAPI;
 
 	int             eventIDLookupMargin{-1};
 };
 
 
 }
-
 }
 
 

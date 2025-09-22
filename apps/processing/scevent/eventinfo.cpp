@@ -117,7 +117,8 @@ void EventInformation::loadAssocations(DataModel::DatabaseQuery *q) {
 
 
 size_t EventInformation::matchingPicks(DataModel::DatabaseQuery *q,
-                                       DataModel::Origin *o) {
+                                       DataModel::Origin *o,
+                                       const PickCache *pickCache) {
 	if ( dirtyPickSet ) {
 		pickIDs.clear();
 		picks.clear();
@@ -162,7 +163,18 @@ size_t EventInformation::matchingPicks(DataModel::DatabaseQuery *q,
 			if ( !o->arrival(i) ) continue;
 			if ( !cfg->matchingLooseAssociatedPicks
 			  && Private::arrivalWeight(o->arrival(i)) == 0 ) continue;
-			PickPtr p = cache->get<Pick>(o->arrival(i)->pickID());
+			PickPtr p;
+
+			if ( pickCache ) {
+				auto it = pickCache->find(o->arrival(i)->pickID());
+				if ( it != pickCache->end() ) {
+					p = it->second;
+				}
+			}
+			else {
+				p = cache->get<Pick>(o->arrival(i)->pickID());
+			}
+
 			if ( !p ) {
 				SEISCOMP_WARNING("could not load origin pick %s",
 				                 o->arrival(i)->pickID().c_str());

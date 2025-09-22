@@ -49,6 +49,13 @@
 					Flinn-Engdahl region name.
 				</description>
 			</parameter>
+			<parameter name="restAPI" type="string">
+				<description>
+				Defines the bind adress of the REST API endpoint. This API
+				allows to query for possible event associations of origin
+				candidates.
+				</description>
+			</parameter>
 			<group name="processing">
 				<group name="blacklist">
 					<parameter name="eventIDs" type="list:string">

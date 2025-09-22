@@ -9,6 +9,7 @@ SET(
 		eventinfo.cpp
 		util.cpp
 		constraints.cpp
+		config.cpp
 )
 
 

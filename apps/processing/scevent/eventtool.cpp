@@ -36,6 +36,8 @@
 #include <seiscomp/math/geo.h>
 #include <seiscomp/system/hostinfo.h>
 
+#include <seiscomp/wired/protocols/http.h>
+
 #include <functional>
 
 
@@ -175,6 +177,114 @@ bool isRejected(Magnitude *mag) {
 	return false;
 }
 
+
+struct InputStringViewBuf : std::streambuf {
+	InputStringViewBuf(const std::string &sv) {
+		auto d = const_cast<char*>(sv.data());
+		this->setg(d, d, d + sv.size());
+	}
+
+	virtual pos_type seekoff(off_type off, std::ios_base::seekdir,
+	                         std::ios_base::openmode) override {
+		return off ? -1 : gptr() - eback();
+	}
+};
+
+struct InputStringViewStream : virtual InputStringViewBuf, std::istream {
+	InputStringViewStream(const std::string &sv)
+	: InputStringViewBuf(sv)
+	, std::istream(static_cast<std::streambuf*>(this)) {}
+};
+
+
+class RESTAPISession : public Wired::HttpSession {
+	public:
+		RESTAPISession(Wired::Device *sock, const char *protocol, EventTool *app)
+		: Wired::HttpSession(sock, protocol), _app(app) {}
+
+	protected:
+		static inline const string ErrorContentType = "Invalid content type: only text/xml is supported.";
+		static inline const string ErrorInvalidXMLDocument = "Invalid input document: XML format expected.";
+		static inline const string ErrorInvalidInputDocument = "Invalid input document: EventParameters expected.";
+
+		bool handleGETRequest(Wired::HttpRequest &req) override {
+			if ( req.path == "/api/1/info" ) {
+				static auto json =
+				"{"
+					"\"name\":\"" + _app->name() + "\","
+					"\"framework\":\"" + _app->frameworkVersion() + "\"" +
+				( _app->version() ? string(",\"version\":\"") + _app->version() + "\"" : string() ) +
+				"}";
+				sendResponse(json, Wired::HTTP_200, "application/json");
+				return true;
+			}
+
+			sendStatus(Wired::HTTP_404);
+			return true;
+		}
+
+		bool handlePOSTRequest(Wired::HttpRequest &req) override {
+			if ( req.path == "/api/1/try-to-associate" ) {
+				if ( req.contentType != "text/xml" ) {
+					sendStatus(Wired::HTTP_400, ErrorContentType);
+					return true;
+				}
+
+				IO::XMLArchive ar;
+				InputStringViewBuf buf(req.data);
+				if ( !ar.open(&buf) ) {
+					sendStatus(Wired::HTTP_400, ErrorInvalidXMLDocument);
+					return true;
+				}
+				PublicObject::SetRegistrationEnabled(false);
+				EventParametersPtr ep;
+				ar >> ep;
+				if ( !ep ) {
+					sendStatus(Wired::HTTP_400, ErrorInvalidInputDocument);
+					return true;
+				}
+
+				SEISCOMP_DEBUG("Handle association REST request");
+				try {
+					auto eventID = _app->tryToAssociate(ep.get());
+					if ( eventID.empty() ) {
+						sendStatus(Wired::HTTP_204);
+					}
+					else {
+						sendStatus(Wired::HTTP_200, eventID);
+					}
+				}
+				catch ( exception &e ) {
+					SEISCOMP_WARNING("Association REST request: %s", e.what());
+					sendStatus(Wired::HTTP_400, e.what());
+				}
+
+				return true;
+			}
+
+			sendStatus(Wired::HTTP_404);
+			return true;
+		}
+
+	private:
+		EventTool *_app;
+};
+
+
+class RESTAPIEndpoint : public Wired::Endpoint {
+	public:
+		RESTAPIEndpoint(EventTool *app) : Wired::Endpoint(nullptr), _app(app) {}
+
+	protected:
+		Wired::Session *createSession(Wired::Socket *socket) override {
+			return new RESTAPISession(socket, "http", _app);
+		}
+
+	private:
+		EventTool *_app;
+};
+
+
 } // ns anonymous
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -213,6 +323,33 @@ EventTool::EventTool(int argc, char **argv) : Application(argc, argv) {
 EventTool::~EventTool() {
 	delete _infoChannel;
 	delete _infoOutput;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string EventTool::tryToAssociate(const DataModel::EventParameters *ep) {
+	if ( ep->originCount() != 1 ) {
+		throw runtime_error("One origin is required and only one origin is allowed");
+	}
+
+	EventInformation::PickCache cache;
+	auto org = ep->origin(0);
+	for ( size_t i = 0; i < ep->pickCount(); ++i ) {
+		auto pick = ep->pick(i);
+		cache[pick->publicID()] = pick;
+	}
+
+	lock_guard<mutex> l(_associationMutex);
+
+	auto info = associateOrigin(org, false, nullptr, &cache);
+	if ( info && info->event ) {
+		return info->event->publicID();
+	}
+
+	return std::string();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -307,6 +444,14 @@ bool EventTool::initConfiguration() {
 	try { _config.eventIDLookupMargin = configGetInt("eventIDLookupMargin"); } catch ( ... ) {}
 
 	try { _config.populateFERegion = configGetBool("populateFERegion"); } catch ( ... ) {}
+	try {
+		auto value = configGetString("restAPI");
+		if ( !fromString(_config.restAPI, value) ) {
+			SEISCOMP_ERROR("Invalid restAPI parameter: %s", value.c_str());
+			return false;
+		}
+	}
+	catch ( ... ) {}
 
 	try { _config.updatePreferredSolutionAfterMerge = configGetBool("eventAssociation.updatePreferredAfterMerge"); } catch (...) {}
 	try { _config.enableFallbackPreferredMagnitude = configGetBool("eventAssociation.enableFallbackMagnitude"); } catch (...) {}
@@ -469,6 +614,22 @@ bool EventTool::init() {
 		}
 
 		delete services;
+	}
+
+	if ( _config.restAPI.port > 0 ) {
+		_restAPI = new Wired::Server;
+		if ( !_restAPI->addEndpoint(_config.restAPI.address, _config.restAPI.port,
+		                            false, new RESTAPIEndpoint(this)) ) {
+			SEISCOMP_ERROR("Failed to add REST API endpoint");
+			return false;
+		}
+
+		if ( !_restAPI->init() ) {
+			return false;
+		}
+
+		SEISCOMP_INFO("Bound REST API to port %d", _config.restAPI.port);
+		_restAPIThread = thread([&] { _restAPI->run(); });
 	}
 
 	return true;
@@ -647,6 +808,11 @@ void EventTool::handleMessage(Core::Message *msg) {
 	_updates.clear();
 	_realUpdates.clear();
 	_originBlackList.clear();
+
+	// Lock the entire association process and all the supporting data
+	// structures. Only tryToAssociate will also lock this mutex from
+	// within the REST API thread.
+	lock_guard<mutex> l(_associationMutex);
 
 	Application::handleMessage(msg);
 
@@ -1906,8 +2072,11 @@ EventInformationPtr EventTool::associateOriginCheckDelay(DataModel::Origin *orig
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *origin,
                                                bool allowEventCreation,
-                                               bool *createdEvent) {
-	if ( createdEvent ) *createdEvent = false;
+                                               bool *createdEvent,
+                                               const EventInformation::PickCache *pickCache) {
+	if ( createdEvent ) {
+		*createdEvent = false;
+	}
 
 	// Default origin status
 	EvaluationMode status = AUTOMATIC;
@@ -1918,7 +2087,8 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 	}
 
 	// Find a matching (cached) event for this origin
-	EventInformationPtr info = findMatchingEvent(origin);
+	EventInformationPtr info = findMatchingEvent(origin, pickCache);
+
 	if ( !info ) {
 		Core::Time startTime = origin->time().value() - _config.eventTimeBefore;
 		Core::Time endTime = origin->time().value() + _config.eventTimeAfter;
@@ -1955,7 +2125,7 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 				);
 				if ( tmp->valid() ) {
 					tmp->loadAssocations(query());
-					MatchResult res = compare(tmp.get(), origin);
+					MatchResult res = compare(tmp.get(), origin, pickCache);
 					if ( res > bestResult ) {
 						bestResult = res;
 						info = tmp;
@@ -1971,6 +2141,11 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 			SEISCOMP_DEBUG("... found best matching event %s (code: %d)", info->event->publicID().c_str(),
 			               static_cast<int>(bestResult));
 			cacheEvent(info);
+
+			if ( pickCache ) {
+				return info;
+			}
+
 			if ( info->event->originReference(origin->publicID()) ) {
 				SEISCOMP_DEBUG("... origin already associated to event %s", info->event->publicID().c_str());
 				SEISCOMP_LOG(_infoChannel, "Origin %s skipped: already associated to event %s",
@@ -1980,7 +2155,9 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 		}
 		// Create a new event
 		else {
-			if ( !allowEventCreation ) return nullptr;
+			if ( !allowEventCreation || pickCache ) {
+				return nullptr;
+			}
 
 			if ( isAgencyIDBlocked(objectAgencyID(origin)) ) {
 				SEISCOMP_LOG(_infoChannel, "Origin %s skipped: agencyID blocked and is not allowed to create a new event",
@@ -2032,6 +2209,10 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 		SEISCOMP_DEBUG("... found cached event information %s for origin", info->event->publicID().c_str());
 		SEISCOMP_LOG(_infoChannel, "Found matching event %s for origin %s",
 			         info->event->publicID().c_str(), origin->publicID().c_str());
+
+		if ( pickCache ) {
+			return info;
+		}
 	}
 
 	if ( info ) {
@@ -2352,8 +2533,9 @@ void EventTool::updatedFocalMechanism(FocalMechanism *focalMechanism) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 EventTool::MatchResult EventTool::compare(EventInformation *info,
-                                          Seiscomp::DataModel::Origin *origin) {
-	size_t matchingPicks = info->matchingPicks(query(), origin);
+                                          Seiscomp::DataModel::Origin *origin,
+                                          const EventInformation::PickCache *cache) {
+	size_t matchingPicks = info->matchingPicks(query(), origin, cache);
 
 	MatchResult result = Nothing;
 
@@ -2493,7 +2675,8 @@ EventInformationPtr EventTool::createEvent(Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-EventInformationPtr EventTool::findMatchingEvent(Origin *origin) {
+EventInformationPtr EventTool::findMatchingEvent(Origin *origin,
+                                                 const EventInformation::PickCache *cache) {
 	MatchResult bestResult = Nothing;
 	EventInformationPtr bestInfo = nullptr;
 	EventMap::iterator it;
@@ -2503,7 +2686,7 @@ EventInformationPtr EventTool::findMatchingEvent(Origin *origin) {
 			continue;
 		}
 
-		MatchResult res = compare(it->second.get(), origin);
+		MatchResult res = compare(it->second.get(), origin, cache);
 		if ( res > bestResult ) {
 			bestResult = res;
 			bestInfo = it->second;

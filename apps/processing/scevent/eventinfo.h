@@ -41,7 +41,8 @@ namespace Client {
 DEFINE_SMARTPOINTER(EventInformation);
 
 struct EventInformation : public Seiscomp::Core::BaseObject {
-	typedef DataModel::PublicObjectCache Cache;
+	using Cache = DataModel::PublicObjectCache;
+	using PickCache = std::map<std::string, DataModel::PickPtr>;
 
 	EventInformation(Cache *cache, Config *cfg);
 
@@ -67,7 +68,8 @@ struct EventInformation : public Seiscomp::Core::BaseObject {
 	void loadAssocations(DataModel::DatabaseQuery *q);
 
 	//! Returns the number of matching picks
-	size_t matchingPicks(DataModel::DatabaseQuery *q, DataModel::Origin *o);
+	size_t matchingPicks(DataModel::DatabaseQuery *q, DataModel::Origin *o,
+	                     const PickCache *cache);
 
 	bool valid() const;
 
