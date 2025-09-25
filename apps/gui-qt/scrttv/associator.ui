@@ -583,10 +583,6 @@
        <property name="text">
         <string>...</string>
        </property>
-       <property name="icon">
-        <iconset resource="../../../../common/libs/seiscomp/gui/datamodel/icons.qrc">
-         <normaloff>:/icons/icons/configure.png</normaloff>:/icons/icons/configure.png</iconset>
-       </property>
        <property name="autoRaise">
         <bool>true</bool>
        </property>

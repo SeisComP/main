@@ -30,11 +30,12 @@
 #include <seiscomp/math/geo.h>
 #include <seiscomp/utils/timer.h>
 #include <seiscomp/seismology/regions.h>
-#include <seiscomp/gui/core/recordviewitem.h>
 #include <seiscomp/gui/core/application.h>
-#include <seiscomp/gui/core/scheme.h>
-#include <seiscomp/gui/core/infotext.h>
 #include <seiscomp/gui/core/flowlayout.h>
+#include <seiscomp/gui/core/icon.h>
+#include <seiscomp/gui/core/infotext.h>
+#include <seiscomp/gui/core/recordviewitem.h>
+#include <seiscomp/gui/core/scheme.h>
 #include <seiscomp/gui/core/spectrogramsettings.h>
 #include <seiscomp/gui/datamodel/origindialog.h>
 #include <seiscomp/gui/datamodel/inventorylistview.h>
@@ -2089,9 +2090,9 @@ void MainWindow::openAcquisition() {
 		addTabulator();
 
 		_tabWidget->setTabText(_tabWidget->indexOf(_traceViews[0]), "Enabled");
-		_tabWidget->setTabIcon(_tabWidget->indexOf(_traceViews[0]), QIcon(":icons/icons/enabled.png"));
+		_tabWidget->setTabIcon(_tabWidget->indexOf(_traceViews[0]), icon("tab_ok"));
 		_tabWidget->setTabText(_tabWidget->indexOf(_traceViews[1]), "Disabled");
-		_tabWidget->setTabIcon(_tabWidget->indexOf(_traceViews[1]), QIcon(":icons/icons/disabled.png"));
+		_tabWidget->setTabIcon(_tabWidget->indexOf(_traceViews[1]), icon("tab_disabled"));
 
 		_tabWidget->setCurrentIndex(0);
 	}
