@@ -38,7 +38,6 @@
 
 #include <seiscomp/utils/misc.h>
 
-#include <iomanip>
 #include <functional>
 
 #include "picker.h"
@@ -71,24 +70,12 @@ char statusFlag(const Seiscomp::DataModel::Pick *pick) {
 }
 
 
-bool contains(const Seiscomp::Core::TimeWindow &tw, const OPT(Seiscomp::Core::Time) &time) {
+bool contains(const Seiscomp::Core::OpenTimeWindow &tw, const OPT(Seiscomp::Core::Time) &time) {
 	if ( !time ) {
 		return false;
 	}
 
-	if ( tw.startTime().valid() && tw.endTime().valid() ) {
-		return tw.contains(*time);
-	}
-
-	if ( tw.startTime().valid() ) {
-		return *time >= tw.startTime();
-	}
-
-	if ( tw.endTime().valid() ) {
-		return *time < tw.endTime();
-	}
-
-	return true;
+	return tw.contains(*time);
 }
 
 

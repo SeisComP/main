@@ -290,3 +290,43 @@ The following actions are supported by scevent:
 
    :param objectID: The ID of an existing event
    :param parameters: The event type certainty
+
+
+.. _scevent-restapi:
+
+REST API
+========
+
+:program:`scevent` provides a HTTP REST API which may be enabled by defining a
+bind address under :confval:`restAPI`. The following enpoints are available
+
+
+.. _scevent-restapi-associate:
+
+try-to-associate
+----------------
+
+Allows to query for possible event associations of origin candidates. An event
+ID is returned if a matching event is found. No event is ever created.
+
+==================  =========================
+**Location**        `/api/1/try-to-associate`
+**HTTP Methods**    POST
+**Request data**    :term:`SCML` containing an :ref:`EventParameters <api-python-datamodel-eventparameters>` element with one and only one :ref:`Origin <api-python-datamodel-origin>`
+**Request header**  `ContentType: text/xml` (no subtype allowed)
+**Response data**   EventID string
+**Response code**   **200** (matching event found), **204** (no matching event found), **400** (invalid input)
+==================  =========================
+
+
+The following example demonstrates how to query the event id for an origin
+defined in :file:`origin.xml` using the command line programm :program:`curl`.
+The request header `Content-Type` must be specified and must have a value of
+`text/xml`. No subtype is allowed. It is assumed that :program:`scevent` is
+configured with `restAPI = 18182`.
+
+
+.. code-block:: sh
+
+   curl -v -X POST http://localhost:18182/api/1/try-to-associate -H "Content-Type: text/xml" -d @origin.xml
+

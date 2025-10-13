@@ -204,11 +204,23 @@ replace the global models in areas where they are defined.
 Global models
 ~~~~~~~~~~~~~
 
-The global models *iasp91* and *ak135* as well as *RSTT* are available and apply
-by default without further configuration if the default locator profiles *iasp91*
-and *ak135*, respectively, are applied. The same is true if explicit iLoc
-profiles using *iasp91* or *ak135* for the profile names are added to the
-configuration.
+The global Earth velocity models *iasp91* and *ak135* as well as *RSTT*
+(section :ref:`iloc-velocity_rstt`) are available and applicable by default
+without further configuration if the default iLoc profile names *iasp91*
+and *ak135*, respectively, are considered. The same is true if explicit iLoc
+profiles using *iasp91* or *ak135* for the profile names are added to the iLoc
+configuration. Any other global model can be added, by explicitly adding an iLoc
+profile as set out in section :ref:`iloc-setup`. The respective model name is
+configured in :confval:`iLoc.profile.$name.globalModel`.
+
+Similar to :ref:`global_locsat` the global models require travel-time tables for
+each phase which is to be considered. The table files are located in
+:confval:`iLoc.auxDir`:file:`/[model name]`.
+
+If available, corrections for Earth's
+ellipticity are considered from
+:confval:`iLoc.auxDir`:file:`/[model name]/ELCOR.dat`, e.g.,
+:file:`@DATADIR@/iloc/iLocAuxDir/iasp91/ELCOR.dat`.
 
 
 .. _iloc-velocity_rstt:
@@ -216,7 +228,8 @@ configuration.
 RSTT
 ~~~~
 
-RSTT are available in :file:`@DATADIR@/iloc/RSTTmodels/pdu202009Du.geotess`.
+RSTT are available in :file:`@DATADIR@/iloc/RSTTmodels/pdu202009Du.geotess` and
+applied by default.
 Custom RSTT can be integrated into iLoc and provided to |scname|.
 For adding custom RSTT to iLoc read the original iLoc documentation from the
 :cite:t:`iloc-github` software repository.
@@ -224,9 +237,13 @@ For adding custom RSTT to iLoc read the original iLoc documentation from the
 The usage of RSTT is controlled per iLoc profile by global configuration
 parameters
 
-* :confval:`iLoc.profile.$name.UseRSTT`
-* :confval:`iLoc.profile.$name.UseRSTTPnSn`
-* :confval:`iLoc.profile.$name.UseRSTTPgLg`
+* :confval:`iLoc.profile.$name.UseRSTT`,
+* :confval:`iLoc.profile.$name.UseRSTTPnSn`,
+* :confval:`iLoc.profile.$name.UseRSTTPgLg`.
+
+In order to adjust these configuration parameters for the *iasp91*,
+*ak135* or any other model, the profile must be added first as set out
+in section :ref:`iloc-setup`.
 
 
 .. _iloc-velocity_local:
@@ -250,8 +267,8 @@ Custom local velocity models can be provided by a file in
        45.000    8.0400    4.4800 MOHO
        77.500    8.0400    4.4800 x
 
-Once added, the velocity can be configured in |scname| as set out in section
-:ref:`iloc-setup`.
+Once added, the velocity can be configured along with iLoc profiles as set out
+in section :ref:`iloc-setup`.
 
 
 Station elevation
@@ -272,7 +289,7 @@ where
   of the phase name.
 
 
-.. note ::
+.. note::
 
    iLoc does not allow airquakes or source locations above datum (0 km). If the
    depth of an origin becomes negative, iLoc
@@ -324,7 +341,7 @@ Setup in |scname|
    installation read the install scripts located in
    :file:`@DATADIR@/deps/[os]/[version]/install-iloc.sh`.
 
-   .. note ::
+   .. note::
 
       * Check the :cite:t:`iloc-github` website for updates before downloading
         the file since the version number, hence the name of the download file
@@ -355,7 +372,7 @@ Setup in |scname|
      Activate the parameter to avoid phase renaming.
    * Consider the remaining parameters.
 
-   .. note ::
+   .. note::
 
       Creating the profiles allows using the same global velocity model along
       with different local models or RSTT settings in separate profiles.
@@ -403,7 +420,7 @@ which opens the iLoc settings dialog:
 
    Adjust the settings and click OK to confirm
 
-.. warning ::
+.. warning::
 
    By default, automatic phase renaming by iLoc is active. The renaming may
    change the phase names, e.g. from P to Pn.

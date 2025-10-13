@@ -740,6 +740,16 @@
 					component will stay the same. It must be changed explicitely.
 					</description>
 				</parameter>
+				<parameter name="showAmpLevel" type="boolean" default="false">
+					<description>
+					If enabled then the picker will show in the upper right corner of
+					the zoomtrace an amplitude measure ranging from 0 to 100 and mapping
+					the current amplitude at the cursor to this range where 0 is the bottom
+					of the widget and 100 the top of the widget. Screen readers should
+					fetch this value change and read them. This is especially important
+					to support visually impaired users.
+					</description>
+				</parameter>
 				<group name="auxiliary">
 					<description>
 					Define the notion and behaviour of auxiliary channels.
