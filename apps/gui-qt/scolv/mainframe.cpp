@@ -160,6 +160,9 @@ MainFrame::MainFrame(){
 	        this, SLOT(configureAcquisition()));
 
 	_ui.menuView->insertAction(_ui.actionProcessManager, _actionToggleFullScreen);
+	_ui.actionUndo->setIcon(icon("undo"));
+	_ui.actionRedo->setIcon(icon("redo"));
+	_ui.actionProcessManager->setIcon(icon("process_manager"));
 
 	_ui.menuView->addSeparator();
 	QMenu *toolBars = _ui.menuView->addMenu("Toolbars");
@@ -177,12 +180,13 @@ MainFrame::MainFrame(){
 
 	if ( addSystemTray ) {
 		_trayIcon = new QSystemTrayIcon(this);
-		_trayIcon->setIcon(QIcon(":/icons/icons/locate.png"));
+		_trayIcon->setIcon(icon("seiscomp-logo").pixmap(64));
 		_trayIcon->setToolTip(tr("%1").arg(SCApp->name().c_str()));
 		_trayIcon->show();
 	}
-	else
+	else {
 		_trayIcon = nullptr;
+	}
 
 	if ( _trayIcon ) {
 		connect(_trayIcon, SIGNAL(messageClicked()), this, SLOT(trayIconMessageClicked()));

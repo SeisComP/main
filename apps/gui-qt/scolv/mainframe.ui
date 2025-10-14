@@ -216,9 +216,6 @@
    <property name="text" >
     <string>Process manager</string>
    </property>
-   <property name="icon" >
-    <iconset resource="../../../../common/libs/seiscomp/gui/core/core_icons.qrc" >:/sc/icons/manufacturing.svg</iconset>
-   </property>
    <property name="iconText" >
     <string>Show process manager</string>
    </property>
@@ -247,9 +244,6 @@
    <property name="enabled" >
     <bool>false</bool>
    </property>
-   <property name="icon" >
-    <iconset resource="../../../../common/libs/seiscomp/gui/datamodel/icons.qrc" >:/icons/icons/undo.png</iconset>
-   </property>
    <property name="text" >
     <string>Undo</string>
    </property>
@@ -266,9 +260,6 @@
   <action name="actionRedo" >
    <property name="enabled" >
     <bool>false</bool>
-   </property>
-   <property name="icon" >
-    <iconset resource="../../../../common/libs/seiscomp/gui/datamodel/icons.qrc" >:/icons/icons/redo.png</iconset>
    </property>
    <property name="text" >
     <string>Redo</string>
@@ -386,7 +377,7 @@
  </widget>
  <pixmapfunction></pixmapfunction>
  <resources>
-  <include location="../../../../common/libs/seiscomp/gui/datamodel/icons.qrc" />
+  <include location="../../../../common/libs/seiscomp/gui/sc_icons.qrc" />
  </resources>
  <connections/>
 </ui>
