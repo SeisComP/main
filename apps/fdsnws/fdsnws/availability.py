@@ -12,8 +12,6 @@
 # Email:   herrnkind@gempa.de
 ###############################################################################
 
-from functools import cmp_to_key
-
 from collections import OrderedDict
 
 from twisted.cred import portal
@@ -33,7 +31,7 @@ from . import utils
 
 
 DBMaxUInt = 18446744073709551615  # 2^64 - 1
-VERSION = "1.0.3"
+VERSION = "1.0.4"
 
 
 ###############################################################################
@@ -1349,19 +1347,21 @@ class FDSNAvailabilityQuery(_Availability):
                     if ro.time.start.microseconds() == 0:
                         q += f"AND {_T('end')} >= '{db.timeToString(ro.time.start)}' "
                     else:
+                        startTimeStr = db.timeToString(ro.time.start)
                         q += (
-                            "AND ({0} > '{1}' OR ("
-                            f"{_T('end')} = '{db.timeToString(ro.time.start)}' AND "
+                            f"AND ({_T('end')} > '{startTimeStr}' OR ("
+                            f"{_T('end')} = '{startTimeStr}' AND "
                             f"end_ms >= {ro.time.start.microseconds()})) "
                         )
                 if ro.time.end is not None:
                     if ro.time.end.microseconds() == 0:
                         q += f"AND {_T('start')} < '{db.timeToString(ro.time.end)}' "
                     else:
+                        endTimeStr = db.timeToString(ro.time.end)
                         q += (
-                            "AND ({0} < '{1}' OR ("
-                            f"{_T('start')} = '{db.timeToString(ro.time.end)}' AND "
-                            "start_ms < {ro.time.end.microseconds()})) "
+                            f"AND ({_T('start')} < '{endTimeStr}' OR ("
+                            f"{_T('start')} = '{endTimeStr}' AND "
+                            f"start_ms < {ro.time.end.microseconds()})) "
                         )
             if ro.quality:
                 qualities = "', '".join(ro.quality)

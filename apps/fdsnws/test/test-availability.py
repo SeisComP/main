@@ -84,6 +84,12 @@ class TestAvailability(FDSNWSTest):
             ),
             ("query?net=AM&format=request", ctTXT, [], False),
             ("queryauth?net=AM&station=R0F05&includerestricted=true", ctTXT, [], True),
+            (
+                "query?net=AM&start=2019-08-21T04:02:05.1&end=2019-08-21T22:01:54.1",
+                ctTXT,
+                [],
+                False,
+            ),
         ]
         for q, ct, ignoreRanges, concurrent in tests:
             auth = q.startswith("queryauth") or q.startswith("extentauth")
