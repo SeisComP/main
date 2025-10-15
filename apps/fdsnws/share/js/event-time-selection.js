@@ -62,12 +62,15 @@ function updateTimeFields() {
   const startTime = new Date(currentOriginTime.getTime() - before * 60000);
   const endTime = new Date(currentOriginTime.getTime() + after * 60000);
 
-  document.querySelector('input[name="starttime"]').value = startTime.toISOString().replace(/\.\d{3}Z$/, '');
-  document.querySelector('input[name="endtime"]').value = endTime.toISOString().replace(/\.\d{3}Z$/, '');
+  const startField = document.querySelector('input[name="starttime"]');
+  const endField = document.querySelector('input[name="endtime"]');
+  
+  startField.value = startTime.toISOString().replace(/\.\d{3}Z$/, '');
+  endField.value = endTime.toISOString().replace(/\.\d{3}Z$/, '');
 
-  // Trigger URL update via existing form event system
-  const form = document.getElementById('query-form');
-  form.dispatchEvent(new Event('input', { bubbles: true }));
+  // Trigger URL update by dispatching change events on the time fields
+  startField.dispatchEvent(new Event('change', { bubbles: true }));
+  endField.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 const debouncedEventLookup = debounce(async function(eventId) {
@@ -88,7 +91,7 @@ const debouncedEventLookup = debounce(async function(eventId) {
 
   if (eventId.length < 3) {
     statusDiv.textContent = 'Enter complete Event ID...';
-    statusDiv.className = 'status loading';
+    statusDiv.className = 'loading';
     return;
   }
 
@@ -97,7 +100,7 @@ const debouncedEventLookup = debounce(async function(eventId) {
   const signal = currentController.signal;
 
   statusDiv.textContent = 'Fetching event...';
-  statusDiv.className = 'status loading';
+  statusDiv.className = 'loading';
 
   try {
     currentOriginTime = await fetchEventOriginTime(eventId, signal);
@@ -105,14 +108,14 @@ const debouncedEventLookup = debounce(async function(eventId) {
     // Only update UI if this request wasn't cancelled
     if (!signal.aborted) {
       statusDiv.textContent = `Origin Time: ${currentOriginTime.toISOString().replace(/\.\d{3}Z$/, '')}`;
-      statusDiv.className = 'status success';
+      statusDiv.className = 'success';
       updateTimeFields();
     }
   } catch (error) {
     // Don't show error if request was just cancelled
     if (!signal.aborted && error.name !== 'AbortError') {
       statusDiv.textContent = error.message;
-      statusDiv.className = 'status error';
+      statusDiv.className = 'error';
       currentOriginTime = null;
     }
   }
@@ -128,14 +131,19 @@ function clearEventData() {
   document.getElementById('event-id').value = '';
   document.getElementById('before-time').value = '';
   document.getElementById('after-time').value = '';
-  document.querySelector('input[name="starttime"]').value = '';
-  document.querySelector('input[name="endtime"]').value = '';
+  
+  const startField = document.querySelector('input[name="starttime"]');
+  const endField = document.querySelector('input[name="endtime"]');
+  startField.value = '';
+  endField.value = '';
+  
   document.getElementById('event-status').textContent = '';
   document.getElementById('event-status').className = '';
   currentOriginTime = null;
   
-  const form = document.getElementById('query-form');
-  form.dispatchEvent(new Event('input', { bubbles: true }));
+  // Trigger URL update
+  startField.dispatchEvent(new Event('change', { bubbles: true }));
+  endField.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 async function initializeEventTimeSelection() {
