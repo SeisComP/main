@@ -221,12 +221,19 @@ class Bulletin(object):
         tim = org.time().value()
         lat = org.latitude().value()
         lon = org.longitude().value()
-        dep = org.depth().value()
+
         timerr = uncertainty(org.time())
         laterr = uncertainty(org.latitude())
         lonerr = uncertainty(org.longitude())
-        deperr = uncertainty(org.depth())
         tstr = time2str(tim)
+
+        dep = None
+        deperr = None
+        try:
+            dep = org.depth().value()
+            deperr = uncertainty(org.depth())
+        except ValueError:
+            pass
 
         originHeader = "Origin:\n"
         if evt:
@@ -283,10 +290,13 @@ class Bulletin(object):
                 txt += f"    Longitude             {lon:10.5f} deg\n"
             else:
                 txt += f"    Longitude             {lon:7.2f} deg\n"
-        if self.enhanced:
-            txt += f"    Depth                {dep:11.3f} km"
-        else:
-            txt += f"    Depth                 {dep:7.0f} km"
+
+        if dep:
+            if self.enhanced:
+                txt += f"    Depth                {dep:11.3f} km"
+            else:
+                txt += f"    Depth                 {dep:7.0f} km"
+
         if deperr is None:
             txt += "\n"
         elif deperr == 0:
@@ -424,11 +434,18 @@ class Bulletin(object):
                     pass
             else:
                 agencyID = ""
-            txt += "    %-8s %5.2f %8s %3d %s  %s\n" % (
+
+            magStationCount = "-"
+            try:
+                magStationCount = "%3d" % (mag.stationCount())
+            except ValueError:
+                pass
+
+            txt += "    %-8s %5.2f %8s %s %s  %s\n" % (
                 typ,
                 val,
                 err,
-                mag.stationCount(),
+                magStationCount,
                 preferredMarker,
                 agencyID,
             )
