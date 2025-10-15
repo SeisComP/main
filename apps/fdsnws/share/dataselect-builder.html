@@ -8,31 +8,55 @@
   <link rel="stylesheet" type="text/css" href="../../js/tcal/tcal.css">
   <script type="text/javascript" src="../../js/tcal/tcal.js"></script>
   <script type="text/javascript" src="../../js/fdsnws-query.js"></script>
+  <script type="text/javascript" src="../../js/event-time-selection.js"></script>
   <script type="text/javascript">
     A_TCALCONF['format'] = 'Y-m-dT00:00:00';
-
-    window.onload = fdsnwsInitQueryForm;
+    
+    window.onload = function() {
+      fdsnwsInitQueryForm();
+      initializeEventTimeSelection();
+    };
   </script>
 </head>
 <body>
   <p><a href="./">Parent Directory</a></p>
   <h1>SeisComP FDSNWS DataSelect - URL Builder</h1>
+  
   <form id="query-form" action="query" method="GET">
+  
+  <!-- Event-based Time Selection -->
+  <fieldset class="event-section">
+    <legend>Event-based Time Selection</legend>
+    <div>
+      <label>Event ID: </label>
+      <input type="text" id="event-id" placeholder="Enter event ID" style="width: 150px;"/>
+      <button type="button" id="clear-event" class="clear-btn">Clear</button>
+    </div>
+    
+    <div id="event-status"></div>
+    
+    <div class="time-controls">
+      <label>Before: <input type="number" id="before-time" min="0" step="1.0" placeholder="0"/> min</label>
+      <label>After: <input type="number" id="after-time" min="0" step="1.0" placeholder="0"/> min</label>
+    </div>
+  </fieldset>
+
   <fieldset>
     <legend>Time constraints</legend>
     <table class="builder">
       <tbody>
         <tr>
           <td>Start Time</td>
-          <td><input type="text" size="10"  maxlength="26" name="starttime" value="" class="tcal"/></td>
+          <td><input type="text" size="20" maxlength="26" name="starttime" value="" class="tcal" placeholder="YYYY-MM-DDTHH:MM:SS"/></td>
         </tr>
         <tr>
           <td>End Time</td>
-          <td><input type="text" size="10" maxlength="26" name="endtime" value="" class="tcal"/></td>
+          <td><input type="text" size="20" maxlength="26" name="endtime" value="" class="tcal" placeholder="YYYY-MM-DDTHH:MM:SS"/></td>
         </tr>
       </tbody>
     </table>
   </fieldset>
+  
   <fieldset>
     <legend>Channel constraints</legend>
     <table class="builder">
@@ -56,6 +80,7 @@
       </tbody>
     </table>
   </fieldset>
+  
   <fieldset>
     <legend>Service specific constraints</legend>
     <table class="builder">
@@ -79,6 +104,7 @@
       </tbody>
     </table>
   </fieldset>
+  
   <fieldset>
     <legend>Output control</legend>
     <table class="builder">
@@ -95,6 +121,7 @@
     </table>
   </fieldset>
   </form>
+  
   <fieldset>
     <legend>URL</legend>
     <p><a id="query-url" href=""></a></p>
