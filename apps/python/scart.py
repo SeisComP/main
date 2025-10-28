@@ -300,10 +300,15 @@ class StreamIterator:
         self.file = workdir + file
         # print "Starting at file %s" % self.file
 
-        self.record, self.index = ar.findIndex(begin, end, self.file)
-        if self.record:
-            self.current = self.record.startTime()
-            self.currentEnd = self.record.endTime()
+        while begin < end:
+            self.record, self.index = ar.findIndex(begin, end, self.file)
+            if self.record:
+                self.current = self.record.startTime()
+                self.currentEnd = self.record.endTime()
+                break
+            begin = self.archive.stepTime(begin)
+            workdir, file = ar.location(begin, net, sta, loc, cha)
+            self.file = workdir + file
 
     def __next__(self):
         while True:
