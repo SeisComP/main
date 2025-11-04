@@ -124,8 +124,6 @@ class MainFrame : public MainWindow {
 		DataModel::EventParametersPtr _offlineData;
 		DataModel::JournalingPtr _offlineJournal;
 
-		bool               _expertMode;
-		bool               _magnitudeCalculationEnabled;
 		bool               _computeMagnitudesAutomatically;
 		bool               _computeMagnitudesSilently;
 		bool               _askForMagnitudeTypes;
