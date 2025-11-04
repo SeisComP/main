@@ -722,7 +722,7 @@ bool App::initComponent(Processing::WaveformProcessor *proc,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::initProcessor(Processing::WaveformProcessor *proc,
-                        Processing::WaveformProcessor::StreamComponent comp,
+                        WaveformProcessor::StreamComponents comp,
                         const Core::Time &time,
                         const std::string &streamID,
                         const DataModel::WaveformStreamID &waveformID,

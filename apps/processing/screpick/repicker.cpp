@@ -311,7 +311,7 @@ bool Repicker::run() {
 			continue;
 		}
 
-		switch ( _picker->usedComponent() ) {
+		switch ( _picker->dataComponents() ) {
 			case Processing::WaveformProcessor::Vertical:
 			case Processing::WaveformProcessor::FirstHorizontal:
 			case Processing::WaveformProcessor::SecondHorizontal:
