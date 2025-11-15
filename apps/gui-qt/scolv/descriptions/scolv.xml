@@ -460,66 +460,71 @@
 				</group>
 				<group name="commandMenuAction">
 					<description>
-						Configuration of custom commands shown in a menu when pressing
-						the Run button next to the custom script buttons. Actions
-						defined here will appear in order of listing. A dash may be
-						use to insert a separator.
+					Configuration of custom commands. Configuration of any command
+					results in a new menu button labeled &quot;Run&quot; with one
+					action for each command.
+					Actions defined here will appear in order of listing.
+					The menu button appears next to the &quot;Relocate&quot;
+					button in the Location tab.
 					</description>
 					<struct type="commandMenuAction profile">
 						<description>Definition of a command menu action.</description>
 						<parameter name="enable" type="boolean" default="true">
 							<description>
-								Controls whether this action will be available.
+							Controls whether this action will be available.
 							</description>
 						</parameter>
 						<parameter name="command" type="file" options="read,exec">
 							<description>
-								Command to be executed. Similar to the custom script
-								buttons the command is launched with the current
-								origin ID as first argument and the eventID as
-								second argument if available. Optionally the entire
-								origin may be written to stdin if an exporter is
-								defined.
+							Command to be executed. Similar to the custom script
+							buttons the command is launched with the current
+							origin ID as first argument and the event ID as
+							second argument if available. Optionally the entire
+							origin may be written to stdin if an exporter is
+							defined.
 							</description>
 						</parameter>
 						<parameter name="exporter" type="string" values="scml,json,csv,binary">
 							<description>
-								Name of the SeisComP exporter used to serialize
-								the current origin when writing it to stdin of
-								the specified command. If empty no data will be
-								send to stdin. See 'sccnv --list-formats' for a
-								list of available options.
+							Name of the SeisComP exporter used to serialize
+							the current origin when writing it to stdin of
+							the specified command. If empty no data will be
+							send to stdin. See 'sccnv --list-formats' for a
+							list of available options.
 
-								Note: Some of the exporters are implemented
-								as plugins which need to be loaded before they
-								can be used.
+							Note: Some of the exporters are implemented
+							as plugins which need to be loaded before they
+							can be used.
 							</description>
 						</parameter>
 						<parameter name="showProcess" type="boolean" default="false">
 							<description>
-								Automatically open process manager for progress
-								monitoring. The process manager may also be started
-								manually via the View menu bar entry or via an icon
-								at the right of the status bar.
+							Automatically open process manager for progress
+							monitoring. The process manager may also be started
+							manually via the View menu bar entry or via an icon
+							at the right of the status bar.
 							</description>
 						</parameter>
 						<parameter name="text" type="string">
 							<description>
-								Name of the action. Use in the launch menu and in
-								the process manager.
+							Name of the action. Use in the launch menu and in
+							the process manager.
 							</description>
 						</parameter>
 						<parameter name="icon" type="file" options="read">
 							<description>Path to an icon to show for this action.</description>
 						</parameter>
-						<parameter name="keySequence" type="file">
+						<parameter name="keySequence" type="string">
 							<description>
-								Keyboard shortcut to run this action without
-								the need to open the menu. E.g., 'Ctrl+Alt+A'
+							Keyboard shortcut to run this action without
+							the need to open the menu. E.g., 'Ctrl+Alt+A'
 							</description>
 						</parameter>
-						<parameter name="toolTip" type="file" options="read,exec">
-							<description>Tool tip for this action.</description>
+						<parameter name="toolTip" type="string">
+							<description>
+							Tool tip for this action as shown when hovering with
+							the mouse over the created button.
+							</description>
 						</parameter>
 					</struct>
 				</group>
@@ -536,7 +541,7 @@
 					<struct name="MagnitudeCommentProfile" link="olv.magnitudeComments">
 						<parameter name="id" type="string">
 							<description>
-							The id of the comment to be added, updated or removed.
+							The ID of the comment to be added, updated or removed.
 							</description>
 						</parameter>
 						<parameter name="label" type="string">
@@ -547,12 +552,12 @@
 						<parameter name="options" type="list:string">
 							<description>
 							A list of options to select from. Actually the values
-							to populate the dropdown list with.
+							to populate the drop-down list with.
 							</description>
 						</parameter>
 						<parameter name="allowFreeText" type="boolean" default="false">
 							<description>
-							If free text is allowed in addition to the predefined
+							Allow free text in addition to the predefined
 							values.
 							</description>
 						</parameter>
