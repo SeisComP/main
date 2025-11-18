@@ -15,7 +15,7 @@
 #include "amptool.h"
 #include "util.h"
 
-#include <seiscomp/logging/filerotator.h>
+#include <seiscomp/logging/output/filerotator.h>
 #include <seiscomp/logging/channel.h>
 
 #include <seiscomp/client/inventory.h>
