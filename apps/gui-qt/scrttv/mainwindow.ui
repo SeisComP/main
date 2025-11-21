@@ -463,7 +463,7 @@
     <string>Restore default display</string>
    </property>
    <property name="shortcut">
-    <string>N</string>
+    <string>Ctrl+N</string>
    </property>
   </action>
   <action name="actionToggleAllRecords">
