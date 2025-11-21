@@ -537,28 +537,31 @@ Hotkey                   Description
 :kbd:`Shift+F1`          Open scrttv documentation
 :kbd:`F2`                Setup connection dialog
 :kbd:`F11`               Toggle fullscreen
-:kbd:`ESC`               Set standard selection mode and deselect all traces
-:kbd:`c`                 Clear picker  markers
-:kbd:`b`                 Toggle record borders
-:kbd:`h`                 List hidden streams
-:kbd:`Ctrl+a`            Toggle showing arrivals
-:kbd:`Ctrl+p`            Toggle showing picks
-:kbd:`n`                 Restore default display
-:kbd:`o`                 Align by origin time
-:kbd:`p`                 Enable pick selection mode
+:kbd:`B`                 Toggle record borders
+:kbd:`C`                 Clear picker markers
+:kbd:`H`                 List hidden streams
+:kbd:`Ctrl+A`            Toggle showing arrivals
+:kbd:`Ctrl+P`            Toggle showing picks
+:kbd:`O`                 Align by origin time
+:kbd:`P`                 Enable pick selection and association mode
+:kbd:`X`                 Clear cart from picks selected in pick association mode
+:kbd:`ESC`               Switch to standard mode leaving zoom or pick association mode
 :kbd:`Alt+left`          Reverse the data time window by buffer size
 :kbd:`Alt+right`         Advance the data time window by buffer size
+:kbd:`Shift+S`           Compute and show spectrograms
+:kbd:`Alt+O`             Open XML file with picks arrivals and origins
+:kbd:`Alt+Q`             Quit scrttv
 -----------------------  ---------------------------------------
 **Filtering**
 -----------------------  ---------------------------------------
-:kbd:`f`                 Toggle filtering
-:kbd:`d`                 Switch to previous filter in list if filtering is enabled.
-:kbd:`g`                 Switch to next filter in list if filtering is enabled.
-:kbd:`r`                 Toggle showing all records
+:kbd:`F`                 Toggle filtering
+:kbd:`D`                 Switch to previous filter in list if filtering is enabled.
+:kbd:`G`                 Switch to next filter in list if filtering is enabled.
+:kbd:`R`                 Toggle showing all records
 -----------------------  ---------------------------------------
 **Navigation**
 -----------------------  ---------------------------------------
-:kbd:`Ctrl+f`            Search traces
+:kbd:`Ctrl+F`            Search traces
 :kbd:`up`                Line up
 :kbd:`down`              Line down
 :kbd:`PgUp`              Page up
@@ -574,8 +577,8 @@ Hotkey                   Description
 -----------------------  ---------------------------------------
 :kbd:`Alt+left`          Rewind time window by 30' and load data
 :kbd:`Alt+right`         Progress time window by 30' and load data
-:kbd:`Ctrl+r`            (Re)load data in current visible time range
-:kbd:`Ctrl+Shift+r`      Switch to real-time with configured buffer size
+:kbd:`Ctrl+R`            (Re)load data in current visible time range
+:kbd:`Ctrl+Shift+R`      Switch to real-time with configured buffer size
 -----------------------  ---------------------------------------
 **Sorting**
 -----------------------  ---------------------------------------
@@ -589,9 +592,16 @@ Hotkey                   Description
 -----------------------  ---------------------------------------
 :kbd:`<`                 Horizontal zoom-in
 :kbd:`>`                 Horizontal zoom-out
-:kbd:`y`                 Vertical zoom-out
-:kbd:`Shift+y`           Vertical zoom-in
-:kbd:`s`                 Toggle amplitude normalization
+:kbd:`Y`                 Vertical zoom-out
+:kbd:`Shift+Y`           Vertical zoom-in
+:kbd:`S`                 Toggle amplitude normalization
 :kbd:`Ctrl+mouse wheel`  Vertical and horizontal zooming
-:kbd:`z`                 Enable/disable zooming: Drag window with left mouse button
+:kbd:`Z`                 Enable/disable zooming: Drag window with left mouse button
+:kbd:`Ctrl+N`            Restore default display: Amplitude scaling and time window
+-----------------------  ---------------------------------------
+**Control Windows**
+-----------------------  ---------------------------------------
+:kbd:`Ctrl+Shift+A`      Toggle control window for phase associator and locator
+:kbd:`Ctrl+Shift+S`      Toggle control window for spectrograms
+-----------------------  ---------------------------------------
 =======================  =======================================
