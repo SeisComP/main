@@ -497,7 +497,7 @@ bool App::init() {
 
 		std::string streamID = it->first.first + "." + it->first.second + "." + it->second.locationCode + "." + channel;
 
-		SEISCOMP_INFO("Adding detection channel %s", streamID.c_str());
+		SEISCOMP_INFO("Adding detection channel %s", streamID);
 
 		_streamIDs.insert(streamID);
 		subscribeStreams.insert(streamID);
@@ -507,7 +507,7 @@ bool App::init() {
 		if ( compZ && acquireComps[0] ) {
 			streamID = it->first.first + "." + it->first.second + "." + it->second.locationCode + "." + compZ->code();
 			if ( subscribeStreams.find(streamID) == subscribeStreams.end() ) {
-				SEISCOMP_DEBUG("Adding data channel %s", streamID.c_str());
+				SEISCOMP_DEBUG("Adding data channel %s", streamID);
 				recordStream()->addStream(it->first.first, it->first.second, it->second.locationCode, compZ->code());
 				subscribeStreams.insert(streamID);
 			}
@@ -516,7 +516,7 @@ bool App::init() {
 		if ( compN && acquireComps[1] ) {
 			streamID = it->first.first + "." + it->first.second + "." + it->second.locationCode + "." + compN->code();
 			if ( subscribeStreams.find(streamID) == subscribeStreams.end() ) {
-				SEISCOMP_DEBUG("Adding data channel %s", streamID.c_str());
+				SEISCOMP_DEBUG("Adding data channel %s", streamID);
 				recordStream()->addStream(it->first.first, it->first.second, it->second.locationCode, compN->code());
 				subscribeStreams.insert(streamID);
 			}
@@ -525,7 +525,7 @@ bool App::init() {
 		if ( compE && acquireComps[2] ) {
 			streamID = it->first.first + "." + it->first.second + "." + it->second.locationCode + "." + compE->code();
 			if ( subscribeStreams.find(streamID) == subscribeStreams.end() ) {
-				SEISCOMP_DEBUG("Adding data channel %s", streamID.c_str());
+				SEISCOMP_DEBUG("Adding data channel %s", streamID);
 				recordStream()->addStream(it->first.first, it->first.second, it->second.locationCode, compE->code());
 				subscribeStreams.insert(streamID);
 			}
