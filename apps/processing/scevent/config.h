@@ -146,7 +146,7 @@ struct Config : System::Application::AbstractSettings {
 	std::string        eventID;
 	std::string        epFile;
 
-	std::string        eventIDPrefix{"gfz"};
+	std::string        eventIDPrefix;
 	std::string        eventIDPattern{"%p%Y%04c"};
 	int                eventIDLookupMargin{-1};
 
