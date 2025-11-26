@@ -164,7 +164,7 @@ class Badge : public QFrame {
 			content->layout()->addWidget(label);
 
 			_closeButton = new QPushButton();
-			_closeButton->setIcon(icon("tab_disabled"));
+			_closeButton->setIcon(icon("close_red"));
 			_closeButton->setFlat(true);
 
 			content->layout()->addWidget(_closeButton);
