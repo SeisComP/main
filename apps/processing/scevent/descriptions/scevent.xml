@@ -453,6 +453,17 @@
 				</group>
 			</group>
 		</configuration>
+		<setup>
+			<group name="eventID">
+				<input name="prefix" type="string" default="">
+					<text>EventID Prefix</text>
+					<description>
+					The prefix of the generated eventID. Usually this is a lowercase version
+					of the agencyID.
+					</description>
+				</input>
+			</group>
+		</setup>
 		<command-line>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
