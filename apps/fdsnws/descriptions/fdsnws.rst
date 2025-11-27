@@ -1,6 +1,8 @@
 fdsnws is a server that provides event, station and data availability
-information by FDSN Web Services (:cite:t:`fdsn`) from a SeisComP database and
-waveforms from a :ref:`global_recordstream` source.
+information from a |scname| database and waveforms from a
+:ref:`global_recordstream` source. fdsnws implements standards defined by
+:cite:t:`fdsn`. Some other data centers offering FDSNWS are listed in
+:cite:t:`fdsn-datacenters`.
 
 .. caution::
    If you expose the FDSN Web Service as a public service, make sure that
