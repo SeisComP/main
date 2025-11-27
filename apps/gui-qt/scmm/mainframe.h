@@ -66,7 +66,7 @@ class LogDispatcher : public Seiscomp::Logging::Output {
 		void log(const char* channelName,
 		         Seiscomp::Logging::LogLevel level,
 		         const char* msg,
-		         time_t time) override {
+		         time_t time, uint32_t) override {
 		_logger->logReceived(channelName, (int)level, msg, (int)time);
 	}
 
