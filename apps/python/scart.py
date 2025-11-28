@@ -1679,7 +1679,7 @@ def main():
                 file=sys.stderr,
             )
         print(
-            f""""#   networks:   {len(totalNetworks)}
+            f"""#   networks:   {len(totalNetworks)}
 #   stations:   {len(totalStations)}
 #   streams:    {len(totalChans)}
 #   records:    {totalRecs}
