@@ -38,24 +38,26 @@
 			</parameter>
 			<group name="scripts">
 				<description>
-				Define scripts linked to extra buttons. A button is created
-				by definition of the corresponding script.
+				Names of executable scripts linked to extra buttons. Buttons are
+				created by definition of the corresponding scripts.
 				</description>
-				<parameter name="export" type="string">
+				<parameter name="export" type="file" options="execute">
 					<description>
 					Full path to the script which enables a publish button in the
-					summary panel on the left side of scolv (activated with F8).
+					SummaryView panel on the left side of scolv (activated with F8).
 					</description>
 				</parameter>
-				<parameter name="script0" type="string">
+				<parameter name="script0" type="file" options="execute">
 					<description>
-					Full path to the script executed when hitting the button labeled with &quot;button0&quot;.
+					Full path to the script executed when hitting the button
+					labeled with &quot;button0&quot;.
 					OriginID and EventID are passed to the script as arguments.
 					</description>
 				</parameter>
-				<parameter name="script1" type="string">
+				<parameter name="script1" type="file" options="execute">
 					<description>
-					Full path to the script executed when hitting the button labeled with &quot;button1&quot;.
+					Full path to the script executed when hitting the button
+					labeled with &quot;button1&quot;.
 					OriginID and EventID are passed to the script as arguments.
 					</description>
 				</parameter>

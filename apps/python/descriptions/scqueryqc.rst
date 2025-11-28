@@ -1,11 +1,12 @@
 scqueryqc queries a database for waveform quality control (QC) parameters. The
-QC parameters can be provided and written to the database, e.g., by :ref:`scqc`.
+QC parameters are typically provided and written to the database by :ref:`scqc`.
 
-.. warning ::
+.. warning::
 
    Writing QC parameters to the database by :ref:`scqc` will result in a rapidly
-   growing database and is therefore not recommended in permanent application without
-   regularly stripping these parameters from the  database!
+   growing database and is therefore inactive by default and not recommended in
+   permanent application without regularly stripping database from these
+   parameters!
 
 The database query is done for
 
@@ -25,7 +26,7 @@ Workflow
 --------
 
 You should minimize the impact of stored waveform QC parameters on the size of the
-database.
+database by regularly archiving the stored parameters and cleaning the database
 
 #. Compute the QC parameters in real time using :ref:`scqc` and save them in the
    |scname| database. Saving the QC parameters in the database requires to
@@ -39,12 +40,20 @@ database.
 
    .. code-block:: sh
 
-      scqueryqc -d [host] -e '[end time]' --streams-from-inventory -o [XML file]
+      scqueryqc -d [database] -e '[end time]' --streams-from-inventory -o [XML file]
 
 
-#. Clean the database from QC parameters.
+#. Clean the database from QC parameters by one of the modules: :ref:`scdb`,
+   :ref:`scdispatch` or :ref:`scdbstrip`
 
-   * Either use :ref:`scdispatch` with the parameters saved in XML. You may need
+   * :ref:`scdb`: Use with the parameters saved in XML and remove them directly
+     from the database
+
+     .. code-block:: sh
+
+        scdb -d [database] -i [XML file] -r
+
+   * :ref:`scdispatch`: Use with the parameters saved in XML. You may need
      to set the routing table for sending the QualityControl parameters to the
      right message group, e.g., QC:
 
@@ -52,7 +61,7 @@ database.
 
         scdispatch -H [host] -O remove --routingtable QualityControl:QC -i [XML file]
 
-   * Alternatively, use :ref:`scdbstrip` with the command-line option
+   * :ref:`scdbstrip`: Run with the command-line option
      :option:`--qc-only` and remove **all** QC parameters in the time span. Use the same
      period for which the QC parameters were retrieved:
 
@@ -60,11 +69,12 @@ database.
 
         scdbstrip -d [database] -Q --date-time '[end time]'
 
-     .. note ::
+     .. note::
 
-        Considering an end time by :option:`--date-time` has the advantage that no QC
-        parameters are removed which were measured after scqueryqc was applied with the
-        same end time value.
+        Considering an end time by :option:`--date-time` has the advantage that
+        no QC parameters are removed which were measured after scqueryqc was
+        applied with the same end time value.
+
 
 Examples
 --------
