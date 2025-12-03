@@ -1981,7 +1981,7 @@ void MainWindow::createOrigin(Gui::RecordViewItem* item, Core::Time time) {
 	origin->setLongitude(dlg.longitude());
 	origin->setLatitude(dlg.latitude());
 	origin->setDepth(DataModel::RealQuantity(dlg.depth()));
-	origin->setTime(Core::Time(dlg.getTime_t()));
+	origin->setTime(Core::Time(dlg.getTime_t(), 0));
 
 	//Seiscomp::DataModel::ArtificialOriginMessage message(origin);
 	//SCApp->sendMessage("GUI", &message);
