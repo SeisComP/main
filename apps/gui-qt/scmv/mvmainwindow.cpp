@@ -1028,7 +1028,7 @@ void MvMainWindow::sendArtificialOrigin(const QPoint& pos) {
 	origin->setLongitude(dialog.longitude());
 	origin->setLatitude(dialog.latitude());
 	origin->setDepth(DataModel::RealQuantity(dialog.depth()));
-	origin->setTime(Core::Time(dialog.getTime_t()));
+	origin->setTime(Core::Time(dialog.getTime_t(), 0));
 
 	SCApp->sendCommand(Gui::CM_OBSERVE_LOCATION, "", origin);
 }
