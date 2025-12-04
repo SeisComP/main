@@ -72,13 +72,17 @@ from seiscomp.fdsnws.http import (
 )
 from seiscomp.fdsnws.log import Log
 
+_jwtSupported = False
+
 try:
+    import jwt
     from seiscomp.fdsnws.jwt import JWT
 
-    _jwtSupported = True
+    if int(jwt.__version__.split(".")[0]) >= 2:
+        _jwtSupported = True
 
 except ImportError:
-    _jwtSupported = False
+    pass
 
 
 def logSC3(entry):
@@ -999,7 +1003,7 @@ configuration read:
         if self._jwtEnabled:
             if not _jwtSupported:
                 seiscomp.logging.error(
-                    "JWT is not supported due to missing dependencies"
+                    "JWT support requires PyJWT 2.0.0 or newer. Please install PyJWT with \"pip\" or install the required version of the python3-PyJWT package if available."
                 )
                 return None
 
