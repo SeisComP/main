@@ -253,14 +253,14 @@ void setInfoWidgetContent(OriginInfoWidget* infoWidget, const std::string &event
 	QString time = Gui::timeToString(origin->time().value(), "%F - %T");
 	infoWidget->setTime(time);
 
-	QString latitude = QString("%1").arg(origin->latitude());
+	QString latitude = QString("%1").arg(origin->latitude().value());
 	infoWidget->setLatitude(latitude);
 
-	QString longitude = QString("%1").arg(origin->longitude());
+	QString longitude = QString("%1").arg(origin->longitude().value());
 	infoWidget->setLongitude(longitude);
 
 	QString depth;
-	try { depth = QString("%1").arg(origin->depth()); }
+	try { depth = QString("%1").arg(origin->depth().value()); }
 	catch ( ... ) {}
 	infoWidget->setDepth(depth);
 
