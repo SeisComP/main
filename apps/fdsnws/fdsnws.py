@@ -424,7 +424,10 @@ class FDSNWS(seiscomp.client.Application):
         self._checker = None
 
         self._jwtEnabled = False
-        self._jwtIssuers = ["https://geofon.gfz.de/eas2", "https://login.earthscope.org/"]
+        self._jwtIssuers = [
+            "https://geofon.gfz.de/eas2",
+            "https://login.earthscope.org/",
+        ]
         self._jwtAudience = ["eas", "fdsn"]
         self._jwtAlgorithms = ["RS256"]
         self._jwtUpdateMin = 300
@@ -710,10 +713,8 @@ class FDSNWS(seiscomp.client.Application):
 
         # dataSelect filter
         try:
-            self._dataSelectFilter = (
-                seiscomp.system.Environment.Instance().absolutePath(
-                    self.configGetString("dataSelectFilter")
-                )
+            self._dataSelectFilter = seiscomp.system.Environment.Instance().absolutePath(
+                self.configGetString("dataSelectFilter")
             )
         except Exception:
             pass
@@ -1003,12 +1004,18 @@ configuration read:
         if self._jwtEnabled:
             if not _jwtSupported:
                 seiscomp.logging.error(
-                    "JWT support requires PyJWT 2.0.0 or newer. Please install PyJWT with \"pip\" or install the required version of the python3-PyJWT package if available."
+                    "JWT support requires PyJWT 2.0.0 or newer. Please install PyJWT "
+                    'with "pip" or install the required version of the python3-PyJWT '
+                    "package if available."
                 )
                 return None
 
             self._jwt = JWT(
-                self._jwtIssuers, self._jwtAudience, self._jwtAlgorithms, self._jwtUpdateMin, self._jwtUpdateMax
+                self._jwtIssuers,
+                self._jwtAudience,
+                self._jwtAlgorithms,
+                self._jwtUpdateMin,
+                self._jwtUpdateMax,
             )
 
         # access logger if requested
@@ -1019,9 +1026,9 @@ configuration read:
         stationInv = dataSelectInv = None
         if self._serveDataSelect or self._serveStation:
             retn = False
-            stationInv = dataSelectInv = (
-                seiscomp.client.Inventory.Instance().inventory()
-            )
+            stationInv = (
+                dataSelectInv
+            ) = seiscomp.client.Inventory.Instance().inventory()
             seiscomp.logging.info("inventory loaded")
 
             if self._serveDataSelect and self._serveStation:
