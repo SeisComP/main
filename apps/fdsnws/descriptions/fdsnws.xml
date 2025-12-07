@@ -140,10 +140,10 @@
 				7232) by the fdsnws-station resource.
 				</description>
 			</parameter>
-			<parameter name="useArclinkAccess" type="boolean" default="false">
+			<parameter name="useAccess" type="boolean" default="false">
 				<description>
 				If enabled, then access to restricted waveform data is
-				controlled by arclink-access bindings. By default authenticated
+				controlled by access bindings. By default authenticated
 				users have access to all data.
 				</description>
 			</parameter>
