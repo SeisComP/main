@@ -442,44 +442,57 @@ Please refer to the documentation of your particular firewall solution on how to
 set up this rule permanently.
 
 
-Authentication Extension
-========================
+Authentication
+==============
 
-The FDSNWS standard requires HTTP digest authentication as the
-authentication mechanism. The "htpasswd" configuration option is used to
-define the location of the file storing usernames and passwords of users
-who are allowed to get restricted data. Any user with valid credentials
-would have access to all restricted data.
+FDSNWS supports 3 authentication methods for accessing waveform data and
+availability of restricted stations/channels:
 
-An extension to the FDSNWS protocol has been developed in order to use
-email-pattern-based access control lists, which is an established
-authorization mechanism in SeisComP3 (used by Arclink). It works as follows:
+* HTTP digest (username/password, FDSNWS standard)
+* GPG token (EIDA extension)
+* JWT (FDSN proposal)
 
-* The user contacts an authentication service (based on eduGAIN AAI,
-  e-mail, etc.) and receives a list of attributes (a token), signed by the
+If ``useAccess`` is set to ``true``, then access to restricted data is
+controlled by the :ref:`access` bindings, otherwise any user authenticated with
+the HTTP digest method has access to any restricted data.
+
+For security reasons, setting ``useAccess`` to ``true`` is required to access
+restricted data if token-based authentication is used.
+
+
+HTTP digest authentication
+--------------------------
+
+In case of standard HTTP digest authentication, the ``htpasswd`` configuration
+option is used to define the location of the file storing usernames and
+passwords of users.
+
+
+GPG token authentication
+-----------------------
+
+* The user contacts an authentication service (based on eduGAIN AAI, e-mail,
+  etc.) and receives a list of attributes (a token), signed by the
   authentication service. The validity of the token is typically 30 days.
 
-* The user presents the token to /auth method (HTTPS) of the dataselect
-  service. This method is the only extension to standard FDSNWS that is
-  required.
+* The user presents the token to /auth method (HTTPS) of the dataselect service.
+  This method is an extension to standard FDSNWS service.
 
-* If the digital signature is valid, a temporary account for /queryauth
-  is created. The /auth method returns username and password of this
-  account, separated by ':'. The account is typically valid for 24 hours.
+* If the digital signature is valid, a temporary account for /queryauth is
+  created. The /auth method returns username and password of this account,
+  separated by ':'. The account is typically valid for 24 hours.
 
-* The username and password are to be used with /queryauth as usual.
-
-* Authorization is based on user's e-mail address in the token and
-  arclink-access bindings.
+* The username and password are to be used with /queryauth as with standard HTTP
+  digest authentication.
 
 
 Configuration
--------------
+~~~~~~~~~~~~~
 
-The authentication extension is enabled by setting the "auth.enable"
-configuration option to "true" and pointing "auth.gnupgHome" to a directory
-where GPG stores its files. Let's use the directory
-~/seiscomp/var/lib/gpg, which is the default.
+The GPG token authentication is enabled by setting ``auth.enable`` to "true"
+(this disables standard HTTP digest authentication) and pointing
+"auth.gnupgHome" to a directory where GPG stores its files. Let's use the
+directory ~/seiscomp/var/lib/gpg, which is the default.
 
 * First create the direcory and your own signing key:
 
@@ -509,35 +522,100 @@ where GPG stores its files. Let's use the directory
 
 
 Usage Example
--------------
+~~~~~~~~~~~~~
 
-A client like :ref:`fdsnws_fetch <sec-fdsnws-related>` is recommended, but also tools like wget and
-curl can be used. As an example, let's request data from the restricted
-station AAI (assuming that we are authorized to get data of this station).
+A client like :ref:`fdsnws_fetch <sec-fdsnws-related>` is recommended, but also
+tools like wget and curl can be used. As an example, let's request data from the
+restricted station AAI (assuming that we are authorized to get data of this
+station).
 
 * The first step is to obtain the token from an authentication service.
-  Assuming that the token is saved in "token.asc", credentials of the
-  temporary account can be requested using one of the following commands:
+  Assuming that the token is saved in "token.asc", credentials of the temporary
+  account can be requested using one of the following commands:
 
   .. code-block:: sh
 
      sysop@host:~$ wget --post-file token.asc https://geofon.gfz.de/fdsnws/dataselect/1/auth -O cred.txt
      sysop@host:~$ curl --data-binary @token.asc https://geofon.gfz.de/fdsnws/dataselect/1/auth -o cred.txt
 
-* The resulting file "cred.txt" contains username and password separated by
-  a colon, so one can conveniently use a shell expansion:
+* The resulting file "cred.txt" contains username and password separated by a
+  colon, so one can conveniently use a shell expansion:
 
   .. code-block:: sh
 
      sysop@host:~$ wget "http://`cat cred.txt`@geofon.gfz.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -O data.mseed
      sysop@host:~$ curl --digest "http://`cat cred.txt`@geofon.gfz.de/fdsnws/dataselect/1/queryauth?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI" -o data.mseed
 
-* Using the :ref:`fdsnws_fetch <sec-fdsnws-related>` utility, the two steps above can be combined into
-  one:
+* Using the :ref:`fdsnws_fetch <sec-fdsnws-related>` utility, the two steps
+  above can be combined into one:
 
   .. code-block:: sh
 
      sysop@host:~$ fdsnws_fetch -a token.asc -s 2015-12-15T16:00:00Z -e 2015-12-15T16:10:00Z -N IA -S AAI -o data.mseed
+
+
+JWT authentication
+------------------
+
+This authentication method is based on JSON Web Token (JWT), which has been
+extensively described in RFC 7515 (for signatures), and 7519 (for name
+registration and token definition) and it is a global standard for
+Authentication and Authorization protocols.
+
+Base64 encoded access token would be included in the HTTP Authorization header
+with /query request. /queryauth would not be used in this case.
+
+
+Configuration
+~~~~~~~~~~~~~
+
+To enable JWT authentication, set ``jwt.enable`` to ``true``. In addition you
+may want to change the ``jwt.issuers`` and ``jwt.audience`` parameters depending
+on which issuers you trust. By default, those are are EIDA (EAS) and EarthScope.
+
+JWT authentication can be used in parallel to standard HTTP digest or GPG token
+authentication (but not both, because the latter two are mutually exclusive due
+to both using /queryauth).
+
+Usage example
+~~~~~~~~~~~~~
+
+* Install the `eas2cli <https://pypi.org/project/eas2cli/>`_ package:
+
+  .. code-block:: sh
+
+     sysop@host:~$ pip install eas2cli
+
+* Get JWT (it is saved as ~/.eidajwt by default):
+
+  .. code-block:: sh
+
+     sysop@host:~$ eas2cli login
+
+* Extract the access token:
+
+  .. code-block:: sh
+
+     sysop@host:~$ token=`python3 -c 'import json; print(json.load(open(".eidajwt"))["access_token"])'`
+
+* Alternatively, get the access token with eas2cli. In this case, the token
+  would be automatically refreshed if it is expired:
+
+  .. code-block:: sh
+
+     sysop@host:~$ token=`python3 -c 'from eas2cli.core import gettoken; print(gettoken())'`
+
+* Get data with curl:
+
+  .. code-block:: sh
+
+     sysop@host:~$ curl -H "Authorization: Bearer $token" 'https://geofon.gfz.de/fdsnws/dataselect/1/query?starttime=2015-12-15T16:00:00Z&endtime=2015-12-15T16:10:00Z&network=IA&station=AAI' -o data.mseed
+
+* Alternatively, a recent version of fdsnws_fetch with JWT support can be used:
+
+  .. code-block:: sh
+
+     sysop@host:~$ fdsnws_fetch -j ~/.eidajwt -s 2015-12-15T16:00:00Z -e 2015-12-15T16:10:00Z -N IA -S AAI -o data.mseed
 
 
 Logging
