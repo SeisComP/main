@@ -380,7 +380,7 @@ class FDSNWS(seiscomp.client.Application):
         self._corsOrigins = ["*"]
 
         self._allowRestricted = True
-        self._useArclinkAccess = False
+        self._useAccess = False
         self._serveDataSelect = True
         self._serveEvent = True
         self._serveStation = True
@@ -538,11 +538,15 @@ class FDSNWS(seiscomp.client.Application):
         except Exception:
             pass
 
-        # use arclink-access bindings
+        # use access bindings
         try:
-            self._useArclinkAccess = self.configGetBool("useArclinkAccess")
+            self._useAccess = self.configGetBool("useAccess")
         except Exception:
-            pass
+            # Backwards compatibility
+            try:
+                self._useAccess = self.configGetBool("useArclinkAccess")
+            except Exception:
+                pass
 
         # services to enable
         try:
@@ -808,7 +812,7 @@ class FDSNWS(seiscomp.client.Application):
             # availability information should be processed
             if (
                 not self._serveEvent
-                and not self._useArclinkAccess
+                and not self._useAccess
                 and (
                     not self._serveStation
                     or (not self.isInventoryDatabaseEnabled() and not self._daEnabled)
@@ -955,7 +959,7 @@ configuration read:
   recordBulkSize           : {self._recordBulkSize}
   allowRestricted          : {self._allowRestricted}
   handleConditionalRequests: {self._handleConditionalRequests}
-  useArclinkAccess         : {self._useArclinkAccess}
+  useAccess                : {self._useAccess}
   hideAuthor               : {self._hideAuthor}
   hideComments             : {self._hideComments}
   evaluationMode           : {modeStr}
@@ -1046,14 +1050,15 @@ configuration read:
             if not retn:
                 return None
 
-        if self._authEnabled:
+        if self._useAccess or self._authEnabled or self._jwtEnabled:
             self._access = Access()
+
+        if self._authEnabled:
             self._checker = UsernamePasswordChecker(self._userdb)
         else:
-            self._access = Access() if self._useArclinkAccess else None
             self._checker = checkers.FilePasswordDB(self._htpasswd, cache=True)
 
-        if self._serveDataSelect and self._useArclinkAccess:
+        if (self._serveDataSelect or _serveAvailability) and self._useAccess:
             self._access.initFromSC3Routing(self.query().loadRouting())
 
         seiscomp.datamodel.PublicObject.SetRegistrationEnabled(False)
