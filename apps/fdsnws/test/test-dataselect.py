@@ -11,6 +11,9 @@ import sys
 
 from fdsnwstest import FDSNWSTest
 
+import seiscomp.io
+import seiscomp.core
+
 
 ###############################################################################
 class TestDataSelect(FDSNWSTest):
@@ -46,6 +49,37 @@ class TestDataSelect(FDSNWSTest):
                 auth=q.startswith("auth"),
             )
             i += 1
+
+        self.testRecordStream()
+
+    def testRecordStream(self):
+        url = f"fdsnws://localhost:{self.port}"
+        rs = seiscomp.io.RecordStream.Open(url)
+        if rs is None:
+            raise ValueError(f"Unable to open recordstream '{url}'")
+
+        if not rs.setRecordType("mseed"):
+            raise ValueError(f"Format 'mseed' is not supported by recordstream '{url}'")
+
+        start = seiscomp.core.Time(2019, 8, 2, 17, 59, 59)
+        end = seiscomp.core.Time(2019, 8, 2, 18, 00, 59)
+        rs.addStream("AM", "R187C", "00", "EHZ", start, end)
+
+        inputRecord = seiscomp.io.RecordInput(
+            rs, seiscomp.core.Array.INT, seiscomp.core.Record.SAVE_RAW
+        )
+
+        result = bytearray()
+        for rec in inputRecord:
+            result.extend(rec.raw().str())
+
+        dataFile = f"{self.rootdir}/results/dataselect-6.mseed"
+        with open(dataFile, "rb") as f:
+            expected = f.read()
+
+        errPos, errMsg = self.diff(expected, result, None)
+        if errPos is not None:
+            raise ValueError(f"Unexpected content at byte {errPos}: {errMsg}")
 
 
 # ------------------------------------------------------------------------------
