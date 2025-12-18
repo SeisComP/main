@@ -227,7 +227,7 @@ MainFrame::MainFrame(){
 		QPushButton *btn = _eventSmallSummary->exportButton();
 		btn->setVisible(true);
 		btn->setText("");
-		btn->setIcon(icon("share"));
+		btn->setIcon(icon("publish_event"));
 		btn->setFlat(true);
 		btn->setToolTip("Publish event");
 
