@@ -315,7 +315,7 @@ void MainFrame::closeEvent(QCloseEvent* e) {
 	      it != _pluginWidgets.end(); ++it ) {
 		it.key()->close();
 	}
-	QMainWindow::closeEvent(e);
+	Seiscomp::Gui::MainWindow::closeEvent(e);
 }
 
 
