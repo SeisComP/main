@@ -15,7 +15,7 @@
 #include "eventtool.h"
 #include "util.h"
 
-#include <seiscomp/logging/filerotator.h>
+#include <seiscomp/logging/output/filerotator.h>
 #include <seiscomp/logging/channel.h>
 
 #include <seiscomp/datamodel/pick.h>
@@ -88,7 +88,7 @@ class GlobalRegion : public Client::Config::Region {
 			// Parse region
 			if ( region.size() != 4 ) {
 				SEISCOMP_ERROR("%srect: expected 4 values in region definition, got %d",
-							   prefix.c_str(), (int)region.size());
+							   prefix, (int)region.size());
 				return false;
 			}
 
@@ -159,7 +159,7 @@ class SC_SYSTEM_CLIENT_API ClearCacheResponseMessage : public Seiscomp::Core::Me
 		ClearCacheResponseMessage() {}
 
 		//! Implemented interface from Message
-		virtual bool empty() const  { return false; }
+		bool empty() const override { return false; }
 };
 
 void ClearCacheResponseMessage::serialize(Archive& ar) {}
@@ -393,7 +393,7 @@ bool EventTool::initConfiguration() {
 		}
 
 		if ( !validToken ) {
-			SEISCOMP_ERROR("Unexpected token in eventAssociation.priorities: %s", item.c_str());
+			SEISCOMP_ERROR("Unexpected token in eventAssociation.priorities: %s", item);
 			return false;
 		}
 
@@ -516,6 +516,35 @@ bool EventTool::init() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void EventTool::printUsage() const {
+	cout << "Usage:"  << endl << "  " << name() << " [options]" << endl << endl
+	     << "Associates Origins to Events or forms new Events if no match is "
+	        "found. Selects "
+	        << endl << "preferred origins, magnitudes and focal mechanisms "
+	        "and sets event types."
+	     << endl;
+
+	Seiscomp::Client::Application::printUsage();
+
+	cout << "Examples:" << endl;
+	cout << "Real-time processing with informative debug output." << endl
+	     << "  " << name() << " --debug" << endl;
+	cout << endl << "None-real-time XML playback of origins."
+	     << endl
+	     << "  " << name() << " --ep origins.xml > events.xml"
+	     << endl;
+	cout << endl << "None-real-time XML playback for re-processing events "
+	                "with origins."
+	     << endl
+	     << "  " << name() << " --ep origins.xml --reprocess > events.xml"
+	     << endl << endl;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool EventTool::run() {
 	if ( _config.clearCache ) {
 		SEISCOMP_DEBUG("Sending clear cache request");
@@ -572,7 +601,7 @@ bool EventTool::run() {
 				}
 				else {
 					SEISCOMP_DEBUG("Cannot update event ID: preferred origin '%s'"
-					               " not found", evt->preferredOriginID().c_str());
+					               " not found", evt->preferredOriginID());
 				}
 			}
 			EventInformationPtr info = new EventInformation(
@@ -588,13 +617,13 @@ bool EventTool::run() {
 			EventInformationPtr info;
 
 			OriginPtr org = _ep->origin(i);
-			SEISCOMP_INFO("Processing origin %s", org->publicID().c_str());
+			SEISCOMP_INFO("Processing origin %s", org->publicID());
 			info = findAssociatedEvent(org.get());
 
 			if ( info ) {
 				SEISCOMP_DEBUG("... %s already associated with event %s",
-				               org->publicID().c_str(),
-				               info->event->publicID().c_str());
+				               org->publicID(),
+				               info->event->publicID());
 				continue;
 			}
 
@@ -612,12 +641,12 @@ bool EventTool::run() {
 			EventInformationPtr info;
 
 			FocalMechanismPtr fm = _ep->focalMechanism(i);
-			SEISCOMP_INFO("Processing focal mechanism %s", fm->publicID().c_str());
+			SEISCOMP_INFO("Processing focal mechanism %s", fm->publicID());
 			info = findAssociatedEvent(fm.get());
 			if ( info ) {
 				SEISCOMP_DEBUG("... %s already associated with event %s",
-				               fm->publicID().c_str(),
-				               info->event->publicID().c_str());
+				               fm->publicID(),
+				               info->event->publicID());
 				continue;
 			}
 
@@ -712,6 +741,16 @@ void EventTool::done() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void EventTool::handleNetworkMessage(const Client::Packet *pkt) {
+	Application::handleNetworkMessage(pkt);
+	_lastNetworkMessage = pkt;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventTool::handleMessage(Core::Message *msg) {
 	_adds.clear();
 	_updates.clear();
@@ -741,12 +780,12 @@ void EventTool::handleMessage(Core::Message *msg) {
 		if ( org ) {
 			if ( _originBlackList.find(org->publicID()) == _originBlackList.end() ) {
 				SEISCOMP_DEBUG("* work on new origin %s (%ld, %d/%lu)",
-				               org->publicID().c_str(), (long int)org.get(),
+				               org->publicID(), (long int)org.get(),
 				               definingPhaseCount(org.get()), (unsigned long)org->arrivalCount());
 				associateOriginCheckDelay(org.get());
 			}
 			else
-				SEISCOMP_DEBUG("* skipped new origin %s: blacklisted", org->publicID().c_str());
+				SEISCOMP_DEBUG("* skipped new origin %s: blacklisted", org->publicID());
 
 			continue;
 		}
@@ -754,7 +793,7 @@ void EventTool::handleMessage(Core::Message *msg) {
 		FocalMechanismPtr fm = FocalMechanism::Cast(it->get());
 		if ( fm ) {
 			SEISCOMP_DEBUG("* work on new focal mechanism %s",
-			               fm->publicID().c_str());
+			               fm->publicID());
 			associateFocalMechanism(fm.get());
 
 			continue;
@@ -780,7 +819,7 @@ void EventTool::handleMessage(Core::Message *msg) {
 					updatedOrigin(org.get(), Magnitude::Cast(it->triggered.get()),
 					              _realUpdates.find(*it) != _realUpdates.end());
 				else
-					SEISCOMP_DEBUG("* skipped origin %s: blacklisted", org->publicID().c_str());
+					SEISCOMP_DEBUG("* skipped origin %s: blacklisted", org->publicID());
 
 				continue;
 			}
@@ -806,6 +845,8 @@ void EventTool::handleMessage(Core::Message *msg) {
 	else {
 		SEISCOMP_DEBUG("No notifier available");
 	}
+
+	_lastNetworkMessage = nullptr;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -821,7 +862,7 @@ void EventTool::handleTimeout() {
 			OriginPtr org = Origin::Cast(it->obj);
 			if ( org ) {
 				SEISCOMP_LOG(_infoChannel, "Processing delayed origin %s",
-				             org->publicID().c_str());
+				             org->publicID());
 				bool createdEvent;
 				associateOrigin(org.get(), true, &createdEvent);
 				if ( createdEvent ) {
@@ -842,7 +883,7 @@ void EventTool::handleTimeout() {
 				FocalMechanismPtr fm = FocalMechanism::Cast(it->obj);
 				if ( fm ) {
 					SEISCOMP_LOG(_infoChannel, "Processing delayed focal mechanism %s",
-					             fm->publicID().c_str());
+					             fm->publicID());
 					associateFocalMechanism(fm.get());
 				}
 			}
@@ -859,7 +900,7 @@ void EventTool::handleTimeout() {
 		EventInformationPtr info;
 		if ( org ) {
 			SEISCOMP_LOG(_infoChannel, "Processing delayed origin %s (no event "
-			             "creation before %i s)", org->publicID().c_str(),
+			             "creation before %i s)", org->publicID(),
 			             it->timeout + DELAY_CHECK_INTERVAL);
 			info = associateOrigin(org.get(), false);
 		}
@@ -867,7 +908,7 @@ void EventTool::handleTimeout() {
 			FocalMechanismPtr fm = FocalMechanism::Cast(it->obj);
 			if ( fm ) {
 				SEISCOMP_LOG(_infoChannel, "Processing delayed focal mechanism %s",
-				             fm->publicID().c_str());
+				             fm->publicID());
 				info = associateFocalMechanism(fm.get());
 			}
 		}
@@ -884,14 +925,14 @@ void EventTool::handleTimeout() {
 		it->timeout -= DELAY_CHECK_INTERVAL;
 		if ( it->timeout <= -DELAY_CHECK_INTERVAL ) {
 			if ( it->reason == SetPreferredFM ) {
-				SEISCOMP_LOG(_infoChannel, "Handling pending event update for %s", it->id.c_str());
+				SEISCOMP_LOG(_infoChannel, "Handling pending event update for %s", it->id);
 				EventInformationPtr info = cachedEvent(it->id);
 				if ( !info ) {
 					info = new EventInformation(&_cache, &_config, query(), it->id, author());
 					if ( !info->event ) {
-						SEISCOMP_ERROR("event %s not found", it->id.c_str());
+						SEISCOMP_ERROR("event %s not found", it->id);
 						SEISCOMP_LOG(_infoChannel, "Skipped delayed preferred FM update, "
-						             "event %s not found in database", it->id.c_str());
+						             "event %s not found in database", it->id);
 					}
 					else {
 						info->loadAssocations(query());
@@ -937,7 +978,7 @@ void EventTool::cleanUpEventCache() {
 	for ( auto it = _events.begin(); it != _events.end(); ) {
 		if ( it->second->aboutToBeRemoved ) {
 			SEISCOMP_DEBUG("... remove event %s from cache",
-			               it->second->event->publicID().c_str());
+			               it->second->event->publicID());
 			_events.erase(it++);
 		}
 		else
@@ -966,14 +1007,26 @@ bool EventTool::hasDelayedEvent(const std::string &publicID,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#define LOG_WITH_SOURCE(MSG, ...) \
+	do {\
+		if ( _lastNetworkMessage ) {\
+			SEISCOMP_LOG(_infoChannel, MSG " from %s through %s", __VA_ARGS__,\
+			             _lastNetworkMessage->sender, _lastNetworkMessage->target);\
+		}\
+		else {\
+			SEISCOMP_LOG(_infoChannel, MSG, __VA_ARGS__);\
+		}\
+	}\
+	while ( 0 )
+
 void EventTool::addObject(const string &parentID, Object* object) {
 	OriginPtr org = Origin::Cast(object);
 	if ( org ) {
 		logObject(_inputOrigin, Core::Time::UTC());
 		SEISCOMP_DEBUG("* queued new origin %s (%ld, %d/%lu)",
-		              org->publicID().c_str(), (long int)org.get(),
+		              org->publicID(), (long int)org.get(),
 		              definingPhaseCount(org.get()), (unsigned long)org->arrivalCount());
-		SEISCOMP_LOG(_infoChannel, "Received new origin %s", org->publicID().c_str());
+		LOG_WITH_SOURCE("Received new origin %s", org->publicID());
 		_adds.insert(TodoEntry(org));
 		return;
 	}
@@ -987,12 +1040,12 @@ void EventTool::addObject(const string &parentID, Object* object) {
 				org->add(mag);
 
 			try {
-				SEISCOMP_LOG(_infoChannel, "Received new magnitude %s (%s %.2f)",
-				             mag->publicID().c_str(), mag->type().c_str(), mag->magnitude().value());
+				LOG_WITH_SOURCE("Received new magnitude %s (%s %.2f)",
+				                mag->publicID(), mag->type(), mag->magnitude().value());
 			}
 			catch ( ... ) {
-				SEISCOMP_LOG(_infoChannel, "Received new magnitude %s (%s -.--)",
-				             mag->publicID().c_str(), mag->type().c_str());
+				LOG_WITH_SOURCE("Received new magnitude %s (%s -.--)",
+				                mag->publicID(), mag->type());
 			}
 
 			_updates.insert(TodoEntry(org));
@@ -1004,8 +1057,8 @@ void EventTool::addObject(const string &parentID, Object* object) {
 	if ( fm ) {
 		logObject(_inputFocalMechanism, Core::Time::UTC());
 		SEISCOMP_DEBUG("* queued new focal mechanism %s (%ld)",
-		               fm->publicID().c_str(), (long int)fm.get());
-		SEISCOMP_LOG(_infoChannel, "Received new focalmechanism %s", fm->publicID().c_str());
+		               fm->publicID(), (long int)fm.get());
+		LOG_WITH_SOURCE("Received new focalmechanism %s", fm->publicID());
 		_adds.insert(TodoEntry(fm));
 		return;
 	}
@@ -1018,8 +1071,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 			if ( fm != mt->focalMechanism() )
 				fm->add(mt);
 
-			SEISCOMP_LOG(_infoChannel, "Received new momenttensor %s",
-			             mt->publicID().c_str());
+			LOG_WITH_SOURCE("Received new momenttensor %s", mt->publicID());
 
 			if ( _config.eventAssociation.ignoreMTDerivedOrigins ) {
 				// Blacklist the derived originID to prevent event
@@ -1034,15 +1086,15 @@ void EventTool::addObject(const string &parentID, Object* object) {
 	OriginReference *ref = OriginReference::Cast(object);
 	if ( ref && !ref->originID().empty() ) {
 		logObject(_inputOriginRef, Core::Time::UTC());
-		SEISCOMP_LOG(_infoChannel, "Received new origin reference %s for event %s",
-		             ref->originID().c_str(), parentID.c_str());
+		LOG_WITH_SOURCE("Received new origin reference %s for event %s",
+		                ref->originID(), parentID);
 
 		EventInformationPtr info = cachedEvent(parentID);
 		if ( !info ) {
 			info = new EventInformation(&_cache, &_config, query(), parentID, author());
 			if ( !info->event ) {
-				SEISCOMP_ERROR("event %s for OriginReference not found", parentID.c_str());
-				SEISCOMP_LOG(_infoChannel, " - skipped, event %s not found in database", parentID.c_str());
+				SEISCOMP_ERROR("event %s for OriginReference not found", parentID);
+				SEISCOMP_LOG(_infoChannel, " - skipped, event %s not found in database", parentID);
 				return;
 			}
 
@@ -1059,7 +1111,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 			_adds.erase(it);
 			// Add it to the origin updates (not triggered by a magnitude change)
 			_realUpdates.insert(TodoEntry(org));
-			SEISCOMP_DEBUG("* removed new origin %s from queue because of preset association", (*it)->publicID().c_str());
+			SEISCOMP_DEBUG("* removed new origin %s from queue because of preset association", (*it)->publicID());
 		}
 
 		_updates.insert(TodoEntry(org));
@@ -1070,15 +1122,15 @@ void EventTool::addObject(const string &parentID, Object* object) {
 	FocalMechanismReference *fm_ref = FocalMechanismReference::Cast(object);
 	if ( fm_ref && !fm_ref->focalMechanismID().empty() ) {
 		logObject(_inputFMRef, Core::Time::UTC());
-		SEISCOMP_LOG(_infoChannel, "Received new focal mechanism reference %s for event %s",
-		             fm_ref->focalMechanismID().c_str(), parentID.c_str());
+		LOG_WITH_SOURCE("Received new focal mechanism reference %s for event %s",
+		                fm_ref->focalMechanismID(), parentID);
 
 		EventInformationPtr info = cachedEvent(parentID);
 		if ( !info ) {
 			info = new EventInformation(&_cache, &_config, query(), parentID, author());
 			if ( !info->event ) {
-				SEISCOMP_ERROR("event %s for ForcalMechanismReference not found", parentID.c_str());
-				SEISCOMP_LOG(_infoChannel, " - skipped, event %s not found in database", parentID.c_str());
+				SEISCOMP_ERROR("event %s for ForcalMechanismReference not found", parentID);
+				SEISCOMP_LOG(_infoChannel, " - skipped, event %s not found in database", parentID);
 				return;
 			}
 
@@ -1095,7 +1147,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 			_adds.erase(it);
 			// Add it to the focal mechanism updates (not triggered by a magnitude change)
 			_realUpdates.insert(TodoEntry(fm));
-			SEISCOMP_DEBUG("* removed new focal mechanism %s from queue because of preset association", (*it)->publicID().c_str());
+			SEISCOMP_DEBUG("* removed new focal mechanism %s from queue because of preset association", (*it)->publicID());
 		}
 
 		_updates.insert(TodoEntry(fm));
@@ -1106,7 +1158,7 @@ void EventTool::addObject(const string &parentID, Object* object) {
 	EventPtr evt = Event::Cast(object);
 	if ( evt ) {
 		logObject(_inputEvent, Core::Time::UTC());
-		SEISCOMP_LOG(_infoChannel, "Received new event %s", evt->publicID().c_str());
+		LOG_WITH_SOURCE("Received new event %s", evt->publicID());
 		EventInformationPtr info = cachedEvent(evt->publicID());
 		if ( !info ) {
 			info = new EventInformation(&_cache, &_config, query(), evt, author());
@@ -1120,12 +1172,12 @@ void EventTool::addObject(const string &parentID, Object* object) {
 	JournalEntryPtr journalEntry = JournalEntry::Cast(object);
 	if ( journalEntry ) {
 		logObject(_inputJournal, Core::Time::UTC());
-		SEISCOMP_LOG(_infoChannel,
-		             "Received new journal entry from %s for object %s: %s(%s)",
-		             journalEntry->sender().c_str(), journalEntry->objectID().c_str(),
-		             journalEntry->action().c_str(), journalEntry->parameters().c_str());
-		if ( handleJournalEntry(journalEntry.get()) )
+		LOG_WITH_SOURCE("Received new journal entry from %s for object %s: %s(%s)",
+		                journalEntry->sender(), journalEntry->objectID(),
+		                journalEntry->action(), journalEntry->parameters());
+		if ( handleJournalEntry(journalEntry.get()) ) {
 			return;
+		}
 	}
 
 	// We are not interested in anything else than the parsed
@@ -1153,9 +1205,9 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 		_updates.insert(TodoEntry(org));
 		_realUpdates.insert(TodoEntry(org));
 		SEISCOMP_DEBUG("* queued updated origin %s (%d/%lu)",
-		               org->publicID().c_str(),
+		               org->publicID(),
 		               definingPhaseCount(org.get()), (unsigned long)org->arrivalCount());
-		SEISCOMP_LOG(_infoChannel, "Received updated origin %s", org->publicID().c_str());
+		LOG_WITH_SOURCE("Received updated origin %s", org->publicID());
 		return;
 	}
 
@@ -1171,9 +1223,8 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 		}
 		_updates.insert(TodoEntry(fm));
 		_realUpdates.insert(TodoEntry(fm));
-		SEISCOMP_DEBUG("* queued updated focal mechanism %s",
-		               fm->publicID().c_str());
-		SEISCOMP_LOG(_infoChannel, "Received updated focal mechanism %s", fm->publicID().c_str());
+		SEISCOMP_DEBUG("* queued updated focal mechanism %s", fm->publicID());
+		LOG_WITH_SOURCE("Received updated focal mechanism %s", fm->publicID());
 		return;
 	}
 
@@ -1189,12 +1240,12 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 		}
 
 		try {
-			SEISCOMP_LOG(_infoChannel, "Received updated magnitude %s (%s %.2f)",
-			             mag->publicID().c_str(), mag->type().c_str(), mag->magnitude().value());
+			LOG_WITH_SOURCE("Received updated magnitude %s (%s %.2f)",
+			                mag->publicID(), mag->type(), mag->magnitude().value());
 		}
 		catch ( ... ) {
-			SEISCOMP_LOG(_infoChannel, "Received updated magnitude %s (%s -.--)",
-			             mag->publicID().c_str(), mag->type().c_str());
+			LOG_WITH_SOURCE("Received updated magnitude %s (%s -.--)",
+			                mag->publicID(), mag->type());
 		}
 
 		org = _cache.get<Origin>(parentID);
@@ -1215,7 +1266,7 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 				return;
 			}
 		}
-		SEISCOMP_LOG(_infoChannel, "Received updated event %s", evt->publicID().c_str());
+		LOG_WITH_SOURCE("Received updated event %s", evt->publicID());
 		EventInformationPtr info = cachedEvent(evt->publicID());
 		if ( !info ) {
 			info = new EventInformation(&_cache, &_config, query(), evt, author());
@@ -1247,23 +1298,23 @@ void EventTool::removeObject(const string &parentID, Object* object) {
 	OriginReference *ref = OriginReference::Cast(object);
 	if ( ref ) {
 		SEISCOMP_DEBUG("%s: origin reference '%s' removed "
-		               "from outside", parentID.c_str(), ref->originID().c_str());
+		               "from outside", parentID, ref->originID());
 		SEISCOMP_LOG(_infoChannel, "%s: origin reference '%s' removed "
-		             "from outside", parentID.c_str(), ref->originID().c_str());
+		             "from outside", parentID, ref->originID());
 
 		EventInformationPtr info = cachedEvent(parentID);
 		if ( !info ) {
 			info = new EventInformation(&_cache, &_config, query(), parentID, author());
 			info->loadAssocations(query());
 			if ( !info->event ) {
-				SEISCOMP_ERROR("event %s for OriginReference not found", parentID.c_str());
+				SEISCOMP_ERROR("event %s for OriginReference not found", parentID);
 				return;
 			}
 			cacheEvent(info);
 		}
 		else if ( !info->event ) {
 			info->dirtyPickSet = true;
-			SEISCOMP_ERROR("event %s for OriginReference not found", parentID.c_str());
+			SEISCOMP_ERROR("event %s for OriginReference not found", parentID);
 			return;
 		}
 
@@ -1271,9 +1322,9 @@ void EventTool::removeObject(const string &parentID, Object* object) {
 
 		if ( info->event->originReferenceCount() == 0 ) {
 			SEISCOMP_DEBUG("%s: last origin reference removed, remove event",
-			               parentID.c_str());
+			               parentID);
 			SEISCOMP_LOG(_infoChannel, "%s: last origin reference removed, removing event",
-			             parentID.c_str());
+			             parentID);
 
 			Notifier::SetEnabled(true);
 			info->event->detach();
@@ -1286,7 +1337,7 @@ void EventTool::removeObject(const string &parentID, Object* object) {
 
 		if ( info->event->preferredOriginID() == ref->originID() ) {
 			SEISCOMP_DEBUG("%s: removed origin reference was the preferred origin, set to NULL",
-			               parentID.c_str());
+			               parentID);
 			// Reset preferred information
 			info->event->setPreferredOriginID("");
 			info->event->setPreferredMagnitudeID("");
@@ -1337,8 +1388,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 	// Not event specific journals
 	if ( entry->action() == "EvNewEvent" ) {
 		SEISCOMP_INFO("Handling journal entry for origin %s: %s(%s)",
-		              entry->objectID().c_str(), entry->action().c_str(),
-		              entry->parameters().c_str());
+		              entry->objectID(), entry->action(), entry->parameters());
 
 		EventPtr e = getEventForOrigin(entry->objectID());
 		if ( e )
@@ -1346,34 +1396,34 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 		else {
 			OriginPtr origin = _cache.get<Origin>(entry->objectID());
 			if ( !origin ) {
-				SEISCOMP_INFO("origin %s for JournalEntry not found", entry->objectID().c_str());
+				SEISCOMP_INFO("origin %s for JournalEntry not found", entry->objectID());
 				return false;
 			}
 
 			if ( !origin->magnitudeCount() && query() ) {
-				SEISCOMP_DEBUG("... loading magnitudes for origin %s", origin->publicID().c_str());
+				SEISCOMP_DEBUG("... loading magnitudes for origin %s", origin->publicID());
 				query()->loadMagnitudes(origin.get());
 			}
 
 			EventInformationPtr info = createEvent(origin.get());
 			if ( info ) {
-				SEISCOMP_INFO("%s: created", info->event->publicID().c_str());
+				SEISCOMP_INFO("%s: created", info->event->publicID());
 				SEISCOMP_LOG(_infoChannel, "Origin %s created a new event %s",
-				             origin->publicID().c_str(), info->event->publicID().c_str());
+				             origin->publicID(), info->event->publicID());
 
 				Notifier::Enable();
 				if ( !info->associate(origin.get()) ) {
 					SEISCOMP_ERROR("Association of origin %s to event %s failed",
-					               origin->publicID().c_str(), info->event->publicID().c_str());
+					               origin->publicID(), info->event->publicID());
 					SEISCOMP_LOG(_infoChannel, "Failed to associate origin %s to event %s",
-					             origin->publicID().c_str(), info->event->publicID().c_str());
+					             origin->publicID(), info->event->publicID());
 				}
 				else {
 					logObject(_outputOriginRef, Time::UTC());
-					SEISCOMP_INFO("%s: associated origin %s", info->event->publicID().c_str(),
-					              origin->publicID().c_str());
+					SEISCOMP_INFO("%s: associated origin %s", info->event->publicID(),
+					              origin->publicID());
 					SEISCOMP_LOG(_infoChannel, "Origin %s associated to event %s",
-					             origin->publicID().c_str(), info->event->publicID().c_str());
+					             origin->publicID(), info->event->publicID());
 					choosePreferred(info.get(), origin.get(), nullptr, true);
 				}
 
@@ -1404,8 +1454,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 
 
 	SEISCOMP_INFO("Handling journal entry for event %s: %s(%s)",
-	              entry->objectID().c_str(), entry->action().c_str(),
-	              entry->parameters().c_str());
+	              entry->objectID(), entry->action(), entry->parameters());
 
 	EventInformationPtr info = cachedEvent(entry->objectID());
 
@@ -1413,7 +1462,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 		// No chached information yet -> load it and cache it
 		info = new EventInformation(&_cache, &_config, query(), entry->objectID(), author());
 		if ( !info->event ) {
-			SEISCOMP_INFO("event %s for JournalEntry not found", entry->objectID().c_str());
+			SEISCOMP_INFO("event %s for JournalEntry not found", entry->objectID());
 			return false;
 		}
 
@@ -1424,7 +1473,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 		info->addJournalEntry(entry, author());
 
 	if ( !info->event->parent() ) {
-		SEISCOMP_ERROR("%s: internal error: no parent", info->event->publicID().c_str());
+		SEISCOMP_ERROR("%s: internal error: no parent", info->event->publicID());
 	}
 
 	if ( entry->action() == "EvPrefMagType" ) {
@@ -1432,7 +1481,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 		response = createEntry(entry->objectID(), entry->action() + OK, !info->constraints.preferredMagnitudeType.empty()?info->constraints.preferredMagnitudeType:":automatic:");
 
 		if ( info->preferredOrigin && !info->preferredOrigin->magnitudeCount() && query() ) {
-			SEISCOMP_DEBUG("... loading magnitudes for origin %s", info->preferredOrigin->publicID().c_str());
+			SEISCOMP_DEBUG("... loading magnitudes for origin %s", info->preferredOrigin->publicID());
 			query()->loadMagnitudes(info->preferredOrigin.get());
 		}
 
@@ -1460,7 +1509,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 				OriginPtr org = _cache.get<Origin>(info->constraints.preferredOriginID);
 				if ( org ) {
 					if ( !org->magnitudeCount() && query() ) {
-						SEISCOMP_DEBUG("... loading magnitudes for origin %s", org->publicID().c_str());
+						SEISCOMP_DEBUG("... loading magnitudes for origin %s", org->publicID());
 						query()->loadMagnitudes(org.get());
 					}
 
@@ -1596,34 +1645,80 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 	else if ( entry->action() == "EvPrefFocMecID" ) {
 		SEISCOMP_DEBUG("...set event preferred focal mechanism");
 
-		if ( entry->parameters().empty() ) {
-			info->event->setPreferredFocalMechanismID(string());
-			response = createEntry(entry->objectID(), entry->action() + OK, ":unset:");
-		}
-		else {
-			if ( !info->event->focalMechanismReference(info->constraints.preferredFocalMechanismID) ) {
-				response = createEntry(entry->objectID(), entry->action() + Failed, ":unreferenced:");
+		if ( info->constraints.preferredOptFocalMechanismID ) {
+			if ( info->constraints.preferredOptFocalMechanismID->empty() ) {
+				Notifier::Enable();
+				if ( !info->event->preferredFocalMechanismID().empty() ) {
+					info->event->setPreferredFocalMechanismID(string());
+					info->event->update();
+					info->preferredFocalMechanism = nullptr;
+				}
+				Notifier::Disable();
+				response = createEntry(entry->objectID(), entry->action() + OK, ":unset:");
 			}
 			else {
-				FocalMechanismPtr fm = _cache.get<FocalMechanism>(info->constraints.preferredFocalMechanismID);
-				if ( fm ) {
-					if ( !fm->momentTensorCount() && query() ) {
-						SEISCOMP_DEBUG("... loading moment tensors for focal mechanism %s", fm->publicID().c_str());
-						query()->loadMomentTensors(fm.get());
-					}
-
-					response = createEntry(entry->objectID(), entry->action() + OK, info->constraints.preferredFocalMechanismID);
-					Notifier::Enable();
-					choosePreferred(info.get(), fm.get());
-					Notifier::Disable();
+				if ( !info->event->focalMechanismReference(*info->constraints.preferredOptFocalMechanismID) ) {
+					response = createEntry(entry->objectID(), entry->action() + Failed, ":unreferenced:");
 				}
 				else {
-					response = createEntry(entry->objectID(), entry->action() + Failed, ":not available:");
+					FocalMechanismPtr fm = _cache.get<FocalMechanism>(*info->constraints.preferredOptFocalMechanismID);
+					if ( fm ) {
+						if ( !fm->momentTensorCount() && query() ) {
+							SEISCOMP_DEBUG("... loading moment tensors for focal mechanism %s", fm->publicID());
+							query()->loadMomentTensors(fm.get());
+						}
+
+						response = createEntry(entry->objectID(), entry->action() + OK, *info->constraints.preferredOptFocalMechanismID);
+						Notifier::Enable();
+						choosePreferred(info.get(), fm.get());
+						Notifier::Disable();
+					}
+					else {
+						response = createEntry(entry->objectID(), entry->action() + Failed, ":not available:");
+					}
 				}
 			}
+
+			Notifier::Enable();
+			updateEvent(info.get());
+			Notifier::Disable();
 		}
+		else {
+			response = createEntry(entry->objectID(), entry->action() + OK, ":disabled:");
+		}
+	}
+	else if ( entry->action() == "EvPrefFocEvalMode" ) {
+		SEISCOMP_DEBUG("...set preferred focal mechanism by evaluation mode");
+
+		DataModel::EvaluationMode em;
+		if ( !em.fromString(entry->parameters().c_str()) && !entry->parameters().empty() ) {
+			// If a mode is requested but an invalid mode identifier has been submitted
+			response = createEntry(entry->objectID(), entry->action() + Failed, string(":mode '") + entry->parameters() + "' unknown:");
+		}
+		else {
+			// Release fixed focal mechanism mode and choose the best one automatically
+			if ( !info->constraints.preferredFocalMechanismEvaluationMode ) {
+				response = createEntry(entry->objectID(), entry->action() + OK, ":automatic:");
+			}
+			else {
+				response = createEntry(entry->objectID(), entry->action() + OK, entry->parameters());
+			}
+
+			Notifier::Enable();
+			if ( !info->event->preferredFocalMechanismID().empty() ) {
+				info->event->setPreferredFocalMechanismID({});
+				info->event->update();
+				info->preferredFocalMechanism = nullptr;
+			}
+			updatePreferredFocalMechanism(info.get());
+			Notifier::Disable();
+		}
+	}
+	else if ( entry->action() == "EvPrefFocAutomatic" ) {
+		response = createEntry(entry->objectID(), entry->action() + OK, ":automatic mode:");
+
 		Notifier::Enable();
-		updateEvent(info.get());
+		updatePreferredFocalMechanism(info.get());
 		Notifier::Disable();
 	}
 	else if ( entry->action() == "EvPrefMw" ) {
@@ -1646,7 +1741,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 	// Merge event in  parameters into event in objectID. The source
 	// event is deleted afterwards.
 	else if ( entry->action() == "EvMerge" ) {
-		SEISCOMP_DEBUG("...merge event '%s'", entry->parameters().c_str());
+		SEISCOMP_DEBUG("...merge event '%s'", entry->parameters());
 
 		if ( entry->parameters().empty() )
 			response = createEntry(entry->objectID(), entry->action() + Failed, ":empty source event id:");
@@ -1658,8 +1753,8 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 			if ( !sourceInfo ) {
 				sourceInfo = new EventInformation(&_cache, &_config, query(), entry->parameters(), author());
 				if ( !sourceInfo->event ) {
-					SEISCOMP_ERROR("source event %s for merge not found", entry->parameters().c_str());
-					SEISCOMP_LOG(_infoChannel, " - skipped, source event %s for merge not found in database", entry->parameters().c_str());
+					SEISCOMP_ERROR("source event %s for merge not found", entry->parameters());
+					SEISCOMP_LOG(_infoChannel, " - skipped, source event %s for merge not found in database", entry->parameters());
 					sourceInfo = nullptr;
 				}
 				else {
@@ -1695,7 +1790,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 	// Move an origin to this event. If it is already associated to another
 	// event, remove this reference
 	else if ( entry->action() == "EvGrabOrg") {
-		SEISCOMP_DEBUG("...grab origin '%s'", entry->parameters().c_str());
+		SEISCOMP_DEBUG("...grab origin '%s'", entry->parameters());
 		OriginPtr org = _cache.get<Origin>(entry->parameters());
 		list<string> fmIDsToMove;
 
@@ -1736,7 +1831,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 
 					if ( sourceInfo->event->preferredOriginID() == org->publicID() ) {
 						SEISCOMP_DEBUG("%s: removed origin reference was the preferred origin, set to NULL",
-						               sourceInfo->event->publicID().c_str());
+						               sourceInfo->event->publicID());
 						// Reset preferred information
 						sourceInfo->event->setPreferredOriginID("");
 						sourceInfo->event->setPreferredMagnitudeID("");
@@ -1748,7 +1843,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 
 					if ( updatedPrefFM ) {
 						SEISCOMP_DEBUG("%s: removed focal mechanism reference was the preferred focal mechanism, set to NULL",
-						               sourceInfo->event->publicID().c_str());
+						               sourceInfo->event->publicID());
 						sourceInfo->event->setPreferredFocalMechanismID(string());
 						sourceInfo->preferredFocalMechanism = nullptr;
 						updatePreferredFocalMechanism(sourceInfo.get());
@@ -1784,7 +1879,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 	// Remove an origin reference from an event and create a new event for
 	// this origin
 	else if ( entry->action() == "EvSplitOrg" ) {
-		SEISCOMP_DEBUG("...split origin '%s' and create a new event", entry->parameters().c_str());
+		SEISCOMP_DEBUG("...split origin '%s' and create a new event", entry->parameters());
 		OriginPtr org = _cache.get<Origin>(entry->parameters());
 		list<string> fmIDsToMove;
 
@@ -1814,7 +1909,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 							if ( !fm ) { ++i; continue; }
 							if ( fm->triggeringOriginID() == org->publicID() ) {
 								SEISCOMP_DEBUG("...scheduled focal mechanism %s for split",
-								               fm->publicID().c_str());
+								               fm->publicID());
 								fmIDsToMove.push_back(fm->publicID());
 								info->event->removeFocalMechanismReference(i);
 								if ( fm->publicID() == info->event->preferredFocalMechanismID() )
@@ -1827,7 +1922,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 
 						if ( info->event->preferredOriginID() == org->publicID() ) {
 							SEISCOMP_DEBUG("%s: removed origin reference was the preferred origin, set to NULL",
-							               info->event->publicID().c_str());
+							               info->event->publicID());
 							// Reset preferred information
 							info->event->setPreferredOriginID("");
 							info->event->setPreferredMagnitudeID("");
@@ -1840,7 +1935,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 
 						if ( updatedPrefFM ) {
 							SEISCOMP_DEBUG("%s: removed focal mechanism reference was the preferred focal mechanism, set to NULL",
-							               info->event->publicID().c_str());
+							               info->event->publicID());
 							info->event->setPreferredFocalMechanismID(string());
 							info->preferredFocalMechanism = nullptr;
 							updatePreferredFocalMechanism(info.get());
@@ -1850,27 +1945,27 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 
 						response = createEntry(entry->objectID(), entry->action() + OK, org->publicID() + " removed by command");
 
-						SEISCOMP_INFO("%s: created", newInfo->event->publicID().c_str());
+						SEISCOMP_INFO("%s: created", newInfo->event->publicID());
 						SEISCOMP_LOG(_infoChannel, "Origin %s created a new event %s",
-						             org->publicID().c_str(), newInfo->event->publicID().c_str());
+						             org->publicID(), newInfo->event->publicID());
 
 						Notifier::Enable();
 						newInfo->associate(org.get());
 						logObject(_outputOriginRef, Time::UTC());
 						// Associate focal mechanism references
 						for ( auto it = fmIDsToMove.begin(); it != fmIDsToMove.end(); ++it ) {
-							SEISCOMP_INFO("%s: associated focal mechanism %s", newInfo->event->publicID().c_str(),
+							SEISCOMP_INFO("%s: associated focal mechanism %s", newInfo->event->publicID(),
 							              it->c_str());
 							newInfo->event->add(new FocalMechanismReference(*it));
 							logObject(_outputFMRef, Time::UTC());
 						}
-						SEISCOMP_INFO("%s: associated origin %s", newInfo->event->publicID().c_str(),
-						              org->publicID().c_str());
+						SEISCOMP_INFO("%s: associated origin %s", newInfo->event->publicID(),
+						              org->publicID());
 						SEISCOMP_LOG(_infoChannel, "Origin %s associated to event %s",
-						             org->publicID().c_str(), newInfo->event->publicID().c_str());
+						             org->publicID(), newInfo->event->publicID());
 
 						if ( !org->magnitudeCount() && query() ) {
-							SEISCOMP_DEBUG("... loading magnitudes for origin %s", org->publicID().c_str());
+							SEISCOMP_DEBUG("... loading magnitudes for origin %s", org->publicID());
 							query()->loadMagnitudes(org.get());
 						}
 
@@ -1909,8 +2004,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 		     ( entry->action().size() >= OK.size() + 2 &&
 		       std::equal(OK.rbegin(), OK.rend(), entry->action().rbegin() ) ) )
 			SEISCOMP_ERROR("Ignoring already processed journal entry from %s: %s(%s)",
-			               entry->sender().c_str(), entry->action().c_str(),
-			               entry->parameters().c_str());
+			               entry->sender(), entry->action(), entry->parameters());
 		else
 			response = createEntry(entry->objectID(), entry->action() + Failed, ":unknown command:");
 	}
@@ -1934,7 +2028,7 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 EventInformationPtr EventTool::associateOriginCheckDelay(DataModel::Origin *origin) {
 	if ( _config.eventAssociation.delayTimeSpan > 0 ) {
 		SEISCOMP_LOG(_infoChannel, "Checking delay filter for origin %s",
-		             origin->publicID().c_str());
+		             origin->publicID());
 
 		EvaluationMode mode = AUTOMATIC;
 		try {
@@ -1965,7 +2059,7 @@ EventInformationPtr EventTool::associateOriginCheckDelay(DataModel::Origin *orig
 
 		// Filter to delay the origin passes
 		SEISCOMP_LOG(_infoChannel, "Origin %s delayed for %i s",
-		             origin->publicID().c_str(), _config.eventAssociation.delayTimeSpan);
+		             origin->publicID(), _config.eventAssociation.delayTimeSpan);
 		_delayBuffer.push_back(DelayedObject(origin, _config.eventAssociation.delayTimeSpan));
 
 		return nullptr;
@@ -2003,7 +2097,7 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 		Core::Time endTime = origin->time().value() + _config.eventAssociation.eventTimeAfter;
 		MatchResult bestResult = Nothing;
 
-		SEISCOMP_DEBUG("... search for origin's %s event in database", origin->publicID().c_str());
+		SEISCOMP_DEBUG("... search for origin's %s event in database", origin->publicID());
 
 		if ( query() ) {
 			// Look for events in a certain timewindow around the origintime
@@ -2045,9 +2139,9 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 
 		if ( info ) {
 			SEISCOMP_LOG(_infoChannel, "Found matching event %s for origin %s (code: %d)",
-			             info->event->publicID().c_str(), origin->publicID().c_str(),
+			             info->event->publicID(), origin->publicID(),
 			             static_cast<int>(bestResult));
-			SEISCOMP_DEBUG("... found best matching event %s (code: %d)", info->event->publicID().c_str(),
+			SEISCOMP_DEBUG("... found best matching event %s (code: %d)", info->event->publicID(),
 			               static_cast<int>(bestResult));
 			cacheEvent(info);
 
@@ -2056,9 +2150,9 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 			}
 
 			if ( info->event->originReference(origin->publicID()) ) {
-				SEISCOMP_DEBUG("... origin already associated to event %s", info->event->publicID().c_str());
+				SEISCOMP_DEBUG("... origin already associated to event %s", info->event->publicID());
 				SEISCOMP_LOG(_infoChannel, "Origin %s skipped: already associated to event %s",
-				             origin->publicID().c_str(), info->event->publicID().c_str());
+				             origin->publicID(), info->event->publicID());
 				info = nullptr;
 			}
 		}
@@ -2070,7 +2164,7 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 
 			if ( isAgencyIDBlocked(objectAgencyID(origin)) ) {
 				SEISCOMP_LOG(_infoChannel, "Origin %s skipped: agencyID blocked and is not allowed to create a new event",
-				             origin->publicID().c_str());
+				             origin->publicID());
 				return nullptr;
 			}
 
@@ -2079,23 +2173,23 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 					double score = _score->evaluate(origin);
 					if ( score < *_config.eventAssociation.minAutomaticScore ) {
 						SEISCOMP_DEBUG("... rejecting automatic origin %s (score: %f < %f)",
-						               origin->publicID().c_str(),
+						               origin->publicID(),
 						               score, *_config.eventAssociation.minAutomaticScore);
 						SEISCOMP_LOG(_infoChannel,
 						             "Origin %s skipped: score too low (%f < %f) to create a new event",
-						             origin->publicID().c_str(),
+						             origin->publicID(),
 						             score, *_config.eventAssociation.minAutomaticScore);
 						return nullptr;
 					}
 				}
 				else if ( definingPhaseCount(origin) < int(_config.eventAssociation.minAutomaticArrivals) ) {
 					SEISCOMP_DEBUG("... rejecting automatic origin %s (phaseCount: %d < %zu)",
-					               origin->publicID().c_str(),
+					               origin->publicID(),
 					               definingPhaseCount(origin),
 					               _config.eventAssociation.minAutomaticArrivals);
 					SEISCOMP_LOG(_infoChannel,
 					             "Origin %s skipped: phaseCount too low (%d < %zu) to create a new event",
-					             origin->publicID().c_str(),
+					             origin->publicID(),
 					             definingPhaseCount(origin),
 					             _config.eventAssociation.minAutomaticArrivals);
 					return nullptr;
@@ -2111,16 +2205,16 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 				if ( createdEvent ) {
 					*createdEvent = true;
 				}
-				SEISCOMP_INFO("%s: created", info->event->publicID().c_str());
+				SEISCOMP_INFO("%s: created", info->event->publicID());
 				SEISCOMP_LOG(_infoChannel, "Origin %s created a new event %s",
-				             origin->publicID().c_str(), info->event->publicID().c_str());
+				             origin->publicID(), info->event->publicID());
 			}
 		}
 	}
 	else {
-		SEISCOMP_DEBUG("... found cached event information %s for origin", info->event->publicID().c_str());
+		SEISCOMP_DEBUG("... found cached event information %s for origin", info->event->publicID());
 		SEISCOMP_LOG(_infoChannel, "Found matching event %s for origin %s",
-			         info->event->publicID().c_str(), origin->publicID().c_str());
+			         info->event->publicID(), origin->publicID());
 
 		if ( pickCache ) {
 			return info;
@@ -2135,16 +2229,16 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 
 		if ( !info->associate(origin) ) {
 			SEISCOMP_ERROR("Association of origin %s to event %s failed",
-			               origin->publicID().c_str(), info->event->publicID().c_str());
+			               origin->publicID(), info->event->publicID());
 			SEISCOMP_LOG(_infoChannel, "Failed to associate origin %s to event %s",
-			             origin->publicID().c_str(), info->event->publicID().c_str());
+			             origin->publicID(), info->event->publicID());
 		}
 		else {
 			logObject(_outputOriginRef, Time::UTC());
-			SEISCOMP_INFO("%s: associated origin %s", info->event->publicID().c_str(),
-			              origin->publicID().c_str());
+			SEISCOMP_INFO("%s: associated origin %s", info->event->publicID(),
+			              origin->publicID());
 			SEISCOMP_LOG(_infoChannel, "Origin %s associated to event %s",
-			             origin->publicID().c_str(), info->event->publicID().c_str());
+			             origin->publicID(), info->event->publicID());
 			choosePreferred(info.get(), origin, nullptr, true);
 		}
 
@@ -2171,16 +2265,16 @@ bool EventTool::checkRegionFilter(const Config::RegionFilters &fs, const Origin 
 				                         origin->longitude()) ) {
 					SEISCOMP_DEBUG("... rejecting automatic origin %s: region "
 					               "criterion not met",
-					               origin->publicID().c_str());
+					               origin->publicID());
 					SEISCOMP_LOG(_infoChannel, "Origin %s skipped: region criteria not met",
-					             origin->publicID().c_str());
+					             origin->publicID());
 					return false;
 				}
 			}
 			catch ( ValueException &exc ) {
 				SEISCOMP_DEBUG("...region check exception: %s", exc.what());
 				SEISCOMP_LOG(_infoChannel, "Origin %s skipped: region check exception: %s",
-					         origin->publicID().c_str(), exc.what());
+					         origin->publicID(), exc.what());
 				return false;
 			}
 		}
@@ -2190,9 +2284,9 @@ bool EventTool::checkRegionFilter(const Config::RegionFilters &fs, const Origin 
 				if ( origin->depth().value() < *f.minDepth ) {
 					SEISCOMP_DEBUG("... rejecting automatic origin %s: min depth "
 					               "criterion not met",
-					               origin->publicID().c_str());
+					               origin->publicID());
 					SEISCOMP_LOG(_infoChannel, "Origin %s skipped: min depth criteria not met",
-					             origin->publicID().c_str());
+					             origin->publicID());
 					return false;
 				}
 			}
@@ -2204,9 +2298,9 @@ bool EventTool::checkRegionFilter(const Config::RegionFilters &fs, const Origin 
 				if ( origin->depth().value() > *f.maxDepth ) {
 					SEISCOMP_DEBUG("... rejecting automatic origin %s: max depth "
 					               "criterion not met",
-					               origin->publicID().c_str());
+					               origin->publicID());
 					SEISCOMP_LOG(_infoChannel, "Origin %s skipped: max depth criteria not met",
-					             origin->publicID().c_str());
+					             origin->publicID());
 					return false;
 				}
 			}
@@ -2240,13 +2334,13 @@ void EventTool::updatedOrigin(DataModel::Origin *org,
 	if ( !info ) {
 		EventPtr e;
 		if ( query() ) {
-			SEISCOMP_DEBUG("... search for origin's %s event in database", origin->publicID().c_str());
+			SEISCOMP_DEBUG("... search for origin's %s event in database", origin->publicID());
 			e = getEventForOrigin(origin->publicID());
 		}
 
 		if ( !e ) {
 			SEISCOMP_DEBUG("... updated origin %s has not been associated yet, doing this",
-			               origin->publicID().c_str());
+			               origin->publicID());
 			associateOrigin(origin, true);
 			return;
 		}
@@ -2256,16 +2350,16 @@ void EventTool::updatedOrigin(DataModel::Origin *org,
 		cacheEvent(info);
 	}
 	else {
-		SEISCOMP_DEBUG("... found cached event information %s for origin", info->event->publicID().c_str());
+		SEISCOMP_DEBUG("... found cached event information %s for origin", info->event->publicID());
 	}
 
 	if ( !origin->arrivalCount() && query() ) {
-		SEISCOMP_DEBUG("... loading arrivals for origin %s", origin->publicID().c_str());
+		SEISCOMP_DEBUG("... loading arrivals for origin %s", origin->publicID());
 		query()->loadArrivals(origin);
 	}
 
 	if ( !origin->magnitudeCount() && query() ) {
-		SEISCOMP_DEBUG("... loading magnitudes for origin %s", origin->publicID().c_str());
+		SEISCOMP_DEBUG("... loading magnitudes for origin %s", origin->publicID());
 		query()->loadMagnitudes(origin);
 	}
 
@@ -2308,7 +2402,7 @@ EventInformationPtr EventTool::associateFocalMechanismCheckDelay(DataModel::Foca
 			return associateFocalMechanism(fm);
 
 		// Filter to delay the origin passes
-		SEISCOMP_LOG(_infoChannel, "FocalMechanism %s delayed", fm->publicID().c_str());
+		SEISCOMP_LOG(_infoChannel, "FocalMechanism %s delayed", fm->publicID());
 		_delayBuffer.push_back(DelayedObject(fm, _config.eventAssociation.delayTimeSpan));
 
 		return nullptr;
@@ -2328,7 +2422,7 @@ EventInformationPtr EventTool::associateFocalMechanism(FocalMechanism *fm) {
 	OriginPtr triggeringOrigin = _cache.get<Origin>(fm->triggeringOriginID());
 	if ( !triggeringOrigin ) {
 		SEISCOMP_DEBUG("... triggering origin %s not found, skipping event association",
-		               fm->triggeringOriginID().c_str());
+		               fm->triggeringOriginID());
 		return info;
 	}
 
@@ -2336,13 +2430,13 @@ EventInformationPtr EventTool::associateFocalMechanism(FocalMechanism *fm) {
 	if ( !info ) {
 		EventPtr e;
 		if ( query() ) {
-			SEISCOMP_DEBUG("... search for triggering origin's %s event in database", triggeringOrigin->publicID().c_str());
+			SEISCOMP_DEBUG("... search for triggering origin's %s event in database", triggeringOrigin->publicID());
 			e = getEventForOrigin(triggeringOrigin->publicID());
 		}
 
 		if ( !e ) {
 			SEISCOMP_DEBUG("... triggering origin %s has not been associated yet, skipping focal mechanism",
-			               triggeringOrigin->publicID().c_str());
+			               triggeringOrigin->publicID());
 			return nullptr;
 		}
 
@@ -2351,11 +2445,11 @@ EventInformationPtr EventTool::associateFocalMechanism(FocalMechanism *fm) {
 		cacheEvent(info);
 	}
 	else {
-		SEISCOMP_DEBUG("... found cached event information %s for focal mechanism", info->event->publicID().c_str());
+		SEISCOMP_DEBUG("... found cached event information %s for focal mechanism", info->event->publicID());
 	}
 
 	if ( !fm->momentTensorCount() && query() ) {
-		SEISCOMP_DEBUG("... loading moment tensor for focal mechanism %s", fm->publicID().c_str());
+		SEISCOMP_DEBUG("... loading moment tensor for focal mechanism %s", fm->publicID());
 		query()->loadMomentTensors(fm);
 	}
 
@@ -2365,16 +2459,16 @@ EventInformationPtr EventTool::associateFocalMechanism(FocalMechanism *fm) {
 	Notifier::Enable();
 	if ( !info->associate(fm) ) {
 		SEISCOMP_ERROR("Association of focal mechanism %s to event %s failed",
-		               fm->publicID().c_str(), info->event->publicID().c_str());
+		               fm->publicID(), info->event->publicID());
 		SEISCOMP_LOG(_infoChannel, "Failed to associate focal mechanism %s to event %s",
-		             fm->publicID().c_str(), info->event->publicID().c_str());
+		             fm->publicID(), info->event->publicID());
 	}
 	else {
 		logObject(_outputFMRef, Time::UTC());
-		SEISCOMP_INFO("%s: associated focal mechanism %s", info->event->publicID().c_str(),
-		              fm->publicID().c_str());
+		SEISCOMP_INFO("%s: associated focal mechanism %s", info->event->publicID(),
+		              fm->publicID());
 		SEISCOMP_LOG(_infoChannel, "FocalMechanism %s associated to event %s",
-		             fm->publicID().c_str(), info->event->publicID().c_str());
+		             fm->publicID(), info->event->publicID());
 		choosePreferred(info.get(), fm);
 	}
 	Notifier::Disable();
@@ -2402,13 +2496,13 @@ void EventTool::updatedFocalMechanism(FocalMechanism *focalMechanism, bool realF
 	if ( !info ) {
 		EventPtr e;
 		if ( query() ) {
-			SEISCOMP_DEBUG("... search for focal mechanisms's %s event in database", fm->publicID().c_str());
+			SEISCOMP_DEBUG("... search for focal mechanisms's %s event in database", fm->publicID());
 			e = getEventForFocalMechanism(fm->publicID());
 		}
 
 		if ( !e ) {
 			SEISCOMP_DEBUG("... updated focal mechanism %s has not been associated yet, doing this",
-			               fm->publicID().c_str());
+			               fm->publicID());
 			associateFocalMechanism(fm);
 			return;
 		}
@@ -2418,11 +2512,11 @@ void EventTool::updatedFocalMechanism(FocalMechanism *focalMechanism, bool realF
 		cacheEvent(info);
 	}
 	else {
-		SEISCOMP_DEBUG("... found cached event information %s for focal mechanism", info->event->publicID().c_str());
+		SEISCOMP_DEBUG("... found cached event information %s for focal mechanism", info->event->publicID());
 	}
 
 	if ( !fm->momentTensorCount() && query() ) {
-		SEISCOMP_DEBUG("... loading moment tensor for focal mechanism %s", fm->publicID().c_str());
+		SEISCOMP_DEBUG("... loading moment tensor for focal mechanism %s", fm->publicID());
 		query()->loadMomentTensors(fm);
 	}
 
@@ -2431,7 +2525,6 @@ void EventTool::updatedFocalMechanism(FocalMechanism *focalMechanism, bool realF
 
 	Notifier::Enable();
 	if ( realFMUpdate && info->event->preferredFocalMechanismID() == fm->publicID() ) {
-		info->event->setPreferredFocalMechanismID(string());
 		info->event->setPreferredFocalMechanismID(string());
 		info->preferredFocalMechanism = nullptr;
 		updatePreferredFocalMechanism(info.get());
@@ -2463,11 +2556,11 @@ EventTool::MatchResult EventTool::compare(EventInformation *info,
 		               _config.eventAssociation.maxMatchingPicksTimeDiff);
 	}
 	SEISCOMP_DEBUG("... matching picks of %s and %s = %lu/%lu, need at least %lu",
-	               origin->publicID().c_str(), info->event->publicID().c_str(),
+	               origin->publicID(), info->event->publicID(),
 	               (unsigned long)matchingPicks, (unsigned long)origin->arrivalCount(),
 	               (unsigned long)_config.eventAssociation.minMatchingPicks);
 	SEISCOMP_LOG(_infoChannel, "... matching picks of %s and %s = %lu/%lu, need at least %lu",
-	             origin->publicID().c_str(), info->event->publicID().c_str(),
+	             origin->publicID(), info->event->publicID(),
 	             (unsigned long)matchingPicks, (unsigned long)origin->arrivalCount(),
 	             (unsigned long)_config.eventAssociation.minMatchingPicks);
 
@@ -2484,19 +2577,19 @@ EventTool::MatchResult EventTool::compare(EventInformation *info,
 
 	// Dist out of range
 	SEISCOMP_DEBUG("... distance of %s to %s = %f, max = %f",
-	               origin->publicID().c_str(), info->event->publicID().c_str(),
+	               origin->publicID(), info->event->publicID(),
 	               dist, _config.eventAssociation.maxDist);
 	SEISCOMP_LOG(_infoChannel, "... distance of %s to %s = %f, max = %f",
-	             origin->publicID().c_str(), info->event->publicID().c_str(),
+	             origin->publicID(), info->event->publicID(),
 	             dist, _config.eventAssociation.maxDist);
 	if ( dist <= _config.eventAssociation.maxDist ) {
 		TimeSpan diffTime = info->preferredOrigin->time().value() - origin->time().value();
 
 		SEISCOMP_DEBUG("... time diff of %s to %s = %.2fs, max = %.2f",
-		               origin->publicID().c_str(), info->event->publicID().c_str(),
+		               origin->publicID(), info->event->publicID(),
 		               (double)diffTime, (double)_config.eventAssociation.maxTimeDiff);
 		SEISCOMP_LOG(_infoChannel, "... time diff of %s to %s = %f, max = %f",
-		             origin->publicID().c_str(), info->event->publicID().c_str(),
+		             origin->publicID(), info->event->publicID(),
 		             (double)diffTime, (double)_config.eventAssociation.maxTimeDiff);
 
 		if ( diffTime.abs() <= _config.eventAssociation.maxTimeDiff ) {
@@ -2512,27 +2605,27 @@ EventTool::MatchResult EventTool::compare(EventInformation *info,
 	switch ( result ) {
 		case Nothing:
 			SEISCOMP_DEBUG("... no match for %s and %s",
-			               origin->publicID().c_str(), info->event->publicID().c_str());
+			               origin->publicID(), info->event->publicID());
 			SEISCOMP_LOG(_infoChannel, "... no match for %s and %s",
-			             origin->publicID().c_str(), info->event->publicID().c_str());
+			             origin->publicID(), info->event->publicID());
 			break;
 		case Location:
 			SEISCOMP_DEBUG("... time/location matches for %s and %s",
-			               origin->publicID().c_str(), info->event->publicID().c_str());
+			               origin->publicID(), info->event->publicID());
 			SEISCOMP_LOG(_infoChannel, "... time/location matches for %s and %s",
-			             origin->publicID().c_str(), info->event->publicID().c_str());
+			             origin->publicID(), info->event->publicID());
 			break;
 		case Picks:
 			SEISCOMP_DEBUG("... matching picks for %s and %s",
-			               origin->publicID().c_str(), info->event->publicID().c_str());
+			               origin->publicID(), info->event->publicID());
 			SEISCOMP_LOG(_infoChannel, "... matching picks for %s and %s",
-			             origin->publicID().c_str(), info->event->publicID().c_str());
+			             origin->publicID(), info->event->publicID());
 			break;
 		case PicksAndLocation:
 			SEISCOMP_DEBUG("... matching picks and time/location for %s and %s",
-			               origin->publicID().c_str(), info->event->publicID().c_str());
+			               origin->publicID(), info->event->publicID());
 			SEISCOMP_LOG(_infoChannel, "... matching picks and time/location for %s and %s",
-			             origin->publicID().c_str(), info->event->publicID().c_str());
+			             origin->publicID(), info->event->publicID());
 			break;
 	}
 
@@ -2550,7 +2643,7 @@ EventInformationPtr EventTool::createEvent(Origin *origin) {
 	if ( eventID.empty() ) {
 		SEISCOMP_ERROR("Unable to allocate a new eventID, skipping origin %s\n"
 		               "Hint: increase event slots with eventIDPattern parameter",
-		               origin->publicID().c_str());
+		               origin->publicID());
 		SEISCOMP_LOG(_infoChannel, "Event created failed: unable to allocate a new EventID");
 		return nullptr;
 	}
@@ -2558,7 +2651,7 @@ EventInformationPtr EventTool::createEvent(Origin *origin) {
 		if ( Event::Find(eventID) ) {
 			SEISCOMP_ERROR("Unable to allocate a new eventID, skipping origin %s\n"
 			               "Hint: increase event slots with eventIDPattern parameter",
-			               origin->publicID().c_str());
+			               origin->publicID());
 			SEISCOMP_LOG(_infoChannel, "Event created failed: unable to allocate a new EventID");
 			return nullptr;
 		}
@@ -2614,10 +2707,10 @@ EventInformationPtr EventTool::findMatchingEvent(
 
 	if ( bestInfo ) {
 		SEISCOMP_DEBUG("... found best matching cached event %s (code: %d)",
-		               bestInfo->event->publicID().c_str(),
+		               bestInfo->event->publicID(),
 		               static_cast<int>(bestResult));
 		SEISCOMP_LOG(_infoChannel, "... found best matching cached event %s (code: %d)",
-		             bestInfo->event->publicID().c_str(),
+		             bestInfo->event->publicID(),
 		             static_cast<int>(bestResult));
 	}
 
@@ -2633,7 +2726,7 @@ EventInformationPtr EventTool::findAssociatedEvent(DataModel::Origin *origin) {
 	for ( auto &[id, info] : _events ) {
 		if ( info->event->originReference(origin->publicID()) ) {
 			SEISCOMP_DEBUG("... feeding cache with event %s",
-			               info->event->publicID().c_str());
+			               info->event->publicID());
 			refreshEventCache(info);
 			return info;
 		}
@@ -2651,7 +2744,7 @@ EventInformationPtr EventTool::findAssociatedEvent(DataModel::FocalMechanism *fm
 	for ( auto &[id, info] : _events ) {
 		if ( info->event->focalMechanismReference(fm->publicID()) ) {
 			SEISCOMP_DEBUG("... feeding cache with event %s",
-			               info->event->publicID().c_str());
+			               info->event->publicID());
 			refreshEventCache(info);
 			return info;
 		}
@@ -2701,14 +2794,14 @@ Magnitude *EventTool::preferredMagnitude(Origin *origin) {
 			Magnitude *mag = origin->magnitude(i);
 			if ( isAgencyIDBlocked(objectAgencyID(mag)) ) {
 				SEISCOMP_DEBUG("...... ignoring %s magnitude %s: agency '%s' is blocked",
-				               mag->type().c_str(), mag->publicID().c_str(),
-				               mag->creationInfo().agencyID().c_str());
+				               mag->type(), mag->publicID(),
+				               mag->creationInfo().agencyID());
 				continue;
 			}
 
 			if ( isRejected(mag) ) {
 				SEISCOMP_DEBUG("...... ignoring %s magnitude %s: evaluation status is 'rejected'",
-				               mag->type().c_str(), mag->publicID().c_str());
+				               mag->type(), mag->publicID());
 				continue;
 			}
 
@@ -2838,7 +2931,7 @@ Event *EventTool::getEventForFocalMechanism(const std::string &fmID) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventTool::cacheEvent(EventInformationPtr info) {
-	SEISCOMP_DEBUG("... caching event %s", info->event->publicID().c_str());
+	SEISCOMP_DEBUG("... caching event %s", info->event->publicID());
 
 	// Cache the complete event information
 	_events[info->event->publicID()] = info;
@@ -2854,7 +2947,7 @@ void EventTool::refreshEventCache(EventInformationPtr info) {
 	if ( info->aboutToBeRemoved ) {
 		// Set the clean-up flag to false
 		info->aboutToBeRemoved = false;
-		SEISCOMP_DEBUG("... clear cache removal flag for event %s", info->event->publicID().c_str());
+		SEISCOMP_DEBUG("... clear cache removal flag for event %s", info->event->publicID());
 	}
 
 	// Add the event to the EventParameters
@@ -2913,9 +3006,9 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
                                 bool realOriginUpdate, bool refresh) {
 	if ( isAgencyIDBlocked(objectAgencyID(info->event.get())) ) {
 		SEISCOMP_DEBUG("No preferred origin selection, event %s agencyID is blocked",
-		               info->event->publicID().c_str());
+		               info->event->publicID());
 		SEISCOMP_LOG(_infoChannel, "No preferred origin selection, event %s agencyID is blocked",
-		             info->event->publicID().c_str());
+		             info->event->publicID());
 		return;
 	}
 
@@ -2923,15 +3016,14 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 	MagnitudePtr momentMag;
 
 	SEISCOMP_DEBUG("%s: testing origin/magnitude(%s)",
-	               info->event->publicID().c_str(),
-	               origin->publicID().c_str());
+	               info->event->publicID(), origin->publicID());
 
 	// Is originID blacklisted, e.g. a derived origin of a moment tensor
 	if ( _originBlackList.find(origin->publicID()) != _originBlackList.end() ) {
 		SEISCOMP_DEBUG("%s: skip setting preferredOriginID, origin %s is blacklisted",
-		               info->event->publicID().c_str(), origin->publicID().c_str());
+		               info->event->publicID(), origin->publicID());
 		SEISCOMP_LOG(_infoChannel, "Origin %s cannot be set preferred: blacklisted",
-		             origin->publicID().c_str());
+		             origin->publicID());
 		return;
 	}
 
@@ -2941,19 +3033,19 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			momentMag = _cache.get<Magnitude>(mt->momentMagnitudeID());
 			if ( momentMag == nullptr ) {
 				SEISCOMP_WARNING("Moment magnitude with id '%s' not found",
-				                 mt->momentMagnitudeID().c_str());
+				                 mt->momentMagnitudeID());
 				continue;
 			}
 
 			if ( isRejected(momentMag.get()) ) {
 				SEISCOMP_LOG(_infoChannel,
 				             "Moment magnitude with id '%s' of status REJECTED",
-				             mt->momentMagnitudeID().c_str());
+				             mt->momentMagnitudeID());
 				continue;
 			}
 
 			mag = momentMag.get();
-			SEISCOMP_DEBUG("... found preferred Mw %s", mag->publicID().c_str());
+			SEISCOMP_DEBUG("... found preferred Mw %s", mag->publicID());
 
 			// Just take the first moment tensor object
 			break;
@@ -2963,7 +3055,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 	// Special magnitude type requested?
 	if ( !mag && !info->constraints.preferredMagnitudeType.empty() ) {
 		SEISCOMP_DEBUG("... requested preferred magnitude type is %s",
-		               info->constraints.preferredMagnitudeType.c_str());
+		               info->constraints.preferredMagnitudeType);
 		for ( size_t i = 0; i < origin->magnitudeCount(); ++i ) {
 			Magnitude *nm = origin->magnitude(i);
 			if ( nm->type() == info->constraints.preferredMagnitudeType ) {
@@ -2971,11 +3063,11 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 					SEISCOMP_LOG(_infoChannel,
 					             "Found magnitude '%s' with requested type but "
 					             "of status REJECTED",
-					             nm->publicID().c_str());
+					             nm->publicID());
 					continue;
 				}
 				SEISCOMP_DEBUG("... found magnitude %s with requested type",
-				               nm->publicID().c_str());
+				               nm->publicID());
 				mag = nm;
 				break;
 			}
@@ -2985,14 +3077,14 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 	// No magnitude found -> go on using the normal procedure
 	if ( !mag ) {
 		SEISCOMP_DEBUG("... looking for preferred magnitude in origin %s",
-		               origin->publicID().c_str());
+		               origin->publicID());
 		mag = preferredMagnitude(origin);
 		if ( !mag ) {
 			SEISCOMP_DEBUG("...... found none");
 		}
 		else {
 			SEISCOMP_DEBUG("...... preferring %s with public ID %s",
-			               mag->type().c_str(), mag->publicID().c_str());
+			               mag->type(), mag->publicID());
 		}
 	}
 
@@ -3004,9 +3096,9 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			info->event->setPreferredOriginID(origin->publicID());
 
 			SEISCOMP_INFO("%s: set first preferredOriginID to %s",
-			              info->event->publicID().c_str(), origin->publicID().c_str());
+			              info->event->publicID(), origin->publicID());
 			SEISCOMP_LOG(_infoChannel, "Origin %s has been set preferred in event %s",
-			             origin->publicID().c_str(), info->event->publicID().c_str());
+			             origin->publicID(), info->event->publicID());
 
 			needRegionNameUpdate = true;
 
@@ -3016,15 +3108,15 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		else {
 			if ( !isAgencyIDAllowed(objectAgencyID(origin)) ) {
 				SEISCOMP_DEBUG("%s: skip setting first preferredOriginID, agencyID '%s' is blocked",
-				               info->event->publicID().c_str(), objectAgencyID(origin).c_str());
+				               info->event->publicID(), objectAgencyID(origin));
 				SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred: agencyID %s is blocked",
-				             origin->publicID().c_str(), objectAgencyID(origin).c_str());
+				             origin->publicID(), objectAgencyID(origin));
 			}
 			else {
 				SEISCOMP_DEBUG("%s: skip setting first preferredOriginID, preferredOriginID is fixed to '%s'",
-				               info->event->publicID().c_str(), info->constraints.preferredOriginID.c_str());
+				               info->event->publicID(), info->constraints.preferredOriginID);
 				SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred: preferredOriginID is fixed to %s",
-				             origin->publicID().c_str(), info->constraints.preferredOriginID.c_str());
+				             origin->publicID(), info->constraints.preferredOriginID);
 			}
 			return;
 		}
@@ -3033,15 +3125,15 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			info->event->setPreferredMagnitudeID(mag->publicID());
 			info->preferredMagnitude = mag;
 			SEISCOMP_INFO("%s: set first preferredMagnitudeID to %s",
-			              info->event->publicID().c_str(), mag->publicID().c_str());
+			              info->event->publicID(), mag->publicID());
 			SEISCOMP_LOG(_infoChannel, "Magnitude %s has been set preferred in event %s",
-			             mag->publicID().c_str(), info->event->publicID().c_str());
+			             mag->publicID(), info->event->publicID());
 			update = true;
 		}
 	}
 	else if ( info->preferredOrigin->publicID() != origin->publicID() ) {
 		SEISCOMP_DEBUG("... checking whether origin %s can become preferred",
-		               origin->publicID().c_str());
+		               origin->publicID());
 
 		update = true;
 
@@ -3049,15 +3141,15 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		if ( info->constraints.fixedOrigin() ) {
 			if ( !info->constraints.fixOrigin(origin) ) {
 				SEISCOMP_DEBUG("... skipping potential preferred origin, origin '%s' is fixed",
-				               info->constraints.preferredOriginID.c_str());
+				               info->constraints.preferredOriginID);
 				SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: origin %s is fixed",
-				             origin->publicID().c_str(), info->event->publicID().c_str(),
-				             info->constraints.preferredOriginID.c_str());
+				             origin->publicID(), info->event->publicID(),
+				             info->constraints.preferredOriginID);
 				return;
 			}
 			else {
 				SEISCOMP_LOG(_infoChannel, "Origin %s is fixed as preferred origin",
-				             origin->publicID().c_str());
+				             origin->publicID());
 				SEISCOMP_DEBUG("... incoming origin is fixed");
 			}
 		}
@@ -3066,10 +3158,10 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 
 			if ( isAgencyIDBlocked(objectAgencyID(origin)) ) {
 				SEISCOMP_DEBUG("... skipping potential preferred origin, agencyID '%s' is blocked",
-				               objectAgencyID(origin).c_str());
+				               objectAgencyID(origin));
 				SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: agencyID %s is blocked",
-				             origin->publicID().c_str(), info->event->publicID().c_str(),
-				             objectAgencyID(origin).c_str());
+				             origin->publicID(), info->event->publicID(),
+				             objectAgencyID(origin));
 				return;
 			}
 
@@ -3084,18 +3176,18 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 
 						if ( originAgencyPriority < preferredOriginAgencyPriority ) {
 							SEISCOMP_DEBUG("... skipping potential preferred origin, priority of agencyID '%s' is too low",
-							               objectAgencyID(origin).c_str());
+							               objectAgencyID(origin));
 							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: priority of agencyID %s is too low",
-							             origin->publicID().c_str(), info->event->publicID().c_str(),
-							             objectAgencyID(origin).c_str());
+							             origin->publicID(), info->event->publicID(),
+							             objectAgencyID(origin));
 							return;
 						}
 						// Found origin with higher agency priority
 						else if ( originAgencyPriority > preferredOriginAgencyPriority ) {
 							SEISCOMP_DEBUG("... agencyID '%s' overrides current agencyID '%s'",
-							               objectAgencyID(origin).c_str(), objectAgencyID(info->preferredOrigin.get()).c_str());
+							               objectAgencyID(origin), objectAgencyID(info->preferredOrigin.get()));
 							SEISCOMP_LOG(_infoChannel, "Origin %s: agencyID '%s' overrides agencyID '%s'",
-							             origin->publicID().c_str(), objectAgencyID(origin).c_str(), objectAgencyID(info->preferredOrigin.get()).c_str());
+							             origin->publicID(), objectAgencyID(origin), objectAgencyID(info->preferredOrigin.get()));
 
 							allowBadMagnitude = true;
 							break;
@@ -3107,18 +3199,18 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 
 						if ( originAuthorPriority < preferredOriginAuthorPriority ) {
 							SEISCOMP_DEBUG("... skipping potential preferred origin, priority of author '%s' is too low",
-							               objectAuthor(origin).c_str());
+							               objectAuthor(origin));
 							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: priority of author %s is too low",
-							             origin->publicID().c_str(), info->event->publicID().c_str(),
-							             objectAuthor(origin).c_str());
+							             origin->publicID(), info->event->publicID(),
+							             objectAuthor(origin));
 							return;
 						}
 						// Found origin with higher author priority
 						else if ( originAuthorPriority > preferredOriginAuthorPriority ) {
 							SEISCOMP_DEBUG("... author '%s' overrides current author '%s'",
-							               objectAuthor(origin).c_str(), objectAuthor(info->preferredOrigin.get()).c_str());
+							               objectAuthor(origin), objectAuthor(info->preferredOrigin.get()));
 							SEISCOMP_LOG(_infoChannel, "Origin %s: author '%s' overrides author '%s'",
-							             origin->publicID().c_str(), objectAuthor(origin).c_str(), objectAuthor(info->preferredOrigin.get()).c_str());
+							             origin->publicID(), objectAuthor(origin), objectAuthor(info->preferredOrigin.get()));
 							break;
 						}
 					}
@@ -3128,13 +3220,13 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 
 						if ( info->constraints.fixOriginMode(info->preferredOrigin.get()) ) {
 							SEISCOMP_LOG(_infoChannel, "Origin %s: has priority %d vs %d",
-							             origin->publicID().c_str(), originPriority, preferredOriginPriority);
+							             origin->publicID(), originPriority, preferredOriginPriority);
 
 							// Set back the evalmode to automatic if a higher priority
 							// origin has been send (but not triggered by a magnitude change only)
 							if ( realOriginUpdate && (originPriority > preferredOriginPriority) ) {
 								SEISCOMP_LOG(_infoChannel, "Origin %s has higher priority: releasing EvPrefOrgEvalMode",
-								             origin->publicID().c_str());
+								             origin->publicID());
 								JournalEntryPtr entry = new JournalEntry;
 								entry->setObjectID(info->event->publicID());
 								entry->setAction("EvPrefOrgEvalMode");
@@ -3162,7 +3254,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							               originPriority,
 							               preferredOriginPriority);
 							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: mode priority too low (%d < %d)",
-							             origin->publicID().c_str(), info->event->publicID().c_str(),
+							             origin->publicID(), info->event->publicID(),
 							             originPriority, preferredOriginPriority);
 							return;
 						}
@@ -3171,7 +3263,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							SEISCOMP_LOG(_infoChannel,
 							             "Origin %s has higher mode priority "
 							             "(%d) than currently preferred origin (%d)",
-							             origin->publicID().c_str(), originPriority,
+							             origin->publicID(), originPriority,
 							             preferredOriginPriority);
 							break;
 						}
@@ -3182,13 +3274,13 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 
 						if ( info->constraints.fixOriginMode(info->preferredOrigin.get()) ) {
 							SEISCOMP_LOG(_infoChannel, "Origin %s: has priority %d vs %d",
-							             origin->publicID().c_str(), originPriority, preferredOriginPriority);
+							             origin->publicID(), originPriority, preferredOriginPriority);
 
 							// Set back the evalmode to automatic if a higher priority
 							// origin has been send (but not triggered by a magnitude change only)
 							if ( realOriginUpdate && (originPriority > preferredOriginPriority) ) {
 								SEISCOMP_LOG(_infoChannel, "Origin %s has higher priority: releasing EvPrefOrgEvalMode",
-								             origin->publicID().c_str());
+								             origin->publicID());
 								JournalEntryPtr entry = new JournalEntry;
 								entry->setObjectID(info->event->publicID());
 								entry->setAction("EvPrefOrgEvalMode");
@@ -3216,14 +3308,14 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							               originPriority,
 							               preferredOriginPriority);
 							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: status priority too low (%d < %d)",
-							             origin->publicID().c_str(), info->event->publicID().c_str(),
+							             origin->publicID(), info->event->publicID(),
 							             originPriority, preferredOriginPriority);
 							return;
 						}
 						// Found origin with higher status priority
 						else if ( originPriority > preferredOriginPriority ) {
 							SEISCOMP_LOG(_infoChannel, "Origin %s: status priority %d overrides status priority %d",
-							             origin->publicID().c_str(), originPriority, preferredOriginPriority);
+							             origin->publicID(), originPriority, preferredOriginPriority);
 							break;
 						}
 					}
@@ -3233,19 +3325,19 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 
 						if ( originMethodPriority < preferredOriginMethodPriority ) {
 							SEISCOMP_DEBUG("... skipping potential preferred origin, priority of method '%s' is too low",
-							               origin->methodID().c_str());
+							               origin->methodID());
 							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: priority of method %s is too low",
-							             origin->publicID().c_str(), info->event->publicID().c_str(),
-							             origin->methodID().c_str());
+							             origin->publicID(), info->event->publicID(),
+							             origin->methodID());
 							return;
 						}
 						// Found origin with higher method priority
 						else if ( originMethodPriority > preferredOriginMethodPriority ) {
 							SEISCOMP_DEBUG("... methodID '%s' overrides current methodID '%s'",
-							               origin->methodID().c_str(), info->preferredOrigin->methodID().c_str());
+							               origin->methodID(), info->preferredOrigin->methodID());
 							SEISCOMP_LOG(_infoChannel, "Origin %s: methodID '%s' overrides methodID '%s'",
-							             origin->publicID().c_str(), origin->methodID().c_str(),
-							             info->preferredOrigin->methodID().c_str());
+							             origin->publicID(), origin->methodID(),
+							             info->preferredOrigin->methodID());
 							break;
 						}
 					}
@@ -3255,13 +3347,13 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 						if ( originPhaseCount < preferredOriginPhaseCount ) {
 							SEISCOMP_DEBUG("... skipping potential preferred automatic origin, phaseCount too low");
 							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: phaseCount too low (%d < %d)",
-							             origin->publicID().c_str(), info->event->publicID().c_str(),
+							             origin->publicID(), info->event->publicID(),
 							             originPhaseCount, preferredOriginPhaseCount);
 							return;
 						}
 						else if ( originPhaseCount > preferredOriginPhaseCount ) {
 							SEISCOMP_LOG(_infoChannel, "Origin %s: phaseCount %d overrides phaseCount %d",
-							             origin->publicID().c_str(), originPhaseCount,
+							             origin->publicID(), originPhaseCount,
 							             preferredOriginPhaseCount);
 							break;
 						}
@@ -3281,13 +3373,13 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 						if ( originPhaseCount < preferredOriginPhaseCount ) {
 							SEISCOMP_DEBUG("... skipping potential preferred automatic origin, phaseCount too low");
 							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: phaseCount too low (%d < %d)",
-							             origin->publicID().c_str(), info->event->publicID().c_str(),
+							             origin->publicID(), info->event->publicID(),
 							             originPhaseCount, preferredOriginPhaseCount);
 							return;
 						}
 						else if ( originPhaseCount > preferredOriginPhaseCount ) {
 							SEISCOMP_LOG(_infoChannel, "Origin %s: phaseCount (automatic) %d overrides phaseCount %d",
-							             origin->publicID().c_str(), originPhaseCount,
+							             origin->publicID(), originPhaseCount,
 							             preferredOriginPhaseCount);
 							break;
 						}
@@ -3300,27 +3392,27 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 						if ( (originRMS >= 0) && (preferredOriginRMS >= 0) && (originRMS > preferredOriginRMS) ) {
 							SEISCOMP_DEBUG("... skipping potential preferred automatic origin, RMS too high");
 							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: RMS too high (%.1f > %.1f",
-							             origin->publicID().c_str(), info->event->publicID().c_str(),
+							             origin->publicID(), info->event->publicID(),
 							             originRMS, preferredOriginRMS);
 							return;
 						}
 						// Both RMS attribute are set: check priority
 						else if ( (originRMS >= 0) && (preferredOriginRMS >= 0) && (originRMS < preferredOriginRMS) ) {
 							SEISCOMP_LOG(_infoChannel, "Origin %s: RMS %.1f overrides RMS %.1f",
-							             origin->publicID().c_str(), originRMS,
+							             origin->publicID(), originRMS,
 							             preferredOriginRMS);
 							break;
 						}
 						// Incoming RMS is not set but preferred origin has RMS: skip incoming
 						else if ( (originRMS < 0) && (preferredOriginRMS >= 0) ) {
 							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: RMS not set",
-							             origin->publicID().c_str(), info->event->publicID().c_str());
+							             origin->publicID(), info->event->publicID());
 							return;
 						}
 						// Incoming RMS is set but preferred origin has no RMS: prioritize incoming
 						else if ( (originRMS >= 0) && (preferredOriginRMS < 0) ) {
 							SEISCOMP_LOG(_infoChannel, "Origin %s: RMS %.1f overrides current unset preferred RMS",
-							             origin->publicID().c_str(), originRMS);
+							             origin->publicID(), originRMS);
 							break;
 						}
 					}
@@ -3341,27 +3433,27 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 						if ( (originRMS >= 0) && (preferredOriginRMS >= 0) && (originRMS > preferredOriginRMS) ) {
 							SEISCOMP_DEBUG("... skipping potential preferred automatic origin, RMS too high");
 							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: RMS too high (%.1f > %.1f",
-							             origin->publicID().c_str(), info->event->publicID().c_str(),
+							             origin->publicID(), info->event->publicID(),
 							             originRMS, preferredOriginRMS);
 							return;
 						}
 						// Both RMS attribute are set: check priority
 						else if ( (originRMS >= 0) && (preferredOriginRMS >= 0) && (originRMS < preferredOriginRMS) ) {
 							SEISCOMP_LOG(_infoChannel, "Origin %s: RMS %.1f overrides RMS %.1f",
-							             origin->publicID().c_str(), originRMS,
+							             origin->publicID(), originRMS,
 							             preferredOriginRMS);
 							break;
 						}
 						// Incoming RMS is not set but preferred origin has RMS: skip incoming
 						else if ( (originRMS < 0) && (preferredOriginRMS >= 0) ) {
 							SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: RMS not set",
-							             origin->publicID().c_str(), info->event->publicID().c_str());
+							             origin->publicID(), info->event->publicID());
 							return;
 						}
 						// Incoming RMS is set but preferred origin has no RMS: prioritize incoming
 						else if ( (originRMS >= 0) && (preferredOriginRMS < 0) ) {
 							SEISCOMP_LOG(_infoChannel, "Origin %s: RMS %.1f overrides current unset preferred RMS",
-							             origin->publicID().c_str(), originRMS);
+							             origin->publicID(), originRMS);
 							break;
 						}
 					}
@@ -3374,8 +3466,8 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 						}
 						else if ( originCreationTime > preferredOriginCreationTime ) {
 							SEISCOMP_LOG(_infoChannel, "Origin %s: %s is more recent than %s",
-							             origin->publicID().c_str(), originCreationTime.iso().c_str(),
-							             preferredOriginCreationTime.iso().c_str());
+							             origin->publicID(), originCreationTime.iso(),
+							             preferredOriginCreationTime.iso());
 							break;
 						}
 					}
@@ -3397,8 +3489,8 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 						}
 						else if ( originCreationTime > preferredOriginCreationTime ) {
 							SEISCOMP_LOG(_infoChannel, "Origin %s: %s (automatic) is more recent than %s",
-							             origin->publicID().c_str(), originCreationTime.iso().c_str(),
-							             preferredOriginCreationTime.iso().c_str());
+							             origin->publicID(), originCreationTime.iso(),
+							             preferredOriginCreationTime.iso());
 							break;
 						}
 					}
@@ -3412,7 +3504,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 						}
 						else if ( score > preferredScore ) {
 							SEISCOMP_LOG(_infoChannel, "Origin %s: score of %f is larger than %f",
-							             origin->publicID().c_str(), score,
+							             origin->publicID(), score,
 							             preferredScore);
 							break;
 						}
@@ -3427,7 +3519,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 					if ( info->preferredMagnitude && !mag ) {
 						SEISCOMP_DEBUG("... skipping potential preferred origin, no preferred magnitude");
 						SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: no preferrable magnitude",
-						             origin->publicID().c_str(), info->event->publicID().c_str());
+						             origin->publicID(), info->event->publicID());
 						return;
 					}
 				}
@@ -3438,10 +3530,10 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 
 				if ( originAgencyPriority < preferredOriginAgencyPriority ) {
 					SEISCOMP_DEBUG("... skipping potential preferred origin, priority of agencyID '%s' is too low",
-					               objectAgencyID(origin).c_str());
+					               objectAgencyID(origin));
 					SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: priority of agencyID %s is too low",
-					             origin->publicID().c_str(), info->event->publicID().c_str(),
-					             objectAgencyID(origin).c_str());
+					             origin->publicID(), info->event->publicID(),
+					             objectAgencyID(origin));
 					return;
 				}
 
@@ -3452,13 +3544,13 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 
 					if ( info->constraints.fixOriginMode(info->preferredOrigin.get()) ) {
 						SEISCOMP_LOG(_infoChannel, "Origin %s: has evaluation mode/status priority %d vs %d",
-						             origin->publicID().c_str(), originPriority, preferredOriginPriority);
+						             origin->publicID(), originPriority, preferredOriginPriority);
 
 						// Set back the evalmode to automatic if a higher priority
 						// origin has been send (but not triggered by a magnitude change only)
 						if ( realOriginUpdate && (originPriority > preferredOriginPriority) ) {
 							SEISCOMP_LOG(_infoChannel, "Origin %s has higher evaluation mode/status priority: releasing EvPrefOrgEvalMode",
-							             origin->publicID().c_str());
+							             origin->publicID());
 							JournalEntryPtr entry = new JournalEntry;
 							entry->setObjectID(info->event->publicID());
 							entry->setAction("EvPrefOrgEvalMode");
@@ -3486,7 +3578,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 						               originPriority,
 						               preferredOriginPriority);
 						SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: evaluation mode/status priority too low (%d < %d)",
-						             origin->publicID().c_str(), info->event->publicID().c_str(),
+						             origin->publicID(), info->event->publicID(),
 						             originPriority, preferredOriginPriority);
 						return;
 					}
@@ -3496,7 +3588,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 					if ( info->preferredMagnitude && !mag ) {
 						SEISCOMP_DEBUG("... skipping potential preferred origin, no preferred magnitude");
 						SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: no preferrable magnitude",
-						             origin->publicID().c_str(), info->event->publicID().c_str());
+						             origin->publicID(), info->event->publicID());
 						return;
 					}
 
@@ -3515,7 +3607,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							if ( originPriority < preferredOriginPriority ) {
 								SEISCOMP_DEBUG("... skipping potential preferred automatic origin, phaseCount too low");
 								SEISCOMP_LOG(_infoChannel, "Origin %s has not been set preferred in event %s: priorities are equal (%d) but phaseCount too low (%d < %d)",
-								             origin->publicID().c_str(), info->event->publicID().c_str(), originPriority,
+								             origin->publicID(), info->event->publicID(), originPriority,
 								             definingPhaseCount(origin), definingPhaseCount(info->preferredOrigin.get()));
 								return;
 							}
@@ -3532,7 +3624,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 							if ( created(origin) < created(info->preferredOrigin.get()) ) {
 								SEISCOMP_DEBUG("... skipping potential preferred origin, there is a better one created later");
 								SEISCOMP_LOG(_infoChannel, "Origin %s: skipped potential preferred origin, there is a better one created later",
-								             origin->publicID().c_str());
+								             origin->publicID());
 								return;
 							}
 						}
@@ -3541,14 +3633,14 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 						SEISCOMP_DEBUG("... priority %d overrides current prioriy %d",
 						               originPriority, preferredOriginPriority);
 						SEISCOMP_LOG(_infoChannel, "Origin %s: priority %d overrides priority %d",
-						             origin->publicID().c_str(), originPriority, preferredOriginPriority);
+						             origin->publicID(), originPriority, preferredOriginPriority);
 					}
 				}
 				else {
 					SEISCOMP_DEBUG("... agencyID '%s' overrides current agencyID '%s'",
-					               objectAgencyID(origin).c_str(), objectAgencyID(info->preferredOrigin.get()).c_str());
+					               objectAgencyID(origin), objectAgencyID(info->preferredOrigin.get()));
 					SEISCOMP_LOG(_infoChannel, "Origin %s: agencyID '%s' overrides agencyID '%s'",
-					             origin->publicID().c_str(), objectAgencyID(origin).c_str(), objectAgencyID(info->preferredOrigin.get()).c_str());
+					             origin->publicID(), objectAgencyID(origin), objectAgencyID(info->preferredOrigin.get()));
 				}
 			}
 		}
@@ -3556,9 +3648,9 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		info->event->setPreferredOriginID(origin->publicID());
 
 		SEISCOMP_INFO("%s: set preferredOriginID to %s",
-		              info->event->publicID().c_str(), origin->publicID().c_str());
+		              info->event->publicID(), origin->publicID());
 		SEISCOMP_LOG(_infoChannel, "Origin %s has been set preferred in event %s",
-		             origin->publicID().c_str(), info->event->publicID().c_str());
+		             origin->publicID(), info->event->publicID());
 
 		needRegionNameUpdate = true;
 
@@ -3571,9 +3663,9 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 				info->event->setPreferredMagnitudeID(mag->publicID());
 				info->preferredMagnitude = mag;
 				SEISCOMP_INFO("%s: set preferredMagnitudeID to %s",
-				              info->event->publicID().c_str(), mag->publicID().c_str());
+				              info->event->publicID(), mag->publicID());
 				SEISCOMP_LOG(_infoChannel, "Magnitude %s has been set preferred in event %s",
-				             mag->publicID().c_str(), info->event->publicID().c_str());
+				             mag->publicID(), info->event->publicID());
 			}
 		}
 		else {
@@ -3583,9 +3675,9 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 				info->event->setPreferredMagnitudeID("");
 				info->preferredMagnitude = mag;
 				SEISCOMP_INFO("%s: set preferredMagnitudeID to ''",
-				              info->event->publicID().c_str());
+				              info->event->publicID());
 				SEISCOMP_LOG(_infoChannel, "Set empty preferredMagnitudeID in event %s",
-				             info->event->publicID().c_str());
+				             info->event->publicID());
 			}
 		}
 	}
@@ -3593,13 +3685,13 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		info->event->setPreferredMagnitudeID(mag->publicID());
 		info->preferredMagnitude = mag;
 		SEISCOMP_INFO("%s: set preferredMagnitudeID to %s",
-		              info->event->publicID().c_str(), mag->publicID().c_str());
+		              info->event->publicID(), mag->publicID());
 		SEISCOMP_INFO("%s: set preferredMagnitudeID to %s",
-		              info->event->publicID().c_str(), mag->publicID().c_str());
+		              info->event->publicID(), mag->publicID());
 		update = true;
 	}
 	else {
-		SEISCOMP_INFO("%s: nothing to do", info->event->publicID().c_str());
+		SEISCOMP_INFO("%s: nothing to do", info->event->publicID());
 	}
 
 	if ( needRegionNameUpdate ) {
@@ -3638,9 +3730,14 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		bool isRejected = false;
 		bool notExistingEvent = false;
 
+		SEISCOMP_DEBUG("%s: Try setting event type from evaluation status of "
+		               "preferred origin %s",
+		               info->event->publicID().c_str(),
+		               info->preferredOrigin->publicID());
 		try {
-			if ( info->preferredOrigin->evaluationStatus() == REJECTED )
+			if ( info->preferredOrigin->evaluationStatus() == REJECTED ) {
 				isRejected = true;
+			}
 		}
 		catch ( ... ) {}
 
@@ -3650,20 +3747,26 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		catch ( ... ) {}
 
 		if ( isRejected ) {
-			SEISCOMP_INFO("%s: preferred origin has evalution status 'rejected'",
-			              info->event->publicID().c_str());
+			SEISCOMP_DEBUG("  + origin evaluation status: 'rejected'");
 
 			// User has manually fixed an origin, don't touch the event type
 			if ( !info->constraints.fixedOrigin() && !notExistingEvent ) {
-				SEISCOMP_INFO("%s: set event type to 'not existing' since "
-				              "preferred origin has evaluation status 'rejected'",
-				              info->event->publicID().c_str());
-				SEISCOMP_LOG(_infoChannel, "Set event type to 'not existing' since "
+				SEISCOMP_DEBUG("  + set event type to 'not existing' since "
+				               "preferred origin has evaluation status 'rejected'");
+				SEISCOMP_LOG(_infoChannel, "Set event type to 'not existing': "
 				                           "preferred origin has evaluation "
 				                           "status 'rejected' in event %s",
-				             info->event->publicID().c_str());
+				             info->event->publicID());
 				info->event->setType(EventType(NOT_EXISTING));
 				update = true;
+			}
+			else {
+				if ( info->constraints.fixedOrigin() ) {
+					SEISCOMP_DEBUG("  + do not set event type: preferred origin is fixed");
+				}
+				else {
+					SEISCOMP_DEBUG("  + do not set event type again");
+				}
 			}
 		}
 		else {
@@ -3671,26 +3774,35 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 			// Preferred origin is not rejected, remove the event type if it was
 			// previously 'not existing'
 			if ( !info->constraints.fixedOrigin() && notExistingEvent ) {
-				SEISCOMP_INFO("%s: remove event type since evaluation status of "
-				              "preferred origin changed from 'rejected'",
-				              info->event->publicID().c_str());
+				SEISCOMP_INFO("  + remove event type: evaluation status of "
+				              "preferred origin changed from 'rejected'");
 				SEISCOMP_LOG(_infoChannel, "Remove event type since evaluation "
 				                           "status of preferred origin "
 				                           "changed from 'rejected' in event %s",
-				             info->event->publicID().c_str());
+				             info->event->publicID());
 				info->event->setType(None);
 				update = true;
 			}
+			else {
+				SEISCOMP_DEBUG("  + do not set event type");
+			}
+		}
+		try {
+			SEISCOMP_DEBUG("  + current event type: '%s'", info->event->type().toString());
+		}
+		catch ( ... ) {
+			SEISCOMP_DEBUG("  + current event type: none");
 		}
 	}
 
 	if ( update ) {
 		SEISCOMP_DEBUG("%s: update (created: %d, notifiers enabled: %d)",
-		               info->event->publicID().c_str(), info->created,
+		               info->event->publicID(), info->created,
 		               Notifier::IsEnabled());
 
-		if ( !info->created )
+		if ( !info->created ) {
 			updateEvent(info, callProcessors);
+		}
 		else {
 			// Call registered processors
 			for ( EventProcessorPtr &proc : _processors ) {
@@ -3712,7 +3824,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		// Either this method or the processors have changed the event type
 		SEISCOMP_LOG(_infoChannel, "Event type of %s has changed to '%s' "
 		                           "by scevent or an event processor",
-		             info->event->publicID().c_str(),
+		             info->event->publicID(),
 		             newEventType ? newEventType->toString() : "");
 
 		Notifier::Enable();
@@ -3742,7 +3854,7 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 		// Either this method or the processors have changed the event type
 		SEISCOMP_LOG(_infoChannel, "Event type certainty of %s has changed to '%s' "
 		                           "by scevent or an event processor",
-		             info->event->publicID().c_str(),
+		             info->event->publicID(),
 		             newEventTypeCertainty ? newEventTypeCertainty->toString() : "");
 
 		Notifier::Enable();
@@ -3777,22 +3889,18 @@ void EventTool::choosePreferred(EventInformation *info, Origin *origin,
 void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanism *fm) {
 	if ( isAgencyIDBlocked(objectAgencyID(info->event.get())) ) {
 		SEISCOMP_DEBUG("No preferred fm selection, event %s agencyID is blocked",
-		               info->event->publicID().c_str());
+		               info->event->publicID());
 		SEISCOMP_LOG(_infoChannel, "No preferred fm selection, event %s agencyID is blocked",
-		             info->event->publicID().c_str());
+		             info->event->publicID());
 		return;
 	}
-
-	SEISCOMP_DEBUG("%s: testing focal mechanism(%s)",
-	               info->event->publicID().c_str(),
-	               fm->publicID().c_str());
 
 	if ( _config.eventAssociation.delayPrefFocMech > 0 ) {
 		if ( !info->preferredOrigin ) {
 			SEISCOMP_DEBUG("No preferred origins set for event %s, cannot compute delay time, ignoring focal mechanism %s",
-			               info->event->publicID().c_str(), fm->publicID().c_str());
+			               info->event->publicID().c_str(), fm->publicID());
 			SEISCOMP_LOG(_infoChannel, "No preferred origins set for event %s, cannot compute delay time, ignoring focal mechanism %s",
-			             info->event->publicID().c_str(), fm->publicID().c_str());
+			             info->event->publicID(), fm->publicID());
 			return;
 		}
 
@@ -3800,16 +3908,16 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 		Core::Time now = Core::Time::UTC();
 
 		//SEISCOMP_LOG(_infoChannel, "Time to reach to set focal mechanism preferred is %s, now is %s",
-		//             minTime.toString("%FT%T").c_str(), now.toString("%FT%T").c_str());
+		//             minTime.toString("%FT%T"), now.toString("%FT%T"));
 
 		if ( minTime > now ) {
 			int secs = (minTime - now).seconds() + 1;
 			SEISCOMP_DEBUG("Setting preferred focal mechanism needs "
 			               "to be delayed by config, still %d secs to go for event %s",
-			               secs, info->event->publicID().c_str());
+			               secs, info->event->publicID());
 			SEISCOMP_LOG(_infoChannel, "Setting preferred focal mechanism needs "
 			             "to be delayed by config, still %d secs to go for event %s",
-			             secs, info->event->publicID().c_str());
+			             secs, info->event->publicID());
 
 			if ( !hasDelayedEvent(info->event->publicID(), SetPreferredFM) )
 				_delayEventBuffer.push_back(DelayedEventUpdate(info->event->publicID(), secs, SetPreferredFM));
@@ -3818,15 +3926,30 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 		}
 	}
 
+	SEISCOMP_DEBUG("%s: testing focal mechanism(%s)",
+	               info->event->publicID(),
+	               fm->publicID());
+
 	bool update = false;
+	bool isAutomaticFMElligible = _config.eventAssociation.enablePreferredFMSelection && isAgencyIDAllowed(objectAgencyID(fm));
 
 	if ( !info->preferredFocalMechanism ) {
-		if ( isAgencyIDAllowed(objectAgencyID(fm)) || info->constraints.fixFocalMechanism(fm) ) {
+		if ( isAutomaticFMElligible || info->constraints.fixFocalMechanism(fm) ) {
 			if ( isRejected(fm) ) {
 				SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, '%s' is rejected",
-				               info->event->publicID().c_str(), fm->publicID().c_str());
+				               info->event->publicID(), fm->publicID());
 				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: status is REJECTED",
-				             fm->publicID().c_str());
+				             fm->publicID());
+				return;
+			}
+
+			if ( info->constraints.preferredFocalMechanismEvaluationMode &&
+			     !info->constraints.fixFocalMechanismMode(fm) ) {
+				SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, evaluation mode is not '%s'",
+				               info->event->publicID(),
+				               info->constraints.preferredFocalMechanismEvaluationMode->toString());
+				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: evaluation mode is not '%s'",
+				             fm->publicID(), info->constraints.preferredFocalMechanismEvaluationMode->toString());
 				return;
 			}
 
@@ -3834,35 +3957,44 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 
 			info->preferredFocalMechanism = fm;
 			SEISCOMP_INFO("%s: set first preferredFocalMechanismID to %s",
-			              info->event->publicID().c_str(), fm->publicID().c_str());
+			              info->event->publicID(), fm->publicID());
 			SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has been set preferred in event %s",
-			             fm->publicID().c_str(), info->event->publicID().c_str());
+			             fm->publicID(), info->event->publicID());
 			update = true;
 		}
-		else {
+		else if ( !isAutomaticFMElligible ) {
+			// Another focal mechanism is fixed
 			if ( !isAgencyIDAllowed(objectAgencyID(fm)) ) {
 				SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, agencyID '%s' is blocked",
-				               info->event->publicID().c_str(), objectAgencyID(fm).c_str());
+				               info->event->publicID(), objectAgencyID(fm));
 				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: agencyID %s is blocked",
-				             fm->publicID().c_str(), objectAgencyID(fm).c_str());
+				             fm->publicID(), objectAgencyID(fm));
+				return;
 			}
 			else {
-				SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, preferredFocalMechanismID is fixed to '%s'",
-				               info->event->publicID().c_str(), info->constraints.preferredFocalMechanismID.c_str());
-				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: preferredFocalMechanismID is fixed to %s",
-				             fm->publicID().c_str(), info->constraints.preferredFocalMechanismID.c_str());
+				SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, feature disabled",
+				               info->event->publicID());
+				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: feature disabled",
+				             fm->publicID());
+				return;
 			}
+		}
+		else {
+			SEISCOMP_DEBUG("%s: skip setting first preferredFocalMechanismID, preferredFocalMechanismID is fixed to '%s'",
+			               info->event->publicID(), *info->constraints.preferredOptFocalMechanismID);
+			SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred: preferredFocalMechanismID is fixed to %s",
+			             fm->publicID(), *info->constraints.preferredOptFocalMechanismID);
 			return;
 		}
 	}
 	else if ( info->preferredFocalMechanism->publicID() != fm->publicID() ) {
 		SEISCOMP_DEBUG("... checking whether focal mechanism %s can become preferred",
-		               fm->publicID().c_str());
+		               fm->publicID());
 
 		if ( isRejected(fm) ) {
 			SEISCOMP_DEBUG("... skipping potential preferred focalmechanism, status is REJECTED");
 			SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: status is REJECTED",
-			             fm->publicID().c_str(), info->event->publicID().c_str());
+			             fm->publicID(), info->event->publicID());
 			return;
 		}
 
@@ -3870,21 +4002,28 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 		if ( info->constraints.fixedFocalMechanism() ) {
 			if ( !info->constraints.fixFocalMechanism(fm) ) {
 				SEISCOMP_DEBUG("... skipping potential preferred focal mechanism, focal mechanism '%s' is fixed",
-				               info->constraints.preferredFocalMechanismID.c_str());
+				               *info->constraints.preferredOptFocalMechanismID);
 				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: focal mechanism %s is fixed",
-				             fm->publicID().c_str(), info->event->publicID().c_str(),
-				             info->constraints.preferredFocalMechanismID.c_str());
+				             fm->publicID(), info->event->publicID(),
+				             *info->constraints.preferredOptFocalMechanismID);
 				return;
 			}
 		}
 		// No fixed focal mechanism => select it using the automatic rules
 		else {
+			if ( !_config.eventAssociation.enablePreferredFMSelection ) {
+				SEISCOMP_DEBUG("... skipping potential preferred focal mechanism, feature disabled");
+				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: feature disabled",
+				             fm->publicID(), info->event->publicID());
+				return;
+			}
+
 			if ( isAgencyIDBlocked(objectAgencyID(fm)) ) {
 				SEISCOMP_DEBUG("... skipping potential preferred focal mechanism, agencyID '%s' is blocked",
-				               objectAgencyID(fm).c_str());
+				               objectAgencyID(fm));
 				SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: agencyID %s is blocked",
-				             fm->publicID().c_str(), info->event->publicID().c_str(),
-				             objectAgencyID(fm).c_str());
+				             fm->publicID(), info->event->publicID(),
+				             objectAgencyID(fm));
 				return;
 			}
 
@@ -3897,18 +4036,18 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 
 						if ( fmAgencyPriority < preferredFMAgencyPriority ) {
 							SEISCOMP_DEBUG("... skipping potential preferred focal mechanism, priority of agencyID '%s' is too low",
-							               objectAgencyID(fm).c_str());
+							               objectAgencyID(fm));
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: priority of agencyID %s is too low",
-							             fm->publicID().c_str(), info->event->publicID().c_str(),
-							             objectAgencyID(fm).c_str());
+							             fm->publicID(), info->event->publicID(),
+							             objectAgencyID(fm));
 							return;
 						}
 						// Found origin with higher agency priority
 						else if ( fmAgencyPriority > preferredFMAgencyPriority ) {
 							SEISCOMP_DEBUG("... agencyID '%s' overrides current agencyID '%s'",
-							               objectAgencyID(fm).c_str(), objectAgencyID(info->preferredFocalMechanism.get()).c_str());
+							               objectAgencyID(fm), objectAgencyID(info->preferredFocalMechanism.get()));
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s: agencyID '%s' overrides agencyID '%s'",
-							             fm->publicID().c_str(), objectAgencyID(fm).c_str(), objectAgencyID(info->preferredFocalMechanism.get()).c_str());
+							             fm->publicID(), objectAgencyID(fm), objectAgencyID(info->preferredFocalMechanism.get()));
 							break;
 						}
 					}
@@ -3918,18 +4057,18 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 
 						if ( fmAuthorPriority < preferredFMAuthorPriority ) {
 							SEISCOMP_DEBUG("... skipping potential preferred focal mechanism, priority of author '%s' is too low",
-							               objectAuthor(fm).c_str());
+							               objectAuthor(fm));
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: priority of author %s is too low",
-							             fm->publicID().c_str(), info->event->publicID().c_str(),
-							             objectAuthor(fm).c_str());
+							             fm->publicID(), info->event->publicID(),
+							             objectAuthor(fm));
 							return;
 						}
 						// Found focal mechanism with higher author priority
 						else if ( fmAuthorPriority > preferredFMAuthorPriority ) {
 							SEISCOMP_DEBUG("... author '%s' overrides current author '%s'",
-							               objectAuthor(fm).c_str(), objectAuthor(info->preferredFocalMechanism.get()).c_str());
+							               objectAuthor(fm), objectAuthor(info->preferredFocalMechanism.get()));
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s: author '%s' overrides author '%s'",
-							             fm->publicID().c_str(), objectAuthor(fm).c_str(), objectAuthor(info->preferredFocalMechanism.get()).c_str());
+							             fm->publicID(), objectAuthor(fm), objectAuthor(info->preferredFocalMechanism.get()));
 							break;
 						}
 					}
@@ -3939,13 +4078,13 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 
 						if ( info->constraints.fixFocalMechanismMode(info->preferredFocalMechanism.get()) ) {
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s: has priority %d vs %d",
-							             fm->publicID().c_str(), fmPriority, preferredFMPriority);
+							             fm->publicID(), fmPriority, preferredFMPriority);
 							// Set back the evalmode to automatic if a higher priority
 							// origin has been send (but not triggered by a magnitude change only)
 							if ( fmPriority > preferredFMPriority ) {
 								/*
 								SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has higher priority: releasing EvPrefOrgEvalMode",
-								             origin->publicID().c_str());
+								             origin->publicID());
 								JournalEntryPtr entry = new JournalEntry;
 								entry->setObjectID(info->event->publicID());
 								entry->setAction("EvPrefOrgEvalMode");
@@ -3967,14 +4106,14 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 							SEISCOMP_DEBUG("... skipping potential preferred focal mechanism (%d < %d)",
 							               fmPriority, preferredFMPriority);
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: priority too low (%d < %d)",
-							             fm->publicID().c_str(), info->event->publicID().c_str(),
+							             fm->publicID(), info->event->publicID(),
 							             fmPriority, preferredFMPriority);
 							return;
 						}
 						// Found origin with higher status priority
 						else if ( fmPriority > preferredFMPriority ) {
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s: status priority %d overrides status priority %d",
-							             fm->publicID().c_str(), fmPriority, preferredFMPriority);
+							             fm->publicID(), fmPriority, preferredFMPriority);
 							break;
 						}
 					}
@@ -3984,13 +4123,13 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 
 						if ( info->constraints.fixFocalMechanismMode(info->preferredFocalMechanism.get()) ) {
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s: has priority %d vs %d",
-							             fm->publicID().c_str(), fmPriority, preferredFMPriority);
+							             fm->publicID(), fmPriority, preferredFMPriority);
 							// Set back the evalmode to automatic if a higher priority
 							// origin has been send (but not triggered by a magnitude change only)
 							if ( fmPriority > preferredFMPriority ) {
 								/*
 								SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has higher priority: releasing EvPrefOrgEvalMode",
-								             origin->publicID().c_str());
+								             origin->publicID());
 								JournalEntryPtr entry = new JournalEntry;
 								entry->setObjectID(info->event->publicID());
 								entry->setAction("EvPrefOrgEvalMode");
@@ -4012,14 +4151,14 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 							SEISCOMP_DEBUG("... skipping potential preferred focalmechanism (%d < %d)",
 							               fmPriority, preferredFMPriority);
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: priority too low (%d < %d)",
-							             fm->publicID().c_str(), info->event->publicID().c_str(),
+							             fm->publicID(), info->event->publicID(),
 							             fmPriority, preferredFMPriority);
 							return;
 						}
 						// Found origin with higher status priority
 						else if ( fmPriority > preferredFMPriority ) {
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s: status priority %d overrides status priority %d",
-							             fm->publicID().c_str(), fmPriority, preferredFMPriority);
+							             fm->publicID(), fmPriority, preferredFMPriority);
 							break;
 						}
 					}
@@ -4029,19 +4168,19 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 
 						if ( fmMethodPriority < preferredFMMethodPriority ) {
 							SEISCOMP_DEBUG("... skipping potential preferred focalMechanism, priority of method '%s' is too low",
-							               fm->methodID().c_str());
+							               fm->methodID());
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: priority of method %s is too low",
-							             fm->publicID().c_str(), info->event->publicID().c_str(),
-							             fm->methodID().c_str());
+							             fm->publicID(), info->event->publicID(),
+							             fm->methodID());
 							return;
 						}
 						// Found origin with higher method priority
 						else if ( fmMethodPriority > preferredFMMethodPriority ) {
 							SEISCOMP_DEBUG("... methodID '%s' overrides current methodID '%s'",
-							               fm->methodID().c_str(), info->preferredFocalMechanism->methodID().c_str());
+							               fm->methodID(), info->preferredFocalMechanism->methodID());
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s: methodID '%s' overrides methodID '%s'",
-							             fm->publicID().c_str(), fm->methodID().c_str(),
-							             info->preferredFocalMechanism->methodID().c_str());
+							             fm->publicID(), fm->methodID(),
+							             info->preferredFocalMechanism->methodID());
 							break;
 						}
 					}
@@ -4054,8 +4193,8 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 						}
 						else if ( fmCreationTime > preferredFMCreationTime ) {
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s: %s is more recent than %s",
-							             fm->publicID().c_str(), fmCreationTime.iso().c_str(),
-							             preferredFMCreationTime.iso().c_str());
+							             fm->publicID(), fmCreationTime.iso(),
+							             preferredFMCreationTime.iso());
 							break;
 						}
 					}
@@ -4077,8 +4216,8 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 						}
 						else if ( fmCreationTime > preferredFMCreationTime ) {
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s: %s (automatic) is more recent than %s",
-							             fm->publicID().c_str(), fmCreationTime.iso().c_str(),
-							             preferredFMCreationTime.iso().c_str());
+							             fm->publicID(), fmCreationTime.iso(),
+							             preferredFMCreationTime.iso());
 							break;
 						}
 					}
@@ -4092,7 +4231,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 						}
 						else if ( score > preferredScore ) {
 							SEISCOMP_LOG(_infoChannel, "FocalMechanism %s: score of %f is larger than %f",
-							             fm->publicID().c_str(), score,
+							             fm->publicID(), score,
 							             preferredScore);
 							break;
 						}
@@ -4105,10 +4244,10 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 
 				if ( fmAgencyPriority < preferredFMAgencyPriority ) {
 					SEISCOMP_DEBUG("... skipping potential preferred focalmechanism, priority of agencyID '%s' is too low",
-					               objectAgencyID(fm).c_str());
+					               objectAgencyID(fm));
 					SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: priority of agencyID %s is too low",
-					             fm->publicID().c_str(), info->event->publicID().c_str(),
-					             objectAgencyID(fm).c_str());
+					             fm->publicID(), info->event->publicID(),
+					             objectAgencyID(fm));
 					return;
 				}
 
@@ -4119,14 +4258,14 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 
 					if ( info->constraints.fixFocalMechanismMode(info->preferredFocalMechanism.get()) ) {
 						SEISCOMP_LOG(_infoChannel, "FocalMechanism %s: has priority %d vs %d",
-						             fm->publicID().c_str(), fmPriority, preferredFMPriority);
+						             fm->publicID(), fmPriority, preferredFMPriority);
 
 						// Set back the evalmode to automatic if a higher priority
 						// focalmechanism has been send
 						if ( fmPriority > preferredFMPriority ) {
 							/*
 							SEISCOMP_LOG(_infoChannel, "Origin %s has higher priority: releasing EvPrefOrgEvalMode",
-							             origin->publicID().c_str());
+							             origin->publicID());
 							JournalEntryPtr entry = new JournalEntry;
 							entry->setObjectID(info->event->publicID());
 							entry->setAction("EvPrefOrgEvalMode");
@@ -4151,7 +4290,7 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 						               "currently preferred (%d < %d)",
 						               fmPriority, preferredFMPriority);
 						SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has not been set preferred in event %s: priority too low (%d < %d)",
-						             fm->publicID().c_str(), info->event->publicID().c_str(),
+						             fm->publicID(), info->event->publicID(),
 						             fmPriority, preferredFMPriority);
 						return;
 					}
@@ -4175,9 +4314,9 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 				}
 				else {
 					SEISCOMP_DEBUG("... agencyID '%s' overrides current agencyID '%s'",
-					               objectAgencyID(fm).c_str(), objectAgencyID(info->preferredFocalMechanism.get()).c_str());
+					               objectAgencyID(fm), objectAgencyID(info->preferredFocalMechanism.get()));
 					SEISCOMP_LOG(_infoChannel, "FocalMechanism %s: agencyID '%s' overrides agencyID '%s'",
-					             fm->publicID().c_str(), objectAgencyID(fm).c_str(), objectAgencyID(info->preferredFocalMechanism.get()).c_str());
+					             fm->publicID(), objectAgencyID(fm), objectAgencyID(info->preferredFocalMechanism.get()));
 				}
 			}
 		}
@@ -4186,14 +4325,14 @@ void EventTool::choosePreferred(EventInformation *info, DataModel::FocalMechanis
 
 		info->preferredFocalMechanism = fm;
 		SEISCOMP_INFO("...... %s: set preferred in %s",
-		              fm->publicID().c_str(), info->event->publicID().c_str());
+		              fm->publicID(), info->event->publicID());
 		SEISCOMP_LOG(_infoChannel, "FocalMechanism %s has been set preferred in event %s",
-		             fm->publicID().c_str(), info->event->publicID().c_str());
+		             fm->publicID(), info->event->publicID());
 
 		update = true;
 	}
 	else {
-		SEISCOMP_INFO("%s: nothing to do", info->event->publicID().c_str());
+		SEISCOMP_INFO("%s: nothing to do", info->event->publicID());
 	}
 
 	if ( update ) {
@@ -4229,7 +4368,7 @@ void EventTool::updatePreferredOrigin(EventInformation *info, bool refresh) {
 		OriginPtr org = _cache.get<Origin>(info->event->originReference(i)->originID());
 		if ( !org ) continue;
 		if ( !org->magnitudeCount() && query() ) {
-			SEISCOMP_DEBUG("... loading magnitudes for origin %s", org->publicID().c_str());
+			SEISCOMP_DEBUG("... loading magnitudes for origin %s", org->publicID());
 			query()->loadMagnitudes(org.get());
 		}
 		choosePreferred(info, org.get(), nullptr, false, refresh);
@@ -4248,7 +4387,7 @@ void EventTool::updatePreferredFocalMechanism(EventInformation *info) {
 		FocalMechanismPtr fm = _cache.get<FocalMechanism>(info->event->focalMechanismReference(i)->focalMechanismID());
 		if ( !fm ) continue;
 		if ( !fm->momentTensorCount() && query() ) {
-			SEISCOMP_DEBUG("... loading moment tensor for focal mechanism %s", fm->publicID().c_str());
+			SEISCOMP_DEBUG("... loading moment tensor for focal mechanism %s", fm->publicID());
 			query()->loadMomentTensors(fm.get());
 		}
 		choosePreferred(info, fm.get());
@@ -4281,20 +4420,20 @@ bool EventTool::mergeEvents(EventInformation *target, EventInformation *source) 
 
 		if ( !org ) {
 			SEISCOMP_WARNING("%s: referenced origin %s not found",
-			                 sourceEvent->publicID().c_str(),
-			                 ref->originID().c_str());
+			                 sourceEvent->publicID(),
+			                 ref->originID());
 
 			if ( targetEvent->originReference(ref->originID()) ) {
 				SEISCOMP_WARNING("... origin %s already associated to event %s",
-				                 ref->originID().c_str(),
-				                 targetEvent->publicID().c_str());
+				                 ref->originID(),
+				                 targetEvent->publicID());
 			}
 			else {
 				SEISCOMP_DEBUG("%s: added origin reference %s due to merge request",
-				               targetEvent->publicID().c_str(),
-				               ref->originID().c_str());
+				               targetEvent->publicID(),
+				               ref->originID());
 				SEISCOMP_LOG(_infoChannel, "OriginReference %s added to event %s due to merge request",
-				             ref->originID().c_str(), targetEvent->publicID().c_str());
+				             ref->originID(), targetEvent->publicID());
 				OriginReferencePtr newRef = new OriginReference(*ref);
 				targetEvent->add(newRef.get());
 			}
@@ -4304,17 +4443,17 @@ bool EventTool::mergeEvents(EventInformation *target, EventInformation *source) 
 
 		if ( !target->associate(org.get()) ) {
 			SEISCOMP_WARNING("%s: associating origin %s failed",
-			                 targetEvent->publicID().c_str(),
-			                 org->publicID().c_str());
+			                 targetEvent->publicID(),
+			                 org->publicID());
 			continue;
 		}
 
 		SEISCOMP_INFO("%s: associated origin %s due to merge request",
-		              targetEvent->publicID().c_str(),
-		              org->publicID().c_str());
+		              targetEvent->publicID(),
+		              org->publicID());
 
 		if ( !org->magnitudeCount() && query() ) {
-			SEISCOMP_DEBUG("... loading magnitudes for origin %s", org->publicID().c_str());
+			SEISCOMP_DEBUG("... loading magnitudes for origin %s", org->publicID());
 			query()->loadMagnitudes(org.get());
 		}
 
@@ -4331,20 +4470,20 @@ bool EventTool::mergeEvents(EventInformation *target, EventInformation *source) 
 
 		if ( !fm ) {
 			SEISCOMP_WARNING("%s: referenced focal mechanism %s not found",
-			                 sourceEvent->publicID().c_str(),
-			                 ref->focalMechanismID().c_str());
+			                 sourceEvent->publicID(),
+			                 ref->focalMechanismID());
 
 			if ( targetEvent->focalMechanismReference(ref->focalMechanismID()) ) {
 				SEISCOMP_WARNING("... focal mechanism %s already associated to event %s",
-				                 ref->focalMechanismID().c_str(),
-				                 targetEvent->publicID().c_str());
+				                 ref->focalMechanismID(),
+				                 targetEvent->publicID());
 			}
 			else {
 				SEISCOMP_DEBUG("%s: added focal mechanism reference %s due to merge request",
-				               targetEvent->publicID().c_str(),
-				               ref->focalMechanismID().c_str());
+				               targetEvent->publicID(),
+				               ref->focalMechanismID());
 				SEISCOMP_LOG(_infoChannel, "FocalMechanismReference %s added to event %s due to merge request",
-				             ref->focalMechanismID().c_str(), targetEvent->publicID().c_str());
+				             ref->focalMechanismID(), targetEvent->publicID());
 				FocalMechanismReferencePtr newRef = new FocalMechanismReference(*ref);
 				targetEvent->add(newRef.get());
 			}
@@ -4354,17 +4493,17 @@ bool EventTool::mergeEvents(EventInformation *target, EventInformation *source) 
 
 		if ( !target->associate(fm.get()) ) {
 			SEISCOMP_WARNING("%s: associating focal mechanism %s failed",
-			                 targetEvent->publicID().c_str(),
-			                 fm->publicID().c_str());
+			                 targetEvent->publicID(),
+			                 fm->publicID());
 			continue;
 		}
 
 		SEISCOMP_INFO("%s: associated focal mechanism %s due to merge request",
-		              targetEvent->publicID().c_str(),
-		              fm->publicID().c_str());
+		              targetEvent->publicID(),
+		              fm->publicID());
 
 		if ( !fm->momentTensorCount() && query() ) {
-			SEISCOMP_DEBUG("... loading moment tensor for focal mechanism %s", fm->publicID().c_str());
+			SEISCOMP_DEBUG("... loading moment tensor for focal mechanism %s", fm->publicID());
 			query()->loadMomentTensors(fm.get());
 		}
 
@@ -4374,9 +4513,9 @@ bool EventTool::mergeEvents(EventInformation *target, EventInformation *source) 
 	}
 
 	// Remove source event
-	SEISCOMP_INFO("%s: deleted", sourceEvent->publicID().c_str());
+	SEISCOMP_INFO("%s: deleted", sourceEvent->publicID());
 	SEISCOMP_LOG(_infoChannel, "Delete event %s after merging",
-	             sourceEvent->publicID().c_str());
+	             sourceEvent->publicID());
 
 	sourceEvent->detach();
 	_cache.remove(sourceEvent);
@@ -4464,9 +4603,9 @@ void EventTool::updateRegionName(DataModel::Event *ev, DataModel::Origin *org) {
 	if ( ed ) {
 		if ( ed->text() != reg ) {
 			SEISCOMP_INFO("%s: updating region name to '%s'",
-			              ev->publicID().c_str(), reg.c_str());
+			              ev->publicID(), reg);
 			SEISCOMP_LOG(_infoChannel, "Event %s region name updated: %s",
-			             ev->publicID().c_str(), reg.c_str());
+			             ev->publicID(), reg);
 			ed->setText(reg);
 			ed->update();
 		}
@@ -4475,9 +4614,9 @@ void EventTool::updateRegionName(DataModel::Event *ev, DataModel::Origin *org) {
 		EventDescriptionPtr ed = new EventDescription(reg, REGION_NAME);
 		ev->add(ed.get());
 		SEISCOMP_INFO("%s: adding region name '%s'",
-		              ev->publicID().c_str(), reg.c_str());
+		              ev->publicID(), reg);
 		SEISCOMP_LOG(_infoChannel, "Event %s got new region name: %s",
-		             ev->publicID().c_str(), reg.c_str());
+		             ev->publicID(), reg);
 	}
 
 	if ( _config.populateFERegion ) {
@@ -4493,9 +4632,9 @@ void EventTool::updateRegionName(DataModel::Event *ev, DataModel::Origin *org) {
 		if ( ed ) {
 			if ( ed->text() != reg ) {
 				SEISCOMP_INFO("%s: updating Flinn-Engdahl region name to '%s'",
-				              ev->publicID().c_str(), reg.c_str());
+				              ev->publicID(), reg);
 				SEISCOMP_LOG(_infoChannel, "Event %s Flinn-Engdahl region name updated: %s",
-				             ev->publicID().c_str(), reg.c_str());
+				             ev->publicID(), reg);
 				ed->setText(reg);
 				ed->update();
 			}
@@ -4504,9 +4643,9 @@ void EventTool::updateRegionName(DataModel::Event *ev, DataModel::Origin *org) {
 			EventDescriptionPtr ed = new EventDescription(reg, FLINN_ENGDAHL_REGION);
 			ev->add(ed.get());
 			SEISCOMP_INFO("%s: adding Flinn-Engdahl region name '%s'",
-			              ev->publicID().c_str(), reg.c_str());
+			              ev->publicID(), reg);
 			SEISCOMP_LOG(_infoChannel, "Event %s got new Flinn-Engdahl region name: %s",
-			             ev->publicID().c_str(), reg.c_str());
+			             ev->publicID(), reg);
 		}
 	}
 }

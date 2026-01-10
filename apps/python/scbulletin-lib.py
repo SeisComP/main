@@ -221,12 +221,19 @@ class Bulletin(object):
         tim = org.time().value()
         lat = org.latitude().value()
         lon = org.longitude().value()
-        dep = org.depth().value()
+
         timerr = uncertainty(org.time())
         laterr = uncertainty(org.latitude())
         lonerr = uncertainty(org.longitude())
-        deperr = uncertainty(org.depth())
         tstr = time2str(tim)
+
+        dep = None
+        deperr = None
+        try:
+            dep = org.depth().value()
+            deperr = uncertainty(org.depth())
+        except ValueError:
+            pass
 
         originHeader = "Origin:\n"
         if evt:
@@ -283,10 +290,15 @@ class Bulletin(object):
                 txt += f"    Longitude             {lon:10.5f} deg\n"
             else:
                 txt += f"    Longitude             {lon:7.2f} deg\n"
-        if self.enhanced:
-            txt += f"    Depth                {dep:11.3f} km"
+
+        if dep:
+            if self.enhanced:
+                txt += f"    Depth                {dep:11.3f} km"
+            else:
+                txt += f"    Depth                 {dep:7.0f} km"
         else:
-            txt += f"    Depth                 {dep:7.0f} km"
+            txt += "    Depth                  N/A"
+
         if deperr is None:
             txt += "\n"
         elif deperr == 0:
@@ -399,6 +411,11 @@ class Bulletin(object):
             mag = org.magnitude(i)
             val = mag.magnitude().value()
             typ = mag.type()
+            magStationCount = "N/A"
+            try:
+                magStationCount = f"{mag.stationCount():3d}"
+            except ValueError:
+                pass
             networkMagnitudes[typ] = mag
 
             for k in range(mag.stationMagnitudeContributionCount()):
@@ -424,11 +441,12 @@ class Bulletin(object):
                     pass
             else:
                 agencyID = ""
-            txt += "    %-8s %5.2f %8s %3d %s  %s\n" % (
+
+            txt += "    %-8s %5.2f %8s %s %s  %s\n" % (
                 typ,
                 val,
                 err,
-                mag.stationCount(),
+                magStationCount,
                 preferredMarker,
                 agencyID,
             )
@@ -460,11 +478,18 @@ class Bulletin(object):
                         pass
                 else:
                     agencyID = ""
-                txt += "    %-8s %5.2f %8s %3d %s  %s\n" % (
+
+                magStationCount = "N/A"
+                try:
+                    magStationCount = f"{mag.stationCount():3d}"
+                except ValueError:
+                    pass
+
+                txt += "    %-8s %5.2f %8s %s %s  %s\n" % (
                     typ,
                     val,
                     err,
-                    mag.stationCount(),
+                    magStationCount,
                     preferredMarker,
                     agencyID,
                 )
@@ -712,11 +737,18 @@ class Bulletin(object):
 
         txt = ""
 
+        dep = "N/A"
         if self.enhanced:
-            depth = org.depth().value()
+            try:
+                dep = f"{org.depth().value():.3f}"
+            except Exception:
+                pass
             sTime = org.time().value().toString("%Y/%m/%d  %H:%M:%S.%f00")[:24]
         else:
-            depth = int(org.depth().value() + 0.5)
+            try:
+                dep = f"{int(org.depth().value() + 0.5)}"
+            except Exception:
+                pass
             sTime = org.time().value().toString("%Y/%m/%d  %H:%M:%S.%f")[:22]
 
         tmp = {
@@ -725,7 +757,7 @@ class Bulletin(object):
             "time": sTime,
             "lat": lat2str(org.latitude().value(), self.enhanced),
             "lon": lon2str(org.longitude().value(), self.enhanced),
-            "dep": depth,
+            "dep": dep,
             "reg": seiscomp.seismology.Regions.getRegionName(
                 org.latitude().value(), org.longitude().value()
             ),
@@ -783,14 +815,14 @@ class Bulletin(object):
 
  %(method)s solution with earthmodel %(model)s (with start solution, %(nsta)d stations used, weight %(nsta)d):
 
-  %(reg)s  %(mtyp)s=%(mval).1f  %(time)s  %(lat)s  %(lon)s   %(dep)"""
+  %(reg)s  %(mtyp)s=%(mval).1f  %(time)s  %(lat)s  %(lon)s   %(dep)s"""
         if self.enhanced:
-            txtFMT += """.3f km
+            txtFMT += """ km
 
   Stat  Net Date      Time                 Amp  Per     Res      Dist    Az  mb  ML  mB
 """
         else:
-            txtFMT += """d km
+            txtFMT += """ km
 
   Stat  Net Date      Time               Amp  Per   Res  Dist  Az  mb  ML  mB
 """
@@ -888,10 +920,13 @@ class Bulletin(object):
 
             txt += lineFMT % (sta, net, tstr, amp, per, res, dist, azi, mstr)
 
-        if self.enhanced:
-            txt += f"\n RMS-ERR:         {org.quality().standardError():.3f}\n\n"
-        else:
-            txt += f"\n RMS-ERR:         {org.quality().standardError():.2f}\n\n"
+        try:
+            if self.enhanced:
+                txt += f"\n RMS-ERR:         {org.quality().standardError():.3f}\n\n"
+            else:
+                txt += f"\n RMS-ERR:         {org.quality().standardError():.2f}\n\n"
+        except ValueError:
+            txt += "\n RMS-ERR:         N/A\n\n"
 
         if evt:
             try:
@@ -929,11 +964,12 @@ class Bulletin(object):
         agencyID = None
         eType = None
         prefMagID = None
-        depth = None
-        altitude = None
+        altitude = "N/A"
+        depth = "N/A"
         sTime = None
         mode = None
         status = None
+
         if evt:
             evid = evt.publicID()
             pos = evid.find("#")  # XXX Hack!!!
@@ -991,16 +1027,21 @@ class Bulletin(object):
         if self.enhanced:
             latitude = f"{org.latitude().value():.3f}"
             longitude = f"{org.longitude().value():.3f}"
-            depth = float(f"{org.depth().value():.3f}")
+            try:
+                depth = float(f"{org.depth().value():.3f}")
+                altitude = -1.0 * depth
+            except ValueError:
+                pass
             sTime = org.time().value().toString("%FT%T.%f")[:23]
         else:
             latitude = f"{org.latitude().value():.1f}"
             longitude = f"{org.longitude().value():.1f}"
-            depth = float(f"{org.depth().value():.0f}")
+            try:
+                depth = int(f"{org.depth().value():.0f}")
+                altitude = -1 * depth
+            except ValueError:
+                pass
             sTime = org.time().value().toString("%FT%T.%f")[:21]
-
-        if depth:
-            altitude = -1.0 * float(depth)
 
         try:
             region = seiscomp.seismology.Regions.getRegionName(
@@ -1064,15 +1105,18 @@ class Bulletin(object):
             size = 1
         # scale symbolColor with depth
         # global default: 0:FF0000,50:ffA500,100:FFFF00,250:00FF00,600:0000FF
-        if depth < 50:
-            symbolColor = "ff0000ff"
-        elif depth >= 50 and depth < 100:
-            symbolColor = "ff00a5ff"
-        elif depth >= 100 and depth < 250:
-            symbolColor = "ff00ffff"
-        elif depth >= 250 and depth < 600:
-            symbolColor = "ff00ff00"
-        else:
+        try:
+            if depth < 50:
+                symbolColor = "ff0000ff"
+            elif depth >= 50 and depth < 100:
+                symbolColor = "ff00a5ff"
+            elif depth >= 100 and depth < 250:
+                symbolColor = "ff00ffff"
+            elif depth >= 250 and depth < 600:
+                symbolColor = "ff00ff00"
+            else:
+                symbolColor = "ffff0000"
+        except Exception:
             symbolColor = "ffff0000"
         txt += f"<Style><IconStyle><scale>{size}</scale><color>{symbolColor}</color></IconStyle></Style>"
         txt += f"<Point><coordinates>{longitude},{latitude},{altitude}</coordinates></Point>"
@@ -1267,11 +1311,18 @@ class Bulletin(object):
                 except ValueError:
                     pass
 
+        depth = ""
+        try:
+            if self.enhanced:
+                depth = f"{org.depth().value():.3f}"
+            else:
+                depth = f"{org.depth().value():.0f}"
+        except Exception:
+            pass
+
         if self.enhanced:
-            depth = f"{org.depth().value():.3f}"
             sTime = org.time().value().toString("%FT%T.%f")[:26]
         else:
-            depth = f"{org.depth().value():.0f}"
             sTime = org.time().value().toString("%FT%T.%f")[:23]
 
         lat = lat2str(org.latitude().value(), self.enhanced)

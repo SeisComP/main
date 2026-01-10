@@ -30,11 +30,13 @@
 #include <seiscomp/math/geo.h>
 #include <seiscomp/utils/timer.h>
 #include <seiscomp/seismology/regions.h>
-#include <seiscomp/gui/core/recordviewitem.h>
 #include <seiscomp/gui/core/application.h>
-#include <seiscomp/gui/core/scheme.h>
-#include <seiscomp/gui/core/infotext.h>
 #include <seiscomp/gui/core/flowlayout.h>
+#include <seiscomp/gui/core/icon.h>
+#include <seiscomp/gui/core/infotext.h>
+#include <seiscomp/gui/core/recordviewitem.h>
+#include <seiscomp/gui/core/scheme.h>
+#include <seiscomp/gui/core/spectrogramsettings.h>
 #include <seiscomp/gui/datamodel/origindialog.h>
 #include <seiscomp/gui/datamodel/inventorylistview.h>
 
@@ -50,7 +52,6 @@
 
 #include "associator.h"
 #include "settings.h"
-#include "spectrogramsettings.h"
 #include "tracemarker.h"
 
 
@@ -615,7 +616,7 @@ void TraceWidget::drawSpectrogramAxis(QPainter &painter) {
 
 	painter.save();
 
-	QPair<double, double> range = _spectrogram->range();
+	QPair<double, double> range = _spectrogram->frequencyRange();
 	_spectrogramAxis->setRange(Seiscomp::Gui::Range(range.first, range.second));
 
 	r.setRight(r.left());
@@ -959,83 +960,7 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 		addDockWidget(Qt::LeftDockWidgetArea, dockSpec);
 		dockSpec->toggleViewAction()->setShortcut(QKeySequence("ctrl+shift+s"));
 		_ui.menuWindow->addAction(dockSpec->toggleViewAction());
-
-		try {
-			_spectrogramSettings->ui.cbSmoothing->setChecked(
-				SCApp->configGetBool("spectrogram.smoothing")
-			);
-		}
-		catch ( ... ) {}
-
-		try {
-			_spectrogramSettings->ui.cbLogScale->setChecked(
-				SCApp->configGetBool("spectrogram.logScale")
-			);
-		}
-		catch ( ... ) {}
-
-		try {
-			auto mode = SCApp->configGetString("spectrogram.normalization");
-			if ( mode == "fixed" ) {
-				_spectrogramSettings->ui.cbNormalization->setCurrentIndex(0);
-			}
-			else if ( mode == "frequency" ) {
-				_spectrogramSettings->ui.cbNormalization->setCurrentIndex(1);
-			}
-			else if ( mode == "time" ) {
-				_spectrogramSettings->ui.cbNormalization->setCurrentIndex(2);
-			}
-		}
-		catch ( ... ) {}
-
-		try {
-			_spectrogramSettings->ui.cbShowAxis->setChecked(
-				SCApp->configGetBool("spectrogram.axis")
-			);
-		}
-		catch ( ... ) {}
-
-		try {
-			_spectrogramSettings->ui.spinMinAmp->setValue(
-				SCApp->configGetDouble("spectrogram.minimumAmplitude")
-			);
-		}
-		catch ( ... ) {}
-
-		try {
-			_spectrogramSettings->ui.spinMaxAmp->setValue(
-				SCApp->configGetDouble("spectrogram.maximumAmplitude")
-			);
-		}
-		catch ( ... ) {}
-
-		try {
-			_spectrogramSettings->ui.spinMinFrequency->setValue(
-				SCApp->configGetDouble("spectrogram.minimumFrequency")
-			);
-		}
-		catch ( ... ) {}
-
-		try {
-			_spectrogramSettings->ui.spinMaxFrequency->setValue(
-				SCApp->configGetDouble("spectrogram.maximumFrequency")
-			);
-		}
-		catch ( ... ) {}
-
-		try {
-			_spectrogramSettings->ui.spinTimeWindow->setValue(
-				SCApp->configGetDouble("spectrogram.timeSpan")
-			);
-		}
-		catch ( ... ) {}
-
-		try {
-			_spectrogramSettings->ui.spinOverlap->setValue(
-				SCApp->configGetDouble("spectrogram.overlap") * 100
-			);
-		}
-		catch ( ... ) {}
+		_spectrogramSettings->init(SCApp, "spectrogram.");
 	}
 	else {
 		_statusBarSelectMode->setVisible(false);
@@ -2056,7 +1981,7 @@ void MainWindow::createOrigin(Gui::RecordViewItem* item, Core::Time time) {
 	origin->setLongitude(dlg.longitude());
 	origin->setLatitude(dlg.latitude());
 	origin->setDepth(DataModel::RealQuantity(dlg.depth()));
-	origin->setTime(Core::Time(dlg.getTime_t()));
+	origin->setTime(Core::Time(dlg.getTime_t(), 0));
 
 	//Seiscomp::DataModel::ArtificialOriginMessage message(origin);
 	//SCApp->sendMessage("GUI", &message);
@@ -2165,9 +2090,9 @@ void MainWindow::openAcquisition() {
 		addTabulator();
 
 		_tabWidget->setTabText(_tabWidget->indexOf(_traceViews[0]), "Enabled");
-		_tabWidget->setTabIcon(_tabWidget->indexOf(_traceViews[0]), QIcon(":icons/icons/enabled.png"));
+		_tabWidget->setTabIcon(_tabWidget->indexOf(_traceViews[0]), icon("tab_ok"));
 		_tabWidget->setTabText(_tabWidget->indexOf(_traceViews[1]), "Disabled");
-		_tabWidget->setTabIcon(_tabWidget->indexOf(_traceViews[1]), QIcon(":icons/icons/disabled.png"));
+		_tabWidget->setTabIcon(_tabWidget->indexOf(_traceViews[1]), icon("tab_disabled"));
 
 		_tabWidget->setCurrentIndex(0);
 	}

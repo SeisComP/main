@@ -16,7 +16,9 @@
 
 #include "mainframe.h"
 #include <seiscomp/gui/core/application.h>
+#include <seiscomp/gui/core/icon.h>
 #include <seiscomp/gui/core/messages.h>
+#include <seiscomp/gui/core/processmanager.h>
 #include <seiscomp/gui/datamodel/eventsummary.h>
 #include <seiscomp/gui/datamodel/eventsummaryview.h>
 #include <seiscomp/gui/datamodel/originlocatorview.h>
@@ -145,8 +147,6 @@ MainFrame::MainFrame(){
 
 	SCApp->settings().beginGroup(objectName());
 
-	_expertMode = true;
-
 	_actionConfigureAcquisition = new QAction(this);
 	_actionConfigureAcquisition->setObjectName(QString::fromUtf8("configureAcquisition"));
 	_actionConfigureAcquisition->setShortcut(QApplication::translate("MainWindow", "F3", 0));
@@ -157,7 +157,10 @@ MainFrame::MainFrame(){
 	connect(_actionConfigureAcquisition, SIGNAL(triggered(bool)),
 	        this, SLOT(configureAcquisition()));
 
-	_ui.menuView->addAction(_actionToggleFullScreen);
+	_ui.menuView->insertAction(_ui.actionProcessManager, _actionToggleFullScreen);
+	_ui.actionUndo->setIcon(icon("undo"));
+	_ui.actionRedo->setIcon(icon("redo"));
+	_ui.actionProcessManager->setIcon(icon("process_manager"));
 
 	_ui.menuView->addSeparator();
 	QMenu *toolBars = _ui.menuView->addMenu("Toolbars");
@@ -175,12 +178,13 @@ MainFrame::MainFrame(){
 
 	if ( addSystemTray ) {
 		_trayIcon = new QSystemTrayIcon(this);
-		_trayIcon->setIcon(QIcon(":/icons/icons/locate.png"));
+		_trayIcon->setIcon(icon("seiscomp-logo").pixmap(64));
 		_trayIcon->setToolTip(tr("%1").arg(SCApp->name().c_str()));
 		_trayIcon->show();
 	}
-	else
+	else {
 		_trayIcon = nullptr;
+	}
 
 	if ( _trayIcon ) {
 		connect(_trayIcon, SIGNAL(messageClicked()), this, SLOT(trayIconMessageClicked()));
@@ -192,9 +196,6 @@ MainFrame::MainFrame(){
 
 	_eventSmallSummary = nullptr;
 	_eventSmallSummaryCurrent = nullptr;
-
-	try { _expertMode = SCApp->configGetBool("mode.expert"); }
-	catch ( ... ) { _expertMode = true; }
 
 	try { _exportScript = Seiscomp::Environment::Instance()->absolutePath(SCApp->configGetString("scripts.export")); }
 	catch ( ... ) { _exportScript = ""; }
@@ -226,7 +227,7 @@ MainFrame::MainFrame(){
 		QPushButton *btn = _eventSmallSummary->exportButton();
 		btn->setVisible(true);
 		btn->setText("");
-		btn->setIcon(QIcon(":/icons/icons/publish.png"));
+		btn->setIcon(icon("share"));
 		btn->setFlat(true);
 		btn->setToolTip("Publish event");
 
@@ -566,6 +567,42 @@ MainFrame::MainFrame(){
 	try { pickerConfig.defaultDepth = SCApp->configGetDouble("olv.defaultDepth"); }
 	catch ( ... ) {}
 
+	// Old configuration
+	try {
+		auto patterns = SCApp->configGetStrings("picker.auxiliary.channels");
+		double minDist = 0, maxDist = 1000;
+		try {
+			minDist = SCApp->configGetDouble("picker.auxiliary.minimumDistance");
+		}
+		catch ( ... ) {}
+		try {
+			maxDist = SCApp->configGetDouble("picker.auxiliary.maximumDistance");
+		}
+		catch ( ... ) {}
+
+		pickerConfig.auxiliaryChannelProfiles.push_back({ QString(), patterns, minDist, maxDist });
+	}
+	catch ( ... ) {}
+
+	try {
+		auto profiles = SCApp->configGetStrings("picker.auxiliary.profiles");
+		for ( const auto &profile : profiles ) {
+			auto patterns = SCApp->configGetStrings("picker.auxiliary.profiles." + profile + ".channels");
+			double minDist = 0, maxDist = 1000;
+			try {
+				minDist = SCApp->configGetDouble("picker.auxiliary.profiles." + profile + ".minimumDistance");
+			}
+			catch ( ... ) {}
+			try {
+				maxDist = SCApp->configGetDouble("picker.auxiliary.profiles." + profile + ".maximumDistance");
+			}
+			catch ( ... ) {}
+
+			pickerConfig.auxiliaryChannelProfiles.push_back({ profile.data(), patterns, minDist, maxDist });
+		}
+	}
+	catch ( ... ) {}
+
 	try { amplitudeConfig.preOffset = Core::TimeSpan(SCApp->configGetDouble("amplitudePicker.preOffset")); }
 	catch ( ... ) { amplitudeConfig.preOffset = Core::TimeSpan(300, 0); }
 
@@ -591,7 +628,7 @@ MainFrame::MainFrame(){
 			QStringList tokens = filter.split(";");
 			if ( tokens.size() != 2 ) {
 				SEISCOMP_ERROR("Wrong filter string, expecting ';' to seperate name and definition: %s",
-				               (const char*)filter.toLatin1());
+				               static_cast<const char*>(filter.toLatin1()));
 				continue;
 			}
 
@@ -602,6 +639,7 @@ MainFrame::MainFrame(){
 
 	OriginDialog::SetDefaultDepth(pickerConfig.defaultDepth);
 
+	amplitudeConfig.auxiliaryChannelProfiles = pickerConfig.auxiliaryChannelProfiles;
 	amplitudeConfig.defaultAddStationsDistance = pickerConfig.defaultAddStationsDistance;
 	amplitudeConfig.hideStationsWithoutData = pickerConfig.hideStationsWithoutData;
 	amplitudeConfig.loadStrongMotionData = pickerConfig.loadStrongMotionData;
@@ -621,14 +659,18 @@ MainFrame::MainFrame(){
 	try {
 		if ( !_magnitudes->setDefaultAggregationType(SCApp->configGetString("olv.defaultMagnitudeAggregation")) ) {
 			SEISCOMP_ERROR("Unknown aggregation in olv.defaultMagnitudeAggregation: %s",
-			               SCApp->configGetString("olv.defaultMagnitudeAggregation").c_str());
+			               SCApp->configGetString("olv.defaultMagnitudeAggregation"));
+			QMessageBox::critical(
+				nullptr,
+				tr("Invalid configuration"),
+				tr("Unknown aggregation in olv.defaultMagnitudeAggregation:\n%1\nFalling back to default.")
+				.arg(SCApp->configGetString("olv.defaultMagnitudeAggregation").c_str())
+			);
 		}
 	}
 	catch ( ... ) {}
 
-	_magnitudeCalculationEnabled = _expertMode;
-
-	_originLocator->setMagnitudeCalculationEnabled(_magnitudeCalculationEnabled);
+	_originLocator->setMagnitudeCalculationEnabled(true);
 	_eventSmallSummary->setDefaultEventRadius(locatorConfig.defaultEventRadius);
 
 	connect(_magnitudes, SIGNAL(localAmplitudesAvailable(Seiscomp::DataModel::Origin*, AmplitudeSet*, StringSet*)),
@@ -661,18 +703,12 @@ MainFrame::MainFrame(){
 	QLayout* layoutMagnitudes = new QVBoxLayout(_ui.tabMagnitudes);
 	layoutMagnitudes->addWidget(_magnitudes);
 
-	if ( _expertMode ) {
-		_tabEventEdit = new QWidget;
-		_ui.tabWidget->insertTab(_ui.tabWidget->count()-1, _tabEventEdit, "Event");
+	_tabEventEdit = new QWidget;
+	_ui.tabWidget->insertTab(_ui.tabWidget->count()-1, _tabEventEdit, "Event");
 
-		_eventEdit = new EventEdit(SCApp->query(), mapTree.get(), _tabEventEdit);
-		QLayout* layoutEventEdit = new QVBoxLayout(_tabEventEdit);
-		layoutEventEdit->addWidget(_eventEdit);
-	}
-	else {
-		_tabEventEdit = nullptr;
-		_eventEdit = nullptr;
-	}
+	_eventEdit = new EventEdit(SCApp->query(), mapTree.get(), _tabEventEdit);
+	QLayout* layoutEventEdit = new QVBoxLayout(_tabEventEdit);
+	layoutEventEdit->addWidget(_eventEdit);
 
 	/*
 	QLayout* layoutPicker = new QVBoxLayout(_ui.tabWaveforms);
@@ -752,19 +788,17 @@ MainFrame::MainFrame(){
 	        _eventSmallSummaryCurrent, SLOT(updateObject(const QString&, Seiscomp::DataModel::Object*)));
 #endif
 
-	if ( _expertMode ) {
-		connect(SCApp, SIGNAL(addObject(const QString&, Seiscomp::DataModel::Object*)),
-		        _eventEdit, SLOT(addObject(const QString&, Seiscomp::DataModel::Object*)));
+	connect(SCApp, SIGNAL(addObject(const QString&, Seiscomp::DataModel::Object*)),
+	        _eventEdit, SLOT(addObject(const QString&, Seiscomp::DataModel::Object*)));
 
-		connect(SCApp, SIGNAL(removeObject(const QString&, Seiscomp::DataModel::Object*)),
-		        _eventEdit, SLOT(removeObject(const QString&, Seiscomp::DataModel::Object*)));
+	connect(SCApp, SIGNAL(removeObject(const QString&, Seiscomp::DataModel::Object*)),
+	        _eventEdit, SLOT(removeObject(const QString&, Seiscomp::DataModel::Object*)));
 
-		connect(SCApp, SIGNAL(updateObject(const QString&, Seiscomp::DataModel::Object*)),
-		        _eventEdit, SLOT(updateObject(const QString&, Seiscomp::DataModel::Object*)));
+	connect(SCApp, SIGNAL(updateObject(const QString&, Seiscomp::DataModel::Object*)),
+	        _eventEdit, SLOT(updateObject(const QString&, Seiscomp::DataModel::Object*)));
 
-		connect(_originLocator, SIGNAL(updatedOrigin(Seiscomp::DataModel::Origin*)),
-		        _eventEdit, SLOT(updateOrigin(Seiscomp::DataModel::Origin*)));
-	}
+	connect(_originLocator, SIGNAL(updatedOrigin(Seiscomp::DataModel::Origin*)),
+	        _eventEdit, SLOT(updateOrigin(Seiscomp::DataModel::Origin*)));
 
 	connect(SCApp, SIGNAL(messageAvailable(Seiscomp::Core::Message*, Seiscomp::Client::Packet*)),
 	        this, SLOT(messageAvailable(Seiscomp::Core::Message*, Seiscomp::Client::Packet*)));
@@ -822,10 +856,8 @@ MainFrame::MainFrame(){
 	connect(_eventList, SIGNAL(eventFMSelected(Seiscomp::DataModel::Event*)),
 	        this, SLOT(setFMData(Seiscomp::DataModel::Event*)));
 
-	if ( _expertMode ) {
-		connect(_eventEdit, SIGNAL(originSelected(Seiscomp::DataModel::Origin*, Seiscomp::DataModel::Event*)),
-		        this, SLOT(setData(Seiscomp::DataModel::Origin*, Seiscomp::DataModel::Event*)));
-	}
+	connect(_eventEdit, SIGNAL(originSelected(Seiscomp::DataModel::Origin*, Seiscomp::DataModel::Event*)),
+	        this, SLOT(setData(Seiscomp::DataModel::Origin*, Seiscomp::DataModel::Event*)));
 
 #ifdef WITH_SMALL_SUMMARY
 	connect(_eventSmallSummary, SIGNAL(selected(Seiscomp::DataModel::Origin*, Seiscomp::DataModel::Event*)),
@@ -923,6 +955,9 @@ MainFrame::MainFrame(){
 	connect(_ui.actionShowStations, SIGNAL(toggled(bool)), _eventEdit, SLOT(drawStations(bool)));
 	connect(_ui.actionShowStationAnnotations, SIGNAL(toggled(bool)), _eventEdit, SLOT(drawStationAnnotations(bool)));
 	connect(_ui.actionShowEventList, SIGNAL(triggered(bool)), this, SLOT(showEventList()));
+	connect(_ui.actionProcessManager, &QAction::triggered, []() {
+		SCApp->processManager()->show();
+	});
 
 	_originLocator->drawStations(_ui.actionShowStations->isChecked());
 	_originLocator->drawStationAnnotations(_ui.actionShowStationAnnotations->isChecked());
@@ -1048,9 +1083,9 @@ void MainFrame::setOffline(bool o) {
 void MainFrame::configureAcquisition() {
 	PickerSettings dlg(_originLocator->config(), _originLocator->pickerConfig(), _magnitudes->amplitudeConfig());
 
-	dlg.ui().cbComputeMagnitudesAfterRelocate->setEnabled(_magnitudeCalculationEnabled);
+	dlg.ui().cbComputeMagnitudesAfterRelocate->setEnabled(true);
 	dlg.ui().cbComputeMagnitudesAfterRelocate->setChecked(_computeMagnitudesAutomatically);
-	dlg.ui().cbComputeMagnitudesSilently->setEnabled(_magnitudeCalculationEnabled);
+	dlg.ui().cbComputeMagnitudesSilently->setEnabled(true);
 	dlg.ui().cbComputeMagnitudesSilently->setChecked(_computeMagnitudesSilently);
 	dlg.ui().cbAskForMagnitudeTypes->setChecked(_askForMagnitudeTypes);
 	dlg.setSaveEnabled(true);
@@ -1259,8 +1294,7 @@ void MainFrame::setOrigin(Seiscomp::DataModel::Origin *o,
 
 	_magnitudes->setOrigin(o, e);
 
-	if ( _magnitudeCalculationEnabled )
-		_magnitudes->setReadOnly(!newOrigin);
+	_magnitudes->setReadOnly(!newOrigin);
 
 #ifdef WITH_SMALL_SUMMARY
 	_eventSmallSummary->setEvent(e);
@@ -1269,12 +1303,6 @@ void MainFrame::setOrigin(Seiscomp::DataModel::Origin *o,
 
 	if ( newOrigin && relocated && _computeMagnitudesAutomatically && (o->magnitudeCount() == 0) )
 		_originLocator->computeMagnitudes();
-
-	/*
-	if ( _expertMode ) {
-		_eventEdit->setEvent(nullptr, nullptr);
-	}
-	*/
 }
 
 
@@ -1313,8 +1341,7 @@ bool MainFrame::populateOrigin(Seiscomp::DataModel::Origin *org, Seiscomp::DataM
 		_eventSmallSummary->setEvent(ev/*, org*/);
 		_eventSmallSummaryCurrent->setEvent(ev, org, true);
 #endif
-		if ( _expertMode )
-			_eventEdit->setEvent(ev, org);
+		_eventEdit->setEvent(ev, org);
 
 		return true;
 	}
@@ -1375,8 +1402,7 @@ void MainFrame::originReferenceRemoved(const std::string &eventID, Seiscomp::Dat
 			_eventSmallSummary->setEvent(nullptr);
 			_eventSmallSummaryCurrent->setEvent(nullptr, _currentOrigin.get(), true);
 #endif
-			if ( _expertMode )
-				_eventEdit->setEvent(nullptr, _currentOrigin.get());
+			_eventEdit->setEvent(nullptr, _currentOrigin.get());
 
 			_eventID.clear();
 		}
@@ -1398,9 +1424,7 @@ void MainFrame::originReferenceAdded(const std::string &eventID, Seiscomp::DataM
 				_eventSmallSummary->setEvent(evt.get()/*, org*/);
 				_eventSmallSummaryCurrent->setEvent(evt.get(), _currentOrigin.get(), true);
 #endif
-				if ( _expertMode ) {
-					_eventEdit->setEvent(evt.get(), _currentOrigin.get());
-				}
+				_eventEdit->setEvent(evt.get(), _currentOrigin.get());
 
 				_eventID = evt->publicID();
 			}

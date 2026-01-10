@@ -41,7 +41,7 @@ from . import utils
 
 DBMaxUInt = 18446744073709551615  # 2^64 - 1
 
-VERSION = "1.2.6"
+VERSION = "1.2.7"
 
 ################################################################################
 
@@ -914,7 +914,9 @@ class FDSNEvent(BaseResource):
             if bBox.maxLat is not None:
                 q += f" AND o.{colLat} <= {bBox.maxLat}"
             if bBox.dateLineCrossing():
-                q += f" AND (o.{colLon} >= {bBox.minLon} OR o.{colLon} <= {bBox.maxLo})"
+                q += (
+                    f" AND (o.{colLon} >= {bBox.minLon} OR o.{colLon} <= {bBox.maxLon})"
+                )
             else:
                 if bBox.minLon is not None:
                     q += f" AND o.{colLon} >= {bBox.minLon}"

@@ -43,6 +43,7 @@ class TestEvent(FDSNWSTest):
             # Mw is found in derived origin of preferred focal mechanism which is not
             # the preferred origin
             ("?format=text&magnitudetype=Mw", ctTXT, False),
+            ("?format=text&minlat=-30&maxlat=30&minlon=150&maxlon=-150", ctTXT, False),
         ]
         for q, ct, concurrent in tests:
             self.testHTTP(

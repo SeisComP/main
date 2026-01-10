@@ -323,6 +323,8 @@ class DBCleaner(seiscomp.client.Application):
         self._invertMode = False
         self._stripEP = True
         self._stripQC = True
+        self._keepModes = [] # Array with modes to keep
+        self._keepStatus = [] # Array with status to keep
 
         self._steps = 0
         self._currentStep = 0
@@ -357,6 +359,18 @@ class DBCleaner(seiscomp.client.Application):
                     "keep-events",
                     "Event-IDs to keep in the database. Combining with 'qc-only' "
                     "is invalid.",
+                )
+                self.commandline().addStringOption(
+                    "Objects",
+                    "keep-event-modes",
+                    "Keep all events where is evaluation mode of the preferred origin is "
+                    "one of the given modes."
+                )
+                self.commandline().addStringOption(
+                    "Objects",
+                    "keep-event-status",
+                    "Keep all events where is evaluation status of the preferred origin is "
+                    "one of the given status."
                 )
                 self.commandline().addOption(
                     "Objects",
@@ -530,6 +544,19 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
             try:
                 eventIDs = self.commandline().optionString("keep-events")
                 self._keepEvents = [id.strip() for id in eventIDs.split(",")]
+            except RuntimeError:
+                pass
+
+            try:
+                status = self.commandline().optionString("keep-event-status")
+                self._keepStatus = [s.strip() for s in status.split(",")]
+                print(status, self._keepStatus)
+            except RuntimeError:
+                pass
+
+            try:
+                modes = self.commandline().optionString("keep-event-modes")
+                self._keepModes = [m.strip() for m in modes.split(",")]
             except RuntimeError:
                 pass
 
@@ -816,6 +843,20 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                     " and PEvent."
                     + self.cnvCol("publicID")
                     + " not in ('%s')" % "','".join(self._keepEvents)
+                )
+
+            if len(self._keepModes) > 0:
+                old_events += (
+                    " and Origin."
+                    + self.cnvCol("evaluationMode")
+                    + " not in ('%s')" % "','".join(self._keepModes)
+                )
+
+            if len(self._keepStatus) > 0:
+                old_events += (
+                    " and Origin."
+                    + self.cnvCol("evaluationStatus")
+                    + " not in ('%s')" % "','".join(self._keepStatus)
                 )
 
             self.beginMessage("Find old events")

@@ -6,24 +6,24 @@
 .. figure:: ../../../../doc/base/media/apps/scolv-location.png
    :alt: scolv
 
-   scolv: OriginLocatorView :ref:`Location tab <scolv-sec-location-tab>`
+   scolv: :ref:`Location tab <scolv-sec-location-tab>`
    with event and phase information
 
 .. figure:: ../../../../doc/base/media/apps/scolv-picker.png
    :alt: scolv picker
 
-   scolv: OriginLocatorView :ref:`phase picker <scolv-sec-waveform-review>`
+   scolv: :ref:`Phase picker <scolv-sec-waveform-review>`
    with waveforms and phase information
 
 .. figure:: ../../../../doc/base/media/apps/scolv-event.png
    :alt: scolv picker
 
-   scolv: OriginLocatorView :ref:`Event tab <fig-scolv-event>` with all origins
+   scolv: :ref:`Event tab <fig-scolv-event>` with all origins
 
 .. figure:: ../../../../doc/base/media/apps/scolv-magnitude-picker.png
    :alt: scolv picker
 
-   scolv: OriginLocatorView :ref:`amplitude waveform review <scolv-sec-amplitude-review>`
+   scolv: :ref:`Amplitude waveform review <scolv-sec-amplitude-review>`
    with station magnitudes
 
 .. raw:: html
@@ -72,7 +72,7 @@ scolv can be operated in 2 modes:
 * **Connected to the messaging** where all event and station inventory parameters
   are received from the :ref:`messaging <concepts_messaging>` or the database and
   *updated in real time*. New or updated
-  parameters can be commited to the messaging. Simply start scolv without any argument
+  parameters can be committed to the messaging. Simply start scolv without any argument
   or connect to a specific host providing the messaging, e.g.:
 
   .. code-block:: sh
@@ -248,13 +248,14 @@ list can be changed in :file:`scolv.cfg` by adjusting :confval:`olv.arrivalTable
 
 .. code-block:: properties
 
-   olv.arrivalTable.visibleColumns = Used, Status, Weight, Phase, Net, Sta,\
-                                     Loc/Cha, Res, Dis, Az, Time, +/-
+   olv.arrivalTable.visibleColumns = Used, Status, Phase, Net, Sta,\
+                                     Loc/Cha, Timeres, Dis, Az, Time, +/-
 
 The user can also interactively select what columns are be visible or hidden
 from a context menu which pops up after a right click on the table header.
 
 .. figure:: media/scolv/arrivals-header-context.png
+   :width: 6cm
    :align: center
 
 The checkbox in the first column indicates if the arrival was used for locating the
@@ -273,7 +274,7 @@ Background: an arrival refers to a pick which can hold several features. The bas
 feature a pick must hold is the pick time. Some modules such as for array processing
 might compute additional pick features. Such features can be the backazimuth and
 the horizontal slowness. Locators like LocSAT were developed to use those features
-to increase the precision of a location. Special applictions are locations based
+to increase the precision of a location. Special applications are locations based
 borehole networks with poor azimuthal coverage or locations with very few stations.
 
 There may be cases where a backazimuth measure of a pick should not be used by
@@ -320,7 +321,7 @@ to view and process waveforms for
 * Picking additional phases,
 * Confirming picks,
 * Adding additional pick information such as polarity and uncertainty,
-* Data procssing, e.g. filtering, rotation, spectrogram and much more.
+* Data processing, e.g. filtering, rotation, spectrogram and much more.
 
 The phase picker window is divided into two parts:
 
@@ -341,12 +342,12 @@ Request waveforms
 
 When the picker window opens waveforms are initially requested for all streams
 which have associated phase picks (arrivals). More waveforms can be fetched
-interavtively:
+interactively:
 
 #. Provide a maximum distance,
-#. Click on the purple `Add` button to load the data.
+#. Click on the `Plus` icon to load the data.
 
-Toggle viewing data without arrivals by clicking the purple `Hide` button.
+Toggle viewing data without arrivals by clicking the `crossed-eye` button.
 
 During request the background of the traces is changed according to the current
 state:
@@ -393,8 +394,8 @@ have been associated with the current location. When opening, it can be configur
 * Load all components: :confval:`picker.loadAllComponents`,
 * Show all components: :confval:`picker.showAllComponents`.
 
-Hotkey :kbd:`t` can be used to toggle beetween 1- and 3-component data. Use the
-yellow buttons or :ref:`hot keys <sec-scolv-hotkeys>` to load components not yet
+Hotkey :kbd:`t` can be used to toggle between 1- and 3-component data. Use the
+orange buttons or :ref:`hot keys <sec-scolv-hotkeys>` to load components not yet
 loaded.
 
 
@@ -402,7 +403,7 @@ Data filtering
 ^^^^^^^^^^^^^^
 
 When the picker window opens, the waveforms are filtered by the default filter
-configured in :confval:`picker.filters`. Selecting filters or unfitlered data
+configured in :confval:`picker.filters`. Selecting filters or unfiltered data
 interactively is available by choosing the filter from the filter menu or
 :ref:`hot keys <sec-scolv-hotkeys>`.
 
@@ -411,10 +412,13 @@ Waveform rotation
 ^^^^^^^^^^^^^^^^^
 
 Waveforms can be rotated to better view details. For rotating the waveform
-components into ZNE or ZRT system a new drop down list was added in the toolbar.
-Selecting either ZNE or ZRT implies that all missing components are requested.
+components into different coordinate system a drop down list exists in the
+toolbar. Available options are: 123, ZNE, ZRT, LQT and ZH(L2).
+Selecting a rotation other than 123 implies that all missing components are
+requested.
 
 .. figure:: media/scolv/rotation-options.png
+   :width: 12cm
    :align: center
 
 
@@ -428,7 +432,7 @@ Phase picks shown on waveforms are color-coded:
 * Blue: predicted using the selected travel-time table
 
 Mature and light colors indicate arrivals and unassociated picks, respectively.
-Unassociated picks can be shown/hidden using :kbd:`Ctrl` + :kbd:`5`.
+Unassociated picks can be shown/hidden using :kbd:`Ctrl` + :kbd:`P`.
 
 
 Phase picking
@@ -481,7 +485,7 @@ An example configuration looks like this (:file:`scolv.cfg`):
 For making a phase pick the picking mode must be activated by choosing a phase in the
 Picking menu. Short cuts are:
 
-* Blue P and S buttons for picking P and phases, respectively (hot keys :kbd:`F1`, :kbd:`F2`),
+* Green P and S buttons for picking P and S phases, respectively (hot keys :kbd:`F1`, :kbd:`F2`),
 * Numbers shown in the picking menu used as hot keys.
 
 Additional information can be added interactively to the picks:
@@ -490,7 +494,7 @@ Additional information can be added interactively to the picks:
 * :ref:`Phase polarities <scolv-sec-polarities>`.
 
 Press :kbd:`ESC` to leave the picking menu. To send all picks to the main scolv
-window click on the red `Apply` button or press :kbd:`F5`. The picks will be used
+window click on the green `Apply all` button or press :kbd:`F5`. The picks will be used
 immediately for :ref:`relocating <scolv-sec-relocating>`.
 
 .. warning::
@@ -614,7 +618,7 @@ provide their own specific global configuration. Read the
 Pressing *Relocate* creates a new origin and updates the arrival table and the
 parameters displayed in the Location tab.
 
-Undoing and redoing actions is availalbe by buttons and
+Undoing and redoing actions is available by buttons and
 :ref:`hot keys <sec-scolv-hotkeys>`.
 
 .. figure:: media/scolv/tab_previous-next.png
@@ -746,7 +750,7 @@ As a shortcut for committing with additional options,
 :ref:`custom commit buttons <fig-scolv-custom-commit>` can be added by
 configuration: Add, enable and configure a custom commit profile in
 :confval:`olv.customCommits`.
-With custom commit buttons origin and event paramters can be set, e.g.:
+With custom commit buttons origin and event parameters can be set, e.g.:
 
 * Origin status
 * Fixing the origin
@@ -834,12 +838,12 @@ Normally, the 25%-trimmed mean is calculated as network magnitude to stabilize
 the result against a few outliers. The 25%-trimmed mean first removes the outliers
 of the outer 12.5% percentiles and then forms the mean.
 
-Magnitudes that were not computed due to missing data or low signa-to-noise
+Magnitudes that were not computed due to missing data or low signal-to-noise
 ratios have a cross button rendered in their tab headers and their value is
 nan (not a number). Furthermore was the status of the magnitude set to
 rejected. To manually review the waveforms and to fine tune the
 parameters, open the waveforms and add at least one station magnitude. Otherwise
-the rejected magnitude will be removed from the origin prio to committing it.
+the rejected magnitude will be removed from the origin prior to committing it.
 
 
 .. _scolv-sec-magnitude-summary:
@@ -885,6 +889,7 @@ The toolbar contains two lines of settings. The first line is similar to the
 Picker, the second line is amplitude picker specific.
 
 .. figure:: media/scolv/magnitudes-toolbar.png
+   :width: 16cm
    :align: center
 
    Second toolbar line: filter selection, filter toggle, min SNR editor,
@@ -980,6 +985,7 @@ of the amplitude. If the mouse hovers an amplitude marker, a tooltip pops up
 after a certain amount of time and shows information about the amplitude.
 
 .. figure:: media/scolv/amplitude-tooltip.png
+   :width: 8cm
    :align: center
 
 
@@ -1064,7 +1070,7 @@ Origin list
 
 The Origin list shows details of all available origins. You may fix/unfix an
 origin to become the preferred one or select the type and set
-the type uncertainty for the selected sevent.
+the type uncertainty for the selected event.
 
 Select a row or cell and
 press the right mouse button to copy the row or cell, respectively.
@@ -1325,7 +1331,7 @@ Location tab
 ^^^^^^^^^^^^
 
 To add an origin comment value to the information panel of the Location tab,
-configure display paramters in scolv. Example (:file:`scolv.cfg`):
+configure display parameters in scolv. Example (:file:`scolv.cfg`):
 
 .. code-block:: properties
 
@@ -1575,7 +1581,7 @@ Configuration example:
 Events tab
 ~~~~~~~~~~
 
-From the event list external scripts can be excuted with :term:`origin` or
+From the event list external scripts can be executed with :term:`origin` or
 :term:`event` objects or both as input from stdin to display the output of the
 script (stdout) in a custom column.
 
@@ -1629,6 +1635,7 @@ Global
 This section contains settings for all the main tabs and *all* waveform windows.
 
 .. figure:: media/scolv/settings-global.png
+   :width: 12cm
    :align: center
 
    Global settings
@@ -1667,6 +1674,7 @@ Picker
 This section contains settings for the picker window.
 
 .. figure:: media/scolv/settings-picker.png
+   :width: 12cm
    :align: center
 
    Waveform picker settings
@@ -1692,6 +1700,7 @@ Magnitude review
 This section contains settings for the magnitude waveform review window.
 
 .. figure:: media/scolv/settings-amplitude.png
+   :width: 12cm
    :align: center
 
    Amplitude/magnitude review settings
@@ -1708,8 +1717,8 @@ This section contains settings for the magnitude waveform review window.
  shifted.
 
 
-Units and precisions
---------------------
+Units and precision
+-------------------
 
 Local network users prefer the distance unit in kilometers while others prefer degrees.
 scolv (as any other GUI) can be configured to show either the one or the other.
@@ -1734,7 +1743,7 @@ Furthermore the precision of various values can be configured:
 
 .. note::
 
-   Configuring units and precisions only affects the way the values are presented,
+   Configuring units and precision only affects the way the values are presented,
    not the values themselves. These and other lock-and-feel parameters can be
    adjusted in *scheme* section of the :ref:`global configuration <global>`.
 
@@ -1772,8 +1781,14 @@ actions in scolv. The hotkeys are provided for:
 +------------------------+-------------------------------------------------------------+
 | F11                    | Toggle fullscreen                                           |
 +------------------------+-------------------------------------------------------------+
+| M                      | Compute magnitudes                                          |
++------------------------+-------------------------------------------------------------+
+| P                      | Open picker window                                          |
++------------------------+-------------------------------------------------------------+
+| R                      | Relocate                                                    |
++------------------------+-------------------------------------------------------------+
 | Ctrl+N                 | Create an unassociated artificial origin at the current map |
-|                        | center                                                      |
+|                        | center and current time                                     |
 +------------------------+-------------------------------------------------------------+
 | Ctrl+Z                 | Go back to last origin (if available)                       |
 +------------------------+-------------------------------------------------------------+
@@ -1787,17 +1802,19 @@ actions in scolv. The hotkeys are provided for:
 +------------------------+-------------------------------------------------------------+
 | Double click           | Center map at the clicked position                          |
 +------------------------+-------------------------------------------------------------+
+| Shift+ Mouse drag      | Zoom map to selection                                       |
++------------------------+-------------------------------------------------------------+
 | **Phase picker**       |                                                             |
 +------------------------+-------------------------------------------------------------+
 | 1 .. 9                 | Activate configured phase picking                           |
 +------------------------+-------------------------------------------------------------+
 | Esc                    | Leaving picking mode                                        |
 +------------------------+-------------------------------------------------------------+
-| F3                     | Add station                                                 |
+| F3                     | Add stations                                                |
 +------------------------+-------------------------------------------------------------+
 | F5                     | Relocate                                                    |
 +------------------------+-------------------------------------------------------------+
-| E                      | Switch to E-component                                       |
+| E                      | Switch to third/E-component                                 |
 +------------------------+-------------------------------------------------------------+
 | F                      | Toggle between current filter and unfiltered                |
 +------------------------+-------------------------------------------------------------+
@@ -1807,13 +1824,15 @@ actions in scolv. The hotkeys are provided for:
 +------------------------+-------------------------------------------------------------+
 | D                      | Toggle through all configured filters: ascending            |
 +------------------------+-------------------------------------------------------------+
-| N                      | Switch to N-component                                       |
+| N                      | Switch to second/N-component                                |
 +------------------------+-------------------------------------------------------------+
 | S                      | Maximize visible amplitudes                                 |
 +------------------------+-------------------------------------------------------------+
+| T                      | Toggle three components in zoom trace                       |
++------------------------+-------------------------------------------------------------+
 | X                      | Deactivate a trace and scroll down (through the traces)     |
 +------------------------+-------------------------------------------------------------+
-| Z                      | Switch to Z-component                                       |
+| Z                      | Switch to first/Z-component                                 |
 +------------------------+-------------------------------------------------------------+
 | Up                     | Scroll up (through the traces)                              |
 +------------------------+-------------------------------------------------------------+
@@ -1825,14 +1844,9 @@ actions in scolv. The hotkeys are provided for:
 +------------------------+-------------------------------------------------------------+
 | Ctrl+S                 | Show Fourier spectrum of selected trace                     |
 +------------------------+-------------------------------------------------------------+
-| Ctrl+N                 | Default trace view                                          |
+| Ctrl+N                 | Restore default display: Amplitude scaling and time window  |
 +------------------------+-------------------------------------------------------------+
 | Ctrl+T                 | Toggle display of theoretical arrivals                      |
-+------------------------+-------------------------------------------------------------+
-| Ctrl+P                 | Toggle display of picks (not arrivals). If picks should     |
-|                        | be shown the first time, all picks within the time span of  |
-|                        | interest are loaded from database. The behavior is the      |
-|                        | same as ticking the option "Load all picks".                |
 +------------------------+-------------------------------------------------------------+
 | Ctrl+Right             | Time zoom in                                                |
 +------------------------+-------------------------------------------------------------+
@@ -1858,11 +1872,11 @@ actions in scolv. The hotkeys are provided for:
 +------------------------+-------------------------------------------------------------+
 | T                      | Temporarily toggle 3 component view                         |
 +------------------------+-------------------------------------------------------------+
-| Space                  | Active picker: Set pick at curser position                  |
+| Space                  | Active picker: Set pick at cursor position                  |
 +------------------------+-------------------------------------------------------------+
 | Space                  | Inactive picker: Show Fourier spectrum from visible window  |
 +------------------------+-------------------------------------------------------------+
-| Enter                  | Active picker: Set pick at curser position, load next trace |
+| Enter                  | Active picker: Set pick at cursor position, load next trace |
 +------------------------+-------------------------------------------------------------+
 | Left                   | Move trace view to left (fine)                              |
 +------------------------+-------------------------------------------------------------+
@@ -1896,7 +1910,7 @@ actions in scolv. The hotkeys are provided for:
 +------------------------+-------------------------------------------------------------+
 | W                      | Reset zoom window to the length of the picking overview     |
 +------------------------+-------------------------------------------------------------+
-| *Picking overview*     |                                                             |
+| *Trace overview*       |                                                             |
 +------------------------+-------------------------------------------------------------+
 | Alt+D                  | Sort by distance                                            |
 +------------------------+-------------------------------------------------------------+
@@ -1928,6 +1942,8 @@ actions in scolv. The hotkeys are provided for:
 +------------------------+-------------------------------------------------------------+
 | Ctrl+Left              | Increase visible time span (zoom out)                       |
 +------------------------+-------------------------------------------------------------+
+| Ctrl+N                 | Restore default display: Amplitude scaling and time window  |
++------------------------+-------------------------------------------------------------+
 | W                      | Reset zoom window to the length of the picking overview     |
 +------------------------+-------------------------------------------------------------+
 | *Trace overview*       |                                                             |
@@ -1939,8 +1955,6 @@ actions in scolv. The hotkeys are provided for:
 | ESC                    | Leave picking mode                                          |
 +------------------------+-------------------------------------------------------------+
 | F                      | Toggle filter                                               |
-+------------------------+-------------------------------------------------------------+
-| Shift+N                | Default view                                                |
 +------------------------+-------------------------------------------------------------+
 | Left                   | Move trace view to left (fine)                              |
 +------------------------+-------------------------------------------------------------+

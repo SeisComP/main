@@ -14,7 +14,7 @@ import seiscomp.logging
 
 from .utils import accessLog, b_str, u_str, writeTSBin
 
-VERSION = "1.2.4"
+VERSION = "1.2.5"
 
 ################################################################################
 

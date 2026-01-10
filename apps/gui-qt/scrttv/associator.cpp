@@ -16,8 +16,9 @@
 #include <seiscomp/datamodel/utils.h>
 #include <seiscomp/seismology/regions.h>
 #include <seiscomp/gui/core/application.h>
-#include <seiscomp/gui/core/flowlayout.h>
+#include <seiscomp/gui/core/icon.h>
 #include <seiscomp/gui/core/inspector.h>
+#include <seiscomp/gui/core/flowlayout.h>
 #include <seiscomp/gui/core/utils.h>
 #include <seiscomp/gui/datamodel/locatorsettings.h>
 #include <seiscomp/gui/datamodel/originlocatormap.h>
@@ -163,7 +164,7 @@ class Badge : public QFrame {
 			content->layout()->addWidget(label);
 
 			_closeButton = new QPushButton();
-			_closeButton->setIcon(QIcon(":/icons/icons/remove.png"));
+			_closeButton->setIcon(icon("close_red"));
 			_closeButton->setFlat(true);
 
 			content->layout()->addWidget(_closeButton);
@@ -197,6 +198,7 @@ Associator::Associator(QWidget *parent) : QWidget(parent) {
 	setupOriginInfo();
 	unsetMessage();
 
+	_ui.btnLocatorSettings->setIcon(icon("settings"));
 	_ui.framePicks->setLayout(new QVBoxLayout);
 	_ui.framePicks->layout()->setContentsMargins(0, 0, 0, 0);
 

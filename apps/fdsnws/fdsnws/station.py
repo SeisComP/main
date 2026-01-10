@@ -35,7 +35,7 @@ from .http import BaseResource
 from .request import RequestOptions
 from . import utils
 
-VERSION = "1.1.5"
+VERSION = "1.1.6"
 
 ################################################################################
 
@@ -759,7 +759,7 @@ class FDSNStation(BaseResource):
         if not modifiedSince:
             return False
 
-        modifiedSince = http.stringToDatetime(modifiedSince)
+        modifiedSince = utils.stringToDatetime(modifiedSince)
         return modifiedSince and self._timeInventoryLoaded <= modifiedSince
 
     # ---------------------------------------------------------------------------

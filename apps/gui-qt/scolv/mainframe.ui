@@ -118,6 +118,7 @@
     <addaction name="actionShowStations" />
     <addaction name="actionShowStationAnnotations" />
     <addaction name="actionShowEventList" />
+    <addaction name="actionProcessManager" />
    </widget>
    <widget class="QMenu" name="menuEdit" >
     <property name="title" >
@@ -211,6 +212,17 @@
     <string>F10</string>
    </property>
   </action>
+  <action name="actionProcessManager" >
+   <property name="text" >
+    <string>Process manager</string>
+   </property>
+   <property name="iconText" >
+    <string>Show process manager</string>
+   </property>
+   <property name="toolTip" >
+    <string>Show process manager</string>
+   </property>
+  </action>
   <action name="actionAutoSelect" >
    <property name="checkable" >
     <bool>true</bool>
@@ -232,9 +244,6 @@
    <property name="enabled" >
     <bool>false</bool>
    </property>
-   <property name="icon" >
-    <iconset resource="../../../../common/libs/seiscomp/gui/datamodel/icons.qrc" >:/icons/icons/undo.png</iconset>
-   </property>
    <property name="text" >
     <string>Undo</string>
    </property>
@@ -251,9 +260,6 @@
   <action name="actionRedo" >
    <property name="enabled" >
     <bool>false</bool>
-   </property>
-   <property name="icon" >
-    <iconset resource="../../../../common/libs/seiscomp/gui/datamodel/icons.qrc" >:/icons/icons/redo.png</iconset>
    </property>
    <property name="text" >
     <string>Redo</string>
@@ -371,7 +377,7 @@
  </widget>
  <pixmapfunction></pixmapfunction>
  <resources>
-  <include location="../../../../common/libs/seiscomp/gui/datamodel/icons.qrc" />
+  <include location="../../../../common/libs/seiscomp/gui/sc_icons.qrc" />
  </resources>
  <connections/>
 </ui>

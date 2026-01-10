@@ -40,6 +40,8 @@
 #include <fdsnxml/responselistelement.h>
 #include <fdsnxml/output.h>
 
+#include <seiscomp/math/math.h>
+#include <seiscomp/core/strings.h>
 #include <seiscomp/core/timewindow.h>
 #include <seiscomp/datamodel/inventory_package.h>
 #include <seiscomp/datamodel/utils.h>
@@ -140,55 +142,6 @@ bool respLowerThan(
     const FDSNXML::ResponseStage *r1, const FDSNXML::ResponseStage *r2
 ) {
 	return r1->number() < r2->number();
-}
-
-typedef pair<int, int> Fraction;
-
-Fraction double2frac(double d) {
-	double df = 1;
-	Fraction::first_type top = d >= 2.0 ? d - 1 : 1, ctop = top;
-	Fraction::second_type bot = d <= 0.5 ? 1 / d - 1 : 1, cbot = bot;
-	double error = fabs(df - d);
-	double last_error = error * 2;
-	bool fixed_top = false;
-
-	if ( fabs(d) < 1E-20 ) {
-		return Fraction(0, 1);
-	}
-
-	while ( error < last_error ) {
-		ctop = top;
-		cbot = bot;
-
-		// cerr << error << "  " << top << "/" << bot << endl;
-		if ( df < d ) {
-			++top;
-		}
-		else {
-			++bot;
-			top = Fraction::first_type(d * bot);
-		}
-
-		df = (double)top / (double)bot;
-		if ( top > 0 ) {
-			last_error = error;
-			error = fabs(df - d);
-			fixed_top = false;
-		}
-		else if ( fixed_top ) {
-			cbot = 1;
-			break;
-		}
-		else {
-			fixed_top = true;
-		}
-
-		if ( top < 0 || bot < 0 ) {
-			return Fraction(0, 0);
-		}
-	}
-
-	return Fraction(ctop, cbot);
 }
 
 class OpenTimeWindow {
@@ -2718,16 +2671,16 @@ bool Convert2SC::process(
 						        "read"
 						     << endl;
 						if ( *oldLat != sc_loc->latitude() ) {
-							cerr << "   lat " << *oldLat
-							     << " != " << sc_loc->latitude() << endl;
+							cerr << "   lat " << Core::number(*oldLat)
+							     << " != " << Core::number(sc_loc->latitude()) << endl;
 						}
 						if ( *oldLon != sc_loc->longitude() ) {
-							cerr << "   lon " << *oldLon
-							     << " != " << sc_loc->longitude() << endl;
+							cerr << "   lon " << Core::number(*oldLon)
+							     << " != " << Core::number(sc_loc->longitude()) << endl;
 						}
 						if ( *oldElev != sc_loc->elevation() ) {
-							cerr << "   elevation " << *oldElev
-							     << " != " << sc_loc->elevation() << endl;
+							cerr << "   elevation " << Core::number(*oldElev)
+							     << " != " << Core::number(sc_loc->elevation()) << endl;
 						}
 					}
 					else if ( newInstance ) {
@@ -2757,22 +2710,22 @@ bool Convert2SC::process(
 									     << endl;
 									if ( ref_loc->latitude() !=
 									     sc_loc->latitude() ) {
-										cerr << "   lat " << ref_loc->latitude()
-										     << " != " << sc_loc->latitude()
+										cerr << "   lat " << Core::number(ref_loc->latitude())
+										     << " != " << Core::number(sc_loc->latitude())
 										     << endl;
 									}
 									if ( ref_loc->longitude() !=
 									     sc_loc->longitude() ) {
 										cerr << "   lon "
-										     << ref_loc->longitude()
-										     << " != " << sc_loc->longitude()
+										     << Core::number(ref_loc->longitude())
+										     << " != " << Core::number(sc_loc->longitude())
 										     << endl;
 									}
 									if ( ref_loc->elevation() !=
 									     sc_loc->elevation() ) {
 										cerr << "   elevation "
-										     << ref_loc->elevation()
-										     << " != " << sc_loc->elevation()
+										     << Core::number(ref_loc->elevation())
+										     << " != " << Core::number(sc_loc->elevation())
 										     << endl;
 									}
 									break;
@@ -2914,9 +2867,9 @@ bool Convert2SC::process(
 	}
 	catch ( ... ) {
 		try {
-			Fraction rat = double2frac(cha->sampleRate().value());
-			sc_stream->setSampleRateNumerator(rat.first);
-			sc_stream->setSampleRateDenominator(rat.second);
+			auto sr = Math::double2frac(cha->sampleRate().value());
+			sc_stream->setSampleRateNumerator(sr.first);
+			sc_stream->setSampleRateDenominator(sr.second);
 		}
 		catch ( ... ) {
 		}
@@ -3103,7 +3056,7 @@ bool Convert2SC::process(
 		    chaCode
 		);
 
-		OPT(Fraction) sr;
+		OPT(Math::Fraction) sr;
 
 		for ( const auto stage : stages ) {
 			try {
@@ -3111,7 +3064,7 @@ bool Convert2SC::process(
 					double samplingRate =
 					    stage->decimation().inputSampleRate() /
 					    stage->decimation().factor();
-					sr = double2frac(samplingRate);
+					sr = Math::double2frac(samplingRate);
 				}
 				else {
 					SEISCOMP_WARNING(

@@ -3,7 +3,7 @@
 	<module name="scardac" category="Acquisition">
 		<description>Waveform archive data availability collector.</description>
 		<configuration>
-			<parameter name="archive" type="string" default="@SEISCOMP_ROOT@/var/lib/archive">
+			<parameter name="archive" type="directory" default="@SEISCOMP_ROOT@/var/lib/archive" options="read">
 				<description>
 				The URL to the waveform archive where all data is stored.
 
@@ -37,7 +37,7 @@
 				disable any limits.
 				</description>
 			</parameter>
-			<parameter name="nslcFile" type="string">
+			<parameter name="nslcFile" type="file" options="read">
 				<description>
 				Line-based text file of form NET.STA.LOC.CHA defining available
 				stream IDs. Depending on the archive type, size and storage
@@ -50,9 +50,9 @@
 				<description>
 				Parameters of this section limit the data processing to either
 
-				reduce the scan time of larger archives or to
+				- Reduce the scan time of larger archives or to
 
-				prevent deletion of availability information even though parts
+				- Prevent deletion of availability information even though parts
 				of the archive have been deleted or moved to a different
 				location.
 				</description>
@@ -103,8 +103,8 @@
 				</description>
 				<parameter name="ignore" type="boolean" default="false">
 					<description>
-					If set to true all data chunks are read independent of their
-					mtime.
+					If set to true, all data chunks are read independent of
+					their mtime.
 					</description>
 				</parameter>
 				<parameter name="start" type="string">
@@ -176,11 +176,11 @@
 					<description>
 					Do not scan the archive but generate test data for each
 					stream in the inventory. Format:
-					days,gaps,gapslen,overlaps,overlaplen. E.g., the following
+					days,gaps,gapsLen,overlaps,overlapLen. E.g., the following
 					parameter list would generate test data for 100 days
-					(starting from now()-100) which includes 150 gaps with a
-					length of 2.5s followed by 50 overlaps with an overlap of
-					5s: --generate-test-data=100,150,2.5,50,5
+					(starting from now()-100 days) which includes 150 gaps with a
+					length of 2.5 s followed by 50 overlaps with an overlap of
+					5 s: --generate-test-data=100,150,2.5,50,5
 					</description>
 				</option>
 			</group>

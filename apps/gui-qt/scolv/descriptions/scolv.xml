@@ -38,24 +38,26 @@
 			</parameter>
 			<group name="scripts">
 				<description>
-				Define scripts linked to extra buttons. A button is created
-				by definition of the corresponding script.
+				Names of executable scripts linked to extra buttons. Buttons are
+				created by definition of the corresponding scripts.
 				</description>
-				<parameter name="export" type="string">
+				<parameter name="export" type="file" options="execute">
 					<description>
 					Full path to the script which enables a publish button in the
-					summary panel on the left side of scolv (activated with F8).
+					SummaryView panel on the left side of scolv (activated with F8).
 					</description>
 				</parameter>
-				<parameter name="script0" type="string">
+				<parameter name="script0" type="file" options="execute">
 					<description>
-					Full path to the script executed when hitting the button labeled with &quot;button0&quot;.
+					Full path to the script executed when hitting the button
+					labeled with &quot;button0&quot;.
 					OriginID and EventID are passed to the script as arguments.
 					</description>
 				</parameter>
-				<parameter name="script1" type="string">
+				<parameter name="script1" type="file" options="execute">
 					<description>
-					Full path to the script executed when hitting the button labeled with &quot;button1&quot;.
+					Full path to the script executed when hitting the button
+					labeled with &quot;button1&quot;.
 					OriginID and EventID are passed to the script as arguments.
 					</description>
 				</parameter>
@@ -89,12 +91,13 @@
 					list of the &quot;Commit with additional options&quot; dialog.
 					</description>
 				</parameter>
-				<parameter name="defaultMagnitudeAggregation" type="string">
+				<parameter name="defaultMagnitudeAggregation" type="string" default="" values="mean,trimmedMean,median,medianTrimmedMean">
 					<description>
-					Sets the default magnitude aggregation method. It can be either &quot;mean&quot;,
-					&quot;trimmed mean&quot; or &quot;median&quot;. If not set, the default
-					behavior is used which computes the mean if less than 4 stations are available,
-					trimmed mean otherwise.
+					Sets the default magnitude aggregation method.
+					If not set, the default behavior is used which computes the
+					mean if less than 4 stations are available, trimmed mean otherwise.
+					Neither of the above values can take an additional parameter.
+					The default parameter values (if supported) will be used.
 					</description>
 				</parameter>
 				<parameter name="computeMagnitudesAfterRelocate" type="boolean" default="false">
@@ -242,6 +245,44 @@
 							from Origin.methodID and the profile from Origin.earthModelID.
 						</description>
 					</parameter>
+				</group>
+				<group name="import">
+					<description>
+					Set default options for the &quot;Import picks&quot; dialog.
+					</description>
+					<parameter name="mode" type="string" default="latest" values="latest,latest-automatic,phases,all">
+						<description>
+						Defines the default mode of import picks. For more information
+						see the &quot;Import picks&quot; dialog.
+						</description>
+					</parameter>
+					<parameter name="acceptedPhases" type="list:string">
+						<description>
+						Defines a list of accepted or denied phases when importing picks.
+						This list will be used to populate the corresponding input
+						field in the &quot;Import picks&quot; dialog.
+
+						A phase which is prepended with a minus, e.g. &quot;-P&quot;,
+						will be denied.
+						</description>
+					</parameter>
+					<group name="options">
+						<parameter name="allAgencies" type="boolean" default="false">
+							<description>
+							Configures the default for &quot;Import picks from all agencies ...&quot;.
+							</description>
+						</parameter>
+						<parameter name="allPhases" type="boolean" default="true">
+							<description>
+							Configures the default for &quot;Import all phases ...&quot;.
+							</description>
+						</parameter>
+						<parameter name="preferTargetPhases" type="boolean" default="true">
+							<description>
+							Configures the default for &quot;Prefer phases of target ...&quot;.
+							</description>
+						</parameter>
+					</group>
 				</group>
 				<group name="commit">
 					<parameter name="forceEventAssociation" type="boolean" default="false">
@@ -419,6 +460,76 @@
 						</parameter>
 					</struct>
 				</group>
+				<group name="commandMenuAction">
+					<description>
+					Configuration of custom commands. Configuration of any command
+					results in a new menu button labeled &quot;Run&quot; with one
+					action for each command.
+					Actions defined here will appear in order of listing.
+					The menu button appears next to the &quot;Relocate&quot;
+					button in the Location tab.
+					</description>
+					<struct type="commandMenuAction profile">
+						<description>Definition of a command menu action.</description>
+						<parameter name="enable" type="boolean" default="true">
+							<description>
+							Controls whether this action will be available.
+							</description>
+						</parameter>
+						<parameter name="command" type="file" options="read,exec">
+							<description>
+							Command to be executed. Similar to the custom script
+							buttons the command is launched with the current
+							origin ID as first argument and the event ID as
+							second argument if available. Optionally the entire
+							origin may be written to stdin if an exporter is
+							defined.
+							</description>
+						</parameter>
+						<parameter name="exporter" type="string" values="scml,json,csv,binary">
+							<description>
+							Name of the SeisComP exporter used to serialize
+							the current origin when writing it to stdin of
+							the specified command. If empty no data will be
+							send to stdin. See 'sccnv --list-formats' for a
+							list of available options.
+
+							Note: Some of the exporters are implemented
+							as plugins which need to be loaded before they
+							can be used.
+							</description>
+						</parameter>
+						<parameter name="showProcess" type="boolean" default="false">
+							<description>
+							Automatically open process manager for progress
+							monitoring. The process manager may also be started
+							manually via the View menu bar entry or via an icon
+							at the right of the status bar.
+							</description>
+						</parameter>
+						<parameter name="text" type="string">
+							<description>
+							Name of the action. Use in the launch menu and in
+							the process manager.
+							</description>
+						</parameter>
+						<parameter name="icon" type="file" options="read">
+							<description>Path to an icon to show for this action.</description>
+						</parameter>
+						<parameter name="keySequence" type="string">
+							<description>
+							Keyboard shortcut to run this action without
+							the need to open the menu. E.g., 'Ctrl+Alt+A'
+							</description>
+						</parameter>
+						<parameter name="toolTip" type="string">
+							<description>
+							Tool tip for this action as shown when hovering with
+							the mouse over the created button.
+							</description>
+						</parameter>
+					</struct>
+				</group>
 				<parameter name="magnitudeComments" type="list:string">
 					<description>
 					A list of magnitude comment profiles. These profiles will be
@@ -432,7 +543,7 @@
 					<struct name="MagnitudeCommentProfile" link="olv.magnitudeComments">
 						<parameter name="id" type="string">
 							<description>
-							The id of the comment to be added, updated or removed.
+							The ID of the comment to be added, updated or removed.
 							</description>
 						</parameter>
 						<parameter name="label" type="string">
@@ -443,12 +554,12 @@
 						<parameter name="options" type="list:string">
 							<description>
 							A list of options to select from. Actually the values
-							to populate the dropdown list with.
+							to populate the drop-down list with.
 							</description>
 						</parameter>
 						<parameter name="allowFreeText" type="boolean" default="false">
 							<description>
-							If free text is allowed in addition to the predefined
+							Allow free text in addition to the predefined
 							values.
 							</description>
 						</parameter>
@@ -636,6 +747,16 @@
 					component will stay the same. It must be changed explicitely.
 					</description>
 				</parameter>
+				<parameter name="showAmpLevel" type="boolean" default="false">
+					<description>
+					If enabled then the picker will show in the upper right corner of
+					the zoomtrace an amplitude measure ranging from 0 to 100 and mapping
+					the current amplitude at the cursor to this range where 0 is the bottom
+					of the widget and 100 the top of the widget. Screen readers should
+					fetch this value change and read them. This is especially important
+					to support visually impaired users.
+					</description>
+				</parameter>
 				<group name="auxiliary">
 					<description>
 					Define the notion and behaviour of auxiliary channels.
@@ -648,6 +769,9 @@
 						A list of wildcard patterns to identify auxiliary
 						channels. A pattern is simply checked against a stream
 						ID, the concatenation of NSLC separated by a period.
+
+						This is an obsolete and deprecated setting. Please use
+						profiles.
 						</description>
 					</parameter>
 					<parameter name="minimumDistance" type="double" unit="deg" default="0">
@@ -656,6 +780,9 @@
 						unassociated auxiliary channel. Loading a
 						channel / station explicitely (F3) will not respect
 						this setting.
+
+						This is an obsolete and deprecated setting. Please use
+						profiles.
 						</description>
 					</parameter>
 					<parameter name="maximumDistance" type="double" unit="deg" default="1000">
@@ -664,8 +791,43 @@
 						unassociated auxiliary channel. Loading a
 						channel / station explicitely (F3) will not respect
 						this setting.
+
+						This is an obsolete and deprecated setting. Please use
+						profiles.
+					</description>
+					</parameter>
+					<parameter name="profiles" type="list:string">
+						<description>
+						A list of auxiliary channel profiles which are enabled.
 						</description>
 					</parameter>
+					<group name="profiles">
+						<struct name="AuxiliaryChannelProfile" link="picker.auxiliary.profiles">
+							<parameter name="channels" type="list:string">
+								<description>
+								A list of wildcard patterns to identify auxiliary
+								channels. A pattern is simply checked against a stream
+								ID, the concatenation of NSLC separated by a period.
+								</description>
+							</parameter>
+							<parameter name="minimumDistance" type="double" unit="deg" default="0">
+								<description>
+								The minimum distance in degrees from origin to load an
+								unassociated auxiliary channel. Loading a
+								channel / station explicitely (F3) will not respect
+								this setting.
+								</description>
+							</parameter>
+							<parameter name="maximumDistance" type="double" unit="deg" default="1000">
+								<description>
+								The maximum distance in degrees from origin to load an
+								unassociated auxiliary channel. Loading a
+								channel / station explicitely (F3) will not respect
+								this setting.
+								</description>
+							</parameter>
+						</struct>
+					</group>
 				</group>
 				<group name="phases">
 					<description>

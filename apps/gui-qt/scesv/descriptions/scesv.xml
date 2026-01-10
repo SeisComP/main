@@ -5,7 +5,8 @@
 		<configuration>
 			<parameter name="loadEventDB" type="double" unit="days" default="1">
 				<description>
-					Number of days to preload if scesv is started.
+				Number of days before current time to preload events from
+				database when starting scesv.
 				</description>
 			</parameter>
 			<parameter name="showLastAutomaticSolution" type="boolean" default="false">
@@ -37,30 +38,30 @@
 			</parameter>
 			<parameter name="visibleMagnitudes" type="list:string" default="M,MLv,mb,mB,Mw(mB)">
 				<description>
-					A list of magnitude types to be displayed.
+				A list of magnitude types to be displayed.
 				</description>
 			</parameter>
 			<parameter name="button0" type="string">
 				<description>
-					Label of button0 which triggers script0.
+				Label of button0 which triggers script0.
 				</description>
 			</parameter>
 			<parameter name="button1" type="string">
 				<description>
-					Label of button1 which triggers script1.
+				Label of button1 which triggers script1.
 				</description>
 			</parameter>
 			<group name="scripts">
-				<parameter name="script0" type="string">
+				<parameter name="script0" type="file" options="execute">
 					<description>
-						Path to a script if button0 is clicked.
+					Path to a script executed when button0 is clicked.
 					</description>
 				</parameter>
 				<group name="script0">
 					<parameter name="exportMap" type="boolean" default="false">
 						<description>
 						If enabled, the current map is exported to file. 
-						The filename is appened to the parameter list of script0.
+						The filename is appended to the parameter list of script0.
 						The script has to take ownership of the file.
 						</description>
 					</parameter>
@@ -75,16 +76,16 @@
 						</description>
 					</parameter>
 				</group>
-				<parameter name="script1" type="string">
+				<parameter name="script1" type="file" options="execute">
 					<description>
-						Path to a script if button1 is clicked.
+					Path to a script executed when button1 is clicked.
 					</description>
 				</parameter>
 				<group name="script1">
 					<parameter name="exportMap" type="boolean" default="false">
 						<description>
 						If enabled, the current map is exported to file. 
-						The filename is appened to the parameter list of script1.
+						The filename is appended to the parameter list of script1.
 						The script has to take ownership of the file.
 						</description>
 					</parameter>
@@ -282,7 +283,7 @@
 			<group name="Options">
 				<option flag="" long-flag="script0" argument="arg">
 					<description>
-					Path to the script called when configurable 
+					Path to the executable script called when configurable
 					button0 is pressed; EventID, arrival count, magnitude and 
 					the additional location information string are passed as 
 					parameters $1, $2, $3 and $4, respectively.
@@ -290,14 +291,16 @@
 				</option>
 				<option flag="" long-flag="script1" argument="arg">
 					<description>
-					Path to the script called when configurable 
+					Path to the executable script called when configurable
 					button1 is pressed; EventID, arrival count, magnitude and 
 					the additional location information string are passed as 
 					parameters $1, $2, $3 and $4, respectively.
 					</description>
 				</option>
 				<option flag="" long-flag="load-event-db" argument="arg">
-					<description>Number of days to load from database.</description>
+					<description>
+					Number of days to load from database.
+					</description>
 				</option>
 			</group>
 		</command-line>

@@ -10,13 +10,19 @@
 import socket
 import traceback
 
+import twisted
+
 from twisted.internet import reactor, defer
 from twisted.python.failure import Failure
+from twisted.web import http
+
 
 import seiscomp.logging
 import seiscomp.core
 import seiscomp.io
 from seiscomp.client import Application
+
+twisted_version = (twisted.version.major, twisted.version.minor, twisted.version.micro)
 
 
 # -------------------------------------------------------------------------------
@@ -103,6 +109,17 @@ def accessLog(req, ro, code, length, err):
         return
 
     logger.log(AccessLogEntry(req, ro, code, length, err))
+
+
+# -------------------------------------------------------------------------------
+# Compability function for stringToDatetime() change in Twisted 24.7, see
+# https://github.com/twisted/twisted/commit/731e370dfc5d2f7224dc1e12931ddf5c51b211a6
+def stringToDatetime(dateString):
+    if twisted_version < (24, 7):
+        return http.stringToDatetime(dateString)
+
+    # Since version 24.7 the argument needs to be a byte string
+    return http.stringToDatetime(dateString.encode("ascii"))
 
 
 ################################################################################

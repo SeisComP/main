@@ -620,7 +620,7 @@ void MNAmplitude::setEnvironment(const Seiscomp::DataModel::Origin *hypocenter,
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MNAmplitude::prepareData(Seiscomp::DoubleArray &data) {
 	SignalUnit unit;
-	if ( !unit.fromString(_streamConfig[_usedComponent].gainUnit.c_str()) ) {
+	if ( !unit.fromString(_streamConfig[targetComponent()].gainUnit.c_str()) ) {
 		// Invalid unit string
 		setStatus(IncompatibleUnit, 2);
 		return;
@@ -632,14 +632,14 @@ void MNAmplitude::prepareData(Seiscomp::DoubleArray &data) {
 		return;
 	}
 
-	if ( _streamConfig[_usedComponent].gain == 0.0 ) {
+	if ( _streamConfig[targetComponent()].gain == 0.0 ) {
 		// Invalid gain
 		setStatus(MissingGain, 1);
 		return;
 	}
 
 	if ( _enableResponses ) {
-		Sensor *sensor = _streamConfig[_usedComponent].sensor();
+		Sensor *sensor = _streamConfig[targetComponent()].sensor();
 		if ( !sensor ) {
 			// No meta-data associated
 			setStatus(MissingResponse, 1);
@@ -653,7 +653,7 @@ void MNAmplitude::prepareData(Seiscomp::DoubleArray &data) {
 		}
 	}
 
-	if ( !_streamConfig[_usedComponent].gainFrequency ) {
+	if ( !_streamConfig[targetComponent()].gainFrequency ) {
 		setStatus(IncompleteMetadata, 0);
 		return;
 	}
@@ -713,7 +713,7 @@ bool MNAmplitude::computeAmplitude(const Seiscomp::DoubleArray &dataArray,
 	Math::Restitution::FFT::TransferFunctionPtr tf;
 
 	if ( _enableResponses ) {
-		Sensor *sensor = _streamConfig[_usedComponent].sensor();
+		Sensor *sensor = _streamConfig[targetComponent()].sensor();
 		tf = sensor->response()->getTransferFunction();
 		if ( !tf ) {
 			setStatus(MissingResponse, 3);
@@ -775,7 +775,7 @@ bool MNAmplitude::computeAmplitude(const Seiscomp::DoubleArray &dataArray,
 		*snr = amplitude->value / *noiseAmplitude();
 
 	// Amplitude is now in SI
-	amplitude->value /= _streamConfig[_usedComponent].gain;
+	amplitude->value /= _streamConfig[targetComponent()].gain;
 
 	SEISCOMP_DEBUG("%s.%s.%s: amp = %f, period = %fs, snr = %f, time = %s",
 	               _networkCode.c_str(), _stationCode.c_str(), _locationCode.c_str(),
@@ -793,7 +793,7 @@ bool MNAmplitude::computeAmplitude(const Seiscomp::DoubleArray &dataArray,
 		double amplitudeFrequency = _stream.fsamp / *period;
 
 		tf->evaluate(&amplitudeResponse, 1, &amplitudeFrequency);
-		tf->evaluate(&sensorResponse, 1, &*_streamConfig[_usedComponent].gainFrequency);
+		tf->evaluate(&sensorResponse, 1, &*_streamConfig[targetComponent()].gainFrequency);
 
 		double scale = abs(sensorResponse) / abs(amplitudeResponse);
 		amplitude->value *= scale;

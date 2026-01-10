@@ -579,8 +579,10 @@ class InventoryManager : public Client::Application,
 			     << "        database or given with --inventory-db. As a result all information" << endl
 			     << "        in the source is written to target and target does not contain any" << endl
 			     << "        additional information. The source must hold all information. This" << endl
-			     << "        works different to merge. If an output file is specified with -o" << endl
-			     << "        no notifiers are generated and sent via messaging." << endl;
+			     << "        works differently to merge. If an output file is specified with -o" << endl
+			     << "        no notifiers are generated and sent via messaging." << endl
+			     << "        Sync also synchronizes station rc files in var/lib/rc unless " << endl
+			     << "        --no-rc is given.";
 			cout << "  merge Merges two or more inventories into one inventory. This command" << endl
 			     << "        is useful to merge existing subtrees into a final inventory before" << endl
 			     << "        synchronization." << endl;
@@ -781,10 +783,6 @@ class InventoryManager : public Client::Application,
 			ar << finalInventory;
 			ar.close();
 			cerr << "done" << endl;
-
-			if ( !_rcdir.empty() ) {
-				if ( !syncRCFiles(finalInventory.get()) ) return false;
-			}
 
 			return true;
 		}

@@ -10,8 +10,8 @@ but can also be provided by other means.
 
 scautoloc normally runs as a :ref:`daemon <sec-scautoloc-daemon-mode>`
 continuously reading picks and amplitudes and processing them in real time. An
-:ref:`offline mode <sec-scautoloc-offline-mode>` is available as well, e.g., for
-playbacks on demand.
+:ref:`offline mode and non-real-time processing <sec-scautoloc-offline-mode>`
+are available as well, e.g., for playbacks on demand.
 
 
 Location procedure
@@ -332,77 +332,124 @@ the server. Log files are written as usual. This mode can be used to test
 new parameter settings before implementation in the real-time system. It also
 provides a simple way to log picks from a real-time system to the pick log.
 
+
+Real-Time Proessing
+===================
+
+
 .. _sec-scautoloc-daemon-mode:
 
 Daemon Mode
-===========
+-----------
 
-For running scautoloc continuously in the background as a daemon it must be
-enabled and started:
+For running scautoloc continuously in real time and in the background as a
+daemon it must be enabled and started:
 
 .. code-block:: sh
 
    seiscomp enable scautoloc
    seiscomp start scautoloc
 
+On-demand proessing
+-------------------
 
-.. _sec-scautoloc-offline-mode:
+You may execute scautoloc on the command-line on demand giving the
+possibility to use specific command-line options.
 
-Offline Mode
-============
-
-scautoloc normally runs as a daemon in the background, continuously reading
-picks and amplitudes and processing them in real time. However, scautoloc
-may also be operated in offline mode. This is useful for debugging. Offline
-mode is activated by adding the command-line parameter  :option:`--ep` or
-:option:`--offline`. When operated in offline mode,
-scautoloc will not connect to the messaging. Instead, it reads picks from a
-:term:`SCML` file provided with :option:`--ep` or from standard input in the pick file
-format. The station coordinates are read from the inventory in the database or
-from the file either defined in :confval:`autoloc.stationLocations` or
--\\-station-locations .
-
-Example for entries in a pick file
+Example:
 
 .. code-block:: sh
 
-    2008-09-25 00:20:16.6 SK LIKS EH __ 4.6 196.953 1.1 A [id]
-    2008-09-25 00:20:33.5 SJ BEO BH __ 3.0 479.042 0.9 A [id]
-    2008-09-25 00:21:00.1 CX MNMCX BH __ 21.0 407.358 0.7 A [id]
-    2008-09-25 00:21:02.7 CX HMBCX BH __ 14.7 495.533 0.5 A [id]
-    2008-09-24 20:53:59.9 IA KLI BH __ 3.2 143.752 0.6 A [id]
-    2008-09-25 00:21:04.5 CX PSGCX BH __ 7.1 258.407 0.6 A [id]
-    2008-09-25 00:21:09.5 CX PB01 BH __ 10.1 139.058 0.6 A [id]
-    2008-09-25 00:21:24.0 NU ACON SH __ 4.9 152.910 0.6 A [id]
-    2008-09-25 00:22:09.0 CX PB04 BH __ 9.0 305.960 0.6 A [id]
-    2008-09-25 00:19:13.1 GE BKNI BH __ 3.3 100.523 0.5 A [id]
-    2008-09-25 00:23:47.6 RO IAS BH __ 3.1 206.656 0.3 A [id]
-    2008-09-25 00:09:12.8 GE JAGI BH __ 31.9 1015.304 0.8 A [id]
-    2008-09-25 00:25:10.7 SJ BEO BH __ 3.4 546.364 1.1 A [id]
+   scautoloc --debug
+
+
+.. _sec-scautoloc-offline-mode:
+
+Non-real Time Processing
+========================
+
+scautoloc normally runs in real time as a daemon in the background, continuously
+receiving and processing picks and amplitudes from messaging in real time.
+However, scautoloc may also be operated in non-real-time/offline mode. This is
+useful for fast playbacks or debugging and tuning. Non-real-time processing is
+activated by adding the command-line parameter :option:`--ep` and, for
+offline mode, :option:`--offline`. Then,
+scautoloc will not connect to the messaging. Instead, it reads picks from a
+:term:`SCML` file provided with :option:`--ep` or from standard input in the
+*pick file format*. The station coordinates are read from the inventory in the
+database or from the file either defined in :confval:`autoloc.stationLocations`
+or :option:`--station-locations`.
+
+.. note::
+
+   When picks are created in real time, they are generally not in order of pick
+   time but in the order of creation time because of data latencies. Therefore,
+   processing of picks created in real time may result in differences to
+   playbacks of picks created in non-real-time playbacks.
+
+
+Non-real-time playback from XML
+-------------------------------
+
+Non-real-time playback may be based on picks and amplitudes (snr and mb) in an
+:term:`SCML` file. The database must be specified explicitly since it cannot be
+received from the messaging. All picks, amplitudes and resulting origins are
+output to stdout in SCML which can be redirected to an unformatted or formatted
+file, :file:`origins.xml`.
+
+Example:
+
+.. code-block:: sh
+
+   scautoloc -d [database] --ep picks.xml -f > origins.xml
+
+Offline mode
+------------
+
+Offline mode works with :option:`--offline` and picks are to be provided in the
+*pick file format*:
+
+.. code-block:: sh
+
+   2008-09-25 00:20:16.6 SK LIKS EH __ 4.6 196.953 1.1 A [id]
+   2008-09-25 00:20:33.5 SJ BEO BH __ 3.0 479.042 0.9 A [id]
+   2008-09-25 00:21:00.1 CX MNMCX BH __ 21.0 407.358 0.7 A [id]
+   2008-09-25 00:21:02.7 CX HMBCX BH __ 14.7 495.533 0.5 A [id]
+   2008-09-24 20:53:59.9 IA KLI BH __ 3.2 143.752 0.6 A [id]
+   2008-09-25 00:21:04.5 CX PSGCX BH __ 7.1 258.407 0.6 A [id]
+   2008-09-25 00:21:09.5 CX PB01 BH __ 10.1 139.058 0.6 A [id]
+   2008-09-25 00:21:24.0 NU ACON SH __ 4.9 152.910 0.6 A [id]
+   2008-09-25 00:22:09.0 CX PB04 BH __ 9.0 305.960 0.6 A [id]
+   2008-09-25 00:19:13.1 GE BKNI BH __ 3.3 100.523 0.5 A [id]
+   2008-09-25 00:23:47.6 RO IAS BH __ 3.1 206.656 0.3 A [id]
+   2008-09-25 00:09:12.8 GE JAGI BH __ 31.9 1015.304 0.8 A [id]
+   2008-09-25 00:25:10.7 SJ BEO BH __ 3.4 546.364 1.1 A [id]
 
 where [id] is a placeholder for the real pick id which has been omitted in this
 example.
 
-.. note:: In the above example some of the picks are not in right order of
-   time because of data latencies. In offline mode scautoloc will not connect to
-   the database, in consequence the station coordinates cannot be read from the
-   database and thus have to be supplied via a file. The station coordinates file
-   has a simple format with one line per entry, consisting of 5 columns: network
-   code, station code, latitude, longitude, elevation (in meters). Example:
+In offline mode scautoloc will not connect to the database. In consequence
+station coordinates cannot be read from the database and must be supplied via
+a station coordinates file. This file has a simple format with one line per
+station, consisting of 5 columns:
+network code, station code, latitude, longitude, elevation (in meters).
+Sensor locations are not treated separately.
 
-   .. code-block:: sh
+Example of a station coordinates file:
 
-       GE APE 37.0689 25.5306 620.0
-       GE BANI -4.5330 129.9000 0.0
-       GE BKB -1.2558 116.9155 0.0
-       GE BKNI 0.3500 101.0333 0.0
-       GE BOAB 12.4493 -85.6659 381.0
-       GE CART 37.5868 -1.0012 65.0
-       GE CEU 35.8987 -5.3731 320.0
-       GE CISI -7.5557 107.8153 0.0
+.. code-block:: sh
 
-The location of this file is specified in :confval:`autoloc.stationLocations` or on the
-command line using -\\-station-locations
+   GE APE 37.0689 25.5306 620.0
+   GE BANI -4.5330 129.9000 0.0
+   GE BKB -1.2558 116.9155 0.0
+   GE BKNI 0.3500 101.0333 0.0
+   GE BOAB 12.4493 -85.6659 381.0
+   GE CART 37.5868 -1.0012 65.0
+   GE CEU 35.8987 -5.3731 320.0
+   GE CISI -7.5557 107.8153 0.0
+
+The name of this file is configured in :confval:`autoloc.stationLocations` or
+passed on the command line using :option:`--station-locations`.
 
 
 scautopick and scautoloc Interaction
@@ -413,7 +460,7 @@ chain, :ref:`scautopick` and :program:`scautoloc`, only work together if the
 information needed by scautoloc can be supplied by :ref:`scautopick` and received
 by :program:`scautoloc` through the message group defined by
 :confval:`connection.subscription` or through :term:`SCML` (:option:`--ep`,
-:option:`-i`). This document explains current
+:option:`--input`). This document explains current
 implicit dependencies between these two utilities and is meant as a guide
 especially for those who plan to modify or replace one or both of these
 utilities by own developments.

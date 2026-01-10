@@ -143,7 +143,9 @@ void addEventWidgetRowData(EventTableWidget::RowData& rowData,
 	QString longitudeValue = QString("%1").arg((longitude <= 0) ? longitude * (-1.0) : longitude);
 	QString longitudeOrientation = QString("%1").arg((longitude <= 0) ? "W" : "E");
 
-	QString depth = QString("%1 km").arg(static_cast<int>(round(origin->depth())));
+	QString depth;
+	try { depth = QString("%1 km").arg(static_cast<int>(round(origin->depth()))); }
+	catch ( ... ) { depth = "-"; }
 
 	rowData[EventTableWidget::EVENT_ID]     = eventId;
 	rowData[EventTableWidget::ORIGIN_TIME]  = originTime;
@@ -251,13 +253,15 @@ void setInfoWidgetContent(OriginInfoWidget* infoWidget, const std::string &event
 	QString time = Gui::timeToString(origin->time().value(), "%F - %T");
 	infoWidget->setTime(time);
 
-	QString latitude = QString("%1").arg(origin->latitude());
+	QString latitude = QString("%1").arg(origin->latitude().value());
 	infoWidget->setLatitude(latitude);
 
-	QString longitude = QString("%1").arg(origin->longitude());
+	QString longitude = QString("%1").arg(origin->longitude().value());
 	infoWidget->setLongitude(longitude);
 
-	QString depth = QString("%1").arg(origin->depth());
+	QString depth;
+	try { depth = QString("%1").arg(origin->depth().value()); }
+	catch ( ... ) {}
 	infoWidget->setDepth(depth);
 
 	QString magnitude;
@@ -1024,7 +1028,7 @@ void MvMainWindow::sendArtificialOrigin(const QPoint& pos) {
 	origin->setLongitude(dialog.longitude());
 	origin->setLatitude(dialog.latitude());
 	origin->setDepth(DataModel::RealQuantity(dialog.depth()));
-	origin->setTime(Core::Time(dialog.getTime_t()));
+	origin->setTime(Core::Time(dialog.getTime_t(), 0));
 
 	SCApp->sendCommand(Gui::CM_OBSERVE_LOCATION, "", origin);
 }

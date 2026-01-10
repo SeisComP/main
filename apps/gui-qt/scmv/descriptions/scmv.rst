@@ -4,6 +4,13 @@ showing also the topography of the region including bathymetry, state borders
 and geologic faults. scmv provides two different tabs with maps showing the
 ground motion and the network status.
 
+.. note::
+
+   scmv which is deprecated but shipped along with the |scname| package for
+   maintaining backwards compatibility. The successor of scmv is :ref:`scmvx`
+   which is also available with |scname|.
+
+
 Ground motion status
 --------------------
 

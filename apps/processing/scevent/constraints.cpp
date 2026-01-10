@@ -15,6 +15,7 @@
 #include "constraints.h"
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 using namespace Seiscomp;
 using namespace Seiscomp::DataModel;
 using namespace Seiscomp::Client;
@@ -60,7 +61,7 @@ bool Constraints::fixedOrigin() const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Constraints::fixedFocalMechanism() const {
-	return !preferredFocalMechanismID.empty();
+	return preferredOptFocalMechanismID.has_value();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -69,8 +70,8 @@ bool Constraints::fixedFocalMechanism() const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Constraints::fixFocalMechanism(const DataModel::FocalMechanism *fm) const {
-	return !preferredFocalMechanismID.empty() &&
-	       fm->publicID() == preferredFocalMechanismID;
+	return preferredOptFocalMechanismID && !preferredOptFocalMechanismID->empty() &&
+	       fm->publicID() == *preferredOptFocalMechanismID;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -79,8 +80,9 @@ bool Constraints::fixFocalMechanism(const DataModel::FocalMechanism *fm) const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Constraints::fixFocalMechanismMode(const DataModel::FocalMechanism *fm) const {
-	if ( !preferredFocalMechanismEvaluationMode )
+	if ( !preferredFocalMechanismEvaluationMode ) {
 		return false;
+	}
 
 	try {
 		return *preferredFocalMechanismEvaluationMode == fm->evaluationMode();
@@ -89,3 +91,4 @@ bool Constraints::fixFocalMechanismMode(const DataModel::FocalMechanism *fm) con
 
 	return false;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

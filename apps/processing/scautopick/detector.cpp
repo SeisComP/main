@@ -175,8 +175,9 @@ void Detector::reset() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Detector::fill(size_t n, double *samples) {
-	if ( _sensitivityCorrection )
-		_streamConfig[_usedComponent].applyGain(n, samples);
+	if ( _sensitivityCorrection ) {
+		_streamConfig[targetComponent()].applyGain(n, samples);
+	}
 
 	Processing::SimpleDetector::fill(n, samples);
 }

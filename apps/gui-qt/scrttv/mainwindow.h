@@ -27,6 +27,7 @@
 #include <seiscomp/gui/core/recordview.h>
 #include <seiscomp/gui/core/recordstreamthread.h>
 #include <seiscomp/gui/core/spectrogramrenderer.h>
+#include <seiscomp/gui/core/spectrogramsettings.h>
 #include <seiscomp/gui/plot/axis.h>
 
 #include "progressbar.h"
@@ -59,7 +60,6 @@ namespace TraceView {
 
 
 class Associator;
-class SpectrogramSettings;
 class TraceMarker;
 
 
@@ -337,7 +337,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		QDockWidget                              *_dockAssociator{nullptr};
 		QVector<TraceView*>                       _traceViews;
 		Associator                               *_associator{nullptr};
-		SpectrogramSettings                      *_spectrogramSettings{nullptr};
+		Gui::SpectrogramSettings                 *_spectrogramSettings{nullptr};
 		QMap<std::string, TraceMarker*>           _markerMap;
 
 		Gui::RecordStreamThread                  *_recordStreamThread;

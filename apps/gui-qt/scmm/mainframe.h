@@ -21,6 +21,7 @@
 #include <seiscomp/gui/core/mainwindow.h>
 #ifndef Q_MOC_RUN
 #include <seiscomp/messaging/connection.h>
+#include <seiscomp/messaging/connection.h>
 #include <seiscomp/logging/output.h>
 #endif
 #include <QtGui>
@@ -59,11 +60,13 @@ class LogDispatcher : public Seiscomp::Logging::Output {
 
 		operator QObject*() { return _logger; }
 
+		bool setup(const Util::Url &url ) override { return false; }
+
 	protected:
 		void log(const char* channelName,
 		         Seiscomp::Logging::LogLevel level,
 		         const char* msg,
-		         time_t time) {
+		         time_t time, uint32_t) override {
 		_logger->logReceived(channelName, (int)level, msg, (int)time);
 	}
 

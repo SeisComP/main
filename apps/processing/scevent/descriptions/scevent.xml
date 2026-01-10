@@ -53,8 +53,9 @@
 			</parameter>
 			<parameter name="restAPI" type="string">
 				<description>
-				Defines the bind adress of the REST API endpoint. This API
-				allows to query for possible event associations of origin
+				Defines the bind address of the REST API of form [address:]port.
+				This API currently provides one endpoint, /api/1/try-to-associate,
+				which allows to query for possible event associations of origin
 				candidates.
 				</description>
 			</parameter>
@@ -372,6 +373,15 @@
 					</description>
 				</parameter>
 
+				<parameter name="enablePreferredFMSelection" type="boolean" default="true">
+					<description>
+					Enables the selection of the preferred focalmechanism. If set
+					to false then only explicit commands will have effect on the
+					preferred focalmechanism selection, namely the EvPrefFocMecID
+					command.
+					</description>
+				</parameter>
+
 				<parameter name="declareFakeEventForRejectedOrigin" type="boolean" default="false">
 					<description>
 					If the preferred Origin has evaluation status 'rejected', the
@@ -443,6 +453,17 @@
 				</group>
 			</group>
 		</configuration>
+		<setup>
+			<group name="eventID">
+				<input name="prefix" type="string" default="">
+					<text>EventID Prefix</text>
+					<description>
+					The prefix of the generated eventID. Usually this is a lowercase version
+					of the agencyID.
+					</description>
+				</input>
+			</group>
+		</setup>
 		<command-line>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>

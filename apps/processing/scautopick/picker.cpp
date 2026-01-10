@@ -38,7 +38,6 @@
 
 #include <seiscomp/utils/misc.h>
 
-#include <iomanip>
 #include <functional>
 
 #include "picker.h"
@@ -71,24 +70,12 @@ char statusFlag(const Seiscomp::DataModel::Pick *pick) {
 }
 
 
-bool contains(const Seiscomp::Core::TimeWindow &tw, const OPT(Seiscomp::Core::Time) &time) {
+bool contains(const Seiscomp::Core::OpenTimeWindow &tw, const OPT(Seiscomp::Core::Time) &time) {
 	if ( !time ) {
 		return false;
 	}
 
-	if ( tw.startTime().valid() && tw.endTime().valid() ) {
-		return tw.contains(*time);
-	}
-
-	if ( tw.startTime().valid() ) {
-		return *time >= tw.startTime();
-	}
-
-	if ( tw.endTime().valid() ) {
-		return *time < tw.endTime();
-	}
-
-	return true;
+	return tw.contains(*time);
 }
 
 
@@ -510,7 +497,7 @@ bool App::init() {
 
 		std::string streamID = it->first.first + "." + it->first.second + "." + it->second.locationCode + "." + channel;
 
-		SEISCOMP_INFO("Adding detection channel %s", streamID.c_str());
+		SEISCOMP_INFO("Adding detection channel %s", streamID);
 
 		_streamIDs.insert(streamID);
 		subscribeStreams.insert(streamID);
@@ -520,7 +507,7 @@ bool App::init() {
 		if ( compZ && acquireComps[0] ) {
 			streamID = it->first.first + "." + it->first.second + "." + it->second.locationCode + "." + compZ->code();
 			if ( subscribeStreams.find(streamID) == subscribeStreams.end() ) {
-				SEISCOMP_DEBUG("Adding data channel %s", streamID.c_str());
+				SEISCOMP_DEBUG("Adding data channel %s", streamID);
 				recordStream()->addStream(it->first.first, it->first.second, it->second.locationCode, compZ->code());
 				subscribeStreams.insert(streamID);
 			}
@@ -529,7 +516,7 @@ bool App::init() {
 		if ( compN && acquireComps[1] ) {
 			streamID = it->first.first + "." + it->first.second + "." + it->second.locationCode + "." + compN->code();
 			if ( subscribeStreams.find(streamID) == subscribeStreams.end() ) {
-				SEISCOMP_DEBUG("Adding data channel %s", streamID.c_str());
+				SEISCOMP_DEBUG("Adding data channel %s", streamID);
 				recordStream()->addStream(it->first.first, it->first.second, it->second.locationCode, compN->code());
 				subscribeStreams.insert(streamID);
 			}
@@ -538,7 +525,7 @@ bool App::init() {
 		if ( compE && acquireComps[2] ) {
 			streamID = it->first.first + "." + it->first.second + "." + it->second.locationCode + "." + compE->code();
 			if ( subscribeStreams.find(streamID) == subscribeStreams.end() ) {
-				SEISCOMP_DEBUG("Adding data channel %s", streamID.c_str());
+				SEISCOMP_DEBUG("Adding data channel %s", streamID);
 				recordStream()->addStream(it->first.first, it->first.second, it->second.locationCode, compE->code());
 				subscribeStreams.insert(streamID);
 			}
@@ -735,7 +722,7 @@ bool App::initComponent(Processing::WaveformProcessor *proc,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::initProcessor(Processing::WaveformProcessor *proc,
-                        Processing::WaveformProcessor::StreamComponent comp,
+                        WaveformProcessor::StreamComponents comp,
                         const Core::Time &time,
                         const std::string &streamID,
                         const DataModel::WaveformStreamID &waveformID,

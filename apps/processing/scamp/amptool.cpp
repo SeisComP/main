@@ -15,7 +15,7 @@
 #include "amptool.h"
 #include "util.h"
 
-#include <seiscomp/logging/filerotator.h>
+#include <seiscomp/logging/output/filerotator.h>
 #include <seiscomp/logging/channel.h>
 
 #include <seiscomp/client/inventory.h>
@@ -286,6 +286,35 @@ bool AmpTool::init() {
 	_timer.setCallback(bind(&AmpTool::handleTimeout, this));
 
 	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+void AmpTool::printUsage() const {
+	   cout << "Usage:"  << endl << "  " << name() << " [options]" << endl << endl
+	        << "Calculates amplitudes on basis of incoming origins and "
+	           "associated picks."
+	        << endl;
+
+	   Seiscomp::Client::Application::printUsage();
+
+	   cout << "Examples:" << endl;
+	   cout << "Real-time processing with informative debug output." << endl
+	        << "  " << name() << " --debug" << endl;
+	   cout << endl
+	        << "None-real-time XML playback of origins with picks. Waveforms "
+	           "are read from a "
+	        << endl
+	        << "miniSEED file. Resulting objects are sent to stdout and "
+	           "redirected to an XML file."
+	        << endl
+	        << "  " << name() << " -d localhost --ep origins.xml -I data.mseed "
+	                             "> amplitudes.xml"
+	        << endl << endl;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

@@ -74,7 +74,7 @@ class App : public Processing::Application {
 		// Initializes a processor which can use multiple components. This
 		// method calls initComponent for each requested component.
 		bool initProcessor(Processing::WaveformProcessor *proc,
-		                   Processing::WaveformProcessor::StreamComponent comp,
+		                   Processing::WaveformProcessor::StreamComponents comp,
 		                   const Core::Time &time,
 		                   const std::string &streamID,
 		                   const DataModel::WaveformStreamID &waveformID,
