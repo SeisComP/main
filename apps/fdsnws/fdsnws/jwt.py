@@ -156,6 +156,7 @@ class _CredentialsChecker(object):
 
         credentials     JSONWebToken. A IBearerToken object containing a decoded token
         """
+        # pylint: disable=E1120
         if IBearerToken.providedBy(credentials):
             # Avatar ID is the full token payload
             return credentials.payload
