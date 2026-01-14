@@ -4598,19 +4598,23 @@ void EventTool::updateEvent(EventInformation *info, bool callProcessors) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventTool::updateRegionName(DataModel::Event *ev, DataModel::Origin *org) {
-	std::string reg = org ? region(org) : "";
+	std::string reg = org ? region(org, !_config.populateFERegion) : "";
 	EventDescription *ed = eventRegionDescription(ev);
 	if ( ed ) {
-		if ( ed->text() != reg ) {
-			SEISCOMP_INFO("%s: updating region name to '%s'",
-			              ev->publicID(), reg);
+		if ( reg.empty() ) {
+			SEISCOMP_INFO("%s: removing region name because it is empty", ev->publicID());
+			SEISCOMP_LOG(_infoChannel, "Event %s region name removed", ev->publicID());
+			ed->detach();
+		}
+		else if ( ed->text() != reg ) {
+			SEISCOMP_INFO("%s: updating region name to '%s'", ev->publicID(), reg);
 			SEISCOMP_LOG(_infoChannel, "Event %s region name updated: %s",
 			             ev->publicID(), reg);
 			ed->setText(reg);
 			ed->update();
 		}
 	}
-	else {
+	else if ( !reg.empty() ) {
 		EventDescriptionPtr ed = new EventDescription(reg, REGION_NAME);
 		ev->add(ed.get());
 		SEISCOMP_INFO("%s: adding region name '%s'",
@@ -4620,7 +4624,7 @@ void EventTool::updateRegionName(DataModel::Event *ev, DataModel::Origin *org) {
 	}
 
 	if ( _config.populateFERegion ) {
-		reg = "";
+		reg = {};
 		if ( org ) {
 			try {
 				reg = Regions::getFlinnEngdahlRegion(org->latitude(), org->longitude());
@@ -4630,7 +4634,12 @@ void EventTool::updateRegionName(DataModel::Event *ev, DataModel::Origin *org) {
 
 		ed = eventFERegionDescription(ev);
 		if ( ed ) {
-			if ( ed->text() != reg ) {
+			if ( reg.empty() ) {
+				SEISCOMP_INFO("%s: removing Flinn-Engdahl region name because it is empty", ev->publicID());
+				SEISCOMP_LOG(_infoChannel, "Event %s Flinn-Engdahl region name removed", ev->publicID());
+				ed->detach();
+			}
+			else if ( ed->text() != reg ) {
 				SEISCOMP_INFO("%s: updating Flinn-Engdahl region name to '%s'",
 				              ev->publicID(), reg);
 				SEISCOMP_LOG(_infoChannel, "Event %s Flinn-Engdahl region name updated: %s",
@@ -4639,7 +4648,7 @@ void EventTool::updateRegionName(DataModel::Event *ev, DataModel::Origin *org) {
 				ed->update();
 			}
 		}
-		else {
+		else if ( !reg.empty() ) {
 			EventDescriptionPtr ed = new EventDescription(reg, FLINN_ENGDAHL_REGION);
 			ev->add(ed.get());
 			SEISCOMP_INFO("%s: adding Flinn-Engdahl region name '%s'",

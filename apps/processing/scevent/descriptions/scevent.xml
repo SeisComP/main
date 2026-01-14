@@ -46,9 +46,11 @@
 			</parameter>
 			<parameter name="populateFERegion" type="boolean" default="false">
 				<description>
-				If enabled, then the EventDescription with type
-				'Flinn-Engdahl region' will be populated with the
-				Flinn-Engdahl region name.
+				If enabled, then the EventDescription with type 'Flinn-Engdahl region'
+				will be populated with the Flinn-Engdahl region name. The EventDescription
+				with type 'region name' will only be populated with a custom region name
+				if one exists. If the latter does not exist, an existing EventDescription
+				with type 'region name' will be removed.
 				</description>
 			</parameter>
 			<parameter name="restAPI" type="string">
