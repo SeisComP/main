@@ -1,5 +1,5 @@
 |scname|'s :ref:`scmaster` is continuously writing to the database. This causes
-the database to grow and to occupy much space on the harddisc. scdbstrip taggles
+the database to grow and to occupy much space on the harddisc. scdbstrip tackles 
 this problem and removes processed objects from the database older than a
 configurable time span. The time comparison considers the object time, not the
 time of their creation.
