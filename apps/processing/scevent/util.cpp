@@ -266,8 +266,13 @@ string allocateEventID(DatabaseArchive *ar, const Origin *origin,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-string region(const Origin *origin) {
-	return Regions::getRegionName(origin->latitude(), origin->longitude());
+string region(const Origin *origin, bool withFERegions) {
+	if ( withFERegions ) {
+		return Regions::getRegionName(origin->latitude(), origin->longitude());
+	}
+	else {
+		return Regions::polyRegions().findRegionName(origin->latitude(), origin->longitude());
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

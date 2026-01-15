@@ -55,7 +55,7 @@ std::string allocateEventID(DataModel::DatabaseArchive *,
                             const DataModel::Origin *origin,
                             const Seiscomp::Client::Config &config);
 
-std::string region(const DataModel::Origin *origin);
+std::string region(const DataModel::Origin *origin, bool withFERegions = true);
 
 double arrivalWeight(const DataModel::Arrival *arr, double defaultWeight=1.);
 int stationCount(const DataModel::Magnitude *mag);
