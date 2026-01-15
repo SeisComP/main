@@ -20,8 +20,8 @@ The following services are available:
 
    ":ref:`fdsnws-dataselect <sec-dataSelect>`", "time series data", "`miniSEED <http://www.iris.edu/data/miniseed.htm>`_"
    ":ref:`fdsnws-station <sec-station>`", "network, station, channel, response metadata", "`FDSN Station XML <http://www.fdsn.org/xml/station/>`_, `StationXML <http://www.data.scec.org/station/xml.html>`_, :term:`SCML`"
-   ":ref:`fdsnws-event <sec-event>`", "earthquake origin and magnitude estimates", "`QuakeML <https://quake.ethz.ch/quakeml>`_, :term:`SCML`"
-   ":ref:`ext-availability <sec-avail>`", "waveform data availability information", "text, geocsv, json, sync, request (`fdsnws-dataselect <https://service.iris.edu/fdsnws/dataselect/1>`_)"
+   ":ref:`fdsnws-event <sec-event>`", "earthquake origin and magnitude estimates", :cite:t:`quakeml`, :term:`SCML`"
+   ":ref:`ext-availability <sec-avail>`", "waveform data availability information", "text, geocsv, json, sync, request (`fdsnws-dataselect <https://service.earthscope.org/fdsnws/dataselect/1>`_)"
 
 
 The available services can be reached from the fdsnws start page.  The services
@@ -290,13 +290,14 @@ Examples
 Feature Notes
 ~~~~~~~~~~~~~
 
-* The IRISWS availability implementation truncates the time spans of the returned
-  data extents and segments to the requested start and end times (if any). This
-  implementation truncates the start and end time only for the formats: ``sync``
-  and ``request``. The ``text``, ``geocsv`` and ``json`` format will return the
-  exact time windows extracted from the waveform archive.
+* The FDSN availability implementation at EarthScope truncates the time spans of
+  the returned data extents and segments to the requested start and end time
+  (if any).
+  In |scname| the implementation truncates the start and end time only for the
+  formats: ``sync`` and ``request``. The ``text``, ``geocsv`` and ``json``
+  format will return the exact time windows extracted from the waveform archive.
 
-  The reasons for this derivation are:
+  The reasons for this deviation are:
 
   * performance: With the ``/extent`` query the ``text``, ``geocsv`` and
     ``json`` offer the display of the number of included time spans
@@ -736,5 +737,5 @@ Related Modules
 Public FDSN Web Servers
 =======================
 
-IRIS maintains a list of data centers (:cite:t:`fdsn-datacenters`)
+EarthScope maintains a list of data centers (:cite:t:`fdsn-datacenters`)
 supporting FDSN Web Services (:cite:t:`fdsn`).
