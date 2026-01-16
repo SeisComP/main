@@ -1385,11 +1385,14 @@ void MainFrame::toggledFullScreen(bool isFullScreen) {
 
 
 void MainFrame::closeEvent(QCloseEvent *e) {
+	MainWindow::closeEvent(e);
+	if ( !e->isAccepted() ) {
+		return;
+	}
+
 	_exportProcess.terminate();
 	_originLocator->close();
 	_magnitudes->close();
-
-	MainWindow::closeEvent(e);
 }
 
 

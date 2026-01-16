@@ -311,11 +311,15 @@ MainFrame::~MainFrame() {
 
 
 void MainFrame::closeEvent(QCloseEvent* e) {
+	Seiscomp::Gui::MainWindow::closeEvent(e);
+	if ( !e->isAccepted() ) {
+		return;
+	}
+
 	for ( PluginWidgetMap::iterator it = _pluginWidgets.begin();
 	      it != _pluginWidgets.end(); ++it ) {
 		it.key()->close();
 	}
-	Seiscomp::Gui::MainWindow::closeEvent(e);
 }
 
 
