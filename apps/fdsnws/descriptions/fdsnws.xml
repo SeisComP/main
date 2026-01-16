@@ -147,6 +147,11 @@
 				users have access to all data.
 				</description>
 			</parameter>
+			<parameter name="useArclinkAccess" type="boolean" default="false">
+				<description>
+				This is an obsolete and deprecated alias of "useAccess".
+				</description>
+			</parameter>
 			<parameter name="hideAuthor" type="boolean" default="false">
 				<description>
 				If enabled, author information is removed from any event

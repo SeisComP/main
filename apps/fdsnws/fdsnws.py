@@ -541,10 +541,15 @@ class FDSNWS(seiscomp.client.Application):
         # use access bindings
         try:
             self._useAccess = self.configGetBool("useAccess")
+            try:
+                self.configGetBool("useArclinkAccess")
+                seiscomp.logging.warning('ignoring deprecated setting "useArclinkAccess"')
+            except Exception:
+                pass
         except Exception:
-            # Backwards compatibility
             try:
                 self._useAccess = self.configGetBool("useArclinkAccess")
+                seiscomp.logging.warning('using deprecated setting "useArclinkAccess"')
             except Exception:
                 pass
 
