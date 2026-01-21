@@ -451,11 +451,11 @@ QColor QcModel::getColor(const QModelIndex &index) const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 QVariant QcModel::data(const QModelIndex &index, int role) const {
-	if ( !index.isValid() )
-		return QVariant();
-
-	if ( index.row() >= _streamMap.size() || index.column() >= _columns.size() )
-		return QVariant();
+	if ( !index.isValid()
+	     || index.row() >= _streamMap.size()
+	     || index.column() >= _columns.size() ) {
+		return {};
+	}
 
 
 	//!---------------------------------------------------------------------------------
@@ -468,10 +468,11 @@ QVariant QcModel::data(const QModelIndex &index, int role) const {
 		}
 
 		const DataModel::WaveformQuality *wfq = getData(index);
-		if ( wfq )
+		if ( wfq ) {
 			return _config->format(_columns.at(index.column()), wfq->value());
-		else
-			return QVariant();
+		}
+
+		return {};
 	}
 	//!---------------------------------------------------------------------------------
 
@@ -488,30 +489,31 @@ QVariant QcModel::data(const QModelIndex &index, int role) const {
 
 		const DataModel::WaveformQuality* wfq = getData(index);
 		if ( wfq ) {
-			if (_config->useAbsoluteValue(_columns.at(index.column())))
+			if ( _config->useAbsoluteValue(_columns.at(index.column())) ) {
 				return fabs(wfq->value());
-			else
-				return wfq->value();
+			}
+			return wfq->value();
 		}
-	 	else
-			return QVariant();
+
+		return {};
 	}
 	//!---------------------------------------------------------------------------------
 
 
 	//!---------------------------------------------------------------------------------
-	else if ( role == Qt::TextAlignmentRole ) {
+	if ( role == Qt::TextAlignmentRole ) {
 		// stream enabled column
 		if ( index.column() == 1 ) {
 			return int(Qt::AlignCenter | Qt::AlignVCenter);
 		}
+
 		return int(Qt::AlignRight | Qt::AlignVCenter);
 	}
 	//!---------------------------------------------------------------------------------
 
 
 	//!---------------------------------------------------------------------------------
-	else if ( role == Qt::BackgroundRole ) {
+	if ( role == Qt::BackgroundRole ) {
 		if ( index.column() == 1 ) {
 			return streamEnabled(index)?QColor(0,255,0,255):QColor(255,0,0,255);
 		}
@@ -522,23 +524,24 @@ QVariant QcModel::data(const QModelIndex &index, int role) const {
 
 
 	//!---------------------------------------------------------------------------------
-	else if ( role == Qt::ToolTipRole ) {
-
+	if ( role == Qt::ToolTipRole ) {
 		const DataModel::WaveformQuality* wfq = getData(index);
-		QString text1, text2;
+		QString text1;
+		QString text2;
 
-		if (wfq)
+		if ( wfq ) {
 			text1 = "Report Message:\n" + wfq2str(wfq);
+		}
 
-
-		if ( (wfq = getAlertData(index)) )
+		if ( (wfq = getAlertData(index)) ) {
 			text2 = "\nAlert Message:\n" + wfq2str(wfq);
+		}
 
 		return text1 + text2;
 }
 	//!---------------------------------------------------------------------------------
 
-	return QVariant();
+	return {};
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -549,11 +552,33 @@ QVariant QcModel::data(const QModelIndex &index, int role) const {
 QString QcModel::wfq2str(const DataModel::WaveformQuality* wfq) const {
 	QString text = QString();
 
-	text.append(QString("value: %1 (+/- %2)\n").arg(wfq->value()).arg(wfq->lowerUncertainty()));
+	try {
+		text.append(QString("value: %1").arg(wfq->value()));
+	}
+	catch(...) {
+		text.append(QString("value: none"));
+	};
+
+	try {
+		text.append(QString(" (+/- %1)\n").arg(wfq->lowerUncertainty()));
+	}
+	catch(...) {
+		text.append(QString("\n"));
+	};
+
+	try {
 	text.append(QString("start: %1\n").arg(Gui::timeToString(wfq->start(), "%Y-%m-%d %H:%M:%S UTC")));
-	try { text.append(QString("end : %1\n").arg(Gui::timeToString(wfq->end(), "%Y-%m-%d %H:%M:%S UTC"))); }
+	}
 	catch(...) {};
-	try { text.append(QString("window length: %1 s").arg(wfq->windowLength())); }
+
+	try {
+		text.append(QString("end : %1\n").arg(Gui::timeToString(wfq->end(), "%Y-%m-%d %H:%M:%S UTC")));
+	}
+	catch(...) {};
+
+	try {
+		text.append(QString("window length: %1 s").arg(wfq->windowLength()));
+	}
 	catch(...) {};
 
 	return text+"\n";
