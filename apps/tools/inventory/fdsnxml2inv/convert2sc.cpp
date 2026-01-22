@@ -1635,7 +1635,7 @@ void populateJSON(
 			serializeJSON((sx->*getObject)(n), ar);
 
 			if ( !ar.success() ) {
-				SEISCOMP_ERROR("failed to serialize %s", name.c_str());
+				SEISCOMP_ERROR("failed to serialize %s", name);
 				return;
 			}
 		}
@@ -1671,7 +1671,7 @@ void populateJSON(
 		}
 
 		if ( !ar.success() ) {
-			SEISCOMP_ERROR("failed to serialize %s", name.c_str());
+			SEISCOMP_ERROR("failed to serialize %s", name);
 			return;
 		}
 	}
@@ -2032,8 +2032,8 @@ bool Convert2SC::push(const FDSNXML::FDSNStationXML *msg) {
 		_visitedStations.insert(StringTuple(netCode, ""));
 
 		SEISCOMP_INFO(
-		    "Processing network %s (%s)", netCode.c_str(),
-		    start.toString("%F %T").c_str()
+		    "Processing network %s (%s)", netCode,
+		    start.toString("%F %T")
 		);
 
 		bool newInstance = false;
@@ -2081,15 +2081,15 @@ bool Convert2SC::push(const FDSNXML::FDSNStationXML *msg) {
 
 		if ( newInstance ) {
 			SEISCOMP_DEBUG(
-			    "Added new network epoch: %s (%s)", sc_net->code().c_str(),
-			    sc_net->start().iso().c_str()
+			    "Added new network epoch: %s (%s)", sc_net->code(),
+			    sc_net->start().iso()
 			);
 			_inv->add(sc_net.get());
 		}
 		else if ( needUpdate ) {
 			SEISCOMP_DEBUG(
-			    "Updated network epoch: %s (%s)", sc_net->code().c_str(),
-			    sc_net->start().iso().c_str()
+			    "Updated network epoch: %s (%s)", sc_net->code(),
+			    sc_net->start().iso()
 			);
 			sc_net->update();
 		}
@@ -2137,7 +2137,7 @@ void Convert2SC::cleanUp() {
 		if ( _visitedStations.find(StringTuple(net->code(), "")) ==
 		     _visitedStations.end() ) {
 			SEISCOMP_DEBUG(
-			    "Leaving unknown network %s untouched", net->code().c_str()
+			    "Leaving unknown network %s untouched", net->code()
 			);
 			++n;
 			continue;
@@ -2146,8 +2146,8 @@ void Convert2SC::cleanUp() {
 		NetworkIndex net_idx(net->code(), net->start());
 		if ( _touchedNetworks.find(net_idx) == _touchedNetworks.end() ) {
 			SEISCOMP_INFO(
-			    "Removing epoch %s (%s)", net->code().c_str(),
-			    net->start().iso().c_str()
+			    "Removing epoch %s (%s)", net->code(),
+			    net->start().iso()
 			);
 			// TODO: Remove epoch
 			_inv->removeNetwork(n);
@@ -2162,7 +2162,7 @@ void Convert2SC::cleanUp() {
 			     _visitedStations.end() ) {
 				SEISCOMP_DEBUG(
 				    "Leaving unknown station %s.%s untouched",
-				    net->code().c_str(), sta->code().c_str()
+				    net->code(), sta->code()
 				);
 				++s;
 				continue;
@@ -2173,8 +2173,8 @@ void Convert2SC::cleanUp() {
 			);
 			if ( _touchedStations.find(sta_idx) == _touchedStations.end() ) {
 				SEISCOMP_INFO(
-				    "Removing epoch %s.%s (%s)", net->code().c_str(),
-				    sta->code().c_str(), sta->start().iso().c_str()
+				    "Removing epoch %s.%s (%s)", net->code(),
+				    sta->code(), sta->start().iso()
 				);
 				// TODO: Remove epoch
 				net->removeStation(s);
@@ -2191,9 +2191,9 @@ void Convert2SC::cleanUp() {
 				if ( _touchedSensorLocations.find(loc_idx) ==
 				     _touchedSensorLocations.end() ) {
 					SEISCOMP_INFO(
-					    "Removing epoch %s.%s.%s (%s)", net->code().c_str(),
-					    sta->code().c_str(), loc->code().c_str(),
-					    loc->start().iso().c_str()
+					    "Removing epoch %s.%s.%s (%s)", net->code(),
+					    sta->code(), loc->code(),
+					    loc->start().iso()
 					);
 					sta->removeSensorLocation(l);
 					continue;
@@ -2210,9 +2210,9 @@ void Convert2SC::cleanUp() {
 					     _touchedStreams.end() ) {
 						SEISCOMP_INFO(
 						    "Removing epoch %s.%s.%s.%s (%s)",
-						    net->code().c_str(), sta->code().c_str(),
-						    loc->code().c_str(), stream->code().c_str(),
-						    stream->start().iso().c_str()
+						    net->code(), sta->code(),
+						    loc->code(), stream->code(),
+						    stream->start().iso()
 						);
 						loc->removeStream(c);
 					}
@@ -2230,9 +2230,9 @@ void Convert2SC::cleanUp() {
 					     _touchedAuxStreams.end() ) {
 						SEISCOMP_INFO(
 						    "Removing epoch %s.%s.%s.%s (%s)",
-						    net->code().c_str(), sta->code().c_str(),
-						    loc->code().c_str(), aux->code().c_str(),
-						    aux->start().iso().c_str()
+						    net->code(), sta->code(),
+						    loc->code(), aux->code(),
+						    aux->start().iso()
 						);
 						loc->removeAuxStream(c);
 					}
@@ -2347,8 +2347,8 @@ bool Convert2SC::process(
 	Core::trim(staCode);
 
 	SEISCOMP_INFO(
-	    "Processing station %s/%s (%s)", sc_net->code().c_str(),
-	    staCode.c_str(), start.toString("%F %T").c_str()
+	    "Processing station %s/%s (%s)", sc_net->code(),
+	    staCode, start.toString("%F %T")
 	);
 
 	bool newInstance = false;
@@ -2449,15 +2449,15 @@ bool Convert2SC::process(
 	if ( newInstance ) {
 		sc_net->add(sc_sta.get());
 		SEISCOMP_DEBUG(
-		    "Added new station epoch: %s (%s)", sc_sta->code().c_str(),
-		    sc_sta->start().iso().c_str()
+		    "Added new station epoch: %s (%s)", sc_sta->code(),
+		    sc_sta->start().iso()
 		);
 	}
 	else if ( needUpdate ) {
 		sc_sta->update();
 		SEISCOMP_DEBUG(
-		    "Updated station epoch: %s (%s)", sc_sta->code().c_str(),
-		    sc_sta->start().iso().c_str()
+		    "Updated station epoch: %s (%s)", sc_sta->code(),
+		    sc_sta->start().iso()
 		);
 	}
 
@@ -2479,8 +2479,8 @@ bool Convert2SC::process(
 		// Create index based on code and location to form
 		// SensorLocation objects later
 		LocationElevation loc_loc(
-		    Location(cha->latitude().value(), cha->longitude().value()),
-		    cha->elevation().value()
+			Location(cha->latitude().value(), cha->longitude().value()),
+			cha->elevation().value()
 		);
 
 		EpochEntry &entry = epochMap[locationCode][loc_loc];
@@ -2582,9 +2582,7 @@ bool Convert2SC::process(
 			continue;
 		}
 
-		for ( auto lit = locationMap.begin(); lit != locationMap.end(); ++lit ) {
-			EpochEntry &entry = lit->second;
-
+		for ( auto &[location, entry] : locationMap  ) {
 			entry.epochs.sort(epochLowerThan);
 
 			DataModel::SensorLocationPtr sc_loc;
@@ -2653,9 +2651,9 @@ bool Convert2SC::process(
 					BCK(oldElev, double, sc_loc->elevation());
 					BCK(oldEnd, Core::Time, sc_loc->end());
 
-					sc_loc->setLatitude(lit->first.first.first);
-					sc_loc->setLongitude(lit->first.first.second);
-					sc_loc->setElevation(lit->first.second);
+					sc_loc->setLatitude(location.first.first);
+					sc_loc->setLongitude(location.first.second);
+					sc_loc->setElevation(location.second);
 					sc_loc->setEnd(sensorLocationEnd);
 
 					UPD(needUpdate, oldLat, double, sc_loc->latitude());
@@ -2739,27 +2737,29 @@ bool Convert2SC::process(
 					if ( newInstance ) {
 						sc_sta->add(sc_loc.get());
 						SEISCOMP_DEBUG(
-						    "Added new sensor location epoch: %s (%s)",
-						    sc_loc->code().c_str(),
-						    sc_loc->start().iso().c_str()
+							"Added new sensor location epoch: %s (%s, %f, %f, %f)",
+							sc_loc->code().empty() ? "--" : sc_loc->code(),
+							sc_loc->start().iso(),
+							location.first.first, location.first.second,
+							location.second
 						);
 					}
 					else if ( needUpdate ) {
 						sc_loc->update();
 						SEISCOMP_DEBUG(
-						    "Updated sensor location epoch: %s (%s)",
-						    sc_loc->code().c_str(),
-						    sc_loc->start().iso().c_str()
+							"Updated sensor location epoch: %s (%s)",
+							sc_loc->code().empty() ? "--" : sc_loc->code(),
+							sc_loc->start().iso()
 						);
 					}
 
 					// Register sensor location
 					_touchedSensorLocations.insert(LocationIndex(
-					    StationIndex(
-					        NetworkIndex(sc_net->code(), sc_net->start()),
-					        EpochIndex(sc_sta->code(), sc_sta->start())
-					    ),
-					    EpochIndex(sc_loc->code(), sc_loc->start())
+						StationIndex(
+							NetworkIndex(sc_net->code(), sc_net->start()),
+							EpochIndex(sc_sta->code(), sc_sta->start())
+						),
+						EpochIndex(sc_loc->code(), sc_loc->start())
 					));
 				}
 
@@ -2954,27 +2954,27 @@ bool Convert2SC::process(
 		SEISCOMP_WARNING(
 		    "%s.%s.%s.%s: response stage 0 not found and "
 		    "instrument sensitivity not set: gain undefined",
-		    sc_loc->station()->network()->code().c_str(),
-		    sc_loc->station()->code().c_str(), sc_loc->code().c_str(),
-		    sc_stream->code().c_str()
+		    sc_loc->station()->network()->code(),
+		    sc_loc->station()->code(), sc_loc->code(),
+		    sc_stream->code()
 		);
 
 		sc_stream->setGainFrequency(Core::None);
 		SEISCOMP_WARNING(
 		    "%s.%s.%s.%s: response stage 0 not found and "
 		    "instrument sensitivity freq not set: freq undefined",
-		    sc_loc->station()->network()->code().c_str(),
-		    sc_loc->station()->code().c_str(), sc_loc->code().c_str(),
-		    sc_stream->code().c_str()
+		    sc_loc->station()->network()->code(),
+		    sc_loc->station()->code(), sc_loc->code(),
+		    sc_stream->code()
 		);
 
 		sc_stream->setGainUnit("");
 		SEISCOMP_WARNING(
 		    "%s.%s.%s.%s: response stage 0 not found and "
 		    "instrument sensitivity unit not set: unit undefined",
-		    sc_loc->station()->network()->code().c_str(),
-		    sc_loc->station()->code().c_str(), sc_loc->code().c_str(),
-		    sc_stream->code().c_str()
+		    sc_loc->station()->network()->code(),
+		    sc_loc->station()->code(), sc_loc->code(),
+		    sc_stream->code()
 		);
 	}
 
@@ -3115,14 +3115,14 @@ bool Convert2SC::process(
 			newDeciInstance = false;
 			SEISCOMP_DEBUG(
 			    "Reused datalogger decimation for stream %s",
-			    sc_stream->code().c_str()
+			    sc_stream->code()
 			);
 		}
 	}
 	catch ( ... ) {
 		SEISCOMP_WARNING(
 		    "%s: no sampling rate given, ignoring all decimation stages",
-		    chaCode.c_str()
+		    chaCode
 		);
 	}
 
@@ -3167,7 +3167,7 @@ bool Convert2SC::process(
 				SEISCOMP_ERROR(
 				    "%s: found another sensor stage but only one is expected: "
 				    "bail out",
-				    chaCode.c_str()
+				    chaCode
 				);
 				return false;
 			}
@@ -3182,8 +3182,8 @@ bool Convert2SC::process(
 				SEISCOMP_WARNING(
 				    "%s: sensor input unit does not match channel instrument "
 				    "unit: %s != %s",
-				    chaCode.c_str(), inputUnit.c_str(),
-				    sc_stream->gainUnit().c_str()
+				    chaCode, inputUnit,
+				    sc_stream->gainUnit()
 				);
 			}
 
@@ -3220,7 +3220,7 @@ bool Convert2SC::process(
 			SEISCOMP_ERROR(
 			    "%s: stage %d is neither an analogue nor a digital stage, "
 			    "don't know what to do",
-			    chaCode.c_str(), stage->number()
+			    chaCode, stage->number()
 			);
 			return false;
 		}
@@ -3295,7 +3295,7 @@ bool Convert2SC::process(
 						SEISCOMP_ERROR(
 						    "%s: stage %d contains an unsupported filter "
 						    "configuration",
-						    chaCode.c_str(), stage->number()
+						    chaCode, stage->number()
 						);
 						return false;
 					}
@@ -3315,11 +3315,11 @@ bool Convert2SC::process(
 						checkAmbigiousID(rf, fir);
 						addRespToInv(rf.get());
 						// SEISCOMP_DEBUG("Added new FIR filter from
-						// coefficients: %s", rf->publicID().c_str());
+						// coefficients: %s", rf->publicID());
 					}
 					else {
 						// SEISCOMP_DEBUG("Reuse FIR filter from coefficients:
-						// %s", rf->publicID().c_str());
+						// %s", rf->publicID());
 					}
 
 					abstractResponse = rf.get();
@@ -3342,7 +3342,7 @@ bool Convert2SC::process(
 							SEISCOMP_ERROR(
 							    "%s: stage %d contains an unconvertible IIR "
 							    "coefficient filter configuration",
-							    chaCode.c_str(), stage->number()
+							    chaCode, stage->number()
 							);
 							return false;
 						}
@@ -3363,11 +3363,11 @@ bool Convert2SC::process(
 							checkAmbigiousID(iir, coeff);
 							addRespToInv(iir.get());
 							// SEISCOMP_DEBUG("Added new PAZ response from paz:
-							// %s", rp->publicID().c_str());
+							// %s", rp->publicID());
 						}
 						else {
 							// SEISCOMP_DEBUG("Reused PAZ response from paz:
-							// %s", rp->publicID().c_str());
+							// %s", rp->publicID());
 						}
 
 						abstractResponse = iir.get();
@@ -3381,7 +3381,7 @@ bool Convert2SC::process(
 							SEISCOMP_ERROR(
 							    "%s: stage %d contains an unconvertible FIR "
 							    "coefficient filter configuration",
-							    chaCode.c_str(), stage->number()
+							    chaCode, stage->number()
 							);
 							return false;
 						}
@@ -3402,11 +3402,11 @@ bool Convert2SC::process(
 							checkAmbigiousID(rf, coeff);
 							addRespToInv(rf.get());
 							// SEISCOMP_DEBUG("Added new FIR filter from
-							// coefficients: %s", rf->publicID().c_str());
+							// coefficients: %s", rf->publicID());
 						}
 						else {
 							// SEISCOMP_DEBUG("Reuse FIR filter from
-							// coefficients: %s", rf->publicID().c_str());
+							// coefficients: %s", rf->publicID());
 						}
 
 						abstractResponse = rf.get();
@@ -3436,11 +3436,11 @@ bool Convert2SC::process(
 						checkAmbigiousID(rp, paz);
 						addRespToInv(rp.get());
 						// SEISCOMP_DEBUG("Added new PAZ response from paz: %s",
-						// rp->publicID().c_str());
+						// rp->publicID());
 					}
 					else {
 						// SEISCOMP_DEBUG("Reused PAZ response from paz: %s",
-						// rp->publicID().c_str());
+						// rp->publicID());
 					}
 
 					abstractResponse = rp.get();
@@ -3469,11 +3469,11 @@ bool Convert2SC::process(
 						checkAmbigiousID(rp, poly);
 						addRespToInv(rp.get());
 						// SEISCOMP_DEBUG("Added new polynomial response from
-						// poly: %s", rp->publicID().c_str());
+						// poly: %s", rp->publicID());
 					}
 					else {
 						// SEISCOMP_DEBUG("reused polynomial response from poly:
-						// %s", rp->publicID().c_str());
+						// %s", rp->publicID());
 					}
 
 					abstractResponse = rp.get();
@@ -3501,11 +3501,11 @@ bool Convert2SC::process(
 						checkAmbigiousID(rp, rl);
 						addRespToInv(rp.get());
 						// SEISCOMP_DEBUG("Added new PAZ response from paz: %s",
-						// rp->publicID().c_str());
+						// rp->publicID());
 					}
 					else {
 						// SEISCOMP_DEBUG("Reused PAZ response from paz: %s",
-						// rp->publicID().c_str());
+						// rp->publicID());
 					}
 
 					abstractResponse = rp.get();
@@ -3618,15 +3618,15 @@ bool Convert2SC::process(
 	if ( newInstance ) {
 		sc_loc->add(sc_stream.get());
 		SEISCOMP_DEBUG(
-		    "Added new stream epoch: %s (%s)", sc_stream->code().c_str(),
-		    sc_stream->start().iso().c_str()
+		    "Added new stream epoch: %s (%s)", sc_stream->code(),
+		    sc_stream->start().iso()
 		);
 	}
 	else if ( needUpdate ) {
 		sc_stream->update();
 		SEISCOMP_DEBUG(
-		    "Updated stream epoch: %s (%s)", sc_stream->code().c_str(),
-		    sc_stream->start().iso().c_str()
+		    "Updated stream epoch: %s (%s)", sc_stream->code(),
+		    sc_stream->start().iso()
 		);
 	}
 
@@ -3808,7 +3808,7 @@ DataModel::DataloggerCalibration *Convert2SC::updateDataloggerCalibration(
 		sc_cal->update();
 		SEISCOMP_DEBUG(
 		    "Reused datalogger calibration for stream %s",
-		    sc_stream->code().c_str()
+		    sc_stream->code()
 		);
 	}
 
@@ -3892,19 +3892,19 @@ DataModel::Sensor *Convert2SC::updateSensor(
 					addRespToInv(rp.get());
 					SEISCOMP_DEBUG(
 					    "Added new Sensor.ResponsePAZ from paz: %s",
-					    rp->publicID().c_str()
+					    rp->publicID()
 					);
 				}
 				else {
 					SEISCOMP_DEBUG(
 					    "Reused Sensor.ResponsePAZ from paz: %s",
-					    rp->publicID().c_str()
+					    rp->publicID()
 					);
 				}
 
 				SEISCOMP_DEBUG(
 				    "Update Sensor.response: %s -> %s",
-				    sc_sens->publicID().c_str(), rp->publicID().c_str()
+				    sc_sens->publicID(), rp->publicID()
 				);
 
 				sc_sens->setResponse(rp->publicID());
@@ -3932,11 +3932,11 @@ DataModel::Sensor *Convert2SC::updateSensor(
 					checkAmbigiousID(rp, &resp->responseList());
 					addRespToInv(rp.get());
 					// SEISCOMP_DEBUG("Added new polynomial response from poly:
-					// %s", rp->publicID().c_str());
+					// %s", rp->publicID());
 				}
 				else {
 					// SEISCOMP_DEBUG("reused polynomial response from poly:
-					// %s", rp->publicID().c_str());
+					// %s", rp->publicID());
 				}
 
 				sc_sens->setResponse(rp->publicID());
@@ -3966,11 +3966,11 @@ DataModel::Sensor *Convert2SC::updateSensor(
 					checkAmbigiousID(rp, &resp->polynomial());
 					addRespToInv(rp.get());
 					// SEISCOMP_DEBUG("Added new polynomial response from poly:
-					// %s", rp->publicID().c_str());
+					// %s", rp->publicID());
 				}
 				else {
 					// SEISCOMP_DEBUG("reused polynomial response from poly:
-					// %s", rp->publicID().c_str());
+					// %s", rp->publicID());
 				}
 
 				sc_sens->setLowFrequency(
@@ -4005,7 +4005,7 @@ DataModel::Sensor *Convert2SC::updateSensor(
 		return NULL;
 	}
 
-	SEISCOMP_DEBUG("Pushing new sensor: %s", sc_sens->publicID().c_str());
+	SEISCOMP_DEBUG("Pushing new sensor: %s", sc_sens->publicID());
 	sc_sens = pushSensor(sc_sens.get());
 
 	return sc_sens.get();
@@ -4086,17 +4086,17 @@ DataModel::Datalogger *Convert2SC::pushDatalogger(DataModel::Datalogger *dl) {
 		if ( !equal(cdl, dl) ) {
 			*cdl = *dl;
 			cdl->update();
-			SEISCOMP_DEBUG("Updated datalogger: %s", cdl->publicID().c_str());
+			SEISCOMP_DEBUG("Updated datalogger: %s", cdl->publicID());
 		}
 		else {
-			SEISCOMP_DEBUG("Reused datalogger: %s", cdl->publicID().c_str());
+			SEISCOMP_DEBUG("Reused datalogger: %s", cdl->publicID());
 		}
 		return cdl;
 	}
 
 	_inv->add(dl);
 	_dataloggerLookup[dl->name()] = dl;
-	SEISCOMP_DEBUG("Added new datalogger: %s", dl->publicID().c_str());
+	SEISCOMP_DEBUG("Added new datalogger: %s", dl->publicID());
 	return dl;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -4112,17 +4112,17 @@ DataModel::Sensor *Convert2SC::pushSensor(DataModel::Sensor *sens) {
 		if ( !equal(csens, sens) ) {
 			*csens = *sens;
 			csens->update();
-			SEISCOMP_DEBUG("Updated sensor: %s", csens->publicID().c_str());
+			SEISCOMP_DEBUG("Updated sensor: %s", csens->publicID());
 		}
 		else {
-			SEISCOMP_DEBUG("Reused sensor: %s", csens->publicID().c_str());
+			SEISCOMP_DEBUG("Reused sensor: %s", csens->publicID());
 		}
 		return csens;
 	}
 
 	_inv->add(sens);
 	_sensorLookup[sens->name()] = sens;
-	SEISCOMP_DEBUG("Added new sensor: %s", sens->publicID().c_str());
+	SEISCOMP_DEBUG("Added new sensor: %s", sens->publicID());
 	return sens;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
