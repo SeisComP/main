@@ -317,6 +317,38 @@
 							<description>
 							</description>
 						</parameter>
+						<parameter name="showMinMax" type="boolean" default="true">
+							<description>
+							Whether the amplitude range is rendered or not.
+							</description>
+						</parameter>
+						<parameter name="format" type="string" default="exponential" values="exponential,engineering">
+							<description>
+							Whether values are shown in engineering notation or in
+							exponential notation.
+							</description>
+						</parameter>
+						<group name="axis">
+							<parameter name="enable" type="boolean" default="false">
+								<description>
+								If enabled then an axis is rendered.
+								</description>
+							</parameter>
+							<parameter name="align" type="string" default="left" values="left,right,both">
+								<description>
+								Defines the axis alignment. &quot;both&quot; renders
+								the axis at both sided.
+								</description>
+							</parameter>
+							<parameter name="tickInterval" type="list:double" default="0, 0">
+								<description>
+								If larger than zero then a fixed axis tickinterval will
+								be used. It is a tuple describing the ticks and subticks
+								intervals. If only one value is given then the subticks
+								are not rendered.
+								</description>
+							</parameter>
+						</group>
 						<group name="minimum">
 							<description>
 							Properties defining the minimum line on each trace.

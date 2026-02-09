@@ -281,6 +281,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		void selectModeNone();
 		void selectModeZoom(bool allowToggle = true);
 		void selectModePicks(bool allowToggle = true);
+		void selectModeShowAmplitude(bool allowToggle = true);
 		void selectMode(int mode);
 
 		void filterSelectionChanged();
@@ -331,6 +332,8 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 
 		void applySpectrogramSettings(TraceWidget *widget);
 
+		void setAmplitudeInspection(bool enable);
+
 
 	private:
 		Ui::MainWindow                            _ui;
@@ -362,6 +365,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		QTimer                                   *_timer;
 		QTimer                                   *_switchBack;
 
+		bool                                      _activeFollowsHover{false};
 		bool                                      _needColorUpdate;
 		int                                       _lastFoundRow;
 		int                                       _rowSpacing;
@@ -395,18 +399,24 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		};
 
 		struct DecorationDesc {
-			std::string matchID;
-			OPT(double) minValue;
-			OPT(double) maxValue;
-			bool        fixedScale{false};
-			OPT(double) gain;
-			OPT(double) minMaxMargin;
-			QPen        minPen;
-			QBrush      minBrush;
-			QPen        maxPen;
-			QBrush      maxBrush;
-			QString     description;
-			QString     unit;
+			std::string                     matchID;
+			OPT(double)                     minValue;
+			OPT(double)                     maxValue;
+			bool                            fixedScale{false};
+			bool                            showMinMax{true};
+			bool                            showAxis{false};
+			bool                            showEngineeringValues{true};
+			QPen                            axisPen{Qt::NoPen};
+			Gui::RecordWidget::AxisPosition axisAlign{Gui::RecordWidget::Left};
+			double                          axisSpacing[2]{0, 0};
+			OPT(double)                     gain;
+			OPT(double)                     minMaxMargin;
+			QPen                            minPen;
+			QBrush                          minBrush;
+			QPen                            maxPen;
+			QBrush                          maxBrush;
+			QString                         description;
+			QString                         unit;
 		};
 
 		struct ChannelGroup {
