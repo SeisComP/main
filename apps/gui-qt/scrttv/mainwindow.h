@@ -399,7 +399,7 @@ class MainWindow : public Seiscomp::Gui::MainWindow {
 		};
 
 		struct DecorationDesc {
-			std::string                     matchID;
+			std::vector<std::string>        matchID;
 			OPT(double)                     minValue;
 			OPT(double)                     maxValue;
 			bool                            fixedScale{false};
