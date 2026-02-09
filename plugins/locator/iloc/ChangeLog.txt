@@ -1,7 +1,39 @@
 ChangeLog
 =========
 
-sciLoc4.2 - 2024-02-15
+sciLoc-4.3
+==========
+- RSTT3.2.1; bugfix release
+- modifications in Makefiles to support the latest gcc.
+- modified Makefiles to support Apple silicon compile and link issues.
+- included calculating the Cyclic Polygon Quotient (CPQ) and the ISC GT5 test
+  Gallacher et al., 2025, Seismica, 4, https://doi.org/10.26443/seismica.v4i1.1536.
+- a phase is identified as Lg only if it was reported as Lg
+  (suggested by Nick Ackerley, NRCan, Canada).
+- included optional station corrections (suggested by Marcelo Asumpção,
+  University São Paulo, Brazil).
+- included RSTT python support utilities to query and edit velocity profiles
+  at RSTT nodes.
+- renamed auxdir to iLocAuxDir to be in sync with the SeisComp iLoc plugin.
+  Both iLoc and the SeisComp iLoc plugin read the same iLocAuxDir.
+
+
+sciLoc-4.2
+==========
+- minor bugfixes in iLoc code.
+- modifications in Makefiles to support latest gcc.
+- modified Makefiles to support Apple silicon compile and link issues.
+- disabled option to extract local velocity model from RSTT.
+- when a kml file is required, only converged solutions are written to it.
+- when in a local velocity model no Conrad discontinuity was labeled, iLoc
+  erroneously took the top of first layer boundary as the Conrad discontinuity,
+  thus preventing the calculation of Pg/Sg phases. The calculation of travel
+  times from a local velocity model was restricted to up to 6 degree distance.
+  The Conrad discontinuity is no longer set to the surface when CONRAD is not
+  specified in the local velocity model.
+  Travel-time calculations from local velocity models now extended to 10 degrees.
+
+sciLoc4.1 - 2024-02-15
 ======================
 - RSTT3.2.1; bugfix release
 - modifications in Makefiles to support latest gcc.

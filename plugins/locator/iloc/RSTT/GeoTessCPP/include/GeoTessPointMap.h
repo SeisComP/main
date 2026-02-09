@@ -614,7 +614,7 @@ public:
 	{
 		char s[100];
 		string frmt = "%8.3f";
-		sprintf(s, frmt.c_str(), getPointDepth(pointIndex));
+		snprintf(s, sizeof(s), frmt.c_str(), getPointDepth(pointIndex));
 		return GeoTessUtils::getLatLonString(getPointUnitVector(pointIndex))
 				+ " " + s;
 	}

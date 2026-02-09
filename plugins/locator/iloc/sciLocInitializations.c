@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2018-2019, Istvan Bondar,
- * Written by Istvan Bondar, ibondar2014@gmail.com
+ * Copyright (c) 2018-2026, Istvan Bondar,
+ * Written by Istvan Bondar, Seismic Location Services
+ * istvan.bondar@slsiloc.eu
  *
  * BSD Open Source License.
  * All rights reserved.
@@ -83,14 +84,17 @@ int iLoc_InitializeEvent(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
     Hypocenter->numDef = Hypocenter->numTimedef = 0;
     Hypocenter->numSlowdef = Hypocenter->numAzimdef = 0;
     Hypocenter->numDefsta = Hypocenter->numDepthDp = 0;
+    Hypocenter->nSPdef150 = 0;
     Hypocenter->DepthDp = Hypocenter->DepthDpError = ILOC_NULLVAL;
     Hypocenter->FixedDepthType = 0;
     Hypocenter->Converged = 0;
     Hypocenter->uRMS = Hypocenter->wRMS = 0.;
     Hypocenter->Gap = Hypocenter->Sgap = 360.;
-    Hypocenter->GT5candidate = 0;
+    Hypocenter->GT5candidateDU = 0;
+    Hypocenter->GT5candidateCPQ = 0;
     Hypocenter->localSgap = 360.;
     Hypocenter->localDU = ILOC_NULLVAL;
+    Hypocenter->localCPQ = ILOC_NULLVAL;
     Hypocenter->numStaWithin10km = 0;
     Hypocenter->localNumDefsta = Hypocenter->localNumDef = 0;
     strcpy(Hypocenter->iLocInfo, "");

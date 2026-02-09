@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2018-2019, Istvan Bondar,
- * Written by Istvan Bondar, ibondar2014@gmail.com
+ * Copyright (c) 2018-2026, Istvan Bondar,
+ * Written by Istvan Bondar, Seismic Location Services
+ * istvan.bondar@slsiloc.eu
  *
  * BSD Open Source License.
  * All rights reserved.
@@ -488,12 +489,20 @@ void iLoc_PrintIOstructures(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
                 fprintf(stderr, "  slat=%.2f", Hypocenter->Errors[2]);
             fprintf(stderr, "\n  uRMS=%.3f wRMS=%.3f SdevObs=%.3f\n",
                     Hypocenter->SdevObs, Hypocenter->uRMS, Hypocenter->wRMS);
-            fprintf(stderr, "  GT5candidate=%d localSgap=%.1f localDU=%.3f ",
-                    Hypocenter->GT5candidate, Hypocenter->localSgap,
-                    Hypocenter->localDU);
+            fprintf(stderr, "  GT5candidateDU=%d localDU=%.3f localSgap=%.1f",
+                    Hypocenter->GT5candidateDU, Hypocenter->localDU,
+                    Hypocenter->localSgap);
             fprintf(stderr, "numStaWithin10km=%d localNumDefsta=%d localNumDef=%d\n",
                     Hypocenter->numStaWithin10km, Hypocenter->localNumDefsta,
                     Hypocenter->localNumDef);
+            fprintf(stderr, "  GT5candidateCPQ=%d localCPQ=%.3f localSgap=%.1f",
+                    Hypocenter->GT5candidateCPQ, Hypocenter->localCPQ,
+                    Hypocenter->localSgap);
+            fprintf(stderr, "numStaWithin10km=%d localNumDefsta=%d numdefSPwithin150km=%d\n",
+                    Hypocenter->numStaWithin10km, Hypocenter->localNumDefsta,
+                    Hypocenter->nSPdef150);
+            if (Hypocenter->GT5candidateDU || Hypocenter->GT5candidateCPQ)
+                fprintf(stderr, "  This event can be a GT5 candidate!\n");
         }
         fprintf(stderr, "\n");
     }
