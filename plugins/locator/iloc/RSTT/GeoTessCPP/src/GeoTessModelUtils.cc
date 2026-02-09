@@ -263,11 +263,11 @@ string GeoTessModelUtils::getBoreholeString(GeoTessPosition& pos,
 	char buf[1000];
 	for (int i = 0; i < (int) borehole.size(); ++i)
 	{
-		sprintf(buf, " %9.3f", borehole[i][0]);
+		snprintf(buf, sizeof(buf), " %9.3f", borehole[i][0]);
 		os << buf;
 		for (int j = 1; j < (int) attributes.size() + 1; ++j)
 		{
-			sprintf(buf, " %10.7g", borehole[i][j]);
+			snprintf(buf, sizeof(buf), " %10.7g", borehole[i][j]);
 			os << buf;
 		}
 		os << endl;

@@ -37,7 +37,7 @@
 
 // **** _SYSTEM INCLUDES_ ******************************************************
 
-#include <cstdio>         /* for sprintf() */
+#include <cstdio>         /* for snprintf() */
 #include <cstring>        /* for memcpy() */
 
 // **** _LOCAL INCLUDES_ *******************************************************
@@ -112,7 +112,7 @@ const string& MD50::getMD5HashHex() const
   static string s(32, '\0');
   uchar* hb = (uchar*) md5BinKey;
 
-  for (i=0; i<16; i++) sprintf(&s[2*i], "%02x", hb[i]);
+  for (i=0; i<16; i++) snprintf(&s[2*i], 3, "%02x", hb[i]);
   return s;
 }
 
@@ -128,7 +128,7 @@ void MD50::getMD5HashHex(string& s) const
   if (s.length() != 32) s.resize(32);
   uchar* hb = (uchar*) md5BinKey;
 
-  for (i=0; i<16; i++) sprintf(&s[2*i], "%02x", hb[i]);
+  for (i=0; i<16; i++) snprintf(&s[2*i], 3, "%02x", hb[i]);
 }
 
 // **** _FUNCTION DESCRIPTION_ *************************************************
