@@ -1130,11 +1130,11 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 	try {
 		vector<string> profiles = SCApp->configGetStrings("streams.profiles");
 		for ( size_t i = 0; i < profiles.size(); ++i ) {
-			string match;
+			vector<string> match;
 			string prefix = "streams.profile." + profiles[i] + ".";
 
 			try {
-				match = SCApp->configGetString(prefix + "match");
+				match = SCApp->configGetStrings(prefix + "match");
 			}
 			catch ( ... ) {
 				continue;
@@ -1825,7 +1825,14 @@ void MainWindow::setupItem(const Record*, Gui::RecordViewItem *item) {
 
 	for ( size_t i = 0; i < _decorationDescs.size(); ++i ) {
 		DecorationDesc &desc = _decorationDescs[i];
-		if ( !Core::wildcmp(desc.matchID, streamIDStr) ) {
+		bool found = false;
+		for ( auto &stream : desc.matchID ) {
+			if ( Core::wildcmp(stream, streamIDStr) ) {
+				found = true;
+				break;
+			}
+		}
+		if ( !found ) {
 			continue;
 		}
 

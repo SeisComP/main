@@ -279,13 +279,17 @@
 					Register the profiles in &quot;profiles&quot; to apply them.
 					</description>
 					<struct type="Stream profile" link="streams.profiles">
-						<parameter name="match" type="string" unit="" default="">
+						<parameter name="match" type="list:string" unit="" default="">
 							<description>
-							Stream applying this profile to. Use regular expressions
-							for defining multiple streams. Examples:
+							List of channels codes this profile applies to. List
+							items may contain wildcards at any position and are
+							separated by comma. The list is	intersected with all
+							loaded channels. Examples:
 
-							GR.BFO.00.BHZ: One stream on vertical component
+							GR.MOX..BHZ: One vertical-component stream.
 
+							GR.CLL..BHZ,GR.MOX..BHZ: Vertical-component streams
+							of two stations.
 
 							GR.*.00.BHZ: All stations from GR network and their
 							vertical components.
