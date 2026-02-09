@@ -37,6 +37,7 @@
 #include <seiscomp/gui/core/recordviewitem.h>
 #include <seiscomp/gui/core/scheme.h>
 #include <seiscomp/gui/core/spectrogramsettings.h>
+#include <seiscomp/gui/core/utils.h>
 #include <seiscomp/gui/datamodel/origindialog.h>
 #include <seiscomp/gui/datamodel/inventorylistview.h>
 
@@ -48,7 +49,6 @@
 
 #include <map>
 #include <set>
-#include <fstream>
 
 #include "associator.h"
 #include "settings.h"
@@ -69,9 +69,10 @@ using namespace Seiscomp::DataModel;
 #define DATA_GROUP_INDEX 4
 
 
-#define MODE_STANDARD 0
-#define MODE_PICKS    1
-#define MODE_ZOOM     2
+#define MODE_STANDARD       0
+#define MODE_PICKS          1
+#define MODE_ZOOM           2
+#define MODE_SHOW_AMPLITUDE 3
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -321,13 +322,15 @@ class TraceDecorator : public Gui::RecordWidgetDecorator {
 				if ( brush != Qt::NoBrush ) {
 					if ( fillAbove ) {
 						if ( py > y1) py = y1;
-						if ( py > y0 )
+						if ( py > y0 ) {
 							painter->fillRect(0,y0,painter->window().width(),py-y0,brush);
+						}
 					}
 					else {
 						if ( py <= y0) py = y0;
-						if ( py <= y1 )
+						if ( py <= y1 ) {
 							painter->fillRect(0,py,painter->window().width(),y1-py,brush);
+						}
 					}
 				}
 			}
@@ -356,26 +359,36 @@ class TraceDecorator : public Gui::RecordWidgetDecorator {
 				yofs += r.height();
 			}
 
-			QPair<double,double> amplRange = widget->amplitudeDataRange(0);
-			QString amps = QString("max: %1").arg(amplRange.second, 0, 'f', 1);
-			if ( !_desc->unit.isEmpty() ) {
-			    amps += " ";
-			    amps += _desc->unit;
+			if ( _desc->showMinMax ) {
+				QPair<double,double> amplRange = widget->amplitudeDataRange(0);
+				QString amps = _desc->showEngineeringValues ?
+					QString("max: %1").arg(Gui::numberToEngineering(amplRange.second, 1)) :
+					QString("max: %1 ").arg(amplRange.second, 0, 'f', 1)
+				;
+				if ( !_desc->unit.isEmpty() ) {
+					amps += _desc->unit;
+				}
+				amps += "\n";
+				amps += _desc->showEngineeringValues ?
+					QString("min: %1").arg(Gui::numberToEngineering(amplRange.first, 1)) :
+					QString("min: %1 ").arg(amplRange.first, 0, 'f', 1)
+				;
+				if ( !_desc->unit.isEmpty() ) {
+					amps += _desc->unit;
+				}
+				painter->setFont(SCScheme.fonts.base);
+				painter->setPen(widget->palette().color(QPalette::Text));
+				QRect r = painter->boundingRect(painter->window(), Qt::AlignLeft | Qt::AlignTop, amps);
+				r.adjust(-4,-4,4,4);
+				r.moveTo(0,yofs);
+				painter->fillRect(r, widget->palette().color(QPalette::Base));
+				r.translate(4,4);
+				painter->drawText(r, Qt::AlignLeft | Qt::AlignTop, amps);
 			}
-			amps += "\n";
-			amps += QString("min: %1").arg(amplRange.first, 0, 'f', 1);
-			if ( !_desc->unit.isEmpty() ) {
-			   amps += " ";
-			   amps += _desc->unit;
-			}
-			painter->setFont(SCScheme.fonts.base);
-			painter->setPen(widget->palette().color(QPalette::Text));
-			QRect r = painter->boundingRect(painter->window(), Qt::AlignLeft | Qt::AlignTop, amps);
-			r.adjust(-4,-4,4,4);
-			r.moveTo(0,yofs);
-			painter->fillRect(r, widget->palette().color(QPalette::Base));
-			r.translate(4,4);
-			painter->drawText(r, Qt::AlignLeft | Qt::AlignTop, amps);
+		}
+
+		const MainWindow::DecorationDesc *desc() const {
+			return _desc;
 		}
 
 	private:
@@ -898,6 +911,7 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 	_statusBarSelectMode->addItem(tr("Standard mode"));
 	_statusBarSelectMode->addItem(tr("Associate picks"));
 	_statusBarSelectMode->addItem(tr("Zoom mode"));
+	_statusBarSelectMode->addItem(tr("Show amplitude"));
 	connect(_statusBarSelectMode, SIGNAL(currentIndexChanged(int)),
 	        this, SLOT(selectMode(int)));
 
@@ -1044,6 +1058,7 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 	connect(_ui.actionModeNone, SIGNAL(triggered()), this, SLOT(selectModeNone()));
 	connect(_ui.actionModeZoom, SIGNAL(triggered()), this, SLOT(selectModeZoom()));
 	connect(_ui.actionModePicks, SIGNAL(triggered()), this, SLOT(selectModePicks()));
+	connect(_ui.actionModeShowAmplitude, SIGNAL(triggered()), this, SLOT(selectModeShowAmplitude()));
 
 	connect(_ui.actionReload, SIGNAL(triggered()), this, SLOT(reload()));
 	connect(_ui.actionSwitchToRealtime, SIGNAL(triggered()), this, SLOT(switchToRealtime()));
@@ -1136,6 +1151,57 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 			try { desc.unit = SCApp->configGetString(prefix + "unit").c_str(); }
 			catch ( ... ) {}
 			try { desc.gain = SCApp->configGetDouble(prefix + "gain"); }
+			catch ( ... ) {}
+			try { desc.showMinMax = SCApp->configGetBool(prefix + "showMinMax"); }
+			catch ( ... ) {}
+			try {
+				auto format = SCApp->configGetString(prefix + "format");
+				if ( format == "engineering" ) {
+					desc.showEngineeringValues = true;
+				}
+				else if ( format == "exponential" ) {
+					desc.showEngineeringValues = false;
+				}
+				else {
+					SEISCOMP_WARNING("Invalid format value '%s': ignoring", format);
+				}
+			}
+			catch ( ... ) {}
+			try { desc.showAxis = SCApp->configGetBool(prefix + "axis.enable"); }
+			catch ( ... ) {}
+			try {
+				auto values = SCApp->configGetDoubles(prefix + "axis.tickInterval");
+				if ( values.size() > 0 ) {
+					desc.axisSpacing[0] = values[0];
+				}
+				if ( values.size() > 1 ) {
+					desc.axisSpacing[1] = values[1];
+				}
+			}
+			catch ( ... ) {}
+			try {
+				auto align = SCApp->configGetString(prefix + "axis.align");
+				if ( align == "left" ) {
+					desc.axisAlign = Gui::RecordWidget::Left;
+				}
+				else if ( align == "right" ) {
+					desc.axisAlign = Gui::RecordWidget::Right;
+				}
+				else if ( align == "both" ) {
+					desc.axisAlign = Gui::RecordWidget::Both;
+				}
+				else {
+					SEISCOMP_WARNING("Invalid axis.align value '%s': ignoring", align);
+				}
+			}
+			catch ( ... ) {}
+			try {
+				QColor c;
+				c = SCApp->configGetColor(prefix + "axis.color", c);
+				if ( c.isValid() ) {
+					desc.axisPen = QPen(c);
+				}
+			}
 			catch ( ... ) {}
 			try { desc.minValue = SCApp->configGetDouble(prefix + "minimum.value"); }
 			catch ( ... ) {}
@@ -1759,28 +1825,76 @@ void MainWindow::setupItem(const Record*, Gui::RecordViewItem *item) {
 
 	for ( size_t i = 0; i < _decorationDescs.size(); ++i ) {
 		DecorationDesc &desc = _decorationDescs[i];
-		if ( !Core::wildcmp(desc.matchID, streamIDStr) ) continue;
+		if ( !Core::wildcmp(desc.matchID, streamIDStr) ) {
+			continue;
+		}
 
 		TraceDecorator *deco = new TraceDecorator(item->widget(), &desc);
 		item->widget()->setDecorator(deco);
 		item->widget()->setDrawOffset(false);
-		if ( desc.gain && *desc.gain != 0.0 )
+		if ( desc.gain && *desc.gain != 0.0 ) {
 			item->widget()->setRecordScale(0, 1.0 / *desc.gain);
+		}
+
+		double gain = item->widget()->recordScale(0) ? *item->widget()->recordScale(0) : 1.0;
 
 		if ( desc.minValue && desc.maxValue && desc.minMaxMargin ) {
 			double center = (*desc.minValue + *desc.maxValue) * 0.5;
-			double vmin = (*desc.minValue-center)*(1+*desc.minMaxMargin)+center;
-			double vmax = (*desc.maxValue-center)*(1+*desc.minMaxMargin)+center;
-			if ( desc.fixedScale )
-				item->widget()->setAmplRange(vmin / *item->widget()->recordScale(0),
-				                             vmax / *item->widget()->recordScale(0));
-			else
-				item->widget()->setMinimumAmplRange(vmin / *item->widget()->recordScale(0),
-				                                    vmax / *item->widget()->recordScale(0));
+			double vmin = (*desc.minValue - center) * (1 + *desc.minMaxMargin) + center;
+			double vmax = (*desc.maxValue - center) * (1 + *desc.minMaxMargin) + center;
+			if ( desc.fixedScale ) {
+				item->widget()->setAmplRange(vmin / gain, vmax / gain);
+			}
+			else {
+				item->widget()->setMinimumAmplRange(vmin / gain, vmax / gain);
+			}
+		}
+
+		item->widget()->showEngineeringValues(desc.showEngineeringValues);
+
+		if ( desc.showAxis ) {
+			item->widget()->setDrawAxis(true);
+			item->widget()->setRecordAxisTickIntervals(0, desc.axisSpacing[0], desc.axisSpacing[1]);
+			item->widget()->setAxisWidth(0);
+			item->widget()->setAxisPosition(desc.axisAlign);
+			item->widget()->setRecordAxisPen(0, desc.axisPen);
+			item->widget()->setRecordLabel(0, desc.unit);
 		}
 
 		break;
 	}
+
+	connect(item->widget(), &Gui::RecordWidget::cursorUpdated, this, [this](Gui::RecordWidget *widget, int) {
+		auto t = widget->cursorPos();
+		auto v = widget->value(t);
+		QString msg;
+		if ( v ) {
+			msg = QString("%1 at %2").arg(*v).arg(t.iso().c_str());
+			auto d = static_cast<TraceDecorator*>(widget->decorator());
+			bool showEng = d ? d->desc()->showEngineeringValues : false;
+			auto ct = showEng ? Gui::numberToEngineering(*v) : QString("%1 ").arg(*v, 0, 'f', 1);
+			if ( d && !d->desc()->unit.isEmpty() ) {
+				ct += d->desc()->unit;
+			}
+			widget->setCursorText(ct);
+		}
+		else {
+			msg = QString("No value at %1").arg(t.iso().c_str());
+			widget->setCursorText(" ");
+		}
+		_statusBarFile->setText(msg);
+	});
+
+	connect(item->widget(), &Gui::RecordWidget::mouseOver, this, [this, item](bool hovered) {
+		if ( hovered ) {
+			if ( _activeFollowsHover ) {
+				item->widget()->setActive(true);
+			}
+		}
+		else if ( item->widget()->isActive() ){
+			item->widget()->setActive(false);
+		}
+	});
 
 	item->setValue(DATA_GROUP, 0);
 	item->setValue(DATA_GROUP_MEMBER, 0);
@@ -2038,7 +2152,7 @@ void MainWindow::loadFiles() {
 
 		IO::RecordInput input(&file, Array::FLOAT, Record::DATA_ONLY);
 
-		cout << "loading " << _dataFiles[i] << "..." << flush;
+		cerr << "loading " << _dataFiles[i] << "..." << flush;
 		Util::StopWatch t;
 
 		for ( Record *rec : input ) {
@@ -2049,7 +2163,7 @@ void MainWindow::loadFiles() {
 			}
 		}
 
-		cout << "(" << t.elapsed() << " sec)" << endl;
+		cerr << "(" << t.elapsed() << " sec)" << endl;
 	}
 
 	Core::TimeWindow tw = _traceViews.front()->coveredTimeRange();
@@ -2910,6 +3024,39 @@ void MainWindow::applySpectrogramSettings(TraceWidget *traceWidget) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::setAmplitudeInspection(bool enable) {
+	_activeFollowsHover = enable;
+
+	foreach ( TraceView *view, _traceViews ) {
+		for ( int i = 0; i < view->rowCount(); ++i ) {
+			auto item = view->itemAt(i);
+			if ( enable ) {
+				item->widget()->setMouseTracking(true);
+				if ( item->widget()->underMouse() ) {
+					item->widget()->setCursorText(" ");
+					item->widget()->setActive(true);
+				}
+			}
+			else {
+				item->widget()->setMouseTracking(false);
+				item->widget()->setCursorText(QString());
+				if ( item->widget()->isActive() ) {
+					item->widget()->setActive(false);
+				}
+			}
+		}
+	}
+
+	if ( !enable ) {
+		_statusBarFile->setText({});
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::checkTraceDelay() {
 	if ( Settings::global.maxDelay == 0 ) {
 		return;
@@ -2970,6 +3117,7 @@ void MainWindow::updateTraceCount() {
 void MainWindow::selectModeNone() {
 	clearSelection();
 	TRACEVIEWS(restoreSelectionMode());
+	setAmplitudeInspection(false);
 	_statusBarSelectMode->blockSignals(true);
 	_statusBarSelectMode->setCurrentIndex(MODE_STANDARD);
 	_statusBarSelectMode->blockSignals(false);
@@ -2990,6 +3138,7 @@ void MainWindow::selectModeZoom(bool allowToggle) {
 	}
 	else {
 		TRACEVIEWS(setZoomEnabled());
+		setAmplitudeInspection(false);
 		_statusBarSelectMode->blockSignals(true);
 		_statusBarSelectMode->setCurrentIndex(MODE_ZOOM);
 		_statusBarSelectMode->blockSignals(false);
@@ -3011,8 +3160,32 @@ void MainWindow::selectModePicks(bool allowToggle) {
 	}
 	else {
 		TRACEVIEWS(setRubberBandSelectionEnabled());
+		setAmplitudeInspection(false);
 		_statusBarSelectMode->blockSignals(true);
 		_statusBarSelectMode->setCurrentIndex(MODE_PICKS);
+		_statusBarSelectMode->blockSignals(false);
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainWindow::selectModeShowAmplitude(bool allowToggle) {
+	if ( SCApp->nonInteractive() ) {
+		return;
+	}
+
+	if ( allowToggle && (_statusBarSelectMode->currentIndex() == MODE_SHOW_AMPLITUDE) ) {
+		selectModeNone();
+	}
+	else {
+		clearSelection();
+		TRACEVIEWS(restoreSelectionMode());
+		setAmplitudeInspection(true);
+		_statusBarSelectMode->blockSignals(true);
+		_statusBarSelectMode->setCurrentIndex(MODE_SHOW_AMPLITUDE);
 		_statusBarSelectMode->blockSignals(false);
 	}
 }
@@ -3032,6 +3205,9 @@ void MainWindow::selectMode(int mode) {
 			break;
 		case 2:
 			selectModeZoom(false);
+			break;
+		case 3:
+			selectModeShowAmplitude(false);
 			break;
 	}
 }
