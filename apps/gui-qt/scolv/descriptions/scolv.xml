@@ -744,7 +744,7 @@
 					will be activated according to the mouse position in the
 					zoom trace (old behaviour). If disabled (default) then only
 					the component of the zoom trace will change but the overall
-					component will stay the same. It must be changed explicitely.
+					component will stay the same. It must be changed explicitly.
 					</description>
 				</parameter>
 				<parameter name="showAmpLevel" type="boolean" default="false">
@@ -759,10 +759,14 @@
 				</parameter>
 				<group name="auxiliary">
 					<description>
-					Define the notion and behaviour of auxiliary channels.
-					They are identified through configurable patterns and if
-					identified as such they will be treated differently in
-					defined situations.
+					When requesting additional waveforms, it is possible to suppress
+					loading auxiliary channels. Auxiliary channels are only loaded
+					if the epicentral distance is within their configured range.
+					Besides, auxiliary channels are directly loaded by holding the
+					add button and selecting the corresponding profile, independent
+					of any distances.
+
+					Use profiles to define auxiliary stations and their distance ranges.
 					</description>
 					<parameter name="channels" type="list:string">
 						<description>
@@ -778,7 +782,7 @@
 						<description>
 						The minimum distance in degrees from origin to load an
 						unassociated auxiliary channel. Loading a
-						channel / station explicitely (F3) will not respect
+						channel / station explicitly (F3) will not respect
 						this setting.
 
 						This is an obsolete and deprecated setting. Please use
@@ -789,7 +793,7 @@
 						<description>
 						The maximum distance in degrees from origin to load an
 						unassociated auxiliary channel. Loading a
-						channel / station explicitely (F3) will not respect
+						channel / station explicitly (F3) will not respect
 						this setting.
 
 						This is an obsolete and deprecated setting. Please use
@@ -802,19 +806,25 @@
 						</description>
 					</parameter>
 					<group name="profiles">
+						<description>
+						Add the name of the profiles to 'picker.auxiliary.profiles'
+						for using them.
+						</description>
 						<struct name="AuxiliaryChannelProfile" link="picker.auxiliary.profiles">
 							<parameter name="channels" type="list:string">
 								<description>
 								A list of wildcard patterns to identify auxiliary
 								channels. A pattern is simply checked against a stream
 								ID, the concatenation of NSLC separated by a period.
+								Note: the orientation code of channels should be either
+								'?' or '*'.
 								</description>
 							</parameter>
 							<parameter name="minimumDistance" type="double" unit="deg" default="0">
 								<description>
 								The minimum distance in degrees from origin to load an
 								unassociated auxiliary channel. Loading a
-								channel / station explicitely (F3) will not respect
+								channel / station explicitly (F3) will not respect
 								this setting.
 								</description>
 							</parameter>
@@ -822,7 +832,7 @@
 								<description>
 								The maximum distance in degrees from origin to load an
 								unassociated auxiliary channel. Loading a
-								channel / station explicitely (F3) will not respect
+								channel / station explicitly (F3) will not respect
 								this setting.
 								</description>
 							</parameter>
@@ -849,9 +859,10 @@
 					</parameter>
 					<group name="groups">
 						<description>
-						Definiton of phase type profiles. The profiles and phase types
+						Definition of phase type profiles. The profiles and phase types
 						can be selected from the Picking menu of the picker window
-						but not with hot keys.
+						but not with hot keys. Add the name of the groups to
+						'picker.phases.groups' for using them.
 						</description>
 						<struct type="Phase type profile" link="picker.phases.groups">
 							<parameter type="list:string">
@@ -911,7 +922,10 @@
 				</group>
 			</group>
 			<group name="amplitudePicker">
-				<description>Parameters controlling the amplitude picker window for computing station magnitudes.</description>
+				<description>
+				Parameters controlling the amplitude picker window
+				for computing station magnitudes.
+				</description>
 				<parameter name="preOffset" type="int" unit="s" default="300">
 					<description>
 						Time span in seconds to be added to the left of the used
