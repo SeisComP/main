@@ -13,8 +13,8 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
-import sys
 import re
+import sys
 
 from seiscomp import client, core, datamodel, io
 
@@ -84,7 +84,7 @@ class EventStreams(client.Application):
         self.setDatabaseEnabled(True, False)
         self.setDaemonEnabled(False)
 
-        self.eventID = None
+        self.eventIDs = None
         self.inputFile = None
         self.inputFormat = "xml"
         self.margin = [300]
@@ -112,8 +112,8 @@ class EventStreams(client.Application):
         self.commandline().addStringOption(
             "Input",
             "input,i",
-            "Input XML file name. Reads event from the XML file instead of database. "
-            "Use '-' to read from stdin.",
+            "Input XML file name. Reads EventParameters from the XML file instead of "
+            "database. Use '-' to read from stdin.",
         )
         self.commandline().addStringOption(
             "Input",
@@ -123,8 +123,12 @@ class EventStreams(client.Application):
         )
 
         self.commandline().addGroup("Dump")
-        self.commandline().addStringOption(
-            "Dump", "event,E", "The ID of the event to consider."
+        self.commandline().addStringsOption(
+            "Dump",
+            "event,E",
+            "The ID of the event to consider. "
+            "Repeat the option to consider multiple events. "
+            "Use '-' to  read the IDs as individual lines from stdin.",
         )
         self.commandline().addStringOption(
             "Dump",
@@ -185,8 +189,8 @@ class EventStreams(client.Application):
         self.commandline().addOption(
             "Output",
             "used-arrivals",
-            "Consider only arrivals which has been used for locating, "
-            "i.e., time, backazimuth or slowness used.",
+            "Consider only arrivals which have been used for locating. "
+            "Ignore all unused arrivals.",
         )
         self.commandline().addOption(
             "Output",
@@ -231,7 +235,17 @@ class EventStreams(client.Application):
             pass
 
         try:
-            self.eventID = self.commandline().optionString("event")
+            self.eventIDs = self.commandline().optionStrings("event")
+            # Check if eventIDs are read from stdin
+            if "-" in self.eventIDs:
+                # Append if -E - is additionally given with -E evID
+                self.eventIDs = [i for i in self.eventIDs if i != "-"]
+                for line in sys.stdin:
+                    evID = line.strip()
+                    if evID == "":
+                        continue
+                    self.eventIDs.append(evID)
+
         except BaseException as exc:
             if not self.inputFile:
                 raise ValueError(
@@ -321,57 +335,26 @@ Get the time windows for all picks given in an XML file without origins and even
     def run(self):
         resolveWildcards = self.commandline().hasOption("resolve-wildcards")
 
-        picks = []
         # read picks from input file
         if self.inputFile:
             try:
-                picks = self.readXML()
+                evPicks, objIDs = self.readXML()
             except IOError as e:
                 print(f"Error: {e}", file=sys.stderr)
                 return False
 
-            if not picks:
+            if not evPicks:
                 raise ValueError("Could not find picks in input file")
 
         # read picks from database
         else:
-            # filter by used arrival
-            pickIDs = set()
-            if self.usedArrivals:
-                # collect all origins
-                oris = []
-                for obj in self.query().getOrigins(self.eventID):
-                    oris.append(datamodel.Origin.Cast(obj))
+            evPicks = self.readDB()
+            objIDs = self.eventIDs
 
-                # check each arrival if used and collect pickID
-                for o in oris:
-                    for i in range(self.query().loadArrivals(o)):
-                        if not (o.arrival(i).timeUsed()
-                                or o.arrival(i).horizontalSlownessUsed()
-                                or o.arrival(i).backazimuthUsed()):
-                            continue
-                        pickIDs.add(o.arrival(i).pickID())
-
-            for obj in self.query().getEventPicks(self.eventID):
-                pick = datamodel.Pick.Cast(obj)
-                if pick is None:
-                    continue
-
-                if self.usedArrivals and pick.publicID() not in pickIDs:
-                    continue
-
-                picks.append(pick)
-
-            if not picks:
-                raise ValueError(
-                    f"Could not find picks for event {self.eventID} in database"
-                )
-
-        # filter picks
-        if self.streamFilter:
-            # # filter channel by --nslc option
+        # setup channel filter by --nslc option
+        channelsRe = []
+        if self.streamFilter and evPicks:
             channels = self.streamFilter
-            channelsRe = []
             for channel in channels:
                 channel = re.sub(r"\.", r"\.", channel)  # . becomes \.
                 channel = re.sub(r"\?", ".", channel)  # ? becomes .
@@ -379,141 +362,225 @@ Get the time windows for all picks given in an XML file without origins and even
                 channel = re.compile(channel)
                 channelsRe.append(channel)
 
-        if self.streamFilter or self.network:
-            pickFiltered = []
+        # go through picks per event
+        linesDict = {}
+        for objID, picks in zip(objIDs, evPicks):
+            # filter picks
+            if self.streamFilter or self.network:
+                picks = self.filterPicks(picks, channelsRe)
+
+            if not picks:
+                print(
+                    f"Info: All picks are filtered out for {objID}",
+                    file=sys.stderr,
+                )
+                continue
+
+            # calculate minimum and maximum pick time
+            minTime = None
+            maxTime = None
+            for pick in picks:
+                if minTime is None or minTime > pick.time().value():
+                    minTime = pick.time().value()
+
+                if maxTime is None or maxTime < pick.time().value():
+                    maxTime = pick.time().value()
+
+            # add time margin(s), no need for None check since pick time is
+            # mandatory and at least on pick exists
+            minTime = minTime - core.TimeSpan(float(self.margin[0]))
+            maxTime = maxTime + core.TimeSpan(float(self.margin[-1]))
+
+            inv = client.Inventory.Instance().inventory()
             for pick in picks:
                 net = pick.waveformID().networkCode()
-                sta = pick.waveformID().stationCode()
+                station = pick.waveformID().stationCode()
                 loc = pick.waveformID().locationCode()
-                cha = pick.waveformID().channelCode()
+                streams = [pick.waveformID().channelCode()]
+                rawStream = streams[0][:2]
 
-                filtered = False
-                if self.streamFilter:
-                    stream = f"{net}.{sta}.{loc}.{cha}"
-                    for chaRe in channelsRe:
-                        if chaRe.match(stream):
-                            filtered = True
-                            continue
+                if self.allComponents:
+                    if resolveWildcards:
+                        iloc = datamodel.getSensorLocation(inv, pick)
+                        if iloc:
+                            tc = datamodel.ThreeComponents()
+                            datamodel.getThreeComponents(
+                                tc, iloc, rawStream, pick.time().value()
+                            )
+                            streams = []
+                            if tc.vertical():
+                                streams.append(tc.vertical().code())
+                            if tc.firstHorizontal():
+                                streams.append(tc.firstHorizontal().code())
+                            if tc.secondHorizontal():
+                                streams.append(tc.secondHorizontal().code())
+                    else:
+                        streams = [f"{rawStream}?"]
 
-                elif self.network:
-                    if net != self.network:
+                if self.allLocations:
+                    loc = "*"
+
+                if self.allStations:
+                    station = "*"
+
+                if self.allNetworks:
+                    net = "*"
+                    station = "*"
+                    loc = "*"
+
+                # FDSNWS requires empty location to be encoded by 2 dashes
+                if not loc and self.fdsnws:
+                    loc = "--"
+
+                for s in streams:
+                    if self.allStreams or self.allNetworks:
+                        s = "*"
+
+                    # gathering streams
+                    nslc = f"{net}.{station}.{loc}.{s}"
+                    if nslc not in linesDict:
+                        linesDict[nslc] = {}
+                        num = 0
+                    else:
+                        num = max(linesDict[nslc].keys()) + 1
+                    linesDict[nslc][num] = {"minTime": minTime, "maxTime": maxTime}
+
+                for s in self.streams:
+                    if s == rawStream:
                         continue
-                    if self.station and sta != self.station:
-                        continue
-                    filtered = True
 
-                if filtered:
-                    pickFiltered.append(pick)
-                else:
-                    print(
-                        f"Ignoring channel {stream}: not considered by configuration",
-                        file=sys.stderr,
-                    )
+                    if self.allStreams or self.allNetworks:
+                        s = "*"
+                    else:
+                        s = f"{s}{streams[0][2]}"
 
-            picks = pickFiltered
+                    # gathering streams
+                    nslc = f"{net}.{station}.{loc}.{s}"
+                    if nslc not in linesDict:
+                        linesDict[nslc] = {}
+                        num = 0
+                    else:
+                        num = max(linesDict[nslc].keys()) + 1
+                    linesDict[nslc][num] = {"minTime": minTime, "maxTime": maxTime}
 
-        if not picks:
-            raise ValueError("Info: All picks are filtered out")
+        # try to merge lines with overlapping time windows by nslc
+        mergedLinesDict = {}
+        for nslc, l in linesDict.items():
+            if max(l.keys()) == 0:
+                mergedLinesDict[nslc] = linesDict[nslc]
+                continue
 
-        # calculate minimum and maximum pick time
-        minTime = None
-        maxTime = None
-        for pick in picks:
-            if minTime is None or minTime > pick.time().value():
-                minTime = pick.time().value()
+            mergedLinesDict[nslc] = self.mergeStreamTimeWindows(linesDict[nslc])
 
-            if maxTime is None or maxTime < pick.time().value():
-                maxTime = pick.time().value()
-
-        # add time margin(s), no need for None check since pick time is
-        # mandatory and at least on pick exists
-        minTime = minTime - core.TimeSpan(float(self.margin[0]))
-        maxTime = maxTime + core.TimeSpan(float(self.margin[-1]))
-
-        # convert times to string dependend on requested output format
+        # line format
+        # convert times to string dependent on requested output format
         if self.caps:
+            lineFMT = "{0} {1} {2} {3} {4} {5}"
             timeFMT = "%Y,%m,%d,%H,%M,%S"
         elif self.fdsnws:
+            lineFMT = "{2} {3} {4} {5} {0} {1}"
             timeFMT = "%FT%T"
         else:
+            lineFMT = "{0};{1};{2}.{3}.{4}.{5}"
             timeFMT = "%F %T"
-        minTime = minTime.toString(timeFMT)
-        maxTime = maxTime.toString(timeFMT)
 
-        inv = client.Inventory.Instance().inventory()
+        # outputs formated strings
+        for nslc, val in sorted(mergedLinesDict.items()):
+            n, s, l, c = nslc.rsplit(".")
+            for num, times in val.items():
+                minTime = times["minTime"].toString(timeFMT)
+                maxTime = times["maxTime"].toString(timeFMT)
+                line = lineFMT.format(minTime, maxTime, n, s, l, c)
+                print(line, file=sys.stdout)
+        return True
 
-        lines = set()
+    def filterPicks(self, picks, channelsRe):
+        pickFiltered = []
         for pick in picks:
             net = pick.waveformID().networkCode()
-            station = pick.waveformID().stationCode()
+            sta = pick.waveformID().stationCode()
             loc = pick.waveformID().locationCode()
-            streams = [pick.waveformID().channelCode()]
-            rawStream = streams[0][:2]
+            cha = pick.waveformID().channelCode()
 
-            if self.allComponents:
-                if resolveWildcards:
-                    iloc = datamodel.getSensorLocation(inv, pick)
-                    if iloc:
-                        tc = datamodel.ThreeComponents()
-                        datamodel.getThreeComponents(
-                            tc, iloc, rawStream, pick.time().value()
-                        )
-                        streams = []
-                        if tc.vertical():
-                            streams.append(tc.vertical().code())
-                        if tc.firstHorizontal():
-                            streams.append(tc.firstHorizontal().code())
-                        if tc.secondHorizontal():
-                            streams.append(tc.secondHorizontal().code())
-                else:
-                    streams = [rawStream + "?"]
+            filtered = False
+            if self.streamFilter:
+                stream = f"{net}.{sta}.{loc}.{cha}"
+                for chaRe in channelsRe:
+                    if chaRe.match(stream):
+                        filtered = True
+                        continue
 
-            if self.allLocations:
-                loc = "*"
-
-            if self.allStations:
-                station = "*"
-
-            if self.allNetworks:
-                net = "*"
-                station = "*"
-                loc = "*"
-
-            # FDSNWS requires empty location to be encoded by 2 dashes
-            if not loc and self.fdsnws:
-                loc = "--"
-
-            # line format
-            if self.caps:
-                lineFMT = "{0} {1} {2} {3} {4} {5}"
-            elif self.fdsnws:
-                lineFMT = "{2} {3} {4} {5} {0} {1}"
-            else:
-                lineFMT = "{0};{1};{2}.{3}.{4}.{5}"
-
-            for s in streams:
-                if self.allStreams or self.allNetworks:
-                    s = "*"
-
-                lines.add(lineFMT.format(minTime, maxTime, net, station, loc, s))
-
-            for s in self.streams:
-                if s == rawStream:
+            elif self.network:
+                if net != self.network:
                     continue
+                if self.station and sta != self.station:
+                    continue
+                filtered = True
 
-                if self.allStreams or self.allNetworks:
-                    s = "*"
-
-                lines.add(
-                    lineFMT.format(
-                        minTime, maxTime, net, station, loc, s + streams[0][2]
-                    )
+            if filtered:
+                pickFiltered.append(pick)
+            else:
+                print(
+                    f"Ignoring channel {stream}: not considered by configuration",
+                    file=sys.stderr,
                 )
 
-        for line in sorted(lines):
-            print(line, file=sys.stdout)
+        return pickFiltered
 
-        return True
+    def mergeStreamTimeWindows(self, inDict):
+        mergedDict = {}
+        tmpDict = inDict
+
+        # loop, until all overlapping time windows are matched
+        continueFlag = True
+        while continueFlag:
+            mergeFlag = False
+            blacklist = []
+
+            # if dict has only a length of 1 left, leave
+            if len(tmpDict.keys()) == 1:
+                mergedDict = tmpDict
+                break
+            for num1, timeDict1 in tmpDict.items():
+                foundFlag = False
+                maxTime1 = timeDict1["maxTime"]
+                minTime1 = timeDict1["minTime"]
+                if num1 in blacklist:
+                    continue
+
+                for num2, timeDict2 in tmpDict.items():
+                    maxTime2 = timeDict2["maxTime"]
+                    minTime2 = timeDict2["minTime"]
+
+                    if num2 <= num1:
+                        continue
+
+                    # Condition: any time stamp must be within the time window
+                    cond1 = maxTime2 >= maxTime1 >= minTime2
+                    cond2 = minTime2 <= minTime1 <= maxTime2
+                    cond3 = maxTime1 >= maxTime2 >= minTime1
+                    cond4 = minTime1 <= minTime2 <= maxTime1
+                    if cond1 or cond2 or cond3 or cond4:
+                        newMinTime = min(minTime1, minTime2)
+                        newMaxTime = max(maxTime1, maxTime2)
+                        mergedDict[num1] = {
+                            "minTime": newMinTime,
+                            "maxTime": newMaxTime,
+                        }
+                        blacklist.append(num2)
+                        mergeFlag = True
+                        foundFlag = True
+                        break
+
+                if not foundFlag:
+                    mergedDict[num1] = tmpDict[num1]
+
+            if mergeFlag:
+                tmpDict = mergedDict
+                mergedDict = {}
+            else:
+                continueFlag = False
+        return mergedDict
 
     def readXML(self):
         if self.inputFormat == "xml":
@@ -541,91 +608,162 @@ Get the time windows for all picks given in an XML file without origins and even
                 raise ValueError(
                     "Neither event parameters nor pick found in input file"
                 )
-            else:
-                return [pick]
+            print(
+                "WARNING: Input file contains just one toplevel Pick object.",
+                file=sys.stderr,
+            )
+            return [[pick]], [[pick.publicID()]]
 
         # we require at least one origin which references to picks via arrivals
         if ep.originCount() == 0 and ep.pickCount() == 0:
             raise ValueError("No origin found in input file")
 
-        originIDs = []
+        # Origin lists, one sub-list per event
+        evOriginIDs = []
+        objIDs = []
+        # search for a specific event ids, collect originIDs
+        if self.eventIDs:
+            for eventID in self.eventIDs:
+                ev = datamodel.Event.Find(eventID)
+                if ev:
+                    evOriginIDs.append(
+                        [
+                            ev.originReference(i).originID()
+                            for i in range(ev.originReferenceCount())
+                        ]
+                    )
+                else:
+                    raise ValueError(f"Event ID '{eventID}' not found in input file")
 
-        # search for a specific event id
-        if self.eventID:
-            ev = datamodel.Event.Find(self.eventID)
-            if ev:
-                originIDs = [
-                    ev.originReference(i).originID()
-                    for i in range(ev.originReferenceCount())
-                ]
-            else:
-                raise ValueError(f"Event ID {self.eventID} not found in input file")
+            objIDs = self.eventIDs
 
-        # use first event/origin if no id was specified
+        # use all events/origins if no id was specified
         else:
-            # no event, use first available origin
+            # no event, use all available origins
             if ep.eventCount() == 0 and ep.originCount() > 0:
-                if ep.originCount() > 1:
-                    print(
-                        "WARNING: Input file contains no event but more than "
-                        "1 origin. Considering only first origin",
-                        file=sys.stderr,
-                    )
-                originIDs.append(ep.origin(0).publicID())
+                print(
+                    "WARNING: Input file contains no event but contains "
+                    f"{ep.originCount()} origin(s). "
+                    "Considering each origin separately.",
+                    file=sys.stderr,
+                )
+                for ocnt in range(ep.originCount()):
+                    evOriginIDs.append([ep.origin(ocnt).publicID()])
 
-            # use origin references of first available event
+                objIDs = evOriginIDs
+
+            # use all origins of all available events
             elif ep.eventCount() > 0 and ep.originCount() > 0:
-                if ep.eventCount() > 1:
-                    print(
-                        "WARNING: Input file contains more than 1 event. "
-                        "Considering only first event",
-                        file=sys.stderr,
+                print(
+                    f"WARNING: Input file contains {ep.eventCount()} event(s). "
+                    "Considering all events",
+                    file=sys.stderr,
+                )
+
+                for ecnt in range(ep.eventCount()):
+                    ev = ep.event(ecnt)
+                    evOriginIDs.append(
+                        [
+                            ev.originReference(i).originID()
+                            for i in range(ev.originReferenceCount())
+                        ]
                     )
-                ev = ep.event(0)
-                originIDs = [
-                    ev.originReference(i).originID()
-                    for i in range(ev.originReferenceCount())
-                ]
+                    objIDs.append(ev.publicID())
             else:
                 print("Found no origins, trying to continue with picks only.")
+                #  try reading picks only
+                picks = []
+                for i in range(ep.pickCount()):
+                    pick = datamodel.Pick.Find(ep.pick(i).publicID())
+                    if pick:
+                        picks.append(pick)
+                        objIDs.append(pick.publicID())
+                return [picks], objIDs
 
-        if originIDs:
+        if evOriginIDs:
             print(
-                f"Considering all arrivals from {len(originIDs)} origin(s).",
+                "Considering all arrivals from "
+                f"{sum(len(sublist) for sublist in evOriginIDs)} origin(s).",
                 file=sys.stderr,
             )
 
-        pickIDs = set()
-        for oID in originIDs:
-            # collect pickIDs from origins
-            o = datamodel.Origin.Find(oID)
-            if o is None:
-                continue
-
-            for i in range(o.arrivalCount()):
-                if self.usedArrivals and not (o.arrival(i).timeUsed()
-                    or o.arrival(i).horizontalSlownessUsed()
-                    or o.arrival(i).backazimuthUsed()):
+        # select picks
+        evPicks = []
+        for oIDs in evOriginIDs:
+            pickIDs = set()
+            for oID in oIDs:
+                # collect pickIDs from origins
+                o = datamodel.Origin.Find(oID)
+                if o is None:
                     continue
 
-                pickIDs.add(o.arrival(i).pickID())
+                for i in range(o.arrivalCount()):
+                    # filter if used
+                    if self.usedArrivals and not (
+                        o.arrival(i).timeUsed()
+                        or o.arrival(i).horizontalSlownessUsed()
+                        or o.arrival(i).backazimuthUsed()
+                    ):
+                        continue
 
-        if len(pickIDs) == 0:
-            #  try reading picks only
-            for i in range(ep.pickCount()):
-                pickIDs.add(ep.pick(i).publicID())
+                    pickIDs.add(o.arrival(i).pickID())
 
-        # lookup picks
-        picks = []
-        for pickID in pickIDs:
-            pick = datamodel.Pick.Find(pickID)
-            if pick:
+            if len(pickIDs) == 0:
+                print("Found no picks.", file=sys.stderr)
+
+            # lookup picks
+            picks = []
+            for pickID in pickIDs:
+                pick = datamodel.Pick.Find(pickID)
+                if pick:
+                    picks.append(pick)
+
+            evPicks.append(picks)
+
+        return evPicks, objIDs
+
+    def readDB(self):
+        evPicks = []
+        for eventID in self.eventIDs:
+            picks = []
+            # filter by used arrival
+            pickIDs = set()
+            if self.usedArrivals:
+                # collect all origins
+                oris = []
+                for obj in self.query().getOrigins(eventID):
+                    oris.append(datamodel.Origin.Cast(obj))
+
+                # check each arrival if used and collect pickID
+                for o in oris:
+                    for i in range(self.query().loadArrivals(o)):
+                        # filter if used
+                        if not (
+                            o.arrival(i).timeUsed()
+                            or o.arrival(i).horizontalSlownessUsed()
+                            or o.arrival(i).backazimuthUsed()
+                        ):
+                            continue
+                        pickIDs.add(o.arrival(i).pickID())
+
+            for obj in self.query().getEventPicks(eventID):
+                pick = datamodel.Pick.Cast(obj)
+                if pick is None:
+                    continue
+
+                if self.usedArrivals and pick.publicID() not in pickIDs:
+                    continue
+
                 picks.append(pick)
 
-        if len(pickIDs) == 0:
-            print("Found no picks.", file=sys.stderr)
+            if not picks:
+                raise ValueError(
+                    f"Could not find picks for event {eventID} in database"
+                )
 
-        return picks
+            evPicks.append(picks)
+
+        return evPicks
 
 
 if __name__ == "__main__":
