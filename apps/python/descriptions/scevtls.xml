@@ -36,7 +36,7 @@
 				<option flag="i" long-flag="input" argument="arg">
 					<description>
 					Name of input XML file. Read from stdin if '-' is given.
-					Deactivates reading events from database.
+					Deactivates reading of events from database.
 					</description>
 				</option>
 			</group>
@@ -44,31 +44,35 @@
 			<group name="Events">
 				<option long-flag="begin" argument="time">
 					<description>
-					Specify the lower bound of the time interval. Format:
-					2012-01-01T00:00:00.
+					Specify the lower bound of the preferred origin time
+					interval. Format: 2012-01-01T00:00:00.
 					</description>
 				</option>
 				<option long-flag="end" argument="time">
 					<description>
-					Specify the upper bound of the time interval. Format:
-					2012-01-01T00:00:00.
+					Specify the upper bound of the preferred origin time
+					interval. Format: 2012-01-01T00:00:00.
 					</description>
 				</option>
 				<option long-flag="hours" argument="arg">
 					<description>
-					Start searching given hours before now. If set, --begin and
-					--end are ignored.
+					Start searching given hours before now. If set, '--begin'
+					and '--end' are ignored.
 					</description>
 				</option>
 				<option long-flag="modified-after" argument="time">
 					<description>
-					Print IDs of events modified after the specified time.
+					Filter for events modified after the specified time.
+					Only the event modification time but not the modification
+					time of related objects is considered.
+					Format: 2012-01-01T00:00:00.
 					</description>
 				</option>
 				<option long-flag="event-type" argument="arg">
 					<description>
-					The event type for filtering events.
-					Use quotes for types with more than one word.
+					The event type for filtering events. Use quotes for types
+					with more than one word. Use 'unknown' or an empty string
+					to search for events having no type associated yet.
 					Example: "mining explosion".
 					</description>
 				</option>
@@ -84,6 +88,11 @@
 					<description>
 					Print the ID of the preferred origin along with the event
 					ID.
+					</description>
+				</option>
+				<option long-flag="origin-count" flag="c" argument="">
+					<description>
+					Print the number of origins references by an event.
 					</description>
 				</option>
 			</group>

@@ -16,74 +16,12 @@
 import os
 import sys
 
-import seiscomp.core
-import seiscomp.client
-import seiscomp.datamodel
-import seiscomp.logging
+from seiscomp import core, client, datamodel, io, logging
 
 
-def readXML(self):
-    ar = seiscomp.io.XMLArchive()
-    if not ar.open(self._inputFile):
-        print(f"Unable to open input file {self._inputFile}")
-        return []
-
-    obj = ar.readObject()
-    if obj is None:
-        raise TypeError("invalid input file format")
-
-    ep = seiscomp.datamodel.EventParameters.Cast(obj)
-    if ep is None:
-        raise ValueError("no event parameters found in input file")
-
-    eventIDs = []
-    for i in range(ep.eventCount()):
-        evt = ep.event(i)
-
-        if self._modifiedAfterTime is not None:
-            try:
-                if evt.creationInfo().modificationTime() < self._modifiedAfterTime:
-                    continue
-            except ValueError:
-                try:
-                    if evt.creationInfo().creationTime() < self._modifiedAfterTime:
-                        continue
-                except ValueError:
-                    continue
-
-        if self._eventType:
-            try:
-                eventType = seiscomp.datamodel.EEventTypeNames.name(evt.type())
-                if eventType != self._eventType:
-                    continue
-            except ValueError:
-                continue
-
-        prefOrgID = evt.preferredOriginID()
-
-        # filter by origin time
-        org = ep.findOrigin(prefOrgID)
-        orgTime = org.time().value()
-        if orgTime < self._startTime:
-            continue
-        if orgTime > self._endTime:
-            continue
-
-        outputString = evt.publicID()
-        if self._preferredOrigin:
-            try:
-                outputString += " " + evt.preferredOriginID()
-            except ValueError:
-                outputString += " none"
-
-        eventIDs.append(outputString)
-
-    return eventIDs
-
-
-class EventList(seiscomp.client.Application):
+class EventList(client.Application):
     def __init__(self, argc, argv):
-        seiscomp.client.Application.__init__(self, argc, argv)
+        client.Application.__init__(self, argc, argv)
 
         self.setMessagingEnabled(False)
         self.setDatabaseEnabled(True, False)
@@ -91,9 +29,9 @@ class EventList(seiscomp.client.Application):
 
         self._startTime = None
         self._endTime = None
-        self.hours = None
         self._delimiter = None
         self._modifiedAfterTime = None
+        self._originCount = False
         self._preferredOrigin = False
         self._inputFile = None
         self._eventType = None
@@ -104,38 +42,39 @@ class EventList(seiscomp.client.Application):
             "Input",
             "input,i",
             "Name of input XML file. Read from stdin if '-' is given. Deactivates "
-            "reading events from database",
+            "reading of events from database",
         )
         self.commandline().addGroup("Events")
         self.commandline().addStringOption(
             "Events",
             "begin",
-            "Specify the lower bound of the time interval. Uses 1900-01-01T00:00:00 "
-            "unless given.",
+            "Specify the lower bound of the preferred origin time interval.",
         )
         self.commandline().addStringOption(
             "Events",
             "end",
-            "Specify the upper bound of the time interval Uses 2500-01-01T00:00:00 "
-            "unless given.",
+            "Specify the upper bound of the preferred origin time interval.",
         )
         self.commandline().addStringOption(
             "Events",
             "hours",
-            "Start searching given hours before"
-            " now. If set, --begin and --end "
-            "are ignored.",
+            "Start searching given hours before now. If set, '--begin' and '--end' are "
+            "ignored.",
         )
         self.commandline().addStringOption(
             "Events",
             "modified-after",
-            "Select events modified after the specified time.",
+            "Filter for events modified after the specified time. Only the event "
+            "modification time but not the modification time of related objects is "
+            "considered.",
         )
 
         self.commandline().addStringOption(
             "Events",
             "event-type",
-            "Select events whith specified " "event type.",
+            "Select events whith specified event type. Use quotes for types with more "
+            "one word. Use 'unknown' or an empty string to search for events having no "
+            "type associated yet.",
         )
 
         self.commandline().addGroup("Output")
@@ -149,10 +88,15 @@ class EventList(seiscomp.client.Application):
             "preferred-origin,p",
             "Print the ID of the preferred origin along with the event ID.",
         )
+        self.commandline().addOption(
+            "Output",
+            "origin-count,c",
+            "Print the number of origins referenced by an event",
+        )
         return True
 
     def validateParameters(self):
-        if not seiscomp.client.Application.validateParameters(self):
+        if not client.Application.validateParameters(self):
             return False
 
         try:
@@ -166,53 +110,44 @@ class EventList(seiscomp.client.Application):
         return True
 
     def init(self):
-        if not seiscomp.client.Application.init(self):
+        def readTimeOption(option):
+            try:
+                value = self.commandline().optionString(option)
+            except RuntimeError:
+                return None
+
+            try:
+                time = core.Time.FromString(value)
+                logging.debug(f"Setting {option} to {time.toString('%FT%TZ')}")
+            except RuntimeError as e:
+                logging.error(f"Wrong '{option}' format '{value}'")
+                raise e
+
+            return time
+
+        if not client.Application.init(self):
             return False
 
         try:
-            self.hours = float(self.commandline().optionString("hours"))
+            hours = float(self.commandline().optionString("hours"))
+            self._startTime = core.Time.UTC() - core.TimeSpan(hours * 3600)
+            logging.debug(
+                "Time window start time set by hours option to "
+                f"{self._startTime.iso()}, all other time parameters are ignored"
+            )
+        except ValueError as e:
+            logging.error(f"Invalid 'hour' value: {e}")
+            return False
         except RuntimeError:
-            pass
-
-        end = "2500-01-01T00:00:00Z"
-        if self.hours is None:
             try:
-                start = self.commandline().optionString("begin")
+                self._startTime = readTimeOption("begin")
             except RuntimeError:
-                start = "1900-01-01T00:00:00Z"
-
-            self._startTime = seiscomp.core.Time.FromString(start)
-            if self._startTime is None:
-                seiscomp.logging.error(f"Wrong 'begin' format '{start}'")
                 return False
-            seiscomp.logging.debug(
-                f"Setting start to {self._startTime.toString('%FT%TZ')}"
-            )
 
             try:
-                end = self.commandline().optionString("end")
+                self._endTime = readTimeOption("end")
             except RuntimeError:
-                pass
-
-            self._endTime = seiscomp.core.Time.FromString(end)
-            if self._endTime is None:
-                seiscomp.logging.error(f"Wrong 'end' format '{end}'")
                 return False
-            seiscomp.logging.debug(f"Setting end to {self._endTime.toString('%FT%TZ')}")
-        else:
-            seiscomp.logging.debug(
-                "Time window set by hours option: ignoring all other time parameters"
-            )
-            secs = self.hours * 3600
-            maxSecs = 596523 * 3600
-            if secs > maxSecs:
-                seiscomp.logging.error(
-                    f"Maximum hours exceeeded. Maximum is {int(maxSecs / 3600)}"
-                )
-                return False
-
-            self._startTime = seiscomp.core.Time.UTC() - seiscomp.core.TimeSpan(secs)
-            self._endTime = seiscomp.core.Time.FromString(end)
 
         try:
             self._delimiter = self.commandline().optionString("delimiter")
@@ -220,18 +155,9 @@ class EventList(seiscomp.client.Application):
             self._delimiter = "\n"
 
         try:
-            modifiedAfter = self.commandline().optionString("modified-after")
-            self._modifiedAfterTime = seiscomp.core.Time.FromString(modifiedAfter)
-            if self._modifiedAfterTime is None:
-                seiscomp.logging.error(
-                    f"Wrong 'modified-after' format '{modifiedAfter}'"
-                )
-                return False
-            seiscomp.logging.debug(
-                f"Setting 'modified-after' time to {self._modifiedAfterTime.toString('%FT%TZ')}"
-            )
+            self._modifiedAfterTime = readTimeOption("modified-after")
         except RuntimeError:
-            pass
+            return False
 
         try:
             self._preferredOrigin = self.commandline().hasOption("preferred-origin")
@@ -239,37 +165,37 @@ class EventList(seiscomp.client.Application):
             pass
 
         try:
-            self._eventType = self.commandline().optionString("event-type")
+            self._originCount = self.commandline().hasOption("origin-count")
         except RuntimeError:
             pass
 
-        if self._eventType:
-            flagEvent = False
-            for i in range(seiscomp.datamodel.EEventTypeQuantity):
-                if self._eventType == seiscomp.datamodel.EEventTypeNames.name(i):
-                    flagEvent = True
-                    break
+        try:
+            eventType = self.commandline().optionString("event-type").strip().lower()
+            if eventType in ("unknown", ""):
+                self._eventType = ""
+            else:
+                for i in range(datamodel.EEventTypeQuantity):
+                    if eventType == datamodel.EEventTypeNames.name(i):
+                        self._eventType = eventType
+                        break
 
-            if not flagEvent:
-                seiscomp.logging.error(
-                    f"'{self._eventType}' is not a valid SeisComP event type"
-                )
-                return False
+                if not self._eventType:
+                    logging.error(f"'{eventType}' is not a valid SeisComP event type")
+                    return False
+        except RuntimeError:
+            pass
 
         return True
 
     def printUsage(self):
-        print(
-            f"""Usage:
+        print(f"""Usage:
   {os.path.basename(__file__)} [options]
 
-List event IDs available in a given time range and print to stdout."""
-        )
+List event IDs available in a given time range and print to stdout.""")
 
-        seiscomp.client.Application.printUsage(self)
+        client.Application.printUsage(self)
 
-        print(
-            f"""Examples:
+        print(f"""Examples:
 Print all event IDs from year 2022 and thereafter
   {os.path.basename(__file__)} -d mysql://sysop:sysop@localhost/seiscomp \
 --begin 2022-01-01T00:00:00
@@ -279,22 +205,26 @@ Print all event IDs with event type 'quarry blast'
 
 Print IDs of all events in XML file
   {os.path.basename(__file__)} -i events.xml
-"""
-        )
+""")
 
-    def run(self):
-        out = []
-        seiscomp.logging.debug(f"Search interval: {self._startTime} - {self._endTime}")
+    def readEventParameters(self):
+        ar = io.XMLArchive()
+        if not ar.open(self._inputFile):
+            raise ValueError(f"Unable to open input file {self._inputFile}")
 
-        if self._inputFile:
-            out = readXML(self)
-            sys.stdout.write(f"{self._delimiter.join(out)}\n")
-            return True
+        obj = ar.readObject()
+        if obj is None:
+            raise TypeError("Invalid input file format")
 
-        for obj in self.query().getEvents(self._startTime, self._endTime):
-            evt = seiscomp.datamodel.Event.Cast(obj)
-            if not evt:
-                continue
+        ep = datamodel.EventParameters.Cast(obj)
+        if ep is None:
+            raise ValueError("No event parameters found in input file")
+
+        return ep
+
+    def processEventParameters(self, ep):
+        for i in range(ep.eventCount()):
+            evt = ep.event(i)
 
             if self._modifiedAfterTime is not None:
                 try:
@@ -307,26 +237,144 @@ Print IDs of all events in XML file
                     except ValueError:
                         continue
 
-            if self._eventType:
+            if self._eventType is not None:
                 try:
-                    eventType = seiscomp.datamodel.EEventTypeNames.name(evt.type())
+                    eventType = datamodel.EEventTypeNames.name(evt.type())
                     if eventType != self._eventType:
                         continue
                 except ValueError:
-                    continue
+                    # empty string is used for unset event type
+                    if self._eventType:
+                        continue
 
-            outputString = evt.publicID()
+            prefOrgID = evt.preferredOriginID()
+
+            # filter by origin time
+            org = ep.findOrigin(prefOrgID)
+            orgTime = org.time().value()
+            if self._startTime is not None and orgTime < self._startTime:
+                continue
+            if self._endTime is not None and orgTime > self._endTime:
+                continue
+
+            row = evt.publicID()
             if self._preferredOrigin:
                 try:
-                    outputString += " " + evt.preferredOriginID()
+                    row += f" {evt.preferredOriginID()}"
                 except ValueError:
-                    outputString += " none"
+                    row += " none"
 
-            out.append(outputString)
+            if self._originCount:
+                try:
+                    row += f" {evt.originReferenceCount()}"
+                except ValueError:
+                    row += " 0"
 
-        sys.stdout.write(f"{self._delimiter.join(out)}\n")
+            print(row, end=self._delimiter)
+
+    def queryDB(self):
+        def addWhere(whereClause, filterStr):
+            if whereClause:
+                return f" AND {filterStr}"
+
+            return f" WHERE {filterStr}"
+
+        def _T(name):
+            return db.convertColumnName(name)
+
+        def _time(time):
+            return db.timeToString(time)
+
+        db = self.database()
+
+        # where clause filtering result by time, modification time or event type
+        w = ""
+        if self._startTime is not None:
+            w += addWhere(w, f"o.{_T('time_value')} >= '{_time(self._startTime)}'")
+        if self._endTime is not None:
+            w += addWhere(w, f"o.{_T('time_value')} <= '{_time(self._endTime)}'")
+        if self._modifiedAfterTime is not None:
+            w += addWhere(
+                w,
+                (
+                    f"e.{_T('creationInfo_modificationTime')} >= "
+                    f"'{_time(self._modifiedAfterTime)}'"
+                ),
+            )
+        if self._eventType is not None:
+            # empty string is used for unset event type
+            if self._eventType:
+                eventTypeFilter = f"= '{self._eventType}'"
+            else:
+                eventTypeFilter = "IS NULL"
+            w += addWhere(w, f"e.{_T('type')} {eventTypeFilter}")
+
+        # select statement
+        selPrefOrigin = (
+            f", e.{_T('preferredOriginID')}" if self._preferredOrigin else ""
+        )
+        # if start or end time is filtered we need to join the origin table
+        joinOrigin = ""
+        if self._startTime is not None or self._endTime is not None:
+            joinOrigin = (
+                f" JOIN PublicObject po ON po.{_T('publicID')} = "
+                f"e.{_T('preferredOriginID')} JOIN Origin o on o._oid = po._oid"
+            )
+        # count origin references
+        selOrefCount = ""
+        joinOref = ""
+        if self._originCount:
+            selOrefCount = ", COUNT(oref._oid)"
+            joinOref = " LEFT JOIN OriginReference oref ON oref._parent_oid = e._oid"
+            w += f" GROUP BY pe.{_T('publicID')}{selPrefOrigin}"
+
+        query = (
+            f"SELECT pe.{_T('publicID')}{selPrefOrigin}{selOrefCount} "
+            "FROM PublicObject pe "
+            "JOIN Event e ON e._oid = pe._oid"
+            f"{joinOrigin}"
+            f"{joinOref}"
+            f"{w}"
+        )
+
+        logging.debug(f"Selecting events: {query}")
+        if not db.beginQuery(query):
+            logging.error(f"Could not query events: {query}")
+            return False
+
+        cols = db.getRowFieldCount()
+        while db.fetchRow():
+            print(
+                " ".join(
+                    db.getRowFieldString(i) if db.getRowFieldString(i) else "-"
+                    for i in range(cols)
+                ),
+                end=self._delimiter,
+            )
 
         return True
+
+    def run(self):
+        def fmtInterval():
+            if self._startTime is None and self._endTime is None:
+                return "unlimited"
+
+            if self._startTime is None:
+                return f"until {self._endTime.iso()}"
+
+            if self._endTime is None:
+                return f"from {self._startTime.iso()}"
+
+            return f"{self._startTime.iso()} - {self._endTime.iso()}"
+
+        logging.debug(f"Search interval: {fmtInterval()}")
+
+        if self._inputFile:
+            ep = self.readEventParameters()
+            self.processEventParameters(ep)
+            return True
+
+        return self.queryDB()
 
 
 def main():
