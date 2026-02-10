@@ -136,6 +136,28 @@ available with :confval:`amplitudes.enableUpdate`.
 Read the :ref:`scamp` documentation for more details on amplitude measurements.
 
 
+PublicID Generation
+===================
+
+There are two modes of publicID generation of the resulting objects,
+:ref:`picks <api-python-datamodel-pick>` and
+:ref:`amplitudes <api-python-datamodel-amplitude>`:
+
+1. Generate standard publicIDs based on :confval:`publicIDPattern`. In addition to the
+   available pattern tokens, scautopick adds four new tokens: :code:`@net@`,
+   :code:`@sta@`, :code:`@loc@` and :code:`@cha@` which are replaced with the
+   corresponding identifiers of the stream the pick or amplitude has been declared on.
+   Furhtermore the new token :code:`@type@` was added which refers to the processor
+   type used to create the pick or amplitude. If a pick is created from a detection
+   then the type is "D". For amplitudes the type is effectively the amplitude type,
+   e.g. "MLv".
+   Example: the pattern :code:`@classname@/@time/%Y%m%d%H%M%S.%f@.@id@/@net@.@sta@.@loc@.@cha@/@type@`
+   results in :code:`Pick/20260210.123456.89.321/GE.MORC..BHZ/AIC`.
+2. Generate simplified publicIDs as with SeisComP3 with pattern :code:`@time@-@type@-@sid@`.
+   Example: :code:`20260210.123456.89-P-GE.MORC..BHZ`. To enable that mode, set
+   :confval:`simplifiedIDs` to :code:`true`.
+
+
 Modes of Operation
 ==================
 
