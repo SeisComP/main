@@ -94,6 +94,7 @@ class EventStreams(client.Application):
         self.allLocations = True
         self.allStreams = True
         self.allComponents = True
+        self.usedArrivals = False
 
         # filter
         self.network = None
@@ -183,6 +184,12 @@ class EventStreams(client.Application):
         )
         self.commandline().addOption(
             "Output",
+            "used-arrivals",
+            "Consider only arrivals which has been used for locating, "
+            "i.e., time, backazimuth or slowness used.",
+        )
+        self.commandline().addOption(
+            "Output",
             "resolve-wildcards,R",
             "If all components are used, use inventory to resolve stream "
             "components instead of using '?' (important when Arclink should be "
@@ -254,6 +261,7 @@ class EventStreams(client.Application):
         self.allStreams = self.commandline().hasOption("all-streams")
         self.allStations = self.commandline().hasOption("all-stations")
         self.allNetworks = self.commandline().hasOption("all-networks")
+        self.usedArrivals = self.commandline().hasOption("used-arrivals")
 
         try:
             networkStation = self.commandline().optionString("net-sta")
@@ -327,9 +335,29 @@ Get the time windows for all picks given in an XML file without origins and even
 
         # read picks from database
         else:
+            # filter by used arrival
+            pickIDs = set()
+            if self.usedArrivals:
+                # collect all origins
+                oris = []
+                for obj in self.query().getOrigins(self.eventID):
+                    oris.append(datamodel.Origin.Cast(obj))
+
+                # check each arrival if used and collect pickID
+                for o in oris:
+                    for i in range(self.query().loadArrivals(o)):
+                        if not (o.arrival(i).timeUsed()
+                                or o.arrival(i).horizontalSlownessUsed()
+                                or o.arrival(i).backazimuthUsed()):
+                            continue
+                        pickIDs.add(o.arrival(i).pickID())
+
             for obj in self.query().getEventPicks(self.eventID):
                 pick = datamodel.Pick.Cast(obj)
                 if pick is None:
+                    continue
+
+                if self.usedArrivals and pick.publicID() not in pickIDs:
                     continue
 
                 picks.append(pick)
@@ -575,6 +603,11 @@ Get the time windows for all picks given in an XML file without origins and even
                 continue
 
             for i in range(o.arrivalCount()):
+                if self.usedArrivals and not (o.arrival(i).timeUsed()
+                    or o.arrival(i).horizontalSlownessUsed()
+                    or o.arrival(i).backazimuthUsed()):
+                    continue
+
                 pickIDs.add(o.arrival(i).pickID())
 
         if len(pickIDs) == 0:
