@@ -48,6 +48,7 @@ using namespace std;
 using namespace Seiscomp::Client;
 using namespace Seiscomp::Math;
 using namespace Seiscomp::Processing;
+using namespace Seiscomp::DataModel;
 
 
 #define LOG_PICKS
@@ -56,9 +57,9 @@ using namespace Seiscomp::Processing;
 namespace {
 
 
-char statusFlag(const Seiscomp::DataModel::Pick *pick) {
+char statusFlag(const Pick *pick) {
 	try {
-		if ( pick->evaluationMode() == Seiscomp::DataModel::AUTOMATIC ) {
+		if ( pick->evaluationMode() == AUTOMATIC ) {
 			return 'A';
 		}
 		else {
@@ -79,13 +80,13 @@ bool contains(const Seiscomp::Core::OpenTimeWindow &tw, const OPT(Seiscomp::Core
 }
 
 
-Seiscomp::DataModel::WaveformStreamID waveformStreamID(const Seiscomp::Record *rec) {
-	return Seiscomp::DataModel::WaveformStreamID(
+WaveformStreamID waveformStreamID(const Seiscomp::Record *rec) {
+	return WaveformStreamID(
 		rec->networkCode(), rec->stationCode(), rec->locationCode(), rec->channelCode(), "");
 }
 
 
-std::string dotted(const Seiscomp::DataModel::WaveformStreamID &wf) {
+std::string dotted(const WaveformStreamID &wf) {
 	return wf.networkCode() + "." + wf.stationCode() + "." + wf.locationCode() + "." + wf.channelCode();
 }
 
@@ -147,6 +148,65 @@ ostream& operator<<(ostream& o, const Seiscomp::DataModel::Amplitude* amp) {
 	return o;
 }
 */
+
+
+class PickerPublicIDPatternResolver : public PublicIDPatternResolver {
+	public:
+		PickerPublicIDPatternResolver(const char *classname, string_view type,
+		                              const Seiscomp::Record *rec)
+		: PublicIDPatternResolver(nullptr)
+		, _classname(classname)
+		, _type(type)
+		, _rec(rec) {}
+
+	public:
+		bool resolve(std::string &variable) const override {
+			if ( variable == "classname" ) {
+				// Override classname as there is currently no instance of
+				// a PublicObject. Otherwise PublicIDPatternResolver::resolve()
+				// would crash.
+				variable = _classname;
+				return true;
+			}
+
+			if ( PublicIDPatternResolver::resolve(variable) ) {
+				return true;
+			}
+
+			if ( variable == "type" ) {
+				variable = _type;
+				return true;
+			}
+
+			if ( variable == "net" ) {
+				variable = _rec->networkCode();
+				return true;
+			}
+
+			if ( variable == "sta" ) {
+				variable = _rec->stationCode();
+				return true;
+			}
+
+			if ( variable == "loc" ) {
+				variable = _rec->locationCode();
+				return true;
+			}
+
+			if ( variable == "cha" ) {
+				variable = _rec->channelCode();
+				return true;
+			}
+
+			return false;
+		}
+
+	private:
+		const char *_classname;
+		string_view _type;
+		const Seiscomp::Record *_rec;
+};
+
 
 }
 
@@ -1331,7 +1391,12 @@ void App::emitPPick(const Processing::Picker *proc,
 		}
 	}
 	else {
-		pick = DataModel::Pick::Create();
+		pick = DataModel::Pick::Create(
+			Util::replace(
+				PublicObject::GetIdPattern(),
+				PickerPublicIDPatternResolver(Pick::ClassName(), _config.pickerType, res.record)
+			)
+		);
 
 		if ( !pick ) {
 			SEISCOMP_WARNING("Duplicate pick ignored");
@@ -1430,7 +1495,12 @@ void App::emitPPick(const Processing::Picker *proc,
 		amp = DataModel::Amplitude::Create(pick->publicID() + ".snr");
 	}
 	else {
-		amp = DataModel::Amplitude::Create();
+		amp = DataModel::Amplitude::Create(
+			Util::replace(
+				PublicObject::GetIdPattern(),
+				PickerPublicIDPatternResolver(Amplitude::ClassName(), "snr", res.record)
+			)
+		);
 	}
 
 	if ( amp ) {
@@ -1477,7 +1547,12 @@ void App::emitSPick(const Processing::SecondaryPicker *proc,
 		}
 	}
 	else {
-		pick = DataModel::Pick::Create();
+		pick = DataModel::Pick::Create(
+			Util::replace(
+				PublicObject::GetIdPattern(),
+				PickerPublicIDPatternResolver(Pick::ClassName(), _config.secondaryPickerType, res.record)
+			)
+		);
 
 		if ( !pick ) {
 			SEISCOMP_WARNING("Duplicate pick ignored");
@@ -1552,7 +1627,12 @@ void App::emitDetection(const Processing::Detector *proc, const Record *rec, con
 		pick = DataModel::Pick::Create(time.toString("%Y%m%d.%H%M%S.%f-") + rec->streamID());
 	}
 	else {
-		pick = DataModel::Pick::Create();
+		pick = DataModel::Pick::Create(
+			Util::replace(
+				PublicObject::GetIdPattern(),
+				PickerPublicIDPatternResolver(Pick::ClassName(), "D", rec)
+			)
+		);
 	}
 
 	DataModel::CreationInfo ci;
@@ -1725,7 +1805,12 @@ void App::emitAmplitude(const AmplitudeProcessor *ampProc,
 			amp = DataModel::Amplitude::Create(ampProc->referencingPickID() + "." + ampProc->type());
 		}
 		else {
-			amp = DataModel::Amplitude::Create();
+			amp = DataModel::Amplitude::Create(
+				Util::replace(
+					PublicObject::GetIdPattern(),
+					PickerPublicIDPatternResolver(Amplitude::ClassName(), ampProc->type(), res.record)
+				)
+			);
 		}
 
 		if ( !amp ) {
