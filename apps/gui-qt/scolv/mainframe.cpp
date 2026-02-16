@@ -272,6 +272,11 @@ MainFrame::MainFrame(){
 	try { locatorConfig.defaultEventRadius = SCApp->configGetDouble("olv.map.event.defaultRadius"); }
 	catch ( ... ) {}
 
+	try { locatorConfig.fmGridSpacing = SCApp->configGetDouble("olv.fmInversion.gridSpacing"); }
+	catch ( ... ) {}
+	try { locatorConfig.fmMaxBadFraction = SCApp->configGetDouble("olv.fmInversion.maxBadFraction"); }
+	catch ( ... ) {}
+
 	try { pickerConfig.showCrossHair = SCApp->configGetBool("picker.showCrossHairCursor"); }
 	catch ( ... ) {}
 
