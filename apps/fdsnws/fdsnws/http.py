@@ -302,17 +302,18 @@ class Site(server.Site):
                         " reached for {ip}"
                     )
                     request.setResponseCode(429)
-                    ct = "text/plain; charset=utf-8"
-                    request.setHeader("Content-Type", ct)
-                    request.setHeader("Retry-After", "60")
-                    request.write(b_str(
-                        f"Error 429: Too Many Requests\n\n"
-                        f"Simultaneous connection limit of "
-                        f"{self._maxConnectionsPerIP} reached for "
-                        f"your IP address.\n"
-                    ))
-                    request.finish()
-                    return server.NOT_DONE_YET
+                    request.setHeader("Retry-After", "30")
+                    return b_str(
+                        f"Your request could not be processed because you "
+                        f"already have active request(s) in progress. This "
+                        f"service allows a maximum of {self._maxConnectionsPerIP} "
+                        f"simultaneous fdsnws connection(s) per user. "
+                        f"Please wait for your current request "
+                        f"to complete before submitting another.\n\n"
+                        f"If you believe this is an error or are connected from "
+                        f"a large agency or institution, please contact the "
+                        f"server for your IP address to be whitelisted."
+                    )
 
                 self._ipConnections[ip] += 1
                 request.notifyFinish().addBoth(self._onRequestFinished, ip)
