@@ -299,7 +299,7 @@ class Site(server.Site):
                 if self._ipConnections[ip] >= self._maxConnectionsPerIP:
                     seiscomp.logging.warning(
                         f"connection limit ({self._maxConnectionsPerIP})"
-                        " reached for {ip}"
+                        f" reached for {ip}"
                     )
                     request.setResponseCode(429)
                     request.setHeader("Retry-After", "30")
@@ -307,7 +307,7 @@ class Site(server.Site):
                         f"Your request could not be processed because you "
                         f"already have active request(s) in progress. This "
                         f"service allows a maximum of {self._maxConnectionsPerIP} "
-                        f"simultaneous fdsnws connection(s) per user. "
+                        f"simultaneous FDSNWS connection(s) per user. "
                         f"Please wait for your current request "
                         f"to complete before submitting another.\n\n"
                         f"If you believe this is an error or are connected from "
@@ -329,7 +329,7 @@ class Site(server.Site):
         return request.getClientIP()
 
     # ---------------------------------------------------------------------------
-    def _onRequestFinished(self, _, ip):
+    def _onRequestFinished(self, result, ip):
         count = self._ipConnections[ip] - 1
         if count <= 0:
             del self._ipConnections[ip]
