@@ -60,7 +60,17 @@
 			</parameter>
 			<parameter name="connections" type="int" default="5">
 				<description>
-				Number of maximum simultaneous requests.
+				Total number of maximum simultaneous requests.
+				</description>
+			<parameter name="connectionsPerIP" type="int" default="0">
+				<description>
+				Maxiumum simultaneous requests per IP address. Enter 0 for 
+				unlimited.
+				</description>
+			<parameter name="connectionWhiteList" type="list:string" default="127.0.0.0/8">
+				<description>
+				List of IP addresses to whitelist for connection rules
+				(e.g. Universities or agencies)
 				</description>
 			</parameter>
 			<parameter name="queryObjects" type="int" default="10000">

@@ -369,6 +369,8 @@ class FDSNWS(seiscomp.client.Application):
         self._listenAddress = "0.0.0.0"  # all interfaces
         self._port = 8080
         self._connections = 5
+        self._connectionsPerIP = 2 # 0 = unlimited
+        self._connectionWhitelist = ["127.0.0.1"]
         self._queryObjects = 100000  # maximum number of objects per query
         self._realtimeGap = None  # minimum data age: 5min
         self._samplesM = None  # maximum number of samples per query
@@ -454,6 +456,20 @@ class FDSNWS(seiscomp.client.Application):
         # maximum number of connections
         try:
             self._connections = self.configGetInt("connections")
+        except Exception:
+            pass
+
+        # maximum number of connections per IP address
+        try:
+            self._connectionsPerIP = self.configGetInt("connectionsPerIP")
+        except Exception:
+            pass
+
+        # whitelist of institution/agency IPs
+        try:
+            self._connectionWhitelist = list(
+                filter(None, self.configGetStrings("connectionWhitelist"))
+            )
         except Exception:
             pass
 
@@ -955,6 +971,8 @@ configuration read:
   listenAddress            : {self._listenAddress}
   port                     : {self._port}
   connections              : {self._connections}
+  connectionsPerIP         : {self._connectionsPerIP}
+  connectionWhitelist      : {self._connectionWhitelist}
   htpasswd                 : {self._htpasswd}
   accessLog                : {self._accessLogFile}
   CORS origins             : {self._corsOrigins}
@@ -1336,7 +1354,7 @@ configuration read:
         fileRes.hideInListing = True
         prefix.putChild(b"css", fileRes)
 
-        return Site(root, self._corsOrigins)
+        return Site(root, self._corsOrigins, self._connectionsPerIP, self._connectionWhitelist)
 
     # -------------------------------------------------------------------------
     def _reloadTask(self):

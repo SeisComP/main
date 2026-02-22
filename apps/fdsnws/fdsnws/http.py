@@ -8,6 +8,8 @@
 ################################################################################
 
 from twisted.web import http, resource, server, static, util
+import collections
+import ipaddress
 
 import seiscomp.core
 import seiscomp.logging
@@ -255,10 +257,29 @@ class DirectoryResource(static.File):
 
 ################################################################################
 class Site(server.Site):
-    def __init__(self, res, corsOrigins):
+    # ---------------------------------------------------------------------------
+    def __init__(self, res, corsOrigins, maxConnectionsPerIP=0, whitelist=None):
         super().__init__(res)
-
         self._corsOrigins = corsOrigins
+        self._maxConnectionsPerIP = maxConnectionsPerIP
+        self._ipConnections = collections.defaultdict(int)
+        self._whitelist = []
+        if whitelist:
+            for entry in whitelist:
+                try:
+                    self._whitelist.append(ipaddress.ip_network(entry.strip(), strict=False))
+                except ValueError:
+                    seiscomp.logging.warning(f"invalid whitelist entry ignored: {entry}")
+
+    # ---------------------------------------------------------------------------
+    def _isWhitelisted(self, ip):
+        if not self._whitelist:
+            return False
+        try:
+            addr = ipaddress.ip_address(ip)
+            return any(addr in net for net in self._whitelist)
+        except ValueError:
+            return False
 
     # ---------------------------------------------------------------------------
     def getResourceFor(self, request):
@@ -268,10 +289,46 @@ class Site(server.Site):
         request.setHeader("Server", f"SeisComP-FDSNWS/{VERSION}")
         request.setHeader("Access-Control-Allow-Headers", "Authorization")
         request.setHeader("Access-Control-Expose-Headers", "WWW-Authenticate")
-
         self.setAllowOrigin(request)
 
+        if self._maxConnectionsPerIP > 0:
+            ip = self._getClientIP(request)
+            if not self._isWhitelisted(ip):
+                if self._ipConnections[ip] >= self._maxConnectionsPerIP:
+                    seiscomp.logging.warning(
+                        f"connection limit ({self._maxConnectionsPerIP}) reached for {ip}"
+                    )
+                    request.setResponseCode(429)
+                    request.setHeader("Content-Type", "text/plain; charset=utf-8")
+                    request.setHeader("Retry-After", "60")
+                    request.write(b_str(
+                        f"Error 429: Too Many Requests\n\n"
+                        f"Simultaneous connection limit of {self._maxConnectionsPerIP} "
+                        f"reached for your IP address.\n"
+                    ))
+                    request.finish()
+                    return server.NOT_DONE_YET
+
+                self._ipConnections[ip] += 1
+                request.notifyFinish().addBoth(self._onRequestFinished, ip)
+
         return server.Site.getResourceFor(self, request)
+
+    # ---------------------------------------------------------------------------
+    def _getClientIP(self, request):
+        # Mirror the XFF logic already used in utils.py AccessLogEntry
+        xff = request.requestHeaders.getRawHeaders("x-forwarded-for")
+        if xff:
+            return xff[0].split(",")[0].strip()
+        return request.getClientIP()
+
+    # ---------------------------------------------------------------------------
+    def _onRequestFinished(self, _, ip):
+        count = self._ipConnections[ip] - 1
+        if count <= 0:
+            del self._ipConnections[ip]
+        else:
+            self._ipConnections[ip] = count
 
     # ---------------------------------------------------------------------------
     def setAllowOrigin(self, req):
