@@ -16,7 +16,7 @@ import seiscomp.logging
 
 from .utils import accessLog, b_str, u_str, writeTSBin
 
-VERSION = "1.2.5"
+VERSION = "1.2.6"
 
 ################################################################################
 
@@ -267,9 +267,11 @@ class Site(server.Site):
         if whitelist:
             for entry in whitelist:
                 try:
-                    self._whitelist.append(ipaddress.ip_network(entry.strip(), strict=False))
+                    self._whitelist.append(ipaddress.ip_network(entry.strip(),
+                        strict=False))
                 except ValueError:
-                    seiscomp.logging.warning(f"invalid whitelist entry ignored: {entry}")
+                    seiscomp.logging.warning(f"invalid whitelist entry "
+                    "ignored: {entry}")
 
     # ---------------------------------------------------------------------------
     def _isWhitelisted(self, ip):
@@ -296,15 +298,18 @@ class Site(server.Site):
             if not self._isWhitelisted(ip):
                 if self._ipConnections[ip] >= self._maxConnectionsPerIP:
                     seiscomp.logging.warning(
-                        f"connection limit ({self._maxConnectionsPerIP}) reached for {ip}"
+                        f"connection limit ({self._maxConnectionsPerIP})"
+                        " reached for {ip}"
                     )
                     request.setResponseCode(429)
-                    request.setHeader("Content-Type", "text/plain; charset=utf-8")
+                    ct = "text/plain; charset=utf-8"
+                    request.setHeader("Content-Type", ct)
                     request.setHeader("Retry-After", "60")
                     request.write(b_str(
                         f"Error 429: Too Many Requests\n\n"
-                        f"Simultaneous connection limit of {self._maxConnectionsPerIP} "
-                        f"reached for your IP address.\n"
+                        f"Simultaneous connection limit of "
+                        f"{self._maxConnectionsPerIP} reached for "
+                        f"your IP address.\n"
                     ))
                     request.finish()
                     return server.NOT_DONE_YET

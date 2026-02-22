@@ -370,7 +370,7 @@ class FDSNWS(seiscomp.client.Application):
         self._port = 8080
         self._connections = 5
         self._connectionsPerIP = 2 # 0 = unlimited
-        self._connectionWhitelist = ["127.0.0.1"]
+        self._connectionWhitelist = ["127.0.0.0/8"]
         self._queryObjects = 100000  # maximum number of objects per query
         self._realtimeGap = None  # minimum data age: 5min
         self._samplesM = None  # maximum number of samples per query
