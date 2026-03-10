@@ -570,38 +570,38 @@
 				<description>Parameters controlling the phase picker window.</description>
 				<parameter name="showCrossHairCursor" type="boolean" default="false">
 					<description>
-						Activate a cross hair cursor showing the configured uncertainties
-						when in picking mode.
+					Activate a cross hair cursor showing the configured uncertainties
+					when in picking mode.
 					</description>
 				</parameter>
 				<parameter name="loadAllPicks" type="boolean" default="true">
 					<description>
-						Load all existing picks for the requested data time window.
+					Load all existing picks for the requested data time window.
 					</description>
 				</parameter>
 				<parameter name="ignoreUnconfiguredStations" type="boolean" default="false">
 					<description>
-						If enabled, the picker will not add stations that are not
-						configured with a detecStream in global bindings.
+					If enabled, the picker will not add stations that are not
+					configured with a detecStream in global bindings.
 					</description>
 				</parameter>
 				<parameter name="limitStationAcquisition" type="boolean" default="false">
 					<description>
-						Limit the data acquisition to the number of nearest
-						stations given by &quot;picker.limitStationAcquisitionCount&quot;.
+					Limit the data acquisition to the number of nearest
+					stations given by &quot;picker.limitStationAcquisitionCount&quot;.
 					</description>
 				</parameter>
 				<parameter name="limitStationAcquisitionCount" type="int" default="10">
 					<description>
-						Limit the data acquisition to the given number of
-						the nearest stations. Requires to activate
-						&quot;picker.limitStationAcquisition&quot;.
+					Limit the data acquisition to the given number of
+					the nearest stations. Requires to activate
+					&quot;picker.limitStationAcquisition&quot;.
 					</description>
 				</parameter>
 				<parameter name="loadStrongMotion" type="boolean" default="false">
 					<description>
-						If enabled, acceleration data is loaded for co-located
-						stations where picked on velocity data.
+					If enabled, acceleration data is loaded for co-located
+					stations where picked on velocity data.
 					</description>
 				</parameter>
 				<parameter name="loadAllComponents" type="boolean" default="false">
@@ -612,57 +612,57 @@
 				</parameter>
 				<parameter name="showAllComponents" type="boolean" default="false">
 					<description>
-						If enabled, all three components are shown in the picker
-						zoom trace. The distance is limited to what is configured
-						in &quot;picker.allComponentsMaximumDistance&quot;.
+					If enabled, all three components are shown in the picker
+					zoom trace. The distance is limited to what is configured
+					in &quot;picker.allComponentsMaximumDistance&quot;.
 					</description>
 				</parameter>
 				<parameter name="allComponentsMaximumDistance" type="double" unit="deg" default="10">
 					<description>
-						The distance limit for the &quot;picker.showAllComponents&quot; flag.
+					The distance limit for the &quot;picker.showAllComponents&quot; flag.
 					</description>
 				</parameter>
 				<parameter name="usePerStreamTimeWindows" type="boolean" default="false">
 					<description>
-						If enabled, data is requested around the P pick for each stations.
-						Otherwise origin time is used and the time window for all stations
-						is the same.
+					If enabled, data is requested around the P pick for each stations.
+					Otherwise origin time is used and the time window for all stations
+					is the same.
 					</description>
 				</parameter>
 				<parameter name="removeAutomaticPicksFromStationAfterManualReview" type="boolean" default="false">
 					<description>
-						After picking and pushing the solution back to scolv all automatic arrivals
-						are removed from a station if a manual pick exists.
+					After picking and pushing the solution back to scolv all automatic arrivals
+					are removed from a station if a manual pick exists.
 					</description>
 				</parameter>
 				<parameter name="removeAllAutomaticPicksAfterManualReview" type="boolean" default="false">
 					<description>
-						After picking and pushing the solution back to scolv all automatic arrivals
-						are removed from all stations regardless if a manual pick exists or not.
+					After picking and pushing the solution back to scolv all automatic arrivals
+					are removed from all stations regardless if a manual pick exists or not.
 					</description>
 				</parameter>
 				<parameter name="preOffset" type="int" unit="s" default="60">
 					<description>
-						The data time span added to the left of either origin time or
-						first arrival depending on the usePerStreamTimeWindows flag.
+					The data time span added to the left of either origin time or
+					first arrival depending on the usePerStreamTimeWindows flag.
 					</description>
 				</parameter>
 				<parameter name="postOffset" type="int" unit="s" default="120">
 					<description>
-						The data time span added to the right of the requested time window.
+					The data time span added to the right of the requested time window.
 					</description>
 				</parameter>
 				<parameter name="minimumTimeWindow" type="int" unit="s" default="1800">
 					<description>
-						Minimum data time window length.
+					Minimum data time window length.
 					</description>
 				</parameter>
 				<parameter name="alignmentPosition" type="double" unit="s" default="0.5">
 					<description>
-						Defines the relative position of the alignment when traces are
-						aligned at a phase. This value is bound
-						to interval [0:1] where 0 is the left side and 1 is right
-						side of the trace window.
+					Defines the relative position of the alignment when traces are
+					aligned at a phase. This value is bound
+					to interval [0:1] where 0 is the left side and 1 is right
+					side of the trace window.
 					</description>
 				</parameter>
 				<parameter name="rotation" type="string" default="123" values="123,ZNE,ZRT,LQT,ZH(L2)">
@@ -675,20 +675,20 @@
 					The unit the waveform data is converted to initially.
 					</description>
 				</parameter>
-				<parameter name="repickerStart" type="double" unit="s">
+				<parameter name="repickerStart" type="double" unit="s" default="-30">
 					<description>
-						Start of the re-picker time window relative the cursor position on the trace.
+					Start of the re-picker time window relative the cursor position on the trace.
 					</description>
 				</parameter>
-				<parameter name="repickerEnd" type="double" unit="s">
+				<parameter name="repickerEnd" type="double" unit="s" default="10">
 					<description>
-						End of the re-picker time window relative the cursor position on the trace.
+					End of the re-picker time window relative the cursor position on the trace.
 					</description>
 				</parameter>
 				<parameter name="filters" type="list:string">
 					<description>
-						List of filters available in the picker. Format:
-						"name1;filter-definition1", "name2;filter-definition2"
+					List of filters available in the picker. Format:
+					"name1;filter-definition1", "name2;filter-definition2"
 					</description>
 				</parameter>
 				<parameter name="limitFilterToZoomTrace" type="boolean" default="false">
@@ -702,16 +702,16 @@
 				</parameter>
 				<parameter name="velocityChannelCodes" type="list:string">
 					<description>
-						A list of channel codes to be used when searching for
-						velocity channels. Usually this information is part of the
-						meta data. In case it is not, this list is used.
+					A list of channel codes to be used when searching for
+					velocity channels. Usually this information is part of the
+					meta data. In case it is not, this list is used.
 					</description>
 				</parameter>
 				<parameter name="accelerationChannelCodes" type="list:string">
 					<description>
-						A list of channel codes to be used when searching for
-						acceleration channels. Usually this information is part of the
-						meta data. In case it is not, this list is used.
+					A list of channel codes to be used when searching for
+					acceleration channels. Usually this information is part of the
+					meta data. In case it is not, this list is used.
 					</description>
 				</parameter>
 				<parameter name="showPhases" type="list:string" default="P,Pn,Pg,pP,sP,S,Sg">
