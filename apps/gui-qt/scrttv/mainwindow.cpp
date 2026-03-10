@@ -3335,34 +3335,40 @@ void MainWindow::reloadData() {
 
 	if ( Settings::global.showPicks && SCApp->query() ) {
 		SCApp->showMessage("Loading picks");
-		DatabaseIterator it = loadPicks(_dataTimeStart, _dataTimeEnd);
+		try {
+			DatabaseIterator it = loadPicks(_dataTimeStart, _dataTimeEnd);
 
-		auto db = SCApp->query()->driver();
-		int picks = 0, arrivals = 0;
-		for ( ; *it; ++it ) {
-			PickPtr pick = Pick::Cast(*it);
-			if ( pick ) {
-				auto idx = db->findColumn("refCount");
-				int refCount = -1;
-				if ( idx >= 0 ) {
-					if ( !Core::fromString(refCount, db->getRowFieldString(idx)) ) {
-						refCount = -1;
+			auto db = SCApp->query()->driver();
+			int picks = 0, arrivals = 0;
+			for ( ; *it; ++it ) {
+				PickPtr pick = Pick::Cast(*it);
+				if ( pick ) {
+					auto idx = db->findColumn("refCount");
+					int refCount = -1;
+					if ( idx >= 0 ) {
+						if ( !Core::fromString(refCount, db->getRowFieldString(idx)) ) {
+							refCount = -1;
+						}
 					}
-				}
 
-				if ( addPick(pick.get(), refCount) ) {
-					++picks;
-					if ( refCount > 0 ) {
-						++arrivals;
+					if ( addPick(pick.get(), refCount) ) {
+						++picks;
+						if ( refCount > 0 ) {
+							++arrivals;
+						}
 					}
 				}
 			}
-		}
 
-		SCApp->showMessage(QString("Loaded %1 picks").arg(it.count()).toLatin1());
-		cerr << "Got " << it.count() << " picks from database" << endl;
-		cerr << "Accepted " << picks << " picks" << endl;
-		cerr << "Declared " << arrivals << " arrivals" << endl;
+			SCApp->showMessage(QString("Loaded %1 picks").arg(it.count()).toLatin1());
+			cerr << "Got " << it.count() << " picks from database" << endl;
+			cerr << "Accepted " << picks << " picks" << endl;
+			cerr << "Declared " << arrivals << " arrivals" << endl;
+		}
+		catch ( std::exception &e ) {
+			SCApp->showMessage("Error loading picks, see log");
+			SEISCOMP_WARNING("Loading picks: %s", e.what());
+		}
 	}
 
 	_statusBarFile->setText(QString());
@@ -4032,7 +4038,7 @@ void MainWindow::objectAdded(const QString &parentID,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MainWindow::objectUpdated(const QString &parentID,
-                               Seiscomp::DataModel::Object* object) {
+                               Seiscomp::DataModel::Object *object) {
 	auto event = Event::Cast(object);
 	if ( event ) {
 		return;
@@ -4043,31 +4049,36 @@ void MainWindow::objectUpdated(const QString &parentID,
 		// Update associated state
 		if ( SCApp->query() ) {
 			auto db = SCApp->query()->driver();
-			auto it = loadPickRefCounts(origin->publicID());
-			for ( ; it.valid(); ++it ) {
-				auto idx = db->findColumn("pickID");
-				if ( idx < 0 ) {
-					continue;
-				}
-				auto pickID = db->getRowFieldString(idx);
+			try {
+				auto it = loadPickRefCounts(origin->publicID());
+				for ( ; it.valid(); ++it ) {
+					auto idx = db->findColumn("pickID");
+					if ( idx < 0 ) {
+						continue;
+					}
+					auto pickID = db->getRowFieldString(idx);
 
-				idx = db->findColumn("refCount");
-				if ( idx < 0 ) {
-					continue;
-				}
+					idx = db->findColumn("refCount");
+					if ( idx < 0 ) {
+						continue;
+					}
 
-				int refCount = -1;
-				if ( Core::fromString(refCount, db->getRowFieldString(idx)) ) {
-					auto itm = _markerMap.find(pickID);
-					if ( itm != _markerMap.end() ) {
-						if ( itm.value()->setAssociated(refCount > 0) ) {
-							itm.value()->update();
-							if ( _associator ) {
-								_associator->updatedMarker(itm.value());
+					int refCount = -1;
+					if ( Core::fromString(refCount, db->getRowFieldString(idx)) ) {
+						auto itm = _markerMap.find(pickID);
+						if ( itm != _markerMap.end() ) {
+							if ( itm.value()->setAssociated(refCount > 0) ) {
+								itm.value()->update();
+								if ( _associator ) {
+									_associator->updatedMarker(itm.value());
+								}
 							}
 						}
 					}
 				}
+			}
+			catch ( std::exception &e ) {
+				SEISCOMP_WARNING("Failed to fetch pick reference count: %s", e.what());
 			}
 		}
 	}
