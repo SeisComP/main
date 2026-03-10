@@ -221,28 +221,28 @@
 					</parameter>
 				</group>
 				<group name="locator">
-					<parameter name="interface" type="string" default="LOCSAT">
+					<parameter name="interface" type="string" default="LOCSAT" values="FixedHypocenter,Hypo71,LocExt,LocRouter,LOCSAT,NonLinLoc,StdLoc">
 						<description>
-							The default locator interface to use.
+						The default locator interface to use.
 						</description>
 					</parameter>
 					<parameter name="defaultProfile" type="string">
 						<description>
-							The default locator profile to use.
+						The default locator profile to use.
 						</description>
 					</parameter>
 					<parameter name="minimumDepth" type="double" unit="km">
 						<description>
-							Minimum depth which is set if the locator used supports fixing
-							the depth. If the depth is lower than this value, the depth is
-							fixed to this configured value and the origin is relocated again.
+						Minimum depth which is set if the locator used supports fixing
+						the depth. If the depth is lower than this value, the depth is
+						fixed to this configured value and the origin is relocated again.
 						</description>
 					</parameter>
 					<parameter name="presetFromOrigin" type="boolean" default="false">
 						<description>
-							Whether to preset the locator settings when an origin
-							is being loaded. It tries to figure the locator type
-							from Origin.methodID and the profile from Origin.earthModelID.
+						Whether to preset the locator settings when an origin
+						is being loaded. It tries to figure the locator type
+						from Origin.methodID and the profile from Origin.earthModelID.
 						</description>
 					</parameter>
 				</group>
