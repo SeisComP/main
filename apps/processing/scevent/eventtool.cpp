@@ -4526,8 +4526,7 @@ bool EventTool::mergeEvents(EventInformation *target, EventInformation *source) 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventTool::removedFromCache(Seiscomp::DataModel::PublicObject *po) {
-	bool saveState = DataModel::Notifier::IsEnabled();
-	DataModel::Notifier::Disable();
+	DataModel::NotifierDisableGuard nguard;
 
 	if ( auto it = _events.find(po->publicID()); it != _events.end() ) {
 		// Remove EventInfo item for uncached event
@@ -4544,8 +4543,6 @@ void EventTool::removedFromCache(Seiscomp::DataModel::PublicObject *po) {
 	if ( _config.epFile.empty() ) {
 		po->detach();
 	}
-
-	DataModel::Notifier::SetEnabled(saveState);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
