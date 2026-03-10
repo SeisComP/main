@@ -530,14 +530,14 @@ void Check::checkOverlap(Epochs &epochs, const T *obj) {
 	OPT(Core::Time) end;
 	try { end = obj->end(); } catch ( ... ) {}
 
-	OpenTimeWindow epoch(obj->start(), end);
+	OpenTimeWindow epoch(obj->start(), end, obj);
 	auto tw = overlaps(epochs, epoch);
 	if ( tw ) {
 		log(LogHandler::Conflict,
 		    (string(obj->className()) + " " + nslc(obj) + "\n  "
 		     "overlapping epochs " +
 		     toString(epoch) + " and " + toString(*tw)).c_str(),
-		    obj, obj);
+		    obj, tw->origin());
 	}
 
 	epochs.push_back(epoch);
@@ -555,15 +555,15 @@ void Check::checkOutside(const T1 *parent, const T2 *obj) {
 	try { pend = parent->end(); } catch ( ... ) {}
 	try { end = obj->end(); } catch ( ... ) {}
 
-	OpenTimeWindow pepoch(parent->start(), pend);
-	OpenTimeWindow epoch(obj->start(), end);
+	OpenTimeWindow pepoch(parent->start(), pend, parent);
+	OpenTimeWindow epoch(obj->start(), end, obj);
 
 	if ( pepoch.outside(epoch) ) {
 		log(LogHandler::Conflict,
 		    (string(obj->className()) + " " + nslc(obj) + "\n  "
 		     "epoch " + toString(epoch) + " outside parent " +
 		     parent->className() + " epoch " + toString(pepoch)).c_str(),
-		    obj, obj);
+		    obj, parent);
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
