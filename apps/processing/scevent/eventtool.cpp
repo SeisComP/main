@@ -2949,6 +2949,7 @@ void EventTool::refreshEventCache(EventInformationPtr info) {
 
 	// Add the event to the EventParameters
 	if ( !info->event->eventParameters() ) {
+		DataModel::NotifierDisableGuard nguard;
 		_ep->add(info->event.get());
 	}
 
