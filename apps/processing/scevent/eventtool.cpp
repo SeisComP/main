@@ -465,16 +465,13 @@ bool EventTool::init() {
 		enableTimer(DELAY_CHECK_INTERVAL);
 	}
 
-	_cache.setTimeSpan(TimeSpan(_config.fExpiry * 3600.));
+	_cache.setTimeSpan(TimeSpan(_config.fExpiry * 3600., 0));
 	_cache.setDatabaseArchive(query());
 
 	_ep = new EventParameters;
 	_journal = new Journaling;
 
-	EventProcessorFactory::ServiceNames *services;
-	services = EventProcessorFactory::Services();
-
-	if ( services ) {
+	if ( auto services = EventProcessorFactory::Services(); services ) {
 		for ( auto &service : *services ) {
 			EventProcessorPtr proc = EventProcessorFactory::Create(service.c_str());
 			if ( proc ) {
@@ -4532,8 +4529,7 @@ void EventTool::removedFromCache(Seiscomp::DataModel::PublicObject *po) {
 	bool saveState = DataModel::Notifier::IsEnabled();
 	DataModel::Notifier::Disable();
 
-	auto it = _events.find(po->publicID());
-	if ( it != _events.end() ) {
+	if ( auto it = _events.find(po->publicID()); it != _events.end() ) {
 		// Remove EventInfo item for uncached event
 		// Don't erase the element but mark it. While iterating over the
 		// event cache and performing check and cache updates an event can
@@ -4545,8 +4541,9 @@ void EventTool::removedFromCache(Seiscomp::DataModel::PublicObject *po) {
 
 	// Only allow to detach objects from the EP instance if it hasn't been read
 	// from a file
-	if ( _config.epFile.empty() )
+	if ( _config.epFile.empty() ) {
 		po->detach();
+	}
 
 	DataModel::Notifier::SetEnabled(saveState);
 }
