@@ -506,6 +506,9 @@ QVariant QcModel::data(const QModelIndex &index, int role) const {
 		if ( index.column() == 1 ) {
 			return int(Qt::AlignCenter | Qt::AlignVCenter);
 		}
+		if ( index.column() == 0 ) {
+			return int(Qt::AlignLeft | Qt::AlignVCenter);
+		}
 
 		return int(Qt::AlignRight | Qt::AlignVCenter);
 	}
