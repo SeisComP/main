@@ -51,17 +51,21 @@ class OpenTimeWindow {
 	public:
 		OpenTimeWindow();
 		OpenTimeWindow(Seiscomp::Core::Time startTime, OPT(Seiscomp::Core::Time) endTime);
+		OpenTimeWindow(Seiscomp::Core::Time startTime, OPT(Seiscomp::Core::Time) endTime,
+		               const Seiscomp::DataModel::Object *origin);
 
 	public:
 		const Seiscomp::Core::Time &startTime() const { return _startTime; }
 		const OPT(Seiscomp::Core::Time) &endTime() const { return _endTime; }
+		const Seiscomp::DataModel::Object *origin() const { return _origin; }
 
 		bool overlaps(const OpenTimeWindow &other) const;
 		bool outside(const OpenTimeWindow &child) const;
 
 	private:
-		Seiscomp::Core::Time      _startTime;
-		OPT(Seiscomp::Core::Time) _endTime;
+		Seiscomp::Core::Time               _startTime;
+		OPT(Seiscomp::Core::Time)          _endTime;
+		const Seiscomp::DataModel::Object *_origin{nullptr};
 };
 
 

@@ -1847,8 +1847,9 @@ class InventoryManager : public Client::Application,
 
 				_continueOperation = false;
 
-				if ( obj1 != NULL && obj2 != NULL )
+				if ( obj1 && obj2 && (obj1->className() == obj2->className()) ) {
 					compareObjects(obj1, obj2, _logs);
+				}
 			}
 			else if ( level == LogHandler::Error ) {
 				_logs << "! " << message << endl;
