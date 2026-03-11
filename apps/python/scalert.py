@@ -755,7 +755,16 @@ class ObjectAlert(seiscomp.client.Application):
             except Exception:
                 evType = "earthquake"
 
-            dep = org.depth().value()
+            if org.depth().value() <1:
+                dep = round(org.depth().value(), 2) * 1000
+            else:
+                dep = round(org.depth().value(), 2)
+
+            if org.depth().value() <1:
+                depth_measure = "Meters"
+            else:
+                depth_measure = "Kilometers"
+
             now = seiscomp.core.Time.GMT()
             otm = org.time().value()
 
@@ -774,7 +783,7 @@ class ObjectAlert(seiscomp.client.Application):
             if preliminary:
                 message = f"{evType}, XXL, preliminary, {dt}, {dsc}"
             else:
-                message = f"{evType}, {dt}, {dsc}, {mag}, depth {int(dep + 0.5)} kilometers" 
+                message = f"{evType}, {dt}, {dsc}, {mag}, depth {dep} {depth_measure}" 
 
             seiscomp.logging.info(message)
 
