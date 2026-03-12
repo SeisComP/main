@@ -2949,8 +2949,15 @@ void EventTool::refreshEventCache(EventInformationPtr info) {
 
 	// Add the event to the EventParameters
 	if ( !info->event->eventParameters() ) {
-		DataModel::NotifierDisableGuard nguard;
-		_ep->add(info->event.get());
+		if ( info->created ) {
+			_ep->add(info->event.get());
+		}
+		else {
+			// Prevent OP_ADD notifiers from being created when adding
+			// to event parameters.
+			DataModel::NotifierDisableGuard nguard;
+			_ep->add(info->event.get());
+		}
 	}
 
 	// Feed event into cache
