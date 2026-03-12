@@ -87,12 +87,12 @@ struct Config : System::Application::AbstractSettings {
 		& cli(
 			originID,
 			"Input", "origin-id,O",
-			"Origin ID to associate (test only, no event updates)", true
+			"Origin ID to associate, updates will be sent unless --test is given", true
 		)
 		& cli(
 			eventID,
 			"Input", "event-id,E",
-			"Event ID to update preferred objects (test only, no event updates)", true
+			"Event ID to update preferred objects, updates will be sent unless --test is given", true
 		)
 		& cli(
 			epFile,

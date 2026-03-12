@@ -347,7 +347,7 @@ bool EventTool::validateParameters() {
 		setDatabaseEnabled(false, false);
 	}
 
-	if ( !_config.originID.empty() || !_config.eventID.empty() ) {
+	if ( (!_config.originID.empty() || !_config.eventID.empty()) && _config.testMode ) {
 		setMessagingEnabled(false);
 	}
 
@@ -689,6 +689,8 @@ bool EventTool::run() {
 
 		query()->loadArrivals(origin.get());
 
+		NotifierEnableGuard nguard;
+
 		EventInformationPtr info = associateOrigin(origin.get(), true);
 		if ( !info ) {
 			cout << "Origin " << _config.originID << " has not been associated to any event (already associated?)" << endl;
@@ -697,6 +699,20 @@ bool EventTool::run() {
 
 		cout << "Origin " << _config.originID << " has been associated to event " << info->event->publicID() << endl;
 		updatePreferredOrigin(info.get());
+
+		NotifierMessagePtr nmsg = Notifier::GetMessage(true);
+		if ( nmsg ) {
+			SEISCOMP_DEBUG("%d notifier available", static_cast<int>(nmsg->size()));
+			if ( !_config.testMode ) {
+				connection()->send(nmsg.get());
+			}
+			else {
+				SEISCOMP_DEBUG("Test mode, no updates sent");
+			}
+		}
+		else {
+			SEISCOMP_DEBUG("No notifier available");
+		}
 
 		return true;
 	}
@@ -711,7 +727,25 @@ bool EventTool::run() {
 		}
 
 		info->loadAssocations(query());
+
+		NotifierEnableGuard nguard;
+
 		updatePreferredOrigin(info.get());
+
+		NotifierMessagePtr nmsg = Notifier::GetMessage(true);
+		if ( nmsg ) {
+			SEISCOMP_DEBUG("%d notifier available", static_cast<int>(nmsg->size()));
+			if ( !_config.testMode ) {
+				connection()->send(nmsg.get());
+			}
+			else {
+				SEISCOMP_DEBUG("Test mode, no updates sent");
+			}
+		}
+		else {
+			SEISCOMP_DEBUG("No notifier available");
+		}
+
 		return true;
 	}
 
