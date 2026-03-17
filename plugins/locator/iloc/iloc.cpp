@@ -392,6 +392,19 @@ void ILoc::initProfiles(const Config::Config *config, const string &auxdir) {
 	for ( size_t i = 0; i < _profileConfigs.size(); ++i ) {
 		ILOC_CONF &cfg = _profileConfigs[i];
 		initConfig(cfg, config, _profiles[i], auxdir);
+		SEISCOMP_INFO("iLoc: Iniital parameters for profile '%s'", _profiles[i]);
+		SEISCOMP_INFO("  + global model:            %s", cfg.TTmodel);
+		SEISCOMP_INFO("  + use RSTT:                %s", cfg.UseRSTT ? "yes" : "no");
+		if ( cfg.UseRSTT ) {
+			SEISCOMP_INFO("    + RSTT model:       %s", cfg.RSTTmodel);
+		}
+		SEISCOMP_INFO("  + use RSTTPgLg:            %s", cfg.UseRSTTPgLg ? "yes" : "no");
+		SEISCOMP_INFO("  + use RSTTPnLn:            %s", cfg.UseRSTTPnSn ? "yes" : "no");
+		SEISCOMP_INFO("  + use local ttt:           %s", cfg.UseLocalTT ? "yes" : "no");
+		if ( cfg.UseLocalTT ) {
+			SEISCOMP_INFO("    + local model:      %s", cfg.LocalVmodel);
+			SEISCOMP_INFO("    + maximum distance: %.3f deg", cfg.MaxLocalTTDelta);
+		}
 	}
 
 	_currentConfig = _profileConfigs.empty() ? nullptr : &_profileConfigs[0];
