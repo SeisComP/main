@@ -1113,35 +1113,43 @@ void App::pushProcessor(const std::string &networkCode,
 void App::processorFinished(const Record *rec, WaveformProcessor *wp) {
 	std::stringstream ss;
 
-	if ( wp->status() == Processing::WaveformProcessor::LowSNR )
+	if ( wp->status() == Processing::WaveformProcessor::LowSNR ) {
 		ss << "SNR " << wp->statusValue() << " too low";
-	else if ( wp->status() > Processing::WaveformProcessor::Terminated )
+	}
+	else if ( wp->status() > Processing::WaveformProcessor::Terminated ) {
 		ss << "ERROR (" << wp->status().toString() << "," << wp->statusValue() << ")";
-	else
+	}
+	else {
 		ss << "OK";
+	}
 
-	SEISCOMP_DEBUG("%s:%s: %s", rec != NULL?rec->streamID().c_str():"-",
+	SEISCOMP_DEBUG("%s:%s: %s", rec ? rec->streamID().c_str() : "-",
 	                           wp->className(),
-	                           ss.str().c_str());
+	                           ss.str());
 
 	// If its a secondary processor remove it from the tracked item list
-	ProcReverseMap::iterator pit = _procLookup.find(wp);
-	if ( pit == _procLookup.end() ) return;
+	auto pit = _procLookup.find(wp);
+	if ( pit == _procLookup.end() ) {
+		return;
+	}
 
-	ProcMap::iterator mit = _runningStreamProcs.find(pit->second);
+	auto mit = _runningStreamProcs.find(pit->second);
 
 	_procLookup.erase(pit);
 
-	if ( mit == _runningStreamProcs.end() ) return;
+	if ( mit == _runningStreamProcs.end() ) {
+		return;
+	}
 
 	ProcList &list = mit->second;
-	for ( ProcList::iterator it = list.begin(); it != list.end(); ) {
+	for ( auto it = list.begin(); it != list.end(); ) {
 		if ( it->proc == wp ) {
 			SEISCOMP_DEBUG("Removed finished processor from stream procs");
 			it = list.erase(it);
 		}
-		else
+		else {
 			++it;
+		}
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1205,7 +1213,7 @@ bool App::addFeatureExtractor(Seiscomp::DataModel::Pick *pick,
 void App::addSecondaryPicker(const Core::Time &onset, const Record *rec, const std::string &pickID) {
 	// Add secondary picker
 	SecondaryPickerPtr proc = SecondaryPickerFactory::Create(_config.secondaryPickerType.c_str());
-	if ( proc == NULL ) {
+	if ( !proc ) {
 		SEISCOMP_WARNING("Could not create secondary picker: %s", _config.secondaryPickerType.c_str());
 		this->exit(1);
 		return;
@@ -1239,34 +1247,40 @@ void App::addSecondaryPicker(const Core::Time &onset, const Record *rec, const s
 		// Check for secondary procs that are still running but where the
 		// end time is before onset and remove them
 		// ...
-		for ( ProcList::iterator it = list.begin(); it != list.end(); ) {
+		for ( auto it = list.begin(); it != list.end(); ) {
 			if ( it->dataEndTime <= onset ) {
-				SEISCOMP_DEBUG("Remove expired proc 0x%lx", (long int)it->proc);
+				SEISCOMP_DEBUG("Remove expired proc %p", static_cast<void*>(it->proc));
 				if ( /*it->proc != NULL*/true ) {
 					SEISCOMP_INFO("Remove expired running processor %s on %s",
 					              it->proc->className(), rec->streamID().c_str());
 
-					if ( it->proc->status() == Processing::WaveformProcessor::LowSNR )
+					if ( it->proc->status() == Processing::WaveformProcessor::LowSNR ) {
 						SEISCOMP_DEBUG("  -> status: SNR(%f) too low", it->proc->statusValue());
-					else if ( it->proc->status() > Processing::WaveformProcessor::Terminated )
+					}
+					else if ( it->proc->status() > Processing::WaveformProcessor::Terminated ) {
 						SEISCOMP_DEBUG("  -> status: ERROR (%s, %f)",
 						               it->proc->status().toString(), it->proc->statusValue());
-					else
+					}
+					else {
 						SEISCOMP_DEBUG("  -> status: OK");
+					}
 
 					// Remove processor from application
 					removeProcessor(it->proc);
 
 					// Remove its reverse lookup
-					ProcReverseMap::iterator pit = _procLookup.find(it->proc);
-					if ( pit != _procLookup.end() ) _procLookup.erase(pit);
+					auto pit = _procLookup.find(it->proc);
+					if ( pit != _procLookup.end() ) {
+						_procLookup.erase(pit);
+					}
 				}
 
 				// Remove it from the run list
 				it = list.erase(it);
 			}
-			else
+			else {
 				++it;
+			}
 		}
 	}
 
@@ -1281,8 +1295,9 @@ void App::addSecondaryPicker(const Core::Time &onset, const Record *rec, const s
 		SEISCOMP_DEBUG("%s: registered proc 0x%lx",
 		               rec->streamID().data(), (long int)proc.get());
 	}
-	else
+	else {
 		SEISCOMP_DEBUG("%s: proc finished already", rec->streamID().data());
+	}
 
 //	SEISCOMP_DEBUG("Number of processors: %lu", (unsigned long)processorCount());
 }
@@ -1350,8 +1365,9 @@ void App::emitTrigger(const Processing::Detector *pickProc,
 
 	const DataModel::WaveformStreamID waveformID(waveformStreamID(rec));
 
-	if ( !initProcessor(proc.get(), proc->usedComponent(), time, rec->streamID(), waveformID, false) )
+	if ( !initProcessor(proc.get(), proc->usedComponent(), time, rec->streamID(), waveformID, false) ) {
 		return;
+	}
 
 	SEISCOMP_DEBUG("%s: created picker %s",
 	               rec->streamID().c_str(), _config.pickerType.c_str());
@@ -1613,11 +1629,13 @@ void App::emitSPick(const Processing::SecondaryPicker *proc,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::emitDetection(const Processing::Detector *proc, const Record *rec, const Core::Time& time) {
+void App::emitDetection(const Processing::Detector *proc, const Record *rec, const Core::Time &time) {
 	if ( !_config.pickerType.empty() ) {
 		emitTrigger(proc, rec, time);
 
-		if ( !_config.sendDetections ) return;
+		if ( !_config.sendDetections ) {
+			return;
+		}
 	}
 
 	bool isDetection = !_config.pickerType.empty() && _config.sendDetections;
