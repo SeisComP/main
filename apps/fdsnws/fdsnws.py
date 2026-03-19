@@ -543,7 +543,9 @@ class FDSNWS(seiscomp.client.Application):
             self._useAccess = self.configGetBool("useAccess")
             try:
                 self.configGetBool("useArclinkAccess")
-                seiscomp.logging.warning('ignoring deprecated setting "useArclinkAccess"')
+                seiscomp.logging.warning(
+                    'ignoring deprecated setting "useArclinkAccess"'
+                )
             except Exception:
                 pass
         except Exception:
@@ -829,21 +831,17 @@ class FDSNWS(seiscomp.client.Application):
         return True
 
     def printUsage(self):
-        print(
-            f"""Usage:
+        print(f"""Usage:
   {os.path.basename(__file__)} [options]
 
-Provide FDSN Web Services"""
-        )
+Provide FDSN Web Services""")
 
         seiscomp.client.Application.printUsage(self)
 
-        print(
-            f"""Examples:
+        print(f"""Examples:
 Execute on command line with debug output
   {os.path.basename(__file__)} --debug
-"""
-        )
+""")
 
     # -------------------------------------------------------------------------
     # Signal handling in Python and fork in wrapped C++ code is not a good
@@ -944,8 +942,7 @@ Execute on command line with debug output
         else:
             invCoordinatePrecisionStr = "unlimited"
 
-        seiscomp.logging.debug(
-            f"""
+        seiscomp.logging.debug(f"""
 configuration read:
   serve
     dataselect             : {self._serveDataSelect}
@@ -994,8 +991,7 @@ configuration read:
     algorithms             : {self._jwtAlgorithms}
     updateMinSeconds       : {self._jwtUpdateMin}
     updateMaxSeconds       : {self._jwtUpdateMax}
-  requestLog               : {self._requestLogFile}"""
-        )
+  requestLog               : {self._requestLogFile}""")
 
         if (
             not self._serveDataSelect
