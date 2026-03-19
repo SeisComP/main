@@ -724,8 +724,10 @@ class FDSNWS(seiscomp.client.Application):
 
         # dataSelect filter
         try:
-            self._dataSelectFilter = seiscomp.system.Environment.Instance().absolutePath(
-                self.configGetString("dataSelectFilter")
+            self._dataSelectFilter = (
+                seiscomp.system.Environment.Instance().absolutePath(
+                    self.configGetString("dataSelectFilter")
+                )
             )
         except Exception:
             pass
@@ -1031,9 +1033,9 @@ configuration read:
         stationInv = dataSelectInv = None
         if self._serveDataSelect or self._serveStation:
             retn = False
-            stationInv = (
-                dataSelectInv
-            ) = seiscomp.client.Inventory.Instance().inventory()
+            stationInv = dataSelectInv = (
+                seiscomp.client.Inventory.Instance().inventory()
+            )
             seiscomp.logging.info("inventory loaded")
 
             if self._serveDataSelect and self._serveStation:
