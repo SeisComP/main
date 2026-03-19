@@ -1063,7 +1063,7 @@ configuration read:
         else:
             self._checker = checkers.FilePasswordDB(self._htpasswd, cache=True)
 
-        if (self._serveDataSelect or _serveAvailability) and self._useAccess:
+        if (self._serveDataSelect or self._serveAvailability) and self._useAccess:
             self._access.initFromSC3Routing(self.query().loadRouting())
 
         seiscomp.datamodel.PublicObject.SetRegistrationEnabled(False)
