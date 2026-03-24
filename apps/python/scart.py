@@ -300,6 +300,11 @@ class StreamIterator:
         self.file = workdir + file
         # print "Starting at file %s" % self.file
 
+        self.record = None
+        self.index = None
+        self.current = None
+        self.currentEnd = None
+
         while begin < end:
             self.record, self.index = ar.findIndex(begin, end, self.file)
             if self.record:
