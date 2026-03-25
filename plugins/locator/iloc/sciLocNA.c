@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2018-2019, Istvan Bondar,
- * Written by Istvan Bondar, ibondar2014@gmail.com
+ * Copyright (c) 2018-2026, Istvan Bondar,
+ * Written by Istvan Bondar, Seismic Location Services
+ * istvan.bondar@slsiloc.eu
  *
  * BSD Open Source License.
  * All rights reserved.
@@ -271,7 +272,7 @@ int iLoc_NASearch(ILOC_CONF *iLocConfig, ILOC_HYPO *grds, ILOC_ASSOC *Assocs,
     ILOC_READING *rdindx = (ILOC_READING *)NULL;                /* readings */
     double *misfit = (double *)NULL;
     double mfitmin = 0., mfitmean = 0., mfitminc = 0.;
-    double du = 1., gap = 360., sgap = 360., dummy = 0.;
+    double du = 1., gap = 360., sgap = 360., dummy = 0., cpq = 0.;
     double *esaz = (double *)NULL;
     double **na_models = (double **)NULL;
     double xcur[ILOC_NA_MAXND], model_opt[ILOC_NA_MAXND];
@@ -374,7 +375,7 @@ int iLoc_NASearch(ILOC_CONF *iLocConfig, ILOC_HYPO *grds, ILOC_ASSOC *Assocs,
 /*
  *  disable correlated errors for reasonably balanced networks
  */
-    du = iLoc_GetdUGapSgap(ksta, esaz, &gap, &sgap);
+    du = iLoc_GetdUGapSgap(ksta, esaz, &gap, &sgap, &cpq);
     iLoc_Free(esaz);
     if (np > 30 && du < 0.7)
         DoCorr = 0;

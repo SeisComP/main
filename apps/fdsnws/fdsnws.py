@@ -72,13 +72,17 @@ from seiscomp.fdsnws.http import (
 )
 from seiscomp.fdsnws.log import Log
 
+_jwtSupported = False
+
 try:
+    import jwt
     from seiscomp.fdsnws.jwt import JWT
 
-    _jwtSupported = True
+    if int(jwt.__version__.split(".")[0]) >= 2:
+        _jwtSupported = True
 
 except ImportError:
-    _jwtSupported = False
+    pass
 
 
 def logSC3(entry):
@@ -380,7 +384,7 @@ class FDSNWS(seiscomp.client.Application):
         self._corsOrigins = ["*"]
 
         self._allowRestricted = True
-        self._useArclinkAccess = False
+        self._useAccess = False
         self._serveDataSelect = True
         self._serveEvent = True
         self._serveStation = True
@@ -420,7 +424,10 @@ class FDSNWS(seiscomp.client.Application):
         self._checker = None
 
         self._jwtEnabled = False
-        self._jwtIssuers = ["https://geofon.gfz.de/eas2", "https://login.earthscope.org/"]
+        self._jwtIssuers = [
+            "https://geofon.gfz.de/eas2",
+            "https://login.earthscope.org/",
+        ]
         self._jwtAudience = ["eas", "fdsn"]
         self._jwtAlgorithms = ["RS256"]
         self._jwtUpdateMin = 300
@@ -538,11 +545,22 @@ class FDSNWS(seiscomp.client.Application):
         except Exception:
             pass
 
-        # use arclink-access bindings
+        # use access bindings
         try:
-            self._useArclinkAccess = self.configGetBool("useArclinkAccess")
+            self._useAccess = self.configGetBool("useAccess")
+            try:
+                self.configGetBool("useArclinkAccess")
+                seiscomp.logging.warning(
+                    'ignoring deprecated setting "useArclinkAccess"'
+                )
+            except Exception:
+                pass
         except Exception:
-            pass
+            try:
+                self._useAccess = self.configGetBool("useArclinkAccess")
+                seiscomp.logging.warning('using deprecated setting "useArclinkAccess"')
+            except Exception:
+                pass
 
         # services to enable
         try:
@@ -808,7 +826,7 @@ class FDSNWS(seiscomp.client.Application):
             # availability information should be processed
             if (
                 not self._serveEvent
-                and not self._useArclinkAccess
+                and not self._useAccess
                 and (
                     not self._serveStation
                     or (not self.isInventoryDatabaseEnabled() and not self._daEnabled)
@@ -820,21 +838,17 @@ class FDSNWS(seiscomp.client.Application):
         return True
 
     def printUsage(self):
-        print(
-            f"""Usage:
+        print(f"""Usage:
   {os.path.basename(__file__)} [options]
 
-Provide FDSN Web Services"""
-        )
+Provide FDSN Web Services""")
 
         seiscomp.client.Application.printUsage(self)
 
-        print(
-            f"""Examples:
+        print(f"""Examples:
 Execute on command line with debug output
   {os.path.basename(__file__)} --debug
-"""
-        )
+""")
 
     # -------------------------------------------------------------------------
     # Signal handling in Python and fork in wrapped C++ code is not a good
@@ -935,8 +949,7 @@ Execute on command line with debug output
         else:
             invCoordinatePrecisionStr = "unlimited"
 
-        seiscomp.logging.debug(
-            f"""
+        seiscomp.logging.debug(f"""
 configuration read:
   serve
     dataselect             : {self._serveDataSelect}
@@ -955,7 +968,7 @@ configuration read:
   recordBulkSize           : {self._recordBulkSize}
   allowRestricted          : {self._allowRestricted}
   handleConditionalRequests: {self._handleConditionalRequests}
-  useArclinkAccess         : {self._useArclinkAccess}
+  useAccess                : {self._useAccess}
   hideAuthor               : {self._hideAuthor}
   hideComments             : {self._hideComments}
   evaluationMode           : {modeStr}
@@ -985,8 +998,7 @@ configuration read:
     algorithms             : {self._jwtAlgorithms}
     updateMinSeconds       : {self._jwtUpdateMin}
     updateMaxSeconds       : {self._jwtUpdateMax}
-  requestLog               : {self._requestLogFile}"""
-        )
+  requestLog               : {self._requestLogFile}""")
 
         if (
             not self._serveDataSelect
@@ -999,12 +1011,18 @@ configuration read:
         if self._jwtEnabled:
             if not _jwtSupported:
                 seiscomp.logging.error(
-                    "JWT is not supported due to missing dependencies"
+                    "JWT support requires PyJWT 2.0.0 or newer. Please install PyJWT "
+                    'with "pip" or install the required version of the python3-PyJWT '
+                    "package if available."
                 )
                 return None
 
             self._jwt = JWT(
-                self._jwtIssuers, self._jwtAudience, self._jwtAlgorithms, self._jwtUpdateMin, self._jwtUpdateMax
+                self._jwtIssuers,
+                self._jwtAudience,
+                self._jwtAlgorithms,
+                self._jwtUpdateMin,
+                self._jwtUpdateMax,
             )
 
         # access logger if requested
@@ -1046,14 +1064,15 @@ configuration read:
             if not retn:
                 return None
 
-        if self._authEnabled:
+        if self._useAccess or self._authEnabled or self._jwtEnabled:
             self._access = Access()
+
+        if self._authEnabled:
             self._checker = UsernamePasswordChecker(self._userdb)
         else:
-            self._access = Access() if self._useArclinkAccess else None
             self._checker = checkers.FilePasswordDB(self._htpasswd, cache=True)
 
-        if self._serveDataSelect and self._useArclinkAccess:
+        if (self._serveDataSelect or self._serveAvailability) and self._useAccess:
             self._access.initFromSC3Routing(self.query().loadRouting())
 
         seiscomp.datamodel.PublicObject.SetRegistrationEnabled(False)

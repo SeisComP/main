@@ -429,7 +429,7 @@ public:
 	{
 	  char s[300];
 	  string frmt("%9.5f %10.5f");
-	  sprintf(s, frmt.c_str(), getLatDegrees(v), getLonDegrees(v));
+	  snprintf(s, sizeof(s), frmt.c_str(), getLatDegrees(v), getLonDegrees(v));
 	  return s;
 	}
 

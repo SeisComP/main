@@ -35,8 +35,19 @@ OpenTimeWindow::OpenTimeWindow() {}
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-OpenTimeWindow::OpenTimeWindow(Seiscomp::Core::Time startTime, OPT(Seiscomp::Core::Time) endTime)
+OpenTimeWindow::OpenTimeWindow(Seiscomp::Core::Time startTime,
+                               OPT(Seiscomp::Core::Time) endTime)
 : _startTime(startTime), _endTime(endTime) {}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+OpenTimeWindow::OpenTimeWindow(Seiscomp::Core::Time startTime,
+                               OPT(Seiscomp::Core::Time) endTime,
+                               const Seiscomp::DataModel::Object *origin)
+: _startTime(startTime), _endTime(endTime), _origin(origin) {}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 

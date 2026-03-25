@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2018-2019, Istvan Bondar,
- * Written by Istvan Bondar, ibondar2014@gmail.com
+ * Copyright (c) 2018-2026, Istvan Bondar,
+ * Written by Istvan Bondar, Seismic Location Services
+ * istvan.bondar@slsiloc.eu
  *
  * BSD Open Source License.
  * All rights reserved.
@@ -33,6 +34,8 @@
  * Functions:
  *    iLoc_LocationQuality
  *    iLoc_GetdUGapSgap
+ *    iLoc_GetNdefSP150
+
  */
 
 /*
@@ -50,14 +53,18 @@ static int CompareDouble(const void *x, const void *y);
  *         Local network:  0 - 150 km
  *         Entire network: 0 - 180 degrees
  *     Only defining stations are considered.
- *     dU is defined in:
- *        Bondár, I. and K. McLaughlin, 2009,
- *        A new ground truth data set for seismic studies,
- *        Seism. Res. Let., 80, 465-472.
  *     sgap is defined in:
  *        Bondár, I., S.C. Myers, E.R. Engdahl and E.A. Bergman, 2004,
  *        Epicenter accuracy based on seismic network criteria,
  *        Geophys. J. Int., 156, 483-496, doi: 10.1111/j.1365-246X.2004.02070.x.
+ *     dU is defined in:
+ *        Bondár, I. and K. McLaughlin, 2009,
+ *        A new ground truth data set for seismic studies,
+ *        Seism. Res. Let., 80, 465-472, https://doi.org/10.1785/gssrl.80.3.465
+ *     CPQ is defined in:
+ *        Gallacher, R., T. Garth, J. Harris, I. Bondár, K. McLaughlin,
+ *        D. Storchak (2025), Revising the Seismic Ground Truth Reference Event
+ *        Identification Criteria, Seismica, 4, https://doi.org/10.26443/seismica.v4i1.1536
  *  Input Arguments:
  *     Hypocenter - pointer to ILOC_HYPO structure
  *     Assocs   - array of ILOC_ASSOC structures
@@ -73,7 +80,7 @@ static int CompareDouble(const void *x, const void *y);
 int iLoc_LocationQuality(ILOC_HYPO *Hypocenter, ILOC_ASSOC *Assocs)
 {
     double *esaz = (double *)NULL;
-    double gap = 0., sgap = 0., du = 0.;
+    double gap = 0., sgap = 0., du = 0., cpq = 0.;
     double delta = 0., d10 = 0., mind = 0., maxd = 0.;
     int i, ndef = 0, nsta = 0, numStaWithin10km = 0, PrevStaInd = -1;
     if ((esaz = (double *)calloc(Hypocenter->numPhase + 2, sizeof(double))) == NULL) {
@@ -102,12 +109,16 @@ int iLoc_LocationQuality(ILOC_HYPO *Hypocenter, ILOC_ASSOC *Assocs)
     Hypocenter->localNumDefsta = nsta;
     Hypocenter->localNumDef = ndef;
     Hypocenter->numStaWithin10km = numStaWithin10km;
-    du = iLoc_GetdUGapSgap(nsta, esaz, &gap, &sgap);
+    du = iLoc_GetdUGapSgap(nsta, esaz, &gap, &sgap, &cpq);
     Hypocenter->localDU = du;
     Hypocenter->localSgap = sgap;
-    Hypocenter->GT5candidate = 1;
+    Hypocenter->localCPQ = cpq;
+    Hypocenter->GT5candidateDU = 1;
     if (du > 0.35 || numStaWithin10km < 1 || sgap > 160.)
-         Hypocenter->GT5candidate = 0;
+         Hypocenter->GT5candidateDU = 0;
+    Hypocenter->GT5candidateCPQ = 1;
+    if (cpq < 0.4 || sgap > 210. || (numStaWithin10km < 1 && Hypocenter->nSPdef150 < 5))
+         Hypocenter->GT5candidateCPQ = 0;
 /*
  *  entire network
  */
@@ -123,7 +134,7 @@ int iLoc_LocationQuality(ILOC_HYPO *Hypocenter, ILOC_ASSOC *Assocs)
         if (Assocs[i].Delta < mind) mind = Assocs[i].Delta;
         PrevStaInd = Assocs[i].StaInd;
     }
-    du = iLoc_GetdUGapSgap(nsta, esaz, &gap, &sgap);
+    du = iLoc_GetdUGapSgap(nsta, esaz, &gap, &sgap, &cpq);
     Hypocenter->Gap = gap;
     Hypocenter->Sgap = sgap;
     Hypocenter->minDist = mind;
@@ -144,21 +155,27 @@ int iLoc_LocationQuality(ILOC_HYPO *Hypocenter, ILOC_ASSOC *Assocs)
  *
  *     b = avg(esaz) - avg(360i/N)  where esaz is sorted
  *
+ *
+ *           abs(sum(x[i] * y[i+1]) - sum(x[i+1] * y[i]))
+ *     cpq = --------------------------------------------
+ *                             2 * pi
+ *
  *  Input Arguments:
  *     nsta - number of defining stations
  *     esaz - array of event-to-station azimuths
  *  Output Arguments:
  *     gap  - largest azimuthal gap
  *     sgap - largest secondary azimuthal gap
+ *     cpq  - cyclic polygon quotient
  *  Return:
  *     dU   - network quality metric
  *  Called by:
  *     iLoc_LocationQuality
  */
-double iLoc_GetdUGapSgap(int nsta, double *esaz, double *gap, double *sgap)
+double iLoc_GetdUGapSgap(int nsta, double *esaz, double *gap, double *sgap, double *cpq)
 {
     int i;
-    double du = 1., bb = 0., uesaz = 0., w = 0., s1 = 0., s2 = 0.;
+    double du = 1., bb = 0., uesaz = 0., v = 0., w = 0., s1 = 0., s2 = 0.;
     *gap = 360.;
     *sgap = 360.;
     if (nsta < 2) return du;
@@ -168,6 +185,7 @@ double iLoc_GetdUGapSgap(int nsta, double *esaz, double *gap, double *sgap)
     qsort(esaz, nsta, sizeof(double), CompareDouble);
 /*
  *  du: mean absolute deviation from best fitting uniform network
+ *  Bondar and McLaughlin, 2009
  */
     for (i = 0; i < nsta; i++) {
         uesaz = 360. * (double)i / (double)nsta;
@@ -189,6 +207,20 @@ double iLoc_GetdUGapSgap(int nsta, double *esaz, double *gap, double *sgap)
     if (w > 360.) w = 360.;
     *gap = w;
 /*
+ *  Cyclic Polygon Quotient (Gallacher et al, 2025)
+ *  Calculate the area of the polygon with the surveyor's formula
+ *  Bart Braden, The College Mathematics Journal, 1986
+ */
+    s1 = 0.;
+    s2 = 0.;
+    for (i = 0; i < nsta; i++) {
+        v = esaz[i] * ILOC_DEG2RAD;
+        w = esaz[i+1] * ILOC_DEG2RAD;
+        s1 += sin(v) * cos(w);
+        s2 += sin(w) * cos(v);
+    }
+    *cpq = fabs(s1 -s2) / ILOC_TWOPI;
+/*
  *  sgap
  */
     esaz[nsta+1] = esaz[1] + 360.;
@@ -199,6 +231,51 @@ double iLoc_GetdUGapSgap(int nsta, double *esaz, double *gap, double *sgap)
     return du;
 }
 
+/*
+ *  Title:
+ *     iLoc_GetNdefSP150
+ *  Synopsis:
+ *     Calculates number of defining S-P pairs within 150 km.
+ *
+ *  Input Arguments:
+ *     Hypocenter - pointer to ILOC_HYPO structure
+ *     rdindx     - array of reading structures
+ *     Assocs     - array of ILOC_ASSOC structures
+ *  Return:
+ *     numSPdef150 - number of defining S-P pairs within 150 km
+
+ *  Called by:
+ *     iLoc_Locator
+ */
+int iLoc_GetNdefSP150(ILOC_HYPO *Hypocenter, ILOC_READING *rdindx, ILOC_ASSOC *Assocs)
+{
+    int i, k, m, np, numSPdef150 = 0;
+    double delta = 150. * ILOC_RAD2DEG / ILOC_EARTHRADIUS;
+/*
+ *  loop over readings
+ */
+    for (i = 0; i < Hypocenter->numReading; i++) {
+        m = rdindx[i].start;
+        np = rdindx[i].start + rdindx[i].npha;
+/*
+ *      multiple phases in the reading
+ */
+        for (k = m + 1; k < np; k++) {
+/*
+ *          both the first-arriving and the later phase must be defining
+ */
+            if (!Assocs[m].Timedef || !Assocs[k].Timedef)
+                continue;
+/*
+ *          number of defining S-P pairs within 150km for CPQ GT5 test
+ */
+            if (Assocs[m].firstP && Assocs[k].firstS && Assocs[m].Delta <= delta &&
+                (Assocs[m].duplicate * Assocs[k].duplicate) == 0)
+                numSPdef150++;
+        }
+    }
+    return numSPdef150;
+}
 /*
  *  Title:
  *     CompareDouble

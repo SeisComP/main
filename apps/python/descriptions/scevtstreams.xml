@@ -57,7 +57,11 @@
 
 			<group name="Dump">
 				<option flag="E" long-flag="event" argument="arg">
-					<description>The ID of the event to consider.</description>
+					<description>
+					The ID of the event to consider. Repeat the option to
+					consider multiple events. Use '-' to read the IDs as
+					individual lines from stdin.
+					</description>
 				</option>
 				<option flag="" long-flag="net-sta" argument="arg">
 					<description>
@@ -112,6 +116,12 @@
 					dumped. This option implies --all-stations, --all-locations,
 					--all-streams, --all-components and will only provide the
 					time window.
+					</description>
+				</option>
+				<option flag="" long-flag="used-arrivals" argument="">
+					<description>
+					Consider only arrivals which have been used for locating.
+					Ignore all unused arrivals.
 					</description>
 				</option>
 				<option flag="R" long-flag="resolve-wildcards" argument="flag">

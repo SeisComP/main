@@ -16,7 +16,7 @@
 
 
 ADD_SC_PLUGIN(
-	"Locator implementation for iLoc v4.2",
+	"Locator implementation for iLoc v4.3",
 	"Jan Becker, gempa GmbH",
-	4, 2, 0
+	4, 3, 0
 )

@@ -1,6 +1,6 @@
-scevtstreams reads all picks of an event or solitary picks determining the time
-window between the first pick and the last pick.
-In addition symmetric asymmetric time margins are added to this time window.
+scevtstreams reads all picks of events, origins or solitary picks determining
+the time window between the first pick and the last pick.
+In addition symmetric or asymmetric time margins are added to this time window.
 It writes the streams that are picked including the determined
 time window for the event to stdout. This tool gives appropriate input
 information for :ref:`scart`, :ref:`fdsnws` and :cite:t:`capstool` for
@@ -33,20 +33,22 @@ Example:
 Examples
 ========
 
-#. Get the time windows for an event in the database:
+#. Get the time windows for a single event or multiple events in the database:
 
    .. code-block:: sh
 
       scevtstreams -E gfz2012abcd -d mysql://sysop:sysop@localhost/seiscomp
+      scevtstreams -E gfz2012abcd -E gfz2012efgh -d mysql://sysop:sysop@localhost/seiscomp
 
-#. Get the time windows for one specific event or all events in a XML file.
+#. Get the time windows for one specific event, multiple or all events in a XML file.
    The time windows start 120 s before the first pick and ends 500 s after the
    last pick:
 
    .. code-block:: sh
 
-      scevtstreams -i event.xml -E gfz2012abcd
-      scevtstreams -i event.xml
+      scevtstreams -i event.xml -m 120,500 -E gfz2012abcd
+      scevtstreams -i event.xml -m 120,500 -E gfz2012abcd -E gfz2012efgh
+      scevtstreams -i event.xml -m 120,500
 
 #. Get the time windows from all picks in a XML file which does not contain
    events or origins:
@@ -54,6 +56,15 @@ Examples
    .. code-block:: sh
 
       scevtstreams -i picks.xml
+
+#. Use **-E -** to read the event IDs as individual lines from *stdin*.
+   Combine with :ref:`scevtls` for creating a streams list for the last day of
+   events in the database:
+
+   .. code-block:: sh
+
+      scevtls -d mysql://sysop:sysop@localhost/seiscomp --hours 24 |\
+      scevtstreams -E - -d mysql://sysop:sysop@localhost/seiscomp
 
 #. Combine with :ref:`scart` for creating a :term:`miniSEED` data file from one
    event. The time window starts and ends 5 minutes before the first and after

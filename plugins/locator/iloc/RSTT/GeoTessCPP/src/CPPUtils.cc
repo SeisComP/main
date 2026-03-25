@@ -123,7 +123,7 @@ string CPPUtils::itos(int i, const string& frmt)
 {
   char s[300];
 
-  sprintf(s, frmt.c_str(), i);
+  snprintf(s, sizeof(s), frmt.c_str(), i);
   return s;
 }
 
@@ -163,7 +163,7 @@ string CPPUtils::ltos(LONG_INT l, const string& frmt)
 {
   char s[300];
 
-  sprintf(s, frmt.c_str(), l);
+  snprintf(s, sizeof(s), frmt.c_str(), l);
   return s;
 }
 
@@ -192,7 +192,7 @@ string CPPUtils::ftos(float f, const string& frmt)
 {
   char s[300];
 
-  sprintf(s, frmt.c_str(), f);
+  snprintf(s, sizeof(s), frmt.c_str(), f);
   return s;
 }
 
@@ -221,7 +221,7 @@ string CPPUtils::dtos(double d, const string& frmt)
 {
   char s[300];
 
-  sprintf(s, frmt.c_str(), d);
+  snprintf(s, sizeof(s), frmt.c_str(), d);
   return s;
 }
 

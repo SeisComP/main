@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2018-2019, Istvan Bondar,
- * Written by Istvan Bondar, ibondar2014@gmail.com
+ * Copyright (c) 2018-2026, Istvan Bondar,
+ * Written by Istvan Bondar, Seismic Location Services
+ * istvan.bondar@slsiloc.eu
  *
  * BSD Open Source License.
  * All rights reserved.
@@ -70,6 +71,7 @@
 #define ILOC_DEPSILON 1.e-8          /* for testing floating point equality */
 #define ILOC_CVGTOL 1.e-8                          /* convergence tolerance */
 #define ILOC_ZEROTOL 1.e-10                               /* zero tolerance */
+#define ILOC_SAMETIME_TOL 0.15        /* time tolerance for duplicate picks */
 /*
  *
  * Array sizes for SplineCoeffs interpolation routines
@@ -300,7 +302,8 @@ typedef struct iLocConfig {
  *     FixHypo          - 1 if fixed hypocenter, 0 otherwise
  *     GT5candidate     - 1 if GT5 candidate, 0 otherwise
  *     localSgap        - local secondary azimuthal gap [deg]
- *     localDU          - local network quality metric
+ *     localDU          - local network quality metric, dU
+ *     localCPQ         - local network quality metric, CPQ
  *     numStaWithin10km - number of defining stations within 10 km
  *     localNumDefsta   - number of local defining stations
  *     localNumDef      - number of local defining observations
@@ -345,9 +348,12 @@ typedef struct Hypocenter {
     double Gap;                           /* azimuthal gap (entire network) */
     double Sgap;                /* secondary azimuthal gap (entire network) */
     int FixHypo;                                        /* fixed hypocenter */
-    int GT5candidate;                    /* 1 if GT5 candidate, 0 otherwise */
+    int GT5candidateDU;            /* 1 if GT5 candidate, 0 otherwise (dU)  */
+    int GT5candidateCPQ;           /* 1 if GT5 candidate, 0 otherwise (CPQ) */
+    int nSPdef150;            /* number of defining S-P pairs within 150 km */
     double localSgap;                /* local secondary azimuthal gap [deg] */
-    double localDU;                         /* local network quality metric */
+    double localDU;                    /* local network quality metric, dU  */
+    double localCPQ;                   /* local network quality metric, CPQ */
     int numStaWithin10km;       /* number of defining stations within 10 km */
     int localNumDefsta;                /* number of local defining stations */
     int localNumDef;               /* number of local defining observations */
@@ -875,7 +881,8 @@ ILOC_TT_TABLE *iLoc_GenerateLocalTTtables(char *auxdir, ILOC_TTINFO *LocalTTInfo
  * sciLocLocationQuality.c
  */
 int iLoc_LocationQuality(ILOC_HYPO *Hypocenter, ILOC_ASSOC *Assocs);
-double iLoc_GetdUGapSgap(int nsta, double *esaz, double *gap, double *sgap);
+double iLoc_GetdUGapSgap(int nsta, double *esaz, double *gap, double *sgap, double *cpq);
+int iLoc_GetNdefSP150(ILOC_HYPO *Hypocenter, ILOC_READING *rdindx, ILOC_ASSOC *Assocs);
 /*
  * sciLocNA.c
  */

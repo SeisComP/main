@@ -221,28 +221,28 @@
 					</parameter>
 				</group>
 				<group name="locator">
-					<parameter name="interface" type="string" default="LOCSAT">
+					<parameter name="interface" type="string" default="LOCSAT" values="FixedHypocenter,Hypo71,LocExt,LocRouter,LOCSAT,NonLinLoc,StdLoc">
 						<description>
-							The default locator interface to use.
+						The default locator interface to use.
 						</description>
 					</parameter>
 					<parameter name="defaultProfile" type="string">
 						<description>
-							The default locator profile to use.
+						The default locator profile to use.
 						</description>
 					</parameter>
 					<parameter name="minimumDepth" type="double" unit="km">
 						<description>
-							Minimum depth which is set if the locator used supports fixing
-							the depth. If the depth is lower than this value, the depth is
-							fixed to this configured value and the origin is relocated again.
+						Minimum depth which is set if the locator used supports fixing
+						the depth. If the depth is lower than this value, the depth is
+						fixed to this configured value and the origin is relocated again.
 						</description>
 					</parameter>
 					<parameter name="presetFromOrigin" type="boolean" default="false">
 						<description>
-							Whether to preset the locator settings when an origin
-							is being loaded. It tries to figure the locator type
-							from Origin.methodID and the profile from Origin.earthModelID.
+						Whether to preset the locator settings when an origin
+						is being loaded. It tries to figure the locator type
+						from Origin.methodID and the profile from Origin.earthModelID.
 						</description>
 					</parameter>
 				</group>
@@ -570,38 +570,38 @@
 				<description>Parameters controlling the phase picker window.</description>
 				<parameter name="showCrossHairCursor" type="boolean" default="false">
 					<description>
-						Activate a cross hair cursor showing the configured uncertainties
-						when in picking mode.
+					Activate a cross hair cursor showing the configured uncertainties
+					when in picking mode.
 					</description>
 				</parameter>
 				<parameter name="loadAllPicks" type="boolean" default="true">
 					<description>
-						Load all existing picks for the requested data time window.
+					Load all existing picks for the requested data time window.
 					</description>
 				</parameter>
 				<parameter name="ignoreUnconfiguredStations" type="boolean" default="false">
 					<description>
-						If enabled, the picker will not add stations that are not
-						configured with a detecStream in global bindings.
+					If enabled, the picker will not add stations that are not
+					configured with a detecStream in global bindings.
 					</description>
 				</parameter>
 				<parameter name="limitStationAcquisition" type="boolean" default="false">
 					<description>
-						Limit the data acquisition to the number of nearest
-						stations given by &quot;picker.limitStationAcquisitionCount&quot;.
+					Limit the data acquisition to the number of nearest
+					stations given by &quot;picker.limitStationAcquisitionCount&quot;.
 					</description>
 				</parameter>
 				<parameter name="limitStationAcquisitionCount" type="int" default="10">
 					<description>
-						Limit the data acquisition to the given number of
-						the nearest stations. Requires to activate
-						&quot;picker.limitStationAcquisition&quot;.
+					Limit the data acquisition to the given number of
+					the nearest stations. Requires to activate
+					&quot;picker.limitStationAcquisition&quot;.
 					</description>
 				</parameter>
 				<parameter name="loadStrongMotion" type="boolean" default="false">
 					<description>
-						If enabled, acceleration data is loaded for co-located
-						stations where picked on velocity data.
+					If enabled, acceleration data is loaded for co-located
+					stations where picked on velocity data.
 					</description>
 				</parameter>
 				<parameter name="loadAllComponents" type="boolean" default="false">
@@ -612,57 +612,57 @@
 				</parameter>
 				<parameter name="showAllComponents" type="boolean" default="false">
 					<description>
-						If enabled, all three components are shown in the picker
-						zoom trace. The distance is limited to what is configured
-						in &quot;picker.allComponentsMaximumDistance&quot;.
+					If enabled, all three components are shown in the picker
+					zoom trace. The distance is limited to what is configured
+					in &quot;picker.allComponentsMaximumDistance&quot;.
 					</description>
 				</parameter>
 				<parameter name="allComponentsMaximumDistance" type="double" unit="deg" default="10">
 					<description>
-						The distance limit for the &quot;picker.showAllComponents&quot; flag.
+					The distance limit for the &quot;picker.showAllComponents&quot; flag.
 					</description>
 				</parameter>
 				<parameter name="usePerStreamTimeWindows" type="boolean" default="false">
 					<description>
-						If enabled, data is requested around the P pick for each stations.
-						Otherwise origin time is used and the time window for all stations
-						is the same.
+					If enabled, data is requested around the P pick for each stations.
+					Otherwise origin time is used and the time window for all stations
+					is the same.
 					</description>
 				</parameter>
 				<parameter name="removeAutomaticPicksFromStationAfterManualReview" type="boolean" default="false">
 					<description>
-						After picking and pushing the solution back to scolv all automatic arrivals
-						are removed from a station if a manual pick exists.
+					After picking and pushing the solution back to scolv all automatic arrivals
+					are removed from a station if a manual pick exists.
 					</description>
 				</parameter>
 				<parameter name="removeAllAutomaticPicksAfterManualReview" type="boolean" default="false">
 					<description>
-						After picking and pushing the solution back to scolv all automatic arrivals
-						are removed from all stations regardless if a manual pick exists or not.
+					After picking and pushing the solution back to scolv all automatic arrivals
+					are removed from all stations regardless if a manual pick exists or not.
 					</description>
 				</parameter>
 				<parameter name="preOffset" type="int" unit="s" default="60">
 					<description>
-						The data time span added to the left of either origin time or
-						first arrival depending on the usePerStreamTimeWindows flag.
+					The data time span added to the left of either origin time or
+					first arrival depending on the usePerStreamTimeWindows flag.
 					</description>
 				</parameter>
 				<parameter name="postOffset" type="int" unit="s" default="120">
 					<description>
-						The data time span added to the right of the requested time window.
+					The data time span added to the right of the requested time window.
 					</description>
 				</parameter>
 				<parameter name="minimumTimeWindow" type="int" unit="s" default="1800">
 					<description>
-						Minimum data time window length.
+					Minimum data time window length.
 					</description>
 				</parameter>
 				<parameter name="alignmentPosition" type="double" unit="s" default="0.5">
 					<description>
-						Defines the relative position of the alignment when traces are
-						aligned at a phase. This value is bound
-						to interval [0:1] where 0 is the left side and 1 is right
-						side of the trace window.
+					Defines the relative position of the alignment when traces are
+					aligned at a phase. This value is bound
+					to interval [0:1] where 0 is the left side and 1 is right
+					side of the trace window.
 					</description>
 				</parameter>
 				<parameter name="rotation" type="string" default="123" values="123,ZNE,ZRT,LQT,ZH(L2)">
@@ -675,20 +675,20 @@
 					The unit the waveform data is converted to initially.
 					</description>
 				</parameter>
-				<parameter name="repickerStart" type="double" unit="s">
+				<parameter name="repickerStart" type="double" unit="s" default="-30">
 					<description>
-						Start of the re-picker time window relative the cursor position on the trace.
+					Start of the re-picker time window relative the cursor position on the trace.
 					</description>
 				</parameter>
-				<parameter name="repickerEnd" type="double" unit="s">
+				<parameter name="repickerEnd" type="double" unit="s" default="10">
 					<description>
-						End of the re-picker time window relative the cursor position on the trace.
+					End of the re-picker time window relative the cursor position on the trace.
 					</description>
 				</parameter>
 				<parameter name="filters" type="list:string">
 					<description>
-						List of filters available in the picker. Format:
-						"name1;filter-definition1", "name2;filter-definition2"
+					List of filters available in the picker. Format:
+					"name1;filter-definition1", "name2;filter-definition2"
 					</description>
 				</parameter>
 				<parameter name="limitFilterToZoomTrace" type="boolean" default="false">
@@ -702,16 +702,16 @@
 				</parameter>
 				<parameter name="velocityChannelCodes" type="list:string">
 					<description>
-						A list of channel codes to be used when searching for
-						velocity channels. Usually this information is part of the
-						meta data. In case it is not, this list is used.
+					A list of channel codes to be used when searching for
+					velocity channels. Usually this information is part of the
+					meta data. In case it is not, this list is used.
 					</description>
 				</parameter>
 				<parameter name="accelerationChannelCodes" type="list:string">
 					<description>
-						A list of channel codes to be used when searching for
-						acceleration channels. Usually this information is part of the
-						meta data. In case it is not, this list is used.
+					A list of channel codes to be used when searching for
+					acceleration channels. Usually this information is part of the
+					meta data. In case it is not, this list is used.
 					</description>
 				</parameter>
 				<parameter name="showPhases" type="list:string" default="P,Pn,Pg,pP,sP,S,Sg">
@@ -744,7 +744,7 @@
 					will be activated according to the mouse position in the
 					zoom trace (old behaviour). If disabled (default) then only
 					the component of the zoom trace will change but the overall
-					component will stay the same. It must be changed explicitely.
+					component will stay the same. It must be changed explicitly.
 					</description>
 				</parameter>
 				<parameter name="showAmpLevel" type="boolean" default="false">
@@ -759,10 +759,14 @@
 				</parameter>
 				<group name="auxiliary">
 					<description>
-					Define the notion and behaviour of auxiliary channels.
-					They are identified through configurable patterns and if
-					identified as such they will be treated differently in
-					defined situations.
+					When requesting additional waveforms, it is possible to suppress
+					loading auxiliary channels. Auxiliary channels are only loaded
+					if the epicentral distance is within their configured range.
+					Besides, auxiliary channels are directly loaded by holding the
+					add button and selecting the corresponding profile, independent
+					of any distances.
+
+					Use profiles to define auxiliary stations and their distance ranges.
 					</description>
 					<parameter name="channels" type="list:string">
 						<description>
@@ -778,7 +782,7 @@
 						<description>
 						The minimum distance in degrees from origin to load an
 						unassociated auxiliary channel. Loading a
-						channel / station explicitely (F3) will not respect
+						channel / station explicitly (F3) will not respect
 						this setting.
 
 						This is an obsolete and deprecated setting. Please use
@@ -789,7 +793,7 @@
 						<description>
 						The maximum distance in degrees from origin to load an
 						unassociated auxiliary channel. Loading a
-						channel / station explicitely (F3) will not respect
+						channel / station explicitly (F3) will not respect
 						this setting.
 
 						This is an obsolete and deprecated setting. Please use
@@ -802,19 +806,25 @@
 						</description>
 					</parameter>
 					<group name="profiles">
+						<description>
+						Add the name of the profiles to 'picker.auxiliary.profiles'
+						for using them.
+						</description>
 						<struct name="AuxiliaryChannelProfile" link="picker.auxiliary.profiles">
 							<parameter name="channels" type="list:string">
 								<description>
 								A list of wildcard patterns to identify auxiliary
 								channels. A pattern is simply checked against a stream
 								ID, the concatenation of NSLC separated by a period.
+								Note: the orientation code of channels should be either
+								'?' or '*'.
 								</description>
 							</parameter>
 							<parameter name="minimumDistance" type="double" unit="deg" default="0">
 								<description>
 								The minimum distance in degrees from origin to load an
 								unassociated auxiliary channel. Loading a
-								channel / station explicitely (F3) will not respect
+								channel / station explicitly (F3) will not respect
 								this setting.
 								</description>
 							</parameter>
@@ -822,7 +832,7 @@
 								<description>
 								The maximum distance in degrees from origin to load an
 								unassociated auxiliary channel. Loading a
-								channel / station explicitely (F3) will not respect
+								channel / station explicitly (F3) will not respect
 								this setting.
 								</description>
 							</parameter>
@@ -849,9 +859,10 @@
 					</parameter>
 					<group name="groups">
 						<description>
-						Definiton of phase type profiles. The profiles and phase types
+						Definition of phase type profiles. The profiles and phase types
 						can be selected from the Picking menu of the picker window
-						but not with hot keys.
+						but not with hot keys. Add the name of the groups to
+						'picker.phases.groups' for using them.
 						</description>
 						<struct type="Phase type profile" link="picker.phases.groups">
 							<parameter type="list:string">
@@ -911,7 +922,10 @@
 				</group>
 			</group>
 			<group name="amplitudePicker">
-				<description>Parameters controlling the amplitude picker window for computing station magnitudes.</description>
+				<description>
+				Parameters controlling the amplitude picker window
+				for computing station magnitudes.
+				</description>
 				<parameter name="preOffset" type="int" unit="s" default="300">
 					<description>
 						Time span in seconds to be added to the left of the used

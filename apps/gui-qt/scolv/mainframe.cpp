@@ -227,7 +227,7 @@ MainFrame::MainFrame(){
 		QPushButton *btn = _eventSmallSummary->exportButton();
 		btn->setVisible(true);
 		btn->setText("");
-		btn->setIcon(icon("share"));
+		btn->setIcon(icon("publish_event"));
 		btn->setFlat(true);
 		btn->setToolTip("Publish event");
 
@@ -270,6 +270,11 @@ MainFrame::MainFrame(){
 	catch ( ... ) { locatorConfig.computeMissingTakeOffAngles = true; }
 
 	try { locatorConfig.defaultEventRadius = SCApp->configGetDouble("olv.map.event.defaultRadius"); }
+	catch ( ... ) {}
+
+	try { locatorConfig.fmGridSpacing = SCApp->configGetDouble("olv.fmInversion.gridSpacing"); }
+	catch ( ... ) {}
+	try { locatorConfig.fmMaxBadFraction = SCApp->configGetDouble("olv.fmInversion.maxBadFraction"); }
 	catch ( ... ) {}
 
 	try { pickerConfig.showCrossHair = SCApp->configGetBool("picker.showCrossHairCursor"); }
@@ -1385,11 +1390,14 @@ void MainFrame::toggledFullScreen(bool isFullScreen) {
 
 
 void MainFrame::closeEvent(QCloseEvent *e) {
+	MainWindow::closeEvent(e);
+	if ( !e->isAccepted() ) {
+		return;
+	}
+
 	_exportProcess.terminate();
 	_originLocator->close();
 	_magnitudes->close();
-
-	MainWindow::closeEvent(e);
 }
 
 

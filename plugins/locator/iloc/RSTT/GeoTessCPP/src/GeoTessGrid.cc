@@ -642,7 +642,7 @@ string GeoTessGrid::toString()
 	{
 		for (int level = 0; level < getNLevels(tess); ++level)
 		{
-			sprintf(buf, " %6d %8d %8d %8d %8d %8d", tess, level,
+			snprintf(buf, sizeof(buf), " %6d %8d %8d %8d %8d %8d", tess, level,
 					tessellations[tess][0] + level,
 					getNTriangles(tess, level),
 					getTriangle(tess, level, 0),

@@ -3,27 +3,27 @@
 
    <div class="four column layout">
 
-.. figure:: ../../../../doc/base/media/apps/scolv-location.png
+.. figure:: media/scolv-location.png
    :alt: scolv
 
-   scolv: :ref:`Location tab <scolv-sec-location-tab>`
+   :ref:`Location tab <scolv-sec-location-tab>`
    with event and phase information
 
-.. figure:: ../../../../doc/base/media/apps/scolv-picker.png
+.. figure:: media/scolv-picker.png
    :alt: scolv picker
 
-   scolv: :ref:`Phase picker <scolv-sec-waveform-review>`
+   :ref:`Phase picker <scolv-sec-waveform-review>`
    with waveforms and phase information
 
-.. figure:: ../../../../doc/base/media/apps/scolv-event.png
-   :alt: scolv picker
+.. figure:: media/scolv-event.png
+   :alt: scolv event tab with origins
 
-   scolv: :ref:`Event tab <fig-scolv-event>` with all origins
+   :ref:`Event tab <fig-scolv-event>` with all origins
 
-.. figure:: ../../../../doc/base/media/apps/scolv-magnitude-picker.png
-   :alt: scolv picker
+.. figure:: media/scolv-magnitude-picker.png
+   :alt: scolv magnitude picker
 
-   scolv: :ref:`Amplitude waveform review <scolv-sec-amplitude-review>`
+   :ref:`Amplitude waveform review <scolv-sec-amplitude-review>`
    with station magnitudes
 
 .. raw:: html
@@ -110,7 +110,7 @@ hypocenter, time, station distribution, helps to find outlier.
 
 .. _fig-scolv-location:
 
-.. figure:: media/scolv/tab_location.png
+.. figure:: media/tab_location.png
    :width: 16cm
    :align: center
 
@@ -168,8 +168,8 @@ by clicking on a point or by selecting a range using mouse drag. Deselecting is
 available by mouse drag when pressing :kbd:`Ctrl`.
 
 
-.. figure:: media/scolv/tab_location_plots.png
-   :width: 18cm
+.. figure:: media/tab_location_plots.png
+   :width: 16cm
    :align: center
 
    Additional arrival plots in Location tab of the main window
@@ -197,7 +197,7 @@ click the link "not active" right below the plot tabs. A setup window pops up
 where the filter can be defined. Currently only a filter by azimuth around
 epicenter can be applied.
 
-.. figure:: media/scolv/plot-filter-setup.png
+.. figure:: media/plot-filter-setup.png
    :width: 8cm
    :align: center
 
@@ -215,36 +215,40 @@ for configuration (:file:`scolv.cfg`). The default is true.
 Arrival table
 -------------
 
-The arrival table shows all arrivals of the current origin. The columns are
-sortable by clicking on the corresponding header item. Additional data columns
-can be shown or active columns can be hidden, either initially or interactively.
-Available column identifiers are:
+The arrival table shows all arrivals of the current origin. The precision of the
+shown values, units and mode of distance measurements (horizontal distance/3D)
+and others can be adjusted by :confval:`scheme.*` parameters in global module
+configuration. The columns are sortable by clicking on the corresponding header
+item. Additional data columns can be shown or active columns can be hidden,
+either initially or interactively. Available column identifiers are:
 
 * **Used**
+* ID
 * **Status**
 * **Phase**
 * Weight
 * Method
 * Polarity
+* Onset
 * Takeoff
 * **Net**
 * **Sta**
 * **Loc/Cha**
-* **Res**
+* **Timeres**
 * **Dis**
 * **Az**
 * **Time**
-* **Timeres**
+* **+/-**
 * Slo
 * Slores
 * Baz
 * Bazres
-* **+/-**
 * Created
 * Latency
 
 The columns printed bold are shown initially. The initial column
-list can be changed in :file:`scolv.cfg` by adjusting :confval:`olv.arrivalTable.visibleColumns`:
+list can be changed in :file:`scolv.cfg` by adjusting
+:confval:`olv.arrivalTable.visibleColumns`:
 
 .. code-block:: properties
 
@@ -254,7 +258,7 @@ list can be changed in :file:`scolv.cfg` by adjusting :confval:`olv.arrivalTable
 The user can also interactively select what columns are be visible or hidden
 from a context menu which pops up after a right click on the table header.
 
-.. figure:: media/scolv/arrivals-header-context.png
+.. figure:: media/arrivals-header-context.png
    :width: 6cm
    :align: center
 
@@ -285,7 +289,7 @@ whether or not to use a particular feature. So the arrival does not only refer
 to a pick but holds flags indicating which features of that pick should be used
 for locating.
 
-.. figure:: media/scolv/arrival-flags.png
+.. figure:: media/arrival-flags.png
    :align: center
 
 Single or multiple rows can be selected in the table. The selection of multiple
@@ -303,7 +307,7 @@ The context menu allows to:
 * Delete selected arrivals,
 * Rename phases of selected arrivals.
 
-.. figure:: media/scolv/arrivals-context.png
+.. figure:: media/arrivals-context.png
    :align: center
 
 If arrivals are deleted, they are removed physically from this solution in
@@ -332,7 +336,7 @@ The zoom trace shows a sub area of the active trace in the list.
 
 .. _fig-scolv-picker:
 
-.. figure:: media/scolv/picker.png
+.. figure:: media/picker.png
    :width: 16cm
    :align: center
 
@@ -345,7 +349,7 @@ which have associated phase picks (arrivals). More waveforms can be fetched
 interactively:
 
 #. Provide a maximum distance,
-#. Click on the `Plus` icon to load the data.
+#. Click on the `+` icon to load the data.
 
 Toggle viewing data without arrivals by clicking the `crossed-eye` button.
 
@@ -358,10 +362,80 @@ state:
 * Gray: meta data are missing.
 
 
-.. figure:: media/scolv/picker-acqui.png
+.. figure:: media/picker-acqui.png
    :width: 16cm
    :align: center
 
+
+Auxiliary channels
+~~~~~~~~~~~~~~~~~~
+
+Configure auxiliary channels to control the loading behaviour of certain
+channels when requesting additional waveform data.
+By simply clicking on the `+` button, the auxiliary channels are only loaded if
+the station-origin distance is within their configured distance range.
+Configuring auxiliary channels is useful if spatially clustered stations,
+like arrays, shall initially not appear in the picker when loading waveforms
+from additional stations.
+
+Holding the `+` button a little longer and selecting a profile will always load
+the auxiliary channels, independent of configured and requested distance ranges.
+After loading additional waveforms, it is possible to toggle between showing and
+hiding auxiliary channels. For that, hold the `crossed-eye` button and select
+the profile. Only the channels of the selected profile will be hidden.
+
+Auxiliary channels are defined by profiles as :confval:`picker.auxiliary.$name.*`
+which need to be created first. To activate the profile, add the name
+of the profile to :confval:`picker.auxiliary.profiles`. Every profile needs to
+have:
+
+* Channel name pattern (:confval:`picker.auxiliary.profiles.$name.channels`),
+* Minimum and maximum distance to origin
+  (:confval:`picker.auxiliary.profiles.$name.minimumDistance`,
+  :confval:`picker.auxiliary.profiles.$name.maximumDistance`).
+
+
+.. raw:: html
+
+   <div class="two column layout">
+
+.. _fig-scolv-auxiliary-channels:
+
+.. figure:: media/auxiliary-channels-add.png
+   :width: 8cm
+   :align: center
+
+   List of configured auxiliary channels to add after holding the `+` button.
+   Selecting a profile will add only the configured channels of the profile.
+
+
+.. figure:: media/auxiliary-channels-hide.png
+   :width: 8cm
+   :align: center
+
+   List of configured auxiliary channels to hide after holding the `crossed-eye`
+   button. Selecting a profile will hide only the configured channels of the
+   profile.
+
+
+.. raw:: html
+
+   </div>
+
+
+.. note:: The orientation code of the channel in
+          :confval:`picker.auxiliary.profiles.$name.channels` is not considered.
+          Set it to '?' or '*', e.g., AB.CDE..HH*.
+
+
+.. warning:: The parameters :confval:`picker.auxiliary.channels`,
+             :confval:`picker.auxiliary.minimumDistance` and
+             :confval:`picker.auxiliary.maximumDistance` are deprecated.
+             Use profiles instead.
+
+
+Clip components
+^^^^^^^^^^^^^^^
 
 If a trace displays all three components and amplitudes are scaled up, they are
 not clipped to their window area. The clipping behavior can be toggled by
@@ -371,14 +445,14 @@ either pressing :kbd:`C` or in the menu
 The difference is shown in the following two images:
 
 
-.. figure:: media/scolv/clobber-off.png
+.. figure:: media/clobber-off.png
    :width: 16cm
    :align: center
 
    Trace clipping enabled
 
 
-.. figure:: media/scolv/clobber-on.png
+.. figure:: media/clobber-on.png
    :width: 16cm
    :align: center
 
@@ -417,9 +491,23 @@ toolbar. Available options are: 123, ZNE, ZRT, LQT and ZH(L2).
 Selecting a rotation other than 123 implies that all missing components are
 requested.
 
-.. figure:: media/scolv/rotation-options.png
-   :width: 12cm
+
+.. figure:: media/rotation-options.png
+   :width: 16cm
    :align: center
+
+
+.. csv-table::
+   :widths: 40 60
+   :align: left
+   :delim: ;
+   :header: Rotation, Explanation
+
+   123; Raw
+   ZNE; Vertical, North, East
+   ZRT; Vertical, Radial, Transversal
+   LQT; Longitudinal, Quasi-Vertical, Transversal
+   ZH(L2); Vertical, vector-sum of both Horizontals (L2-Norm)
 
 
 Phase picks
@@ -477,7 +565,7 @@ An example configuration looks like this (:file:`scolv.cfg`):
    # Define all phases of group "teleseismic"
    picker.phases.groups.teleseismic = pP, sP, sS, PKP, PKP
 
-.. figure:: media/scolv/phases-menu.png
+.. figure:: media/phases-menu.png
    :align: center
 
    Pick phase selection menu
@@ -510,30 +598,39 @@ Pick uncertainties
 
 If the mouse hovers a pick, a dashed rectangle is drawn around this pick. Then
 the pick is active and the right mouse button can be pressed to open the context
-menu where the polarity and uncertainty can be defined. The following screen shot
-shows the available uncertainties.
+menu where among other things the uncertainty can be defined.
+Pick uncertainties can be defined freely whereas choosing among a predefined
+set of uncertainties is a lot faster.
+The way pick uncertainties are used depends on the applied locator routine and
+its configuration.
 
-.. figure:: media/scolv/pick-context2.png
+If an uncertainty is selected, the active pick is copied into a manual pick
+and the uncertainty is displayed as semi transparent bar to the left and
+to the right of the pick. The width of the bar corresponds to the uncertainty
+in seconds. To edit uncertainties of the active pick, shift the black triangles
+at the time axis.
+
+
+.. figure:: media/pick-context-uncertainty.png
    :align: center
 
-   Pick context menu
 
-Additionally, pick uncertainties can be defined freely whereas choosing
-among a predefined set of uncertainties is a lot faster. The way, pick uncertainties
-are used depends on the applied locator routine and its configuration.
-To set the uncertainty of a pick more easily a list of predefined uncertainties can be
-defined using :confval:`picker.uncertainties`, e.g.:
+To set the uncertainty of a pick more easily a list of predefined uncertainties
+can be defined using :confval:`picker.uncertainties`, e.g.:
 
 .. code-block:: properties
 
    picker.uncertainties = 0.05, 0.1, 0.2, "(0.1,0.2)", "(0.05,0.02)"
 
-where single values define symmetric and pairs of values define asymmetric uncertainties.
+where single values define symmetric and pairs of values define asymmetric
+uncertainties.
 The pre-defined uncertainties can be selected during picking using
 :ref:`hot keys <sec-scolv-hotkeys>`, e.g.
-:kbd:`1` or :kbd:`2` for the 1st or the 2nd value defined in :confval:`picker.uncertainties`.
+:kbd:`shift+1` or :kbd:`shift+2` for the 1st or the 2nd value defined in
+:confval:`picker.uncertainties`.
 Later, the uncertainties can be adjusted manually.
-As for phase types, uncertainty profiles can be additionally configured (:file:`scolv.cfg`):
+As for phase types, uncertainty profiles can be additionally configured
+(:file:`scolv.cfg`):
 
 .. code-block:: properties
 
@@ -554,15 +651,6 @@ As for phase types, uncertainty profiles can be additionally configured (:file:`
    picker.uncertainties.preferred = local, teleseismic
 
 
-If an uncertainty is selected, the active pick is copied into a manual pick
-and the uncertainty is displayed as semi transparent bar to the left and
-to the right of the pick. The width of the bar corresponds to the uncertainty
-in seconds.
-
-.. figure:: media/scolv/pick-uncertainty.png
-   :align: center
-
-
 .. _scolv-sec-polarities:
 
 Phase polarities
@@ -572,15 +660,30 @@ Furthermore the phase pick polarity can be defined. When this is the polarity
 of the first arrival P phase it can be used to manually set the focal mechanisms
 of the origin in the :ref:`FirstMotion <scolv-sec-diagrams>` diagram.
 
-.. figure:: media/scolv/pick-context.png
+Right-clicking on the active pick opens the context menu where among other
+things the polarity can be defined. Here you chose: either *positive*,
+*negative*, *undecidable* or *unset*. You may speed up your work by using
+:ref:`hot keys <sec-scolv-hotkeys>`.
+If set, the polarity is displayed as an arrow (up or down).
+*Undecidable* is displayed as a cross (X).
+
+.. figure:: media/pick-context-polarity.png
    :align: center
 
-Right-click on the pick to make a choice: Either *positive*, *negative*,
-*undecidable* or *unset* is available. You may speed up your work by using
-:ref:`hot keys <sec-scolv-hotkeys>`. If set, the polarity is displayed as an
-arrow. *Undecidable* is displayed as a cross (X).
 
-.. figure:: media/scolv/pick-polarity.png
+.. _scolv-sec-onset:
+
+Phase onset
+~~~~~~~~~~~
+
+Similar to the uncertainties and polarities, phase pick onsets can be defined
+via the pick context menu or :ref:`hot keys <sec-scolv-hotkeys>`.
+Right clicking on an active pick opens the context menu where among other
+things the onset can be defined. Choose between *emergent*, *impulsive*,
+*questionable* or *unset*. If set, the onset is displayed either as
+*/* (emergent), *|* (impulsive) or *?* (questionable).
+
+.. figure:: media/pick-context-onset.png
    :align: center
 
 
@@ -596,7 +699,7 @@ be directly adjusted in the :ref:`arrival table <scolv-sec-location-arrival-tabl
 Prior to relocating choose the locator, the locator profile and additional parameters
 to the right or from the the tool box.
 
-.. figure:: media/scolv/scolv-relocating.png
+.. figure:: media/scolv-relocating.png
    :width: 16cm
    :align: center
 
@@ -621,7 +724,7 @@ parameters displayed in the Location tab.
 Undoing and redoing actions is available by buttons and
 :ref:`hot keys <sec-scolv-hotkeys>`.
 
-.. figure:: media/scolv/tab_previous-next.png
+.. figure:: media/tab_previous-next.png
    :align: center
 
 .. hint::
@@ -640,8 +743,9 @@ and new magnitudes can be calculated by using the
 committing the new origin, is the possibility to check the resulting magnitudes
 before they are computed manually by :ref:`scmag`.
 
-:ref:`An amplitudes status window <fig-scolv-location-amp-status>` will pop up showing the progress
-information of measurements. The amplitudes are either measured or fetched from
+:ref:`An amplitudes status window <fig-scolv-location-amp-status>` will pop up
+showing the progress information of measurements.
+The amplitudes are either measured or fetched from
 database if the pick is unchanged and the amplitude is already in the system.
 For new manual picks, waveforms are requested to measured the amplitudes. The
 popup window contains information about the progress, limitations and possible
@@ -649,10 +753,35 @@ errors.
 
 .. _fig-scolv-location-amp-status:
 
-.. figure:: media/scolv/tab_location_amp_status.png
+.. figure:: media/tab_location_amp_status.png
+   :width: 12cm
    :align: center
 
    Measure amplitudes status window.
+
+Feedback shown in the *Progress* column (list may be incomplete):
+
+.. csv-table::
+   :widths: 40 60
+   :align: left
+   :delim: ;
+   :header: Progress feedback, Explanation
+
+   **Success** (black);
+   read from database;       Amplitudes were read from database where they already exist
+   percentage bar;           The progress of data loading
+   **Information** (blue);
+   distance out of range (x); Amplitude is not defined for station-origin distance
+   depth out of range (x);   Amplitude is not defined for origin depth
+   period out of range (x);  Period of amplitude is not in defined range
+   low SNR (x);              Measured SNR is too low
+   clipped data (x);         Amplitude threshold of the sensor is exceeded
+   error (x);                Amplitude computation failed
+   **Error** (red);
+   no data;                  Waveform data could not be fetched
+   no vertical component found; Meta data of station/stream lacks vertical component
+   no first/second horizontal component found; Meta data of station/stream lacks a horizontal component
+   incomplete data (x% ok);  Waveform data for requested time range are loaded incompletely
 
 After closing the amplitude status window magnitudes are computed and
 possible limitations are shown, if applicable, in the magnitudes status window.
@@ -660,7 +789,7 @@ Confirm this window in order to proceed.
 
 .. _fig-scolv-location-mag-status:
 
-.. figure:: media/scolv/tab_location_mag_status.png
+.. figure:: media/tab_location_mag_status.png
    :align: center
 
    Compute magnitudes status window.
@@ -696,7 +825,7 @@ To optimize the workflow
 Instead of selecting events from the Events tab, the previous or the next event
 can be conveniently selected from the edit buttons above the Location tab.
 
-.. figure:: media/scolv/tab_previous-next.png
+.. figure:: media/tab_previous-next.png
    :align: center
 
 
@@ -709,7 +838,7 @@ Instead of optionally setting parameters in the Event tab an additional commit
 mode allows to directly set certain parameters such as
 
 * Event type
-* Ovent certainty
+* Event certainty
 * Origin
 * Event comment
 
@@ -717,13 +846,13 @@ and to choose options along with the location and its magnitudes. After pressing
 and holding the Commit button down for a little while, a menu pops up which
 allows to select *With additional options*.
 
-.. figure:: media/scolv/commit-options.png
+.. figure:: media/commit-options.png
    :align: center
 
 Selecting this entry
 brings up another window where the different options can be set.
 
-.. figure:: media/scolv/commit-options2.png
+.. figure:: media/commit-options-window.png
    :align: center
 
 It allows to fix the origin to be committed as preferred origin and to set the
@@ -762,7 +891,7 @@ With custom commit buttons origin and event parameters can be set, e.g.:
 
 .. _fig-scolv-custom-commit:
 
-.. figure:: media/scolv/commit-custom.png
+.. figure:: media/commit-custom.png
    :width: 16cm
    :align: center
 
@@ -779,7 +908,7 @@ origin. They can be recomputed after creating a new origin, e.g. by relocating.
 
 .. _fig-scolv-magnitudes:
 
-.. figure:: media/scolv/tab_magnitudes.png
+.. figure:: media/tab_magnitudes.png
    :width: 16cm
    :align: center
 
@@ -873,7 +1002,7 @@ The magnitude review page also allows the review of waveforms.
 The button *Waveforms* brings up the amplitude waveform review page.
 The waveform review magnitude type is the same as the currently active tab.
 
-.. figure:: media/scolv/magnitudes-waveforms.png
+.. figure:: media/magnitudes-waveforms.png
    :width: 16cm
    :align: center
 
@@ -888,7 +1017,7 @@ This display is similar to the Picker.
 The toolbar contains two lines of settings. The first line is similar to the
 Picker, the second line is amplitude picker specific.
 
-.. figure:: media/scolv/magnitudes-toolbar.png
+.. figure:: media/magnitudes-toolbar.png
    :width: 16cm
    :align: center
 
@@ -984,7 +1113,7 @@ its state is set to manual and the marker is updated to reflect the new position
 of the amplitude. If the mouse hovers an amplitude marker, a tooltip pops up
 after a certain amount of time and shows information about the amplitude.
 
-.. figure:: media/scolv/amplitude-tooltip.png
+.. figure:: media/amplitude-tooltip.png
    :width: 8cm
    :align: center
 
@@ -1042,18 +1171,21 @@ a window that has to be opened by pulling the left side frame to the right.
 
 .. _fig-scolv-event:
 
-.. figure:: media/scolv/tab_event.png
+.. figure:: media/tab_event.png
    :width: 16cm
    :align: center
 
    Event tab of scolv.
 
+
 * **Origin list:** List of all associated origins
+
   * **B1** Selector for the event type
   * **B2** Button to fix the selected origin as preferred
   * **B3** Button to let :ref:`scevent` select the preferred origin
 
 * **Magnitude list** List of magnitudes of the actual origin
+
   * **B4** Button to fix the selected magnitude as preferred
   * **B5** Button to let :ref:`scevent` select the preferred magnitude
 
@@ -1139,7 +1271,7 @@ file using the File menu in the main window.
 
 .. _fig-scolv-events:
 
-.. figure:: media/scolv/tab_events.png
+.. figure:: media/tab_events.png
    :width: 16cm
    :align: center
 
@@ -1166,29 +1298,32 @@ Events table
 ------------
 
 As with the arrival table the shown columns of the list are also configurable.
-The available identifiers are:
+The available identifiers are given in the table below.
 
-* **OT(GMT)** : origin time
-* **Type** : event type
-* M : magnitude
-* **MType** : magnitude type
-* **Phases** : number of used phases
-* **RMS** : root-mean square travel-time residual
-* AzGap: largest azimuthal gap between two neighboring stations of an origin
-* **Lat** : latitude
-* **Lon** : longitude
-* **Depth** : depth
-* DType : depth type
-* **Stat** : a combination of the :ref:`color-coded mode <scolv-origin-mode>` and
-  the :ref:`status<scolv-origin-status>` of the preferred origin as described by
-  a letter. A trailing "+" indicates that origins were contributed to the event
-  by multiple agencies, e.g. "C+".
-* FM : focal mechanism
-* Origins: number of origins per event
-* **Agency** : agency ID
-* Author : author
-* **Region** : region name
-* **ID** : ID of the show element, e.g. event or origin
+.. csv-table::
+   :widths: 20 80
+   :align: left
+   :delim: ;
+   :header: Column name, Explanation
+
+   **OT(GMT)** ; origin time
+   **Type** ; event type
+   M ; magnitude
+   **MType** ; magnitude type
+   **Phases** ; number of used phases
+   **RMS** ; root-mean square travel-time residual
+   AzGap ; largest azimuthal gap between two neighboring stations of an origin
+   **Lat** ; latitude
+   **Lon** ; longitude
+   **Depth** ; depth
+   DType ; depth type
+   **Stat** ; A combination of the :ref:`color-coded mode <scolv-origin-mode>` and the :ref:`status<scolv-origin-status>` of the preferred origin as described by a letter. A trailing "+" indicates that origins were contributed to the event by multiple agencies, e.g. "C+".
+   FM ; focal mechanism
+   Origins ; number of origins per event
+   **Agency** ; agency ID
+   Author ; author
+   **Region** ; region name
+   **ID** ; ID of the show element, e.g. event or origin
 
 The bold identifiers are visible initially by default.
 To show or hide columns interactively click with the right mouse button on the
@@ -1400,7 +1535,6 @@ value, configure eventlist parameters in scolv or global. Example
    eventlist.customColumn.colors = "A:00FF00","B:rgb(64,192,0)",\
                                    "C:rgb(192,64,0)","D:FF0000"
 
-
 The last three examples are used to show the *SED.quality* comment value which
 is set by the :ref:`NonLinLoc locator plugin <global_nonlinloc>`.
 
@@ -1425,7 +1559,8 @@ External scripts
 
 User-defined scripts may generated and executed
 
-* By :ref:`custom buttons <sec-scolv-buttons>`
+* By :ref:`custom buttons <sec-scolv-buttons>` and
+  :ref:`custom menu actions <sec-scolv-command-menu-action>`
 * Automatically to show :ref:`custom information <sec-scolv-information>` in the
   Location, Event and the Events tabs.
   The information may include parameters derived from origins.
@@ -1447,10 +1582,52 @@ Configuration (:file:`scolv.cfg`):
 * Up to 2 buttons in Location tab. Configure:
 
   * button1: :confval:`button0`, :confval:`scripts.script0`,
-  * button2: :confval:`button1`,  :confval:`scripts.script1`.
+  * button2: :confval:`button1`, :confval:`scripts.script1`.
 
   Read :confval:`scripts.script0` and :confval:`scripts.script1` for the
   description of the parameters passed to the scripts.
+
+
+.. _sec-scolv-command-menu-action:
+
+Command menu action
+^^^^^^^^^^^^^^^^^^^
+
+In addition to the custom buttons, scolv allows to add more executable scripts
+which can be triggered from the Location tab via
+:confval:`olv.commandMenuAction`. As soon as one
+:confval:`olv.commandMenuAction` profile is configured and enabled, an
+additional button, labeled **Run...**, appears next to the **Relocate** button.
+All configured actions are listed in a drop down menu after clicking the
+**Run...** button. Clicking on one item will run the configured action.
+Similar to the custom buttons each command is launched with the current
+origin ID as first argument and the event ID as second argument if available.
+
+.. raw:: html
+
+   <div class="two column layout">
+
+.. _fig-scolv-command-menu-action:
+
+.. figure:: media/command-menu-action-run.png
+   :width: 8cm
+   :align: center
+
+   The **Run...** button appears when configuring any command action entry in
+   :confval:`olv.commandMenuAction`.
+
+.. figure:: media/command-menu-action-scripts.png
+   :width: 8cm
+   :align: center
+
+   The configured entries are listed as a drop-down menu.
+
+.. raw:: html
+
+   </div>
+
+Starting a command action automatically makes the
+:ref:`process manager <sec-scolv-process-manager>` available.
 
 
 .. _sec-scolv-information:
@@ -1611,35 +1788,137 @@ processed. A progress indicator is plotted in the middle of the event list while
 the background processes are running.
 
 
+.. _sec-scolv-process-manager:
+
+Process manager
+===============
+
+The process manager enhances the management of external scripts. It features
+an individual pop-up window that lists the currently running or finished
+processes along with their states and additional information. Running processes
+can be
+
+* Stopped
+* Continued if stopped before
+* Terminated.
+
+The manager also provides showing the output of a process (*stdout* and
+*stderr*) and the specific process log.
+
+Ideally, scripts to be fully monitored by the process manager should:
+
+* Be executable by |scname| (mandatory)
+* Return an exit code: 0 for success, otherwise error.
+* Report to standard out or/and standard error.
+
+After starting a process, e.g., with a
+:ref:`custom-command action <sec-scolv-command-menu-action>`,
+a state icon appears in the right bottom corner next to the connection icon
+indicating the state of previous given by their return codes.
+If all processes have finished with 0 or no return code, the state icon appears
+in black. When any process failed to start or finished with a non-zero exit
+code, the state icon changes to a yellow exclamation mark.
+This state icon will persist, even if new custom menu actions have been
+successfully finished. For resetting the state icon open the process manager
+window and remove one entry or simply clear the whole process list.
+
+
+.. figure:: media/process-manager-icon.png
+   :width: 10cm
+   :align: center
+
+   Process manager icon in the middle indicating successful (left) or erroneous
+   (right) process execution.
+
+
+When the icon is available, the process manager can be opened by clicking on
+that icon or by pressing :kbd:`Ctrl + Alt + P`.
+The pop-up window lists all available processes with their corresponding state,
+configured name, start time, run time and exit code. Further information from
+the *stdout*, *stderr* and the internal process log can be viewed.
+
+.. figure:: media/process-manager.png
+   :width: 16cm
+   :align: center
+
+   The process manager shows the process status and log of externally started scripts.
+
+
 .. _scolv-settings:
 
 Settings
 ========
 
-All settings of scolv can be adjusted in its :ref:`configuration file <scolv_configuration>`.
-However, some settings can be changed on-the-fly. The connection to the messaging
-system and the database can be adjusted in the *Setup connection* dialog access
-by pressing :kbd:`F2`. A window for adjusting scolv settings is
-available which can be opened by pressing :kbd:`F3`.
+The :ref:`module configuration <scolv_configuration>` can be adjusted
+before executing scolv. However, the connection to the messaging and the
+database, the :term:`recordstream` interface and other parameter important for
+operators can be changed during runtime. For changing the messaging/database
+connection and any other parameter open the *Configure connection* and the
+*Configure OriginLocatorView* menu, respectively, in the *Settings* menu which
+exists in scolv and any other |scname| GUI.
+
+.. figure:: media/scolv-settings.png
+   :width: 10cm
+   :align: center
+
+
+Messaging and database
+----------------------
+
+The connection to the messaging system including the message groups scolv the
+GUI is subscribed to and the database can be adjusted in the
+*Configure connection* item (press :kbd:`F2`).
+
+.. _fig-scolv-settings-connection:
+
+.. figure:: media/scolv-connection.png
+   :width: 10cm
+   :align: center
+
+   Settings for connection to messaging and database.
+
+Observing the connection state by the connection icon in the lower right corner
+of the main window is important for ensuring that all committed parameters can
+actually be sent to the messaging. When the connection icon changes to read
+(Figure below), the connection is interrupted. Press
+the connection icon or select the *Configure connection* item to open
+the same dialog for selecting the appropriate connection to the messaging.
+
+.. _fig-scolv-connection-icon:
+
+.. figure:: media/connection-icon.png
+   :width: 10cm
+   :align: center
+
+   Connection icon on the right side indicating either an active (left) or an
+   inactive (right) connection messaging system.
+
+
+Operator interface
+------------------
+
+Parameters relevant for data processing can be adjusted through the
+*Configure OriginLocatorView* (press :kbd:`F3`). All parameters correspond to
+:ref:`module configuration parameters <scolv_configuration>`.
 
 .. warning::
 
-   When pressing the Save button in the scolv settings menu, the parameters will be written
-   to :file:`$HOME/.seiscomp/scolv.cfg` (use mode configuration) where they take
-   priority over configurations in :file:`$SEISCOMP_ROOT/etc/scolv.cfg` (system mode configuration).
+   The dialog allows saving the parameter by pressing the *Save* button. In this
+   case all parameters will be written to :file:`$HOME/.seiscomp/scolv.cfg`
+   (configuration in user mode) where they take priority over configurations in
+   :file:`$SEISCOMP_ROOT/etc/scolv.cfg` (configuration in system mode).
 
 
 Global
-------
+^^^^^^
 
 This section contains settings for all the main tabs and *all* waveform windows.
 
-.. figure:: media/scolv/settings-global.png
+.. figure:: media/settings-global.png
    :width: 12cm
    :align: center
 
-   Global settings
-
+   Global settings and RecordStream (data source)
 
 *Reduction velocity*
  Sets the reduction velocity used for plot *MoveOut*.
@@ -1668,16 +1947,17 @@ This section contains settings for all the main tabs and *all* waveform windows.
  shown. Once data arrives the trace becomes visible.
 
 
-Picker
-------
+Phase picker
+^^^^^^^^^^^^
 
-This section contains settings for the picker window.
+Parameters for phase picking can be adjusted in the picker sections.
 
-.. figure:: media/scolv/settings-picker.png
-   :width: 12cm
+.. figure:: media/settings-picker.png
+   :width: 18cm
    :align: center
 
-   Waveform picker settings
+   Phase picker settings (left) and waveform filtering (right). The default
+   filter is marked by "@".
 
 *Show cross hair cursor*
  Enables the cross hair cursor which shows the currently selected uncertainty
@@ -1694,16 +1974,16 @@ This section contains settings for the picker window.
  If checked all automatic picks are removed once the manual review is confirmed.
 
 
-Magnitude review
-----------------
+Amplitude measurements
+^^^^^^^^^^^^^^^^^^^^^^
 
-This section contains settings for the magnitude waveform review window.
+This section contains settings for the waveform amplitude review window.
 
-.. figure:: media/scolv/settings-amplitude.png
-   :width: 12cm
+.. figure:: media/settings-amplitude.png
+   :width: 18cm
    :align: center
 
-   Amplitude/magnitude review settings
+   Amplitude review settings (left) and waveform filters (right).
 
 *Waveform time window pre offset*
  Sets an offset before the used amplitude time window that is used when
@@ -1717,35 +1997,44 @@ This section contains settings for the magnitude waveform review window.
  shifted.
 
 
-Units and precision
--------------------
+Distances and precision
+-----------------------
 
-Local network users prefer the distance unit in kilometers while others prefer degrees.
-scolv (as any other GUI) can be configured to show either the one or the other.
+Local network users may prefer to show values at higher precision or distances
+in kilometers while others prefer degrees.
+scolv (as any other GUI) can be configured in this respect. Configure your
+global module configuration accordingly.
+
+.. note::
+
+   Configuring units and precisions only affects the way the values are
+   presented in GUIs, not the values themselves. These and other lock-and-feel
+   parameters can be adjusted in *scheme* section of the
+   :ref:`global configuration <global>`.
+
+**Distance measures:**
 
 .. code-block:: properties
 
    # If true, show distances in km. Use degree otherwise.
    scheme.unit.distanceInKM = true
+   # Show hypocentral distances instead of epicentral
+   scheme.distanceHypocentral = true
 
-Furthermore the precision of various values can be configured:
+**Precisions of values:**
 
 .. code-block:: properties
 
    # Precision of depth values.
-   scheme.precision.depth = 0
+   scheme.precision.depth = 1
+   # Precision of distance values.
+   scheme.precision.distance = 1
    # Precision of latitude/longitude values.
    scheme.precision.location = 2
-   # Precision of magnitude values.
-   scheme.precision.magnitude = 2
+   # Precision of origin times (fractions of seconds).
+   scheme.precision.originTime = 3
    # Precision of pick times (fractions of seconds).
-   scheme.precision.pickTime = 1
-
-.. note::
-
-   Configuring units and precision only affects the way the values are presented,
-   not the values themselves. These and other lock-and-feel parameters can be
-   adjusted in *scheme* section of the :ref:`global configuration <global>`.
+   scheme.precision.pickTime = 3
 
 
 .. _sec-scolv-hotkeys:
@@ -1797,6 +2086,10 @@ actions in scolv. The hotkeys are provided for:
 | Ctrl+PgUp              | Load previous event from the event list                     |
 +------------------------+-------------------------------------------------------------+
 | Ctrl+PgDown            | Load next event from the event list                         |
++------------------------+-------------------------------------------------------------+
+| Ctrl+Alt+P             | Open process manager window                                 |
++------------------------+-------------------------------------------------------------+
+| Ctrl+Alt+L             | Open application log window                                 |
 +------------------------+-------------------------------------------------------------+
 | Mouse wheel            | Zoom map in/out                                             |
 +------------------------+-------------------------------------------------------------+

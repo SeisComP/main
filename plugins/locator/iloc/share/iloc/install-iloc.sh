@@ -3,7 +3,7 @@
 # The name of the following file may change. Find the correct one in source:
 # https://github.com/IstvanBondar/iLoc
 # The download source corresponds to the iloc documentation
-URL="https://github.com/IstvanBondar/iLoc/raw/main/iLocAuxDir4.2.tgz"
+URL="https://github.com/IstvanBondar/SeisComp-iLoc-plugin/archive/refs/tags/sciLoc4.3.tar.gz"
 
 error() {
 	echo $1
@@ -12,39 +12,39 @@ error() {
 
 echo "Installing iLoc dependencies"
 
-echo -n "User name for owning the SeisComP installation (sysop): "
-read user
+echo -n "User name for owning the SeisComP installation [${USER}]: "
+read userName
 
-if  [ -z "$user" ]; then
-	user=sysop
+if [ -z "$userName" ]; then
+	userName=$USER
 fi
 
-seiscompTemp=/home/${user}/seiscomp
+seiscompTemp=/home/${userName}/seiscomp
 
-echo -n "SeisComP installation directory (${seiscompTemp}): "
+echo -n "SeisComP installation directory [${seiscompTemp}]: "
 read seiscomp
 
-if  [ -z "$seiscomp" ]; then
+if [ -z "$seiscomp" ]; then
 	seiscomp=${seiscompTemp}
 fi
 
 if [ ! -d "${seiscomp}" ]; then
-	error "Directory "${seiscomp}" does not exists"
+	error "Directory '${seiscomp}' does not exist"
 fi
 
-iloc="$seiscomp/share/iloc"
+iloc=${seiscomp}/share/iloc
 
-mkdir -p "${iloc}" || error "Could not create target path ${iloc}"
+mkdir -p "${iloc}" || error "Could not create target path '${iloc}'"
 
 tarFile="$(mktemp)"
 
 echo "Downloading ${URL} to ${tarFile}"
-wget -O "${tarFile}" "${URL}" || error "Failed to download ${URL} to ${tarFile}"
+wget -O "${tarFile}" "${URL}" || error "Failed to download '${URL}' to '${tarFile}'"
 
-echo "Extracting tarball to '${iloc}'"
-tar xzf "${tarFile}" -C "${iloc}" || error "Failed to extract ${tarFile}"
-
-echo "Changing ownership of ${iloc} to $user - you may wish to set group ownership"
-chown -R $user "${iloc}"
+cd ${iloc}
+echo "Extracting TAR ball to '${iloc}'"
+tar zxf ${tarFile} SeisComp-iLoc-plugin-sciLoc4.3/iLocAuxDir --strip-components=1 -C ${iloc} || error "Failed to extract '${tarFile}'"
+echo "Changing ownership of '${iloc}' to '$userName' - you may wish to set group ownership"
+chown -R $userName ${iloc}
 
 exit 0

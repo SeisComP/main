@@ -1305,7 +1305,7 @@ def main():
                     f"{rec.streamID()} "
                     f"current time: {seiscomp.core.Time.LocalTime().iso()}"
                     f", rec start: {rec.startTime().iso()}"
-                    f", rec end: {rec.startTime().iso()}",
+                    f", rec end: {rec.endTime().iso()}",
                     file=sys.stderr,
                 )
 

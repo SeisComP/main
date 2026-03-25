@@ -477,7 +477,8 @@ bool HCApp::run() {
 
 				_streamThread->addStream(streamID.networkCode(), streamID.stationCode(),
 				                         streamID.locationCode(), streamID.channelCode(),
-				                         endTime - heli->recordsTimeSpan() - Core::TimeSpan(_timeSpanPerRow, 0), Core::Time());
+				                         endTime - heli->recordsTimeSpan() - Core::TimeSpan(_timeSpanPerRow, 0),
+				                         Core::None);
 			}
 			else {
 				IO::RecordStreamPtr rs = IO::RecordStream::Open(recordStreamURL().c_str());

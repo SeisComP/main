@@ -465,16 +465,13 @@ bool EventTool::init() {
 		enableTimer(DELAY_CHECK_INTERVAL);
 	}
 
-	_cache.setTimeSpan(TimeSpan(_config.fExpiry * 3600.));
+	_cache.setTimeSpan(TimeSpan(_config.fExpiry * 3600., 0));
 	_cache.setDatabaseArchive(query());
 
 	_ep = new EventParameters;
 	_journal = new Journaling;
 
-	EventProcessorFactory::ServiceNames *services;
-	services = EventProcessorFactory::Services();
-
-	if ( services ) {
+	if ( auto services = EventProcessorFactory::Services(); services ) {
 		for ( auto &service : *services ) {
 			EventProcessorPtr proc = EventProcessorFactory::Create(service.c_str());
 			if ( proc ) {
@@ -2952,7 +2949,15 @@ void EventTool::refreshEventCache(EventInformationPtr info) {
 
 	// Add the event to the EventParameters
 	if ( !info->event->eventParameters() ) {
-		_ep->add(info->event.get());
+		if ( info->created ) {
+			_ep->add(info->event.get());
+		}
+		else {
+			// Prevent OP_ADD notifiers from being created when adding
+			// to event parameters.
+			DataModel::NotifierDisableGuard nguard;
+			_ep->add(info->event.get());
+		}
 	}
 
 	// Feed event into cache
@@ -4529,11 +4534,9 @@ bool EventTool::mergeEvents(EventInformation *target, EventInformation *source) 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventTool::removedFromCache(Seiscomp::DataModel::PublicObject *po) {
-	bool saveState = DataModel::Notifier::IsEnabled();
-	DataModel::Notifier::Disable();
+	DataModel::NotifierDisableGuard nguard;
 
-	auto it = _events.find(po->publicID());
-	if ( it != _events.end() ) {
+	if ( auto it = _events.find(po->publicID()); it != _events.end() ) {
 		// Remove EventInfo item for uncached event
 		// Don't erase the element but mark it. While iterating over the
 		// event cache and performing check and cache updates an event can
@@ -4545,10 +4548,9 @@ void EventTool::removedFromCache(Seiscomp::DataModel::PublicObject *po) {
 
 	// Only allow to detach objects from the EP instance if it hasn't been read
 	// from a file
-	if ( _config.epFile.empty() )
+	if ( _config.epFile.empty() ) {
 		po->detach();
-
-	DataModel::Notifier::SetEnabled(saveState);
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -4598,19 +4600,23 @@ void EventTool::updateEvent(EventInformation *info, bool callProcessors) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventTool::updateRegionName(DataModel::Event *ev, DataModel::Origin *org) {
-	std::string reg = org ? region(org) : "";
+	std::string reg = org ? region(org, !_config.populateFERegion) : "";
 	EventDescription *ed = eventRegionDescription(ev);
 	if ( ed ) {
-		if ( ed->text() != reg ) {
-			SEISCOMP_INFO("%s: updating region name to '%s'",
-			              ev->publicID(), reg);
+		if ( reg.empty() ) {
+			SEISCOMP_INFO("%s: removing region name because it is empty", ev->publicID());
+			SEISCOMP_LOG(_infoChannel, "Event %s region name removed", ev->publicID());
+			ed->detach();
+		}
+		else if ( ed->text() != reg ) {
+			SEISCOMP_INFO("%s: updating region name to '%s'", ev->publicID(), reg);
 			SEISCOMP_LOG(_infoChannel, "Event %s region name updated: %s",
 			             ev->publicID(), reg);
 			ed->setText(reg);
 			ed->update();
 		}
 	}
-	else {
+	else if ( !reg.empty() ) {
 		EventDescriptionPtr ed = new EventDescription(reg, REGION_NAME);
 		ev->add(ed.get());
 		SEISCOMP_INFO("%s: adding region name '%s'",
@@ -4620,7 +4626,7 @@ void EventTool::updateRegionName(DataModel::Event *ev, DataModel::Origin *org) {
 	}
 
 	if ( _config.populateFERegion ) {
-		reg = "";
+		reg = {};
 		if ( org ) {
 			try {
 				reg = Regions::getFlinnEngdahlRegion(org->latitude(), org->longitude());
@@ -4630,7 +4636,12 @@ void EventTool::updateRegionName(DataModel::Event *ev, DataModel::Origin *org) {
 
 		ed = eventFERegionDescription(ev);
 		if ( ed ) {
-			if ( ed->text() != reg ) {
+			if ( reg.empty() ) {
+				SEISCOMP_INFO("%s: removing Flinn-Engdahl region name because it is empty", ev->publicID());
+				SEISCOMP_LOG(_infoChannel, "Event %s Flinn-Engdahl region name removed", ev->publicID());
+				ed->detach();
+			}
+			else if ( ed->text() != reg ) {
 				SEISCOMP_INFO("%s: updating Flinn-Engdahl region name to '%s'",
 				              ev->publicID(), reg);
 				SEISCOMP_LOG(_infoChannel, "Event %s Flinn-Engdahl region name updated: %s",
@@ -4639,7 +4650,7 @@ void EventTool::updateRegionName(DataModel::Event *ev, DataModel::Origin *org) {
 				ed->update();
 			}
 		}
-		else {
+		else if ( !reg.empty() ) {
 			EventDescriptionPtr ed = new EventDescription(reg, FLINN_ENGDAHL_REGION);
 			ev->add(ed.get());
 			SEISCOMP_INFO("%s: adding Flinn-Engdahl region name '%s'",

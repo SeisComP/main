@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2018-2019, Istvan Bondar,
- * Written by Istvan Bondar, ibondar2014@gmail.com
+ * Copyright (c) 2018-2026, Istvan Bondar,
+ * Written by Istvan Bondar, Seismic Location Services
+ * istvan.bondar@slsiloc.eu
  *
  * BSD Open Source License.
  * All rights reserved.
@@ -78,7 +79,7 @@ static void StationTrace(int n, int nsamp, double moveout, double deltim,
 int iLoc_DepthResolution(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
         ILOC_ASSOC *Assocs, ILOC_READING *rdindx)
 {
-    int i, k, m, np, nsdef = 0, ncoredef = 0, nlocal = 0;
+    int i, k, m, np, nspdef = 0, ncoredef = 0, nlocal = 0;
     int hasDepthResolution = 0;
 /*
  *  loop over readings
@@ -114,7 +115,7 @@ int iLoc_DepthResolution(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
             if (Assocs[m].firstP && Assocs[k].firstS &&
                 Assocs[m].Delta <= iLocConfig->MaxSPDistDeg &&
                 (Assocs[m].duplicate * Assocs[k].duplicate) == 0)
-                nsdef++;
+                nspdef++;
         }
     }
 /*
@@ -123,7 +124,7 @@ int iLoc_DepthResolution(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
  *       ncoredef >= MinCorePhases
  */
     if (nlocal >= iLocConfig->MinLocalStations ||
-        nsdef >= iLocConfig->MinSPpairs ||
+        nspdef >= iLocConfig->MinSPpairs ||
         ncoredef >= iLocConfig->MinCorePhases ||
         Hypocenter->numDepthDp >= iLocConfig->MinDepthPhases)
         hasDepthResolution = 1;
@@ -134,7 +135,7 @@ int iLoc_DepthResolution(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
         fprintf(stderr, "  %d stations within %.2f degrees\n",
                 nlocal, iLocConfig->MaxLocalDistDeg);
         fprintf(stderr, "  %d defining S-P pairs within %.2f degrees\n",
-                nsdef, iLocConfig->MaxSPDistDeg);
+                nspdef, iLocConfig->MaxSPDistDeg);
         fprintf(stderr, "  %d defining PcP/ScS phases\n", ncoredef);
     }
     strcat(Hypocenter->iLocInfo, "  Depth resolution from:\n");
@@ -143,7 +144,7 @@ int iLoc_DepthResolution(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
     sprintf(Hypocenter->iLocInfo, "%s    %d stations within %.2f degrees\n",
             Hypocenter->iLocInfo, nlocal, iLocConfig->MaxLocalDistDeg);
     sprintf(Hypocenter->iLocInfo, "%s    %d defining S-P pairs within %.2f degrees\n",
-            Hypocenter->iLocInfo, nsdef, iLocConfig->MaxSPDistDeg);
+            Hypocenter->iLocInfo, nspdef, iLocConfig->MaxSPDistDeg);
     sprintf(Hypocenter->iLocInfo, "%s    %d defining PcP/ScS phases\n",
             Hypocenter->iLocInfo, ncoredef);
     return hasDepthResolution;

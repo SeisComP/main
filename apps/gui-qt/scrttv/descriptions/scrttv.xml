@@ -279,13 +279,17 @@
 					Register the profiles in &quot;profiles&quot; to apply them.
 					</description>
 					<struct type="Stream profile" link="streams.profiles">
-						<parameter name="match" type="string" unit="" default="">
+						<parameter name="match" type="list:string" unit="" default="">
 							<description>
-							Stream applying this profile to. Use regular expressions
-							for defining multiple streams. Examples:
+							List of channels codes this profile applies to. List
+							items may contain wildcards at any position and are
+							separated by comma. The list is	intersected with all
+							loaded channels. Examples:
 
-							GR.BFO.00.BHZ: One stream on vertical component
+							GR.MOX..BHZ: One vertical-component stream.
 
+							GR.CLL..BHZ,GR.MOX..BHZ: Vertical-component streams
+							of two stations.
 
 							GR.*.00.BHZ: All stations from GR network and their
 							vertical components.
@@ -317,6 +321,38 @@
 							<description>
 							</description>
 						</parameter>
+						<parameter name="showMinMax" type="boolean" default="true">
+							<description>
+							Whether the amplitude range is rendered or not.
+							</description>
+						</parameter>
+						<parameter name="format" type="string" default="exponential" values="exponential,engineering">
+							<description>
+							Whether values are shown in engineering notation or in
+							exponential notation.
+							</description>
+						</parameter>
+						<group name="axis">
+							<parameter name="enable" type="boolean" default="false">
+								<description>
+								If enabled then an axis is rendered.
+								</description>
+							</parameter>
+							<parameter name="align" type="string" default="left" values="left,right,both">
+								<description>
+								Defines the axis alignment. &quot;both&quot; renders
+								the axis at both sided.
+								</description>
+							</parameter>
+							<parameter name="tickInterval" type="list:double" default="0, 0">
+								<description>
+								If larger than zero then a fixed axis tickinterval will
+								be used. It is a tuple describing the ticks and subticks
+								intervals. If only one value is given then the subticks
+								are not rendered.
+								</description>
+							</parameter>
+						</group>
 						<group name="minimum">
 							<description>
 							Properties defining the minimum line on each trace.

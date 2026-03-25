@@ -291,7 +291,7 @@ class Bulletin(object):
             else:
                 txt += f"    Longitude             {lon:7.2f} deg\n"
 
-        if dep:
+        if dep is not None:
             if self.enhanced:
                 txt += f"    Depth                {dep:11.3f} km"
             else:

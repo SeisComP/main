@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2018-2019, Istvan Bondar,
- * Written by Istvan Bondar, ibondar2014@gmail.com
+ * Copyright (c) 2018-2026, Istvan Bondar,
+ * Written by Istvan Bondar, Seismic Location Services
+ * istvan.bondar@slsiloc.eu
  *
  * BSD Open Source License.
  * All rights reserved.
@@ -546,10 +547,6 @@ int iLoc_Locator(ILOC_CONF *iLocConfig, ILOC_PHASEIDINFO *PhaseIdInfo,
             iLoc_DepthPhaseStack(iLocConfig, Hypocenter, Assocs, TTInfo, TTtables,
                                  DefaultDepth->Topo);
 /*
- *      Free memory
- */
-        iLoc_Free(rdindx);
-/*
  *      Calculate residuals for all phases
  */
         iLoc_TravelTimeResiduals(iLocConfig, Hypocenter, Assocs, StaLocs, ec,
@@ -558,7 +555,12 @@ int iLoc_Locator(ILOC_CONF *iLocConfig, ILOC_PHASEIDINFO *PhaseIdInfo,
 /*
  *      Calculate location quality metrics
  */
+        Hypocenter->nSPdef150 = iLoc_GetNdefSP150(Hypocenter, rdindx, Assocs);
         iLoc_LocationQuality(Hypocenter, Assocs);
+/*
+ *      Free memory
+ */
+        iLoc_Free(rdindx);
 /*
  *      Print final solution, phases and residuals
  */
@@ -632,11 +634,16 @@ int iLoc_Locator(ILOC_CONF *iLocConfig, ILOC_PHASEIDINFO *PhaseIdInfo,
             fprintf(stderr, "free-depth solution\n");
             strcat(Hypocenter->iLocInfo, "  free-depth solution\n");
         }
-        fprintf(stderr, "GT5cand=%d (dU=%5.3f sgap=%5.1f numStaWithin10km=%d)\n",
-                Hypocenter->GT5candidate, Hypocenter->localDU,
+        fprintf(stderr, " dU GT5cand=%d (dU=%5.3f sgap=%5.1f numStaWithin10km=%d)\n",
+                Hypocenter->GT5candidateDU, Hypocenter->localDU,
                 Hypocenter->localSgap, Hypocenter->numStaWithin10km);
-        if (Hypocenter->GT5candidate)
-            strcat(Hypocenter->iLocInfo, "  This event is a GT5 candidate!\n");
+        fprintf(stderr, "CPQ GT5cand=%d (dU=%5.3f sgap=%5.1f numStaWithin10km=%d ",
+                Hypocenter->GT5candidateCPQ, Hypocenter->localCPQ,
+                Hypocenter->localSgap, Hypocenter->numStaWithin10km);
+        fprintf(stderr, "numdefSPwithin150km=%d localNumDefsta=%d)\n",
+                Hypocenter->nSPdef150, Hypocenter->localNumDefsta);
+        if (Hypocenter->GT5candidateDU || Hypocenter->GT5candidateCPQ)
+            strcat(Hypocenter->iLocInfo, "  This event can be a GT5 candidate!\n");
 /*
  *      print output structures
  */

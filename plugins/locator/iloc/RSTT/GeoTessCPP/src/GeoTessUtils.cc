@@ -67,7 +67,7 @@ string GeoTessUtils::getLatLonString(const double* const v)
 {
   char s[300];
   string frmt("%9.5f %10.5f");
-  sprintf(s, frmt.c_str(), getLatDegrees(v), getLonDegrees(v));
+  snprintf(s, sizeof(s), frmt.c_str(), getLatDegrees(v), getLonDegrees(v));
   return s;
 }
 
@@ -79,7 +79,7 @@ string GeoTessUtils::getLonLatString(const double* const v)
 {
   char s[300];
   string frmt("%11.6f %10.6f");
-  sprintf(s, frmt.c_str(), getLonDegrees(v), getLatDegrees(v));
+  snprintf(s, sizeof(s), frmt.c_str(), getLonDegrees(v), getLatDegrees(v));
   return s;
 }
 

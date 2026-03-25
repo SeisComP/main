@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2018-2019, Istvan Bondar,
- * Written by Istvan Bondar, ibondar2014@gmail.com
+ * Copyright (c) 2018-2026, Istvan Bondar,
+ * Written by Istvan Bondar, Seismic Location Services
+ * istvan.bondar@slsiloc.eu
  *
  * BSD Open Source License.
  * All rights reserved.
@@ -529,7 +530,7 @@ static void PhaseIdentification(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
  *              phases ordered by time within a reading
  */
             if (m) {
-                if (fabs(Assocs[k].ArrivalTime - Assocs[k-1].ArrivalTime) < 0.05) {
+                if (fabs(Assocs[k].ArrivalTime - Assocs[k-1].ArrivalTime) < ILOC_SAMETIME_TOL) {
 /*
  *                  if previous phaseid is null, rename it
  */
@@ -782,6 +783,16 @@ static void PhaseIdentification(ILOC_CONF *iLocConfig, ILOC_HYPO *Hypocenter,
  *          otherwise set to best fitting phase
  */
             else {
+/*
+ *              if the best fitting phase was Lg, rename it to Sg
+ */
+                if (ILOC_STREQ(candidate_phase, "Lg"))
+                    strcpy(candidate_phase, "Sg");
+/*
+ *              however, if it was reported as Lg, keep it as Lg
+ */
+                if (ILOC_STREQ(mappedphase, "Lg") && ILOC_STREQ(candidate_phase, "Sg"))
+                    strcpy(candidate_phase, "Lg");
                 strcpy(Assocs[k].Phase, candidate_phase);
                 strcpy(Assocs[k].Vmodel, Vmodel);
                 Assocs[k].TimeRes = min_resid;

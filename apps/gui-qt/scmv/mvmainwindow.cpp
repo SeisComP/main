@@ -680,8 +680,14 @@ bool MvMainWindow::eventFilter(QObject* object, QEvent* event) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MvMainWindow::closeEvent(QCloseEvent *e) {
-	if ( _recordStreamThread.get() )
+	MainWindow::closeEvent(e);
+	if ( !e->isAccepted() ) {
+		return;
+	}
+
+	if ( _recordStreamThread.get() ) {
 		_recordStreamThread->stop(true);
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
