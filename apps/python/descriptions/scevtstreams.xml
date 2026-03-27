@@ -82,8 +82,15 @@
 					<description>
 					Time margin around the picked time window, default is 300.
 					Added before the first and after the last pick,
-					respectively. Use 2 comma-separted values (before,after)
+					respectively. Use 2 comma-separated values (before,after)
 					for asymmetric margins. Example: 120,300.
+					</description>
+				</option>
+				<option long-flag="per-pick" argument="">
+					<description>
+					The time windows will be created for each pick individually,
+					instead of using the earliest and the latest pick. This option is
+					only applied if the XML file contains neither events nor origins.
 					</description>
 				</option>
 				<option flag="S" long-flag="streams" argument="arg">
