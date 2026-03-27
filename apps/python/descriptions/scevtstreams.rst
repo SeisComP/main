@@ -40,7 +40,7 @@ Examples
       scevtstreams -E gfz2012abcd -d mysql://sysop:sysop@localhost/seiscomp
       scevtstreams -E gfz2012abcd -E gfz2012efgh -d mysql://sysop:sysop@localhost/seiscomp
 
-#. Get the time windows for one specific event, multiple or all events in a XML file.
+#. Get the time windows for one specific event, multiple or all events in an XML file.
    The time windows start 120 s before the first pick and ends 500 s after the
    last pick:
 
@@ -50,12 +50,20 @@ Examples
       scevtstreams -i event.xml -m 120,500 -E gfz2012abcd -E gfz2012efgh
       scevtstreams -i event.xml -m 120,500
 
-#. Get the time windows from all picks in a XML file which does not contain
-   events or origins:
+#. Get the time windows from all picks in an XML file which does not contain
+   events or origins, each of which will have the same time span (earliest to latest
+   pick):
 
    .. code-block:: sh
 
       scevtstreams -i picks.xml
+
+#. Get individual time windows from all picks in an XML file which does not contain
+   events or origins by applying the margin on each pick separately:
+
+   .. code-block:: sh
+
+      scevtstreams -i picks.xml --per-pick
 
 #. Use **-E -** to read the event IDs as individual lines from *stdin*.
    Combine with :ref:`scevtls` for creating a streams list for the last day of

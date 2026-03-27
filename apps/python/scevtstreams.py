@@ -88,6 +88,7 @@ class EventStreams(client.Application):
         self.inputFile = None
         self.inputFormat = "xml"
         self.margin = [300]
+        self.perPick = False
 
         self.allNetworks = True
         self.allStations = True
@@ -152,6 +153,13 @@ class EventStreams(client.Application):
             "before the first and after the last pick, respectively. Use 2 "
             "comma-separted values (before,after) for asymmetric margins, e.g. "
             "-m 120,300.",
+        )
+        self.commandline().addOption(
+            "Output",
+            "per-pick",
+            "Time windows will be cut per pick instead of using earliest and latest "
+            "pick. Option is only evaluated if XML file contains neither events "
+            "nor origins.",
         )
         self.commandline().addStringOption(
             "Output",
@@ -276,6 +284,7 @@ class EventStreams(client.Application):
         self.allStations = self.commandline().hasOption("all-stations")
         self.allNetworks = self.commandline().hasOption("all-networks")
         self.usedArrivals = self.commandline().hasOption("used-arrivals")
+        self.perPick = self.commandline().hasOption("per-pick")
 
         try:
             networkStation = self.commandline().optionString("net-sta")
@@ -670,14 +679,20 @@ Get the time windows for all picks given in an XML file without origins and even
                     )
                     objIDs.append(ev.publicID())
             else:
-                print("Found no origins, trying to continue with picks only.")
+                print("Found no origins, trying to continue with picks only.",
+                      file=sys.stderr)
                 #  try reading picks only
                 picks = []
                 for i in range(ep.pickCount()):
                     pick = datamodel.Pick.Find(ep.pick(i).publicID())
                     if pick:
-                        picks.append(pick)
+                        if self.perPick:
+                            picks.append([pick])
+                        else:
+                            picks.append(pick)
                         objIDs.append(pick.publicID())
+                if self.perPick:
+                    return picks, objIDs
                 return [picks], objIDs
 
         if evOriginIDs:
