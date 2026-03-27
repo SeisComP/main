@@ -63,7 +63,7 @@ Event parameters
 
 * **EvOpComment**: Set event operator's comment.
 * **EvPrefFocMecID**: Set event preferred focal mechanism.
-* **EvPrefMagTypev:** Set preferred magnitude type.
+* **EvPrefMagType:** Set preferred magnitude type.
 * **EvPrefMw**: Set Mw from focal mechanism as preferred magnitude.
 * **EvPrefOrgAutomatic**: Set the preferred mode to *automatic* corresponding to *unfix* in scolv.
 * **EvPrefOrgEvalMode**: Set preferred origin by evaluation mode.
