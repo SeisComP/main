@@ -1618,6 +1618,11 @@ void serializeJSON(const string *val, IO::JSONArchive &ar) {
 	ar &NAMED_OBJECT("value", value);
 }
 
+void serializeJSON(const FDSNXML::RestrictedStatusType *val, IO::JSONArchive &ar) {
+	FDSNXML::RestrictedStatusType value = *val;
+	ar &NAMED_OBJECT("value", value);
+}
+
 template <typename T1, typename T2, typename T3, typename T4>
 void populateJSON(
     const string &name, const T1 *sx, T2 sc, T3 (T4::*getObject)(size_t) const,
@@ -1694,6 +1699,16 @@ void populateJSON(const FDSNXML::Network *sx, DataModel::NetworkPtr sc) {
 	    &FDSNXML::Network::operatorsCount
 	);
 	populateJSON("SourceID", sx, sc, &FDSNXML::Network::sourceID);
+
+	try {
+		if ( sx->restrictedStatus() == FDSNXML::RST_PARTIAL ) {
+			populateJSON(
+			    "RestrictedStatus", sx, sc,
+			    &FDSNXML::Network::restrictedStatus);
+		}
+	}
+	catch ( Core::ValueException & ) {
+	}
 }
 
 void populateJSON(const FDSNXML::Station *sx, DataModel::StationPtr sc) {
@@ -1713,6 +1728,16 @@ void populateJSON(const FDSNXML::Station *sx, DataModel::StationPtr sc) {
 	populateJSON("SourceID", sx, sc, &FDSNXML::Station::sourceID);
 	populateJSON("Vault", sx, sc, &FDSNXML::Station::vault);
 	populateJSON("Geology", sx, sc, &FDSNXML::Station::geology);
+
+	try {
+		if ( sx->restrictedStatus() == FDSNXML::RST_PARTIAL ) {
+			populateJSON(
+			    "RestrictedStatus", sx, sc,
+			    &FDSNXML::Station::restrictedStatus);
+		}
+	}
+	catch ( Core::ValueException & ) {
+	}
 }
 
 void populateJSON(const FDSNXML::Channel *sx, DataModel::StreamPtr sc) {
@@ -1729,6 +1754,16 @@ void populateJSON(const FDSNXML::Channel *sx, DataModel::StreamPtr sc) {
 	populateJSON("DataLogger", sx, sc, &FDSNXML::Channel::dataLogger);
 	populateJSON("WaterLevel", sx, sc, &FDSNXML::Channel::waterLevel);
 	populateJSON("SourceID", sx, sc, &FDSNXML::Channel::sourceID);
+
+	try {
+		if ( sx->restrictedStatus() == FDSNXML::RST_PARTIAL ) {
+			populateJSON(
+			    "RestrictedStatus", sx, sc,
+			    &FDSNXML::Channel::restrictedStatus);
+		}
+	}
+	catch ( Core::ValueException & ) {
+	}
 }
 
 template <typename T1, typename T2>
@@ -2055,7 +2090,8 @@ bool Convert2SC::push(const FDSNXML::FDSNStationXML *msg) {
 		string oldDescription = sc_net->description();
 
 		try {
-			sc_net->setRestricted(net->restrictedStatus() != FDSNXML::RST_OPEN);
+			// partial == open
+			sc_net->setRestricted(net->restrictedStatus() == FDSNXML::RST_CLOSED);
 		}
 		catch ( ... ) {
 			sc_net->setRestricted(Core::None);
@@ -2417,7 +2453,8 @@ bool Convert2SC::process(
 
 	sc_sta->setPlace(place);
 	try {
-		sc_sta->setRestricted(sta->restrictedStatus() != FDSNXML::RST_OPEN);
+		// partial == open
+		sc_sta->setRestricted(sta->restrictedStatus() == FDSNXML::RST_CLOSED);
 	}
 	catch ( ... ) {
 		sc_sta->setRestricted(Core::None);
@@ -2851,6 +2888,7 @@ bool Convert2SC::process(
 	sc_stream->setFlags(flags);
 
 	try {
+		// partial == closed
 		sc_stream->setRestricted(cha->restrictedStatus() != FDSNXML::RST_OPEN);
 	}
 	catch ( ... ) {
