@@ -363,6 +363,14 @@ void deserializeString(IO::JSONArchive &ar, T1 sx, void (T2::*setProperty)(T3)) 
 }
 
 
+template<typename T1, typename T2, typename T3>
+void deserializeRestrictedStatus(IO::JSONArchive &ar, T1 sx, void (T2::*setProperty)(T3)) {
+	FDSNXML::RestrictedStatusType value;
+	ar & NAMED_OBJECT("value", value);
+	(sx.get()->*setProperty)(value);
+}
+
+
 void deserializeJSON(const string& name, IO::JSONArchive &ar, FDSNXML::NetworkPtr sx) {
 	if ( name == "FDSNXML:Identifier" )
 		deserializeIdentifier(ar, sx);
@@ -370,6 +378,8 @@ void deserializeJSON(const string& name, IO::JSONArchive &ar, FDSNXML::NetworkPt
 		deserializeOperator(ar, sx);
 	else if ( name == "FDSNXML:SourceID" )
 		deserializeString(ar, sx, &FDSNXML::Network::setSourceID);
+	else if ( name == "FDSNXML:RestrictedStatus" )
+		deserializeRestrictedStatus(ar, sx, &FDSNXML::Network::setRestrictedStatus);
 }
 
 
@@ -388,6 +398,8 @@ void deserializeJSON(const string& name, IO::JSONArchive &ar, FDSNXML::StationPt
 		deserializeString(ar, sx, &FDSNXML::Station::setVault);
 	else if ( name == "FDSNXML:Geology" )
 		deserializeString(ar, sx, &FDSNXML::Station::setGeology);
+	else if ( name == "FDSNXML:RestrictedStatus" )
+		deserializeRestrictedStatus(ar, sx, &FDSNXML::Station::setRestrictedStatus);
 }
 
 
@@ -406,6 +418,8 @@ void deserializeJSON(const string& name, IO::JSONArchive &ar, FDSNXML::ChannelPt
 		deserializeFloatType(ar, sx, &FDSNXML::Channel::setWaterLevel);
 	else if ( name == "FDSNXML:SourceID" )
 		deserializeString(ar, sx, &FDSNXML::Channel::setSourceID);
+	else if ( name == "FDSNXML:RestrictedStatus" )
+		deserializeRestrictedStatus(ar, sx, &FDSNXML::Channel::setRestrictedStatus);
 }
 
 
