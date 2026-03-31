@@ -342,8 +342,9 @@ Autoloc::Pick *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seiscom
 	pick->loc = scpick->waveformID().locationCode();
 	pick->cha = scpick->waveformID().channelCode();
 
-	if (pick->loc=="")
+	if ( pick->loc=="" ) {
 		pick->loc = "__";
+	}
 
 	pick->attachment = scpick;
 

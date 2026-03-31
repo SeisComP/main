@@ -102,12 +102,12 @@ Associator::shutdown()
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool
-Associator::feed(const Pick* pick)
-{
+Associator::feed(const Pick* pick) {
 	_associations.clear();
 
-	if ( ! _origins)
+	if ( !_origins ) {
 		return false;
+	}
 
 	static Seiscomp::TravelTimeTable ttt;
 
@@ -131,8 +131,9 @@ Associator::feed(const Pick* pick)
 		catch ( std::out_of_range & ) {
 			continue;
 		}
-		if ( ! ttlist)
+		if ( !ttlist ) {
 			continue;
+		}
 
 		// An imported origin is treated as if it had a very high
 		// score. => Anything can be associated with it.
@@ -200,12 +201,14 @@ Associator::feed(const Pick* pick)
 				residual /= 10;       // normalize residual
 
 				affinity = avgfn(residual); // test if exp(-residual**2) if better
-				if (affinity < AFFMIN)
+				if ( affinity < AFFMIN ) {
 					continue;
+				}
 			}
 			string phcode = phase.code;
-			if (phcode=="P" && ttime > 960)
+			if ( phcode=="P" && ttime > 960 ) {
 				phcode = "PKP";
+			}
 			Association asso(origin, pick, phcode, residual, affinity);
 			asso.distance = delta;
 			asso.azimuth = az;

@@ -544,7 +544,7 @@ bool App::initConfiguration() {
 		_config.networkType = ::Autoloc::LocalNetwork;
 	}
 	else {
-		SEISCOMP_ERROR("Illegal value %s for autoloc.networkType", ntp.c_str());
+		SEISCOMP_ERROR("Illegal value '%s' for autoloc.networkType", ntp);
 		return false;
 	}
 
@@ -557,7 +557,7 @@ bool App::initConfiguration() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::init() {
-	if ( ! Client::Application::init() ) {
+	if ( !Client::Application::init() ) {
 		return false;
 	}
 
@@ -610,7 +610,7 @@ bool App::initInventory() {
 	if ( _stationLocationFile.empty() ) {
 		SEISCOMP_DEBUG("Initializing station inventory from DB");
 		inventory = Inventory::Instance()->inventory();
-		if ( ! inventory ) {
+		if ( !inventory ) {
 			SEISCOMP_ERROR("no inventory!");
 			return false;
 		}
@@ -652,54 +652,61 @@ bool App::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Ti
 	static std::set<std::string> configuredStreams;
 	std::string key = wfid.networkCode() + "." + wfid.stationCode();
 
-	if ( configuredStreams.find(key) != configuredStreams.end() )
+	if ( configuredStreams.find(key) != configuredStreams.end() ) {
 		return false;
+	}
 
 	for ( size_t n = 0; n < inventory->networkCount() && !found; ++n ) {
 		DataModel::Network *network = inventory->network(n);
 
-		if ( network->code() != wfid.networkCode() )
+		if ( network->code() != wfid.networkCode() ) {
 			continue;
+		}
 
 		try {
-			if ( time < network->start() )
+			if ( time < network->start() ) {
 				continue;
+			}
 		}
 		catch ( ... ) { }
 
 		try {
-			if ( time > network->end() )
+			if ( time > network->end() ) {
 				continue;
+			}
 		}
 		catch ( ... ) { }
 
 		for ( size_t s = 0; s < network->stationCount(); ++s ) {
 			DataModel::Station *station = network->station(s);
 
-			if (station->code() != wfid.stationCode())
+			if ( station->code() != wfid.stationCode() ) {
 				continue;
+			}
 
 			std::string epochStart="unset", epochEnd="unset";
 
 			try {
-				if (time < station->start())
+				if ( time < station->start() ) {
 					continue;
+				}
 				epochStart = station->start().toString("%FT%TZ");
 			}
 			catch ( ... ) { }
 
 			try {
-				if (time > station->end())
+				if ( time > station->end() ) {
 					continue;
+				}
 				epochEnd = station->end().toString("%FT%TZ");
 			}
 			catch ( ... ) { }
 
 			SEISCOMP_DEBUG("Station %s %s epoch %s ... %s",
-			               network->code().c_str(),
-			               station->code().c_str(),
-			               epochStart.c_str(),
-			               epochEnd.c_str());
+			               network->code(),
+			               station->code(),
+			               epochStart,
+			               epochEnd);
 
 			double elevation = 0;
 			try { elevation = station->elevation(); }
@@ -723,7 +730,7 @@ bool App::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Ti
 	}
 
 	if ( !found ) {
-		SEISCOMP_WARNING("%s not found in station inventory", key.c_str());
+		SEISCOMP_WARNING("%s not found in station inventory", key);
 		return false;
 	}
 
@@ -737,7 +744,9 @@ bool App::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Ti
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::readHistoricEvents() {
-	if ( _keepEventsTimeSpan <= 0 || ! query() ) return;
+	if ( _keepEventsTimeSpan <= 0 || !query() ) {
+		return;
+	}
 
 	SEISCOMP_DEBUG("readHistoricEvents: reading %d seconds of events", _keepEventsTimeSpan);
 
@@ -797,7 +806,7 @@ bool App::runFromXMLFile(const char *filename)
 	SEISCOMP_INFO("App::runFromXMLFile");
 
 	IO::XMLArchive ar;
-	if ( ! ar.open(filename)) {
+	if ( !ar.open(filename) ) {
 		SEISCOMP_ERROR("unable to open XML playback file '%s'", filename);
 		return false;
 	}
@@ -866,7 +875,7 @@ bool App::runFromEPFile(const char *filename) {
 	SEISCOMP_INFO("App::runFromEPFile");
 	IO::XMLArchive ar;
 	if ( !ar.open(filename)) {
-		SEISCOMP_ERROR("unable to open XML file: %s", filename);
+		SEISCOMP_ERROR("Unable to open XML file: %s", filename);
 		return false;
 	}
 
@@ -874,11 +883,11 @@ bool App::runFromEPFile(const char *filename) {
 	ar.close();
 
 	if ( !_ep ) {
-		SEISCOMP_ERROR("No event parameters found: %s", filename);
+		SEISCOMP_INFO("No event parameters found: %s", filename);
 		return false;
 	}
 
-	SEISCOMP_INFO("finished reading event parameters from XML");
+	SEISCOMP_INFO("Finished reading event parameters from XML");
 	SEISCOMP_INFO("  number of picks:      %d", _ep->pickCount());
 	SEISCOMP_INFO("  number of amplitudes: %d", _ep->amplitudeCount());
 	SEISCOMP_INFO("  number of origins:    %d", _ep->originCount());
@@ -903,13 +912,13 @@ bool App::runFromEPFile(const char *filename) {
 			if ( pick->evaluationStatus() == DataModel::REJECTED ) {
 				if ( !_config.allowRejectedPicks ) {
 					add = false;
-					SEISCOMP_DEBUG("Ignoring pick %s with evaluation status %s",
-					               pick->publicID().c_str(), pick->evaluationStatus().toString());
+					SEISCOMP_INFO("Ignoring pick %s with evaluation status '%s'",
+					              pick->publicID(), pick->evaluationStatus().toString());
 					continue;
 				}
 				else {
-					SEISCOMP_DEBUG("Considering pick %s with evaluation status %s",
-					               pick->publicID().c_str(), pick->evaluationStatus().toString());
+					SEISCOMP_DEBUG("Considering pick %s with evaluation status '%s'",
+					               pick->publicID(), pick->evaluationStatus().toString());
 				}
 			}
 		}
@@ -921,8 +930,8 @@ bool App::runFromEPFile(const char *filename) {
 		}
 		catch ( ... ) {
 			add = false;
-			SEISCOMP_WARNING("Ignore pick %s: no creation time set",
-			                 pick->publicID().c_str());
+			SEISCOMP_INFO("Ignoring pick %s: creation time no set",
+			              pick->publicID());
 			continue;
 		}
 
@@ -939,8 +948,8 @@ bool App::runFromEPFile(const char *filename) {
 			objs.push_back(TimeObject(t, 1, amplitude->publicID(), amplitude));
 		}
 		catch ( ... ) {
-			SEISCOMP_WARNING("Ignore amplitude %s: no creation time set",
-			                 amplitude->publicID().c_str());
+			SEISCOMP_INFO("Ignoring amplitude %s: creation time not et",
+			              amplitude->publicID());
 		}
 	}
 
@@ -951,8 +960,8 @@ bool App::runFromEPFile(const char *filename) {
 			objs.push_back(TimeObject(t, 2, origin->publicID(), origin));
 		}
 		catch ( ... ) {
-			SEISCOMP_WARNING("Ignore origin %s: no creation time set",
-			                 origin->publicID().c_str());
+			SEISCOMP_INFO("Ignoring origin %s: creation time not set",
+			              origin->publicID());
 		}
 	}
 
@@ -1023,11 +1032,12 @@ bool App::run() {
 		return runFromEPFile(_inputEPFile.c_str());
 
 	// normal online mode
-	if ( ! Autoloc3::config().offline )
+	if ( !Autoloc3::config().offline ) {
 		return Application::run();
+	}
 
 	// XML playback: first fill object queue, then run()
-	if ( _config.playback && _inputFileXML.size() > 0) {
+	if ( _config.playback && _inputFileXML.size() > 0 ) {
 		runFromXMLFile(_inputFileXML.c_str());
 		return Application::run();
 	}
@@ -1077,7 +1087,7 @@ void App::handleTimeout() {
 
 	// The following is relevant (and executed) only for XML playback.
 
-	while ( ! _objects.empty() && !isExitRequested() ) {
+	while ( !_objects.empty() && !isExitRequested() ) {
 
 		Core::Time t;
 		DataModel::PublicObjectPtr o = _objects.front();
@@ -1139,30 +1149,36 @@ void App::addObject(const std::string& parentID, DataModel::Object* o) {
 	DataModel::Pick *pick = DataModel::Pick::Cast(o);
 	if ( pick ) {
 		logObject(_inputPicks, Core::Time::UTC());
-		if ( ! feed(pick))
+		if ( !feed(pick) ) {
 			return;
-		if (extra_debug)
+		}
+		if ( extra_debug ) {
 			logObjectCounts();
+		}
 		return;
 	}
 
 	DataModel::Amplitude *amplitude = DataModel::Amplitude::Cast(o);
 	if ( amplitude ) {
 		logObject(_inputAmps, Core::Time::UTC());
-		if ( ! feed(amplitude))
+		if ( !feed(amplitude) ) {
 			return;
-		if (extra_debug)
+		}
+		if ( extra_debug ) {
 			logObjectCounts();
+		}
 		return;
 	}
 
 	DataModel::Origin *origin = DataModel::Origin::Cast(o);
 	if ( origin ) {
 		logObject(_inputOrgs, Core::Time::UTC());
-		if ( ! feed(origin))
+		if ( !feed(origin) ) {
 			return;
-		if (extra_debug)
+		}
+		if ( extra_debug ) {
 			logObjectCounts();
+		}
 		return;
 	}
 }
@@ -1173,74 +1189,75 @@ void App::addObject(const std::string& parentID, DataModel::Object* o) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::feed(DataModel::Pick *scpick) {
-
 	const std::string &pickID = scpick->publicID();
 
-	SEISCOMP_INFO_S("Pick " + pickID);
-	SEISCOMP_INFO_S("  label  " + pickLabel(scpick));
-
+	std::string status = "unset";
 	try {
-		if ( scpick->evaluationStatus() == DataModel::REJECTED ) {
-			if ( !_config.allowRejectedPicks ) {
-				SEISCOMP_INFO("Pick with evaluation status '%s' rejected - STOP",
-				               scpick->evaluationStatus().toString());
-				return false;
-			}
-			else {
-				SEISCOMP_INFO("Pick with evaluation status '%s' accepted",
-				               scpick->evaluationStatus().toString());
-			}
+		status = scpick->evaluationStatus().toString();
+	} catch ( ... ) {}
+	std::string mode = "unset";
+	try {
+		mode = scpick->evaluationMode().toString();
+	} catch ( ... ) {}
+	SEISCOMP_INFO("Processing pick: %s with evaluation mode/status = '%s'/'%s'",
+	              pickID, mode, status);
+	SEISCOMP_INFO_S("  + label:  " + pickLabel(scpick));
+	try {
+		if ( scpick->evaluationStatus() == DataModel::REJECTED && !_config.allowRejectedPicks ) {
+			SEISCOMP_INFO("  + ignoring pick due to evaluation status");
+			return false;
 		}
 	}
-	catch ( ... ) {
-		SEISCOMP_WARNING_S("Pick " + pickID + ": missing evaluation status");
+	catch ( ... ) {}
+
+	if ( mode == "unset" ) {
+		SEISCOMP_DEBUG("Pick %s: setting evaluation mode from '%s' to 'automatic'",
+		               scpick->publicID(), mode);
+		scpick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
 	}
 
-	if (_inputFileXML.size() || _inputEPFile.size()) {
+	if ( _inputFileXML.size() || _inputEPFile.size() ) {
 		try {
 			const Core::Time &creationTime = scpick->creationInfo().creationTime();
 			sync(creationTime);
 		}
 		catch ( ... ) {
-			SEISCOMP_WARNING_S("Pick " + pickID + ": no creation time set!");
+			SEISCOMP_INFO_S("Pick " + pickID + ": creation time is not set");
 		}
 	}
 
 	if (objectAgencyID(scpick) != agencyID() && isAgencyIDBlocked(objectAgencyID(scpick))) {
-		SEISCOMP_INFO_S("Blocked pick from agency " + objectAgencyID(scpick));
+		SEISCOMP_INFO("  + ignoring pick since agency is '%s'", objectAgencyID(scpick));
 		return false;
 	}
 
 	const int priority = _authorPriority(objectAuthor(scpick));
 	if (priority == 0) {
-		SEISCOMP_INFO_S("Blocked pick from author " + objectAuthor(scpick));
+		SEISCOMP_INFO("  + ignoring pick since author is '%s'", objectAuthor(scpick));
 		return false;
-	}
-
-	try {
-		if (scpick->evaluationMode() == DataModel::MANUAL) {
-		}
-	}
-	catch ( ... ) {
-		SEISCOMP_WARNING("Pick %s: setting evaluation mode to 'automatic'",
-		                 scpick->publicID().c_str());
-		scpick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
 	}
 
 	// configure station if needed
-	initOneStation(scpick->waveformID(), scpick->time().value());
+	if ( !initOneStation(scpick->waveformID(), scpick->time().value())) {
+		SEISCOMP_INFO("  + ignoring pick");
+		// return false;
+	}
 
 	::Autoloc::PickPtr pick = convertFromSC(scpick);
-	if ( ! pick )
+	if ( !pick ) {
+		SEISCOMP_INFO("  + ignoring pick from SC");
 		return false;
+	}
 
-	if ( _config.offline )
+	if ( _config.offline ) {
 		timeStamp();
+	}
 
 	::Autoloc::Autoloc3::feed(pick.get());
 
-	if ( _config.offline )
+	if ( _config.offline ) {
 		_flush();
+	}
 
 	return true;
 }
@@ -1251,40 +1268,41 @@ bool App::feed(DataModel::Pick *scpick) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::feed(DataModel::Amplitude *scampl) {
-
+	const std::string &atype  = scampl->type();
 	const std::string &amplID = scampl->publicID();
+	if ( atype != _amplTypeAbs && atype != _amplTypeSNR ) {
+		SEISCOMP_DEBUG("Ignoring '%s' amplitude %s: neither of type %s nor %s",
+		               atype, amplID, _amplTypeAbs, _amplTypeSNR);
+		return false;
+	}
 
-	if (_inputFileXML.size() || _inputEPFile.size()) {
+	SEISCOMP_INFO("Processing '%s' amplitude %s from pick %s",
+	              scampl->type(), amplID, scampl->pickID());
+
+	if (objectAgencyID(scampl) != agencyID()) {
+		if ( isAgencyIDBlocked(objectAgencyID(scampl)) ) {
+			SEISCOMP_INFO_S("  + ignoring amplitude since agency is: " + objectAgencyID(scampl));
+			return false;
+		}
+		SEISCOMP_DEBUG("  + agency is: %s", objectAgencyID(scampl));
+	}
+
+	const std::string &pickID = scampl->pickID();
+	::Autoloc::Pick *pick = (::Autoloc::Pick *) Autoloc3::pick(pickID);
+	if ( !pick ) {
+		SEISCOMP_INFO("  + ignoring amplitude since reference pick cannot be found");
+		return false;
+	}
+
+	if ( _inputFileXML.size() || _inputEPFile.size() ) {
 		try {
 			const Core::Time &creationTime = scampl->creationInfo().creationTime();
 			sync(creationTime);
 		}
 		catch ( ... ) {
 			SEISCOMP_WARNING("Amplitude %s: creation time not set",
-			                 amplID.c_str());
+			                 amplID);
 		}
-	}
-
-	if (objectAgencyID(scampl) != agencyID()) {
-		if ( isAgencyIDBlocked(objectAgencyID(scampl)) ) {
-			SEISCOMP_INFO_S("Blocked amplitude from agency " + objectAgencyID(scampl));
-			return false;
-		}
-		SEISCOMP_INFO("Amplitude %s from agency %s",
-		              amplID.c_str(), objectAgencyID(scampl).c_str());
-	}
-
-	const std::string &atype  = scampl->type();
-	const std::string &pickID = scampl->pickID();
-
-	if ( atype != _amplTypeAbs && atype != _amplTypeSNR )
-		return false;
-
-	::Autoloc::Pick *pick = (::Autoloc::Pick *) Autoloc3::pick(pickID);
-	if ( ! pick ) {
-		// TODO: debug message not here
-		SEISCOMP_DEBUG_S("Pick " + pickID + " not found for " + atype + " amplitude");
-		return false;
 	}
 
 	try {
@@ -1298,6 +1316,7 @@ bool App::feed(DataModel::Amplitude *scampl) {
 		}
 	}
 	catch ( ... ) {
+		SEISCOMP_INFO("  + ignoring amplitude");
 		return false;
 	}
 
@@ -1312,7 +1331,7 @@ bool App::feed(DataModel::Amplitude *scampl) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::feed(DataModel::Origin *scorigin) {
 
-	if ( ! scorigin ) {
+	if ( !scorigin ) {
 		SEISCOMP_ERROR("This should never happen: origin=NULL");
 		return false;
 	}
@@ -1324,7 +1343,7 @@ bool App::feed(DataModel::Origin *scorigin) {
 
 	if ( ownOrigin ) {
 		if ( manual(scorigin) ) {
-			if ( ! _config.useManualOrigins ) {
+			if ( !_config.useManualOrigins ) {
 				SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(scorigin) + " because autoloc.useManualOrigins = false");
 				return false;
 			}
@@ -1338,7 +1357,7 @@ bool App::feed(DataModel::Origin *scorigin) {
 	else {
 		// imported origin
 
-		if ( ! _config.useImportedOrigins ) {
+		if ( !_config.useImportedOrigins ) {
 			SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(scorigin) + " because autoloc.useImportedOrigins = false");
 			return false;
 		}
@@ -1358,13 +1377,13 @@ bool App::feed(DataModel::Origin *scorigin) {
 	for ( size_t i=0; i<arrivalCount; i++ ) {
 		const std::string &pickID = scorigin->arrival(i)->pickID();
 		DataModel::Pick *scpick = DataModel::Pick::Find(pickID);
-		if ( ! scpick) {
+		if ( !scpick ) {
 			SEISCOMP_ERROR_S("Pick " + pickID + " not found");
 		}
 	}
 
 	::Autoloc::Origin *origin = convertFromSC(scorigin);
-	if ( ! origin ) {
+	if ( !origin ) {
 		SEISCOMP_ERROR_S("Failed to convert origin " + objectAgencyID(scorigin));
 		return false;
 	}
@@ -1381,8 +1400,9 @@ bool App::feed(DataModel::Origin *scorigin) {
 
 	::Autoloc::Autoloc3::feed(origin);
 
-	if ( _config.offline )
+	if ( _config.offline ) {
 		_flush();
+	}
 
 	return true;
 }
@@ -1399,7 +1419,7 @@ bool App::_report(const ::Autoloc::Origin *origin) {
 
 	if ( _config.offline || _config.test ) {
 		std::string reportStr = ::Autoloc::printDetailed(origin);
-		SEISCOMP_INFO("Reporting origin %ld\n%s", origin->id, reportStr.c_str());
+		SEISCOMP_INFO("Reporting origin %ld\n%s", origin->id, reportStr);
 		SEISCOMP_INFO ("Origin %ld not sent (test/offline mode)", origin->id);
 
 		if ( _ep ) {
@@ -1460,7 +1480,7 @@ bool App::_report(const ::Autoloc::Origin *origin) {
 
 			if ( connection()->send(jm.get()) ) {
 				SEISCOMP_DEBUG("Sent origin journal entry for origin %s to the message group: %s",
-				               scorigin->publicID().c_str(), primaryMessagingGroup().c_str());
+				               scorigin->publicID(), primaryMessagingGroup());
 			}
 			else {
 				SEISCOMP_ERROR("Sending origin journal entry failed with error: %s",
