@@ -1017,11 +1017,27 @@ MainWindow::MainWindow() : _questionApplyChanges(this) {
 	connect(_ui.actionPreviousFilter, SIGNAL(triggered()), this, SLOT(previousFilter()));
 	connect(_ui.actionToggleFilter, SIGNAL(triggered()), this, SLOT(toggleFilter()));
 	connect(_ui.actionApplyGain, SIGNAL(toggled(bool)), this, SLOT(showScaledValues(bool)));
-	connect(_ui.actionRestoreConfigOrder, SIGNAL(triggered()), this, SLOT(sortByConfig()));
-	connect(_ui.actionSortDistance, SIGNAL(triggered()), this, SLOT(sortByDistance()));
-	connect(_ui.actionSortStaCode, SIGNAL(triggered()), this, SLOT(sortByStationCode()));
-	connect(_ui.actionSortNetStaCode, SIGNAL(triggered()), this, SLOT(sortByNetworkStationCode()));
-	connect(_ui.actionSortGroup, SIGNAL(triggered()), this, SLOT(sortByGroup()));
+
+	connect(_ui.actionRestoreConfigOrder, &QAction::triggered, this, [this]() {
+		_sortMode = SortMode::Config;
+		sortByConfig();
+	});
+	connect(_ui.actionSortDistance, &QAction::triggered, this, [this]() {
+		_sortMode = SortMode::Distance;
+		sortByDistance();
+	});
+	connect(_ui.actionSortStaCode, &QAction::triggered, this, [this]() {
+		_sortMode = SortMode::Station;
+		sortByStationCode();
+	});
+	connect(_ui.actionSortNetStaCode, &QAction::triggered, this, [this]() {
+		_sortMode = SortMode::NetworkStation;
+		sortByNetworkStationCode();
+	});
+	connect(_ui.actionSortGroup, &QAction::triggered, this, [this]() {
+		_sortMode = SortMode::Group;
+		sortByGroup();
+	});
 
 	connect(_ui.actionAlignLeft, SIGNAL(triggered()), this, SLOT(alignLeft()));
 	connect(_ui.actionAlignRight, SIGNAL(triggered()), this, SLOT(alignRight()));
