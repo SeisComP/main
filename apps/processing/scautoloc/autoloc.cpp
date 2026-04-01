@@ -32,6 +32,8 @@ namespace Autoloc {
 static bool valid(const Pick *pick) {
 	// don't look any further at a pick for which we don't have station info
 	if ( !pick->station() ) {
+		SEISCOMP_WARNING("Rejecting pick %s without station information",
+		                 pick->label);
 		return false;
 	}
 
@@ -40,17 +42,23 @@ static bool valid(const Pick *pick) {
 		return true;
 	}
 
-	// the following is only relevant for automatic picks
+	if ( pick->snr > 1.0E7 ) {
+		// SNR is very high, something *must* be wrong
+		SEISCOMP_WARNING("Rejecting pick %s with too high SNR of %g",
+		                 pick->label, pick->snr);
+		return false;
+	}
 
-	if ( pick->snr <= 0 || pick->snr > 1.0E7 ) {
-		if ( pick->snr > 1.0E7 ) {
-			// If SNR is so high, something *must* be wrong
-			SEISCOMP_WARNING("Pick %s with snr of %g was rejected", pick->label, pick->snr);
-		}
+	if ( pick->snr <= 0 ) {
+		// If SNR is 0 or negative, something *must* be wrong
+		SEISCOMP_WARNING("Rejecting pick %s with too low SNR of %g",
+		                 pick->label, pick->snr);
 		return false;
 	}
 
 	if ( !hasAmplitude(pick) ) {
+		SEISCOMP_WARNING("Rejecting pick %s without amplitude",
+		                 pick->label);
 		return false;
 	}
 
@@ -777,13 +785,13 @@ bool Autoloc3::_tooManyRecentPicks(const Pick *newPick) const {
 	// were 10 Picks with SNR X
 	weightedSum *= 2*0.07; // TODO: Make 0.07 configurable?
 	if ( newPick->snr < weightedSum ) {
-		SEISCOMP_DEBUG("_tooManyRecentPicks: %s      %.2f < %.2f",
+		SEISCOMP_DEBUG("_tooManyRecentPicks: %s      pick SNR %.2f < %.2f",
 		               newPick->label, newPick->snr, weightedSum);
 		return true;
 	}
 
 	if ( newPick->snr < prevThreshold ) {
-		SEISCOMP_DEBUG("_tooManyRecentPicks: %s   XX %.2f < %.2f",
+		SEISCOMP_DEBUG("_tooManyRecentPicks: %s   XX pick SNR %.2f < %.2f",
 		               newPick->label, newPick->snr, prevThreshold);
 		return true;
 	}
@@ -922,7 +930,9 @@ bool Autoloc3::_perhapsPdiff(const Pick *pick) const {
 	// This is a very crude test that won't harm. if at all, only a few
 	// picks with low SNR following a large event are affected.
 
-	if ( pick->snr > 6 )  { // TODO: make this configurable? not very important
+	if ( pick->snr > 6 ) { // TODO: make this configurable? not very important
+		SEISCOMP_DEBUG("Ignoring pick %s with high SNR %.1f which might by Pdiff",
+		               pick->id, pick->snr);
 		return false;
 	}
 
@@ -931,7 +941,7 @@ bool Autoloc3::_perhapsPdiff(const Pick *pick) const {
 		const Origin *origin = item.get();
 		const Station *station = pick->station();
 
-		if ( pick->time - origin->time >  1000 ) {
+		if ( pick->time - origin->time > 1000 ) {
 			continue;
 		}
 
@@ -1418,11 +1428,12 @@ Origin *Autoloc3::_findEquivalent(const Origin *origin) {
 bool Autoloc3::_process(const Pick *pick) {
 	// process a pick
 	if ( !valid(pick) ) {
-		SEISCOMP_DEBUG("invalid pick %s", pick->label);
+		SEISCOMP_DEBUG("Ignoring invalid pick %s", pick->label);
 		return false;
 	}
 
 	if ( automatic(pick) && _tooLowSNR(pick) ) {
+		SEISCOMP_DEBUG("Ignoring pick %s with low SNR %.1f", pick->label, pick->snr);
 		return false;
 	}
 

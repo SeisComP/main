@@ -1236,10 +1236,7 @@ bool App::feed(DataModel::Pick *scpick) {
 	}
 
 	// configure station if needed
-	if ( !initOneStation(scpick->waveformID(), scpick->time().value())) {
-		SEISCOMP_INFO("  + ignoring pick");
-		// return false;
-	}
+	initOneStation(scpick->waveformID(), scpick->time().value());
 
 	::Autoloc::PickPtr pick = convertFromSC(scpick);
 	if ( !pick ) {
