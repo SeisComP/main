@@ -2385,14 +2385,15 @@ bool Autoloc3::_addMorePicks(Origin *origin, bool keepDepth) {
 			continue;
 		}
 
-		if ( pick->amp <= 0. || pick->snr <= 0.) {
+		if ( (pick->amp <= 0.) || (pick->snr <= 0.) ) {
 			continue;
 		}
 		if ( _tooLowSNR(pick) ) {
 			continue;
 		}
-		if (_blacklisted(pick))
+		if ( _blacklisted(pick) ) {
 			continue;
+		}
 //		if (pick->origin()) // associated to another origin?
 //			continue;
 		if ( !_associate(origin, pick, "P") &&

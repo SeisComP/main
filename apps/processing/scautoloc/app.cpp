@@ -399,7 +399,8 @@ bool App::initConfiguration() {
 		try {
 			// deprecated since 2013-06-26
 			_config.xxlMinAmplitude = configGetDouble("autoloc.thresholdXXL");
-			SEISCOMP_ERROR("Config parameter autoloc.thresholdXXL is deprecated.  Use autoloc.xxl.minAmplitude instead!");
+			SEISCOMP_ERROR("Config parameter autoloc.thresholdXXL is deprecated."
+			               " Use autoloc.xxl.minAmplitude instead!");
 		}
 		catch (...) {}
 	}

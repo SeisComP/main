@@ -84,7 +84,7 @@
 					Maximum secondary azimuthal gap for an origin to be reported by.
 					The secondary gap is the maximum of the sum of 2 station gaps.
 
-					Default: 360 degrees, i.e. no restriction based on this parameter.
+					360: No restriction due to this parameter.
 					</description>
 				</parameter>
 				<parameter name="maxStationDistance" type="double" default="180" unit="deg">
@@ -110,8 +110,15 @@
 				</parameter>
 				<parameter name="amplTypeSNR" type="string" default="snr">
 					<description>
-					If this string is non-empty, it is used to obtain a pick SNR from an
-					amplitude object. If it is empty, the pick SNR is 10.
+					If this string is non-empty, it is used to obtain a pick SNR
+					from an amplitude object which is compared against
+					&quot;minPickSNR&quot;. If the parameter is empty, the pick
+					SNR is 10.
+					</description>
+				</parameter>
+				<parameter name="minPickSNR" type="double" default="3" unit="">
+					<description>
+					Minimum SNR value of a pick to be considered.
 					</description>
 				</parameter>
 				<parameter name="grid" type="file" default="@DATADIR@/scautoloc/grid.conf" options="read">
@@ -126,12 +133,15 @@
 				</parameter>
 				<parameter name="stationLocations" type="file" default="" options="read">
 					<description>
-					The station file to be used when in offline mode.
-					If no file is given the database is used. An example is given
-					in &quot;@DATADIR@/scautoloc/station-locations.conf&quot;.
+					The station file to be used when in offline mode. An example
+					is &quot;@DATADIR@/scautoloc/station-locations.conf&quot;.
+					If no file is given, the database is used. Instead of this
+					parameter you may also provide full inventory XML by
+					configuring &quot;database.inventory&quot; or by the
+					command-line option '--inventory-db'.
 					</description>
 				</parameter>
-				<parameter name="useManualPicks" type="boolean" default="false">
+				<parameter name="useManualPicks" type="boolean" default="true">
 					<description>
 					Receive and process manual phase picks.
 					</description>
