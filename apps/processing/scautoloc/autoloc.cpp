@@ -744,7 +744,7 @@ bool Autoloc3::_tooManyRecentPicks(const Pick *newPick) const {
 			continue;
 		}
 
-		if ( !_config.useManualPicks && manual(oldPick) && !_config.useManualOrigins ) {
+		if ( !_config.useManualPicks && manual(oldPick) ) {
 			continue;
 		}
 
@@ -768,7 +768,9 @@ bool Autoloc3::_tooManyRecentPicks(const Pick *newPick) const {
 
 		// not well tested:
 		double x = snr * (1-dt/_config.xxlDeadTime);
-		if (x>prevThreshold) prevThreshold = x;
+		if ( x > prevThreshold ) {
+			prevThreshold = x;
+		}
 	}
 
 	// These criteria mean that if within the time span there
@@ -1018,7 +1020,7 @@ OriginPtr Autoloc3::_xxlPreliminaryOrigin(const Pick *newPick)
 			continue;
 		}
 
-		if ( !_config.useManualPicks && manual(oldPick) && !_config.useManualOrigins ) {
+		if ( !_config.useManualPicks && manual(oldPick) ) {
 			continue;
 		}
 
@@ -1413,16 +1415,16 @@ Origin *Autoloc3::_findEquivalent(const Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_process(const Pick *pick)
-{
+bool Autoloc3::_process(const Pick *pick) {
 	// process a pick
 	if ( !valid(pick) ) {
 		SEISCOMP_DEBUG("invalid pick %s", pick->label);
 		return false;
 	}
 
-	if ( automatic(pick) && _tooLowSNR(pick) )
+	if ( automatic(pick) && _tooLowSNR(pick) ) {
 		return false;
+	}
 
 	// A pick is tagged as XXL pick if it exceeds BOTH the configured XXL
 	// minimum amplitude and XXL minimum SNR threshold.
@@ -1451,7 +1453,6 @@ bool Autoloc3::_process(const Pick *pick)
 	}
 
 	if ( manual(pick) ) {
-
 		if ( !_config.useManualPicks ) {
 			if ( _config.useManualOrigins ) {
 				// If we want to consider only associated manual picks,
@@ -2332,9 +2333,8 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const std::string &p
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_addMorePicks(Origin *origin, bool keepDepth)
-// associate all matching picks
-{
+bool Autoloc3::_addMorePicks(Origin *origin, bool keepDepth) {
+	// associate all matching picks
 	std::set<std::string> have;
 	for ( auto& arr : origin->arrivals ) {
 		if ( arr.excluded ) {
