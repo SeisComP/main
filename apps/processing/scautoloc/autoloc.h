@@ -182,7 +182,7 @@ class Autoloc3 {
 
 			// If true then manual picks are being used as automatics
 			// picks are
-			bool useManualPicks{false};
+			bool useManualPicks{true};
 
 			// The pick log file
 			bool        pickLogEnable{false};

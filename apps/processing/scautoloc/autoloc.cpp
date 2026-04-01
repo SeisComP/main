@@ -782,7 +782,7 @@ bool Autoloc3::_tooManyRecentPicks(const Pick *newPick) const {
 		return true;
 	}
 
-	if (newPick->snr < prevThreshold) {
+	if ( newPick->snr < prevThreshold ) {
 		SEISCOMP_DEBUG("_tooManyRecentPicks: %s   XX %.2f < %.2f",
 		               newPick->label, newPick->snr, prevThreshold);
 		return true;
@@ -1466,6 +1466,7 @@ bool Autoloc3::_process(const Pick *pick) {
 				return false;
 			}
 		}
+		SEISCOMP_INFO("Processing manual pick %s", pick->id);
 	}
 
 	SEISCOMP_INFO("process pick %s %s", pick->label, (pick->xxl ? " XXL":""));
@@ -2357,9 +2358,13 @@ bool Autoloc3::_addMorePicks(Origin *origin, bool keepDepth) {
 			continue;
 		}
 		if ( !_config.useManualPicks && manual(pick) ) {
+			SEISCOMP_INFO("Ignoring manual pick %s for origin %s",
+			              pick->id, origin->publicID);
 			continue;
 		}
 		if ( ignored(pick) ) {
+			SEISCOMP_INFO("Ignoring pick %s for origin %s",
+			              pick->id, origin->publicID);
 			continue;
 		}
 

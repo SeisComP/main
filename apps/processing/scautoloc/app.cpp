@@ -457,9 +457,7 @@ bool App::initConfiguration() {
 	catch (...) {}
 
 	try { _config.useManualPicks = configGetBool("autoloc.useManualPicks"); }
-	catch (...) {
-		_config.useManualPicks = false;
-	}
+	catch (...) {}
 
 	try { _config.useManualOrigins = configGetBool("autoloc.useManualOrigins"); }
 	catch (...) {}
