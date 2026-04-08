@@ -64,8 +64,6 @@ App::App(int argc, char **argv)
 	addMessagingSubscription("LOCATION");
 
 	_config = Autoloc3::config();
-
-	_keepEventsTimeSpan = 86400; // one day
 	_wakeUpTimout = 5; // wake up every 5 seconds to check pending operations
 
 	_playbackSpeed = 1;
@@ -194,7 +192,7 @@ void App::createCommandLineDescription() {
 
 	commandline().addOption("Settings", "keep-events-timespan",
 	                        "The timespan to keep historical events.",
-	                        &_keepEventsTimeSpan);
+	                        &_config.originKeep);
 
 	commandline().addOption("Settings", "cleanup-interval",
 	                        "The object cleanup interval in seconds.",
@@ -258,8 +256,9 @@ bool App::validateParameters() {
 
 	if ( _config.offline ) {
 		setMessagingEnabled(false);
-		if ( !_stationLocationFile.empty() )
+		if ( !_stationLocationFile.empty() ) {
 			setDatabaseEnabled(false, false);
+		}
 	}
 
 	// Load inventory from database only if no station location file was specified.
@@ -270,32 +269,40 @@ bool App::validateParameters() {
 	else {
 		setLoadStationsEnabled(true);
 
-		if ( !isInventoryDatabaseEnabled() )
+		if ( !isInventoryDatabaseEnabled() ) {
 			setDatabaseEnabled(false, false);
-		else
+		}
+		else {
 			setDatabaseEnabled(true, true);
+		}
 	}
 
 	// Maybe we do want to allow sending of origins in offline mode?
-	if ( commandline().hasOption("test") )
+	if ( commandline().hasOption("test") ) {
 		_config.test = true;
+	}
 
-	if ( commandline().hasOption("playback") )
+	if ( commandline().hasOption("playback") ) {
 		_config.playback = true;
+	}
 
-	if ( commandline().hasOption("use-manual-picks") )
+	if ( commandline().hasOption("use-manual-picks") ) {
 		_config.useManualPicks = true;
+	}
 
-	if ( commandline().hasOption("use-manual-origins") )
+	if ( commandline().hasOption("use-manual-origins") ) {
 		_config.useManualOrigins = true;
+	}
 
 	_config.allowRejectedPicks = commandline().hasOption("allow-rejected-picks");
 
-	if ( commandline().hasOption("use-imported-origins") )
+	if ( commandline().hasOption("use-imported-origins") ) {
 		_config.useImportedOrigins = true;
+	}
 
-	if ( commandline().hasOption("try-default-depth") )
+	if ( commandline().hasOption("try-default-depth") ) {
 		_config.tryDefaultDepth = true;
+	}
 
 	if ( commandline().hasOption("adopt-manual-depth") ) {
 		_config.adoptManualDepth = true;
@@ -340,13 +347,13 @@ bool App::initConfiguration() {
 
 	// support deprecated configuration, deprecated since 2020-11-16
 	try {
-		_keepEventsTimeSpan = configGetInt("keepEventsTimeSpan");
+		_config.originKeep = configGetInt("keepEventsTimeSpan");
 		SEISCOMP_ERROR("Configuration parameter keepEventsTimeSpan is deprecated."
 		               " Use buffer.originKeep instead!");
 	}
 	catch ( ... ) {}
 	// override deprecated configuration if value is set
-	try { _keepEventsTimeSpan = configGetInt("buffer.originKeep"); }
+	try { _config.originKeep = configGetInt("buffer.originKeep"); }
 	catch ( ... ) {}
 
 
@@ -743,11 +750,11 @@ bool App::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Ti
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::readHistoricEvents() {
-	if ( _keepEventsTimeSpan <= 0 || !query() ) {
+	if ( _config.originKeep <= 0 || !query() ) {
 		return;
 	}
 
-	SEISCOMP_DEBUG("readHistoricEvents: reading %d seconds of events", _keepEventsTimeSpan);
+	SEISCOMP_DEBUG("readHistoricEvents: reading %d seconds of events", _config.originKeep);
 
 	typedef std::list<DataModel::OriginPtr> OriginList;
 	typedef std::set<std::string> PickIds;
@@ -761,8 +768,8 @@ void App::readHistoricEvents() {
 
 	// Store all preferred origins
 	DataModel::DatabaseIterator it =
-		query()->getPreferredOrigins(now - Core::TimeSpan(_keepEventsTimeSpan, 0),
-		                             now + Core::TimeSpan(_keepEventsTimeSpan, 0), "");
+		query()->getPreferredOrigins(now - Core::TimeSpan(_config.originKeep, 0),
+		                             now + Core::TimeSpan(_config.originKeep, 0), "");
 	for ( ; it.get() != nullptr; ++it ) {
 		DataModel::OriginPtr origin = DataModel::Origin::Cast(it.get());
 		if ( origin )
@@ -1352,7 +1359,6 @@ bool App::feed(DataModel::Origin *scorigin) {
 	}
 	else {
 		// imported origin
-
 		if ( !_config.useImportedOrigins ) {
 			SEISCOMP_INFO_S("Ignored origin from " + objectAgencyID(scorigin) + " because autoloc.useImportedOrigins = false");
 			return false;

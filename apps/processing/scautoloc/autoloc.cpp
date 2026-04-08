@@ -2277,8 +2277,8 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const std::string &p
 
 			double score_after_relocation = _score(relo.get());
 			double rms_after_relocation = relo->rms();
-			if (score_after_relocation < original_score ||
-			    rms_after_relocation > original_rms + 3./sqrt(10.+copy->arrivals.size())) {
+			if ( (score_after_relocation < original_score) ||
+			    (rms_after_relocation > original_rms + 3./sqrt(10.+copy->arrivals.size())) ) {
 				// no improvement
 				int index = copy->findArrival(pick);
 				if (index==-1) {

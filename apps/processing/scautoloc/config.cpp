@@ -106,9 +106,8 @@ void Autoloc3::Config::dump() const {
 	SEISCOMP_INFO("    defaultDepth                     %g km",  defaultDepth);
 	SEISCOMP_INFO("    minimumDepth                     %g km",  minimumDepth);
 	SEISCOMP_INFO("  buffer");
-	SEISCOMP_INFO("    pickKeep                         %.0f s", maxAge);
-	SEISCOMP_INFO("    manual picks                     %s",     useManualPicks ? "true":"false");
-	SEISCOMP_INFO("    manual origins                   %s",     useManualOrigins ? "true":"false");
+	SEISCOMP_INFO("    picks kept in buffer             %.0f s", maxAge);
+	SEISCOMP_INFO("    origins kept in buffer           %.0f s", originKeep);
 	SEISCOMP_INFO("  autoloc");
 	SEISCOMP_INFO("    maxRMS                           %.1f s", maxRMS);
 	SEISCOMP_INFO("    maxResidual                      %.1f s", maxResidualUse);
@@ -122,8 +121,8 @@ void Autoloc3::Config::dump() const {
 	SEISCOMP_INFO("    minScore                         %.1f",   minScore);
 	SEISCOMP_INFO("    minPickSNR                       %.1f",   minPickSNR);
 	SEISCOMP_INFO("    goodRMS                          %.1f s", goodRMS);
-	SEISCOMP_INFO("    useManualPicks                   %s",     useManualPicks ? "true":"false");
-	SEISCOMP_INFO("    useManualOrigins                 %s",     useManualOrigins ? "true":"false");
+	SEISCOMP_INFO("    use manual picks                 %s",     useManualPicks ? "true":"false");
+	SEISCOMP_INFO("    use manual origins               %s",     useManualOrigins ? "true":"false");
 	SEISCOMP_INFO("    useImportedOrigins               %s",     useImportedOrigins ? "true":"false");
 	SEISCOMP_INFO("    publicationIntervalTimeSlope     %.2f",   publicationIntervalTimeSlope);
 	SEISCOMP_INFO("    publicationIntervalTimeIntercept %.1f",   publicationIntervalTimeIntercept);

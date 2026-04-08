@@ -120,7 +120,7 @@ Seiscomp::DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool all
 		scarr->setPickID(arr.pick->id);
 		scarr->setDistance(arr.distance);
 		scarr->setAzimuth(arr.azimuth);
-		scarr->setTimeResidual( arr.residual);
+		scarr->setTimeResidual(arr.residual);
 		scarr->setTimeUsed(arr.excluded == Arrival::NotExcluded);
 		scarr->setBackazimuthUsed(arr.excluded == Arrival::NotExcluded);
 		scarr->setHorizontalSlownessUsed(arr.excluded == Arrival::NotExcluded);
@@ -342,9 +342,8 @@ Autoloc::Pick *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seiscom
 	pick->loc = scpick->waveformID().locationCode();
 	pick->cha = scpick->waveformID().channelCode();
 
-	if ( pick->loc=="" ) {
+	if (pick->loc=="")
 		pick->loc = "__";
-	}
 
 	pick->attachment = scpick;
 
