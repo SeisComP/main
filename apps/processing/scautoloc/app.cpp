@@ -102,14 +102,15 @@ void App::createCommandLineDescription() {
 	commandline().addOption("Mode", "playback",
 	                        "Flush origins immediately without delay.");
 	commandline().addOption("Mode", "xml-playback", "TODO"); // TODO
+
 	commandline().addGroup("Input");
 	commandline().addOption("Input", "input,i",
-	                        "Name of XML input file for --xml-playback.",
+	                        "Name of input XML file for --xml-playback.",
 	                        &_inputFileXML, false);
 	commandline().addOption("Input", "ep",
-	                        "Name of input XML file (SCML) with all picks and"
+	                        "Name of input XML file (SCML) with all picks and "
 	                        "origins for offline processing.  Use '-' to read "
-	                        "from stdin.The database connection is not received "
+	                        "from stdin. The database connection is not received "
 	                        "from messaging and must be provided. Results are "
 	                        "sent in XML to stdout." ,
 	                        &_inputEPFile, false);
@@ -119,8 +120,8 @@ void App::createCommandLineDescription() {
 	                        "Allow picks with evaluation status 'rejected' for"
 	                        "nucleation and association.");
 	commandline().addOption("Settings", "station-locations",
-	                        "The station-locations.conf file to use when in"
-	                        "offline mode. If no file is given the database is used.",
+	                        "The station-locations.conf file to use when in "
+	                        "offline mode. If no file is given, the database is used.",
 	                        &_stationLocationFile, false);
 	commandline().addOption("Settings", "station-config",
 	                        "The station configuration file.",
@@ -131,7 +132,6 @@ void App::createCommandLineDescription() {
 	                        "The pick log file. Providing a file name enables "
 	                        "logging picks even when disabled by configuration.",
 	                        &_config.pickLogFile, false);
-
 	commandline().addOption("Settings", "default-depth",
 	                        "Default depth for locating",
 	                        &_config.defaultDepth);
@@ -155,7 +155,6 @@ void App::createCommandLineDescription() {
 	                        &_config.defaultMaxNucDist);
 	commandline().addOption("Settings", "min-pick-affinity", "",
 	                        &_config.minPickAffinity);
-
 	commandline().addOption("Settings", "min-phase-count",
 	                        "Minimum number of picks for an origin to be reported.",
 	                        &_config.minPhaseCount);
@@ -165,7 +164,6 @@ void App::createCommandLineDescription() {
 	commandline().addOption("Settings", "min-pick-snr",
 	                        "Minimum SNR for a pick to be processed.",
 	                        &_config.minPickSNR);
-
 	commandline().addOption("Settings", "xxl-enable", "", &_config.xxlEnabled);
 	commandline().addOption("Settings", "xxl-min-phase-count",
 	                        "Minimum number of picks for an XXL origin to be reported.",
@@ -182,18 +180,15 @@ void App::createCommandLineDescription() {
 	                        &_config.xxlMaxDepth);
 	commandline().addOption("Settings", "xxl-dead-time", "",
 	                        &_config.xxlDeadTime);
-
 	commandline().addOption("Settings", "min-sta-count-ignore-pkp",
 	                        "Minimum station count for which we ignore PKP phases.",
 	                        &_config.minStaCountIgnorePKP);
 	commandline().addOption("Settings", "min-score-bypass-nucleator",
 	                        "Minimum score at which the nucleator is bypassed.",
 	                        &_config.minScoreBypassNucleator);
-
 	commandline().addOption("Settings", "keep-events-timespan",
 	                        "The timespan to keep historical events.",
 	                        &_config.originKeep);
-
 	commandline().addOption("Settings", "cleanup-interval",
 	                        "The object cleanup interval in seconds.",
 	                        &_config.cleanupInterval);
@@ -201,7 +196,6 @@ void App::createCommandLineDescription() {
 	                        "During cleanup all objects older than maxAge (in "
 	                        "seconds) are removed (maxAge == 0 disables cleanup).",
 	                        &_config.maxAge);
-
 	commandline().addOption("Settings", "wakeup-interval",
 	                        "The interval in seconds to check pending operations.",
 	                        &_wakeUpTimout);
@@ -213,7 +207,6 @@ void App::createCommandLineDescription() {
 	                        "extraordinarily high pick activity, resulting in a "
 	                        "dynamically increased pick threshold.",
 	                        &_config.dynamicPickThresholdInterval);
-
 	commandline().addOption("Settings", "use-manual-picks",
 	                        "Allow using manual picks for nucleation and association.");
 	commandline().addOption("Settings", "use-manual-origins",
@@ -888,7 +881,7 @@ bool App::runFromEPFile(const char *filename) {
 	ar.close();
 
 	if ( !_ep ) {
-		SEISCOMP_INFO("No event parameters found: %s", filename);
+		SEISCOMP_ERROR("No event parameters found: %s", filename);
 		return false;
 	}
 
@@ -935,7 +928,7 @@ bool App::runFromEPFile(const char *filename) {
 		}
 		catch ( ... ) {
 			add = false;
-			SEISCOMP_INFO("Ignoring pick %s: creation time no set",
+			SEISCOMP_INFO("Ignoring pick %s: creation time not set",
 			              pick->publicID());
 			continue;
 		}
@@ -1011,9 +1004,9 @@ void App::sync(const Seiscomp::Core::Time &t) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 const Seiscomp::Core::Time App::now() const {
-
-	if (_inputFileXML.size() || _inputEPFile.size())
+	if ( _inputFileXML.size() || _inputEPFile.size() ) {
 		return syncTime;
+	}
 
 	return Core::Time::UTC();
 }
@@ -1199,14 +1192,18 @@ bool App::feed(DataModel::Pick *scpick) {
 	std::string status = "unset";
 	try {
 		status = scpick->evaluationStatus().toString();
-	} catch ( ... ) {}
+	}
+	catch ( ... ) {}
+
 	std::string mode = "unset";
 	try {
 		mode = scpick->evaluationMode().toString();
-	} catch ( ... ) {}
+	}
+	catch ( ... ) {}
 	SEISCOMP_INFO("Processing pick: %s with evaluation mode/status = '%s'/'%s'",
 	              pickID, mode, status);
 	SEISCOMP_INFO_S("  + label:  " + pickLabel(scpick));
+
 	try {
 		if ( scpick->evaluationStatus() == DataModel::REJECTED && !_config.allowRejectedPicks ) {
 			SEISCOMP_INFO("  + ignoring pick due to evaluation status");
@@ -1231,13 +1228,13 @@ bool App::feed(DataModel::Pick *scpick) {
 		}
 	}
 
-	if (objectAgencyID(scpick) != agencyID() && isAgencyIDBlocked(objectAgencyID(scpick))) {
+	if ( objectAgencyID(scpick) != agencyID() && isAgencyIDBlocked(objectAgencyID(scpick)) ) {
 		SEISCOMP_INFO("  + ignoring pick since agency is '%s'", objectAgencyID(scpick));
 		return false;
 	}
 
 	const int priority = _authorPriority(objectAuthor(scpick));
-	if (priority == 0) {
+	if ( priority == 0 ) {
 		SEISCOMP_INFO("  + ignoring pick since author is '%s'", objectAuthor(scpick));
 		return false;
 	}

@@ -347,151 +347,57 @@
 					and association.
 					</description>
 				</option>
-				<option flag="" long-flag="station-locations" argument="arg" default="">
-					<description>
-					The station-locations.conf file to use when in
-					offline mode (started with --offline).
-					If no file is given the database is used.
-					</description>
-				</option>
-
-				<option flag="" long-flag="station-config" argument="arg" default="">
-					<description>
-					The station configuration file. Examples are in @DATADIR@/scautoloc/
-					</description>
-				</option>
-
-				<option flag="" long-flag="grid" argument="arg" default="">
-					<description>
-					The grid configuration file. Examples are in @DATADIR@/scautoloc/
-					</description>
-				</option>
-
-				<option flag="" long-flag="pick-log" argument="arg" default="">
-					<description>
-					The pick log file. Providing a file name enables logging picks
-					even when disabled by configuration.
-					</description>
-				</option>
-				<option flag="" long-flag="default-depth" argument="arg" default="10">
-					<description>
-					Default depth for comparison with the depth after locating.
-					</description>
-				</option>
-
-				<option flag="" long-flag="max-sgap" argument="arg" default="360">
-					<description>
-					Maximum secondary azimuthal gap for an origin to be reported.
-					The secondary gap is the maximum of the sum of 2 station gaps.
-					</description>
-				</option>
-
-				<option flag="" long-flag="max-rms" argument="arg" default="3.5">
-					<description>
-					Maximum travel-time RMS for a location to be reported.
-					</description>
-				</option>
-
-				<option flag="" long-flag="max-residual" argument="arg" default="3">
-					<description>
-					Maximum travel-time residual (unweighted) for a pick at a
-					station to be used.
-					</description>
-				</option>
-
-				<option flag="" long-flag="max-station-distance" argument="arg" default="5">
-					<description>
-					Maximum distance of stations to be used.
-					</description>
-				</option>
-
-				<option flag="" long-flag="max-nucleation-distance-default" argument="arg" default="180">
+				<option flag="" long-flag="station-locations" argument="arg" param-ref="autoloc.stationLocations"/>
+				<option flag="" long-flag="station-config" argument="arg" param-ref="autoloc.stationConfig"/>
+				<option flag="" long-flag="grid" argument="arg" param-ref="autoloc.grid"/>
+				<option flag="" long-flag="pick-log" argument="arg" param-ref="autoloc.pickLog"/>
+				<option flag="" long-flag="default-depth" argument="arg" param-ref="locator.defaultDepth"/>
+				<option flag="" long-flag="max-sgap" argument="arg" param-ref="autoloc.maxSGAP"/>
+				<option flag="" long-flag="max-rms" argument="arg" param-ref="autoloc.maxRMS"/>
+				<option flag="" long-flag="max-residual" argument="arg" param-ref="autoloc.maxResidual"/>
+				<option flag="" long-flag="max-station-distance" argument="arg" param-ref="autoloc.maxStationDistance"/>
+				<option flag="" long-flag="max-nucleation-distance-default" argument="arg" default="180" unit="deg">
 					<description>
 					Default maximum distance of stations to be used for nucleating new origins.
 					</description>
 				</option>
-
-				<option flag="" long-flag="min-pick-affinity" argument="arg" default="0.05">
-					<description></description>
-				</option>
-
-				<option flag="" long-flag="min-phase-count" argument="arg" default="4">
-					<description>
-					Minimum number of picks for an origin to be reported.</description>
-				</option>
-
+				<option flag="" long-flag="min-pick-affinity" argument="arg" default="0.05"/>
+				<option flag="" long-flag="min-phase-count" argument="arg" param-ref="autoloc.minPhaseCount"/>
 				<option flag="" long-flag="min-score" argument="arg" default="8">
 					<description>
 					Minimum score for an origin to be reported.
 					</description>
 				</option>
-
-				<option flag="" long-flag="min-pick-snr" argument="arg" default="3">
-					<description>
-					Minimum SNR for a pick to be processed.
-					</description>
-				</option>
-
-				<option flag="" long-flag="threshold-xxl" argument="arg" default="10000000">
-					<description>
-					An amplitude exceeding this threshold will flag the pick as XXL.
-					</description>
-				</option>
-
-				<option flag="" long-flag="min-phase-count-xxl" argument="arg" default="4">
-					<description>
-					Minimum number of picks for an XXL origin to be reported.
-					</description>
-				</option>
-
-				<option flag="" long-flag="max-distance-xxl" argument="arg" default="15">
-					<description></description>
-				</option>
-
-				<option flag="" long-flag="min-sta-count-ignore-pkp" argument="arg" default="15">
-					<description>
-					Minimum station count for which we ignore PKP phases.
-					</description>
-				</option>
+				<option flag="" long-flag="min-pick-snr" argument="arg" param-ref="autoloc.minPickSNR"/>
+				<option flag="" long-flag="min-sta-count-ignore-pkp" argument="arg" param-ref="autoloc.minStaCountIgnorePKP"/>
 
 				<option flag="" long-flag="min-score-bypass-nucleator" argument="arg" default="40">
 					<description>
 					Minimum score at which the nucleator is bypassed.
 					</description>
 				</option>
-
-				<option flag="" long-flag="keep-events-timespan" argument="arg" default="86400">
-					<description>
-					The timespan to keep historical events.
-					</description>
-				</option>
-
-				<option flag="" long-flag="cleanup-interval" argument="arg" default="3600">
-					<description>
-					The object cleanup interval in seconds.
-					</description>
-				</option>
-
-				<option flag="" long-flag="max-age" argument="arg" default="3784320000">
-					<description>
-					During cleanup all pick objects older than maxAge (in seconds)
-					are removed (maxAge == 0 disables cleanup).
-					</description>
-				</option>
-
+				<option flag="" long-flag="keep-events-timespan" argument="arg" param-ref="buffer.originKeep"/>
+				<option flag="" long-flag="cleanup-interval" argument="arg" param-ref="buffer.cleanupInterval"/>
+				<option flag="" long-flag="max-age" argument="arg" param-ref="buffer.pickKeep"/>
 				<option flag="" long-flag="wakeup-interval" argument="arg" default="5" unit="s">
 					<description>
 					The interval in seconds to check pending operations.
 					</description>
 				</option>
-
-				<option flag="" long-flag="dynamic-pick-threshold-interval" argument="arg" default="60">
+				<option flag="" long-flag="dynamic-pick-threshold-interval" argument="arg" default="3600" unit="s">
 					<description>
 					The interval in seconds in which to check for extraordinarily
 					high pick activity, resulting in a dynamically increased
 					pick threshold.
 					</description>
 				</option>
+
+				<option flag="" long-flag="xxl-enable" argument="arg" param-ref="autoloc.xxl.enable"/>
+				<option flag="" long-flag="xxl-min-amplitude" argument="arg" param-ref="autoloc.xxl.minAmplitude"/>
+				<option flag="" long-flag="xxl-min-snr" argument="arg" param-ref="autoloc.xxl.minSNR"/>
+				<option flag="" long-flag="xxl-min-phase-count" argument="arg" param-ref="autoloc.xxl.minPhaseCount"/>
+				<option flag="" long-flag="xxl-max-distance" argument="arg" param-ref="autoloc.xxl.maxStationDistance"/>
+				<option flag="" long-flag="xxl-max-depth" argument="arg" param-ref="autoloc.xxl.maxDepth"/>
 			</group>
 			<group name="Output">
 				<option flag="f" long-flag="formatted">
