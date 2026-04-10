@@ -2281,7 +2281,7 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const std::string &p
 			    (rms_after_relocation > original_rms + 3./sqrt(10.+copy->arrivals.size())) ) {
 				// no improvement
 				int index = copy->findArrival(pick);
-				if (index==-1) {
+				if ( index==-1 ) {
 					SEISCOMP_ERROR("THIS SHOULD NEVER HAPPEN @_associate A");
 					return false;
 				}
@@ -2292,7 +2292,7 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const std::string &p
 				_relocator.setFixedDepth(origin->hypocenter.dep);
 				_relocator.useFixedDepth(true);
 				relo = _relocator.relocate(copy.get());
-				if ( !relo) {
+				if ( !relo ) {
 					SEISCOMP_ERROR("THIS SHOULD NEVER HAPPEN @_associate B");
 				}
 				else {
@@ -2304,9 +2304,9 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const std::string &p
 				}
 			}
 
-			if (relo) {
+			if ( relo ) {
 				int index = relo->findArrival(pick);
-				if (index==-1) {
+				if ( index == -1 ) {
 					SEISCOMP_ERROR("THIS SHOULD NEVER HAPPEN @_associate C");
 					return false;
 				}
@@ -2321,7 +2321,7 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const std::string &p
 
 		}
 
-		if (relo) {
+		if ( relo ) {
 			origin->updateFrom(relo.get());
 		}
 		else {

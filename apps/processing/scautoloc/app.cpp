@@ -344,7 +344,6 @@ bool App::initConfiguration() {
 	}
 	catch (...) {}
 
-
 	// support deprecated configuration, deprecated since 2020-11-16
 	try {
 		_config.originKeep = configGetInt("keepEventsTimeSpan");
@@ -365,9 +364,6 @@ bool App::initConfiguration() {
 	try { _config.cleanupInterval = configGetDouble("buffer.cleanupInterval"); }
 	catch (...) {}
 
-	try { _config.defaultDepth = configGetDouble("locator.defaultDepth"); }
-	catch (...) {}
-
 	try { _config.defaultDepthStickiness = configGetDouble("autoloc.defaultDepthStickiness"); }
 	catch (...) {}
 
@@ -375,6 +371,21 @@ bool App::initConfiguration() {
 	catch (...) {}
 
 	try { _config.adoptManualDepth = configGetBool("autoloc.adoptManualDepth"); }
+	catch (...) {}
+
+	// support deprecated configuration, deprecated since 2020-11-13
+	try {
+		_config.locatorProfile = configGetString("autoloc.locator.profile");
+		SEISCOMP_ERROR("Configuration parameter autoloc.locator.profile is deprecated."
+		                 " Use locator.profile instead!");
+	}
+	catch (...) {}
+
+	// override deprecated configuration if value is set
+	try { _config.locatorProfile = configGetString("locator.profile"); }
+	catch (...) {}
+
+	try { _config.defaultDepth = configGetDouble("locator.defaultDepth"); }
 	catch (...) {}
 
 	try { _config.minimumDepth = configGetDouble("locator.minimumDepth"); }
@@ -513,18 +524,6 @@ bool App::initConfiguration() {
 	catch (...) {}
 
 	try { _stationLocationFile = configGetString("autoloc.stationLocations"); }
-	catch (...) {}
-
-	// support deprecated configuration, deprecated since 2020-11-13
-	try {
-		_config.locatorProfile = configGetString("autoloc.locator.profile");
-		SEISCOMP_ERROR("Configuration parameter autoloc.locator.profile is deprecated."
-		                 " Use locator.profile instead!");
-	}
-	catch (...) {}
-
-	// override deprecated configuration if value is set
-	try { _config.locatorProfile = configGetString("locator.profile"); }
 	catch (...) {}
 
 	try { _config.playback = configGetBool("autoloc.playback"); }

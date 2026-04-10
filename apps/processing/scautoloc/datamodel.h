@@ -127,6 +127,8 @@ class Arrival
 		float azimuth;
 		float affinity;
 		float score;
+		bool backazimuthUsed{true};
+		bool slownessUsed{true};
 
 		float ascore, dscore, tscore;
 

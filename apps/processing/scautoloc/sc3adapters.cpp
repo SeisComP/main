@@ -122,8 +122,18 @@ Seiscomp::DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool all
 		scarr->setAzimuth(arr.azimuth);
 		scarr->setTimeResidual(arr.residual);
 		scarr->setTimeUsed(arr.excluded == Arrival::NotExcluded);
-		scarr->setBackazimuthUsed(arr.excluded == Arrival::NotExcluded);
-		scarr->setHorizontalSlownessUsed(arr.excluded == Arrival::NotExcluded);
+		if ( arr.backazimuthUsed ) {
+			scarr->setBackazimuthUsed(arr.excluded == Arrival::NotExcluded);
+		}
+		else {
+			scarr->setBackazimuthUsed(false);
+		}
+		if ( arr.slownessUsed ) {
+			scarr->setHorizontalSlownessUsed(arr.excluded == Arrival::NotExcluded);
+		}
+		else {
+			scarr->setHorizontalSlownessUsed(false);
+		}
 		scarr->setWeight(arr.excluded == Arrival::NotExcluded ? 1. : 0.);
 		scarr->setPhase(phase);
 
