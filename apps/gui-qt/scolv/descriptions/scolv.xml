@@ -1058,10 +1058,10 @@
 				</parameter>
 				<parameter name="useFullState" type="boolean" default="true">
 					<description>
-					When enabled, the full state or administrative region name is
-					shown in the State column (e.g. &quot;New South Wales&quot;) instead
-					of the abbreviation (e.g. &quot;NSW&quot;). Requires cities.xml entries
-					to carry the stateFull attribute.
+					When enabled, the full administrative region name is shown in the
+					Region column (e.g. &quot;New South Wales&quot;) instead of the
+					abbreviation (e.g. &quot;NSW&quot;). If no region is available, the
+					full country name is shown as fallback.
 					</description>
 				</parameter>
 			</group>

@@ -132,7 +132,7 @@
            </column>
            <column>
             <property name="text" >
-             <string>State</string>
+             <string>Region</string>
             </property>
            </column>
            <column>

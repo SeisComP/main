@@ -1976,16 +1976,23 @@ void MainFrame::updateCitiesTab(DataModel::Origin *origin) {
 		     static_cast<int>(city.population()) < _citiesMinPopulation )
 			continue;
 
-		QString stateDisplay = (useFullState && !city.stateFull().empty())
-		    ? QString::fromStdString(city.stateFull())
-		    : QString::fromStdString(city.state());
+		const auto &region = city.adminRegion();
+		QString regionDisplay;
+		if ( !region.name.empty() )
+			regionDisplay = useFullState
+			    ? QString::fromStdString(region.name)
+			    : (region.abbr.empty()
+			        ? QString::fromStdString(region.name)
+			        : QString::fromStdString(region.abbr));
+		else
+			regionDisplay = QString::fromStdString(city.country());
 
 		entries.push_back({
 		    Math::Geo::deg2km(dist), az,
 		    QString::fromStdString(city.name()),
 		    QString::fromStdString(city.type()),
-		    stateDisplay,
-		    QString::fromStdString(city.countryID()),
+		    regionDisplay,
+		    QString::fromStdString(city.country()),
 		    city.population(),
 		    isCapital
 		});
