@@ -1028,6 +1028,43 @@
 					</group>
 				</group>
 			</group>
+			<group name="cities">
+				<description>
+				Configuration of the Nearby Cities tab in scolv. The tab lists
+				cities and locations near the current origin, sorted by distance.
+				Cities are sourced from the built-in cities.xml (via SCApp) and
+				optionally from a user-supplied extended locations file.
+				</description>
+				<parameter name="maxDist" type="double" unit="km" default="1000">
+					<description>
+					Maximum search radius in km around the origin. Cities beyond
+					this distance are not shown.
+					</description>
+				</parameter>
+				<parameter name="maxCount" type="int" default="20">
+					<description>
+					Maximum number of cities displayed. When more cities fall
+					within the search radius, the closest ones are kept.
+					</description>
+				</parameter>
+				<parameter name="minPopulation" type="int" default="10000">
+					<description>
+					Minimum population for a location to appear in the table.
+					Capital cities from cities.xml (category &quot;C&quot;) are
+					always shown regardless of this threshold. Entries in the
+					extended locations file that have no population value (or
+					zero) are also always included.
+					</description>
+				</parameter>
+				<parameter name="useFullState" type="boolean" default="true">
+					<description>
+					When enabled, the full state or administrative region name is
+					shown in the State column (e.g. &quot;New South Wales&quot;) instead
+					of the abbreviation (e.g. &quot;NSW&quot;). Requires cities.xml entries
+					to carry the stateFull attribute.
+					</description>
+				</parameter>
+			</group>
 		</configuration>
 		<command-line>
 			<synopsis>

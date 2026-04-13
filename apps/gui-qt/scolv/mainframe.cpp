@@ -56,9 +56,16 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QSystemTrayIcon>
+#include <QHeaderView>
+
+#include <seiscomp/datamodel/eventdescription.h>
+#include <seiscomp/datamodel/notifier.h>
+#include <seiscomp/math/geo.h>
 
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
+#include <cstdlib>
 //#include <unistd.h>
 
 #define WITH_SMALL_SUMMARY
@@ -135,6 +142,33 @@ string trim(const std::string &str) {
 	Core::trim(tmp);
 	return tmp;
 }
+
+
+// Numeric QTableWidgetItem so distance/population columns sort correctly
+class NumericItem : public QTableWidgetItem {
+	public:
+		NumericItem(double value, const QString &text)
+		: QTableWidgetItem(text), _value(value) {}
+
+		bool operator<(const QTableWidgetItem &other) const override {
+			const NumericItem *o = dynamic_cast<const NumericItem *>(&other);
+			return o ? _value < o->_value : QTableWidgetItem::operator<(other);
+		}
+	private:
+		double _value;
+};
+
+
+static const char *compassDir(double az) {
+	static const char *dirs[16] = {
+	    "N","NNE","NE","ENE","E","ESE","SE","SSE",
+	    "S","SSW","SW","WSW","W","WNW","NW","NNW"
+	};
+	return dirs[static_cast<int>((az + 11.25) / 22.5) % 16];
+}
+
+
+
 
 
 }
@@ -709,7 +743,7 @@ MainFrame::MainFrame(){
 	layoutMagnitudes->addWidget(_magnitudes);
 
 	_tabEventEdit = new QWidget;
-	_ui.tabWidget->insertTab(_ui.tabWidget->count()-1, _tabEventEdit, "Event");
+	_ui.tabWidget->insertTab(_ui.tabWidget->indexOf(_ui.tabNearbyCities), _tabEventEdit, "Event");
 
 	_eventEdit = new EventEdit(SCApp->query(), mapTree.get(), _tabEventEdit);
 	QLayout* layoutEventEdit = new QVBoxLayout(_tabEventEdit);
@@ -989,6 +1023,25 @@ MainFrame::MainFrame(){
 		_originLocator->setScript1(Seiscomp::Environment::Instance()->absolutePath(SCApp->configGetString("scripts.script1")));
 	}
 	catch ( ... ) {}
+
+	// Nearby Cities config
+	try { _citiesMaxDist = SCApp->configGetDouble("cities.maxDist"); } catch ( ... ) {}
+	try { _citiesMaxCount = SCApp->configGetInt("cities.maxCount"); } catch ( ... ) {}
+	try { _citiesMinPopulation = SCApp->configGetInt("cities.minPopulation"); } catch ( ... ) {}
+	try { _citiesUseFullState = SCApp->configGetBool("cities.useFullState"); } catch ( ... ) {}
+
+	_ui.citiesUseFullState->setChecked(_citiesUseFullState);
+
+	connect(_ui.citiesTable->selectionModel(),
+	        &QItemSelectionModel::selectionChanged,
+	        this, &MainFrame::onCitySelectionChanged);
+	connect(_ui.setRegionBtn, &QPushButton::clicked,
+	        this, &MainFrame::onSetRegionName);
+	connect(_ui.regionFormatCombo,
+	        static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+	        this, &MainFrame::onRegionFormatChanged);
+	connect(_ui.citiesUseFullState, &QCheckBox::toggled,
+	        this, [this](bool){ updateCitiesTab(_currentOrigin.get()); });
 
 	SCApp->settings().endGroup();
 }
@@ -1295,7 +1348,7 @@ void MainFrame::setOrigin(Seiscomp::DataModel::Origin *o,
                           Seiscomp::DataModel::Event *e,
                           bool newOrigin, bool relocated) {
 	_currentOrigin = o;
-	_eventID = "";
+	_eventID = e ? e->publicID() : "";
 
 	_magnitudes->setOrigin(o, e);
 
@@ -1305,6 +1358,9 @@ void MainFrame::setOrigin(Seiscomp::DataModel::Origin *o,
 	_eventSmallSummary->setEvent(e);
 	_eventSmallSummaryCurrent->setEvent(e, o, true);
 #endif
+
+	updateCitiesTab(o);
+	updateCurrentRegionLabel(e);
 
 	if ( newOrigin && relocated && _computeMagnitudesAutomatically && (o->magnitudeCount() == 0) )
 		_originLocator->computeMagnitudes();
@@ -1347,6 +1403,9 @@ bool MainFrame::populateOrigin(Seiscomp::DataModel::Origin *org, Seiscomp::DataM
 		_eventSmallSummaryCurrent->setEvent(ev, org, true);
 #endif
 		_eventEdit->setEvent(ev, org);
+
+		updateCitiesTab(org);
+		updateCurrentRegionLabel(ev);
 
 		return true;
 	}
@@ -1874,6 +1933,254 @@ void MainFrame::trayIconMessageClicked() {
 		_eventList->selectEventID(_trayMessageEventID);
 
 	_trayMessageEventID.clear();
+}
+
+
+
+
+void MainFrame::updateCitiesTab(DataModel::Origin *origin) {
+	QTableWidget *t = _ui.citiesTable;
+	t->setSortingEnabled(false);
+	t->setRowCount(0);
+	_ui.regionPreview->clear();
+	_ui.setRegionBtn->setEnabled(false);
+
+	if ( !origin ) return;
+
+	double originLat   = origin->latitude().value();
+	double originLon   = origin->longitude().value();
+	double maxDistDeg  = Math::Geo::km2deg(_citiesMaxDist);
+
+	struct Entry {
+		double  distKm;
+		double  az;
+		QString name;
+		QString type;
+		QString state;
+		QString country;
+		double  population;
+		bool    isCapital;
+	};
+	std::vector<Entry> entries;
+
+	bool useFullState = _ui.citiesUseFullState->isChecked();
+
+	for ( const auto &city : SCApp->cities() ) {
+		double dist, az;
+		Math::Geo::delazi(originLat, originLon, city.lat, city.lon,
+		                  &dist, &az);
+		if ( dist > maxDistDeg ) continue;
+
+		bool isCapital = city.category() == "C";
+		if ( !isCapital &&
+		     static_cast<int>(city.population()) < _citiesMinPopulation )
+			continue;
+
+		QString stateDisplay = (useFullState && !city.stateFull().empty())
+		    ? QString::fromStdString(city.stateFull())
+		    : QString::fromStdString(city.state());
+
+		entries.push_back({
+		    Math::Geo::deg2km(dist), az,
+		    QString::fromStdString(city.name()),
+		    QString::fromStdString(city.type()),
+		    stateDisplay,
+		    QString::fromStdString(city.countryID()),
+		    city.population(),
+		    isCapital
+		});
+	}
+
+	std::sort(entries.begin(), entries.end(),
+	          [](const Entry &a, const Entry &b){ return a.distKm < b.distKm; });
+
+	if ( static_cast<int>(entries.size()) > _citiesMaxCount )
+		entries.resize(static_cast<size_t>(_citiesMaxCount));
+
+	t->setRowCount(static_cast<int>(entries.size()));
+
+	for ( int i = 0; i < static_cast<int>(entries.size()); ++i ) {
+		const Entry &e = entries[i];
+
+		auto boldify = [&](QTableWidgetItem *item) {
+			if ( e.isCapital ) {
+				QFont f = item->font();
+				f.setBold(true);
+				item->setFont(f);
+			}
+			return item;
+		};
+
+		t->setItem(i, 0, boldify(new QTableWidgetItem(e.name)));
+		t->setItem(i, 1, boldify(new QTableWidgetItem(e.type)));
+		t->setItem(i, 2, boldify(new QTableWidgetItem(e.state)));
+		t->setItem(i, 3, boldify(new QTableWidgetItem(e.country)));
+		t->setItem(i, 4, boldify(new NumericItem(
+		    e.distKm, QString::number(static_cast<int>(e.distKm + 0.5)))));
+		t->setItem(i, 5, boldify(new QTableWidgetItem(
+		    QString::fromLatin1(compassDir(e.az)))));
+		t->setItem(i, 6, boldify(new NumericItem(
+		    e.population,
+		    QString::number(static_cast<long long>(e.population)))));
+
+		auto *capItem = new QTableWidgetItem(
+		    e.isCapital ? QString("\u2605") : QString());
+		capItem->setTextAlignment(Qt::AlignCenter);
+		t->setItem(i, 7, capItem);
+	}
+
+	t->setSortingEnabled(true);
+	t->horizontalHeader()->resizeSections(QHeaderView::ResizeToContents);
+}
+
+
+void MainFrame::updateCurrentRegionLabel(DataModel::Event *event) {
+	if ( !event ) {
+		_ui.currentRegionLabel->setText(tr("Region: \u2014"));
+		return;
+	}
+	for ( size_t i = 0; i < event->eventDescriptionCount(); ++i ) {
+		auto *d = event->eventDescription(i);
+		if ( d->type() == DataModel::REGION_NAME ) {
+			_ui.currentRegionLabel->setText(
+			    tr("Region: %1").arg(d->text().c_str()));
+			return;
+		}
+	}
+	_ui.currentRegionLabel->setText(tr("Region: \u2014"));
+}
+
+
+QString MainFrame::formatRegionName(const QString &name, const QString &state,
+                                    const QString &country, int distKm,
+                                    const QString &dir) const {
+	QString loc = !state.isEmpty() ? state : country;
+
+	switch ( _ui.regionFormatCombo->currentIndex() ) {
+		case 0: return QString("%1 of %2%3")
+		            .arg(dir, name, loc.isEmpty() ? "" : ", " + loc);
+		case 1: return QString("%1, %2 at %3 km")
+		            .arg(name, dir).arg(distKm);
+		case 2: return QString("%1 km %2 of %3")
+		            .arg(distKm).arg(dir, name);
+		case 3: return QString("%1 (%2, %3 km)")
+		            .arg(name, dir).arg(distKm);
+		case 4: return QString("%1 km %2 of %3%4")
+		            .arg(distKm).arg(dir, name,
+		                             loc.isEmpty() ? "" : ", " + loc);
+		default: return name;
+	}
+}
+
+
+void MainFrame::updateRegionPreview() {
+	int row = _ui.citiesTable->currentRow();
+	if ( row < 0 ) {
+		_ui.regionPreview->clear();
+		_ui.setRegionBtn->setEnabled(false);
+		return;
+	}
+
+	auto cell = [&](int col) -> QString {
+		auto *item = _ui.citiesTable->item(row, col);
+		return item ? item->text() : QString();
+	};
+
+	QString name    = cell(0);
+	QString state   = cell(2);
+	QString country = cell(3);
+	int     distKm  = static_cast<int>(cell(4).toDouble() + 0.5);
+	QString dir     = cell(5);
+
+	_ui.regionPreview->setText(
+	    formatRegionName(name, state, country, distKm, dir));
+	_ui.setRegionBtn->setEnabled(!_eventID.empty());
+}
+
+
+void MainFrame::onCitySelectionChanged() {
+	updateRegionPreview();
+}
+
+
+void MainFrame::onRegionFormatChanged() {
+	updateRegionPreview();
+}
+
+
+void MainFrame::onSetRegionName() {
+	QString regionText = _ui.regionPreview->text().trimmed();
+	if ( regionText.isEmpty() ) return;
+	if ( _eventID.empty() ) {
+		QMessageBox::warning(this, tr("No Event"),
+		                     tr("No event is currently loaded."));
+		return;
+	}
+
+	if ( QMessageBox::question(
+	         this, tr("Set Region Name"),
+	         tr("Set region name for event %1 to:\n\n\"%2\"?")
+	             .arg(_eventID.c_str(), regionText),
+	         QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes )
+		return;
+
+	DataModel::EventPtr evt = DataModel::Event::Find(_eventID);
+	if ( !evt && SCApp->query() )
+		evt = DataModel::Event::Cast(
+		    SCApp->query()->loadObject(
+		        DataModel::Event::TypeInfo(), _eventID));
+	if ( !evt ) {
+		QMessageBox::critical(this, tr("Error"),
+		                      tr("Could not load event '%1'.")
+		                          .arg(_eventID.c_str()));
+		return;
+	}
+
+	if ( SCApp->query() )
+		SCApp->query()->loadEventDescriptions(evt.get());
+
+	DataModel::EventDescription    *desc = nullptr;
+	DataModel::Operation            op   = DataModel::OP_ADD;
+	DataModel::EventDescriptionPtr  newDesc;
+
+	for ( size_t i = 0; i < evt->eventDescriptionCount(); ++i ) {
+		if ( evt->eventDescription(i)->type() == DataModel::REGION_NAME ) {
+			desc = evt->eventDescription(i);
+			op   = DataModel::OP_UPDATE;
+			break;
+		}
+	}
+
+	if ( !desc ) {
+		newDesc = new DataModel::EventDescription;
+		newDesc->setType(DataModel::REGION_NAME);
+		evt->add(newDesc.get());
+		desc = newDesc.get();
+	}
+
+	desc->setText(regionText.toStdString());
+
+	DataModel::NotifierMessagePtr msg = new DataModel::NotifierMessage;
+	msg->attach(new DataModel::Notifier(
+	    "EventParameters", DataModel::OP_UPDATE, evt.get()));
+	msg->attach(new DataModel::Notifier(evt->publicID(), op, desc));
+
+	if ( !SCApp->sendMessage(SCApp->messageGroups().event.c_str(), msg.get()) ) {
+		QMessageBox::critical(this, tr("Error"),
+		                      tr("Failed to send region name update.\n"
+		                         "Check messaging connection."));
+		return;
+	}
+
+	for ( DataModel::NotifierMessage::iterator it = msg->begin();
+	      it != msg->end(); ++it )
+		SCApp->emitNotifier(it->get());
+
+	_ui.currentRegionLabel->setText(tr("Region: %1").arg(regionText));
+
+	QMessageBox::information(this, tr("Region Name Set"),
+	                         tr("Region name updated to:\n\"%1\"")
+	                             .arg(regionText));
 }
 
 
