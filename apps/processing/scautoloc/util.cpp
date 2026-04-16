@@ -32,6 +32,7 @@
 #include <cmath>
 
 #include "util.h"
+#include "locator.h"
 #include "nucleator.h"
 #include "datamodel.h"
 
@@ -611,7 +612,15 @@ DataModel::Origin *convertToSC(const AutolocInternal::Origin* origin, const std:
 	origin->geoProperties(minDist, maxDist, aziGap);
 	oq.setMinimumDistance(minDist);
 	oq.setMaximumDistance(maxDist);
-	oq.setAzimuthalGap(aziGap);
+
+	double primaryGap, secondaryGap;
+	if ( determineAzimuthalGaps(origin, &primaryGap, &secondaryGap) ) {
+		oq.setAzimuthalGap(primaryGap);
+		oq.setSecondaryAzimuthalGap(secondaryGap);
+	}
+	else {
+		oq.setAzimuthalGap(aziGap);
+	}
 
 	scorigin->setQuality(oq);
 
