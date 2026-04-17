@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<module name="scoriginquality" category="Processing">
+		<description>
+		Automatic A/B/C/D origin quality grader.
+
+		Subscribes to LOCATION messages and assigns a quality grade to each
+		incoming origin based on its OriginQuality fields. The grade is written
+		back as an origin Comment with a configurable ID so that it is visible
+		in scolv and other SeisComP GUIs without any additional configuration.
+
+		Grading uses a worst-of rule: each parameter (azimuthal gap, secondary
+		azimuthal gap, RMS, used station count, minimum distance) is graded
+		independently and the final grade is the worst individual grade.
+
+		Default thresholds follow ISC/ANSS conventions:
+
+		Grade | maxGap | maxSecGap | maxRMS | minStations | maxMinDist
+		------+--------+-----------+--------+-------------+-----------
+		  A   |   90   |    135    |  0.15  |     10      |    30
+		  B   |  135   |    180    |  0.30  |      6      |    60
+		  C   |  180   |    210    |  0.50  |      4      |    90
+		  D   |  any worse than C                                      |
+
+		All thresholds are configurable. Parameters that cannot be read from the
+		OriginQuality object are silently skipped so the grade is based on
+		whatever information is available.
+		</description>
+		<configuration>
+			<parameter name="quality.commentID" type="string" default="quality">
+				<description>
+				ID of the Comment object written to each origin. This should
+				match the ID configured in scolv (olv.originComments.quality.id)
+				so the grade appears in the quality dropdown.
+				</description>
+			</parameter>
+
+			<group name="quality">
+				<group name="A">
+					<parameter name="maxGap" type="double" unit="deg" default="90">
+						<description>
+						Maximum primary azimuthal gap for grade A.
+						</description>
+					</parameter>
+					<parameter name="maxSecondaryGap" type="double" unit="deg" default="135">
+						<description>
+						Maximum secondary azimuthal gap for grade A.
+						</description>
+					</parameter>
+					<parameter name="maxRMS" type="double" unit="s" default="0.15">
+						<description>
+						Maximum travel-time RMS residual for grade A.
+						</description>
+					</parameter>
+					<parameter name="minStations" type="int" default="10">
+						<description>
+						Minimum number of used stations for grade A.
+						</description>
+					</parameter>
+					<parameter name="maxMinDist" type="double" unit="deg" default="30">
+						<description>
+						Maximum nearest-station distance for grade A.
+						</description>
+					</parameter>
+				</group>
+
+				<group name="B">
+					<parameter name="maxGap" type="double" unit="deg" default="135">
+						<description>
+						Maximum primary azimuthal gap for grade B.
+						</description>
+					</parameter>
+					<parameter name="maxSecondaryGap" type="double" unit="deg" default="180">
+						<description>
+						Maximum secondary azimuthal gap for grade B.
+						</description>
+					</parameter>
+					<parameter name="maxRMS" type="double" unit="s" default="0.30">
+						<description>
+						Maximum travel-time RMS residual for grade B.
+						</description>
+					</parameter>
+					<parameter name="minStations" type="int" default="6">
+						<description>
+						Minimum number of used stations for grade B.
+						</description>
+					</parameter>
+					<parameter name="maxMinDist" type="double" unit="deg" default="60">
+						<description>
+						Maximum nearest-station distance for grade B.
+						</description>
+					</parameter>
+				</group>
+
+				<group name="C">
+					<parameter name="maxGap" type="double" unit="deg" default="180">
+						<description>
+						Maximum primary azimuthal gap for grade C.
+						</description>
+					</parameter>
+					<parameter name="maxSecondaryGap" type="double" unit="deg" default="210">
+						<description>
+						Maximum secondary azimuthal gap for grade C.
+						</description>
+					</parameter>
+					<parameter name="maxRMS" type="double" unit="s" default="0.50">
+						<description>
+						Maximum travel-time RMS residual for grade C.
+						</description>
+					</parameter>
+					<parameter name="minStations" type="int" default="4">
+						<description>
+						Minimum number of used stations for grade C.
+						</description>
+					</parameter>
+					<parameter name="maxMinDist" type="double" unit="deg" default="90">
+						<description>
+						Maximum nearest-station distance for grade C.
+						</description>
+					</parameter>
+				</group>
+			</group>
+		</configuration>
+		<command-line>
+			<group name="Quality">
+				<optionReference>quality.commentID</optionReference>
+			</group>
+		</command-line>
+	</module>
+</seiscomp>
