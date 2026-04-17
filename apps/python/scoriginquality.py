@@ -200,7 +200,7 @@ class OriginQualityApp(seiscomp.client.Application):
             return False
 
         self._logGrade(originID, grade, details)
-        self._sendGrade(origin, grade)
+        self._sendGrade(origin, grade, details)
         self.connection().syncOutbox()
         return True
 
@@ -232,7 +232,7 @@ class OriginQualityApp(seiscomp.client.Application):
             self._logGrade(origin.publicID(), grade, details)
             # In --ep mode we have no DB to check for existing comments,
             # so always OP_ADD
-            self._sendGrade(origin, grade, force_add=True)
+            self._sendGrade(origin, grade, details, force_add=True)
 
         self.connection().syncOutbox()
         return True
@@ -260,7 +260,7 @@ class OriginQualityApp(seiscomp.client.Application):
             )
             return
         self._logGrade(origin.publicID(), grade, details)
-        self._sendGrade(origin, grade)
+        self._sendGrade(origin, grade, details)
 
     # ------------------------------------------------------------------
     # Core grading logic
@@ -328,10 +328,25 @@ class OriginQualityApp(seiscomp.client.Application):
             "scoriginquality: %s -> %s [%s]" % (originID, grade, detail_str)
         )
 
-    def _sendGrade(self, origin, grade, force_add=False):
+    def _buildCommentText(self, grade, details):
+        units  = {"gap": "°", "secGap": "°", "rms": " s", "stations": "", "minDist": "°"}
+        labels = {"gap": "Az. Gap", "secGap": "Sec. Gap", "rms": "RMS",
+                  "stations": "Stations", "minDist": "Min. Dist"}
+        fmts   = {"gap": "%.1f", "secGap": "%.1f", "rms": "%.3f",
+                  "stations": "%d", "minDist": "%.1f"}
+        lines = [grade]
+        for key in ("gap", "secGap", "rms", "stations", "minDist"):
+            if key not in details:
+                continue
+            val, g = details[key]
+            valstr = fmts[key] % val
+            lines.append("%s: %s%s \u2192 %s" % (labels[key], valstr, units[key], g))
+        return "\n".join(lines)
+
+    def _sendGrade(self, origin, grade, details=None, force_add=False):
         comment = seiscomp.datamodel.Comment()
         comment.setId(self._commentID)
-        comment.setText(grade)
+        comment.setText(self._buildCommentText(grade, details or {}))
         ci = seiscomp.datamodel.CreationInfo()
         ci.setAgencyID(self.agencyID())
         ci.setAuthor("scoriginquality")
