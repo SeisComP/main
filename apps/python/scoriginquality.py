@@ -15,9 +15,15 @@
 #
 # scoriginquality - Automatic A/B/C/D origin quality grader
 #
-# Subscribes to LOCATION messages, reads OriginQuality fields from each
-# incoming Origin, assigns a grade (A/B/C/D) using a worst-of rule, and
-# writes the grade back as an origin Comment with a configurable ID.
+# Two modes:
+#
+#   Live mode (default):
+#     Subscribes to LOCATION messages, grades each incoming origin and
+#     writes the grade back as a Comment via messaging.
+#
+#   Batch mode (--event / --ep):
+#     --event <eventID>   Grade the preferred origin of one event from DB.
+#     --ep <file>         Grade all origins in a SeisComP XML file.
 #
 # Grade thresholds (all configurable, defaults follow ISC/ANSS conventions):
 #
@@ -26,31 +32,32 @@
 #     A   |   90   |    135    |  0.15  |     10      |    30
 #     B   |  135   |    180    |  0.30  |      6      |    60
 #     C   |  180   |    210    |  0.50  |      4      |    90
-#     D   |  360   |    360    |  inf   |      1      |   180
-#
-# Anything worse than D gets grade D.
+#     D   |  anything worse than C                              |
 ############################################################################
 
 import sys
 import seiscomp.core
 import seiscomp.client
 import seiscomp.datamodel
+import seiscomp.io
 import seiscomp.logging
 
 
 GRADES = ("A", "B", "C", "D")
 
 
-def _grade_index(value, thresholds, lower_is_worse=True):
-    """Return 0-3 index for A-D given sorted thresholds (A→B→C→D direction)."""
+def _grade_index(value, thresholds):
     for i, threshold in enumerate(thresholds):
-        if lower_is_worse:
-            if value <= threshold:
-                return i
-        else:
-            if value >= threshold:
-                return i
-    return 3  # D
+        if value <= threshold:
+            return i
+    return 3
+
+
+def _grade_index_stations(nsta, min_thresholds):
+    for i, threshold in enumerate(min_thresholds):
+        if nsta >= threshold:
+            return i
+    return 3
 
 
 class OriginQualityApp(seiscomp.client.Application):
@@ -59,7 +66,7 @@ class OriginQualityApp(seiscomp.client.Application):
         seiscomp.client.Application.__init__(self, argc, argv)
 
         self.setMessagingEnabled(True)
-        self.setDatabaseEnabled(False, False)
+        self.setDatabaseEnabled(True, True)
         self.setMessagingUsername("")
         self.setPrimaryMessagingGroup(seiscomp.client.Protocol.LISTENER_GROUP)
         self.addMessagingSubscription("LOCATION")
@@ -67,21 +74,30 @@ class OriginQualityApp(seiscomp.client.Application):
         self.setAutoApplyNotifierEnabled(True)
         self.setInterpretNotifierEnabled(True)
 
-        # Comment ID written on the origin
-        self._commentID = "quality"
+        self._commentID   = "quality"
+        self._eventID     = None
+        self._epFile      = None
 
-        # Thresholds — list index 0=A, 1=B, 2=C, 3=D
-        self._maxGap       = [90.0,  135.0, 180.0, 360.0]
-        self._maxSecGap    = [135.0, 180.0, 210.0, 360.0]
-        self._maxRMS       = [0.15,  0.30,  0.50,  1e9]
-        self._minStations  = [10,    6,     4,     1]
-        self._maxMinDist   = [30.0,  60.0,  90.0,  180.0]
+        self._maxGap      = [90.0,  135.0, 180.0, 360.0]
+        self._maxSecGap   = [135.0, 180.0, 210.0, 360.0]
+        self._maxRMS      = [0.15,  0.30,  0.50,  1e9]
+        self._minStations = [10,    6,     4,     1]
+        self._maxMinDist  = [30.0,  60.0,  90.0,  180.0]
 
     # ------------------------------------------------------------------
     # Configuration
     # ------------------------------------------------------------------
 
     def createCommandLineDescription(self):
+        self.commandline().addGroup("Batch")
+        self.commandline().addStringOption(
+            "Batch", "event,E",
+            "Grade the preferred origin of this event ID from the database and exit."
+        )
+        self.commandline().addStringOption(
+            "Batch", "ep",
+            "Grade all origins in a SeisComP XML file and print results to stdout."
+        )
         self.commandline().addGroup("Quality")
         self.commandline().addStringOption(
             "Quality", "comment-id",
@@ -97,70 +113,21 @@ class OriginQualityApp(seiscomp.client.Application):
         except Exception:
             pass
 
-        try:
-            self._maxGap[0] = self.configGetDouble("quality.A.maxGap")
-        except Exception:
-            pass
-        try:
-            self._maxGap[1] = self.configGetDouble("quality.B.maxGap")
-        except Exception:
-            pass
-        try:
-            self._maxGap[2] = self.configGetDouble("quality.C.maxGap")
-        except Exception:
-            pass
-
-        try:
-            self._maxSecGap[0] = self.configGetDouble("quality.A.maxSecondaryGap")
-        except Exception:
-            pass
-        try:
-            self._maxSecGap[1] = self.configGetDouble("quality.B.maxSecondaryGap")
-        except Exception:
-            pass
-        try:
-            self._maxSecGap[2] = self.configGetDouble("quality.C.maxSecondaryGap")
-        except Exception:
-            pass
-
-        try:
-            self._maxRMS[0] = self.configGetDouble("quality.A.maxRMS")
-        except Exception:
-            pass
-        try:
-            self._maxRMS[1] = self.configGetDouble("quality.B.maxRMS")
-        except Exception:
-            pass
-        try:
-            self._maxRMS[2] = self.configGetDouble("quality.C.maxRMS")
-        except Exception:
-            pass
-
-        try:
-            self._minStations[0] = self.configGetInt("quality.A.minStations")
-        except Exception:
-            pass
-        try:
-            self._minStations[1] = self.configGetInt("quality.B.minStations")
-        except Exception:
-            pass
-        try:
-            self._minStations[2] = self.configGetInt("quality.C.minStations")
-        except Exception:
-            pass
-
-        try:
-            self._maxMinDist[0] = self.configGetDouble("quality.A.maxMinDist")
-        except Exception:
-            pass
-        try:
-            self._maxMinDist[1] = self.configGetDouble("quality.B.maxMinDist")
-        except Exception:
-            pass
-        try:
-            self._maxMinDist[2] = self.configGetDouble("quality.C.maxMinDist")
-        except Exception:
-            pass
+        for grade_idx, grade in enumerate(("A", "B", "C")):
+            for attr, lst in (("maxGap",        self._maxGap),
+                              ("maxSecondaryGap", self._maxSecGap),
+                              ("maxRMS",         self._maxRMS),
+                              ("maxMinDist",     self._maxMinDist)):
+                try:
+                    lst[grade_idx] = self.configGetDouble(
+                        "quality.%s.%s" % (grade, attr))
+                except Exception:
+                    pass
+            try:
+                self._minStations[grade_idx] = self.configGetInt(
+                    "quality.%s.minStations" % grade)
+            except Exception:
+                pass
 
         return True
 
@@ -173,31 +140,133 @@ class OriginQualityApp(seiscomp.client.Application):
         except Exception:
             pass
 
+        try:
+            self._eventID = self.commandline().optionString("event")
+        except Exception:
+            pass
+
+        try:
+            self._epFile = self.commandline().optionString("ep")
+        except Exception:
+            pass
+
         seiscomp.logging.info(
             "scoriginquality: writing grade to comment '%s'" % self._commentID
         )
         return True
 
     # ------------------------------------------------------------------
-    # Messaging handlers
+    # Entry point — batch modes short-circuit the messaging loop
+    # ------------------------------------------------------------------
+
+    def run(self):
+        if self._eventID:
+            return self._runEventMode(self._eventID)
+        if self._epFile:
+            return self._runEpMode(self._epFile)
+        return seiscomp.client.Application.run(self)
+
+    # ------------------------------------------------------------------
+    # Batch: single event from database
+    # ------------------------------------------------------------------
+
+    def _runEventMode(self, eventID):
+        if not self.query():
+            seiscomp.logging.error("No database connection")
+            return False
+
+        obj = self.query().loadObject(seiscomp.datamodel.Event.TypeInfo(), eventID)
+        event = seiscomp.datamodel.Event.Cast(obj)
+        if not event:
+            seiscomp.logging.error("Event '%s' not found in database" % eventID)
+            return False
+
+        originID = event.preferredOriginID()
+        if not originID:
+            seiscomp.logging.error("Event '%s' has no preferred origin" % eventID)
+            return False
+
+        obj = self.query().loadObject(seiscomp.datamodel.Origin.TypeInfo(), originID)
+        origin = seiscomp.datamodel.Origin.Cast(obj)
+        if not origin:
+            seiscomp.logging.error("Origin '%s' not found in database" % originID)
+            return False
+
+        grade, details = self._computeGrade(origin)
+        if grade is None:
+            seiscomp.logging.error(
+                "Origin '%s' has no usable OriginQuality — cannot grade" % originID
+            )
+            return False
+
+        self._logGrade(originID, grade, details)
+        self._sendGrade(origin, grade)
+        self.connection().syncOutbox()
+        return True
+
+    # ------------------------------------------------------------------
+    # Batch: XML event parameters file
+    # ------------------------------------------------------------------
+
+    def _runEpMode(self, filename):
+        ar = seiscomp.io.XMLArchive()
+        if not ar.open(filename):
+            seiscomp.logging.error("Cannot open file '%s'" % filename)
+            return False
+
+        ep = seiscomp.datamodel.EventParameters.Cast(ar.readObject())
+        ar.close()
+        if not ep:
+            seiscomp.logging.error("No EventParameters found in '%s'" % filename)
+            return False
+
+        for i in range(ep.originCount()):
+            origin = ep.origin(i)
+            grade, details = self._computeGrade(origin)
+            if grade is None:
+                seiscomp.logging.warning(
+                    "Origin '%s' has no usable OriginQuality — skipping"
+                    % origin.publicID()
+                )
+                continue
+            self._logGrade(origin.publicID(), grade, details)
+            # In --ep mode we have no DB to check for existing comments,
+            # so always OP_ADD
+            self._sendGrade(origin, grade, force_add=True)
+
+        self.connection().syncOutbox()
+        return True
+
+    # ------------------------------------------------------------------
+    # Live messaging handlers
     # ------------------------------------------------------------------
 
     def addObject(self, parentID, obj):
         origin = seiscomp.datamodel.Origin.Cast(obj)
         if origin:
-            self._processOrigin(parentID, origin)
+            self._processOrigin(origin)
 
     def updateObject(self, parentID, obj):
         origin = seiscomp.datamodel.Origin.Cast(obj)
         if origin:
-            self._processOrigin(parentID, origin)
+            self._processOrigin(origin)
+
+    def _processOrigin(self, origin):
+        grade, details = self._computeGrade(origin)
+        if grade is None:
+            seiscomp.logging.warning(
+                "scoriginquality: %s has no usable OriginQuality — skipping"
+                % origin.publicID()
+            )
+            return
+        self._logGrade(origin.publicID(), grade, details)
+        self._sendGrade(origin, grade)
 
     # ------------------------------------------------------------------
     # Core grading logic
     # ------------------------------------------------------------------
 
     def _computeGrade(self, origin):
-        """Return (grade_str, details_dict) for the given origin."""
         try:
             oq = origin.quality()
         except Exception:
@@ -206,7 +275,6 @@ class OriginQualityApp(seiscomp.client.Application):
         indices = []
         details = {}
 
-        # Azimuthal gap (primary)
         try:
             gap = oq.azimuthalGap()
             idx = _grade_index(gap, self._maxGap)
@@ -215,7 +283,6 @@ class OriginQualityApp(seiscomp.client.Application):
         except Exception:
             pass
 
-        # Secondary azimuthal gap
         try:
             sgap = oq.secondaryAzimuthalGap()
             idx = _grade_index(sgap, self._maxSecGap)
@@ -224,7 +291,6 @@ class OriginQualityApp(seiscomp.client.Application):
         except Exception:
             pass
 
-        # RMS / standard error
         try:
             rms = oq.standardError()
             idx = _grade_index(rms, self._maxRMS)
@@ -233,7 +299,6 @@ class OriginQualityApp(seiscomp.client.Application):
         except Exception:
             pass
 
-        # Used station count (higher is better)
         try:
             nsta = oq.usedStationCount()
             idx = _grade_index_stations(nsta, self._minStations)
@@ -242,7 +307,6 @@ class OriginQualityApp(seiscomp.client.Application):
         except Exception:
             pass
 
-        # Minimum distance
         try:
             minDist = oq.minimumDistance()
             idx = _grade_index(minDist, self._maxMinDist)
@@ -254,27 +318,17 @@ class OriginQualityApp(seiscomp.client.Application):
         if not indices:
             return None, {}
 
-        worst = max(indices)
-        return GRADES[worst], details
+        return GRADES[max(indices)], details
 
-    def _processOrigin(self, parentID, origin):
-        grade, details = self._computeGrade(origin)
-        if grade is None:
-            seiscomp.logging.warning(
-                "scoriginquality: %s has no usable OriginQuality — skipping"
-                % origin.publicID()
-            )
-            return
-
+    def _logGrade(self, originID, grade, details):
         detail_str = ", ".join(
-            "%s=%.3g(%s)" % (k, v[0], v[1]) for k, v in details.items()
+            "%s=%.4g(%s)" % (k, v[0], v[1]) for k, v in details.items()
         )
         seiscomp.logging.info(
-            "scoriginquality: %s -> %s [%s]"
-            % (origin.publicID(), grade, detail_str)
+            "scoriginquality: %s -> %s [%s]" % (originID, grade, detail_str)
         )
 
-        # Build or update the comment
+    def _sendGrade(self, origin, grade, force_add=False):
         comment = seiscomp.datamodel.Comment()
         comment.setId(self._commentID)
         comment.setText(grade)
@@ -284,35 +338,24 @@ class OriginQualityApp(seiscomp.client.Application):
         ci.setCreationTime(seiscomp.core.Time.GMT())
         comment.setCreationInfo(ci)
 
-        # Send as notifier on LOCATION group
         op = seiscomp.datamodel.OP_ADD
-
-        # Check if origin already has this comment; use OP_UPDATE if so
-        for i in range(origin.commentCount()):
-            try:
-                if origin.comment(i).id() == self._commentID:
-                    op = seiscomp.datamodel.OP_UPDATE
-                    break
-            except Exception:
-                pass
+        if not force_add:
+            for i in range(origin.commentCount()):
+                try:
+                    if origin.comment(i).id() == self._commentID:
+                        op = seiscomp.datamodel.OP_UPDATE
+                        break
+                except Exception:
+                    pass
 
         msg = seiscomp.datamodel.NotifierMessage()
-        n = seiscomp.datamodel.Notifier(origin.publicID(), op, comment)
-        msg.attach(n)
+        msg.attach(seiscomp.datamodel.Notifier(origin.publicID(), op, comment))
 
         if not self.connection().send("LOCATION", msg):
             seiscomp.logging.error(
                 "scoriginquality: failed to send grade for %s"
                 % origin.publicID()
             )
-
-
-def _grade_index_stations(nsta, min_thresholds):
-    """Grade stations: A if nsta>=min_thresholds[0], B if >=min_thresholds[1], etc."""
-    for i, threshold in enumerate(min_thresholds):
-        if nsta >= threshold:
-            return i
-    return 3
 
 
 def main():
