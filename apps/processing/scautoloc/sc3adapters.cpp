@@ -13,7 +13,6 @@
 
 
 
-
 #define SEISCOMP_COMPONENT Autoloc
 #include <seiscomp/logging/log.h>
 
@@ -38,8 +37,7 @@
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Seiscomp::Core::Time sctime(const Autoloc::Time &time)
-{
+Seiscomp::Core::Time sctime(const Autoloc::Time &time)	{
 	return Seiscomp::Core::Time() + Seiscomp::Core::TimeSpan(time);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -48,8 +46,7 @@ Seiscomp::Core::Time sctime(const Autoloc::Time &time)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Seiscomp::DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases)
-{
+Seiscomp::DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases) {
 	using namespace Autoloc;
 
 	Seiscomp::DataModel::Origin *scorigin
@@ -166,8 +163,7 @@ Seiscomp::DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool all
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seiscomp::DataModel::Origin *scorigin)
-{
+Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seiscomp::DataModel::Origin *scorigin) {
 	double lat = scorigin->latitude().value();
 	double lon = scorigin->longitude().value();
 	double dep = scorigin->depth().value();
@@ -314,8 +310,8 @@ Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seisc
 	}
 	catch ( ... ) {
 		SEISCOMP_WARNING("Origin::depthType is not set!");
-		if (scorigin->evaluationMode() == DataModel::MANUAL &&
-		    _config.adoptManualDepth == true) {
+		if ( scorigin->evaluationMode() == DataModel::MANUAL &&
+		    _config.adoptManualDepth ) {
 			// This is a hack! We cannot know wether the operator
 			// assigned a depth manually, but we can assume the
 			// depth to be opperator approved and this is better
@@ -338,8 +334,7 @@ Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seisc
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Autoloc::Pick *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seiscomp::DataModel::Pick *scpick)
-{
+Autoloc::Pick *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seiscomp::DataModel::Pick *scpick) {
 	const std::string &id  = scpick->publicID();
 	const std::string &label = pickLabel(scpick);
 	const std::string &net = scpick->waveformID().networkCode();
@@ -352,8 +347,9 @@ Autoloc::Pick *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seiscom
 	pick->loc = scpick->waveformID().locationCode();
 	pick->cha = scpick->waveformID().channelCode();
 
-	if (pick->loc=="")
+	if ( pick->loc.empty() ) {
 		pick->loc = "__";
+	}
 
 	pick->attachment = scpick;
 
