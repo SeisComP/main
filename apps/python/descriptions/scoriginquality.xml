@@ -5,26 +5,29 @@
 		Automatic A/B/C/D origin quality grader.
 
 		Subscribes to LOCATION messages and assigns a quality grade to each
-		incoming origin based on its OriginQuality fields. The grade is written
-		back as an origin Comment with a configurable ID so that it is visible
-		in scolv and other SeisComP GUIs without any additional configuration.
+		incoming origin using a worst-of rule. The grade is written back as an
+		origin Comment visible in scolv and scesv without any additional
+		configuration. Hovering over the grade shows a per-parameter breakdown.
 
-		Grading uses a worst-of rule: each parameter (azimuthal gap, secondary
-		azimuthal gap, RMS, used station count, minimum distance) is graded
-		independently and the final grade is the worst individual grade.
+		Two categories of input are used:
 
-		Default thresholds follow ISC/ANSS conventions:
+		  Network geometry (statistical proxies for constraint quality):
+		    azimuthal gap, secondary azimuthal gap, station count, min. distance
 
-		Grade | maxGap | maxSecGap | maxRMS | minStations | maxMinDist
-		------+--------+-----------+--------+-------------+-----------
-		  A   |   90   |    135    |  0.15  |     10      |    30
-		  B   |  135   |    180    |  0.30  |      6      |    60
-		  C   |  180   |    210    |  0.50  |      4      |    90
-		  D   |  any worse than C                                      |
+		  Locator output (direct measures of location quality):
+		    RMS residual, horizontal uncertainty (semi-major axis, km),
+		    depth uncertainty (km), iLoc ground truth level (GT0-GT25)
 
-		All thresholds are configurable. Parameters that cannot be read from the
-		OriginQuality object are silently skipped so the grade is based on
-		whatever information is available.
+		Parameters not present in the data are silently skipped.
+
+		Default thresholds:
+
+		Grade | Gap  | SecGap | RMS    | Sta | MinDist | HorizUnc | DepUnc | GT
+		------+------+--------+--------+-----+---------+----------+--------+-----
+		  A   |  90° |  135°  | 0.15s  | ≥10 |   30°   |   5 km   |  5 km  | ≤GT2
+		  B   | 135° |  180°  | 0.30s  |  ≥6 |   60°   |  10 km   | 15 km  | ≤GT5
+		  C   | 180° |  210°  | 0.50s  |  ≥4 |   90°   |  20 km   | 30 km  | ≤GT10
+		  D   | anything worse than C
 		</description>
 		<configuration>
 			<parameter name="quality.commentID" type="string" default="quality">
@@ -118,7 +121,43 @@
 						Maximum nearest-station distance for grade C.
 						</description>
 					</parameter>
+					<parameter name="maxHorizUncertainty" type="double" unit="km" default="20">
+						<description>
+						Maximum horizontal uncertainty (semi-major axis) for grade C.
+						Populated by LOCSAT, iLoc and other locators via OriginUncertainty.
+						</description>
+					</parameter>
+					<parameter name="maxDepthUncertainty" type="double" unit="km" default="30">
+						<description>
+						Maximum depth uncertainty for grade C.
+						Populated by iLoc and other locators via OriginUncertainty.
+						</description>
+					</parameter>
 				</group>
+			</group>
+			<group name="A">
+				<parameter name="maxHorizUncertainty" type="double" unit="km" default="5">
+					<description>
+					Maximum horizontal uncertainty (semi-major axis) for grade A.
+					</description>
+				</parameter>
+				<parameter name="maxDepthUncertainty" type="double" unit="km" default="5">
+					<description>
+					Maximum depth uncertainty for grade A.
+					</description>
+				</parameter>
+			</group>
+			<group name="B">
+				<parameter name="maxHorizUncertainty" type="double" unit="km" default="10">
+					<description>
+					Maximum horizontal uncertainty (semi-major axis) for grade B.
+					</description>
+				</parameter>
+				<parameter name="maxDepthUncertainty" type="double" unit="km" default="15">
+					<description>
+					Maximum depth uncertainty for grade B.
+					</description>
+				</parameter>
 			</group>
 		</configuration>
 		<command-line>

@@ -25,14 +25,26 @@
 #     --event <eventID>   Grade the preferred origin of one event from DB.
 #     --ep <file>         Grade all origins in a SeisComP XML file.
 #
-# Grade thresholds (all configurable, defaults follow ISC/ANSS conventions):
+# Grading uses a worst-of rule across two categories:
 #
-#   Grade | maxGap | maxSecGap | maxRMS | minStations | maxMinDist
-#   ------+--------+-----------+--------+-------------+-----------
-#     A   |   90   |    135    |  0.15  |     10      |    30
-#     B   |  135   |    180    |  0.30  |      6      |    60
-#     C   |  180   |    210    |  0.50  |      4      |    90
-#     D   |  anything worse than C                              |
+#   Network geometry (statistical proxies for constraint quality):
+#     azimuthal gap, secondary azimuthal gap, station count, min distance
+#
+#   Locator output (direct measures of location quality):
+#     RMS residual, horizontal uncertainty (semi-major axis), depth
+#     uncertainty, ground truth level (iLoc GT0-GT25)
+#
+# All thresholds are configurable. Parameters not present in the data are
+# silently skipped — the grade is based on whatever is available.
+#
+# Default thresholds:
+#
+#   Grade | Gap   | SecGap | RMS    | Sta | MinDist | HorizUnc | DepUnc | GT
+#   ------+-------+--------+--------+-----+---------+----------+--------+------
+#     A   |  90°  |  135°  | 0.15s  | ≥10 |   30°   |   5 km   |  5 km  | ≤GT2
+#     B   | 135°  |  180°  | 0.30s  |  ≥6 |   60°   |  10 km   | 15 km  | ≤GT5
+#     C   | 180°  |  210°  | 0.50s  |  ≥4 |   90°   |  20 km   | 30 km  | ≤GT10
+#     D   | anything worse than C                                               |
 ############################################################################
 
 import sys
@@ -45,8 +57,12 @@ import seiscomp.logging
 
 GRADES = ("A", "B", "C", "D")
 
+# iLoc ground truth levels in order from best to worst
+_GT_ORDER = ["GT0", "GT1", "GT2", "GT5", "GT10", "GT25"]
+
 
 def _grade_index(value, thresholds):
+    """Return 0-3 (A-D) for a value where lower is worse (e.g. gap, RMS, uncertainty)."""
     for i, threshold in enumerate(thresholds):
         if value <= threshold:
             return i
@@ -54,10 +70,21 @@ def _grade_index(value, thresholds):
 
 
 def _grade_index_stations(nsta, min_thresholds):
+    """Return 0-3 (A-D) for station count where higher is better."""
     for i, threshold in enumerate(min_thresholds):
         if nsta >= threshold:
             return i
     return 3
+
+
+def _grade_index_gt(gt_level):
+    """Return 0-3 (A-D) for an iLoc ground truth level string."""
+    if not gt_level:
+        return None
+    gt = gt_level.strip().upper()
+    # GT0/GT1 → A, GT2 → B, GT5 → B, GT10 → C, GT25 → C, worse → D
+    mapping = {"GT0": 0, "GT1": 0, "GT2": 1, "GT5": 1, "GT10": 2, "GT25": 2}
+    return mapping.get(gt, 3)
 
 
 class OriginQualityApp(seiscomp.client.Application):
@@ -78,11 +105,16 @@ class OriginQualityApp(seiscomp.client.Application):
         self._eventID     = None
         self._epFile      = None
 
+        # --- Network geometry thresholds (statistical proxies) ---
         self._maxGap      = [90.0,  135.0, 180.0, 360.0]
         self._maxSecGap   = [135.0, 180.0, 210.0, 360.0]
-        self._maxRMS      = [0.15,  0.30,  0.50,  1e9]
         self._minStations = [10,    6,     4,     1]
         self._maxMinDist  = [30.0,  60.0,  90.0,  180.0]
+
+        # --- Locator output thresholds (direct quality measures) ---
+        self._maxRMS      = [0.15,  0.30,  0.50,  1e9]
+        self._maxHorizUnc = [5.0,   10.0,  20.0,  1e9]   # km, semi-major axis
+        self._maxDepUnc   = [5.0,   15.0,  30.0,  1e9]   # km
 
     # ------------------------------------------------------------------
     # Configuration
@@ -113,14 +145,21 @@ class OriginQualityApp(seiscomp.client.Application):
         except Exception:
             pass
 
+        scalar_params = [
+            ("maxGap",            self._maxGap,      "double"),
+            ("maxSecondaryGap",   self._maxSecGap,   "double"),
+            ("maxRMS",            self._maxRMS,       "double"),
+            ("maxMinDist",        self._maxMinDist,   "double"),
+            ("maxHorizUncertainty", self._maxHorizUnc, "double"),
+            ("maxDepthUncertainty", self._maxDepUnc,   "double"),
+        ]
+
         for grade_idx, grade in enumerate(("A", "B", "C")):
-            for attr, lst in (("maxGap",        self._maxGap),
-                              ("maxSecondaryGap", self._maxSecGap),
-                              ("maxRMS",         self._maxRMS),
-                              ("maxMinDist",     self._maxMinDist)):
+            for param, lst, typ in scalar_params:
                 try:
-                    lst[grade_idx] = self.configGetDouble(
-                        "quality.%s.%s" % (grade, attr))
+                    if typ == "double":
+                        lst[grade_idx] = self.configGetDouble(
+                            "quality.%s.%s" % (grade, param))
                 except Exception:
                     pass
             try:
@@ -156,7 +195,7 @@ class OriginQualityApp(seiscomp.client.Application):
         return True
 
     # ------------------------------------------------------------------
-    # Entry point — batch modes short-circuit the messaging loop
+    # Entry point
     # ------------------------------------------------------------------
 
     def run(self):
@@ -195,7 +234,7 @@ class OriginQualityApp(seiscomp.client.Application):
         grade, details = self._computeGrade(origin)
         if grade is None:
             seiscomp.logging.error(
-                "Origin '%s' has no usable OriginQuality — cannot grade" % originID
+                "Origin '%s' has no usable quality data — cannot grade" % originID
             )
             return False
 
@@ -225,13 +264,11 @@ class OriginQualityApp(seiscomp.client.Application):
             grade, details = self._computeGrade(origin)
             if grade is None:
                 seiscomp.logging.warning(
-                    "Origin '%s' has no usable OriginQuality — skipping"
+                    "Origin '%s' has no usable quality data — skipping"
                     % origin.publicID()
                 )
                 continue
             self._logGrade(origin.publicID(), grade, details)
-            # In --ep mode we have no DB to check for existing comments,
-            # so always OP_ADD
             self._sendGrade(origin, grade, details, force_add=True)
 
         self.connection().syncOutbox()
@@ -255,7 +292,7 @@ class OriginQualityApp(seiscomp.client.Application):
         grade, details = self._computeGrade(origin)
         if grade is None:
             seiscomp.logging.warning(
-                "scoriginquality: %s has no usable OriginQuality — skipping"
+                "scoriginquality: %s has no usable quality data — skipping"
                 % origin.publicID()
             )
             return
@@ -267,51 +304,85 @@ class OriginQualityApp(seiscomp.client.Application):
     # ------------------------------------------------------------------
 
     def _computeGrade(self, origin):
-        try:
-            oq = origin.quality()
-        except Exception:
-            return None, {}
-
         indices = []
         details = {}
 
+        # --- OriginQuality fields ---
         try:
-            gap = oq.azimuthalGap()
-            idx = _grade_index(gap, self._maxGap)
-            indices.append(idx)
-            details["gap"] = (gap, GRADES[idx])
+            oq = origin.quality()
+
+            try:
+                gap = oq.azimuthalGap()
+                idx = _grade_index(gap, self._maxGap)
+                indices.append(idx)
+                details["gap"] = (gap, GRADES[idx])
+            except Exception:
+                pass
+
+            try:
+                sgap = oq.secondaryAzimuthalGap()
+                idx = _grade_index(sgap, self._maxSecGap)
+                indices.append(idx)
+                details["secGap"] = (sgap, GRADES[idx])
+            except Exception:
+                pass
+
+            try:
+                rms = oq.standardError()
+                idx = _grade_index(rms, self._maxRMS)
+                indices.append(idx)
+                details["rms"] = (rms, GRADES[idx])
+            except Exception:
+                pass
+
+            try:
+                nsta = oq.usedStationCount()
+                idx = _grade_index_stations(nsta, self._minStations)
+                indices.append(idx)
+                details["stations"] = (nsta, GRADES[idx])
+            except Exception:
+                pass
+
+            try:
+                minDist = oq.minimumDistance()
+                idx = _grade_index(minDist, self._maxMinDist)
+                indices.append(idx)
+                details["minDist"] = (minDist, GRADES[idx])
+            except Exception:
+                pass
+
+            try:
+                gt = oq.groundTruthLevel()
+                idx = _grade_index_gt(gt)
+                if idx is not None:
+                    indices.append(idx)
+                    details["GT"] = (gt, GRADES[idx])
+            except Exception:
+                pass
+
         except Exception:
             pass
 
+        # --- OriginUncertainty fields (direct locator output) ---
         try:
-            sgap = oq.secondaryAzimuthalGap()
-            idx = _grade_index(sgap, self._maxSecGap)
-            indices.append(idx)
-            details["secGap"] = (sgap, GRADES[idx])
-        except Exception:
-            pass
+            ou = origin.uncertainty()
 
-        try:
-            rms = oq.standardError()
-            idx = _grade_index(rms, self._maxRMS)
-            indices.append(idx)
-            details["rms"] = (rms, GRADES[idx])
-        except Exception:
-            pass
+            try:
+                horiz = ou.maxHorizontalUncertainty()
+                idx = _grade_index(horiz, self._maxHorizUnc)
+                indices.append(idx)
+                details["horizUnc"] = (horiz, GRADES[idx])
+            except Exception:
+                pass
 
-        try:
-            nsta = oq.usedStationCount()
-            idx = _grade_index_stations(nsta, self._minStations)
-            indices.append(idx)
-            details["stations"] = (nsta, GRADES[idx])
-        except Exception:
-            pass
+            try:
+                depUnc = ou.depthUncertainty()
+                idx = _grade_index(depUnc, self._maxDepUnc)
+                indices.append(idx)
+                details["depUnc"] = (depUnc, GRADES[idx])
+            except Exception:
+                pass
 
-        try:
-            minDist = oq.minimumDistance()
-            idx = _grade_index(minDist, self._maxMinDist)
-            indices.append(idx)
-            details["minDist"] = (minDist, GRADES[idx])
         except Exception:
             pass
 
@@ -320,27 +391,41 @@ class OriginQualityApp(seiscomp.client.Application):
 
         return GRADES[max(indices)], details
 
+    # ------------------------------------------------------------------
+    # Output helpers
+    # ------------------------------------------------------------------
+
     def _logGrade(self, originID, grade, details):
         detail_str = ", ".join(
-            "%s=%.4g(%s)" % (k, v[0], v[1]) for k, v in details.items()
+            "%s=%s(%s)" % (k,
+                           ("%.1f" % v[0] if isinstance(v[0], float) else str(v[0])),
+                           v[1])
+            for k, v in details.items()
         )
         seiscomp.logging.info(
             "scoriginquality: %s -> %s [%s]" % (originID, grade, detail_str)
         )
 
     def _buildCommentText(self, grade, details):
-        units  = {"gap": "°", "secGap": "°", "rms": " s", "stations": "", "minDist": "°"}
-        labels = {"gap": "Az. Gap", "secGap": "Sec. Gap", "rms": "RMS",
-                  "stations": "Stations", "minDist": "Min. Dist"}
-        fmts   = {"gap": "%.1f", "secGap": "%.1f", "rms": "%.3f",
-                  "stations": "%d", "minDist": "%.1f"}
+        labels = {
+            "gap":      ("Az. Gap",      "°",   "%.1f"),
+            "secGap":   ("Sec. Gap",     "°",   "%.1f"),
+            "rms":      ("RMS",          " s",  "%.3f"),
+            "stations": ("Stations",     "",    "%d"),
+            "minDist":  ("Min. Dist",    "°",   "%.1f"),
+            "GT":       ("GT Level",     "",    "%s"),
+            "horizUnc": ("Horiz. Unc.",  " km", "%.1f"),
+            "depUnc":   ("Depth Unc.",   " km", "%.1f"),
+        }
         lines = [grade]
-        for key in ("gap", "secGap", "rms", "stations", "minDist"):
+        for key in ("gap", "secGap", "rms", "stations", "minDist",
+                    "horizUnc", "depUnc", "GT"):
             if key not in details:
                 continue
             val, g = details[key]
-            valstr = fmts[key] % val
-            lines.append("%s: %s%s \u2192 %s" % (labels[key], valstr, units[key], g))
+            label, unit, fmt = labels[key]
+            valstr = fmt % val
+            lines.append("%s: %s%s \u2192 %s" % (label, valstr, unit, g))
         return "\n".join(lines)
 
     def _sendGrade(self, origin, grade, details=None, force_add=False):
