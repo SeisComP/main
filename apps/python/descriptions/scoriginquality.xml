@@ -41,85 +41,79 @@
 			<group name="quality">
 				<group name="A">
 					<parameter name="maxGap" type="double" unit="deg" default="90">
-						<description>
-						Maximum primary azimuthal gap for grade A.
-						</description>
+						<description>Maximum primary azimuthal gap for grade A.</description>
 					</parameter>
 					<parameter name="maxSecondaryGap" type="double" unit="deg" default="135">
-						<description>
-						Maximum secondary azimuthal gap for grade A.
-						</description>
+						<description>Maximum secondary azimuthal gap for grade A.</description>
 					</parameter>
 					<parameter name="maxRMS" type="double" unit="s" default="0.15">
-						<description>
-						Maximum travel-time RMS residual for grade A.
-						</description>
+						<description>Maximum travel-time RMS residual for grade A.</description>
 					</parameter>
 					<parameter name="minStations" type="int" default="10">
-						<description>
-						Minimum number of used stations for grade A.
-						</description>
+						<description>Minimum number of used stations for grade A.</description>
 					</parameter>
 					<parameter name="maxMinDist" type="double" unit="deg" default="30">
+						<description>Maximum nearest-station distance for grade A.</description>
+					</parameter>
+					<parameter name="maxHorizUncertainty" type="double" unit="km" default="5">
 						<description>
-						Maximum nearest-station distance for grade A.
+						Maximum horizontal uncertainty (semi-major axis) for grade A.
+						Populated by LOCSAT, iLoc and other locators via OriginUncertainty.
+						</description>
+					</parameter>
+					<parameter name="maxDepthUncertainty" type="double" unit="km" default="5">
+						<description>
+						Maximum depth uncertainty for grade A.
+						Populated by iLoc and other locators via OriginUncertainty.
 						</description>
 					</parameter>
 				</group>
 
 				<group name="B">
 					<parameter name="maxGap" type="double" unit="deg" default="135">
-						<description>
-						Maximum primary azimuthal gap for grade B.
-						</description>
+						<description>Maximum primary azimuthal gap for grade B.</description>
 					</parameter>
 					<parameter name="maxSecondaryGap" type="double" unit="deg" default="180">
-						<description>
-						Maximum secondary azimuthal gap for grade B.
-						</description>
+						<description>Maximum secondary azimuthal gap for grade B.</description>
 					</parameter>
 					<parameter name="maxRMS" type="double" unit="s" default="0.30">
-						<description>
-						Maximum travel-time RMS residual for grade B.
-						</description>
+						<description>Maximum travel-time RMS residual for grade B.</description>
 					</parameter>
 					<parameter name="minStations" type="int" default="6">
-						<description>
-						Minimum number of used stations for grade B.
-						</description>
+						<description>Minimum number of used stations for grade B.</description>
 					</parameter>
 					<parameter name="maxMinDist" type="double" unit="deg" default="60">
+						<description>Maximum nearest-station distance for grade B.</description>
+					</parameter>
+					<parameter name="maxHorizUncertainty" type="double" unit="km" default="10">
 						<description>
-						Maximum nearest-station distance for grade B.
+						Maximum horizontal uncertainty (semi-major axis) for grade B.
+						Populated by LOCSAT, iLoc and other locators via OriginUncertainty.
+						</description>
+					</parameter>
+					<parameter name="maxDepthUncertainty" type="double" unit="km" default="15">
+						<description>
+						Maximum depth uncertainty for grade B.
+						Populated by iLoc and other locators via OriginUncertainty.
 						</description>
 					</parameter>
 				</group>
 
 				<group name="C">
 					<parameter name="maxGap" type="double" unit="deg" default="180">
-						<description>
-						Maximum primary azimuthal gap for grade C.
-						</description>
+						<description>Maximum primary azimuthal gap for grade C.</description>
 					</parameter>
 					<parameter name="maxSecondaryGap" type="double" unit="deg" default="210">
-						<description>
-						Maximum secondary azimuthal gap for grade C.
-						</description>
+						<description>Maximum secondary azimuthal gap for grade C.</description>
 					</parameter>
 					<parameter name="maxRMS" type="double" unit="s" default="0.50">
-						<description>
-						Maximum travel-time RMS residual for grade C.
-						</description>
+						<description>Maximum travel-time RMS residual for grade C.</description>
 					</parameter>
 					<parameter name="minStations" type="int" default="4">
-						<description>
-						Minimum number of used stations for grade C.
-						</description>
+						<description>Minimum number of used stations for grade C.</description>
 					</parameter>
 					<parameter name="maxMinDist" type="double" unit="deg" default="90">
-						<description>
-						Maximum nearest-station distance for grade C.
-						</description>
+						<description>Maximum nearest-station distance for grade C.</description>
 					</parameter>
 					<parameter name="maxHorizUncertainty" type="double" unit="km" default="20">
 						<description>
@@ -134,30 +128,6 @@
 						</description>
 					</parameter>
 				</group>
-			</group>
-			<group name="A">
-				<parameter name="maxHorizUncertainty" type="double" unit="km" default="5">
-					<description>
-					Maximum horizontal uncertainty (semi-major axis) for grade A.
-					</description>
-				</parameter>
-				<parameter name="maxDepthUncertainty" type="double" unit="km" default="5">
-					<description>
-					Maximum depth uncertainty for grade A.
-					</description>
-				</parameter>
-			</group>
-			<group name="B">
-				<parameter name="maxHorizUncertainty" type="double" unit="km" default="10">
-					<description>
-					Maximum horizontal uncertainty (semi-major axis) for grade B.
-					</description>
-				</parameter>
-				<parameter name="maxDepthUncertainty" type="double" unit="km" default="15">
-					<description>
-					Maximum depth uncertainty for grade B.
-					</description>
-				</parameter>
 			</group>
 		</configuration>
 		<command-line>
