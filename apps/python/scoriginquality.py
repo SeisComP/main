@@ -104,6 +104,7 @@ class OriginQualityApp(seiscomp.client.Application):
         self._commentID   = "quality"
         self._eventID     = None
         self._epFile      = None
+        self._allEvents   = False
 
         # --- Network geometry thresholds (statistical proxies) ---
         self._maxGap      = [90.0,  135.0, 180.0, 360.0]
@@ -129,6 +130,10 @@ class OriginQualityApp(seiscomp.client.Application):
         self.commandline().addStringOption(
             "Batch", "ep",
             "Grade all origins in a SeisComP XML file and print results to stdout."
+        )
+        self.commandline().addOption(
+            "Batch", "all",
+            "Grade all events in the database and exit."
         )
         self.commandline().addGroup("Quality")
         self.commandline().addStringOption(
@@ -189,6 +194,8 @@ class OriginQualityApp(seiscomp.client.Application):
         except Exception:
             pass
 
+        self._allEvents = self.commandline().hasOption("all")
+
         seiscomp.logging.info(
             "scoriginquality: writing grade to comment '%s'" % self._commentID
         )
@@ -199,6 +206,8 @@ class OriginQualityApp(seiscomp.client.Application):
     # ------------------------------------------------------------------
 
     def run(self):
+        if self._allEvents:
+            return self._runAllMode()
         if self._eventID:
             return self._runEventMode(self._eventID)
         if self._epFile:
@@ -241,6 +250,70 @@ class OriginQualityApp(seiscomp.client.Application):
         self._logGrade(originID, grade, details)
         self._sendGrade(origin, grade, details)
         self.connection().syncOutbox()
+        return True
+
+    # ------------------------------------------------------------------
+    # Batch: all events in database
+    # ------------------------------------------------------------------
+
+    def _runAllMode(self):
+        if not self.query():
+            seiscomp.logging.error("No database connection")
+            return False
+
+        import seiscomp.core
+        # Use a wide time window to capture all events
+        begin = seiscomp.core.Time.FromString("1900-01-01", "%Y-%m-%d")
+        end   = seiscomp.core.Time.FromString("2100-01-01", "%Y-%m-%d")
+
+        it = self.query().getEvents(begin, end)
+        eventIDs = []
+        while True:
+            obj = it.get()
+            if not obj:
+                break
+            ev = seiscomp.datamodel.Event.Cast(obj)
+            if ev:
+                eventIDs.append(ev.publicID())
+            it.step()
+
+        total = len(eventIDs)
+        seiscomp.logging.info("scoriginquality: processing %d events" % total)
+
+        ok = skip = fail = 0
+        for i, eid in enumerate(eventIDs):
+            obj = self.query().loadObject(seiscomp.datamodel.Event.TypeInfo(), eid)
+            ev  = seiscomp.datamodel.Event.Cast(obj)
+            if not ev or not ev.preferredOriginID():
+                skip += 1
+                continue
+
+            obj2   = self.query().loadObject(seiscomp.datamodel.Origin.TypeInfo(), ev.preferredOriginID())
+            origin = seiscomp.datamodel.Origin.Cast(obj2)
+            if not origin:
+                skip += 1
+                continue
+
+            grade, details = self._computeGrade(origin)
+            if grade is None:
+                skip += 1
+                continue
+
+            self._logGrade(ev.preferredOriginID(), grade, details)
+            self._sendGrade(origin, grade, details)
+            ok += 1
+
+            # Flush every 50 events to avoid backlog buildup
+            if ok % 50 == 0:
+                self.connection().syncOutbox()
+                seiscomp.logging.info(
+                    "scoriginquality: %d/%d done" % (i + 1, total)
+                )
+
+        self.connection().syncOutbox()
+        seiscomp.logging.info(
+            "scoriginquality: finished — graded %d, skipped %d" % (ok, skip)
+        )
         return True
 
     # ------------------------------------------------------------------
