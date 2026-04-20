@@ -367,7 +367,10 @@ class XMLDump : public Seiscomp::Client::Application {
 					return false;
 				}
 
-				setMessagingEnabled(false);
+				if ( !databaseURI().empty() ) {
+					setMessagingEnabled(false);
+				}
+
 				setLoggingToStdErr(true);
 			}
 
