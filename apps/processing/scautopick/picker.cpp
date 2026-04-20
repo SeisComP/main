@@ -1127,9 +1127,22 @@ void App::processorFinished(const Record *rec, WaveformProcessor *wp) {
 	                           wp->className(),
 	                           ss.str());
 
-	// If its a secondary processor remove it from the tracked item list
+	// If it is a secondary processor remove it from the tracked item list
 	auto pit = _procLookup.find(wp);
 	if ( pit == _procLookup.end() ) {
+		if ( _config.runSecondaryProcessorsWithoutPPick ) {
+			auto picker = dynamic_cast<Processing::Picker*>(wp);
+			if ( picker ) {
+				// If it is a primary picker
+				if ( picker->status() == Processing::WaveformProcessor::LowSNR ) {
+					// In case of LowSNR, run a secondary picker anyway
+					if ( !_config.secondaryPickerType.empty() ) {
+						addSecondaryPicker(picker->trigger(), rec, {});
+					}
+				}
+			}
+		}
+
 		return;
 	}
 
@@ -1229,10 +1242,10 @@ void App::addSecondaryPicker(const Core::Time &onset, const Record *rec, const s
 	const std::string &n = rec->networkCode();
 	const std::string &s = rec->stationCode();
 	const std::string &l = rec->locationCode();
-	std::string c = rec->channelCode();
 
-	if ( !initProcessor(proc.get(), proc->usedComponent(), onset, rec->streamID(), waveformID, true) )
+	if ( !initProcessor(proc.get(), proc->usedComponent(), onset, rec->streamID(), waveformID, true) ) {
 		return;
+	}
 
 	SEISCOMP_DEBUG("%s: created secondary picker %s (rec ref: %d)",
 	               rec->streamID().c_str(), _config.secondaryPickerType.c_str(),

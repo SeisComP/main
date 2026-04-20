@@ -107,6 +107,9 @@ void Picker::Config::init(const Client::Application *app) {
 	try { killPendingSecondaryProcessors = app->configGetBool("killPendingSPickers"); }
 	catch ( ... ) {}
 
+	try { runSecondaryProcessorsWithoutPPick = app->configGetBool("allowSPickersWithDetections"); }
+	catch ( ... ) {}
+
 	try { sendDetections = app->configGetBool("sendDetections"); }
 	catch ( ... ) {}
 
