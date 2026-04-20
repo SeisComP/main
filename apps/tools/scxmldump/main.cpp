@@ -916,10 +916,10 @@ class XMLDump : public Seiscomp::Client::Application {
 				return false;
 			}
 
-			if ( ( _settings.dumpInventory && !dumpInventory() )
-			  || ( _settings.dumpConfig && !dumpConfig() )
-			  || ( _settings.dumpRouting && !dumpRouting() )
-			  || ( _settings.dumpAvailability && !dumpDataAvailability() )
+			if ( (_settings.dumpInventory && !dumpInventory())
+			  || (_settings.dumpConfig && !dumpConfig())
+			  || (_settings.dumpRouting && !dumpRouting())
+			  || (_settings.dumpAvailability && !dumpDataAvailability())
 			  || !dumpEPAndJournal()
 			  || !dumpPublicIDs() ) {
 				return false;
