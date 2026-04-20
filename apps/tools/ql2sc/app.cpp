@@ -1546,7 +1546,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 					);
 				}
 				else {
-					SEISCOMP_INFO("* skipping event opertor comment update because it "
+					SEISCOMP_INFO("* skipping event operator comment update because it "
 					              "has been set already by %s",
 					              entry->sender());
 				}
