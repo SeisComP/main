@@ -103,6 +103,14 @@
 				situations to have two picks (P and S) instead only a wrong P.
 				</description>
 			</parameter>
+			<parameter name="allowSPickersWithDetections" type="boolean" default="false">
+				<description>
+				If a picker is configured and does not create a pick due to low snr and
+				if this flag is set to true then a secondary picker will nevertheless be
+				created triggered at the detection time. This allows S picks without
+				having P picks.
+				</description>
+			</parameter>
 			<parameter name="extraPickComments" type="boolean" default="false">
 				<description>
 				If enabled and &quot;picker&quot; or &quot;spicker&quot; is

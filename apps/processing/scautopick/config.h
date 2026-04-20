@@ -154,6 +154,8 @@ class Config {
 		// primary pick has been declared
 		bool        killPendingSecondaryProcessors{true};
 
+		bool        runSecondaryProcessorsWithoutPPick{false};
+
 		// Send detections as well if a picker is configured?
 		bool        sendDetections{false};
 
