@@ -251,29 +251,19 @@ bool ImExImpl::init() {
 	try {
 		string criteriaStr = _imex->configGetString("hosts." + _sinkName + ".criteria");
 
-		Utils::LeTokenizer tokenizer(criteriaStr);
-		if( !tokenizer.tokenize() ) {
-			SEISCOMP_ERROR("%s", tokenizer.what().c_str());
-			return false;
-		}
-		Utils::LeParserTypes::Tokens tokens = tokenizer.tokens();
-
-		SEISCOMP_DEBUG("= Parsed criterion for sink: %s =", _sinkName.c_str());
-		for ( size_t i = 0; i < tokens.size(); ++i )
-			SEISCOMP_DEBUG("%s", tokens[i].c_str());
-
-		CriterionFactory<CriterionInterface> factory(_sinkName, _imex);
-		Utils::LeParser<CriterionInterface> parser(tokens, &factory);
-		_criterion = boost::shared_ptr<CriterionInterface>(parser.parse());
-		if ( !_criterion.get() ) {
+		CriterionFactory factory(_sinkName, _imex);
+		Utils::LeParser parser(&factory);
+		_criterion = parser.parse(criteriaStr);
+		if ( !_criterion ) {
 			SEISCOMP_ERROR("%s", parser.what());
 			return false;
 		}
 
-		if ( parser.error() )
+		if ( parser.error() ) {
 			SEISCOMP_ERROR("%s", parser.what());
+		}
 	}
-	catch ( Config::Exception& e ) {
+	catch ( Config::Exception &e ) {
 		if ( _filter ) {
 			SEISCOMP_DEBUG("(%s) %s ", e.what(), _sinkName.c_str());
 			return false;
@@ -930,12 +920,15 @@ bool ImExImpl::isOriginEligibleImport(const DataModel::Origin* origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool ImExImpl::filterMagnitudeImport(const DataModel::Origin* origin) {
+bool ImExImpl::filterMagnitudeImport(const DataModel::Origin *origin) {
 	for ( size_t i = 0; i < origin->magnitudeCount(); ++i ) {
-		DataModel::Magnitude* magnitude = origin->magnitude(i);
-		if ( !magnitude )
+		DataModel::Magnitude *magnitude = origin->magnitude(i);
+		if ( !magnitude ) {
 			continue;
-		if ( _criterion->isInMagnitudeRange(magnitude->magnitude().value()) ) {
+		}
+
+		FilterContext ctx{ nullptr, magnitude };
+		if ( _criterion->eval(&ctx) ) {
 			SEISCOMP_DEBUG("Magnitude of type %s with valus %f matched",
 			               magnitude->type().c_str(), magnitude->magnitude().value());
 			return true;
@@ -957,25 +950,32 @@ bool ImExImpl::filterMagnitudeImport(const DataModel::Origin* origin) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool ImExImpl::filterMagnitudeExport(const DataModel::Origin* origin) {
 	string preferredMagnitude;
-	EventList::iterator eventIt = _eventList.begin();
+	auto eventIt = _eventList.begin();
 	for ( ; eventIt != _eventList.end(); ++eventIt) {
 		if ( eventIt->preferredOriginID() == origin->publicID() ) {
 			preferredMagnitude = eventIt->preferredMagnitudeID();
 			break;
 		}
 	}
-	if ( preferredMagnitude.empty() )
+
+	if ( preferredMagnitude.empty() ) {
 		return false;
+	}
+
 	SEISCOMP_DEBUG("Preferred magnitude ID has been found");
-	DataModel::Magnitude* magnitude = origin->findMagnitude(preferredMagnitude);
-	if ( !magnitude )
+	auto *magnitude = origin->findMagnitude(preferredMagnitude);
+	if ( !magnitude ) {
 		return false;
+	}
+
 	SEISCOMP_DEBUG("Preferred magnitude has been found");
-	if ( !_criterion->isInMagnitudeRange(magnitude->magnitude().value()) ) {
+	FilterContext ctx{ nullptr, magnitude };
+	if ( !_criterion->eval(&ctx) ) {
 		SEISCOMP_DEBUG("= Magnitude mismatch =");
 		_criterion->clearError();
 		return false;
 	}
+
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -994,37 +994,21 @@ bool ImExImpl::filterMagnitude(const DataModel::Origin* origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool ImExImpl::filter(DataModel::Origin* origin) {
-	if ( !_filter )
+bool ImExImpl::filter(DataModel::Origin *origin) {
+	if ( !_filter ) {
 		return true;
+	}
+
+	FilterContext ctx{ origin, nullptr };
 
 	SEISCOMP_DEBUG("Filtering origin: %s", origin->publicID().c_str());
-	SEISCOMP_DEBUG("Checking latitude/longitude");
-	if ( !_criterion->isInLatLonRange(origin->latitude(), origin->longitude()) ) {
-		SEISCOMP_DEBUG("= latitude/longitude mismatch =");
-		SEISCOMP_DEBUG("%s", _criterion->what().c_str());
+	if ( !_criterion->eval(&ctx) ) {
 		_criterion->clearError();
 		return false;
 	}
 
-	// Arrival count
-	SEISCOMP_DEBUG("Checking arrival count");
-	if ( !_criterion->checkArrivalCount(origin->arrivalCount()) ) {
-		SEISCOMP_DEBUG("Number of arrivals %ld is below the minimum", (long int)origin->arrivalCount());
-		SEISCOMP_DEBUG("%s", _criterion->what().c_str());
-		_criterion->clearError();
-		return false;
-	}
-
-	// Magnitude
 	SEISCOMP_DEBUG("Checking magnitude");
-	if ( !filterMagnitude(origin) )
-		return false;
-
-	SEISCOMP_DEBUG("Checking agencyID");
-	if ( !_criterion->checkAgencyID(objectAgencyID(origin)) ) {
-		SEISCOMP_DEBUG("Could not find agencyID: %s", objectAgencyID(origin).c_str());
-		_criterion->clearError();
+	if ( !filterMagnitude(origin) ) {
 		return false;
 	}
 
@@ -1265,10 +1249,10 @@ void ImExImpl::sendOrigin(DataModel::Origin *origin, bool update) {
 			}
 		}
 
-		SEISCOMP_DEBUG("Sending %ld %s and %ld %s to %s in respect to origin %s",
-		               (long int)origin->magnitudeCount(),
+		SEISCOMP_DEBUG("Sending %d %s and %d %s to %s in respect to origin %s",
+		               origin->magnitudeCount(),
 		               DataModel::Magnitude::ClassName(),
-		               (long int)stationMagnitudeContributionCount,
+		               stationMagnitudeContributionCount,
 		               DataModel::StationMagnitudeContribution::ClassName(),
 		               _routingTable[DataModel::Magnitude::ClassName()].c_str(),
 		               originID.c_str()
@@ -1396,3 +1380,4 @@ bool ImExImpl::configGetRoutingTable(const string& prefix, const string& name, R
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 } // namespace Applictions
 } // namespace Seiscomp
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

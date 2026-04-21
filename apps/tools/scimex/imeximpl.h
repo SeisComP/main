@@ -165,14 +165,14 @@ class ImExImpl {
 	// Private implementation
 	// ------------------------------------------------------------------
 	private:
-		std::string                            _sinkName;
-		std::string                            _sinkAddress;
-		std::string                            _userName;
-		Client::ConnectionPtr                  _sink;
-		ImEx*                                  _imex;
-		boost::shared_ptr<CriterionInterface>  _criterion;
-		boost::thread                         *_thread0;
-		boost::thread                         *_thread1;
+		std::string             _sinkName;
+		std::string             _sinkAddress;
+		std::string             _userName;
+		Client::ConnectionPtr   _sink;
+		ImEx*                   _imex;
+		Utils::LeExpressionPtr  _criterion;
+		boost::thread          *_thread0;
+		boost::thread          *_thread1;
 
 		int  _sleepDuration;
 
