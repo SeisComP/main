@@ -253,14 +253,16 @@ bool ImExImpl::init() {
 
 		CriterionFactory factory(_sinkName, _imex);
 		Utils::LeParser parser(&factory);
-		_criterion = parser.parse(criteriaStr);
-		if ( !_criterion ) {
-			SEISCOMP_ERROR("%s", parser.what());
-			return false;
+		try {
+			_criterion = parser.parse(criteriaStr);
+			if ( !_criterion ) {
+				SEISCOMP_ERROR("%s: failed", criteriaStr);
+				return false;
+			}
 		}
-
-		if ( parser.error() ) {
-			SEISCOMP_ERROR("%s", parser.what());
+		catch ( exception &e ) {
+			SEISCOMP_ERROR("%s: %s", criteriaStr, e.what());
+			return false;
 		}
 	}
 	catch ( Config::Exception &e ) {
@@ -928,16 +930,14 @@ bool ImExImpl::filterMagnitudeImport(const DataModel::Origin *origin) {
 		}
 
 		FilterContext ctx{ nullptr, magnitude };
-		if ( _criterion->eval(&ctx) ) {
-			SEISCOMP_DEBUG("Magnitude of type %s with valus %f matched",
-			               magnitude->type().c_str(), magnitude->magnitude().value());
-			return true;
+		try {
+			if ( _criterion->eval(&ctx) ) {
+				SEISCOMP_DEBUG("Magnitude of type %s with value %f matched",
+				               magnitude->type().c_str(), magnitude->magnitude().value());
+				return true;
+			}
 		}
-		else {
-			SEISCOMP_DEBUG("= Magnitude mismatch =");
-			SEISCOMP_DEBUG("%s", _criterion->what().c_str());
-			_criterion->clearError();
-		}
+		catch ( std::exception & ) {}
 
 	}
 	return false;
@@ -970,13 +970,16 @@ bool ImExImpl::filterMagnitudeExport(const DataModel::Origin* origin) {
 
 	SEISCOMP_DEBUG("Preferred magnitude has been found");
 	FilterContext ctx{ nullptr, magnitude };
-	if ( !_criterion->eval(&ctx) ) {
-		SEISCOMP_DEBUG("= Magnitude mismatch =");
-		_criterion->clearError();
-		return false;
+	try {
+		if ( _criterion->eval(&ctx) ) {
+			SEISCOMP_DEBUG("Magnitude of type %s with value %f matched",
+			               magnitude->type().c_str(), magnitude->magnitude().value());
+			return true;
+		}
 	}
+	catch ( std::exception & ) {}
 
-	return true;
+	return false;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1002,8 +1005,12 @@ bool ImExImpl::filter(DataModel::Origin *origin) {
 	FilterContext ctx{ origin, nullptr };
 
 	SEISCOMP_DEBUG("Filtering origin: %s", origin->publicID().c_str());
-	if ( !_criterion->eval(&ctx) ) {
-		_criterion->clearError();
+	try {
+		if ( !_criterion->eval(&ctx) ) {
+			return false;
+		}
+	}
+	catch ( std::exception & ) {
 		return false;
 	}
 

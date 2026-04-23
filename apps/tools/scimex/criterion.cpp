@@ -39,30 +39,30 @@ CriterionFactory::CriterionFactory(const std::string &sinkName,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Utils::LeExpression *CriterionFactory::createExpression(const std::string &name) const {
+Utils::LeExpression *CriterionFactory::createExpression(std::string_view name) const {
 	auto criterion = new Criterion;
 
-	if ( !configGetLatitude("criteria." + name, "latitude", criterion) ) {
+	if ( !configGetLatitude("criteria." + std::string(name), "latitude", criterion) ) {
 		delete criterion;
 		return nullptr;
 	}
 
-	if ( !configGetLongitude("criteria." + name, "longitude", criterion) ) {
+	if ( !configGetLongitude("criteria." + std::string(name), "longitude", criterion) ) {
 		delete criterion;
 		return nullptr;
 	}
 
-	if ( !configGetMagnitude("criteria." + name, "magnitude", criterion) ) {
+	if ( !configGetMagnitude("criteria." + std::string(name), "magnitude", criterion) ) {
 		delete criterion;
 		return nullptr;
 	}
 
-	if ( !configGetArrivalCount("criteria." + name, "arrivalCount", criterion) ) {
+	if ( !configGetArrivalCount("criteria." + std::string(name), "arrivalCount", criterion) ) {
 		delete criterion;
 		return nullptr;
 	}
 
-	if ( !configGetAgencyID("criteria." + name, "agencyID", criterion) ) {
+	if ( !configGetAgencyID("criteria." + std::string(name), "agencyID", criterion) ) {
 		delete criterion;
 		return nullptr;
 	}
@@ -305,23 +305,25 @@ bool Criterion::isInLatLonRange(double lat, double lon) {
 
 	SEISCOMP_DEBUG("Checking latitude/longitude");
 
+	std::ostringstream ss;
+
 	if ( (lat < _latitudeRange.first) || (lat > _latitudeRange.second) ) {
 		result = false;
-		std::ostringstream ss;
 		ss << "Latitude " << lat << " not in [" << _latitudeRange.first << ":" << _latitudeRange.second << "]";
-		append(ss.str());
 	}
 
 	if ( (lon < _longitudeRange.first) || (lon > _longitudeRange.second) ) {
+		if ( !result ) {
+			ss << std::endl;
+		}
+
 		result = false;
-		std::ostringstream ss;
 		ss << "Longitude " << lon << " not in [" << _longitudeRange.first << ":" << _longitudeRange.second << "]";
-		append(ss.str());
 	}
 
 	if ( !result ) {
 		SEISCOMP_DEBUG("= latitude/longitude mismatch =");
-		SEISCOMP_DEBUG("%s", what());
+		SEISCOMP_DEBUG("%s", ss.str());
 	}
 
 	return result;
@@ -337,9 +339,8 @@ bool Criterion::isInMagnitudeRange(double mag) {
 		return true;
 	}
 
-	std::ostringstream ss;
-	ss << "Magnitude " << mag << " not in [" << _magnitudeRange.first << ":" << _magnitudeRange.second << "]";
-	append(ss.str());
+	SEISCOMP_DEBUG("= magnitude mismatch =");
+	SEISCOMP_DEBUG("Magnitude %f not in [%f:%f]", mag, _magnitudeRange.first, _magnitudeRange.second);
 	return false;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -355,12 +356,7 @@ bool Criterion::checkArrivalCount(size_t count) {
 		return true;
 	}
 
-	std::ostringstream ss;
-	ss << "Arrival count " << count << " < " << _arrivalCount;
-	append(ss.str());
-
 	SEISCOMP_DEBUG("Number of arrivals %ld is below the minimum", count);
-	SEISCOMP_DEBUG("%s", what());
 
 	return false;
 }
@@ -382,13 +378,6 @@ bool Criterion::checkAgencyID(const std::string &id) {
 	if ( it != _agencyIDs.end() ) {
 		return true;
 	}
-
-	std::ostringstream ss;
-	ss << "AgencyId " << id << " not in ";
-	for ( size_t i = 0; i < _agencyIDs.size(); ++i ) {
-		ss << _agencyIDs[i] << " ";
-	}
-	append(ss.str());
 
 	SEISCOMP_DEBUG("Could not find agencyID: %s", id);
 

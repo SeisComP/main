@@ -108,7 +108,7 @@ class CriterionFactory : public Utils::LeFactory {
 		CriterionFactory(const std::string &sinkName, Client::Application *app);
 
 	public:
-		Utils::LeExpression *createExpression(const std::string &name) const override;
+		Utils::LeExpression *createExpression(std::string_view name) const override;
 
 	private:
 		bool configGetLatitude(const std::string &prefix, const std::string &name, Criterion *criterion) const;
