@@ -1028,6 +1028,57 @@
 					</group>
 				</group>
 			</group>
+			<group name="eventlist">
+				<group name="highlight">
+					<description>
+						Configure event list row highlighting. Each named rule defines
+						a condition and the background/foreground colours to apply to
+						matching rows. The first matching rule wins.
+
+						Supported condition keys (case-insensitive, joined with &amp;&amp;):
+						  type             — event type (e.g. earthquake, not-existing,
+						                     outside-of-network-interest, quarry-blast)
+						  evaluationStatus — origin status (e.g. preliminary, confirmed,
+						                     reviewed, final, rejected)
+						  evaluationMode   — origin mode (automatic, manual)
+						  typeCertainty    — event certainty (known, suspected, none)
+
+						Both = and != operators are supported.
+
+						Colours must be specified as 6-digit hex (RRGGBB) or 8-digit
+						hex (RRGGBBAA), or as a Qt named colour (e.g. orange, yellow).
+					</description>
+					<parameter name="highlight" type="list:string">
+						<description>
+							Ordered list of highlight rule names. Rules are evaluated in
+							order; the first matching rule is applied. Example:
+							preliminary-earthquake, automatic, rejected-uncertain
+						</description>
+					</parameter>
+					<struct name="HighlightRule" link="eventlist.highlight">
+						<parameter name="condition" type="string">
+							<description>
+								Condition string to match against each event and its
+								preferred origin. Tokens are joined with &amp;&amp;, each
+								of the form key=value or key!=value. Example:
+								"type=earthquake &amp;&amp; evaluationStatus=preliminary"
+							</description>
+						</parameter>
+						<parameter name="background" type="string">
+							<description>
+								Background colour for matching rows. Use 6-digit hex
+								(e.g. FFA500) or a Qt named colour (e.g. orange).
+							</description>
+						</parameter>
+						<parameter name="foreground" type="string">
+							<description>
+								Foreground (text) colour for matching rows. Use 6-digit hex
+								(e.g. 000000) or a Qt named colour (e.g. black).
+							</description>
+						</parameter>
+					</struct>
+				</group>
+			</group>
 		</configuration>
 		<command-line>
 			<synopsis>

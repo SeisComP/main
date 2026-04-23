@@ -52,10 +52,13 @@
 #include <seiscomp/datamodel/utils.h>
 
 #include <seiscomp/core/datamessage.h>
+#include <seiscomp/core/exceptions.h>
+#include <seiscomp/utils/leparser.h>
 
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QSystemTrayIcon>
+#include <QTreeWidgetItem>
 
 #include <sstream>
 #include <iomanip>
@@ -135,6 +138,82 @@ string trim(const std::string &str) {
 	Core::trim(tmp);
 	return tmp;
 }
+
+
+class EventKeyValueContext : public Utils::LeKeyValueContext {
+	public:
+		EventKeyValueContext(DataModel::Event *event, DataModel::Origin *origin,
+		                     DataModel::Magnitude *magnitude)
+		    : _event(event), _origin(origin), _magnitude(magnitude) {}
+
+		std::string getString(std::string_view key) const override {
+			if ( key == "type" ) {
+				try { return DataModel::EEventTypeNames::name(_event->type()); }
+				catch ( ... ) { throw Core::ValueException(); }
+			}
+			if ( key == "typecertainty" ) {
+				try { return DataModel::EEventTypeCertaintyNames::name(_event->typeCertainty()); }
+				catch ( ... ) { throw Core::ValueException(); }
+			}
+			if ( key == "evaluationstatus" || key == "status" ) {
+				if ( !_origin ) throw Core::ValueException();
+				try { return DataModel::EEvaluationStatusNames::name(_origin->evaluationStatus()); }
+				catch ( ... ) { throw Core::ValueException(); }
+			}
+			if ( key == "evaluationmode" || key == "mode" ) {
+				if ( !_origin ) throw Core::ValueException();
+				try { return DataModel::EEvaluationModeNames::name(_origin->evaluationMode()); }
+				catch ( ... ) { throw Core::ValueException(); }
+			}
+			if ( key == "agencyid" ) {
+				if ( !_origin ) throw Core::ValueException();
+				try { return _origin->creationInfo().agencyID(); }
+				catch ( ... ) { throw Core::ValueException(); }
+			}
+			if ( key == "author" ) {
+				if ( !_origin ) throw Core::ValueException();
+				try { return _origin->creationInfo().author(); }
+				catch ( ... ) { throw Core::ValueException(); }
+			}
+			throw std::runtime_error(std::string("unknown key: ") + std::string(key));
+		}
+
+		double getDouble(std::string_view key) const override {
+			if ( key == "latitude" || key == "lat" ) {
+				if ( !_origin ) throw Core::ValueException();
+				return _origin->latitude().value();
+			}
+			if ( key == "longitude" || key == "lon" ) {
+				if ( !_origin ) throw Core::ValueException();
+				return _origin->longitude().value();
+			}
+			if ( key == "depth" ) {
+				if ( !_origin ) throw Core::ValueException();
+				try { return _origin->depth().value(); }
+				catch ( ... ) { throw Core::ValueException(); }
+			}
+			if ( key == "magnitude" || key == "mag" ) {
+				if ( !_magnitude ) throw Core::ValueException();
+				return _magnitude->magnitude().value();
+			}
+			if ( key == "rms" ) {
+				if ( !_origin ) throw Core::ValueException();
+				try { return _origin->quality().standardError(); }
+				catch ( ... ) { throw Core::ValueException(); }
+			}
+			if ( key == "azimuthalgap" || key == "gap" ) {
+				if ( !_origin ) throw Core::ValueException();
+				try { return _origin->quality().azimuthalGap(); }
+				catch ( ... ) { throw Core::ValueException(); }
+			}
+			throw std::runtime_error(std::string("unknown key: ") + std::string(key));
+		}
+
+	private:
+		DataModel::Event     *_event;
+		DataModel::Origin    *_origin;
+		DataModel::Magnitude *_magnitude;
+};
 
 
 }
@@ -742,6 +821,11 @@ MainFrame::MainFrame(){
 	connect(_eventList, SIGNAL(visibleEventCountChanged()),
 	        this, SLOT(updateEventTabText()));
 
+	connect(_eventList, SIGNAL(eventAddedToList(Seiscomp::DataModel::Event*,bool)),
+	        this, SLOT(updateEventHighlight(Seiscomp::DataModel::Event*)));
+	connect(_eventList, SIGNAL(eventUpdatedInList(Seiscomp::DataModel::Event*)),
+	        this, SLOT(updateEventHighlight(Seiscomp::DataModel::Event*)));
+
 	_originLocator->map()->addLayer(eventMapLayer);
 
 	QLayout* layoutEventList = new QVBoxLayout(_ui.tabEventList);
@@ -984,6 +1068,8 @@ MainFrame::MainFrame(){
 		_originLocator->setScript1(Seiscomp::Environment::Instance()->absolutePath(SCApp->configGetString("scripts.script1")));
 	}
 	catch ( ... ) {}
+
+	loadHighlightRules();
 
 	SCApp->settings().endGroup();
 }
@@ -1448,6 +1534,27 @@ void MainFrame::objectAdded(const QString &parentID, Seiscomp::DataModel::Object
 		return;
 	}
 
+	// When a new preferred magnitude arrives, re-highlight its parent event
+	// so that magnitude-based rules take effect immediately.
+	if ( !_highlightRules.empty() ) {
+		Magnitude *mag = Magnitude::Cast(o);
+		if ( mag ) {
+			QTreeWidget *tree = _eventList->eventTree();
+			if ( tree ) {
+				const std::string &mid = mag->publicID();
+				for ( int i = 0; i < tree->topLevelItemCount(); ++i ) {
+					QTreeWidgetItem *item = tree->topLevelItem(i);
+					Event *ev = EventListView::eventFromTreeItem(item);
+					if ( ev && ev->preferredMagnitudeID() == mid ) {
+						Origin *org = Origin::Find(ev->preferredOriginID());
+						applyHighlight(item, ev, org, mag);
+					}
+				}
+			}
+			return;
+		}
+	}
+
 	// NOTE Do not update the station state during picking
 	/*
 	DataModel::ConfigStation *cs = DataModel::ConfigStation::Cast(o);
@@ -1470,11 +1577,52 @@ void MainFrame::objectUpdated(const QString& parentID, Seiscomp::DataModel::Obje
 	*/
 
 	Event *evt = Event::Cast(o);
-	if ( evt && evt->publicID() == _eventID ) {
-		if ( _currentOrigin && _currentOrigin->publicID() == evt->preferredOriginID() ) {
-			_magnitudes->setPreferredMagnitudeID(evt->preferredMagnitudeID());
+	if ( evt ) {
+		if ( evt->publicID() == _eventID ) {
+			if ( _currentOrigin && _currentOrigin->publicID() == evt->preferredOriginID() ) {
+				_magnitudes->setPreferredMagnitudeID(evt->preferredMagnitudeID());
+			}
 		}
+		updateEventHighlight(evt);
 		return;
+	}
+
+	if ( !_highlightRules.empty() ) {
+		QTreeWidget *tree = _eventList->eventTree();
+		if ( !tree ) return;
+
+		// When a preferred origin arrives or is updated, re-highlight its parent
+		// event. This covers the case where the origin message arrives after the
+		// event was added to the list (evaluationMode/Status not yet available).
+		Origin *org = Origin::Cast(o);
+		if ( org ) {
+			const std::string &oid = org->publicID();
+			for ( int i = 0; i < tree->topLevelItemCount(); ++i ) {
+				QTreeWidgetItem *item = tree->topLevelItem(i);
+				Event *ev = EventListView::eventFromTreeItem(item);
+				if ( ev && ev->preferredOriginID() == oid ) {
+					Magnitude *mag = Magnitude::Find(ev->preferredMagnitudeID());
+					applyHighlight(item, ev, org, mag);
+				}
+			}
+			return;
+		}
+
+		// When a preferred magnitude arrives or is updated, re-highlight its
+		// parent event so that magnitude-based rules reflect the new value.
+		Magnitude *mag = Magnitude::Cast(o);
+		if ( mag ) {
+			const std::string &mid = mag->publicID();
+			for ( int i = 0; i < tree->topLevelItemCount(); ++i ) {
+				QTreeWidgetItem *item = tree->topLevelItem(i);
+				Event *ev = EventListView::eventFromTreeItem(item);
+				if ( ev && ev->preferredMagnitudeID() == mid ) {
+					Origin *org2 = Origin::Find(ev->preferredOriginID());
+					applyHighlight(item, ev, org2, mag);
+				}
+			}
+			return;
+		}
 	}
 }
 
@@ -1870,6 +2018,120 @@ void MainFrame::trayIconMessageClicked() {
 
 	_trayMessageEventID.clear();
 }
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+// Load highlight rules from config:
+//   eventlist.highlight = rule1, rule2, ...
+//   eventlist.highlight.<name>.condition  = "key == 'string' && key != 'string' && key < number"
+//   eventlist.highlight.<name>.background = RRGGBB | named-color
+//   eventlist.highlight.<name>.foreground = RRGGBB | named-color
+void MainFrame::loadHighlightRules() {
+	_highlightRules.clear();
+
+	std::vector<std::string> names;
+	try {
+		names = SCApp->configGetStrings("eventlist.highlight");
+	}
+	catch ( ... ) { return; }
+
+	Utils::LeKeyValueFactory factory;
+	Utils::LeParser::Symbols symbols = Utils::LeParser::DefaultSymbols();
+	symbols.reserved = Utils::LeKeyValueFactory::Reserved();
+	Utils::LeParser parser(&factory, &symbols);
+
+	for ( const auto &name : names ) {
+		const std::string base = "eventlist.highlight." + name;
+
+		std::string condStr;
+		try {
+			condStr = SCApp->configGetString(base + ".condition");
+		}
+		catch ( ... ) { continue; }   // condition is mandatory
+
+		Utils::LeExpression *expr = nullptr;
+		try {
+			expr = parser.parse(condStr);
+		}
+		catch ( const std::exception &e ) {
+			SEISCOMP_WARNING("eventlist.highlight.%s: invalid condition: %s",
+			                 name.c_str(), e.what());
+			continue;
+		}
+
+		HighlightRule rule;
+		rule.expression = expr;
+		rule.background = SCApp->configGetColor(base + ".background", QColor());
+		rule.foreground = SCApp->configGetColor(base + ".foreground", QColor());
+		_highlightRules.emplace_back(std::move(rule));
+	}
+
+	SEISCOMP_INFO("Loaded %d event highlight rule(s)", (int)_highlightRules.size());
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+// Apply the first matching highlight rule to all columns of a tree item.
+void MainFrame::applyHighlight(QTreeWidgetItem  *item,
+                               DataModel::Event  *event,
+                               DataModel::Origin *origin,
+                               DataModel::Magnitude *magnitude) const {
+	EventKeyValueContext ctx(event, origin, magnitude);
+
+	const HighlightRule *matched = nullptr;
+	for ( const auto &rule : _highlightRules ) {
+		if ( !rule.expression ) continue;
+		try {
+			if ( rule.expression->eval(&ctx) ) {
+				matched = &rule;
+				break;
+			}
+		}
+		catch ( ... ) {}
+	}
+
+	int cols = item->columnCount();
+	for ( int c = 0; c < cols; ++c ) {
+		if ( matched ) {
+			if ( matched->background.isValid() )
+				item->setBackground(c, matched->background);
+			if ( matched->foreground.isValid() )
+				item->setForeground(c, matched->foreground);
+		}
+		else {
+			item->setData(c, Qt::BackgroundRole, QVariant());
+			item->setData(c, Qt::ForegroundRole, QVariant());
+		}
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MainFrame::updateEventHighlight(DataModel::Event *event) {
+	if ( !event || _highlightRules.empty() ) return;
+
+	QTreeWidget *tree = _eventList->eventTree();
+	if ( !tree ) return;
+
+	Origin *origin = Origin::Find(event->preferredOriginID());
+	Magnitude *magnitude = Magnitude::Find(event->preferredMagnitudeID());
+	const std::string &eid = event->publicID();
+
+	for ( int i = 0; i < tree->topLevelItemCount(); ++i ) {
+		QTreeWidgetItem *item = tree->topLevelItem(i);
+		Event *ev = EventListView::eventFromTreeItem(item);
+		if ( !ev || ev->publicID() != eid ) continue;
+		applyHighlight(item, event, origin, magnitude);
+		break;
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 }

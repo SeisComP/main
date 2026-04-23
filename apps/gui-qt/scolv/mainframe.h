@@ -22,11 +22,15 @@
 #include <seiscomp/datamodel/origin.h>
 #include <seiscomp/datamodel/eventparameters.h>
 #include <seiscomp/datamodel/journaling.h>
+#include <seiscomp/utils/leparser.h>
 #endif
 #include "ui_mainframe.h"
 
 #include <QtGui>
+#include <QColor>
 #include <QSystemTrayIcon>
+
+class QTreeWidgetItem;
 
 namespace Seiscomp {
 namespace Gui {
@@ -38,6 +42,13 @@ class EventEdit;
 class OriginLocatorView;
 class MagnitudeView;
 class PickerView;
+
+
+struct HighlightRule {
+	Utils::LeExpressionPtr expression;
+	QColor                 background;
+	QColor                 foreground;
+};
 
 
 class MainFrame : public MainWindow {
@@ -64,6 +75,7 @@ class MainFrame : public MainWindow {
 
 	private slots:
 		void configureAcquisition();
+		void updateEventHighlight(Seiscomp::DataModel::Event*);
 
 		void messageAvailable(Seiscomp::Core::Message*, Seiscomp::Client::Packet*);
 
@@ -95,6 +107,11 @@ class MainFrame : public MainWindow {
 
 	private:
 		bool populateOrigin(Seiscomp::DataModel::Origin*, Seiscomp::DataModel::Event*, bool);
+		void loadHighlightRules();
+		void applyHighlight(QTreeWidgetItem *item,
+		                    Seiscomp::DataModel::Event *event,
+		                    Seiscomp::DataModel::Origin *origin,
+		                    Seiscomp::DataModel::Magnitude *magnitude = nullptr) const;
 
 		// This creates an EventParameters instance containing copies
 		// of all event attributes relevant for publication incl.
@@ -123,6 +140,8 @@ class MainFrame : public MainWindow {
 		DataModel::OriginPtr _currentOrigin;
 		DataModel::EventParametersPtr _offlineData;
 		DataModel::JournalingPtr _offlineJournal;
+
+		std::vector<HighlightRule> _highlightRules;
 
 		bool               _computeMagnitudesAutomatically;
 		bool               _computeMagnitudesSilently;
