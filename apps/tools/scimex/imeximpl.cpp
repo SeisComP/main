@@ -252,7 +252,13 @@ bool ImExImpl::init() {
 		string criteriaStr = _imex->configGetString("hosts." + _sinkName + ".criteria");
 
 		CriterionFactory factory(_sinkName, _imex);
-		Utils::LeParser parser(&factory);
+
+		// For backwards compatbility & and | are used as logical binary operators
+		auto symbols = Utils::LeParser::DefaultSymbols();
+		symbols.set(Utils::LeParser::Operator::And, "&");
+		symbols.set(Utils::LeParser::Operator::Or, "|");
+
+		Utils::LeParser parser(&factory, &symbols);
 		try {
 			_criterion = parser.parse(criteriaStr);
 			if ( !_criterion ) {
