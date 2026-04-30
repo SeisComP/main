@@ -1990,7 +1990,7 @@ void MainFrame::updateCitiesTab(DataModel::Origin *origin) {
 		entries.push_back({
 		    Math::Geo::deg2km(dist), az,
 		    QString::fromStdString(city.name()),
-		    QString::fromStdString(city.type()),
+		    QString(city.type().toString()),
 		    regionDisplay,
 		    QString::fromStdString(city.country()),
 		    city.population(),
