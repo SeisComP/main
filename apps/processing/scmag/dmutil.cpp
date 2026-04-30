@@ -12,7 +12,7 @@
  ***************************************************************************/
 
 
-#include "component.h"
+#define SEISCOMP_COMPONENT MagTool
 
 #include <string>
 #include <map>
@@ -33,9 +33,6 @@ using namespace std;
 #include <seiscomp/datamodel/eventparameters.h>
 #include <seiscomp/datamodel/publicobject.h>
 #include <seiscomp/datamodel/utils.h>
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -44,13 +41,13 @@ bool dumpOrigin(const Seiscomp::DataModel::Origin *origin) {
 	using namespace Seiscomp::Core;
 
 	double dt = double(Time::UTC() - origin->time().value())/60.;
-	SEISCOMP_INFO("**** origin %s",    origin->publicID().c_str());
+	SEISCOMP_INFO("**** origin %s", origin->publicID().c_str());
 	SEISCOMP_INFO("* time      %s   = %.1f min ago",
 		      origin->time().value().toString("%F %T.%f").c_str(), dt );
 	SEISCOMP_INFO("* latitude  %8.3f", origin->latitude().value());
 	SEISCOMP_INFO("* longitude %8.3f", origin->longitude().value());
 	SEISCOMP_INFO("* depth     %6.1f", origin->depth().value());
-	SEISCOMP_INFO("* arrivals  %4lu",   (unsigned long)origin->arrivalCount());
+	SEISCOMP_INFO("* arrivals  %4lu", origin->arrivalCount());
 	SEISCOMP_INFO("** Magnitudes:");
 
 	int nmag = origin->magnitudeCount();
@@ -155,8 +152,3 @@ Seiscomp::DataModel::EvaluationStatus status(const Seiscomp::DataModel::Origin *
 	return status;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
