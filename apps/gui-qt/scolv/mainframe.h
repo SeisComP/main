@@ -32,7 +32,6 @@ namespace Seiscomp {
 namespace Gui {
 
 
-
 class EventListView;
 class EventSummary;
 class EventEdit;

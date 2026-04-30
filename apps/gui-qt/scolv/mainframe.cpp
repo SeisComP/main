@@ -169,8 +169,6 @@ static const char *compassDir(double az) {
 
 
 
-
-
 }
 
 
@@ -1027,6 +1025,7 @@ MainFrame::MainFrame(){
 	// Nearby Cities config
 	try { _citiesMaxDist = SCApp->configGetDouble("cities.maxDist"); } catch ( ... ) {}
 	try { _citiesMaxCount = SCApp->configGetInt("cities.maxCount"); } catch ( ... ) {}
+	if ( _citiesMaxCount <= 0 ) _citiesMaxCount = 20;
 	try { _citiesMinPopulation = SCApp->configGetInt("cities.minPopulation"); } catch ( ... ) {}
 	try { _citiesUseFullState = SCApp->configGetBool("cities.useFullState"); } catch ( ... ) {}
 
@@ -1038,7 +1037,7 @@ MainFrame::MainFrame(){
 	connect(_ui.setRegionBtn, &QPushButton::clicked,
 	        this, &MainFrame::onSetRegionName);
 	connect(_ui.regionFormatCombo,
-	        static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+	        QOverload<int>::of(&QComboBox::currentIndexChanged),
 	        this, &MainFrame::onRegionFormatChanged);
 	connect(_ui.citiesUseFullState, &QCheckBox::toggled,
 	        this, [this](bool){ updateCitiesTab(_currentOrigin.get()); });
@@ -1990,7 +1989,7 @@ void MainFrame::updateCitiesTab(DataModel::Origin *origin) {
 		entries.push_back({
 		    Math::Geo::deg2km(dist), az,
 		    QString::fromStdString(city.name()),
-		    QString(city.type().toString()),
+		    city.type() == Math::Geo::CITYTYPE_UNKNOWN ? QString("-") : QString(city.type().toString()),
 		    regionDisplay,
 		    QString::fromStdString(city.country()),
 		    city.population(),
