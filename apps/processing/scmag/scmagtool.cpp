@@ -12,7 +12,8 @@
  ***************************************************************************/
 
 
-#include "component.h"
+#define SEISCOMP_COMPONENT MagTool
+
 #include "magtool.h"
 #include "dmutil.h"
 
@@ -231,32 +232,38 @@ class MagToolApp : public Seiscomp::Client::Application {
 
 			try {
 				_magtool.setSummaryMagnitudeEnabled(configGetBool("summaryMagnitude.enabled"));
-			} catch ( ... ) {}
+			}
+			catch ( ... ) {}
 
 			try {
 				_magtool.setSummaryMagnitudeType(configGetString("summaryMagnitude.type"));
-			} catch ( ... ) {}
+			}
+			catch ( ... ) {}
 
 			try {
 				_magtool.setSummaryMagnitudeMinStationCount(configGetInt("summaryMagnitude.minStationCount"));
-			} catch ( ... ) {}
+			}
+			catch ( ... ) {}
 
 			try {
 				_magtool.setSummaryMagnitudeSingleton(configGetBool("summaryMagnitude.singleton"));
-			} catch ( ... ) {}
+			}
+			catch ( ... ) {}
 
 			try {
 				_magtool.setSummaryMagnitudeBlacklist(configGetStrings("summaryMagnitude.blacklist"));
-			} catch ( ... ) {}
+			}
+			catch ( ... ) {}
 
 			try {
 				_magtool.setSummaryMagnitudeWhitelist(configGetStrings("summaryMagnitude.whitelist"));
-			} catch ( ... ) {}
+			}
+			catch ( ... ) {}
 
 			try {
 				_magtool.setMinimumArrivalWeight(configGetDouble("minimumArrivalWeight"));
-			} catch ( ... ) {}
-
+			}
+			catch ( ... ) {}
 
 			try {
 				std::vector<std::string> averages = configGetStrings("magnitudes.average");
@@ -275,8 +282,9 @@ class MagToolApp : public Seiscomp::Client::Application {
 						++defaultCount;
 
 						// Unable to parse the default?
-						if ( !getAverageMethod(defaultAverageMethod, type, "default") )
+						if ( !getAverageMethod(defaultAverageMethod, type, "default") ) {
 							return false;
+						}
 					}
 				}
 
@@ -286,25 +294,31 @@ class MagToolApp : public Seiscomp::Client::Application {
 				}
 
 				// Prefill the typed averages with default
-				for ( MagTool::MagnitudeTypes::iterator it = _magTypes.begin(); it != _magTypes.end(); ++it )
-					averageMethods[*it] = defaultAverageMethod;
+				for ( auto &type : _magTypes ) {
+					averageMethods[type] = defaultAverageMethod;
+				}
 
 				for ( size_t i = 0; i < averages.size(); ++i ) {
 					std::string type = averages[i];
 					size_t pos = type.find(':');
 					// Found global average
-					if ( pos == std::string::npos ) continue;
+					if ( pos == std::string::npos ) {
+						continue;
+					}
 
 					std::string averageStr = type.substr(pos+1);
 					type.erase(pos);
 					Core::trim(type);
 
 					// Ignore unconfigured magnitude types
-					if ( _magTypes.find(type) == _magTypes.end() ) continue;
+					if ( _magTypes.find(type) == _magTypes.end() ) {
+						continue;
+					}
 
 					MagTool::AverageDescription magTypeAverage;
-					if ( !getAverageMethod(magTypeAverage, averageStr, type.c_str()) )
+					if ( !getAverageMethod(magTypeAverage, averageStr, type.c_str()) ) {
 						return false;
+					}
 
 					averageMethods[type] = magTypeAverage;
 				}
@@ -314,7 +328,6 @@ class MagToolApp : public Seiscomp::Client::Application {
 			}
 			catch ( ... ) {}
 
-
 			MagTool::SummaryMagnitudeCoefficients defaultCoefficients;
 			std::map<std::string, MagTool::SummaryMagnitudeCoefficients> coefficients;
 
@@ -322,11 +335,13 @@ class MagToolApp : public Seiscomp::Client::Application {
 
 			try {
 				coeff[0] = configGetStrings("summaryMagnitude.coefficients.a");
-			} catch ( ... ) {}
+			}
+			catch ( ... ) {}
 
 			try {
 				coeff[1] = configGetStrings("summaryMagnitude.coefficients.b");
-			} catch ( ... ) {}
+			}
+			catch ( ... ) {}
 
 			for ( int c = 0; c < 2; ++c ) {
 				for ( size_t i = 0; i < coeff[c].size(); ++i ) {
@@ -343,10 +358,12 @@ class MagToolApp : public Seiscomp::Client::Application {
 
 						trim(toks[0]);
 
-						if ( c == 0 )
+						if ( c == 0 ) {
 							coefficients[toks[0]].a = v;
-						else
+						}
+						else {
 							coefficients[toks[0]].b = v;
+						}
 					}
 					else if ( toks.size() == 1 ) {
 						double v;
@@ -356,10 +373,12 @@ class MagToolApp : public Seiscomp::Client::Application {
 							return true;
 						}
 
-						if ( c == 0 )
+						if ( c == 0 ) {
 							defaultCoefficients.a = v;
-						else
+						}
+						else {
 							defaultCoefficients.b = v;
+						}
 					}
 					else {
 						SEISCOMP_ERROR("summaryMagnitude.coefficients.a syntax error: '%s' -> using default values",
@@ -370,11 +389,13 @@ class MagToolApp : public Seiscomp::Client::Application {
 				}
 			}
 
-			if ( defaultCoefficients.a || defaultCoefficients.b )
+			if ( defaultCoefficients.a || defaultCoefficients.b ) {
 				_magtool.setSummaryMagnitudeDefaultCoefficients(defaultCoefficients);
+			}
 
-			if ( !coefficients.empty() )
+			if ( !coefficients.empty() ) {
 				_magtool.setSummaryMagnitudeCoefficients(coefficients);
+			}
 
 			return true;
 		}
@@ -448,11 +469,13 @@ class MagToolApp : public Seiscomp::Client::Application {
 					return false;
 				}
 
-				for ( size_t i = 0; i < ep->pickCount(); ++i )
+				for ( size_t i = 0; i < ep->pickCount(); ++i ) {
 					_magtool.feed(ep->pick(i));
+				}
 
-				for ( size_t i = 0; i < ep->amplitudeCount(); ++i )
+				for ( size_t i = 0; i < ep->amplitudeCount(); ++i ) {
 					_magtool.feed(ep->amplitude(i), false, false);
+				}
 
 				for ( size_t i = 0; i < ep->originCount(); ++i ) {
 					OriginPtr org = ep->origin(i);
@@ -498,8 +521,9 @@ class MagToolApp : public Seiscomp::Client::Application {
 			if ( !_interval || _sendImmediately ) {
 				NotifierMessagePtr xmsg = Notifier::GetMessage();
 				if (xmsg) {
-					if ( !commandline().hasOption("test") )
+					if ( !commandline().hasOption("test") ) {
 						connection()->send(xmsg.get());
+					}
 				}
 			}
 

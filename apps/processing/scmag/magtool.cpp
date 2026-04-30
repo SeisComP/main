@@ -12,28 +12,23 @@
  ***************************************************************************/
 
 
-#include "component.h"
+#define SEISCOMP_COMPONENT MagTool
+
 #include "magtool.h"
 #include "dmutil.h"
 
-#include <seiscomp/math/mean.h>
-#include <seiscomp/math/geo.h>
 #include <seiscomp/logging/log.h>
+
+#include <seiscomp/client/application.h>
 
 #include <seiscomp/datamodel/databasequery.h>
 #include <seiscomp/datamodel/notifier.h>
-#include <seiscomp/datamodel/pick.h>
-#include <seiscomp/datamodel/arrival.h>
-#include <seiscomp/datamodel/origin.h>
-#include <seiscomp/datamodel/realquantity.h>
-#include <seiscomp/datamodel/waveformstreamid.h>
-#include <seiscomp/datamodel/amplitude.h>
-#include <seiscomp/datamodel/stationmagnitude.h>
-#include <seiscomp/datamodel/magnitude.h>
-#include <seiscomp/datamodel/eventparameters.h>
+#include <seiscomp/datamodel/eventparameters_package.h>
 #include <seiscomp/datamodel/utils.h>
 
-#include <seiscomp/client/application.h>
+#include <seiscomp/math/mean.h>
+#include <seiscomp/math/geo.h>
+
 #include <seiscomp/utils/timer.h>
 
 #include <algorithm>
@@ -43,9 +38,6 @@
 #include <set>
 #include <string>
 #include <vector>
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -847,8 +839,9 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 		if ( !magRef ) {
 			magRef = new StationMagnitudeContribution(stationMagnitude->publicID());
 			magRef->setWeight(weights[weightIndex]);
-			if ( staCount )
+			if ( staCount ) {
 				magRef->setResidual(stationMagnitude->magnitude().value() - value);
+			}
 			netMag->add(magRef.get());
 		}
 		else {
@@ -934,10 +927,12 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 
 	netMag->setMethodID(methodID);
 	netMag->setMagnitude(RealQuantity(value, stdev, Core::None, Core::None, Core::None));
-	if ( invalidMagnitude )
+	if ( invalidMagnitude ) {
 		netMag->setEvaluationStatus(DataModel::EvaluationStatus(DataModel::REJECTED));
-	else
+	}
+	else {
 		netMag->setEvaluationStatus(Core::None);
+	}
 
 	netMag->setStationCount(staCount);
 
@@ -953,9 +948,13 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 	// Find the magnitude processor for this mag type
 	ProcessorList::iterator it;
 	for ( it = _processors.begin(); it != _processors.end(); it++ ) {
-		if ( it->second->type() == mtype ) break;
+		if ( it->second->type() == mtype ) {
+			break;
+		}
 	}
-	if ( it == _processors.end() ) return false;
+	if ( it == _processors.end() ) {
+		return false;
+	}
 
 	if ( staCount ) {
 		double Mw;
@@ -1206,9 +1205,7 @@ int MagTool::retrieveMissingPicksAndArrivalsFromDB(const DataModel::Origin *orig
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 MagTool::OriginList *MagTool::createBinding(const std::string &pickID) {
-	std::pair<OriginMap::iterator, bool>
-		itp = _orgs.insert(OriginMap::value_type(pickID, OriginList()));
-
+	auto itp = _orgs.insert(OriginMap::value_type(pickID, OriginList()));
 	return &itp.first->second;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1219,10 +1216,12 @@ MagTool::OriginList *MagTool::createBinding(const std::string &pickID) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void MagTool::bind(const std::string &pickID, DataModel::Origin *origin) {
 	OriginList *origins = originsForPick(pickID);
-	if ( origins )
+	if ( origins ) {
 		origins->push_back(origin);
-	else
+	}
+	else {
 		SEISCOMP_DEBUG("No complete binding for pick %s yet", pickID.c_str());
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1399,7 +1398,7 @@ bool MagTool::considerUnusedArrivals(const std::string &type) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool MagTool::processOrigin(DataModel::Origin* origin) {
+bool MagTool::processOrigin(DataModel::Origin *origin) {
 	SEISCOMP_INFO("working on origin %s", origin->publicID().c_str());
 
 	retrieveMissingPicksAndArrivalsFromDB(origin);
@@ -1982,8 +1981,7 @@ bool MagTool::feed(DataModel::Amplitude* amp, bool update, bool remove) {
 		origins = createBinding(pickID);
 
 		// Disable generation of notifiers
-		bool oldState = DataModel::Notifier::IsEnabled();
-		DataModel::Notifier::Disable();
+		DataModel::NotifierDisableGuard guard;
 
 		std::list<DataModel::OriginPtr> reloadOrigins;
 
@@ -2053,9 +2051,6 @@ bool MagTool::feed(DataModel::Amplitude* amp, bool update, bool remove) {
 			               origin->publicID().c_str());
 			SCCoreApp->query()->load(origin.get());
 		}
-
-		// Restore notifier state
-		DataModel::Notifier::SetEnabled(oldState);
 	}
 
 	if ( !origins ) {
@@ -2414,3 +2409,4 @@ bool MagTool::_feed(DataModel::Amplitude *ampl, bool update) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 }
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
