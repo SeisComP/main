@@ -36,6 +36,19 @@
 				to be removed. All other child object types are not affected.
 				</description>
 			</parameter>
+			<parameter name="strictModificationTime" type="boolean" default="false">
+				<description>
+				If enabled then modification times are compared in that way that adding
+				or removing of child objects is blocked if the remove object is not more
+				recent than the local object. For example magnitudes of an origin are not
+				allowed to be removed if the incoming origin has a modification time equal
+				or less than the modification time of the local origin.
+				Please note that this check requires that modules update the modification
+				time if childs are added or removed. That is usually not the case. For example
+				scmag must be configured with updateParent=true in order to update the
+				modification times of origin and magnitudes if new elements are added.
+				</description>
+			</parameter>
 			<group name="host">
 				<description>
 				Definition of host profiles. For each host profile a connection

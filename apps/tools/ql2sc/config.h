@@ -76,6 +76,7 @@ struct Config {
 	int            maxWaitForEventIDTimeout;
 	PrefixFirewall publicIDFilter;
 	bool           allowRemoval;
+	bool           strictModificationTime;
 	HostConfigs    hosts;
 };
 

@@ -70,6 +70,9 @@ bool Config::init() {
 	try { allowRemoval = app->configGetBool("allowRemoval"); }
 	catch ( ... ) { allowRemoval = true; }
 
+	try { strictModificationTime = app->configGetBool("strictModificationTime"); }
+	catch ( ... ) { strictModificationTime = false; }
+
 	try {
 		auto publicIDWhitelist = app->configGetStrings("processing.whitelist.publicIDs");
 		copy(
