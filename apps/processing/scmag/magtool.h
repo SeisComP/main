@@ -105,14 +105,15 @@ class MagTool {
 		void setAverageMethods(const AverageMethods &);
 
 		void setMinimumArrivalWeight(double);
+		void setUpdateParent(bool update);
 
 		bool init(const MagnitudeTypes &mags, const Core::TimeSpan& expiry,
 		          bool allowReprocessing, bool staticUpdate, bool keepWeights, double warning);
 		void done();
 
-		bool feed(DataModel::Origin*);
-		bool feed(DataModel::Pick*);
-		bool feed(DataModel::Amplitude*amp, bool update, bool remove);
+		bool feed(DataModel::Origin *);
+		bool feed(DataModel::Pick *);
+		bool feed(DataModel::Amplitude *, bool update, bool remove);
 
 		void remove(DataModel::PublicObject *po);
 
@@ -220,6 +221,7 @@ class MagTool {
 		Coefficients           _magnitudeCoefficients;
 		AverageMethods         _magnitudeAverageMethods;
 
+		bool                   _updateParent{false};
 		bool                   _allowReprocessing{false};
 		bool                   _staticUpdate{false};
 		bool                   _keepWeights{false};
