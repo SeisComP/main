@@ -97,12 +97,13 @@ inline bool checkUpdateOnTimeStamps(const T *remoteO, const T *localO) {
 }
 
 
-class MyDiff : public Diff4 {
+class MyDiff : public Diff5 {
 	public:
-		MyDiff(const Config &cfg) : _cfg(cfg) {}
+		MyDiff(const Config &cfg)
+		: _cfg(cfg) {}
 
 	protected:
-		bool blocked(const Core::BaseObject *o, LogNode *node, bool local) {
+		bool blocked(const Core::BaseObject *o, LogNode *node, bool local) override {
 			auto po = PublicObject::ConstCast(o);
 			if ( po ) {
 				if ( _cfg.publicIDFilter.isDenied(po->publicID()) ) {
@@ -154,7 +155,7 @@ class MyDiff : public Diff4 {
 
 		bool confirmUpdate(const Core::BaseObject *localO,
 		                   const Core::BaseObject *remoteO,
-		                   LogNode *node) {
+		                   LogNode *node) override {
 			const Core::MetaProperty *prop = nullptr;
 			auto it = CreationInfoIndex.find(localO->className());
 			if ( it == CreationInfoIndex.end() ) {
@@ -196,9 +197,36 @@ class MyDiff : public Diff4 {
 			return true;
 		}
 
+		bool confirmAdd(const Core::BaseObject *remoteO,
+		                bool parentUpdateConfirmed,
+		                LogNode *node) override {
+			if ( _cfg.strictModificationTime && !parentUpdateConfirmed ) {
+				// If the parent is not updated due to modification times and if
+				// strict modification times are enabled then modifying the hierarchy
+				// is not allowed.
+				if ( node ) {
+					node->addChild(o2t(remoteO), "SKIP ADD due to strict block of parent update");
+				}
+				return false;
+			}
+
+			return true;
+		}
+
 		bool confirmRemove(const Core::BaseObject *localO,
+		                   bool parentUpdateConfirmed,
 		                   LogNode *node) override {
 			const Core::MetaProperty *prop = nullptr;
+
+			if ( _cfg.strictModificationTime && !parentUpdateConfirmed ) {
+				// If the parent is not updated due to modification times and if
+				// strict modification times are enabled then modifying the hierarchy
+				// is not allowed.
+				if ( node ) {
+					node->addChild(o2t(localO), "SKIP REMOVE due to strict block of parent update");
+				}
+				return false;
+			}
 
 			if ( _cfg.allowRemoval ) {
 				return true;
@@ -238,6 +266,8 @@ class MyDiff : public Diff4 {
 			// and do not descent if the update of the parent is not
 			// confirmed. Otherwise pass the modification check on to the
 			// childs.
+			// If strict mode is enabled then the descent is controlled by
+			// the object itself.
 			if ( prop->isClass() && !prop->type().empty() ) {
 				const Core::MetaProperty *propCreationInfo = nullptr;
 				auto it = CreationInfoIndex.find(prop->type());
