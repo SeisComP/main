@@ -29,6 +29,10 @@ class OLVApp : public Kicker<MainFrame> {
 		  Kicker<MainFrame>(argc, argv, flags) {
 			setLoadRegionsEnabled(true);
 			_preloadDays = 1;
+			// Set new default target groups
+			_messageGroups.pick = "LOCATION";
+			_messageGroups.amplitude = "LOCATION";
+			_messageGroups.location = "LOCATION";
 		}
 
 	protected:
