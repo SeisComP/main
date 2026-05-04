@@ -30,6 +30,12 @@
 				parameters to the QuakeLink hosts.
 				</description>
 			</parameter>
+			<parameter name="allowRemoval" type="boolean" default="true">
+				<description>
+				If disabled then child objects carrying a creationInfo are not allowed
+				to be removed. All other child object types are not affected.
+				</description>
+			</parameter>
 			<group name="host">
 				<description>
 				Definition of host profiles. For each host profile a connection
