@@ -12,13 +12,12 @@
  ***************************************************************************/
 
 
-
-
 #define SEISCOMP_COMPONENT OriginLocatorView
 #include <seiscomp/logging/log.h>
 #include <seiscomp/gui/core/application.h>
 
 #include "mainframe.h"
+
 
 using namespace Seiscomp::Gui;
 
@@ -28,7 +27,6 @@ class OLVApp : public Kicker<MainFrame> {
 		OLVApp(int& argc, char** argv, int flags = DEFAULT) :
 		  Kicker<MainFrame>(argc, argv, flags) {
 			setLoadRegionsEnabled(true);
-			_preloadDays = 1;
 			// Set new default target groups
 			_messageGroups.pick = "LOCATION";
 			_messageGroups.amplitude = "LOCATION";
@@ -36,7 +34,6 @@ class OLVApp : public Kicker<MainFrame> {
 		}
 
 	protected:
-
 		void printUsage() const {
 			std::cout << "Usage:" << std::endl
 			          << "  " << name() << " [options]"
@@ -59,8 +56,9 @@ class OLVApp : public Kicker<MainFrame> {
 		}
 
 		bool initConfiguration() {
-			if ( !Kicker<MainFrame>::initConfiguration() )
+			if ( !Kicker<MainFrame>::initConfiguration() ) {
 				return false;
+			}
 
 			try { _preloadDays = configGetDouble("loadEventDB"); }
 			catch ( ... ) {}
@@ -80,7 +78,9 @@ class OLVApp : public Kicker<MainFrame> {
 		}
 
 		bool validateParameters() {
-			if ( !Kicker<MainFrame>::validateParameters() ) return false;
+			if ( !Kicker<MainFrame>::validateParameters() ) {
+				return false;
+			}
 
 			if ( commandline().hasOption("offline") || !_inputFile.empty() ) {
 				setMessagingEnabled(false);
@@ -107,21 +107,23 @@ class OLVApp : public Kicker<MainFrame> {
 					w->openFile(_inputFile);
 				}
 			}
-			else if ( !_eventID.empty() )
+			else if ( !_eventID.empty() ) {
 				w->setEventID(_eventID);
-			else if ( !_originID.empty() )
+			}
+			else if ( !_originID.empty() ) {
 				w->setOriginID(_originID);
-			else
+			}
+			else {
 				w->loadEvents(_preloadDays);
+			}
 		}
 
 	private:
 		std::string _originID;
 		std::string _eventID;
 		std::string _inputFile;
-		float _preloadDays;
+		float       _preloadDays{1.0f};
 };
-
 
 
 int main(int argc, char** argv) {
