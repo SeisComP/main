@@ -16,6 +16,15 @@
 				to be used for calculating a magnitude.
 				</description>
 			</parameter>
+			<parameter name="updateParent" type="boolean" default="false">
+				<description>
+				When a new magnitude or station magnitude has been added to an origin or
+				if a new station magnitude reference has been added to a magnitude, this
+				flag controls whether the parent object (origin or magnitude) will receive
+				an update w.r.t. the modification time as well. This feature can be
+				important when cross connecting two systems via Quakelink.
+				</description>
+			</parameter>
 			<group name="magnitudes">
 				<description>
 				General parameters for computing magnitudes. Others are configured

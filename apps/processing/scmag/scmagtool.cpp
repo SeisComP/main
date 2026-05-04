@@ -397,6 +397,13 @@ class MagToolApp : public Seiscomp::Client::Application {
 				_magtool.setSummaryMagnitudeCoefficients(coefficients);
 			}
 
+			try {
+				_magtool.setUpdateParent(configGetBool("updateParent"));
+			}
+			catch ( ... ) {
+				_magtool.setUpdateParent(false);
+			}
+
 			return true;
 		}
 

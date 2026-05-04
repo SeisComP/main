@@ -312,6 +312,15 @@ void MagTool::setMinimumArrivalWeight(double w) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void MagTool::setUpdateParent(bool update) {
+	_updateParent = update;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool MagTool::init(const MagnitudeTypes &mags, const Core::TimeSpan &expiry,
                    bool allowReprocessing, bool staticUpdate,
                    bool keepWeights, double warningLevel) {
@@ -538,6 +547,10 @@ DataModel::StationMagnitude *MagTool::getStationMagnitude(
 				mag->parent()->publicID().c_str());
 		}
 		origin->add(mag);
+		if ( _updateParent ) {
+			DataModel::touch(origin);
+			origin->update();
+		}
 	}
 
 	//mag->setAmplitudeID(ampl->publicID());
@@ -587,6 +600,10 @@ DataModel::Magnitude *MagTool::getMagnitude(DataModel::Origin *origin,
 		mag->setCreationInfo(ci);
 		mag->setType(type);
 		origin->add(mag);
+		if ( _updateParent ) {
+			DataModel::touch(origin);
+			origin->update();
+		}
 
 		if ( newInstance ) {
 			*newInstance = true;
@@ -843,6 +860,10 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 				magRef->setResidual(stationMagnitude->magnitude().value() - value);
 			}
 			netMag->add(magRef.get());
+			if ( _updateParent ) {
+				DataModel::touch(netMag);
+				netMag->update();
+			}
 		}
 		else {
 			double oldWeight = -1, oldResidual = 0;
@@ -890,6 +911,10 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 			if ( staCount )
 				magRef->setResidual(stationMagnitude->magnitude().value() - value);
 			netMag->add(magRef.get());
+			if ( _updateParent ) {
+				DataModel::touch(netMag);
+				netMag->update();
+			}
 		}
 		else {
 			double oldWeight = -1, oldResidual = 0;
@@ -939,6 +964,10 @@ bool MagTool::computeNetworkMagnitude(DataModel::Origin *origin, const std::stri
 	for ( size_t i = 0; i < netMag->stationMagnitudeContributionCount(); ) {
 		if ( refs.find(netMag->stationMagnitudeContribution(i)) == refs.end() ) {
 			netMag->removeStationMagnitudeContribution(i);
+			if ( _updateParent ) {
+				DataModel::touch(netMag);
+				netMag->update();
+			}
 		}
 		else {
 			++i;
@@ -2220,6 +2249,10 @@ bool MagTool::feed(DataModel::Amplitude* amp, bool update, bool remove) {
 				if ( origin->stationMagnitude(i)->amplitudeID() == amp->publicID() ) {
 					mtypes.insert(origin->stationMagnitude(i)->type());
 					origin->removeStationMagnitude(i);
+					if ( _updateParent ) {
+						DataModel::touch(origin);
+						origin->update();
+					}
 					break;
 				}
 			}
