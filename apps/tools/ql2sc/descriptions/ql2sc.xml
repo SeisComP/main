@@ -38,8 +38,8 @@
 			</parameter>
 			<parameter name="strictModificationTime" type="boolean" default="false">
 				<description>
-				If enabled then modification times are compared in that way that adding
-				or removing of child objects is blocked if the remove object is not more
+				If enabled then modification times are compared in a way that adding
+				or removing of child objects is blocked if the remote object is not more
 				recent than the local object. For example magnitudes of an origin are not
 				allowed to be removed if the incoming origin has a modification time equal
 				or less than the modification time of the local origin.
