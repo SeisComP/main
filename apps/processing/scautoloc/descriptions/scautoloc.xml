@@ -141,7 +141,7 @@
 					command-line option '--inventory-db'.
 					</description>
 				</parameter>
-				<parameter name="useManualPicks" type="boolean" default="true">
+				<parameter name="useManualPicks" type="boolean" default="false">
 					<description>
 					Receive and process manual phase picks.
 					</description>
