@@ -86,7 +86,7 @@ StationConfig::get(const string &net, const string &sta) const {
 
 		const Entry &e = (*mit).second;
 		SEISCOMP_DEBUG("Station %s %s  pattern %-8s config: usage=%d maxnucdist=%g",
-		               net.c_str(), sta.c_str(), pattern.c_str(), e.usage, e.maxNucDist);
+		               net, sta, pattern, e.usage, e.maxNucDist);
 
 		return e;
 	}
@@ -102,11 +102,12 @@ StationConfig::get(const string &net, const string &sta) const {
 void Autoloc3::Config::dump() const {
 	SEISCOMP_INFO("Configuration:");
 	SEISCOMP_INFO("  locator");
-	SEISCOMP_INFO("    profile                          %s",     locatorProfile.c_str());
-	SEISCOMP_INFO("    defaultDepth                     %g km",  defaultDepth);
-	SEISCOMP_INFO("    minimumDepth                     %g km",  minimumDepth);
+	SEISCOMP_INFO("    profile                          %s",     locatorProfile);
+	SEISCOMP_INFO("    default depth                    %g km",  defaultDepth);
+	SEISCOMP_INFO("    minimum depth                    %g km",  minimumDepth);
 	SEISCOMP_INFO("  buffer");
-	SEISCOMP_INFO("    pickKeep                         %.0f s", maxAge);
+	SEISCOMP_INFO("    picks kept in buffer             %.0f s", maxAge);
+	SEISCOMP_INFO("    origins kept in buffer           %.0f s", originKeep);
 	SEISCOMP_INFO("  autoloc");
 	SEISCOMP_INFO("    maxRMS                           %.1f s", maxRMS);
 	SEISCOMP_INFO("    maxResidual                      %.1f s", maxResidualUse);
@@ -120,14 +121,14 @@ void Autoloc3::Config::dump() const {
 	SEISCOMP_INFO("    minScore                         %.1f",   minScore);
 	SEISCOMP_INFO("    minPickSNR                       %.1f",   minPickSNR);
 	SEISCOMP_INFO("    goodRMS                          %.1f s", goodRMS);
-	SEISCOMP_INFO("    useManualPicks                   %s",     useManualPicks ? "true":"false");
-	SEISCOMP_INFO("    useManualOrigins                 %s",     useManualOrigins ? "true":"false");
+	SEISCOMP_INFO("    use manual picks                 %s",     useManualPicks ? "true":"false");
+	SEISCOMP_INFO("    use manual origins               %s",     useManualOrigins ? "true":"false");
 	SEISCOMP_INFO("    useImportedOrigins               %s",     useImportedOrigins ? "true":"false");
 	SEISCOMP_INFO("    publicationIntervalTimeSlope     %.2f",   publicationIntervalTimeSlope);
 	SEISCOMP_INFO("    publicationIntervalTimeIntercept %.1f",   publicationIntervalTimeIntercept);
 	SEISCOMP_INFO("    publicationIntervalPickCount     %d",     publicationIntervalPickCount);
 	SEISCOMP_INFO("    reportAllPhases                  %s",     reportAllPhases ? "true":"false");
-	SEISCOMP_INFO("    pickLogFile                      %s",     pickLogFile.size() ? pickLogFile.c_str() : "pick logging is disabled");
+	SEISCOMP_INFO("    pickLogFile                      %s",     pickLogFile.size() ? pickLogFile : "pick logging is disabled");
 	SEISCOMP_INFO("    dynamicPickThresholdInterval     %g",     dynamicPickThresholdInterval);
 	SEISCOMP_INFO("  offline                            %s",     offline ? "true":"false");
 	SEISCOMP_INFO("  test                               %s",     test ? "true":"false");

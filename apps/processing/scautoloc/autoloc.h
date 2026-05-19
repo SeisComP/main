@@ -62,10 +62,13 @@ class Autoloc3 {
 			// Also defines priority in descending order.
 			std::vector<std::string> authors;
 
-			// During cleanup() all objects older than maxAge
+			// During cleanup() all pick objects older than maxAge
 			// (in hours) are removed.
 			// If this parameter is <= 0, cleanup() is disabled.
 			double maxAge{6.0 * 3600.0};   // unit: s
+
+			// time to keep origins in buffer
+			double originKeep{86400};
 
 			// time span within which we search for picks which may indicate extraordinary activity
 			double dynamicPickThresholdInterval{3600.0};   // unit: s

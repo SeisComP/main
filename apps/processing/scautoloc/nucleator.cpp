@@ -229,7 +229,7 @@ GridPoint::feed(const Pick* pick)
 		return nullptr;
 	StationWrapperCPtr wrapper = (*xit).second;
 	if ( ! wrapper->station ) {
-		SEISCOMP_ERROR("Nucleator: station '%s' not found", key.c_str());
+		SEISCOMP_ERROR("Nucleator: station '%s' not found", key);
 		return nullptr;
 
 	}
@@ -413,8 +413,7 @@ bool GridPoint::setupStation(const Station *station)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-static double avgfn2(double x)
-{
+static double avgfn2(double x) {
 	const double w = 0.2; // plateau width
 
 	if (x < -1 || x > 1)
@@ -433,8 +432,7 @@ static double avgfn2(double x)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-static double depthFactor(double depth)
-{
+static double depthFactor(double depth) {
 	// straight line, easy (but also risky!) to be made configurable
 	return 1+0.0005*(200-depth);
 }
@@ -444,13 +442,13 @@ static double depthFactor(double depth)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-static PickSet originPickSet(const Origin *origin)
-{
+static PickSet originPickSet(const Origin *origin) {
 	PickSet picks;
 
-	for (Arrival &arr : ((Origin*)origin)->arrivals) {
-		if (arr.excluded)
+	for ( Arrival &arr : ((Origin*)origin)->arrivals ) {
+		if ( arr.excluded ) {
 			continue;
+		}
 		picks.insert(arr.pick);
 	}
 
@@ -462,8 +460,7 @@ static PickSet originPickSet(const Origin *origin)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-double originScore(const Origin *origin, double maxRMS, double networkSizeKm)
-{
+double originScore(const Origin *origin, double maxRMS, double networkSizeKm) {
 	((Origin*)origin)->arrivals.sort();
 
 	double score = 0, amplScoreMax=0;
@@ -473,27 +470,32 @@ double originScore(const Origin *origin, double maxRMS, double networkSizeKm)
 		double phaseScore = 1; // 1 for P / 0.3 for PKP
 		Arrival &arr = ((Origin*)origin)->arrivals[i];
 		PickCPtr pick = arr.pick;
-		if ( ! pick->station())
+		if ( !pick->station() ) {
 			continue;
+		}
 
 		arr.score = 0;
 		arr.ascore = arr.dscore = arr.tscore = 0;
 
 		// higher score for picks with higher SNR
 		double snr = pick->snr > 3 ? pick->snr : 3;
-		if ( snr > 1.E07 )
+		if ( snr > 1.E07 ) {
 			continue;
-		if ( snr > 100 )
+		}
+		if ( snr > 100 ) {
 			snr = 100;
+		}
 
 		// For a manual pick without SNR, as produced by
 		// scolv, we assume a default value.
-		if (manual(pick.get()) && pick->snr <= 0)
+		if ( manual(pick.get()) && pick->snr <= 0 ) {
 			snr = 10; // make this configureable
+		}
 
 		double normamp = pick->normamp;
-		if (manual(pick.get()) && normamp <= 0)
+		if ( manual(pick.get()) && normamp <= 0 ) {
 			normamp = 1; // make this configureable
+		}
 
 		double snrScore = log10(snr);
 
@@ -506,27 +508,31 @@ double originScore(const Origin *origin, double maxRMS, double networkSizeKm)
 		// Any amplitude > 1 percent of the XXL threshold
 		// will have an increased amplitude score
 		double q = 0.8;
-		if (normamp <= 0) {
+		if ( normamp <= 0 ) {
 			SEISCOMP_WARNING("THIS SHOULD NEVER HAPPEN: pick %s with  normamp %g  amp %g (not critical)",
-				       pick->id.c_str(), normamp, pick->amp);
+				       pick->id, normamp, pick->amp);
 			continue;
 		}
 
 		double amplScore = 1+q*(1+0.5*log10(normamp));
 		// The score must *not* be reduced based on low amplitude
-		if (amplScore < 1)
+		if ( amplScore < 1 ) {
 			amplScore = 1;
+		}
 
 		// Amplitudes usually decrease with distance.
 		// This hack takes this fact into account for computing the score.
 		// A sudden big amplitude at large distance cannot increase the score too badly
-		if (amplScoreMax==0)
+		if ( amplScoreMax==0 ) {
 			amplScoreMax = amplScore;
+		}
 		else {
-			if (i>2 && amplScore > amplScoreMax+0.4)
+			if ( i>2 && amplScore > amplScoreMax+0.4 ) {
 				amplScore = amplScoreMax+0.4;
-			if (amplScore > amplScoreMax)
+			}
+			if ( amplScore > amplScoreMax ) {
 				amplScoreMax = amplScore;
+			}
 		}
 
 		amplScore *= snrScore;
@@ -597,8 +603,7 @@ double originScore(const Origin *origin, double maxRMS, double networkSizeKm)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-static Origin* bestOrigin(OriginVector &origins)
-{
+static Origin* bestOrigin(OriginVector &origins) {
 	double maxScore = 0;
 	Origin* best = nullptr;
 
@@ -618,8 +623,7 @@ static Origin* bestOrigin(OriginVector &origins)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool GridSearch::feed(const Pick *pick)
-{
+bool GridSearch::feed(const Pick *pick) {
 	_newOrigins.clear();
 
 	if (_stations.size() == 0) {
@@ -765,8 +769,7 @@ bool GridSearch::feed(const Pick *pick)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool GridSearch::_readGrid(const std::string &gridfile)
-{
+bool GridSearch::_readGrid(const std::string &gridfile) {
 	std::ifstream ifile(gridfile.c_str());
 
 	if ( ifile.good() ) {
@@ -810,8 +813,7 @@ bool GridSearch::_readGrid(const std::string &gridfile)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void GridSearch::setup()
-{
+void GridSearch::setup() {
 //	_relocator.setStations(_stations);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
