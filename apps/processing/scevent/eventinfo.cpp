@@ -489,6 +489,7 @@ bool EventInformation::setEventOpComment(DataModel::JournalEntry *e, string &err
 		event->comment(i)->setText(e->parameters());
 
 		try {
+			event->comment(i)->creationInfo().setAuthor(e->sender());
 			event->comment(i)->creationInfo().setModificationTime(Core::Time::UTC());
 		}
 		catch ( ... ) {
