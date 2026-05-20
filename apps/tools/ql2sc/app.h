@@ -89,11 +89,12 @@ class App : public Client::Application {
 		               const DataModel::Journaling *journals,
 		               const DataModel::Event *event,
 		               const RoutingTable *routing,
-		               Notifiers &notifiers, bool syncPreferred);
+		               const HostConfig &config,
+		               Notifiers &notifiers);
 
 		bool sendNotifiers(const DataModel::EventParameters *ep,
 		                   const Notifiers &notifiers, const RoutingTable &routing);
-		bool sendJournals(const Notifiers &journals);
+		bool sendNotifiers(const Notifiers &notifiers);
 		void applyNotifier(const DataModel::Notifier *n);
 		void readLastUpdates();
 		void writeLastUpdates();
@@ -101,7 +102,8 @@ class App : public Client::Application {
 		DataModel::JournalEntry *createJournalEntry(const std::string &id,
 		                                            const std::string &action,
 		                                            const std::string &params,
-		                                            const Core::Time *created = nullptr);
+		                                            const Core::Time *created = nullptr,
+		                                            std::string_view author = {});
 
 		std::string waitForEventAssociation(const std::string &originID, int timeout);
 		void originAssociatedWithEvent(const std::string &eventID,

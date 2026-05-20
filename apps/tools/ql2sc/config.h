@@ -42,7 +42,6 @@ struct HostConfig {
 	bool         syncEventAttributes;
 	bool         syncPreferred;
 	int          syncEventDelay{0};
-
 };
 
 typedef std::vector<HostConfig> HostConfigs;
