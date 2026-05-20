@@ -34,7 +34,7 @@ class QLClient : public IO::QuakeLink::Connection {
 
 	public:
 		QLClient(int notificationID, const HostConfig *config, size_t backLog = 0);
-		virtual ~QLClient();
+		~QLClient() override;
 
 	public:
 		void run();
@@ -48,16 +48,15 @@ class QLClient : public IO::QuakeLink::Connection {
 		int notificationID() const { return _notificationID; }
 
 	protected:
-		void processResponse(IO::QuakeLink::Response *response);
+		void processResponse(IO::QuakeLink::Response *response) override;
 
 	private:
 		void listen();
 
 	private:
 		struct Statistics {
-			Statistics() : messages(0), payloadBytes(0) {};
-			size_t messages;
-			size_t payloadBytes;
+			size_t messages{0};
+			size_t payloadBytes{0};
 		};
 
 		int                        _notificationID;

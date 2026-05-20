@@ -243,45 +243,58 @@ Event Attributes
 It might be desirable to synchronize event attributes set at the source with
 the local system. In particular the event type, the type uncertainty, event
 descriptions and comments might be of interest. Because it is not advisable
-to route events and let :ref:`scevent` associate imported origins it can
+to route events and instead let :ref:`scevent` associate imported origins, it can
 happen that the imported event ID is different from the event ID of the local
 system. The input host configuration parameter :confval:`syncEventAttributes`
-controls that behaviour. It is set to true by default which means that imported
-event attributes are going to be imported as well. ql2sc does not update
-directly the attributes but commands scevent in as many cases as possible
-to do so. To find the matching local event it takes the first occurrence which
-has associated the currently imported preferred origin.
+controls, if ql2sc imports origins and waits for the event association to
+determine the target event ID and to synchronize event attributes. This behaviour
+is enabled by default. ql2sc does not update event attributes directly, but sends
+commands via the journal to scevent and let scevent update the corresponding
+event attributes.
 
+Supported event attributes are:
+
+* type
+* type certainty
+* name
+* operator comment
 
 Limitations
 -----------
 
 There are limitations to this process to avoid infinite loops when cross
-connecting two systems. Prior to sending the commands to scevent to change a
-particular attribute ql2sc checks if that attribute has been set already by
-another module (via JournalEntry database table). If not, then ql2sc is allowed
-to request an attribute change otherwise not. To illustrate the issue take the
-following example:
+connecting two systems. All the following checks only apply if attribute
+changes are detected and need to be synchronized.
+
+As modification times of the event cannot be compared because the event object
+is managed by scevent, the event journals are used to get the last modification
+time of a certain attribute. This actually requires the Quakelink instance used
+to import solutions to also provide the journals as part of the XML documents.
+This has been added to Quakelink version 2025.062.
+
+If Quakelink does not provide journals, then ql2sc only requests an event
+attribute change if ql2sc is the last author of a similar request. If any local
+user has changed the attribute in the meantime, ql2sc will stay away from
+overwriting it.
+
+To illustrate the workflow, take the following example:
 
 scolv connected to system ``A`` changes the event type to 'earthquake'. ql2sc
 of system ``B`` checks if the event type of the local event has been changed
-already which is not the case and it requests that change. System ``A``
-changes the event type again to 'unset'. ql2sc of system ``B`` notices that
-someone has already changed the event type and it was ql2sc itself. It requests
-again a change.
+already. As this is not the case, it requests that change. System ``A``
+changes the event type again to 'unset'. ql2sc of system ``B`` checks that
+the remote event type is different from the local event type and that the
+last author of the requested event type change is ql2sc itself. So it will
+request that change again.
 
-scolv connected to system ``B`` changes the event type to 'earthquake' again.
+scolv connected to system ``B`` changes the event type back to 'earthquake'.
 ql2sc of system ``A`` notices that ``scolv@A`` has already changed the
-event type and ignores the request.
+event type earlier so it will refuse the update and respect the local change.
 
-That simple case would not create an infinite loop even if ``ql2sc@A`` would
-accept the last change. The situation changes immediately if two subsequent
-attribute changes are being received by ``ql2sc@B`` while both of them are
-already applied on system ``A``. ``ql2sc@B`` would "restore" the old state due
-to the first received update and then apply the "final" state due to the
-second update. Each update triggers again an update at system ``A`` and the
-states start flapping. Without the described check there wouldn't be a well
-defined exit condition.
+If Quakelink provides journals, then ql2sc will compare the creation time of
+the commands and if the remote change request is newer than the local
+change request, the change will be requested. The author of the request will
+also be forwarded from the remote request.
 
 
 Caveats
