@@ -490,7 +490,8 @@ bool HCApp::run() {
 
 				rs->addStream(streamID.networkCode(), streamID.stationCode(),
 				              streamID.locationCode(), streamID.channelCode(),
-				              endTime - heli->recordsTimeSpan() - Core::TimeSpan(_timeSpanPerRow, 0), endTime);
+				              endTime - heli->recordsTimeSpan() - Core::TimeSpan(_timeSpanPerRow, 0),
+				              endTime);
 
 				try {
 					IO::RecordInput ri(rs.get(), Array::FLOAT, Record::DATA_ONLY);
