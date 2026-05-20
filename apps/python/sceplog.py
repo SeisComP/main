@@ -68,9 +68,6 @@ Execute sceplog with debug output
             ar.writeObject(self._eventParameters)
             ar.close()
             # Hack to avoid the "close failed in file object destructor"
-            # exception
-            #     print ""
-            sys.stdout.write("\n")
 
         return True
 
