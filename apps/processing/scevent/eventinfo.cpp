@@ -479,7 +479,10 @@ bool EventInformation::setEventOpComment(DataModel::JournalEntry *e, string &err
 
 	// Check for updating an existing event description
 	for ( size_t i = 0; i < event->commentCount(); ++i ) {
-		if ( event->comment(i)->id() != "Operator" ) continue;
+		if ( event->comment(i)->id() != "Operator" ) {
+			continue;
+		}
+
 		// Nothing to do
 		if ( event->comment(i)->text() == e->parameters() ) {
 			error = ":no changes:";
@@ -509,8 +512,12 @@ bool EventInformation::setEventOpComment(DataModel::JournalEntry *e, string &err
 	cmt->setText(e->parameters());
 	CreationInfo ci;
 	ci.setAuthor(e->sender());
-	try { ci.setCreationTime(e->created()); }
-	catch ( ... ) { ci.setCreationTime(Core::Time::UTC()); }
+	try {
+		ci.setCreationTime(e->created());
+	}
+	catch ( ... ) {
+		ci.setCreationTime(Core::Time::UTC());
+	}
 	cmt->setCreationInfo(ci);
 
 	if ( !event->add(cmt.get()) ) {
