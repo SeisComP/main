@@ -54,12 +54,8 @@ class Worker {
 
 		DataModel::DatabaseIterator dbSegments(size_t &segmentsOutside);
 		bool readChunkSegments(Segments &segments, const std::string &chunk,
-		                       DataModel::DataSegmentPtr chunkSeg,
 		                       const Core::Time &mtime,
 		                       const Core::TimeWindow &window);
-
-		void diffSegment(DataModel::DatabaseIterator &db_seg_it,
-		                 DataModel::DataSegment *chunkSeg, bool extent = false);
 
 		bool writeExtent(DataModel::Operation op);
 		bool syncSegments();
@@ -80,7 +76,8 @@ class Worker {
 		std::string                     _sid;
 		bool                            _segmentOverflow{false};
 		size_t                          _segCount{0};
-		Segments                        _segmentsStore;
+		Segments                        _segmentsInsert;
+		Segments                        _segmentsUpdate;
 		Segments                        _segmentsRemove;
 };
 

@@ -69,6 +69,15 @@ Definitions
 * ``Scan window`` -- time window limiting the synchronization of the archive
   with the database configured via :confval:`filter.time.start` and
   :confval:`filter.time.end` respectively :option:`--start` and :option:`--end`.
+  The restriction is enforced symmetrically on chunks, on individual segments
+  and on existing database segments:
+
+  - chunks lying entirely outside the scan window are skipped,
+  - for chunks that straddle a scan-window boundary, only the segments
+    inside the window are considered,
+  - existing `DataSegments` outside the scan window are left untouched in
+    the database.
+
   The scan window is useful to
 
   - reduce the scan time of larger archives. Depending on the size and storage
@@ -99,33 +108,39 @@ Workflow
 #. Subsequently process the `DataExtents` using :confval:`threads` number of
    parallel threads. For each `DataExtent`:
 
-   #. Collect all available chunks within `scan window`.
-   #. If the `DataExtent` is new (no database entry yet), store a new and
-      empty `DataExtent` to database, else query existing `DataSegments` from
-      the database:
+   #. Capture the current time as the prospective new ``lastScan`` value, so
+      chunks modified during the scan are picked up on the next run.
+   #. Collect all available chunks of the stream from the archive and, if the
+      extent already exists, load existing `DataSegments` inside the
+      `scan window` from the database.
+   #. **PLAN phase** -- for each chunk decide whether to **READ** or
+      **SKIP** it based on the `scan window`, `modification window` and
+      ``lastScan``. A chunk is also re-read when no database segment
+      starts within its window, so chunks reappearing in the archive with
+      their original mtime are picked up even though that mtime is older
+      than the previous scan. Afterwards, propagate **READ** to
+      neighboring chunks whenever a database segment straddles their
+      common boundary, so a boundary-spanning segment is either
+      re-derived from fresh records on both sides or copied verbatim from
+      the database on both sides, but never mixed.
+   #. **BUILD phase** -- assemble the desired segment list:
 
-      * count segments outside `scan window`
-      * create a database iterator for extents within `scan window`
-   #. Create two in-memory segment lists which collect segments to remove and
-      segments to add/update
-   #. For each chunk
+      * for a **READ** chunk parse its records, derive chunk segments by
+        analyzing gaps/overlaps with respect to :confval:`jitter`, sampling
+        rate and quality changes, and drop chunk segments lying outside the
+        `scan window`,
+      * for a **SKIP** chunk copy database segments starting in the chunk's
+        window,
+      * adjacent segments that are contiguous within :confval:`jitter` and
+        share sampling rate and quality are merged across chunk boundaries.
 
-      * determine the `chunk window` and `mtime`
-      * decide whether the chunk needs to be read depending on the `mtime`
-        and a possible `chunk gap`. If necessary, read the chunk and
+   #. **DIFF phase** -- compare the desired segment list against the
+      previously loaded database segments and derive the resulting insert,
+      update and remove operations. Segments outside the `scan window` are
+      never considered for removal.
 
-        - create chunk segments by analyzing the chunk records for
-          gaps/overlaps defined by :confval:`jitter`, sampling rate or quality
-          changes
-        - merge chunk segments with database segments and update the in-memory
-          segment lists.
-
-        If not necessary, advance the database segment iterator to the end
-        of the chunk window.
-
-   #. Remove and then add/update the collected segments.
-   #. Merge segment information into `DataAttributeExtents`
-   #. Merge `DataAttributeExtents` into overall `DataExtent`
+   #. Apply the collected operations to the database and recompute
+      `DataAttributeExtents` and the overall `DataExtent`.
 
 Examples
 --------
