@@ -147,8 +147,8 @@ void Autoloc3::Config::dump() const {
 		SEISCOMP_INFO("  xxl.deadTime                      %g s",   xxlDeadTime);
 	}
 
-	SEISCOMP_INFO("  depthSetter type:                 %s",     depthSetterType.c_str());
-	if ( depthSetterType == "Polygon" ) {
+	SEISCOMP_INFO("  depthLookup type:                 %s",     depthLookupType.c_str());
+	if ( depthLookupType == "Polygon" ) {
 		for ( const auto &r : depthRegions )
 			SEISCOMP_INFO("    region: %s", r.c_str());
 	}

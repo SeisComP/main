@@ -435,7 +435,7 @@ bool App::initConfiguration() {
 	try { _config.xxlDeadTime = configGetDouble("autoloc.xxl.deadTime"); }
 	catch (...) {}
 
-	try { _config.depthSetterType = configGetString("autoloc.depthSetter"); }
+	try { _config.depthLookupType = configGetString("autoloc.depthLookup"); }
 	catch (...) {}
 
 	try { _config.depthRegions = configGetStrings("autoloc.regionDepth.regions"); }

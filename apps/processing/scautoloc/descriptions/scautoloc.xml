@@ -240,9 +240,9 @@
 					</parameter>
 				</group>
 
-				<parameter name="depthSetter" type="string" default="Constant">
+				<parameter name="depthLookup" type="string" default="Constant">
 					<description>
-					DefaultDepthSetter implementation to use for region- and
+					DepthLookup implementation to use for region- and
 					slab-based depth lookup. Available values:
 
 					- "Constant": always uses the global autoloc.defaultDepth
@@ -251,11 +251,11 @@
 					  features loaded by SeisComP's GeoFeatureSet; requires
 					  autoloc.regionDepth.regions to be set.
 					- "Slab2": uses USGS Slab2.0 depth-footprint contours;
-					  requires the ddslab2 plugin (core.plugins = ddslab2).
+					  requires the dlslab2 plugin (core.plugins = dlslab2).
 
 					Example for Slab2:
-					  core.plugins = ddslab2
-					  autoloc.depthSetter = Slab2
+					  core.plugins = dlslab2
+					  autoloc.depthLookup = Slab2
 					</description>
 				</parameter>
 
@@ -264,7 +264,7 @@
 						<description>
 						Ordered, comma-separated list of polygon feature names
 						(from BNA or GeoJSON files in @DATADIR@/spatial/vector/)
-						used when autoloc.depthSetter = Polygon. Each feature must
+						used when autoloc.depthLookup = Polygon. Each feature must
 						carry a "defaultDepth" attribute (km) and may carry
 						"maxDepth" (km). The first polygon containing the origin
 						location is used.
