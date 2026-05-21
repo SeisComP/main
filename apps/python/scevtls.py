@@ -297,7 +297,7 @@ Print IDs of all events in XML file
             w += addWhere(
                 w,
                 (
-                    f"e.{_T('creationInfo_modificationTime')} >= "
+                    f"COALESCE(e.{_T('creationInfo_modificationTime')}, e.{_T('creationInfo_creationTime')}) >= "
                     f"'{_time(self._modifiedAfterTime)}'"
                 ),
             )
