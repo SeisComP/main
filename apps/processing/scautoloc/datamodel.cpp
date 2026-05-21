@@ -395,12 +395,14 @@ void Origin::geoProperties(double &min, double &max, double &gap) const
 
 	std::vector<double> azi;
 
-	for (const Arrival& arr : arrivals) {
-		if ( ! arr.excluded ) {
-			if ( arr.distance < min )
+	for ( const Arrival& arr : arrivals ) {
+		if ( !arr.excluded ) {
+			if ( arr.distance < min ) {
 				min = arr.distance;
-			else if ( arr.distance > max )
+			}
+			else if ( arr.distance > max ) {
 				max = arr.distance;
+			}
 			
 			azi.push_back(arr.azimuth);
 		}
@@ -420,8 +422,9 @@ void Origin::geoProperties(double &min, double &max, double &gap) const
 
 	for ( size_t i = 0; i < azi.size()-1; ++i ) {
 		double azGap = azi[i+1]-azi[i];
-		if ( azGap > gap )
+		if ( azGap > gap ) {
 			gap = azGap;
+		}
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -430,8 +433,7 @@ void Origin::geoProperties(double &min, double &max, double &gap) const
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-int OriginVector::mergeEquivalentOrigins(const Origin *start)
-{
+int OriginVector::mergeEquivalentOrigins(const Origin *start) {
 	return 0;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

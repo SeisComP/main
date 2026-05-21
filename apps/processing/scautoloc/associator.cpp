@@ -102,17 +102,14 @@ Associator::shutdown()
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool
-Associator::feed(const Pick* pick)
-{
+Associator::feed(const Pick* pick) {
 	_associations.clear();
 
-	if ( ! _origins)
+	if ( !_origins ) {
 		return false;
+	}
 
 	static Seiscomp::TravelTimeTable ttt;
-
-	int count = 0;
-
 	for (const OriginPtr& _origin : *_origins) {
 
 		const Origin  *origin = _origin.get();
@@ -131,38 +128,41 @@ Associator::feed(const Pick* pick)
 		catch ( std::out_of_range & ) {
 			continue;
 		}
-		if ( ! ttlist)
+		if ( !ttlist ) {
 			continue;
+		}
 
 		// An imported origin is treated as if it had a very high
 		// score. => Anything can be associated with it.
 		double origin_score = origin->imported ? 1000 : origin->score;
 
 		for (const Phase &phase : _phases) {
-
 			// TODO: make this configurable
 //			if (origin->definingPhaseCount() < (phase.code == "P" ? 8 : 30))
-			if (origin_score < (phase.code == "P" ? 20 : 50))
+			if ( origin_score < (phase.code == "P" ? 20 : 50) ) {
 				continue;
+			}
 
-			if (delta < phase.dmin || delta > phase.dmax)
+			if ( delta < phase.dmin || delta > phase.dmax ) {
 				continue;
+			}
 
 			double ttime = -1, x = 1;
 
 			if (phase.code == "P") {
 				for (const auto& tt: *ttlist) {
-					if (delta < 114) {
+					if ( delta < 114 ) {
 						// for delta < 114,
 						// always take 1st arrival
 						ttime = tt.time;
 						break;
 					}
-					if (tt.phase.substr(0,2) != "PK")
+					if ( tt.phase.substr(0,2) != "PK" ) {
 						// for delta >= 114,
 						// skip Pdiff etc.,
 						// take first of PKP*, PKiKP*
 						continue;
+					}
 
 					ttime = tt.time;
 					break;
@@ -180,8 +180,9 @@ Associator::feed(const Pick* pick)
 				}
 			}
 
-			if (ttime == -1) // phase not found
+			if ( ttime == -1 ) { // phase not found
 				continue;
+			}
 
 			// compute "affinity" based on distance and residual
 			double affinity = 0;
@@ -191,8 +192,9 @@ Associator::feed(const Pick* pick)
 				// associate it with affinity 1, otherwise skip
 				//
 				// TODO: Make this configurable
-				if (residual < -20 || residual > 30)
+				if ( residual < -20 || residual > 30 ) {
 					continue;
+				}
 				affinity = 1;
 			}
 			else {
@@ -200,17 +202,18 @@ Associator::feed(const Pick* pick)
 				residual /= 10;       // normalize residual
 
 				affinity = avgfn(residual); // test if exp(-residual**2) if better
-				if (affinity < AFFMIN)
+				if ( affinity < AFFMIN ) {
 					continue;
+				}
 			}
 			string phcode = phase.code;
-			if (phcode=="P" && ttime > 960)
+			if ( phcode=="P" && ttime > 960 ) {
 				phcode = "PKP";
+			}
 			Association asso(origin, pick, phcode, residual, affinity);
 			asso.distance = delta;
 			asso.azimuth = az;
 			_associations.push_back(asso);
-			count++;
 
 			// ensure no more than one association per origin
 			break;

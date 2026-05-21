@@ -42,8 +42,7 @@ namespace Autoloc {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void delazi(double lat1, double lon1, double lat2, double lon2,
-            double &delta, double &az1, double &az2)
-{
+            double &delta, double &az1, double &az2) {
 	Seiscomp::Math::Geo::delazi(lat1, lon1, lat2, lon2, &delta, &az1, &az2);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -53,8 +52,7 @@ void delazi(double lat1, double lon1, double lat2, double lon2,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void delazi(const Hypocenter *hypo, const Station *station,
-            double &delta, double &az1, double &az2)
-{
+            double &delta, double &az1, double &az2) {
 	Seiscomp::Math::Geo::delazi(hypo->lat, hypo->lon, station->lat, station->lon, &delta, &az1, &az2);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -63,8 +61,7 @@ void delazi(const Hypocenter *hypo, const Station *station,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-double distance(const Station* s1, const Station* s2)
-{
+double distance(const Station* s1, const Station* s2) {
 	double delta, az, baz;
 	delazi(s1->lat, s1->lon, s2->lat, s2->lon, delta, az, baz);
 	return delta;
@@ -75,8 +72,7 @@ double distance(const Station* s1, const Station* s2)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-std::string printDetailed(const Origin *origin)
-{
+std::string printDetailed(const Origin *origin) {
 	return printOrigin(origin, false);
 }
 
@@ -86,8 +82,7 @@ std::string printDetailed(const Origin *origin)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-std::string printOneliner(const Origin *origin)
-{
+std::string printOneliner(const Origin *origin) {
 	return printOrigin(origin, true);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -96,8 +91,7 @@ std::string printOneliner(const Origin *origin)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool automatic(const Pick *pick)
-{
+bool automatic(const Pick *pick) {
 	return pick->mode == Pick::Automatic;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -106,8 +100,7 @@ bool automatic(const Pick *pick)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool ignored(const Pick *pick)
-{
+bool ignored(const Pick *pick) {
 	return pick->mode == Pick::IgnoredAutomatic;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -116,8 +109,7 @@ bool ignored(const Pick *pick)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool manual(const Pick *pick)
-{
+bool manual(const Pick *pick) {
 	return pick->mode == Pick::Manual;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -126,8 +118,7 @@ bool manual(const Pick *pick)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-char modeFlag(const Pick *pick)
-{
+char modeFlag(const Pick *pick) {
 	return automatic(pick) ? 'A' : 'M';
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -136,10 +127,10 @@ char modeFlag(const Pick *pick)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool hasAmplitude(const Pick *pick)
-{
-	if (pick->amp <= 0)
+bool hasAmplitude(const Pick *pick) {
+	if ( pick->amp <= 0 ) {
 		return false;
+	}
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -148,8 +139,7 @@ bool hasAmplitude(const Pick *pick)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool travelTimeP(double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta, TravelTime &result)
-{
+bool travelTimeP(double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta, TravelTime &result) {
 	static Seiscomp::TravelTimeTable ttt;
 
 	Seiscomp::TravelTimeList *ttlist { nullptr };
@@ -160,18 +150,21 @@ bool travelTimeP(double lat1, double lon1, double dep1, double lat2, double lon2
 	catch ( std::out_of_range & ) {
 		return false;
 	}
-	if ( ! ttlist)
+	if ( !ttlist ) {
 		return false;
+	}
 
-	for (auto& tt : *ttlist) {
+	for ( auto& tt : *ttlist ) {
 		result = tt;
-		if (delta < 114)
+		if ( delta < 114 ) {
 			// for  distances < 114, allways take 1st arrival
 			break;
-		if (tt.phase.substr(0,2) != "PK")
+		}
+		if ( tt.phase.substr(0,2) != "PK" ) {
 			// for  distances >= 114, skip Pdiff etc., take first
 			// PKP*, PKiKP*
 			continue;
+		}
 		break;
 	}
 	delete ttlist;
@@ -184,10 +177,9 @@ bool travelTimeP(double lat1, double lon1, double dep1, double lat2, double lon2
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-static Time str2time(const std::string &s)
-{
+static Time str2time(const std::string &s) {
 	Seiscomp::Core::Time t;
-	if ( ! t.fromString(s.c_str(), "%F %T.%f")) {
+	if ( !t.fromString(s.c_str(), "%F %T.%f") ) {
 		SEISCOMP_ERROR_S("Failed to convert time string " + s);
 		exit(3);
 	}
@@ -199,8 +191,7 @@ static Time str2time(const std::string &s)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-std::string time2str(const Time &t)
-{
+std::string time2str(const Time &t) {
 	return sctime(t).toString("%F %T.%f000000").substr(0,21);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -209,20 +200,21 @@ std::string time2str(const Time &t)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-double meandev(const Origin* origin)
-{
+double meandev(const Origin* origin) {
 	double cumresid {0};
 	double cumweight {0};
 
 	for (const Arrival &arr : origin->arrivals) {
-		if (arr.excluded)
+		if ( arr.excluded ) {
 			continue;
+		}
 		cumresid  += std::abs(arr.residual);
 		cumweight += 1;
 	}
 
-	if (cumweight == 0.)
+	if ( cumweight == 0. ) {
 		return 0;
+	}
 
 	return cumresid/cumweight;
 }
@@ -232,10 +224,10 @@ double meandev(const Origin* origin)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-double avgfn(double x)
-{
-	if (x<-1 || x>1)
+double avgfn(double x) {
+	if ( x<-1 || x>1 ) {
 		return 0;
+	}
 
 	x *= M_PI*0.5;
 	x = cos(x);
@@ -247,8 +239,7 @@ double avgfn(double x)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-std::string printOrigin(const Origin *origin, bool oneliner)
-{
+std::string printOrigin(const Origin *origin, bool oneliner) {
 	assert(origin);
 
 	std::ostringstream out;
@@ -302,7 +293,7 @@ std::string printOrigin(const Origin *origin, bool oneliner)
 			case Arrival::TemporarilyExcluded:  excludedFlag = "Xt"; break;
 			default:                            excludedFlag = "X ";
 			}
-			if ( ! pick->station()) {
+			if ( !pick->station() ) {
 				out << pick->id << "   missing station information" << std::endl;
 				continue;
 			}
@@ -358,8 +349,7 @@ std::string printOrigin(const Origin *origin, bool oneliner)
 namespace Utils {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-StationMap *readStationLocations(const std::string &fname)
-{
+StationMap *readStationLocations(const std::string &fname) {
 	StationMap *stations = new StationMap;
 	std::string code, net;
 	double lat, lon, alt;
@@ -389,33 +379,32 @@ StationMap *readStationLocations(const std::string &fname)
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::string &filename) {
-                // read inventory from station locations file
-                StationMap *stationMap = readStationLocations(filename);
+	// read inventory from station locations file
+	StationMap *stationMap = readStationLocations(filename);
 
-		Seiscomp::DataModel::Inventory *inventory = new Seiscomp::DataModel::Inventory;
-		for (auto& item : *stationMap) {
+	Seiscomp::DataModel::Inventory *inventory = new Seiscomp::DataModel::Inventory;
+	for ( auto& item : *stationMap ) {
+		std::string key = item.first;
+		const Station *s = item.second.get();
+		std::string netId = "Network/"+s->net;
+		Seiscomp::DataModel::Network *network = inventory->findNetwork(netId);
+		if ( !network) {
+			network = new Seiscomp::DataModel::Network(netId);
+			network->setCode(s->net);
+			inventory->add(network);
+		}
 
-                        std::string key = item.first;
-                        const Station *s = item.second.get();
-			std::string netId = "Network/"+s->net;
-			Seiscomp::DataModel::Network *network = inventory->findNetwork(netId);
-                        if ( ! network) {
-                                network = new Seiscomp::DataModel::Network(netId);
-                                network->setCode(s->net);
-                                inventory->add(network);
-                        }
+		std::string staId = "Station/"+s->net+"/"+s->code;
+		Seiscomp::DataModel::Station *station = new Seiscomp::DataModel::Station(staId);
+		station->setCode(s->code);
+		station->setLatitude(s->lat);
+		station->setLongitude(s->lon);
+		station->setElevation(s->alt);
+		network->add(station);
+	}
+	delete stationMap;
 
-			std::string staId = "Station/"+s->net+"/"+s->code;
-			Seiscomp::DataModel::Station *station = new Seiscomp::DataModel::Station(staId);
-                        station->setCode(s->code);
-                        station->setLatitude(s->lat);
-                        station->setLongitude(s->lon);
-                        station->setElevation(s->alt);
-                        network->add(station);
-                }
-                delete stationMap;
-
-		return inventory;
+	return inventory;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -423,15 +412,15 @@ Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::stri
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Pick* readPickLine()
-{
+Pick* readPickLine() {
 	PickVector picks;
 	std::string sta, net, cha, loc, date, time, id;
 	double snr, amp, per;
 	char stat;
 
-	if ( ! (std::cin >>date >>time >>net >>sta >>cha >>loc >>snr >>amp >>per >>stat >>id) )
+	if ( !(std::cin >>date >>time >>net >>sta >>cha >>loc >>snr >>amp >>per >>stat >>id) ) {
 		return nullptr;
+	}
 
 	std::string key = net + "." + sta;
 	std::string label = date + "." + time + "-" + net + "." + sta + "." + loc + "." + cha + "-" + stat;
@@ -456,8 +445,7 @@ Pick* readPickLine()
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-PickVector readPickFile()
-{
+PickVector readPickFile() {
 	PickVector picks;
 	PickPtr pick = 0;
 
@@ -500,8 +488,7 @@ namespace Seiscomp {
 namespace Math {
 namespace Statistics {
 
-double rms(const std::vector<double> &v, double offset)
-{
+double rms(const std::vector<double> &v, double offset) {
 	double r{0};
 
 	if (v.empty())
