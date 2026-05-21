@@ -52,7 +52,7 @@ class Worker {
 
 		bool dbConnect();
 
-		DataModel::DatabaseIterator dbSegments(size_t &segmentsOutside);
+		DataModel::DatabaseIterator dbSegments();
 		bool readChunkSegments(Segments &segments, const std::string &chunk,
 		                       const Core::Time &mtime,
 		                       const Core::TimeWindow &window);
@@ -134,6 +134,7 @@ class SCARDAC : public Client::Application {
 		int             _threads{1};
 		float           _jitter{0.5};
 		size_t          _maxSegments{1000000};
+		size_t          _maxChunkOverlap{500};
 		std::string     _wfidFile;
 		std::string     _start;
 		std::string     _end;

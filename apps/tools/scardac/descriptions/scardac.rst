@@ -50,8 +50,12 @@ Definitions
   - contains at least one record, otherwise it must be absent
   - each record of a chunk must fulfill the following conditions:
 
+    - `record start < record end`
     - `chunk start <= record start < chunk end`
     - `chunk start < record end < next chunk end`
+  - a record stored in chunk N may have an end time greater than the start time
+    of chunk N+1 but no more than :confval:`maxChunkOverlap` samples should strech
+    into the next chunk else unnecessary reads are triggered
   - chunks do not overlap, end time of current chunk equals start time of
     successive chunk, otherwise a ``chunk gap`` is declared
   - records may occur unordered within a chunk or across chunk boundaries,
@@ -115,14 +119,13 @@ Workflow
       `scan window` from the database.
    #. **PLAN phase** -- for each chunk decide whether to **READ** or
       **SKIP** it based on the `scan window`, `modification window` and
-      ``lastScan``. A chunk is also re-read when no database segment
-      starts within its window, so chunks reappearing in the archive with
-      their original mtime are picked up even though that mtime is older
-      than the previous scan. Afterwards, propagate **READ** to
-      neighboring chunks whenever a database segment straddles their
-      common boundary, so a boundary-spanning segment is either
-      re-derived from fresh records on both sides or copied verbatim from
-      the database on both sides, but never mixed.
+      ``lastScan``. A chunk is also re-read when no existing DB segment SPANS or
+      STARTS within its window, so chunks reappearing in the archive with their
+      original mtime are picked up even though that mtime is older than the
+      previous scan. Afterwards, propagate **READ** to neighboring chunks
+      whenever a database segment straddles their common boundary, so a
+      boundary-spanning segment is either re-derived from fresh records on both
+      sides or copied verbatim from the database on both sides, but never mixed.
    #. **BUILD phase** -- assemble the desired segment list:
 
       * for a **READ** chunk parse its records, derive chunk segments by
