@@ -25,6 +25,13 @@
 						organised into 000/, 020/, 040/, ... 680/ subdirectories.
 					</description>
 				</parameter>
+				<parameter name="fallback" type="double" default="10" unit="km">
+					<description>
+						Default depth returned when the origin is located outside
+						all Slab2.0 depth-footprint polygons (i.e. not in any
+						known subduction zone).
+					</description>
+				</parameter>
 			</group>
 		</configuration>
 	</plugin>

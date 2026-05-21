@@ -27,11 +27,9 @@ class Slab2DepthLookup : public Seiscomp::Seismology::DepthLookup {
 	public:
 		bool init(const Seiscomp::Config::Config &config) override;
 
-		double getDefaultDepth(double lat, double lon,
-		                       double fallback) const override;
+		double fetch(double lat, double lon) const override;
 
-		double getMaxDepth(double lat, double lon,
-		                   double fallback) const override;
+		double fetchMaxDepth(double lat, double lon) const override;
 
 	private:
 		struct SlabLevel {
@@ -47,6 +45,7 @@ class Slab2DepthLookup : public Seiscomp::Seismology::DepthLookup {
 
 		int _slabDepthAt(double lat, double lon) const;
 
+		double                       _fallback{10.0};
 		std::vector<SlabZone>        _slabZones;
 		Seiscomp::Geo::GeoFeatureSet _slabFeatures;  // local — NOT the global singleton
 };

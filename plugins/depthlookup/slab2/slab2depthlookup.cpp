@@ -40,6 +40,14 @@ bool Slab2DepthLookup::init(const Seiscomp::Config::Config &config) {
 		return false;
 	}
 
+	try {
+		_fallback = config.getDouble("dlslab2.fallback");
+	}
+	catch ( ... ) {
+		SEISCOMP_INFO("dlslab2: dlslab2.fallback not set, using default %.0f km",
+		              _fallback);
+	}
+
 	namespace fs = boost::filesystem;
 
 	if ( !fs::is_directory(directory) ) {
@@ -155,16 +163,14 @@ int Slab2DepthLookup::_slabDepthAt(double lat, double lon) const {
 
 
 // ---------------------------------------------------------------------------
-double Slab2DepthLookup::getDefaultDepth(double lat, double lon,
-                                         double fallback) const {
+double Slab2DepthLookup::fetch(double lat, double lon) const {
 	int d = _slabDepthAt(lat, lon);
-	return d >= 0 ? static_cast<double>(d) : fallback;
+	return d >= 0 ? static_cast<double>(d) : _fallback;
 }
 
 
 // ---------------------------------------------------------------------------
-double Slab2DepthLookup::getMaxDepth(double lat, double lon,
-                                     double fallback) const {
+double Slab2DepthLookup::fetchMaxDepth(double lat, double lon) const {
 	const Seiscomp::Geo::GeoCoordinate loc(lat, lon);
 
 	for ( const SlabZone &zone : _slabZones ) {
@@ -177,5 +183,5 @@ double Slab2DepthLookup::getMaxDepth(double lat, double lon,
 			}
 		}
 	}
-	return fallback;
+	return _fallback;
 }

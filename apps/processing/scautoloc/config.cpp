@@ -103,7 +103,6 @@ void Autoloc3::Config::dump() const {
 	SEISCOMP_INFO("Configuration:");
 	SEISCOMP_INFO("  locator");
 	SEISCOMP_INFO("    profile                          %s",     locatorProfile.c_str());
-	SEISCOMP_INFO("    defaultDepth                     %g km",  defaultDepth);
 	SEISCOMP_INFO("    minimumDepth                     %g km",  minimumDepth);
 	SEISCOMP_INFO("  buffer");
 	SEISCOMP_INFO("    pickKeep                         %.0f s", maxAge);
@@ -112,7 +111,6 @@ void Autoloc3::Config::dump() const {
 	SEISCOMP_INFO("    maxResidual                      %.1f s", maxResidualUse);
 	SEISCOMP_INFO("    maxResidual for keeping picks    %.1f s", maxResidualKeep);
 	SEISCOMP_INFO("    minPhaseCount                    %d",     minPhaseCount);
-	SEISCOMP_INFO("    maxDepth                         %.1f km", maxDepth);
 	SEISCOMP_INFO("    minStaCountIgnorePKP             %d",     minStaCountIgnorePKP);
 	SEISCOMP_INFO("    defaultDepthStickiness           %g",     defaultDepthStickiness);
 	SEISCOMP_INFO("    tryDefaultDepth                  %s",     tryDefaultDepth ? "true":"false");
@@ -148,10 +146,6 @@ void Autoloc3::Config::dump() const {
 	}
 
 	SEISCOMP_INFO("  depthLookup type:                 %s",     depthLookupType.c_str());
-	if ( depthLookupType == "Polygon" ) {
-		for ( const auto &r : depthRegions )
-			SEISCOMP_INFO("    region: %s", r.c_str());
-	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

@@ -91,8 +91,6 @@ class Autoloc3 {
 			//    maxResidualUse  = 2*maxRMS
 
 
-			// Use this depth if there is no depth resolution
-			double defaultDepth{10.0};           // unit: km
 			double defaultDepthStickiness{0.5};  // 0...1
 
 			// Try to relocate an origin using the configured default depth.
@@ -104,9 +102,6 @@ class Autoloc3 {
 
 			// Minimum depth in case there is depth resolution
 			double minimumDepth{5.0};          // uni: 5 km
-
-			// maximum depth of origin, checked before sending
-			double maxDepth{1000.0};
 
 			// Max. secondary azimuthal gap
 			double maxAziGapSecondary{360.0};
@@ -228,9 +223,6 @@ class Autoloc3 {
 			// DepthLookup implementation to use.
 			// "Constant" (default), "Polygon", or "Slab2" (dlslab2 plugin).
 			std::string depthLookupType{"Constant"};
-
-			// Region names for the Polygon depth setter.
-			std::vector<std::string> depthRegions;
 
 			const Seiscomp::Config::Config* scconfig{nullptr};
 

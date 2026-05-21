@@ -12,16 +12,6 @@
 					The locator profile to use.
 					</description>
 				</parameter>
-				<parameter name="defaultDepth" type="double" default="10" unit="km">
-					<description>
-					For each location, scautoloc performs checks to test if the
-					depth estimate is reliable. If the same location quality
-					(e.g. pick RMS) can be achieved while fixing the depth to
-					the default depth, the latter is used. This is most often
-					the case for shallow events with essentially no depth
-					resolution.
-					</description>
-				</parameter>
 				<parameter name="minimumDepth" type="double" default="5" unit="km">
 					<description>
 					The locator might converge at a depth of 0 or even negative
@@ -72,11 +62,6 @@
 				<parameter name="minPhaseCount" type="int" default="6">
 					<description>
 					Minimum number of phases for reporting origins.
-					</description>
-				</parameter>
-				<parameter name="maxDepth" type="double" default="1000" unit="km">
-					<description>
-					Maximum permissible depth for reporting origins.
 					</description>
 				</parameter>
 				<parameter name="maxSGAP" type="double" default="360" unit="deg">
@@ -152,8 +137,8 @@
 				</parameter>
 				<parameter name="adoptManualDepth" type="boolean" default="true">
 					<description>
-					Adopt the depth from manual origins. Otherwise the default depth
-					in locator.defaultDepth is considered.
+					Adopt the depth from manual origins. Otherwise the configured
+					default depth from the active DepthLookup backend is used.
 					</description>
 				</parameter>
 				<parameter name="authors" type="list:string">
@@ -165,8 +150,9 @@
 				</parameter>
 				<parameter name="tryDefaultDepth" type="boolean" default="true">
 					<description>
-					Compare located origin with the origin at the depth given by
-					locator.defaultDepth. The origin with lower RMS is reported.
+					Compare located origin with the origin at the default depth
+					returned by the active DepthLookup backend. The origin with
+					lower RMS is reported.
 					</description>
 				</parameter>
 				<parameter name="publicationIntervalTimeSlope" type="double" unit="s/count" default="0.5">
@@ -242,16 +228,22 @@
 
 				<parameter name="depthLookup" type="string" default="Constant">
 					<description>
-					DepthLookup implementation to use for region- and
-					slab-based depth lookup. Available values:
+					DepthLookup backend to use for region- and slab-based depth
+					lookup. Each backend owns its own configuration namespace.
+					Available values:
 
-					- "Constant": always uses the global autoloc.defaultDepth
-					  (default; no plugin required).
+					- "Constant" (default): returns the fixed depth set in
+					  depths.constant.value. No plugin required.
 					- "Polygon": looks up the origin against named polygon
-					  features loaded by SeisComP's GeoFeatureSet; requires
-					  autoloc.regionDepth.regions to be set.
-					- "Slab2": uses USGS Slab2.0 depth-footprint contours;
-					  requires the dlslab2 plugin (core.plugins = dlslab2).
+					  features loaded by SeisComP's GeoFeatureSet.
+					  Configure depths.polygon.regions and
+					  depths.polygon.fallback.
+					- "Slab2": uses USGS Slab2.0 depth-footprint contours.
+					  Requires the dlslab2 plugin (core.plugins = dlslab2).
+					  Configure dlslab2.directory and dlslab2.fallback.
+
+					The selected backend is mandatory — scautoloc will not start
+					if the backend type is unknown or fails to initialise.
 
 					Example for Slab2:
 					  core.plugins = dlslab2
@@ -259,20 +251,36 @@
 					</description>
 				</parameter>
 
-				<group name="regionDepth">
-					<parameter name="regions" type="list:string" default="">
-						<description>
-						Ordered, comma-separated list of polygon feature names
-						(from BNA or GeoJSON files in @DATADIR@/spatial/vector/)
-						used when autoloc.depthLookup = Polygon. Each feature must
-						carry a "defaultDepth" attribute (km) and may carry
-						"maxDepth" (km). The first polygon containing the origin
-						location is used.
+				<group name="depths">
+					<group name="constant">
+						<parameter name="value" type="double" default="10" unit="km">
+							<description>
+							Constant default depth returned by the "Constant"
+							DepthLookup backend for any location.
+							</description>
+						</parameter>
+					</group>
+					<group name="polygon">
+						<parameter name="regions" type="list:string" default="">
+							<description>
+							Ordered, comma-separated list of polygon feature names
+							(from BNA or GeoJSON files in @DATADIR@/spatial/vector/)
+							used when autoloc.depthLookup = Polygon. Each feature
+							must carry a "defaultDepth" attribute (km) and may carry
+							a "maxDepth" attribute (km). The first polygon containing
+							the origin location is used.
 
-						Example:
-						autoloc.regionDepth.regions = sumatra_slab, stable_craton
-						</description>
-					</parameter>
+							Example:
+							depths.polygon.regions = sumatra_slab, stable_craton
+							</description>
+						</parameter>
+						<parameter name="fallback" type="double" default="10" unit="km">
+							<description>
+							Depth returned by the "Polygon" backend when the origin
+							is outside all configured polygon regions.
+							</description>
+						</parameter>
+					</group>
 				</group>
 			</group>
 		</configuration>
