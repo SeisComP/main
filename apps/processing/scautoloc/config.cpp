@@ -135,16 +135,23 @@ void Autoloc3::Config::dump() const {
 // This isn't used still so we don't want to confuse the user....
 //	SEISCOMP_INFO("useImportedOrigins               %s",     useImportedOrigins ? "true":"false");
 
-	if ( ! xxlEnabled) {
+	if ( ! xxlEnabled ) {
 		SEISCOMP_INFO("  XXL feature is not enabled");
-		return;
 	}
-	SEISCOMP_INFO("  XXL feature is enabled");
-	SEISCOMP_INFO("  xxl.minPhaseCount                 %d",     xxlMinPhaseCount);
-	SEISCOMP_INFO("  xxl.minAmplitude                  %g",     xxlMinAmplitude);
-	SEISCOMP_INFO("  xxl.maxStationDistance           %.1f deg", xxlMaxStaDist);
-	SEISCOMP_INFO("  xxl.maxDepth                      %g km",  xxlMaxDepth);
-	SEISCOMP_INFO("  xxl.deadTime                      %g s",  xxlDeadTime);
+	else {
+		SEISCOMP_INFO("  XXL feature is enabled");
+		SEISCOMP_INFO("  xxl.minPhaseCount                 %d",     xxlMinPhaseCount);
+		SEISCOMP_INFO("  xxl.minAmplitude                  %g",     xxlMinAmplitude);
+		SEISCOMP_INFO("  xxl.maxStationDistance           %.1f deg", xxlMaxStaDist);
+		SEISCOMP_INFO("  xxl.maxDepth                      %g km",  xxlMaxDepth);
+		SEISCOMP_INFO("  xxl.deadTime                      %g s",   xxlDeadTime);
+	}
+
+	SEISCOMP_INFO("  depthSetter type:                 %s",     depthSetterType.c_str());
+	if ( depthSetterType == "Polygon" ) {
+		for ( const auto &r : depthRegions )
+			SEISCOMP_INFO("    region: %s", r.c_str());
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

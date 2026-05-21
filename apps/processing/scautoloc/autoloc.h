@@ -19,6 +19,9 @@
 #include <string>
 #include <map>
 #include <set>
+#include <vector>
+
+#include <seiscomp/seismology/defaultdepthsetter.h>
 
 #include "datamodel.h"
 #include "nucleator.h"
@@ -221,6 +224,13 @@ class Autoloc3 {
 			size_t xxlMinPhaseCount{4};   // default 4 picks
 			double xxlMaxStaDist{10.0};         // unit: degrees
 			double xxlMaxDepth{100};            // unit: km
+
+			// DefaultDepthSetter implementation to use.
+			// "Constant" (default), "Polygon", or "Slab2" (ddslab2 plugin).
+			std::string depthSetterType{"Constant"};
+
+			// Region names for the Polygon depth setter.
+			std::vector<std::string> depthRegions;
 
 			const Seiscomp::Config::Config* scconfig{nullptr};
 
@@ -514,6 +524,7 @@ class Autoloc3 {
 		OriginVector _origins;
 		Config   _config;
 		StationConfig _stationConfig;
+		Seiscomp::Seismology::DefaultDepthSetterPtr _defaultDepthSetter;
 };
 
 
