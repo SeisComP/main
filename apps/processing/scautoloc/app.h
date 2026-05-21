@@ -102,7 +102,6 @@ class App : public Client::Application, protected ::Autoloc::Autoloc3
 		DataModel::InventoryPtr inventory;
 
 		::Autoloc::Autoloc3::Config _config;
-		int _keepEventsTimeSpan;
 		int _wakeUpTimout;
 
 		ObjectLog *_inputPicks;

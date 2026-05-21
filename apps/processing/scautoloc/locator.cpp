@@ -97,22 +97,22 @@ void Locator::setSeiscompConfig(const Seiscomp::Config::Config *scconfig)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Locator::init()
-{
-	if ( !_scconfig) {
+bool Locator::init() {
+	if ( !_scconfig ) {
 		SEISCOMP_ERROR("_scconfig is NULL in Locator::init()");
 		return false;
 	}
 
 	const std::string locator = "LOCSAT";
 	_sclocator = Seiscomp::Seismology::LocatorInterface::Create(locator.c_str());
-	if ( !_sclocator) {
+	if ( !_sclocator ) {
 		SEISCOMP_ERROR_S("Could not create " + locator + " instance");
 		exit(-1);
 	}
 
-	if ( !_sclocator->init(*_scconfig))
+	if ( !_sclocator->init(*_scconfig) ) {
 		return false;
+	}
 
 	_sclocator->useFixedDepth(false);
 	_minDepth = 5;
@@ -148,8 +148,7 @@ void Locator::setStation(const Autoloc::Station *station) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Locator::setMinimumDepth(double depth)
-{
+void Locator::setMinimumDepth(double depth) {
 	_minDepth = depth;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -158,8 +157,7 @@ void Locator::setMinimumDepth(double depth)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-static bool hasFixedDepth(const Origin *origin)
-{
+static bool hasFixedDepth(const Origin *origin) {
 	switch(origin->depthType) {
 		case Origin::DepthManuallyFixed:
 		case Origin::DepthDefault:
@@ -175,8 +173,7 @@ static bool hasFixedDepth(const Origin *origin)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Origin *Locator::relocate(const Origin *origin)
-{
+Origin *Locator::relocate(const Origin *origin) {
 	_locatorCallCounter++;
 
 // vvvvvvvvvvvvvvvvv
@@ -193,12 +190,13 @@ Origin *Locator::relocate(const Origin *origin)
 
 
 	Origin* relo = _screlocate(origin);
-	if ( ! relo)
+	if ( !relo ) {
 		return nullptr;
+	}
 
-	if (relo->hypocenter.dep <= _minDepth &&
+	if ( relo->hypocenter.dep <= _minDepth &&
 	    relo->depthType != Origin::DepthManuallyFixed &&
-	    ! _sclocator->usingFixedDepth()) {
+	    ! _sclocator->usingFixedDepth() ) {
 
 		// relocate again, this time fixing the depth to _minDepth
 		// NOTE: This reconfigures the locator temporarily!
@@ -208,7 +206,7 @@ Origin *Locator::relocate(const Origin *origin)
 
 		delete relo;
 
-		if ( ! relo2) {
+		if ( !relo2 ) {
 			// give up
 			return nullptr;
 		}
@@ -220,8 +218,9 @@ Origin *Locator::relocate(const Origin *origin)
 	}
 
 	OriginQuality &q = relo->quality;
-	if ( ! determineAzimuthalGaps(relo, &q.aziGapPrimary, &q.aziGapSecondary))
+	if ( !determineAzimuthalGaps(relo, &q.aziGapPrimary, &q.aziGapSecondary) ) {
 		q.aziGapPrimary = q.aziGapSecondary = 360.;
+	}
 
 	return relo;
 }
@@ -231,12 +230,11 @@ Origin *Locator::relocate(const Origin *origin)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Origin* Locator::_screlocate(const Origin *origin)
-{
+Origin* Locator::_screlocate(const Origin *origin) {
 	// convert origin to SC, relocate, and convert the result back
 
 	Seiscomp::DataModel::OriginPtr scorigin = convertToSC(origin);
-	if ( ! scorigin ) {
+	if ( !scorigin ) {
 		// give up
 		SEISCOMP_ERROR("Unexpected failure to relocate origin");
 		return nullptr;
@@ -263,14 +261,13 @@ Origin* Locator::_screlocate(const Origin *origin)
 */
 
 	size_t arrivalCount = origin->arrivals.size();
-	for (size_t i=0; i<arrivalCount; i++) {
-
+	for ( size_t i=0; i<arrivalCount; i++ ) {
 		const Arrival &arr = origin->arrivals[i];
 		Seiscomp::DataModel::PickPtr
 			scpick = Seiscomp::DataModel::Pick::Find(arr.pick->id);
 
-		if ( !scpick) {
-			SEISCOMP_ERROR("THIS MUST NEVER HAPPEN: Pick '%s' not found", arr.pick->id.c_str());
+		if ( !scpick ) {
+			SEISCOMP_ERROR("THIS MUST NEVER HAPPEN: Pick '%s' not found", arr.pick->id);
 		}
 /*
 		if ( !scpick) {
@@ -301,11 +298,13 @@ Origin* Locator::_screlocate(const Origin *origin)
 		// Sometimes LocSAT requires a second invocation. Reason TBD
 		Seiscomp::DataModel::OriginCPtr temp;
 		temp = _sclocator->relocate(scorigin.get());
-		if ( !temp )
+		if ( !temp ) {
 			return nullptr;
+		}
 		screlo = _sclocator->relocate(temp.get());
-		if ( !screlo )
+		if ( !screlo ) {
 			return nullptr;
+		}
 	}
 	catch ( Seiscomp::Seismology::LocatorException& ) {
 		return nullptr;
@@ -327,8 +326,9 @@ Origin* Locator::_screlocate(const Origin *origin)
 	// fatal.
 	//
 	Origin *relo = new Origin(*origin);
-	if ( ! relo)
+	if ( !relo ) {
 		return nullptr;
+	}
 
 	relo->hypocenter.lat = screlo->latitude().value();
 	try {
@@ -387,9 +387,12 @@ Origin* Locator::_screlocate(const Origin *origin)
 		arr.residual = screlo->arrival(i)->timeResidual();
 		arr.distance = screlo->arrival(i)->distance();
 		arr.azimuth  = screlo->arrival(i)->azimuth();
+		arr.backazimuthUsed = screlo->arrival(i)->backazimuthUsed();
+		arr.slownessUsed = screlo->arrival(i)->horizontalSlownessUsed();
 
-		if ( (arr.phase == "P" || arr.phase == "P1") && arr.distance > 115)
+		if ( (arr.phase == "P" || arr.phase == "P1") && arr.distance > 115 ) {
 			arr.phase = "PKP";
+		}
 
 //		if (arr.residual == -999.)
 //			arr.residual = 0; // FIXME preliminary cosmetics;
@@ -424,8 +427,7 @@ Origin* Locator::_screlocate(const Origin *origin)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool determineAzimuthalGaps(const Origin *origin, double *primary, double *secondary)
-{
+bool determineAzimuthalGaps(const Origin *origin, double *primary, double *secondary) {
 	std::vector<double> azi;
 
 	size_t arrivalCount = origin->arrivals.size();

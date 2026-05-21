@@ -58,7 +58,7 @@ class Pick : public Seiscomp::Core::BaseObject
 	public:
 		typedef enum { Automatic, Manual, Confirmed, IgnoredAutomatic } Mode;
 
-   	public:
+	public:
 		Pick() = delete;
 		Pick(const std::string &id, const std::string &label, const std::string &net, const std::string &sta, const Time &time);
 		~Pick();
@@ -127,6 +127,8 @@ class Arrival
 		float azimuth;
 		float affinity;
 		float score;
+		bool backazimuthUsed{true};
+		bool slownessUsed{true};
 
 		float ascore, dscore, tscore;
 
