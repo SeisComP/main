@@ -134,9 +134,6 @@ void App::createCommandLineDescription() {
 	                        "logging picks even when disabled by configuration.",
 	                        &_config.pickLogFile, false);
 
-	commandline().addOption("Settings", "default-depth",
-	                        "Default depth for locating",
-	                        &_config.defaultDepth);
 	commandline().addOption("Settings", "default-depth-stickiness",
 	                        "",
 	                        &_config.defaultDepthStickiness);
@@ -358,9 +355,6 @@ bool App::initConfiguration() {
 	try { _config.cleanupInterval = configGetDouble("buffer.cleanupInterval"); }
 	catch (...) {}
 
-	try { _config.defaultDepth = configGetDouble("locator.defaultDepth"); }
-	catch (...) {}
-
 	try { _config.defaultDepthStickiness = configGetDouble("autoloc.defaultDepthStickiness"); }
 	catch (...) {}
 
@@ -377,9 +371,6 @@ bool App::initConfiguration() {
 	catch (...) {}
 
 	try { _config.maxRMS = configGetDouble("autoloc.maxRMS"); }
-	catch (...) {}
-
-	try { _config.maxDepth = configGetDouble("autoloc.maxDepth"); }
 	catch (...) {}
 
 	try { _config.maxResidualUse = configGetDouble("autoloc.maxResidual"); }
@@ -433,6 +424,9 @@ bool App::initConfiguration() {
 	catch (...) {}
 
 	try { _config.xxlDeadTime = configGetDouble("autoloc.xxl.deadTime"); }
+	catch (...) {}
+
+	try { _config.depthLookupType = configGetString("autoloc.depthLookup"); }
 	catch (...) {}
 
 	try { _config.minPickSNR = configGetDouble("autoloc.minPickSNR"); }

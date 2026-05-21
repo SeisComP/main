@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<plugin name="dlslab2">
+		<extends>global</extends>
+		<description>
+			USGS Slab2.0 depth-footprint plugin for DepthLookup.
+
+			Provides region-specific default and maximum depths for scautoloc
+			(and other modules) by looking up the event location against
+			USGS Slab2.0 depth-footprint contour polygons.
+
+			The dataset covers 30 subduction zones at 20 km depth intervals
+			(000–680 km) generated from Hayes et al. (2018), Slab2.0
+			(doi:10.5066/F7PV6JNV).
+
+			Enable by adding dlslab2 to core.plugins and setting
+			autoloc.depthLookup = Slab2.
+		</description>
+		<configuration>
+			<group name="dlslab2">
+				<parameter name="directory" type="path"
+				           default="@DATADIR@/dlslab2/slabs">
+					<description>
+						Root directory containing Slab2.0 BNA depth-footprint files,
+						organised into 000/, 020/, 040/, ... 680/ subdirectories.
+					</description>
+				</parameter>
+				<parameter name="fallback" type="double" default="10" unit="km">
+					<description>
+						Default depth returned when the origin is located outside
+						all Slab2.0 depth-footprint polygons (i.e. not in any
+						known subduction zone).
+					</description>
+				</parameter>
+			</group>
+		</configuration>
+	</plugin>
+</seiscomp>

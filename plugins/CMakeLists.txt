@@ -1,1 +1,1 @@
-SUBDIRS(locator magnitudes)
+SUBDIRS(depthlookup locator magnitudes)

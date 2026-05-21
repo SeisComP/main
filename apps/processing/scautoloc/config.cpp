@@ -103,7 +103,6 @@ void Autoloc3::Config::dump() const {
 	SEISCOMP_INFO("Configuration:");
 	SEISCOMP_INFO("  locator");
 	SEISCOMP_INFO("    profile                          %s",     locatorProfile.c_str());
-	SEISCOMP_INFO("    defaultDepth                     %g km",  defaultDepth);
 	SEISCOMP_INFO("    minimumDepth                     %g km",  minimumDepth);
 	SEISCOMP_INFO("  buffer");
 	SEISCOMP_INFO("    pickKeep                         %.0f s", maxAge);
@@ -112,7 +111,6 @@ void Autoloc3::Config::dump() const {
 	SEISCOMP_INFO("    maxResidual                      %.1f s", maxResidualUse);
 	SEISCOMP_INFO("    maxResidual for keeping picks    %.1f s", maxResidualKeep);
 	SEISCOMP_INFO("    minPhaseCount                    %d",     minPhaseCount);
-	SEISCOMP_INFO("    maxDepth                         %.1f km", maxDepth);
 	SEISCOMP_INFO("    minStaCountIgnorePKP             %d",     minStaCountIgnorePKP);
 	SEISCOMP_INFO("    defaultDepthStickiness           %g",     defaultDepthStickiness);
 	SEISCOMP_INFO("    tryDefaultDepth                  %s",     tryDefaultDepth ? "true":"false");
@@ -135,16 +133,19 @@ void Autoloc3::Config::dump() const {
 // This isn't used still so we don't want to confuse the user....
 //	SEISCOMP_INFO("useImportedOrigins               %s",     useImportedOrigins ? "true":"false");
 
-	if ( ! xxlEnabled) {
+	if ( ! xxlEnabled ) {
 		SEISCOMP_INFO("  XXL feature is not enabled");
-		return;
 	}
-	SEISCOMP_INFO("  XXL feature is enabled");
-	SEISCOMP_INFO("  xxl.minPhaseCount                 %d",     xxlMinPhaseCount);
-	SEISCOMP_INFO("  xxl.minAmplitude                  %g",     xxlMinAmplitude);
-	SEISCOMP_INFO("  xxl.maxStationDistance           %.1f deg", xxlMaxStaDist);
-	SEISCOMP_INFO("  xxl.maxDepth                      %g km",  xxlMaxDepth);
-	SEISCOMP_INFO("  xxl.deadTime                      %g s",  xxlDeadTime);
+	else {
+		SEISCOMP_INFO("  XXL feature is enabled");
+		SEISCOMP_INFO("  xxl.minPhaseCount                 %d",     xxlMinPhaseCount);
+		SEISCOMP_INFO("  xxl.minAmplitude                  %g",     xxlMinAmplitude);
+		SEISCOMP_INFO("  xxl.maxStationDistance           %.1f deg", xxlMaxStaDist);
+		SEISCOMP_INFO("  xxl.maxDepth                      %g km",  xxlMaxDepth);
+		SEISCOMP_INFO("  xxl.deadTime                      %g s",   xxlDeadTime);
+	}
+
+	SEISCOMP_INFO("  depthLookup type:                 %s",     depthLookupType.c_str());
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

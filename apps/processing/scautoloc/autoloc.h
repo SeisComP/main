@@ -19,6 +19,9 @@
 #include <string>
 #include <map>
 #include <set>
+#include <vector>
+
+#include <seiscomp/seismology/depthlookup.h>
 
 #include "datamodel.h"
 #include "nucleator.h"
@@ -88,8 +91,6 @@ class Autoloc3 {
 			//    maxResidualUse  = 2*maxRMS
 
 
-			// Use this depth if there is no depth resolution
-			double defaultDepth{10.0};           // unit: km
 			double defaultDepthStickiness{0.5};  // 0...1
 
 			// Try to relocate an origin using the configured default depth.
@@ -101,9 +102,6 @@ class Autoloc3 {
 
 			// Minimum depth in case there is depth resolution
 			double minimumDepth{5.0};          // uni: 5 km
-
-			// maximum depth of origin, checked before sending
-			double maxDepth{1000.0};
 
 			// Max. secondary azimuthal gap
 			double maxAziGapSecondary{360.0};
@@ -221,6 +219,10 @@ class Autoloc3 {
 			size_t xxlMinPhaseCount{4};   // default 4 picks
 			double xxlMaxStaDist{10.0};         // unit: degrees
 			double xxlMaxDepth{100};            // unit: km
+
+			// DepthLookup implementation to use.
+			// "Constant" (default), "Polygon", or "Slab2" (dlslab2 plugin).
+			std::string depthLookupType{"Constant"};
 
 			const Seiscomp::Config::Config* scconfig{nullptr};
 
@@ -514,6 +516,7 @@ class Autoloc3 {
 		OriginVector _origins;
 		Config   _config;
 		StationConfig _stationConfig;
+		Seiscomp::Seismology::DepthLookupPtr _depthLookup;
 };
 
 
