@@ -57,7 +57,7 @@ class Worker {
 		                       const Core::Time &mtime,
 		                       const Core::TimeWindow &window);
 
-		bool writeExtent(DataModel::Operation op);
+		bool writeExtent(const DataModel::Operation &op);
 		bool syncSegments();
 		void syncExtent();
 		void readAttExtMillis(DataModel::DataAttributeExtent *attExt);

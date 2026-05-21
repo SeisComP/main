@@ -31,15 +31,9 @@
 using namespace std;
 namespace fs = boost::filesystem;
 
-namespace Seiscomp {
-namespace DataAvailability {
+namespace Seiscomp::DataAvailability {
 
 REGISTER_DATAAVAILABILITY_COLLECTOR(SDSCollector, "sds");
-
-namespace {
-
-
-} // ns anonymous
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -47,7 +41,7 @@ namespace {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 SDSCollector::RecordIterator::RecordIterator(string file,
-                                    const DataModel::WaveformStreamID &wid)
+                                             const DataModel::WaveformStreamID &wid)
 : _file(std::move(file)), _sid(streamID(wid)),
   _input(&_stream, Array::DOUBLE, Record::DATA_ONLY) {
 	if ( !_stream.setSource(_file) ) {
@@ -81,14 +75,14 @@ bool SDSCollector::RecordIterator::next() {
 		}
 
 		// SEISCOMP_DEBUG("%s: Received record: %i samples, %.1fHz, %s ~ %s",
-		//                _sid.c_str(), _rec->sampleCount(),
-		//                _rec->samplingFrequency(), _rec->startTime().iso().c_str(),
-		//                _rec->endTime().iso().c_str());
+		//                _sid, _rec->sampleCount(),
+		//                _rec->samplingFrequency(), _rec->startTime().iso(),
+		//                _rec->endTime().iso());
 
 		if ( _rec->streamID() != _sid ) {
 			SEISCOMP_WARNING("%s: Received record with invalid stream id "
 			                 "while reading file: %s",
-			                 _sid.c_str(), _file.c_str());
+			                 _sid, _file);
 			continue;
 		}
 
@@ -178,7 +172,7 @@ bool SDSCollector::setSource(const char *source) {
 			}
 			else {
 				SEISCOMP_WARNING("Invalid archive directory: %s",
-				                 dir.string().c_str());
+				                 dir.string());
 				continue;
 			}
 		}
@@ -316,7 +310,7 @@ bool SDSCollector::chunkTimeWindow(Core::TimeWindow &window,
 	vector<string> toks;
 	int year;
 	int doy;
-	Core::split(toks, SC_FS_FILE_NAME(SC_FS_PATH(chunk)).c_str(), ".", false);
+	Core::split(toks, SC_FS_FILE_NAME(SC_FS_PATH(chunk)), ".", false);
 	if ( toks.size() == 7 &&
 	     toks[5].length() == 4 && Core::fromString(year, toks[5]) &&
 	     toks[6].length() == 3 && Core::fromString(doy, toks[6]) ) {
@@ -345,7 +339,7 @@ Core::Time SDSCollector::chunkMTime(const std::string &chunk) {
 	}
 	catch ( ... ) {
 		SEISCOMP_WARNING("Could not resolve canonical path of file: %s",
-		                 chunk.c_str());
+		                 chunk);
 		return t;
 	}
 
@@ -355,11 +349,11 @@ Core::Time SDSCollector::chunkMTime(const std::string &chunk) {
 			t = mtime;
 		}
 		else {
-			SEISCOMP_WARNING("Could not read mtime of file: %s", chunk.c_str());
+			SEISCOMP_WARNING("Could not read mtime of file: %s", chunk);
 		}
 	}
 	catch ( ... ) {
-		SEISCOMP_WARNING("Could not read mtime of file: %s", chunk.c_str());
+		SEISCOMP_WARNING("Could not read mtime of file: %s", chunk);
 		return t;
 	}
 
@@ -504,6 +498,5 @@ bool SDSCollector::checkTimeWindow(int year, int doy) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-} // ns DataAvailability
-} // ns Seiscomp
+} // ns Seiscomp::DataAvailability
 

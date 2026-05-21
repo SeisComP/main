@@ -25,8 +25,7 @@
 
 IMPLEMENT_INTERFACE_FACTORY(Seiscomp::DataAvailability::Collector, SC_DAPLUGIN_API);
 
-namespace Seiscomp {
-namespace DataAvailability {
+namespace Seiscomp::DataAvailability {
 
 IMPLEMENT_SC_ABSTRACT_CLASS_DERIVED(Collector,
                                     Seiscomp::Core::InterruptibleObject,
@@ -171,5 +170,4 @@ void Collector::handleInterrupt(int /*unused*/) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-} // ns DataAvailability
-} // ns Seiscomp
+} // namespace Seiscomp::DataAvailability
