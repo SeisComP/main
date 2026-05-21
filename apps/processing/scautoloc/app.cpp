@@ -42,18 +42,10 @@ namespace Seiscomp {
 
 namespace Applications {
 
-namespace Autoloc {
-
-
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-App::App(int argc, char **argv)
+AutolocApp::AutolocApp(int argc, char **argv)
 : Application(argc, argv), Autoloc3()
-, objectCount(0)
-, _inputPicks(nullptr)
-, _inputAmps(nullptr)
-, _inputOrgs(nullptr)
-, _outputOrgs(nullptr)
 {
 	setMessagingEnabled(true);
 
@@ -74,7 +66,7 @@ App::App(int argc, char **argv)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::printUsage() const {
+void AutolocApp::printUsage() const {
 	std::cout << "Usage:"  << std::endl << "  scautoloc [options]" << std::endl << std::endl
 	     << "Associator of P-phase picks for locating seismic events." << std::endl;
 
@@ -90,7 +82,7 @@ void App::printUsage() const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::createCommandLineDescription() {
+void AutolocApp::createCommandLineDescription() {
 	Client::Application::createCommandLineDescription();
 
 	commandline().addGroup("Mode");
@@ -227,7 +219,7 @@ void App::createCommandLineDescription() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::validateParameters() {
+bool AutolocApp::validateParameters() {
 	if ( !Client::Application::validateParameters() ) {
 		return false;
 	}
@@ -318,7 +310,7 @@ bool App::validateParameters() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::initConfiguration() {
+bool AutolocApp::initConfiguration() {
 	if ( !Client::Application::initConfiguration() ) return false;
 
 	// support deprecated configuration, deprecated since 2020-11-16
@@ -533,13 +525,13 @@ bool App::initConfiguration() {
 	try { ntp = configGetString("autoloc.networkType"); }
 	catch ( ... ) {}
 	if ( ntp == "global" ) {
-		_config.networkType = ::Autoloc::GlobalNetwork;
+		_config.networkType = Autoloc::GlobalNetwork;
 	}
 	else if ( ntp == "regional" ) {
-		_config.networkType = ::Autoloc::RegionalNetwork;
+		_config.networkType = Autoloc::RegionalNetwork;
 	}
 	else if ( ntp == "local" ) {
-		_config.networkType = ::Autoloc::LocalNetwork;
+		_config.networkType = Autoloc::LocalNetwork;
 	}
 	else {
 		SEISCOMP_ERROR("Illegal value '%s' for autoloc.networkType", ntp);
@@ -554,7 +546,7 @@ bool App::initConfiguration() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::init() {
+bool AutolocApp::init() {
 	if ( !Client::Application::init() ) {
 		return false;
 	}
@@ -571,6 +563,7 @@ bool App::init() {
 	SEISCOMP_INFO("Starting Autoloc");
 	setConfig(_config);
 	dumpConfig();
+
 	if ( !setGridFile(_gridConfigFile) ) {
 		return false;
 	}
@@ -590,7 +583,7 @@ bool App::init() {
 		}
 	}
 	else {
-// TEMP		readHistoricEvents();
+		// readHistoricEvents();
 		if ( _wakeUpTimout > 0 ) {
 			enableTimer(_wakeUpTimout);
 		}
@@ -604,7 +597,7 @@ bool App::init() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::initInventory() {
+bool AutolocApp::initInventory() {
 	if ( _stationLocationFile.empty() ) {
 		SEISCOMP_DEBUG("Initializing station inventory from DB");
 		inventory = Inventory::Instance()->inventory();
@@ -634,7 +627,7 @@ bool App::initInventory() {
 	}
 	else {
 		SEISCOMP_DEBUG_S("Initializing station inventory from file '" + _stationLocationFile + "'");
-		inventory = ::Autoloc::Utils::inventoryFromStationLocationFile(_stationLocationFile);
+		inventory = Autoloc::Utils::inventoryFromStationLocationFile(_stationLocationFile);
 	}
 
 	return true;
@@ -645,7 +638,7 @@ bool App::initInventory() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Time &time) {
+bool AutolocApp::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Time &time) {
 	bool found {false};
 	static std::set<std::string> configuredStreams;
 	std::string key = wfid.networkCode() + "." + wfid.stationCode();
@@ -709,8 +702,8 @@ bool App::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Ti
 			double elevation = 0;
 			try { elevation = station->elevation(); }
 			catch ( ... ) {}
-			::Autoloc::Station *sta =
-				new ::Autoloc::Station(
+			Autoloc::Station *sta =
+				new Autoloc::Station(
 					station->code(),
 					network->code(),
 					station->latitude(),
@@ -741,7 +734,7 @@ bool App::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Ti
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::readHistoricEvents() {
+void AutolocApp::readHistoricEvents() {
 	if ( _config.originKeep <= 0 || !query() ) {
 		return;
 	}
@@ -799,7 +792,7 @@ void App::readHistoricEvents() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::runFromXMLFile(const char *filename)
+bool AutolocApp::runFromXMLFile(const char *filename)
 {
 	SEISCOMP_INFO("App::runFromXMLFile");
 
@@ -869,7 +862,7 @@ bool App::runFromXMLFile(const char *filename)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::runFromEPFile(const char *filename) {
+bool AutolocApp::runFromEPFile(const char *filename) {
 	SEISCOMP_INFO("App::runFromEPFile");
 	IO::XMLArchive ar;
 	if ( !ar.open(filename)) {
@@ -994,7 +987,7 @@ bool App::runFromEPFile(const char *filename) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::sync(const Seiscomp::Core::Time &t) {
+void AutolocApp::sync(const Seiscomp::Core::Time &t) {
 	syncTime = t;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1003,7 +996,7 @@ void App::sync(const Seiscomp::Core::Time &t) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-const Seiscomp::Core::Time App::now() const {
+const Seiscomp::Core::Time AutolocApp::now() const {
 	if ( _inputFileXML.size() || _inputEPFile.size() ) {
 		return syncTime;
 	}
@@ -1016,7 +1009,7 @@ const Seiscomp::Core::Time App::now() const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::timeStamp() const {
+void AutolocApp::timeStamp() const {
 	SEISCOMP_DEBUG_S("Timestamp: "+now().toString("%F %T.%f"));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1025,7 +1018,7 @@ void App::timeStamp() const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::run() {
+bool AutolocApp::run() {
 	if ( !_inputEPFile.empty() )
 		return runFromEPFile(_inputEPFile.c_str());
 
@@ -1048,7 +1041,7 @@ bool App::run() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::done() {
+void AutolocApp::done() {
 	_exitRequested = true;
 	shutdown();
 
@@ -1063,7 +1056,7 @@ void App::done() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::handleMessage(Core::Message* msg) {
+void AutolocApp::handleMessage(Core::Message* msg) {
 	// Call the original method to make sure that the
 	// interpret callbacks (addObject, updateObject -> see below)
 	// will be called
@@ -1075,7 +1068,7 @@ void App::handleMessage(Core::Message* msg) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::handleTimeout() {
+void AutolocApp::handleTimeout() {
 
 	if ( !_config.playback || _inputFileXML.empty() ) {
 		_flush();
@@ -1126,7 +1119,7 @@ void App::handleTimeout() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::handleAutoShutdown() {
+void AutolocApp::handleAutoShutdown() {
 //	_flush();
 	Client::Application::handleAutoShutdown();
 }
@@ -1136,15 +1129,17 @@ void App::handleAutoShutdown() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::addObject(const std::string& parentID, DataModel::Object* o) {
-	DataModel::PublicObject *publicObject = DataModel::PublicObject::Cast(o);
+void AutolocApp::addObject(const std::string& parentID, DataModel::Object* o) {
+	using namespace Seiscomp::DataModel;
+
+	PublicObject *publicObject = PublicObject::Cast(o);
 	if ( !publicObject ) {
 		return;
 	}
 
 	bool extra_debug = false;
 
-	DataModel::Pick *pick = DataModel::Pick::Cast(o);
+	Pick *pick = Pick::Cast(o);
 	if ( pick ) {
 		logObject(_inputPicks, Core::Time::UTC());
 		if ( !feed(pick) ) {
@@ -1156,7 +1151,7 @@ void App::addObject(const std::string& parentID, DataModel::Object* o) {
 		return;
 	}
 
-	DataModel::Amplitude *amplitude = DataModel::Amplitude::Cast(o);
+	Amplitude *amplitude = Amplitude::Cast(o);
 	if ( amplitude ) {
 		logObject(_inputAmps, Core::Time::UTC());
 		if ( !feed(amplitude) ) {
@@ -1168,7 +1163,7 @@ void App::addObject(const std::string& parentID, DataModel::Object* o) {
 		return;
 	}
 
-	DataModel::Origin *origin = DataModel::Origin::Cast(o);
+	Origin *origin = Origin::Cast(o);
 	if ( origin ) {
 		logObject(_inputOrgs, Core::Time::UTC());
 		if ( !feed(origin) ) {
@@ -1186,7 +1181,7 @@ void App::addObject(const std::string& parentID, DataModel::Object* o) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::feed(DataModel::Pick *scpick) {
+bool AutolocApp::feed(DataModel::Pick *scpick) {
 	const std::string &pickID = scpick->publicID();
 
 	std::string status = "unset";
@@ -1242,7 +1237,7 @@ bool App::feed(DataModel::Pick *scpick) {
 	// configure station if needed
 	initOneStation(scpick->waveformID(), scpick->time().value());
 
-	::Autoloc::PickPtr pick = convertFromSC(scpick);
+	Autoloc::PickPtr pick = convertFromSC(scpick);
 	if ( !pick ) {
 		SEISCOMP_INFO("  + ignoring pick from SC");
 		return false;
@@ -1252,7 +1247,7 @@ bool App::feed(DataModel::Pick *scpick) {
 		timeStamp();
 	}
 
-	::Autoloc::Autoloc3::feed(pick.get());
+	Autoloc::Autoloc3::feed(pick.get());
 
 	if ( _config.offline ) {
 		_flush();
@@ -1266,7 +1261,7 @@ bool App::feed(DataModel::Pick *scpick) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::feed(DataModel::Amplitude *scampl) {
+bool AutolocApp::feed(DataModel::Amplitude *scampl) {
 	const std::string &atype  = scampl->type();
 	const std::string &amplID = scampl->publicID();
 	if ( atype != _amplTypeAbs && atype != _amplTypeSNR ) {
@@ -1287,7 +1282,7 @@ bool App::feed(DataModel::Amplitude *scampl) {
 	}
 
 	const std::string &pickID = scampl->pickID();
-	::Autoloc::Pick *pick = (::Autoloc::Pick *) Autoloc3::pick(pickID);
+	Autoloc::Pick *pick = (Autoloc::Pick *) Autoloc3::pick(pickID);
 	if ( !pick ) {
 		SEISCOMP_INFO("  + ignoring amplitude since reference pick cannot be found");
 		return false;
@@ -1319,7 +1314,7 @@ bool App::feed(DataModel::Amplitude *scampl) {
 		return false;
 	}
 
-	::Autoloc::Autoloc3::feed(pick);
+	Autoloc::Autoloc3::feed(pick);
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1328,7 +1323,7 @@ bool App::feed(DataModel::Amplitude *scampl) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::feed(DataModel::Origin *scorigin) {
+bool AutolocApp::feed(DataModel::Origin *scorigin) {
 
 	if ( !scorigin ) {
 		SEISCOMP_ERROR("This should never happen: origin=NULL");
@@ -1380,7 +1375,7 @@ bool App::feed(DataModel::Origin *scorigin) {
 		}
 	}
 
-	::Autoloc::Origin *origin = convertFromSC(scorigin);
+	Autoloc::Origin *origin = convertFromSC(scorigin);
 	if ( !origin ) {
 		SEISCOMP_ERROR_S("Failed to convert origin " + objectAgencyID(scorigin));
 		return false;
@@ -1396,7 +1391,7 @@ bool App::feed(DataModel::Origin *scorigin) {
 		origin->imported = true;
 	}
 
-	::Autoloc::Autoloc3::feed(origin);
+	Autoloc::Autoloc3::feed(origin);
 
 	if ( _config.offline ) {
 		_flush();
@@ -1410,13 +1405,13 @@ bool App::feed(DataModel::Origin *scorigin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::_report(const ::Autoloc::Origin *origin) {
+bool AutolocApp::_report(const Autoloc::Origin *origin) {
 
 	// Log object flow
 	logObject(_outputOrgs, now());
 
 	if ( _config.offline || _config.test ) {
-		std::string reportStr = ::Autoloc::printDetailed(origin);
+		std::string reportStr = Autoloc::printDetailed(origin);
 		SEISCOMP_INFO("Reporting origin %ld\n%s", origin->id, reportStr);
 		SEISCOMP_INFO ("Origin %ld not sent (test/offline mode)", origin->id);
 
@@ -1491,14 +1486,12 @@ bool App::_report(const ::Autoloc::Origin *origin) {
 		SEISCOMP_INFO("Sent origin %ld", origin->id);
 	}
 
-	SEISCOMP_INFO_S(::Autoloc::printOrigin(origin, false));
+	SEISCOMP_INFO_S(Autoloc::printOrigin(origin, false));
 
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-
-} // namespace Autoloc
 
 } // namespace Applications
 

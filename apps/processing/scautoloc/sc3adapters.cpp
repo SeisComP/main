@@ -163,13 +163,13 @@ Seiscomp::DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool all
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seiscomp::DataModel::Origin *scorigin) {
+Autoloc::Origin *Seiscomp::Applications::AutolocApp::convertFromSC(const Seiscomp::DataModel::Origin *scorigin) {
 	double lat = scorigin->latitude().value();
 	double lon = scorigin->longitude().value();
 	double dep = scorigin->depth().value();
 	double time = double(scorigin->time().value() - Seiscomp::Core::Time());
 
-	::Autoloc::Origin *origin = new ::Autoloc::Origin(lat, lon, dep, time);
+	Autoloc::Origin *origin = new Autoloc::Origin(lat, lon, dep, time);
 
 	try {
 		origin->hypocenter.laterr = 0.5 * (scorigin->latitude().lowerUncertainty()
@@ -237,7 +237,7 @@ Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seisc
 			// als Autoloc-Pick schon haben
 		}
 */
-		const ::Autoloc::Pick *pick = ::Autoloc::Autoloc3::pick(pickID);
+		const Autoloc::Pick *pick = Autoloc::Autoloc3::pick(pickID);
 		if ( !pick ) {
 // TODO: Use Cache here!
 			// XXX FIXME: This may also happen after Autoloc cleaned up older picks, so the pick isn't available any more!
@@ -251,7 +251,7 @@ Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seisc
 //			return nullptr;
 		}
 
-		::Autoloc::Arrival arr(pick /* , const std::string &phase="P", double residual=0 */ );
+		Autoloc::Arrival arr(pick /* , const std::string &phase="P", double residual=0 */ );
 		try {
 			arr.residual = scorigin->arrival(i)->timeResidual();
 		}
@@ -301,11 +301,11 @@ Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seisc
 	// FIXME: In scolv the Origin::depthType is not set!
 	Seiscomp::DataModel::OriginDepthType dtype = scorigin->depthType();
 	if ( dtype == Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::FROM_LOCATION) ) {
-		origin->depthType = ::Autoloc::Origin::DepthFree;
+		origin->depthType = Autoloc::Origin::DepthFree;
 	}
 
 	else if ( dtype == Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::OPERATOR_ASSIGNED) ) {
-		origin->depthType = ::Autoloc::Origin::DepthManuallyFixed;
+		origin->depthType = Autoloc::Origin::DepthManuallyFixed;
 	}
 	}
 	catch ( ... ) {
@@ -317,11 +317,11 @@ Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seisc
 			// depth to be opperator approved and this is better
 			// than nothing.
 			// TODO: Make this behavior configurable?
-			origin->depthType = ::Autoloc::Origin::DepthManuallyFixed;
+			origin->depthType = Autoloc::Origin::DepthManuallyFixed;
 			SEISCOMP_WARNING("Treating depth as if it was manually fixed");
 		}
 		else {
-			origin->depthType = ::Autoloc::Origin::DepthFree;
+			origin->depthType = Autoloc::Origin::DepthFree;
 			SEISCOMP_WARNING("Leaving depth free");
 		}
 	}
@@ -334,16 +334,16 @@ Autoloc::Origin *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seisc
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Autoloc::Pick *Seiscomp::Applications::Autoloc::App::convertFromSC(const Seiscomp::DataModel::Pick *scpick) {
+Autoloc::Pick *Seiscomp::Applications::AutolocApp::convertFromSC(const Seiscomp::DataModel::Pick *scpick) {
 	const std::string &id  = scpick->publicID();
 	const std::string &label = pickLabel(scpick);
 	const std::string &net = scpick->waveformID().networkCode();
 	const std::string &sta = scpick->waveformID().stationCode();
-	::Autoloc::Time time = ::Autoloc::Time(scpick->time().value());
+	Autoloc::Time time = Autoloc::Time(scpick->time().value());
 
-	::Autoloc::Pick* pick = new ::Autoloc::Pick(id, label, net, sta, time);
+	Autoloc::Pick* pick = new Autoloc::Pick(id, label, net, sta, time);
 
-	pick->mode = ::Autoloc::Utils::mode(scpick);
+	pick->mode = Autoloc::Utils::mode(scpick);
 	pick->loc = scpick->waveformID().locationCode();
 	pick->cha = scpick->waveformID().channelCode();
 
