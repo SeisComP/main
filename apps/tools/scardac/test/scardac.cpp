@@ -592,7 +592,7 @@ BOOST_AUTO_TEST_CASE(multiday) {
 	ext->add(seg2b.get());
 	attExt->setSegmentCount(4);
 
-	reader = runApp(dbURI, { appName , "--debug" });
+	reader = runApp(dbURI, { appName });
 	daFound = checkEqual(reader, da.get(), ctx);
 
 	// restore mseedFile2: seg2a and seg2b is merged into seg2 again
@@ -610,7 +610,7 @@ BOOST_AUTO_TEST_CASE(multiday) {
 	ext->setUpdated(seg2Original->updated());
 	attExt->setUpdated(seg2Original->updated());
 
-	reader = runApp(dbURI, { appName, "--debug" });
+	reader = runApp(dbURI, { appName });
 	daFound = checkEqual(reader, da.get(), ctx);
 }
 //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

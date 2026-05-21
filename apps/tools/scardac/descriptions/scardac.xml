@@ -37,6 +37,24 @@
 				disable any limits.
 				</description>
 			</parameter>
+			<parameter name="maxChunkOverlap" type="int" default="500">
+				<description>
+				A record entirely stored in chunk N may have an end time
+				exceeding the chunk's time window. This parameter defines
+				maximum number of samples overlapping the chunks end time.
+
+				The parameter is used to evaluate if a chunk needs to be read in
+				a corner case where a chunk was moved out of the archive during
+				a previous scan (causing surrounding segments to be split at the
+				chunk's boundaries) and then later moved back with its original
+				mtime. In that situation the chunk's mtime stays older than
+				lastScan and no READ would be triggered otherwise.
+
+				If set to values greater than the expected samples per record
+				unnecessary reads of chunks and possible neighbouring chunks are
+				triggered. 
+				</description>
+			</parameter>
 			<parameter name="nslcFile" type="file" options="read">
 				<description>
 				Line-based text file of form NET.STA.LOC.CHA defining available

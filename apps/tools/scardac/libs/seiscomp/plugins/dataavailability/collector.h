@@ -190,7 +190,7 @@ class SC_DAPLUGIN_API Collector : public Core::InterruptibleObject {
 		 *         opened. The ownership is transferred to the caller.
 		 */
 		virtual RecordIterator* begin(const std::string &chunk,
-	                                  const DataModel::WaveformStreamID &wid) = 0;
+		                              const DataModel::WaveformStreamID &wid) = 0;
 
 		/**
 		 * @brief threadSafe Define whether or not a collector instance may

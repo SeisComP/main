@@ -144,7 +144,8 @@ Worker::Worker(const SCARDAC *app, int id, Collector *collector)
 // Properties:
 //
 //   * Idempotent: running scardac twice on unchanged data is a no-op.
-//   * No counter drift: _segCount == size of desired list, by construction.
+//   * No counter drift: _segCount == size of desired list plus segments
+//     outside scan window.
 //   * No false overlaps at chunk boundaries: boundary-spanning DB
 //     segments force both adjacent chunks to be re-read.
 //   * Single-chunk streams are safe: there is no "trailing segments"
@@ -174,19 +175,18 @@ inline bool segmentsContiguous(const DataModel::DataSegment *a,
 	return std::abs((b->start() - a->end()).length()) <= jitter;
 }
 
-// Compare two segments for equality of all persisted fields, including
-// `updated`. `updated` carries the max(mtime) of all source chunks that
-// contributed to the segment. Including it here ensures that any source
-// modification propagates to the DB even when the segment's shape
-// (start/end/rate/quality/outOfOrder) is unchanged: scardac only stores a
-// coarse summary of each segment and cannot detect record-level changes
-// directly, so `updated` is the only signal downstream consumers receive
-// that the underlying records may have changed.
-inline bool segmentsEqual(const DataModel::DataSegment *a,
-                          const DataModel::DataSegment *b) {
-	return a->start() == b->start() && a->end() == b->end()
-	    && a->sampleRate() == b->sampleRate() && a->quality() == b->quality()
-	    && a->outOfOrder() == b->outOfOrder() && a->updated() == b->updated();
+// Compare two segments for equality of persisted fields except for start time.
+// `updated` carries the max(mtime) of all source chunks that contributed to the
+// segment. Including it here ensures that any source modification propagates to the DB
+// even when the segment's shape (start/end/rate/quality/outOfOrder) is unchanged:
+// scardac only stores a coarse summary of each segment and cannot detect record-level
+// changes directly, so `updated` is the only signal downstream consumers receive that
+// the underlying records may have changed.
+inline bool segmentsEqualNoIndex(const DataModel::DataSegment *a,
+                                 const DataModel::DataSegment *b) {
+	return a->end() == b->end()
+	       && a->sampleRate() == b->sampleRate() && a->quality() == b->quality()
+	       && a->outOfOrder() == b->outOfOrder() && a->updated() == b->updated();
 }
 
 // Deep clone a DB segment into a new DataSegmentPtr (with no parent set).
@@ -224,9 +224,9 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 
 	SEISCOMP_INFO("[%i] %s: Start processing", _id, _sid);
 
-	// Capture scan start time BEFORE any chunk is read. This becomes the
-	// new lastScan value. Any chunk modified during this scan will have
-	// mtime > scanStart and will therefore be picked up on the next run.
+	// Capture scan start time BEFORE any chunk is read. This becomes the new lastScan
+	// value. Any chunk modified during this scan will have mtime > scanStart and will
+	// therefore be picked up on the next run.
 	auto scanStart = Core::Time::UTC();
 
 	Collector::DataChunks chunks;
@@ -257,12 +257,12 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 
 		_extentOID = _db->getCachedId(_extent);
 		if ( _extentOID != IO::DatabaseInterface::INVALID_OID ) {
-			size_t segmentsOutside = 0;
-			auto it = dbSegments(segmentsOutside);
+			auto it = dbSegments();
 			for ( ; *it; ++it ) {
 				if ( _app->_exitRequested ) {
 					return;
 				}
+
 				auto *seg = DataSegment::Cast(*it);
 				if ( seg ) {
 					dbSegs.emplace_back(seg);
@@ -272,17 +272,17 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 		}
 
 		SEISCOMP_DEBUG("[%i] %s: Found existing extent\n"
-		               "  start            : %s\n"
-		               "  end              : %s\n"
-		               "  updated          : %s\n"
-		               "  last scan        : %s\n"
-		               "  attribute extents: %zu\n"
-		               "  DB segments      : %zu\n"
-		               "  segment overflow : %i",
+		               "  start              : %s\n"
+		               "  end                : %s\n"
+		               "  updated            : %s\n"
+		               "  last scan          : %s\n"
+		               "  attribute extents  : %zu\n"
+		               "  DB segments loaded : %zu/%zu\n"
+		               "  segment overflow   : %i",
 		               _id, _sid, extent->start().iso(), extent->end().iso(),
 		               extent->updated().iso(), extent->lastScan().iso(),
 		               extent->dataAttributeExtentCount(), dbSegs.size(),
-		               extent->segmentOverflow());
+		               dbSegs.size() + _segCount, extent->segmentOverflow());
 	}
 	else if ( writeExtent(OP_ADD) ) {
 		_extentOID = _db->getCachedId(_extent);
@@ -302,7 +302,6 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 		for ( auto &seg : dbSegs ) {
 			_segmentsRemove.push_back(seg);
 		}
-		_segCount = 0;
 		if ( syncSegments() ) {
 			_extent->setLastScan(scanStart);
 			syncExtent();
@@ -310,12 +309,18 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 		return;
 	}
 
-	// ------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------
 	// PHASE 1: PLAN - decide READ or SKIP for every chunk
-	// ------------------------------------------------------------------
+	SEISCOMP_DEBUG("[%i] %s: Phase 1 (PLAN): checking READ requirement of %zu chunks",
+	               _id, _sid, chunks.size());
 	std::vector<ChunkPlan> plan;
 	plan.reserve(chunks.size());
+	size_t readCount = 0;
 	for ( const auto &chunkPath : chunks ) {
+		if ( _app->_exitRequested ) {
+			return;
+		}
+
 		ChunkPlan p;
 		p.path = chunkPath;
 		if ( !_collector->chunkTimeWindow(p.window, chunkPath) ) {
@@ -324,6 +329,7 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 			                 _id, _sid, chunkPath);
 			continue;
 		}
+
 		p.mtime = _collector->chunkMTime(chunkPath);
 		if ( !p.mtime ) {
 			p.mtime = scanStart;
@@ -336,6 +342,7 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 			plan.push_back(p);
 			continue;
 		}
+
 		if ( _app->_endTime && p.window.startTime() > *_app->_endTime ) {
 			p.read = false;
 			p.reason = "after scan window";
@@ -343,8 +350,8 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 			continue;
 		}
 
-		// mtime-based decision (using >= to handle second-resolution
-		// filesystem mtimes against microsecond-resolution lastScan)
+		// mtime-based decision (using >= to handle second-resolution filesystem mtimes
+		// against microsecond-resolution lastScan)
 		if ( !foundInDB ) {
 			p.read = true;
 			p.reason = "new extent";
@@ -370,49 +377,59 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 			p.reason = "unchanged";
 		}
 
-		// If the chunk would otherwise be skipped, force a re-read when no
-		// existing DB segment STARTS within its window. This catches the
-		// case where a chunk was moved out of the archive during a previous
-		// scan (causing surrounding segments to be split at the chunk's
-		// boundaries) and then later moved back with its original mtime.
-		// In that situation the chunk's mtime stays older than lastScan, so
-		// the mtime check above will not re-read it, and the boundary
-		// READ-propagation step below cannot help either because both
-		// neighbours are also SKIP. Without this override the previously
-		// split segments would never be merged back.
+		// If the chunk would otherwise be skipped, force a re-read if the chunk does
+		// not contribute data to an existing DB segment. This catches the case where a
+		// chunk was moved out of the archive during a previous scan (causing
+		// surrounding segments to be split at the chunk's boundaries) and then later
+		// moved back with its original mtime. In that situation the chunk's mtime
+		// stays older than lastScan, so the mtime check above will not re-read it, and
+		// the boundary READ-propagation step below cannot help either because both
+		// neighbours are also SKIP. Without this override the previously split segments
+		// would never be merged back.
 		//
-		// The predicate mirrors what the BUILD phase does for SKIP chunks:
-		// a SKIP chunk only contributes DB segments STARTING in its window.
-		// If no such segment exists, a SKIP would contribute nothing, so we
-		// can safely force a READ instead. Segments that merely spill over
-		// from the previous chunk (start before, end inside) do not count
-		// here - those belong to the preceding chunk's SKIP contribution.
+		// Truly empty chunks (no data ever recorded) will be re-read on every run under
+		// this rule, but that cost is negligible: an empty chunk yields zero records
+		// and therefore zero segments.
 		//
-		// Truly empty chunks (no data ever recorded) will be re-read on
-		// every run under this rule, but that cost is negligible: an empty
-		// chunk yields zero records and therefore zero segments.
-		//
-		// dbSegs is sorted by start time; a linear scan with an early
-		// break is sufficient in practice. std::lower_bound could replace
-		// the loop if this ever shows up as hot.
+		// Since the chunks contributing data to a DB segment are unknown a heurestic is
+		// used which estimates the samples per record and thus the maximum number of
+		// samples overflowing the end of the chunk time window.
 		if ( !p.read && foundInDB ) {
-			bool hasStart = false;
+			bool contributesData = false;
 			for ( const auto &seg : dbSegs ) {
+				if ( _app->_exitRequested ) {
+					return;
+				}
+
 				if ( seg->start() >= p.window.endTime() ) {
 					break;
 				}
-				if ( seg->start() >= p.window.startTime() ) {
-					hasStart = true;
+
+				// Spillover cutoff: convert "maxChunkOverlap samples" to a
+				// time offset past the chunk start. A segment starting in
+				// an earlier chunk only "contributes data" to this chunk if
+				// it extends beyond this cutoff - otherwise it is just a
+				// record-end spillover from the previous chunk.
+				if ( seg->start() >= p.window.startTime()
+				     || ( seg->sampleRate() > 0
+				          && seg->end() > p.window.startTime()
+				                          + Core::TimeSpan(_app->_maxChunkOverlap
+				                                           / seg->sampleRate()) ) ) {
+					contributesData = true;
 					break;
 				}
 			}
-			if ( !hasStart ) {
+
+			if ( !contributesData ) {
 				p.read = true;
-				p.reason = "no DB segment starts in chunk window";
+				p.reason = "no DB segment spanning or starting in chunk window";
 			}
 		}
 
 		plan.push_back(p);
+		if ( p.read ) {
+			++readCount;
+		}
 	}
 
 	if ( plan.empty() ) {
@@ -420,66 +437,103 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 		return;
 	}
 
-	// Propagate READ to neighbours when DB segments cross chunk
-	// boundaries. Any DB segment that straddles the boundary between two
-	// adjacent chunks forces both chunks to be READ, otherwise a fresh
-	// read on one side could conflict with the stale representation on
-	// the other. We iterate to a fixed point; propagation is purely local
-	// and converges in one or two passes.
-	bool changed = true;
-	while ( changed && !_app->_exitRequested ) {
-		changed = false;
+	// Propagate READ across chunks linked by boundary-spanning DB segments. A
+	// boundary-spanning segment forces both adjacent chunks to share the same READ/SKIP
+	// fate, otherwise a fresh read on one side could conflict with the stale
+	// representation on the other. We compute this in two linear passes instead of a
+	// fixed-point iteration over all (segment, boundary) pairs:
+	//
+	//   1. Mark each inter-chunk boundary as "linked" if at least one DB segment
+	//      straddles it. Since dbSegs is sorted by start time and chunks are sorted by
+	//      time as well, a single forward sweep with a monotonically advancing boundary
+	//      cursor suffices.
+	//   2. Walk plan once; within every maximal run of consecutive linked boundaries,
+	//      propagate READ across all chunks of the run if any of them is already READ.
+	//
+	// Result: O(dbSegs + plan) instead of O(passes * dbSegs * plan).
+	const size_t N = plan.size();
+	if ( N >= 2 && readCount && readCount != N ) {
+		std::vector<bool> linked(N - 1, false);
+
+		// Pass 1: mark linked boundaries.
+		size_t firstBoundary = 0;
 		for ( const auto &seg : dbSegs ) {
-			for ( size_t i = 0; i + 1 < plan.size(); ++i ) {
-				auto &cur = plan[i];
-				auto &next = plan[i + 1];
+			if ( _app->_exitRequested ) {
+				return;
+			}
 
-				// segment crosses the boundary between cur and next
-				bool spans = seg->start() < cur.window.endTime()
-				          && seg->end() > next.window.startTime();
-				if ( !spans ) {
-					continue;
-				}
+			// Advance the cursor past boundaries the segment cannot reach any more.
+			// Monotone in seg index because dbSegs is sorted.
+			while ( firstBoundary < N - 1
+			        && plan[firstBoundary].window.endTime() <= seg->start() ) {
+				++firstBoundary;
+			}
 
-				if ( cur.read && !next.read ) {
-					next.read = true;
-					next.reason = "neighbour of boundary-spanning DB segment";
-					changed = true;
+			// Mark every boundary the segment actually crosses. Chunks are
+			// time-ordered, so the segment-end test is the only stop condition we need.
+			for ( size_t b = firstBoundary; b < N - 1; ++b ) {
+				if ( seg->end() <= plan[b + 1].window.startTime() ) {
+					break;
 				}
-				else if ( next.read && !cur.read ) {
-					cur.read = true;
-					cur.reason = "neighbour of boundary-spanning DB segment";
-					changed = true;
+				linked[b] = true;
+			}
+		}
+
+		// Pass 2: propagate READ across maximal linked runs.
+		for ( size_t i = 0; i < N - 1; ) {
+			if ( _app->_exitRequested ) {
+				return;
+			}
+
+			if ( !linked[i] ) {
+				++i;
+				continue;
+			}
+
+			size_t runStart = i;
+			while ( i < N - 1 && linked[i] ) {
+				++i;
+			}
+			size_t runEnd = i; // chunks [runStart .. runEnd] inclusive
+
+			bool anyRead = false;
+			for ( size_t k = runStart; k <= runEnd; ++k ) {
+				if ( plan[k].read ) {
+					anyRead = true;
+					break;
+				}
+			}
+			if ( anyRead ) {
+				for ( size_t k = runStart; k <= runEnd; ++k ) {
+					if ( !plan[k].read ) {
+						plan[k].read = true;
+						plan[k].reason = "neighbour of boundary-spanning DB segment";
+					}
 				}
 			}
 		}
 	}
 
-	for ( const auto &p : plan ) {
-		SEISCOMP_DEBUG("[%i] %s: Plan: %s (%s, mtime %s, %s)", _id, _sid,
-		               p.read ? "READ" : "SKIP", p.reason, p.mtime.iso(), p.path);
-	}
-
-	// ------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------
 	// PHASE 2: BUILD the desired segment list
-	// ------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------
 	//
 	// For each chunk:
 	//   READ -> parse records and produce chunk segments
 	//   SKIP -> copy DB segments whose start falls in this chunk's window
 	//
-	// After appending any segment, try to merge it with the tail of
-	// newSegs (contiguous within jitter, same rate, same quality).
+	// After appending any segment, try to merge it with the tail of newSegs (contiguous
+	// within jitter, same rate, same quality).
 	//
-	// Boundary-spanning DB segments are only copied once - by the chunk
-	// they START in. The propagation rule above guarantees that if a DB
-	// segment spans two chunks, either both are READ (fresh data replaces
-	// it entirely and it is never copied here) or both are SKIP (it is
-	// copied verbatim by its start chunk and reaches into the end
-	// chunk's window without conflict).
+	// Boundary-spanning DB segments are only copied once - by the chunk they START in.
+	// The propagation rule above guarantees that if a DB segment spans two chunks,
+	// either both are READ (fresh data replaces it entirely and it is never copied
+	// here) or both are SKIP (it is copied verbatim by its start chunk and reaches into
+	// the end chunk's window without conflict).
 	std::vector<DataSegmentPtr> newSegs;
 	newSegs.reserve(dbSegs.size() + plan.size());
-
+	SEISCOMP_DEBUG("[%i] %s: Phase 2 (BUILD): reading %zu/%zu chunks",
+	               _id, _sid, readCount, chunks.size());
 	auto appendSegment = [&](DataSegmentPtr seg) {
 		if ( !newSegs.empty() ) {
 			auto &tail = newSegs.back();
@@ -526,8 +580,8 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 		}
 
 		if ( p.read ) {
-			SEISCOMP_DEBUG("[%i] %s: Reading chunk (%s): %s", _id, _sid, p.reason,
-			               p.path);
+			SEISCOMP_DEBUG("[%i] %s: %s %s (%s, mtime %s)",
+			               _id, _sid, "READ", p.path, p.reason, p.mtime.iso());
 
 			Segments chunkSegs;
 			if ( !readChunkSegments(chunkSegs, p.path, p.mtime, p.window) ) {
@@ -548,8 +602,8 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 			}
 		}
 		else {
-			SEISCOMP_DEBUG("[%i] %s: Skipping chunk (%s): %s", _id, _sid, p.reason,
-			               p.path);
+			SEISCOMP_DEBUG("[%i] %s: %s %s (%s, mtime %s)",
+			               _id, _sid, "SKIP", p.path, p.reason, p.mtime.iso());
 
 			dbSegsStartingIn(p.window, dbHits);
 			for ( size_t idx : dbHits ) {
@@ -561,21 +615,19 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 		}
 	}
 
-	// ------------------------------------------------------------------
-	// PHASE 2b: TOUCH - bump each segment's `updated` to the maximum
-	// mtime of all chunks whose windows overlap that segment.
-	// ------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------
+	// PHASE 2b: TOUCH - bump each segment's `updated` to the maximum mtime of all
+	// chunks whose windows overlap that segment.
+	// ---------------------------------------------------------------------------------
 	//
-	// A multi-chunk segment's `updated` should reflect the latest source
-	// modification across ALL chunks contributing data to it - not only
-	// chunks that happened to be re-read in this run. The READ/SKIP
-	// propagation step ensures correct segment SHAPE, but `updated` is
-	// a metadata signal that downstream consumers use to detect record-
-	// level changes scardac cannot see directly. Compute it uniformly
-	// here.
+	// A multi-chunk segment's `updated` should reflect the latest source modification
+	// across ALL chunks contributing data to it - not only chunks that happened to be
+	// re-read in this run. The READ/SKIP propagation step ensures correct segment
+	// SHAPE, but `updated` is a metadata signal that downstream consumers use to detect
+	// record- level changes scardac cannot see directly. Compute it uniformly here.
 	//
-	// Both newSegs and plan are roughly sorted by time, so the per-segment
-	// search walks a small contiguous slice of plan.
+	// Both newSegs and plan are roughly sorted by time, so the per-segment search walks
+	// a small contiguous slice of plan.
 	for ( auto &seg : newSegs ) {
 		for ( const auto &p : plan ) {
 			if ( p.window.endTime() <= seg->start() ) {
@@ -590,9 +642,11 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 		}
 	}
 
-	// ------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------
 	// PHASE 3: DIFF newSegs against dbSegs
-	// ------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------
+	SEISCOMP_DEBUG("[%i] %s: Phase 3 (DIFF): comparing %zu new against %zu DB segments",
+	               _id, _sid, newSegs.size(), dbSegs.size());
 	std::sort(newSegs.begin(), newSegs.end(),
 	          [](const DataSegmentPtr &a, const DataSegmentPtr &b) {
 		          return a->start() < b->start();
@@ -612,9 +666,11 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 		auto &ns = newSegs[iNew];
 		auto &ds = dbSegs[iDb];
 
+		// Update
 		if ( ns->start() == ds->start() ) {
-			if ( !segmentsEqual(ns.get(), ds.get()) ) {
-				// same start, fields differ: update the DB row in place
+			if ( !segmentsEqualNoIndex(ns.get(), ds.get()) ) {
+				// same index (start time) but other fields differs:
+				// update the DB row in place
 				ds->setEnd(ns->end());
 				ds->setUpdated(ns->updated());
 				ds->setSampleRate(ns->sampleRate());
@@ -627,12 +683,14 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 			++iNew;
 			++iDb;
 		}
+		// Add
 		else if ( ns->start() < ds->start() ) {
 			_segmentsInsert.push_back(ns);
 			SEISCOMP_DEBUG("[%i] %s: Add segment [%s~%s]", _id, _sid, ns->start().iso(),
 			               ns->end().iso());
 			++iNew;
 		}
+		// Remove
 		else {
 			_segmentsRemove.push_back(ds);
 			SEISCOMP_DEBUG("[%i] %s: Remove DB segment [%s~%s]", _id, _sid,
@@ -640,6 +698,7 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 			++iDb;
 		}
 	}
+
 	while ( iNew < newSegs.size() ) {
 		if ( _app->_exitRequested ) {
 			return;
@@ -649,6 +708,7 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 		SEISCOMP_DEBUG("[%i] %s: Add segment [%s~%s]", _id, _sid, ns->start().iso(),
 		               ns->end().iso());
 	}
+
 	while ( iDb < dbSegs.size() ) {
 		if ( _app->_exitRequested ) {
 			return;
@@ -659,7 +719,7 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 		               ds->start().iso(), ds->end().iso());
 	}
 
-	_segCount = newSegs.size();
+	_segCount += newSegs.size();
 
 	if ( syncSegments() ) {
 		_extent->setLastScan(scanStart);
@@ -701,30 +761,42 @@ bool Worker::dbConnect() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-DatabaseIterator Worker::dbSegments(size_t &segmentsOutside) {
+DatabaseIterator Worker::dbSegments() {
 	std::ostringstream oss;
-	segmentsOutside = 0;
 	auto *db = _db->driver();
 
 	// if the data collection is restricted by time, then query the number of
 	// segments lying outside the requested time window
 	if ( _app->_startTime || _app->_endTime ) {
+		// "Outside the scan window" = segment whose START falls outside
+		// [startTime, endTime]. This matches the load filter in the main
+		// dbSegments() query below: segments starting before startTime
+		// (including those that straddle the boundary) are NOT loaded for
+		// the DIFF and are therefore "outside" from a synchronization
+		// standpoint. Combine the two boundary predicates with OR.
 		oss << "SELECT COUNT(*) "
 		       "FROM DataSegment "
 		       "WHERE _parent_oid = "
-		    << _extentOID;
-		if ( _app->_startTime ) {
-			oss << " AND " << _T("end") << " <= '"
+		    << _extentOID << " AND ";
+		if ( _app->_startTime && _app->_endTime ) {
+			oss << '(' << _T("start") << " < '"
+			    << db->timeToString(*_app->_startTime) << "' OR "
+			    << _T("start") << " > '"
+			    << db->timeToString(*_app->_endTime) << "')";
+		}
+		else if ( _app->_startTime ) {
+			oss << _T("start") << " < '"
 			    << db->timeToString(*_app->_startTime) << "'";
 		}
-		if ( _app->_endTime ) {
-			oss << " AND " << _T("start") << " > '" << db->timeToString(*_app->_endTime)
-			    << "'";
+		else {
+			oss << _T("start") << " > '"
+			    << db->timeToString(*_app->_endTime) << "'";
 		}
 
 		if ( !db->beginQuery(oss.str().c_str()) || !db->fetchRow()
 		     || !Seiscomp::Core::fromString(
-		         segmentsOutside, static_cast<const char *>(db->getRowField(0))) ) {
+		         _segCount,
+		         static_cast<const char *>(db->getRowField(0))) ) {
 			SEISCOMP_WARNING("[%i] %s: Could not query number of segments "
 			                 "outside time window",
 			                 _id, _sid);
@@ -734,12 +806,18 @@ DatabaseIterator Worker::dbSegments(size_t &segmentsOutside) {
 		oss.str("");
 	}
 
+	// Load only segments whose START falls inside the scan window. Segments that
+	// straddle the --start boundary (start before, end inside) are deliberately
+	// EXCLUDED here: they originate in chunks outside the scan window which we
+	// cannot read, so we must leave them untouched in the database. Treating
+	// them like in-window segments would put them into the DIFF as orphans
+	// (unmatched by any plan chunk's BUILD output) and DIFF would remove them.
 	oss << "SELECT * "
 	       "FROM DataSegment "
 	       "WHERE _parent_oid = "
 	    << _extentOID;
 	if ( _app->_startTime ) {
-		oss << " AND " << _T("end") << " > '"
+		oss << " AND " << _T("start") << " >= '"
 		    << _db->driver()->timeToString(*_app->_startTime) << "'";
 	}
 	if ( _app->_endTime ) {
@@ -894,23 +972,16 @@ bool Worker::readChunkSegments(Segments &segments, const std::string &chunk,
 		++dropped;
 	}
 
-	// enforce --start/--end time window restriction on segments. Chunks whose
-	// window only partially overlaps the user window may still contain
-	// segments lying entirely outside it - drop those here. The same
-	// inclusive/exclusive semantics are used as for chunks (see PHASE 1
-	// PLAN) and for DB segments in dbSegments(), so a segment is kept iff
-	//   (no startTime OR seg.end()   >  startTime) AND
-	//   (no endTime   OR seg.start() <= endTime)
+	// Drop fresh segments that fall entirely outside the effective scan
+	// window. With effective times aligned to chunk boundaries, segments
+	// produced from in-window chunks normally satisfy this filter
+	// trivially; the check guards against pathological cases (e.g., a
+	// chunk reporting a time window inconsistent with its records).
 	uint32_t outsideWindow = 0;
 	if ( _app->_startTime || _app->_endTime ) {
 		auto isOutside = [this](const DataModel::DataSegmentPtr &s) {
-			if ( _app->_startTime && s->end() <= *_app->_startTime ) {
-				return true;
-			}
-			if ( _app->_endTime && s->start() > *_app->_endTime ) {
-				return true;
-			}
-			return false;
+			return ( _app->_startTime && s->end() <= *_app->_startTime )
+			       ||( _app->_endTime && s->start() > *_app->_endTime );
 		};
 		auto newEnd = std::remove_if(segments.begin(), segments.end(),
 		                             [&](const DataModel::DataSegmentPtr &s) {
@@ -1373,11 +1444,24 @@ bool SCARDAC::initConfiguration() {
 	try {
 		int maxSegments = SCCoreApp->configGetInt("maxSegments");
 		if ( maxSegments < 0 ) {
-			SEISCOMP_ERROR("Negative values not allowed for parameter "
-			               "maxSegments");
+			SEISCOMP_ERROR("Negative values not allowed for parameter 'maxSegments'");
 			return false;
 		}
 		_maxSegments = static_cast<size_t>(maxSegments);
+	}
+	catch ( ... ) {
+	}
+
+	try {
+		// This parameter may be replaced if the DataSegment stored in the DB would
+		// name the last contributing chunk or the number of contributing chunks
+		int maxChunkOverlap = SCCoreApp->configGetInt("maxChunkOverlap");
+		if ( maxChunkOverlap < 0 ) {
+			SEISCOMP_ERROR("Negative values not allowed for parameter "
+			               "'maxChunkOverlap'");
+			return false;
+		}
+		_maxChunkOverlap = static_cast<size_t>(maxChunkOverlap);
 	}
 	catch ( ... ) {
 	}
