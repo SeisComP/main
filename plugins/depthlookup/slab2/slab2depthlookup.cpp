@@ -18,6 +18,7 @@
 
 #include <seiscomp/geo/feature.h>
 #include <seiscomp/logging/log.h>
+#include <seiscomp/system/environment.h>
 
 #include <algorithm>
 #include <map>
@@ -38,6 +39,11 @@ bool Slab2DepthLookup::init(const Seiscomp::Config::Config &config) {
 	catch ( ... ) {
 		SEISCOMP_WARNING("dlslab2: no directory configured under dlslab2.directory");
 		return false;
+	}
+
+	auto *env = Seiscomp::Environment::Instance();
+	if ( env ) {
+		directory = env->resolvePath(directory);
 	}
 
 	try {
