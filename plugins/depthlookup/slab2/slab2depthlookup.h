@@ -19,6 +19,7 @@
 #include <seiscomp/seismology/depthlookup.h>
 #include <seiscomp/geo/featureset.h>
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -43,11 +44,20 @@ class Slab2DepthLookup : public Seiscomp::Seismology::DepthLookup {
 			int                      maxDepthKm{0};
 		};
 
+		// Supplementary polygon regions consulted when a point falls outside
+		// all slab zones. Loaded from dlslab2.polygon.regions.
+		struct PolyRegion {
+			const Seiscomp::Geo::GeoFeature *feature{nullptr};
+			double                           defaultDepth{0.0};
+			std::optional<double>            maxDepth;
+		};
+
 		int _slabDepthAt(double lat, double lon) const;
 
 		double                       _fallback{10.0};
 		std::vector<SlabZone>        _slabZones;
 		Seiscomp::Geo::GeoFeatureSet _slabFeatures;  // local — NOT the global singleton
+		std::vector<PolyRegion>      _polyRegions;   // from global GeoFeatureSet singleton
 };
 
 

@@ -28,10 +28,29 @@
 				<parameter name="fallback" type="double" default="10" unit="km">
 					<description>
 						Default depth returned when the origin is located outside
-						all Slab2.0 depth-footprint polygons (i.e. not in any
-						known subduction zone).
+						all Slab2.0 depth-footprint polygons and outside any
+						configured polygon regions.
 					</description>
 				</parameter>
+				<group name="polygon">
+					<parameter name="regions" type="list:string" default="">
+						<description>
+							Ordered, comma-separated list of polygon feature names
+							(from BNA or GeoJSON files in @DATADIR@/spatial/vector/)
+							consulted when the origin falls outside all Slab2.0 zones.
+							Each feature must carry a "defaultDepth" attribute (km)
+							and may carry a "maxDepth" attribute (km). The first
+							matching polygon is used.
+
+							This allows region-specific default depths for stable
+							cratons, rifts, or other non-subduction areas on top of
+							the global Slab2.0 coverage.
+
+							Example:
+							dlslab2.polygon.regions = australia_craton, african_craton
+						</description>
+					</parameter>
+				</group>
 			</group>
 		</configuration>
 	</plugin>

@@ -16,18 +16,40 @@
 
 #include "slab2depthlookup.h"
 
+#include <seiscomp/core/strings.h>
 #include <seiscomp/geo/feature.h>
+#include <seiscomp/geo/featureset.h>
 #include <seiscomp/logging/log.h>
 #include <seiscomp/system/environment.h>
 
 #include <algorithm>
 #include <map>
+#include <optional>
 #include <string>
 
 #include <boost/filesystem.hpp>
 
 
 REGISTER_DEPTH_LOOKUP(Slab2DepthLookup, "Slab2");
+
+
+namespace {
+
+std::optional<double> parseAttr(const Seiscomp::Geo::GeoFeature *f,
+                                const std::string &key) {
+	const auto &attrs = f->attributes();
+	auto it = attrs.find(key);
+	if ( it == attrs.end() || it->second.empty() ) {
+		return std::nullopt;
+	}
+	double v;
+	if ( !Seiscomp::Core::fromString(v, it->second) ) {
+		return std::nullopt;
+	}
+	return v;
+}
+
+} // anonymous namespace
 
 
 // ---------------------------------------------------------------------------
@@ -145,6 +167,43 @@ bool Slab2DepthLookup::init(const Seiscomp::Config::Config &config) {
 
 	SEISCOMP_INFO("dlslab2: %zu zone(s) loaded from %s",
 	              _slabZones.size(), directory.c_str());
+
+	// Load supplementary polygon regions (consulted when a point is outside
+	// all slab zones). Config key: dlslab2.polygon.regions
+	_polyRegions.clear();
+	std::vector<std::string> polyNames;
+	try {
+		polyNames = config.getStrings("dlslab2.polygon.regions");
+	}
+	catch ( ... ) {}
+
+	if ( !polyNames.empty() ) {
+		const Seiscomp::Geo::GeoFeatureSet &fs =
+		    Seiscomp::Geo::GeoFeatureSetSingleton::getInstance();
+
+		for ( const auto *f : fs.features() ) {
+			if ( !f->closedPolygon() ) {
+				continue;
+			}
+			if ( std::find(polyNames.begin(), polyNames.end(), f->name())
+			         == polyNames.end() ) {
+				continue;
+			}
+			auto dd = parseAttr(f, "defaultDepth");
+			if ( !dd ) {
+				SEISCOMP_WARNING("dlslab2: polygon region '%s' has no "
+				                 "defaultDepth attribute — skipped",
+				                 f->name().c_str());
+				continue;
+			}
+			_polyRegions.push_back({f, *dd, parseAttr(f, "maxDepth")});
+			SEISCOMP_INFO("dlslab2: polygon region '%s' defaultDepth=%.0f km",
+			              f->name().c_str(), *dd);
+		}
+		SEISCOMP_INFO("dlslab2: %zu supplementary polygon region(s) loaded",
+		              _polyRegions.size());
+	}
+
 	return !_slabZones.empty();
 }
 
@@ -171,7 +230,20 @@ int Slab2DepthLookup::_slabDepthAt(double lat, double lon) const {
 // ---------------------------------------------------------------------------
 double Slab2DepthLookup::fetch(double lat, double lon) const {
 	int d = _slabDepthAt(lat, lon);
-	return d >= 0 ? static_cast<double>(d) : _fallback;
+	if ( d >= 0 ) {
+		return static_cast<double>(d);
+	}
+
+	const Seiscomp::Geo::GeoCoordinate loc(lat, lon);
+	for ( const PolyRegion &r : _polyRegions ) {
+		if ( r.feature->contains(loc) ) {
+			SEISCOMP_DEBUG("dlslab2: polygon region '%s' depth %.0f km at (%.2f, %.2f)",
+			               r.feature->name().c_str(), r.defaultDepth, lat, lon);
+			return r.defaultDepth;
+		}
+	}
+
+	return _fallback;
 }
 
 
@@ -189,5 +261,12 @@ double Slab2DepthLookup::fetchMaxDepth(double lat, double lon) const {
 			}
 		}
 	}
+
+	for ( const PolyRegion &r : _polyRegions ) {
+		if ( r.feature->contains(loc) ) {
+			return r.maxDepth.value_or(_fallback);
+		}
+	}
+
 	return _fallback;
 }
