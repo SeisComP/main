@@ -21,9 +21,13 @@
 
 #include "datamodel.h"
 
-Seiscomp::Core::Time sctime(const Autoloc::Time &time);
+namespace Seiscomp {
 
-Seiscomp::DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases=true);
-// Origin *convertFromSC(const Seiscomp::DataModel::Origin* scorigin);
+Core::Time sctime(const Autoloc::Time &time);
 
-Autoloc::Pick *convertFromSC(const Seiscomp::DataModel::Pick *scpick);
+DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases=true);
+// Origin *convertFromSC(const DataModel::Origin* scorigin);
+
+Autoloc::Pick *convertFromSC(const DataModel::Pick *scpick);
+
+}  // namespace Seiscomp

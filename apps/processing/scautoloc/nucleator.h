@@ -28,6 +28,8 @@
 #include "locator.h"
 
 
+namespace Seiscomp {
+
 namespace Autoloc {
 
 class Nucleator
@@ -243,6 +245,8 @@ class GridPoint : public Seiscomp::Core::BaseObject
 
 double originScore(const Origin *origin, double maxRMS=3.5, double radius=0.);
 
-}
+}  // namespace Autoloc
+
+}  // namespace Seiscomp
 
 #endif

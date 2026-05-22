@@ -76,8 +76,8 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 
 	protected:
 //		DataModel::Origin *convertToSC  (const Autoloc::Origin* origin, bool allPhases=true);
-		::Autoloc::Origin *convertFromSC(const DataModel::Origin* scorigin);
-		::Autoloc::Pick   *convertFromSC(const DataModel::Pick*   scpick);
+		Autoloc::Origin *convertFromSC(const DataModel::Origin* scorigin);
+		Autoloc::Pick   *convertFromSC(const DataModel::Pick*   scpick);
 
 	private:
 		// Processing

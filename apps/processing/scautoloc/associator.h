@@ -19,6 +19,8 @@
 
 #include "datamodel.h"
 
+namespace Seiscomp {
+
 namespace Autoloc {
 
 
@@ -82,5 +84,7 @@ class Associator::Phase
 };
 
 } // namespace Autoloc
+
+} // namespace Seiscomp
 
 #endif

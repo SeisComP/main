@@ -23,6 +23,8 @@
 #include "datamodel.h"
 
 
+namespace Seiscomp {
+
 namespace Autoloc {
 
 DEFINE_SMARTPOINTER(MySensorLocationDelegate);
@@ -89,5 +91,7 @@ class Locator {
 bool determineAzimuthalGaps(const Origin*, double *primary, double *secondary);
 
 }  // namespace Autoloc
+
+}  // namespace Seiscomp
 
 #endif

@@ -23,6 +23,8 @@
 
 #include "datamodel.h"
 
+namespace Seiscomp {
+
 namespace Autoloc {
 
 void delazi(double lat1, double lon1, double lat2, double lon2, double &delta, double &az1, double &az2);
@@ -59,22 +61,20 @@ PickVector readPickFile();
 Pick*      readPickLine();
 Pick::Mode mode(const Seiscomp::DataModel::Pick *pick);
 
-}
+}  // namespace Utils
 
-}
-
-
+}  // namespace Autoloc
 
 
 
-
-namespace Seiscomp {
 namespace Math {
+
 namespace Statistics {
 
 double rms(const std::vector<double> &v, double offset = 0);
 
 } // namespace Statistics
-} // namespace Math
-} // namespace Seiscomp
 
+} // namespace Math
+
+} // namespace Seiscomp

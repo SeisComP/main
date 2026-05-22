@@ -26,6 +26,8 @@
 #include "locator.h"
 #include "stationconfig.h"
 
+namespace Seiscomp {
+
 namespace Autoloc {
 
 typedef enum { GlobalNetwork, RegionalNetwork, LocalNetwork } NetworkType;
@@ -53,8 +55,9 @@ class Autoloc3 {
 			// time to keep origins in buffer
 			double originKeep{86400};
 
-			// time span within which we search for picks which may indicate extraordinary activity
-			double dynamicPickThresholdInterval{3600.0};   // unit: s
+			// time span within which we search for picks
+			// which may indicate extraordinary activity
+			double dynamicPickThresholdInterval{3600.0};  // unit: s
 
 			// typically good RMS in our network
 			double goodRMS{1.5};   // unit: s
@@ -505,5 +508,6 @@ class Autoloc3 {
 
 }  // namespace Autoloc
 
+}  // namespace Seiscomp
 
 #endif

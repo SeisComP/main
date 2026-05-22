@@ -27,6 +27,8 @@
 #include "util.h"
 #include "sc3adapters.h"
 
+namespace Seiscomp {
+
 namespace Autoloc {
 
 
@@ -359,7 +361,7 @@ double Origin::rms() const
 			res.push_back(arr.residual);
 	}
 
-	return Seiscomp::Math::Statistics::rms(res);
+	return Math::Statistics::rms(res);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -379,7 +381,7 @@ double Origin::medianStationDistance() const
 	if (distance.size() == 0)
 		return -1;
 
-	return Seiscomp::Math::Statistics::median(distance);
+	return Math::Statistics::median(distance);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -517,3 +519,5 @@ const Origin *OriginVector::bestEquivalentOrigin(const Origin *origin) const
 
 
 }  // namespace Autoloc
+
+}  // namespace Seiscomp

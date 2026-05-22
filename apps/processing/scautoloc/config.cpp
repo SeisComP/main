@@ -21,6 +21,8 @@
 
 using namespace std;
 
+namespace Seiscomp {
+
 namespace Autoloc {
 
 
@@ -77,3 +79,5 @@ void Autoloc3::Config::dump() const {
 
 
 }  // namespace Autoloc
+
+}  // namespace Seiscomp

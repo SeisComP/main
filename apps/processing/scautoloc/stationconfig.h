@@ -21,6 +21,8 @@
 #include <seiscomp/core/datetime.h>
 
 
+namespace Seiscomp {
+
 namespace Autoloc {
 
 class StationConfigItem {
@@ -72,5 +74,6 @@ class StationConfig {
 
 }  // namespace Autoloc
 
+}  // namespace Seiscomp
 
 #endif

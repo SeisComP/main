@@ -36,9 +36,12 @@
 #include "datamodel.h"
 
 
+namespace Seiscomp {
+
+
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Seiscomp::Core::Time sctime(const Autoloc::Time &time)	{
-	return Seiscomp::Core::Time() + Seiscomp::Core::TimeSpan(time);
+Core::Time sctime(const Autoloc::Time &time)	{
+	return Core::Time() + Core::TimeSpan(time);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -46,31 +49,30 @@ Seiscomp::Core::Time sctime(const Autoloc::Time &time)	{
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Seiscomp::DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases) {
+DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases) {
 	using namespace Autoloc;
 
-	Seiscomp::DataModel::Origin *scorigin
-	    = Seiscomp::DataModel::Origin::Create();
+	DataModel::Origin *scorigin = DataModel::Origin::Create();
 
-	Seiscomp::DataModel::TimeQuantity sctq;
-	Seiscomp::DataModel::RealQuantity scrq;
+	DataModel::TimeQuantity sctq;
+	DataModel::RealQuantity scrq;
 
-	scorigin->setTime(Seiscomp::DataModel::TimeQuantity(sctime(origin->time), origin->timeerr, Seiscomp::Core::None, Seiscomp::Core::None, Seiscomp::Core::None));
-	scorigin->setLatitude(Seiscomp::DataModel::RealQuantity(origin->hypocenter.lat, origin->hypocenter.laterr, Seiscomp::Core::None, Seiscomp::Core::None, Seiscomp::Core::None));
-	scorigin->setLongitude(Seiscomp::DataModel::RealQuantity(origin->hypocenter.lon, origin->hypocenter.lonerr, Seiscomp::Core::None, Seiscomp::Core::None, Seiscomp::Core::None));
-	scorigin->setDepth(Seiscomp::DataModel::RealQuantity(origin->hypocenter.dep, origin->hypocenter.deperr, Seiscomp::Core::None, Seiscomp::Core::None, Seiscomp::Core::None));
+	scorigin->setTime(DataModel::TimeQuantity(sctime(origin->time), origin->timeerr, Core::None, Core::None, Core::None));
+	scorigin->setLatitude(DataModel::RealQuantity(origin->hypocenter.lat, origin->hypocenter.laterr, Core::None, Core::None, Core::None));
+	scorigin->setLongitude(DataModel::RealQuantity(origin->hypocenter.lon, origin->hypocenter.lonerr, Core::None, Core::None, Core::None));
+	scorigin->setDepth(DataModel::RealQuantity(origin->hypocenter.dep, origin->hypocenter.deperr, Core::None, Core::None, Core::None));
 
 	scorigin->setMethodID(origin->methodID);
 	scorigin->setEarthModelID(origin->earthModelID);
 
-	scorigin->setEvaluationMode(Seiscomp::DataModel::EvaluationMode(Seiscomp::DataModel::AUTOMATIC));
+	scorigin->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
 	if ( origin->preliminary ) {
-		scorigin->setEvaluationStatus(Seiscomp::DataModel::EvaluationStatus(Seiscomp::DataModel::PRELIMINARY));
+		scorigin->setEvaluationStatus(DataModel::EvaluationStatus(DataModel::PRELIMINARY));
 	}
 
 	switch ( origin->depthType ) {
 	case Autoloc::Origin::DepthFree:
-			scorigin->setDepthType(Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::FROM_LOCATION));
+			scorigin->setDepthType(DataModel::OriginDepthType(DataModel::FROM_LOCATION));
 			break;
 
 	case Autoloc::Origin::DepthMinimum:
@@ -80,7 +82,7 @@ Seiscomp::DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool all
 			break;
 
 	case Autoloc::Origin::DepthManuallyFixed:
-			scorigin->setDepthType(Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::OPERATOR_ASSIGNED));
+			scorigin->setDepthType(DataModel::OriginDepthType(DataModel::OPERATOR_ASSIGNED));
 			break;
 	default:
 			break;
@@ -90,7 +92,7 @@ Seiscomp::DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool all
 	// origins with fixed depth, as this caused some problems at BMG
 	// where the fixed-depth checkbox was not unchecked and an incorrect
 	// depth was retained. Need a better way, though.
-//	scorigin->setDepthType(Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::FROM_LOCATION));
+//	scorigin->setDepthType(DataModel::OriginDepthType(DataModel::FROM_LOCATION));
 
 	size_t arrivalCount = origin->arrivals.size();
 
@@ -111,9 +113,9 @@ Seiscomp::DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool all
 			continue;
 		}
 */
-		const Seiscomp::DataModel::Phase phase(arr.phase);
-		Seiscomp::DataModel::Arrival* scarr
-		        = new Seiscomp::DataModel::Arrival();
+		const DataModel::Phase phase(arr.phase);
+		DataModel::Arrival* scarr
+		        = new DataModel::Arrival();
 		scarr->setPickID(arr.pick->id);
 		scarr->setDistance(arr.distance);
 		scarr->setAzimuth(arr.azimuth);
@@ -136,7 +138,7 @@ Seiscomp::DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool all
 
 		scorigin->add(scarr);
 	}
-	Seiscomp::DataModel::OriginQuality oq;
+	DataModel::OriginQuality oq;
 	oq.setAssociatedPhaseCount(scorigin->arrivalCount());
 	oq.setUsedPhaseCount(origin->definingPhaseCount());
 	oq.setAssociatedStationCount(origin->associatedStationCount());
@@ -163,11 +165,11 @@ Seiscomp::DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool all
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Autoloc::Origin *Seiscomp::Applications::AutolocApp::convertFromSC(const Seiscomp::DataModel::Origin *scorigin) {
+Autoloc::Origin *Applications::AutolocApp::convertFromSC(const DataModel::Origin *scorigin) {
 	double lat = scorigin->latitude().value();
 	double lon = scorigin->longitude().value();
 	double dep = scorigin->depth().value();
-	double time = double(scorigin->time().value() - Seiscomp::Core::Time());
+	double time = double(scorigin->time().value() - Core::Time());
 
 	Autoloc::Origin *origin = new Autoloc::Origin(lat, lon, dep, time);
 
@@ -227,7 +229,7 @@ Autoloc::Origin *Seiscomp::Applications::AutolocApp::convertFromSC(const Seiscom
 	for ( int i=0; i<arrivalCount; i++ ) {
 		const std::string &pickID = scorigin->arrival(i)->pickID();
 /*
-		Seiscomp::DataModel::Pick *scpick = Seiscomp::DataModel::Pick::Find(pickID);
+		DataModel::Pick *scpick = DataModel::Pick::Find(pickID);
 		if ( ! scpick) {
 			SEISCOMP_ERROR_S("Pick " + pickID + " not found - cannot convert origin");
 			delete origin;
@@ -242,7 +244,7 @@ Autoloc::Origin *Seiscomp::Applications::AutolocApp::convertFromSC(const Seiscom
 // TODO: Use Cache here!
 			// XXX FIXME: This may also happen after Autoloc cleaned up older picks, so the pick isn't available any more!
 			SEISCOMP_ERROR_S("Pick " + pickID + " not found in internal pick pool - SKIPPING this pick");
-//			if (Seiscomp::DataModel::PublicObject::Find(pickID))
+//			if (DataModel::PublicObject::Find(pickID))
 //				SEISCOMP_ERROR("HOWEVER, this pick is present in pool of public objects");
 			// This actually IS an error but we try to work around
 			// it instead of giving up in this origin completely.
@@ -282,14 +284,14 @@ Autoloc::Origin *Seiscomp::Applications::AutolocApp::convertFromSC(const Seiscom
 
 			try {
 				if ( !scorigin->arrival(i)->timeUsed() ) {
-					arr.excluded = ::Autoloc::Arrival::ManuallyExcluded;
+					arr.excluded = Autoloc::Arrival::ManuallyExcluded;
 				}
 			}
 			catch ( ... ) {
 				// In a manual origin in which the time is not
 				// explicitly used we treat the arrival as if
 				// it was explicitly excluded.
-				arr.excluded = ::Autoloc::Arrival::ManuallyExcluded;
+				arr.excluded = Autoloc::Arrival::ManuallyExcluded;
 			}
 		}
 
@@ -299,12 +301,12 @@ Autoloc::Origin *Seiscomp::Applications::AutolocApp::convertFromSC(const Seiscom
 	origin->publicID = scorigin->publicID();
 	try {
 	// FIXME: In scolv the Origin::depthType is not set!
-	Seiscomp::DataModel::OriginDepthType dtype = scorigin->depthType();
-	if ( dtype == Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::FROM_LOCATION) ) {
+	DataModel::OriginDepthType dtype = scorigin->depthType();
+	if ( dtype == DataModel::OriginDepthType(DataModel::FROM_LOCATION) ) {
 		origin->depthType = Autoloc::Origin::DepthFree;
 	}
 
-	else if ( dtype == Seiscomp::DataModel::OriginDepthType(Seiscomp::DataModel::OPERATOR_ASSIGNED) ) {
+	else if ( dtype == DataModel::OriginDepthType(DataModel::OPERATOR_ASSIGNED) ) {
 		origin->depthType = Autoloc::Origin::DepthManuallyFixed;
 	}
 	}
@@ -334,7 +336,7 @@ Autoloc::Origin *Seiscomp::Applications::AutolocApp::convertFromSC(const Seiscom
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Autoloc::Pick *Seiscomp::Applications::AutolocApp::convertFromSC(const Seiscomp::DataModel::Pick *scpick) {
+Autoloc::Pick *Applications::AutolocApp::convertFromSC(const DataModel::Pick *scpick) {
 	const std::string &id  = scpick->publicID();
 	const std::string &label = pickLabel(scpick);
 	const std::string &net = scpick->waveformID().networkCode();
@@ -356,3 +358,5 @@ Autoloc::Pick *Seiscomp::Applications::AutolocApp::convertFromSC(const Seiscomp:
 	return pick;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+}  // namespace Seiscomp

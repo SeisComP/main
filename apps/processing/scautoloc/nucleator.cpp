@@ -32,6 +32,8 @@
 #include "nucleator.h"
 
 
+namespace Seiscomp {
+
 namespace Autoloc {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -786,7 +788,7 @@ bool GridSearch::_readGrid(const std::string &gridfile) {
 		std::string line;
 		std::getline(ifile, line);
 
-		Seiscomp::Core::trim(line);
+		Core::trim(line);
 
 		// Skip empty lines
 		if ( line.empty() ) continue;
@@ -820,3 +822,5 @@ void GridSearch::setup() {
 
 
 } // namespace Autoloc
+
+} // namespace Seiscomp

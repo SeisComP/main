@@ -24,6 +24,8 @@
 #include <seiscomp/datamodel/origin.h>
 
 
+namespace Seiscomp {
+
 namespace Autoloc {
 
 typedef std::size_t OriginID;
@@ -298,5 +300,7 @@ typedef std::vector<PickPtr> PickVector;
 typedef std::vector<Pick*>   PickGroup;
 
 }  // namespace Autoloc
+
+}  // namespace Seiscomp
 
 #endif

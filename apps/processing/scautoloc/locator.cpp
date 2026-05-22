@@ -26,6 +26,8 @@
 #include "locator.h"
 
 
+namespace Seiscomp {
+
 namespace Autoloc {
 
 
@@ -42,13 +44,12 @@ MySensorLocationDelegate::~MySensorLocationDelegate() {
 void MySensorLocationDelegate::setStation(const Autoloc::Station *station) {
 	std::string key = station->net + "." + station->code;
 
-	Seiscomp::DataModel::SensorLocationPtr
-		sloc = Seiscomp::DataModel::SensorLocation::Create();
+	DataModel::SensorLocationPtr sloc = DataModel::SensorLocation::Create();
 
 	sloc->setLatitude(  station->lat  );
 	sloc->setLongitude( station->lon  );
 	sloc->setElevation( station->alt  );
-	_sensorLocations.insert(std::pair<std::string,Seiscomp::DataModel::SensorLocationPtr>(key, sloc));
+	_sensorLocations.insert(std::pair<std::string, DataModel::SensorLocationPtr>(key, sloc));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -56,8 +57,8 @@ void MySensorLocationDelegate::setStation(const Autoloc::Station *station) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Seiscomp::DataModel::SensorLocation *
-MySensorLocationDelegate::getSensorLocation(Seiscomp::DataModel::Pick *pick) const {
+DataModel::SensorLocation *
+MySensorLocationDelegate::getSensorLocation(DataModel::Pick *pick) const {
 	if ( !pick )
 		return nullptr;
 
@@ -87,7 +88,7 @@ Locator::Locator()
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Locator::setSeiscompConfig(const Seiscomp::Config::Config *scconfig)
+void Locator::setSeiscompConfig(const Config::Config *scconfig)
 {
 	_scconfig = scconfig;
 }
@@ -104,7 +105,7 @@ bool Locator::init() {
 	}
 
 	const std::string locator = "LOCSAT";
-	_sclocator = Seiscomp::Seismology::LocatorInterface::Create(locator.c_str());
+	_sclocator = Seismology::LocatorInterface::Create(locator.c_str());
 	if ( !_sclocator ) {
 		SEISCOMP_ERROR_S("Could not create " + locator + " instance");
 		exit(-1);
@@ -233,15 +234,15 @@ Origin *Locator::relocate(const Origin *origin) {
 Origin* Locator::_screlocate(const Origin *origin) {
 	// convert origin to SC, relocate, and convert the result back
 
-	Seiscomp::DataModel::OriginPtr scorigin = convertToSC(origin);
+	DataModel::OriginPtr scorigin = convertToSC(origin);
 	if ( !scorigin ) {
 		// give up
 		SEISCOMP_ERROR("Unexpected failure to relocate origin");
 		return nullptr;
 	}
 
-	Seiscomp::DataModel::TimeQuantity sctq;
-	Seiscomp::DataModel::RealQuantity scrq;
+	DataModel::TimeQuantity sctq;
+	DataModel::RealQuantity scrq;
 
 /*
 	if (fixedDepth >= 0) {
@@ -257,34 +258,33 @@ Origin* Locator::_screlocate(const Origin *origin) {
 /*
 	// Store SC Picks/Stations here so that they can be found
 	// by LocSAT via SC PublicObject lookup
-//	std::vector<Seiscomp::DataModel::PublicObjectPtr> scobjects;
+//	std::vector<DataModel::PublicObjectPtr> scobjects;
 */
 
 	size_t arrivalCount = origin->arrivals.size();
 	for ( size_t i=0; i<arrivalCount; i++ ) {
 		const Arrival &arr = origin->arrivals[i];
-		Seiscomp::DataModel::PickPtr
-			scpick = Seiscomp::DataModel::Pick::Find(arr.pick->id);
+		DataModel::PickPtr scpick = DataModel::Pick::Find(arr.pick->id);
 
 		if ( !scpick ) {
 			SEISCOMP_ERROR("THIS MUST NEVER HAPPEN: Pick '%s' not found", arr.pick->id);
 		}
 /*
 		if ( !scpick) {
-			const Seiscomp::DataModel::Phase phase(arr.phase);
+			const DataModel::Phase phase(arr.phase);
 
-			scpick = Seiscomp::DataModel::Pick::Create(arr.pick->id);
+			scpick = DataModel::Pick::Create(arr.pick->id);
 			if ( !scpick ) {
 				SEISCOMP_ERROR_S("Locator::_screlocate(): Failed to create pick "+arr.pick->id+" - giving up");
 				return nullptr;
 			}
 			const Station *sta = arr.pick->station();
-			Seiscomp::DataModel::WaveformStreamID wfid(sta->net, sta->code, "", "XYZ", "");
+			DataModel::WaveformStreamID wfid(sta->net, sta->code, "", "XYZ", "");
 			scpick->setWaveformID(wfid);
 			sctq.setValue(sctime(arr.pick->time));
 			scpick->setTime(sctq);
 			scpick->setPhaseHint(phase);
-			scpick->setEvaluationMode(Seiscomp::DataModel::EvaluationMode(Seiscomp::DataModel::AUTOMATIC));
+			scpick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
 		}
 		scobjects.push_back(scpick);
 */
@@ -293,10 +293,10 @@ Origin* Locator::_screlocate(const Origin *origin) {
 	//
 	// try the actual relocation
 	//
-	Seiscomp::DataModel::OriginCPtr screlo;
+	DataModel::OriginCPtr screlo;
 	try {
 		// Sometimes LocSAT requires a second invocation. Reason TBD
-		Seiscomp::DataModel::OriginCPtr temp;
+		DataModel::OriginCPtr temp;
 		temp = _sclocator->relocate(scorigin.get());
 		if ( !temp ) {
 			return nullptr;
@@ -306,10 +306,10 @@ Origin* Locator::_screlocate(const Origin *origin) {
 			return nullptr;
 		}
 	}
-	catch ( Seiscomp::Seismology::LocatorException& ) {
+	catch ( Seismology::LocatorException& ) {
 		return nullptr;
 	}
-	catch ( Seiscomp::Seismology::PickNotFoundException& ) {
+	catch ( Seismology::PickNotFoundException& ) {
 		SEISCOMP_WARNING("Unsuccessful location due to PickNotFoundException");
 		return nullptr;
 	}
@@ -403,7 +403,7 @@ Origin* Locator::_screlocate(const Origin *origin) {
 		if ( arr.residual > 800 && ( arr.phase == "P" || arr.phase == "Pdiff" ) && \
 		     arr.distance > 104 && arr.distance < 112) {
 
-			Seiscomp::TravelTime tt;
+			TravelTime tt;
 			if ( ! travelTimeP(arr.distance, origin->dep, tt))
 				continue;
 			arr.residual = arr.pick->time - (origin->time + tt.time);
@@ -467,3 +467,5 @@ bool determineAzimuthalGaps(const Origin *origin, double *primary, double *secon
 
 
 }  // namespace Autoloc
+
+}  // namespace Seiscomp

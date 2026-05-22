@@ -25,6 +25,8 @@
 #include "autoloc.h"
 
 
+namespace Seiscomp {
+
 namespace Autoloc {
 
 
@@ -363,7 +365,7 @@ Time Autoloc3::now() {
 		return _now;
 	}
 
-	return Time(Seiscomp::Core::Time::UTC());
+	return Time(Core::Time::UTC());
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -671,7 +673,7 @@ double Autoloc3::_score(const Origin *origin) const {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Autoloc3::_log(const Pick *pick) {
 	if ( _pickLogFilePrefix != "" ) {
-		Time now = Time(Seiscomp::Core::Time::UTC());
+		Time now = Time(Core::Time::UTC());
 		setPickLogFileName(_pickLogFilePrefix+"."+sctime(now).toString("%F"));
 	}
 
@@ -957,8 +959,8 @@ bool Autoloc3::_perhapsPdiff(const Pick *pick) const {
 			continue;
 		}
 
-		Seiscomp::TravelTimeTable ttt;
-		Seiscomp::TravelTimeList *ttlist{nullptr};
+		TravelTimeTable ttt;
+		TravelTimeList *ttlist{nullptr};
 		try {
 			ttlist = ttt.compute(origin->hypocenter.lat,
 			                     origin->hypocenter.lon,
@@ -972,7 +974,7 @@ bool Autoloc3::_perhapsPdiff(const Pick *pick) const {
 			continue;
 		}
 
-		const Seiscomp::TravelTime *tt;
+		const TravelTime *tt;
 		if ( (tt = getPhase(ttlist, "Pdiff")) == nullptr ) {
 			delete ttlist;
 			continue;
@@ -1961,7 +1963,7 @@ bool Autoloc3::_excludeDistantStations(Origin *origin)
 	sort(distance.begin(), distance.end());
 
 	int nx = 0.1*distanceCount > 2 ? int(0.1*distanceCount) : 2;
-//	double medDistance=Seiscomp::Math::Statistics::median(distance);
+//	double medDistance=Math::Statistics::median(distance);
 	double maxDistance=distance[distanceCount-nx];
 
 	for (int i=distanceCount-nx+1; i<distanceCount; i++) {
@@ -2643,8 +2645,8 @@ double Autoloc3::_testFake(Origin *origin) const
 			const Station *sta = arr.pick->station();
 			double delta, az, baz, depth=otherOrigin->hypocenter.dep;
 			delazi(&(otherOrigin->hypocenter), sta, delta, az, baz);
-			Seiscomp::TravelTimeTable ttt;
-			Seiscomp::TravelTimeList *ttlist {nullptr};
+			TravelTimeTable ttt;
+			TravelTimeList *ttlist {nullptr};
 			try {
 				ttlist = ttt.compute(otherOrigin->hypocenter.lat,
 				                     otherOrigin->hypocenter.lon,
@@ -2659,7 +2661,7 @@ double Autoloc3::_testFake(Origin *origin) const
 			}
 
 			if ( delta > 30 ) {
-				const Seiscomp::TravelTime *tt = getPhase(ttlist, "PP");
+				const TravelTime *tt = getPhase(ttlist, "PP");
 				if ( tt && !arr.pick->xxl && arr.score < 1 ) {
 					double dt = arr.pick->time - (otherOrigin->time + tt->time);
 					if (dt > -20 && dt < 30) {
@@ -2675,7 +2677,7 @@ double Autoloc3::_testFake(Origin *origin) const
 			}
 
 			if ( delta > 100 ) {
-				const Seiscomp::TravelTime *tt = getPhase(ttlist, "PKP");
+				const TravelTime *tt = getPhase(ttlist, "PKP");
 				if ( tt && !arr.pick->xxl ) {
 					double dt = arr.pick->time - (otherOrigin->time + tt->time);
 					if (dt > -20 && dt < 50) { // a bit more generous for PKP
@@ -2690,7 +2692,7 @@ double Autoloc3::_testFake(Origin *origin) const
 			}
 
 			if ( delta > 120 && delta < 142 ) {
-				const Seiscomp::TravelTime *tt = getPhase(ttlist, "SKP");
+				const TravelTime *tt = getPhase(ttlist, "SKP");
 				if ( tt && !arr.pick->xxl) {
 					double dt = arr.pick->time - (otherOrigin->time + tt->time);
 					if ( dt > -20 && dt < 50 ) { // a bit more generous for SKP
@@ -2706,7 +2708,7 @@ double Autoloc3::_testFake(Origin *origin) const
 			}
 
 			if (delta > 100 && delta < 130) { // preliminary! TODO: need to check amplitudes
-				const Seiscomp::TravelTime *tt = getPhase(ttlist, "PKKP");
+				const TravelTime *tt = getPhase(ttlist, "PKKP");
 				if ( tt && !arr.pick->xxl ) {
 					double dt = arr.pick->time - (otherOrigin->time + tt->time);
 					if ( dt > -20 && dt < 50 ) { // a bit more generous for PKKP
@@ -2722,7 +2724,7 @@ double Autoloc3::_testFake(Origin *origin) const
 			}
 
 			if ( delta > 25 && depth > 60 ) {
-				const Seiscomp::TravelTime *tt = getPhase(ttlist, "pP");
+				const TravelTime *tt = getPhase(ttlist, "pP");
 				if ( tt ) {
 					double dt = arr.pick->time - (otherOrigin->time + tt->time);
 					if ( dt > -20 && dt < 30 ) {
@@ -2752,7 +2754,7 @@ double Autoloc3::_testFake(Origin *origin) const
 			}
 
 			if (delta < 110) {
-				const Seiscomp::TravelTime *tt = getPhase(ttlist, "S"); // includes SKS!
+				const TravelTime *tt = getPhase(ttlist, "S"); // includes SKS!
 				if ( tt && !arr.pick->xxl && arr.score < 1 ) {
 					double dt = arr.pick->time - (otherOrigin->time + tt->time);
 					if ( dt > -20 && dt < 30 ) {
@@ -3141,7 +3143,7 @@ void Autoloc3::cleanup(Time minTime)
 
 	size_t beforePickCount   = Pick::count();
 	size_t beforeOriginCount = Origin::count();
-	size_t beforeObjectCount = Seiscomp::DataModel::PublicObject::ObjectCount();
+	size_t beforeObjectCount = DataModel::PublicObject::ObjectCount();
 
 	PickPool tempPickPool;
 	for (auto& item : pickPool) {
@@ -3178,9 +3180,9 @@ void Autoloc3::cleanup(Time minTime)
 	_nextCleanup = now() + _config.cleanupInterval;
 	SEISCOMP_DEBUG("CLEANUP ********** pick count   = %d/%d (%d)", beforePickCount, Pick::count(), pickPool.size());
 	SEISCOMP_DEBUG("CLEANUP ********** origin count = %d/%d (%d)", beforeOriginCount, Origin::count(), _origins.size()+_lastSent.size());
-	SEISCOMP_DEBUG("CLEANUP ********** object count = %d/%d", beforeObjectCount, Seiscomp::DataModel::PublicObject::ObjectCount());
+	SEISCOMP_DEBUG("CLEANUP ********** object count = %d/%d", beforeObjectCount, DataModel::PublicObject::ObjectCount());
 
-	Seiscomp::logObjectCounts();
+	logObjectCounts();
 
 	dumpState();
 }
@@ -3244,3 +3246,5 @@ bool Autoloc3::_depthIsResolvable(Origin *origin) {
 
 
 }  // namespace Autoloc
+
+}  // namespace Seiscomp

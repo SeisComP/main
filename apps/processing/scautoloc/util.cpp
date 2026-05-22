@@ -37,13 +37,15 @@
 #include "sc3adapters.h"
 
 
+namespace Seiscomp {
+
 namespace Autoloc {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void delazi(double lat1, double lon1, double lat2, double lon2,
             double &delta, double &az1, double &az2) {
-	Seiscomp::Math::Geo::delazi(lat1, lon1, lat2, lon2, &delta, &az1, &az2);
+	Math::Geo::delazi(lat1, lon1, lat2, lon2, &delta, &az1, &az2);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -53,7 +55,7 @@ void delazi(double lat1, double lon1, double lat2, double lon2,
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void delazi(const Hypocenter *hypo, const Station *station,
             double &delta, double &az1, double &az2) {
-	Seiscomp::Math::Geo::delazi(hypo->lat, hypo->lon, station->lat, station->lon, &delta, &az1, &az2);
+	Math::Geo::delazi(hypo->lat, hypo->lon, station->lat, station->lon, &delta, &az1, &az2);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -140,9 +142,9 @@ bool hasAmplitude(const Pick *pick) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool travelTimeP(double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta, TravelTime &result) {
-	static Seiscomp::TravelTimeTable ttt;
+	static TravelTimeTable ttt;
 
-	Seiscomp::TravelTimeList *ttlist { nullptr };
+	TravelTimeList *ttlist { nullptr };
 
 	try {
 		ttlist = ttt.compute(lat1, lon1, std::max(dep1, 0.01), lat2, lon2, alt2);
@@ -178,7 +180,7 @@ bool travelTimeP(double lat1, double lon1, double dep1, double lat2, double lon2
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 static Time str2time(const std::string &s) {
-	Seiscomp::Core::Time t;
+	Core::Time t;
 	if ( !t.fromString(s.c_str(), "%F %T.%f") ) {
 		SEISCOMP_ERROR_S("Failed to convert time string " + s);
 		exit(3);
@@ -378,24 +380,24 @@ StationMap *readStationLocations(const std::string &fname) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::string &filename) {
+DataModel::Inventory* inventoryFromStationLocationFile(const std::string &filename) {
 	// read inventory from station locations file
 	StationMap *stationMap = readStationLocations(filename);
 
-	Seiscomp::DataModel::Inventory *inventory = new Seiscomp::DataModel::Inventory;
+	DataModel::Inventory *inventory = new DataModel::Inventory;
 	for ( auto& item : *stationMap ) {
 		std::string key = item.first;
 		const Station *s = item.second.get();
 		std::string netId = "Network/"+s->net;
-		Seiscomp::DataModel::Network *network = inventory->findNetwork(netId);
+		DataModel::Network *network = inventory->findNetwork(netId);
 		if ( !network) {
-			network = new Seiscomp::DataModel::Network(netId);
+			network = new DataModel::Network(netId);
 			network->setCode(s->net);
 			inventory->add(network);
 		}
 
 		std::string staId = "Station/"+s->net+"/"+s->code;
-		Seiscomp::DataModel::Station *station = new Seiscomp::DataModel::Station(staId);
+		DataModel::Station *station = new DataModel::Station(staId);
 		station->setCode(s->code);
 		station->setLatitude(s->lat);
 		station->setLongitude(s->lon);
@@ -460,14 +462,14 @@ PickVector readPickFile() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Pick::Mode mode(const Seiscomp::DataModel::Pick *pick) {
+Pick::Mode mode(const DataModel::Pick *pick) {
 	try {
 		switch ( pick->evaluationMode() ) {
-			case Seiscomp::DataModel::AUTOMATIC:
+			case DataModel::AUTOMATIC:
 				return Pick::Automatic;
-			case Seiscomp::DataModel::MANUAL:
+			case DataModel::MANUAL:
 				return Pick::Manual;
-			//case Seiscomp::DataModel::CONFIRMED_PICK:
+			//case DataModel::CONFIRMED_PICK:
 			//	return Pick::Confirmed;
 			default:
 				break;
@@ -484,7 +486,6 @@ Pick::Mode mode(const Seiscomp::DataModel::Pick *pick) {
 } // namespace Autoloc
 
 
-namespace Seiscomp {
 namespace Math {
 namespace Statistics {
 

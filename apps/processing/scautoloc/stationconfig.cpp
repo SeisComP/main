@@ -28,6 +28,7 @@
 
 #include <seiscomp/logging/log.h>
 
+namespace Seiscomp {
 
 namespace Autoloc {
 
@@ -185,3 +186,5 @@ StationConfig::get(const std::string &net, const std::string &sta) const
 
 
 }  // namespace Autoloc
+
+}  // namespace Seiscomp

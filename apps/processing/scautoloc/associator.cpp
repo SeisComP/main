@@ -27,6 +27,8 @@
 
 using namespace std;
 
+namespace Seiscomp {
+
 namespace Autoloc {
 
 #define AFFMIN 0.1
@@ -109,7 +111,7 @@ Associator::feed(const Pick* pick) {
 		return false;
 	}
 
-	static Seiscomp::TravelTimeTable ttt;
+	static TravelTimeTable ttt;
 	for (const OriginPtr& _origin : *_origins) {
 
 		const Origin  *origin = _origin.get();
@@ -119,7 +121,7 @@ Associator::feed(const Pick* pick) {
 		double delta, az, baz;
 		delazi(&hypo, station, delta, az, baz);
 
-		Seiscomp::TravelTimeList *ttlist {nullptr};
+		TravelTimeList *ttlist {nullptr};
 
 		try {
 			ttlist = ttt.compute(hypo.lat, hypo.lon, std::max(hypo.dep, 0.01),
@@ -258,3 +260,5 @@ Associator::Phase::Phase(const string &code, double dmin, double dmax)
 
 
 }  // namespace Autoloc
+
+}  // namespace Seiscomp

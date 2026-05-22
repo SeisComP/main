@@ -70,7 +70,7 @@ void AutolocApp::printUsage() const {
 	std::cout << "Usage:"  << std::endl << "  scautoloc [options]" << std::endl << std::endl
 	     << "Associator of P-phase picks for locating seismic events." << std::endl;
 
-	Seiscomp::Client::Application::printUsage();
+	Client::Application::printUsage();
 
 	std::cout << "Examples:" << std::endl;
 	std::cout << "Real-time processing with informative debug output." << std::endl
@@ -987,7 +987,7 @@ bool AutolocApp::runFromEPFile(const char *filename) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void AutolocApp::sync(const Seiscomp::Core::Time &t) {
+void AutolocApp::sync(const Core::Time &t) {
 	syncTime = t;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -996,7 +996,7 @@ void AutolocApp::sync(const Seiscomp::Core::Time &t) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-const Seiscomp::Core::Time AutolocApp::now() const {
+const Core::Time AutolocApp::now() const {
 	if ( _inputFileXML.size() || _inputEPFile.size() ) {
 		return syncTime;
 	}
@@ -1130,7 +1130,7 @@ void AutolocApp::handleAutoShutdown() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void AutolocApp::addObject(const std::string& parentID, DataModel::Object* o) {
-	using namespace Seiscomp::DataModel;
+	using namespace DataModel;
 
 	PublicObject *publicObject = PublicObject::Cast(o);
 	if ( !publicObject ) {
