@@ -24,28 +24,11 @@
 #include "nucleator.h"
 #include "associator.h"
 #include "locator.h"
+#include "stationconfig.h"
 
 namespace Autoloc {
 
 typedef enum { GlobalNetwork, RegionalNetwork, LocalNetwork } NetworkType;
-
-class StationConfig {
-	public:
-		struct Entry {
-			float maxNucDist{0.0};
-			float maxLocDist{0.0};
-			int usage{0};
-		};
-
-		StationConfig();
-		bool read(const std::string &filename);
-
-		const Entry& get(const std::string &net, const std::string &sta) const;
-
-	private:
-		std::map<std::string, Entry> _entry;
-};
-
 
 class Autoloc3 {
 

@@ -13,6 +13,7 @@ SET(
 		util.cpp
 		sc3adapters.cpp
 		main.cpp
+		stationconfig.cpp
 )
 
 SET(
@@ -26,6 +27,7 @@ SET(
 		scutil.h
 		util.h
 		sc3adapters.h
+		stationconfig.h
 )
 
 SET(

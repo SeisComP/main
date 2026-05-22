@@ -130,7 +130,8 @@ bool Autoloc3::init() {
 	if ( !_config.staConfFile.empty()) {
 		SEISCOMP_DEBUG_S("Reading station config from file " + _config.staConfFile);
 
-		if ( !_stationConfig.read(_config.staConfFile) ) {
+		_stationConfig.setFilename(_config.staConfFile);
+		if ( !_stationConfig.read() ) {
 			return false;
 		}
 	}
@@ -2990,11 +2991,11 @@ bool Autoloc3::setStation(Station *station) {
 	if (_stations.find(key) != _stations.end())
 		return false;
 
-	const StationConfig::Entry &e
+	const StationConfigItem &item
 		= _stationConfig.get(station->net, station->code);
-	station->maxNucDist = e.maxNucDist;
+	station->maxNucDist = item.maxNucDist;
 	station->maxLocDist = 180;
-	station->used = e.usage > 0;
+	station->used = item.usage > 0;
 	_stations.insert(StationMap::value_type(key, station));
 
 	_relocator.setStation(station);
