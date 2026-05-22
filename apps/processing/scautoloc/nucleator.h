@@ -209,7 +209,9 @@ class GridPoint : public Seiscomp::Core::BaseObject
 {
 	public:
 		// normal grid point
-		GridPoint(double latitude, double longitude, double depth);
+		GridPoint(double latitude, double longitude, double depth,
+		          double radius=4, double dt=50, double maxdist=180,
+		          size_t nmin=6);
 
 		~GridPoint() {
 			_wrappers.clear();
@@ -228,16 +230,15 @@ class GridPoint : public Seiscomp::Core::BaseObject
 
 		bool setupStation(const Station *station);
 
-	public:
+	private:
 		Hypocenter hypocenter;
 
-	public: // private:
 		// config
-		double _radius, _dt;
-		double maxStaDist;
-		size_t _nmin;
+		double _radius {4};
+		double _dt {50};
+		double maxStaDist {180};
+		size_t _nmin {6};
 
-	private:
 		std::map<std::string, StationWrapperCPtr> _wrappers;
 		std::multiset<ProjectedPick> _picks;
 };

@@ -208,8 +208,8 @@ size_t ProjectedPick::Count()
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-GridPoint::GridPoint(double latitude, double longitude, double depth)
-	: hypocenter(latitude, longitude, depth), _radius(4), _dt(50), maxStaDist(180), _nmin(6)
+GridPoint::GridPoint(double latitude, double longitude, double depth, double radius, double dt, double maxdist, size_t nmin)
+	: hypocenter(latitude, longitude, depth), _radius(radius), _dt(dt), maxStaDist(maxdist), _nmin(nmin)
 {
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -628,7 +628,7 @@ static Origin* bestOrigin(OriginVector &origins) {
 bool GridSearch::feed(const Pick *pick) {
 	_newOrigins.clear();
 
-	if (_stations.size() == 0) {
+	if ( _stations.size() == 0 ) {
 		SEISCOMP_ERROR("\nGridSearch::feed() NO STATIONS SET\n");
 		exit(1);
 	}
@@ -637,9 +637,9 @@ bool GridSearch::feed(const Pick *pick) {
 
 	// link pick to station through pointer
 
-	if ( ! pick->station()) {
+	if ( ! pick->station() ) {
 		StationMap::const_iterator it = _stations.find(net_sta);
-		if (it == _stations.end()) {
+		if ( it == _stations.end() ) {
 			SEISCOMP_ERROR_S("\nGridSearch::feed() NO STATION " + net_sta + "\n");
 			return false;
 		}
@@ -651,7 +651,7 @@ bool GridSearch::feed(const Pick *pick) {
 	// Has the station been configured already? If not, do it now.
 
 	bool stationSetupNeeded = false;
-	if (_configuredStations.find(net_sta) == _configuredStations.end()) {
+	if ( _configuredStations.find(net_sta) == _configuredStations.end() ) {
 		_configuredStations.insert(net_sta);
 		stationSetupNeeded = true;
 		SEISCOMP_DEBUG_S("GridSearch: setting up station " + net_sta);
@@ -667,11 +667,11 @@ bool GridSearch::feed(const Pick *pick) {
 	double maxScore = 0;
 	for (GridPointPtr &gp : _grid) {
 
-		if (stationSetupNeeded)
+		if ( stationSetupNeeded )
 			gp->setupStation(pick->station());
 
 		OriginCPtr origin = gp->feed(pick);
-		if ( ! origin)
+		if ( ! origin )
 			continue;
 
 		// look at the origin, check whether
@@ -679,16 +679,16 @@ bool GridSearch::feed(const Pick *pick) {
 		//  * we have already seen a similar but better origin
 
 		// test minimum number of picks
-		if (origin->arrivals.size() < 6) // TODO: make this limit configurable
+		if ( origin->arrivals.size() < 6 ) // TODO: make this limit configurable
 			continue;
 		// is the new pick part of the returned origin?
-		if (origin->findArrival(pick) == -1)
+		if ( origin->findArrival(pick) == -1 )
 			// this is actually an unexpected condition!
 			continue;
 
 		const PickSet pickSet = originPickSet(origin.get());
 		// test if we already have an origin with this particular pick set
-		if (pickSetOriginMap.find(pickSet) != pickSetOriginMap.end()) {
+		if ( pickSetOriginMap.find(pickSet) != pickSetOriginMap.end() ) {
 			double score1 = originScore(pickSetOriginMap[pickSet].get());
 			double score2 = originScore(origin.get());
 			if ( score2 <= score1 ) {
@@ -724,9 +724,9 @@ bool GridSearch::feed(const Pick *pick) {
 	}
 
 	OriginVector tempOrigins;
-	for (auto& item: pickSetOriginMap) {
+	for ( auto& item: pickSetOriginMap ) {
 		Origin *origin = item.second.get();
-		if (originScore(origin) < 0.6*maxScore) {
+		if ( originScore(origin) < 0.6*maxScore ) {
 			continue;
 		}
 
@@ -738,7 +738,7 @@ bool GridSearch::feed(const Pick *pick) {
 
 		// see if the new pick is within the maximum allowed nucleation distance
 		int index = relo->findArrival(pick);
-		if ( index==-1 ) {
+		if ( index == -1 ) {
 			SEISCOMP_ERROR("pick unexpectedly not found in GridSearch::feed()");
 			continue;
 		}
@@ -783,7 +783,6 @@ bool GridSearch::_readGrid(const std::string &gridfile) {
 	}
 
 	_grid.clear();
-	double lat, lon, dep, rad, dmax; int nmin;
 	while ( ! ifile.eof() ) {
 		std::string line;
 		std::getline(ifile, line);
@@ -791,22 +790,28 @@ bool GridSearch::_readGrid(const std::string &gridfile) {
 		Core::trim(line);
 
 		// Skip empty lines
-		if ( line.empty() ) continue;
+		if ( line.empty() ) {
+			continue;
+		}
 
 		// Skip comments
-		if ( line[0] == '#' ) continue;
+		if ( line[0] == '#' ) {
+			continue;
+		}
 
 		std::istringstream iss(line, std::istringstream::in);
 
-		if (iss >> lat >> lon >> dep >> rad >> dmax >> nmin) {
-			GridPoint *gp = new GridPoint(lat, lon, dep);
-			gp->_nmin = nmin;
-			gp->_radius = rad;
-			gp->maxStaDist = dmax;
+		double lat, lon, dep, rad, dmax;
+		size_t nmin;
+		if ( iss >> lat >> lon >> dep >> rad >> dmax >> nmin ) {
+			double dt {50};
+			GridPoint *gp = new GridPoint(lat, lon, dep, rad, dt, dmax, nmin);
 			_grid.push_back(gp);
 		}
 	}
-	SEISCOMP_DEBUG("read %d grid lines",int(_grid.size()));
+
+	SEISCOMP_DEBUG("read %d grid lines", int(_grid.size()));
+
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
