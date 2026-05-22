@@ -21,6 +21,7 @@ SET(
 		app.h
 		associator.h
 		autoloc.h
+		config.h
 		datamodel.h
 		locator.h
 		nucleator.h

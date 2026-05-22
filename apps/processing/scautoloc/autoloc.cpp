@@ -3023,7 +3023,7 @@ void Autoloc3::setLocatorProfile(const std::string &profile) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::setConfig(const Config &config) {
+void Autoloc3::setConfig(const AutolocConfig &config) {
 	_config = config;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

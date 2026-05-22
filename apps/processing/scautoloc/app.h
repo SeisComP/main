@@ -121,7 +121,7 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 		DataModel::EventParametersPtr _ep;
 		DataModel::InventoryPtr inventory;
 
-		Autoloc::Autoloc3::Config _config;
+		Autoloc::AutolocConfig _config;
 		int _wakeUpTimout;
 
 		ObjectLog *_inputPicks {nullptr};

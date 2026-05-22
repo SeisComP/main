@@ -17,7 +17,7 @@
 #define SEISCOMP_COMPONENT Autoloc
 #include <seiscomp/logging/log.h>
 
-#include "autoloc.h"
+#include "config.h"
 
 using namespace std;
 
@@ -27,7 +27,7 @@ namespace Autoloc {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::Config::dump() const {
+void AutolocConfig::dump() const {
 	SEISCOMP_INFO("Configuration:");
 	SEISCOMP_INFO("  locator");
 	SEISCOMP_INFO("    profile                          %s",     locatorProfile);
