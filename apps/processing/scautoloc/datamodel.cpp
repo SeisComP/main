@@ -25,16 +25,42 @@
 #include <seiscomp/math/mean.h>
 #include "datamodel.h"
 #include "util.h"
+#include "scutil.h"
 #include "sc3adapters.h"
 
 namespace Seiscomp {
 
 namespace Autoloc {
 
+// namespace DataModel {
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Station::Station(const Seiscomp::DataModel::Station *scstation) {
+	const Seiscomp::DataModel::Network *scnetwork =
+		Seiscomp::DataModel::Network::Cast(scstation->parent());
+	if (scnetwork == nullptr) {
+		throw Seiscomp::Core::ValueException("Network is unset");
+	}
+
+	net  = scnetwork->code();
+	code = scstation->code();
+	lat = scstation->latitude();
+	lon = scstation->longitude();
+
+	try {
+		alt = scstation->elevation();
+	}
+	catch ( ... ) {
+		alt = 0.;
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Station::Station(const std::string &code, const std::string &net, double lat, double lon, double alt)
-	: code(code), net(net), lat(lat), lon(lon), alt(alt), used(true), maxNucDist(180), maxLocDist(180)
+	: code(code), net(net), lat(lat), lon(lon), alt(alt), maxNucDist(180), maxLocDist(180), enabled(true)
 {
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -45,6 +71,28 @@ Station::Station(const std::string &code, const std::string &net, double lat, do
 static size_t _pickCount=0;
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Pick::Pick(const Seiscomp::DataModel::Pick *scpick)
+        : time(scpick->time().value()), scpick(scpick), label(pickLabel(scpick))
+{
+//	time = Autoloc::DataModel::Time(scpick->time().value());
+//	status = Autoloc::status(scpick);
+
+//	creationTime = Autoloc::DataModel::Time(scpick->creationInfo().creationTime());
+	amp = snr = per = 0;
+	xxl = false;
+//	blacklisted = false;
+//	priority = 0;
+	_station = nullptr;
+	_originID = 0;
+
+	attachment = scpick;
+
+	_pickCount++;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+/*
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Pick::Pick(const std::string &id, const std::string &label, const std::string &net, const std::string &sta, const Time &time)
 	: id(id), label(label), net(net), sta(sta),
 	  time(time), amp(0), per(0), snr(0), normamp(0),
@@ -53,7 +101,7 @@ Pick::Pick(const std::string &id, const std::string &label, const std::string &n
 	_pickCount++;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
+*/
 
 
 
@@ -88,9 +136,46 @@ void Pick::setStation(const Station *sta) const
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Pick::setOrigin(OriginID id) const
+OriginID Pick::originID() const
+{
+	return _originID;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Pick::setOriginID(OriginID id) const
 {
 	_originID = id;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Pick::setAmplitudeSNR(const Seiscomp::DataModel::Amplitude *scampl)
+{
+	snr = scampl->amplitude().value();
+	scamplSNR = scampl;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Pick::setAmplitudeAbs(const Seiscomp::DataModel::Amplitude *scampl)
+{
+	amp = scampl->amplitude().value();
+//	if (amp <= 0)
+//		SEISCOMP_WARNING(
+//			"setAmplitudeAbs: amp=%g <= 0 publicID=%s",
+//			amp, scampl->publicID());
+	per = (scampl->type() == "mb") ? scampl->period().value() : 1;
+	scamplAbs = scampl;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -237,11 +322,11 @@ void Origin::updateFrom(const Origin *other)
 bool Origin::add(const Arrival &arr)
 {
 	if ( findArrival(arr.pick.get()) != -1 ) {
-		SEISCOMP_WARNING_S("Pick already present -> not added.  id = " + arr.pick->id);
+		SEISCOMP_WARNING_S("Pick already present -> not added.  id = " + arr.pick->id());
 		return false;
 	}
 
-	arr.pick->setOrigin(id);
+	arr.pick->setOriginID(id);
 	arrivals.push_back(arr);
 	return true;
 }
@@ -315,7 +400,7 @@ size_t Origin::associatedStationCount() const
 		if ( !arr.pick )
 			continue;
 
-		stations.insert(arr.pick->net + "." + arr.pick->sta);
+		stations.insert(arr.pick->net() + "." + arr.pick->sta());
 	}
 
 	return stations.size();
@@ -337,7 +422,7 @@ size_t Origin::definingStationCount() const {
 		if ( !arr.pick )
 			continue;
 
-		stations.insert(arr.pick->net + "." + arr.pick->sta);
+		stations.insert(arr.pick->net() + "." + arr.pick->sta());
 	}
 
 	return stations.size();
@@ -472,6 +557,20 @@ Origin* OriginVector::find(const OriginID &id)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+const Origin* OriginVector::find(const OriginID &id) const
+{
+	for (const auto& item: *this) {
+		if (id == item->id)
+			return item.get();
+	}
+	return nullptr;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 static size_t countCommonPicks(const Origin *origin1, const Origin *origin2)
 {
 	size_t count {0};
@@ -517,6 +616,8 @@ const Origin *OriginVector::bestEquivalentOrigin(const Origin *origin) const
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+// }  // namespace DataModel
 
 }  // namespace Autoloc
 

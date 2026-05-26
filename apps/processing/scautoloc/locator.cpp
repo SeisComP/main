@@ -264,10 +264,10 @@ Origin* Locator::_screlocate(const Origin *origin) {
 	size_t arrivalCount = origin->arrivals.size();
 	for ( size_t i=0; i<arrivalCount; i++ ) {
 		const Arrival &arr = origin->arrivals[i];
-		DataModel::PickPtr scpick = DataModel::Pick::Find(arr.pick->id);
+		DataModel::PickPtr scpick = DataModel::Pick::Find(arr.pick->id());
 
 		if ( !scpick ) {
-			SEISCOMP_ERROR("THIS MUST NEVER HAPPEN: Pick '%s' not found", arr.pick->id);
+			SEISCOMP_ERROR("THIS MUST NEVER HAPPEN: Pick '%s' not found", arr.pick->id());
 		}
 /*
 		if ( !scpick) {
@@ -378,7 +378,7 @@ Origin* Locator::_screlocate(const Origin *origin) {
 		Arrival &arr = relo->arrivals[i];
 		const std::string &pickID = screlo->arrival(i)->pickID();
 
-		if (arr.pick->id != pickID) {
+		if (arr.pick->id() != pickID) {
 			// If this should ever happen, complain loudly and fail
 			SEISCOMP_ERROR("Locator: FATAL ERROR: Inconsistent arrival order");
 			return nullptr;

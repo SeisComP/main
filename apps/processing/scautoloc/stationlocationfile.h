@@ -12,20 +12,24 @@
  ***************************************************************************/
 
 
+#ifndef SEISCOMP_AUTOLOC_STATIONLOCATIONFILE_H_INCLUDED
+#define SEISCOMP_AUTOLOC_STATIONLOCATIONFILE_H_INCLUDED
 
-
+#include <seiscomp/datamodel/inventory.h>
 #include <string>
-#include <vector>
-#include <seiscomp/core/datetime.h>
-#include <seiscomp/datamodel/origin.h>
 
-#include "datamodel.h"
 
 namespace Seiscomp {
 
-DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases=true);
-// Origin *convertFromSC(const DataModel::Origin* scorigin);
+namespace DataModel {
 
-Autoloc::Pick *convertFromSC(const DataModel::Pick *scpick);
+// Read an inventory from a text file consisting of lines of
+// network code, station code, latitude, longitude, elevation
 
-}  // namespace Seiscomp
+Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::string &filename);
+
+} // namespace DataModel
+
+} // namespace Seiscomp
+
+#endif

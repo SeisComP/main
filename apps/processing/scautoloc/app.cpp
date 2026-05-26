@@ -702,17 +702,8 @@ bool AutolocApp::initOneStation(const DataModel::WaveformStreamID &wfid, const C
 			double elevation = 0;
 			try { elevation = station->elevation(); }
 			catch ( ... ) {}
-			Autoloc::Station *sta =
-				new Autoloc::Station(
-					station->code(),
-					network->code(),
-					station->latitude(),
-					station->longitude(),
-					elevation);
 
-			sta->used = true;
-			sta->maxNucDist = _config.defaultMaxNucDist;
-
+			Autoloc::Station *sta = new Autoloc::Station(station);
 			setStation(sta);
 			found = true;
 
@@ -1010,7 +1001,7 @@ const Core::Time AutolocApp::now() const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void AutolocApp::timeStamp() const {
-	SEISCOMP_DEBUG_S("Timestamp: "+now().toString("%F %T.%f"));
+	SEISCOMP_DEBUG_S("Timestamp: " + now().toString("%F %T.%f"));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

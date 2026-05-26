@@ -39,14 +39,6 @@
 namespace Seiscomp {
 
 
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Core::Time sctime(const Autoloc::Time &time)	{
-	return Core::Time() + Core::TimeSpan(time);
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases) {
@@ -101,7 +93,7 @@ DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases) {
 
 		// If not all (automatic) phases are requested, only include P and PKP
 		if ( !allPhases && automatic(arr.pick.get()) && arr.phase != "P" && arr.phase != "PKP") {
-			SEISCOMP_DEBUG_S("SKIPPING 1  "+arr.pick->id);
+			SEISCOMP_DEBUG_S("SKIPPING 1  " + arr.pick->id());
 			continue;
 		}
 
@@ -116,7 +108,7 @@ DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases) {
 		const DataModel::Phase phase(arr.phase);
 		DataModel::Arrival* scarr
 		        = new DataModel::Arrival();
-		scarr->setPickID(arr.pick->id);
+		scarr->setPickID(arr.pick->id());
 		scarr->setDistance(arr.distance);
 		scarr->setAzimuth(arr.azimuth);
 		scarr->setTimeResidual(arr.residual);
@@ -337,21 +329,21 @@ Autoloc::Origin *Applications::AutolocApp::convertFromSC(const DataModel::Origin
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Autoloc::Pick *Applications::AutolocApp::convertFromSC(const DataModel::Pick *scpick) {
-	const std::string &id  = scpick->publicID();
-	const std::string &label = pickLabel(scpick);
-	const std::string &net = scpick->waveformID().networkCode();
-	const std::string &sta = scpick->waveformID().stationCode();
+//	const std::string &id  = scpick->publicID();
+//	const std::string &label = pickLabel(scpick);
+//	const std::string &net = scpick->waveformID().networkCode();
+//	const std::string &sta = scpick->waveformID().stationCode();
 	Autoloc::Time time = Autoloc::Time(scpick->time().value());
 
-	Autoloc::Pick* pick = new Autoloc::Pick(id, label, net, sta, time);
+	Autoloc::Pick* pick = new Autoloc::Pick(scpick);
 
 	pick->mode = Autoloc::Utils::mode(scpick);
-	pick->loc = scpick->waveformID().locationCode();
-	pick->cha = scpick->waveformID().channelCode();
+//	pick->loc = scpick->waveformID().locationCode();
+//	pick->cha = scpick->waveformID().channelCode();
 
-	if ( pick->loc.empty() ) {
-		pick->loc = "__";
-	}
+//	if ( pick->loc.empty() ) {
+//		pick->loc = "__";
+//	}
 
 	pick->attachment = scpick;
 

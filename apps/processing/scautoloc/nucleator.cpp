@@ -512,7 +512,7 @@ double originScore(const Origin *origin, double maxRMS, double networkSizeKm) {
 		double q = 0.8;
 		if ( normamp <= 0 ) {
 			SEISCOMP_WARNING("THIS SHOULD NEVER HAPPEN: pick %s with  normamp %g  amp %g (not critical)",
-				       pick->id, normamp, pick->amp);
+				       pick->id(), normamp, pick->amp);
 			continue;
 		}
 
@@ -633,7 +633,7 @@ bool GridSearch::feed(const Pick *pick) {
 		exit(1);
 	}
 
-	std::string net_sta = pick->net + "." + pick->sta;
+	std::string net_sta = pick->net() + "." + pick->sta();
 
 	// link pick to station through pointer
 

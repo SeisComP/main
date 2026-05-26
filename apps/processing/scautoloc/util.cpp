@@ -43,6 +43,16 @@ namespace Autoloc {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Seiscomp::Core::Time sctime(const Autoloc::Time &time)
+{
+	return Seiscomp::Core::Time() + Seiscomp::Core::TimeSpan(time);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void delazi(double lat1, double lon1, double lat2, double lon2,
             double &delta, double &az1, double &az2) {
 	Math::Geo::delazi(lat1, lon1, lat2, lon2, &delta, &az1, &az2);
@@ -296,7 +306,7 @@ std::string printOrigin(const Origin *origin, bool oneliner) {
 			default:                            excludedFlag = "X ";
 			}
 			if ( !pick->station() ) {
-				out << pick->id << "   missing station information" << std::endl;
+				out << pick->id() << "   missing station information" << std::endl;
 				continue;
 			}
 
@@ -361,7 +371,7 @@ StationMap *readStationLocations(const std::string &fname) {
 
 		Station* station = new Station(code, net, lat, lon, alt);
 		station->maxNucDist = 180; // TODO make this default configurable
-		station->used = true;
+		station->enabled = true;
 		std::string key = net + "." + code;
 		stations->insert(std::pair<std::string, Station*>(key, station));
 	}
@@ -427,7 +437,8 @@ Pick* readPickLine() {
 	std::string key = net + "." + sta;
 	std::string label = date + "." + time + "-" + net + "." + sta + "." + loc + "." + cha + "-" + stat;
 	Time ptime = str2time(date+" "+time);
-	Pick *pick = new Pick(id, label, net, sta, ptime);
+//	Pick *pick = new Pick(id, label, net, sta, ptime);
+	Pick *pick = nullptr; // XXX XXX XXX
 	pick->amp  = amp;
 	pick->per  = per;
 	pick->snr  = snr;

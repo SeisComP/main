@@ -102,17 +102,8 @@ static int arrivalWithLargestResidual(const Origin *origin) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Autoloc3::Autoloc3() {
-	_now = _nextCleanup = 0;
 	_associator.setOrigins(&_origins);
 	_relocator.setMinimumDepth(_config.minimumDepth);
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Autoloc3::~Autoloc3() {
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -327,7 +318,7 @@ bool Autoloc3::_addStationInfo(const Pick *pick) {
 		return true; // nothing to do
 	}
 
-	const std::string net_sta = pick->net + "." + pick->sta;
+	const std::string net_sta = pick->net() + "." + pick->sta();
 	StationMap::const_iterator it = _stations.find(net_sta);
 	if ( it == _stations.end() ) {
 		// remember missing stations already complained about
@@ -384,7 +375,7 @@ bool Autoloc3::_store(const Pick *pick) {
 		return false;
 	}
 
-	if ( automatic(pick) && !pick->station()->used) {
+	if ( automatic(pick) && !pick->station()->enabled) {
 		// This means that this pick is completely ignored!
 		// Nevertheless, we might want to loosely associate it to an
 		// origin, i.e. associate it without using it for location
@@ -405,8 +396,8 @@ bool Autoloc3::_store(const Pick *pick) {
 		_now = pick->time;
 
 	// physically store the pick
-	if ( !Autoloc3::pick(pick->id) )
-		pickPool[ pick->id ] = pick;
+	if ( !Autoloc3::pick(pick->id()) )
+		pickPool[ pick->id() ] = pick;
 
 	return true;
 }
@@ -418,7 +409,7 @@ bool Autoloc3::_store(const Pick *pick) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Autoloc3::feed(const Pick *pick) {
 	_newOrigins.clear();
-	bool isnew = !Autoloc3::pick(pick->id);
+	bool isnew = !Autoloc3::pick(pick->id());
 
 	if ( !_store(pick) ) {
 		return false;
@@ -438,7 +429,7 @@ bool Autoloc3::feed(const Pick *pick) {
 	}
 
 	// A previous version of the new pick might have been updated in _store();
-	bool status = _process( Autoloc3::pick(pick->id));
+	bool status = _process( Autoloc3::pick(pick->id()));
 	cleanup();
 	if ( !status ) {
 		return false;
@@ -458,6 +449,15 @@ Origin *Autoloc3::_findMatchingOrigin(const Origin *origin) {
 	// * identical picks
 	// * similar picks (same stream but slightly different times)
 	// replace similar picks by the ones found in the new origin, incl. weight
+
+	// It makes no sense to compare origins too different in time.
+	// This maximum time difference is for teleseismic worst case
+	// where we might need to associate origins wrongly located
+	// e.g. by using PKP as P where time differences of up to
+	// 20 minutes are possible. This time difference may be made
+	// configurable but this is not crucial.
+	double maxOriginTimeDifference {20*60};
+
 	Origin *found = 0;
 	size_t bestmatch = 0;
 
@@ -465,25 +465,24 @@ Origin *Autoloc3::_findMatchingOrigin(const Origin *origin) {
 	for (auto& item : _origins) {
 		Origin *existing = item.get();
 
-		// It makes no sense to compare origins too different in time. This maximum time difference is for teleseismic worst case where we might need to associate origins wrongly located e.g. by using PKP as P where time differences of up to 20 minutes are possible. This time difference may be made configurable but this is not crucial.
-		if (std::abs(origin->time - existing->time) > 20*60)
+		if (std::abs(origin->time - existing->time) > maxOriginTimeDifference)
 			continue;
 
 		size_t identical=0, similar=0;
 
 		// go through this origin and look for manual picks
-		for (size_t i1=0; i1<existing->arrivals.size(); i1++) {
+		for (size_t i1=0; i1 < existing->arrivals.size(); i1++) {
 			const Pick *pick = existing->arrivals[i1].pick.get();
 
 			if ( !pick->station() ) {
-				const std::string net_sta = pick->net + "." + pick->sta;
+				const std::string net_sta = pick->net() + "." + pick->sta();
 				SEISCOMP_WARNING("Pick %3d   %s    %s  without station info",i1,
 				                 net_sta, pick->label);
 				continue;
 			}
 
 			// try to find a matching pick in our newly fed origin
-			for (size_t i2=0; i2<origin->arrivals.size(); i2++) {
+			for (size_t i2=0; i2 < origin->arrivals.size(); i2++) {
 				const Pick *pick2 = origin->arrivals[i2].pick.get();
 
 				// identical picks?
@@ -507,9 +506,9 @@ Origin *Autoloc3::_findMatchingOrigin(const Origin *origin) {
 			}
 		}
 
-		if (identical+similar > 0) {
-			if (identical+similar > bestmatch) {
-				bestmatch = identical+similar;
+		if (identical + similar > 0) {
+			if (identical + similar > bestmatch) {
+				bestmatch = identical + similar;
 				found = existing;
 			}
 		}
@@ -682,10 +681,10 @@ bool Autoloc3::_log(const Pick *pick) {
 	}
 
 	char line[200];
-	std::string loc = pick->loc == "" ? "__" : pick->loc;
+	std::string loc = pick->loc() == "" ? "__" : pick->loc();
 	sprintf(line, "%s %-2s %-6s %-3s %-2s %6.1f %10.3f %4.1f %c %s",
 	      time2str(pick->time).c_str(),
-	      pick->net.c_str(), pick->sta.c_str(), pick->cha.c_str(), loc.c_str(),
+	      pick->net().c_str(), pick->sta().c_str(), pick->cha().c_str(), loc.c_str(),
 	      pick->snr, pick->amp, pick->per, modeFlag(pick),
 	      pick->label.c_str());
 	_pickLogFile << line << std::endl;
@@ -764,7 +763,7 @@ bool Autoloc3::_tooManyRecentPicks(const Pick *newPick) const {
 			continue;
 		}
 
-		if ( newPick->origin() ) { // associated?
+		if ( newPick->originID() ) { // associated?
 			continue;
 		}
 
@@ -935,7 +934,7 @@ bool Autoloc3::_perhapsPdiff(const Pick *pick) const {
 
 	if ( pick->snr > 6 ) { // TODO: make this configurable? not very important
 		SEISCOMP_DEBUG("Ignoring pick %s with high SNR %.1f which might by Pdiff",
-		               pick->id, pick->snr);
+		               pick->id(), pick->snr);
 		return false;
 	}
 
@@ -1480,7 +1479,7 @@ bool Autoloc3::_process(const Pick *pick) {
 				return false;
 			}
 		}
-		SEISCOMP_INFO("Processing manual pick %s", pick->id);
+		SEISCOMP_INFO("Processing manual pick %s", pick->id());
 	}
 
 	SEISCOMP_INFO("process pick %s %s", pick->label, (pick->xxl ? " XXL":""));
@@ -2373,12 +2372,12 @@ bool Autoloc3::_addMorePicks(Origin *origin, bool keepDepth) {
 		}
 		if ( !_config.useManualPicks && manual(pick) ) {
 			SEISCOMP_INFO("Ignoring manual pick %s for origin %s",
-			              pick->id, origin->publicID);
+			              pick->id(), origin->publicID);
 			continue;
 		}
 		if ( ignored(pick) ) {
 			SEISCOMP_INFO("Ignoring pick %s for origin %s",
-			              pick->id, origin->publicID);
+			              pick->id(), origin->publicID);
 			continue;
 		}
 
@@ -2806,7 +2805,7 @@ size_t Autoloc3::_removeOutliers(Origin *origin) {
 
 		if ( arr.excluded && std::abs(arr.residual) > _config.maxResidualKeep ) {
 
-			arr.pick->setOrigin(0); // disassociate the pick
+			arr.pick->setOriginID(0); // disassociate the pick
 			it = origin->arrivals.erase(it);
 			count++;
 			// TODO try to re-associate the released pick with other origin
@@ -2997,7 +2996,7 @@ bool Autoloc3::setStation(Station *station) {
 		= _stationConfig.get(station->net, station->code);
 	station->maxNucDist = item.maxNucDist;
 	station->maxLocDist = 180;
-	station->used = item.usage > 0;
+	station->enabled = item.usage > 0;
 	_stations.insert(StationMap::value_type(key, station));
 
 	_relocator.setStation(station);

@@ -35,7 +35,7 @@ class Autoloc3 {
 
 	public:
 		Autoloc3();
-		virtual ~Autoloc3();
+		virtual ~Autoloc3() = default;
 
 	public:
 		// initialization stuff
@@ -303,8 +303,8 @@ class Autoloc3 {
 		std::map<int, OriginPtr> _lastSent;
 		std::map<int, OriginPtr> _outgoing;
 
-		Time     _now;
-		Time     _nextCleanup;
+		Time _now {0};
+		Time _nextCleanup {0};
 
 	protected:
 		typedef std::map<std::string, PickCPtr> PickPool;
