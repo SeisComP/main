@@ -49,9 +49,6 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 		// Initialize the internal inventory from the SeisComP inventory
 		bool initInventory();
 
-		// Initialize one station at runtime
-		bool initOneStation(const DataModel::WaveformStreamID&, const Core::Time&);
-
 	private:
 		// Read past events from the database
 		void readHistoricEvents();
@@ -73,6 +70,8 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 
 		// Add a time stamp generated using now() to the debug log
 		void timeStamp() const;
+
+		double _playbackSpeed {1.};
 
 	protected:
 //		DataModel::Origin *convertToSC  (const Autoloc::Origin* origin, bool allPhases=true);
@@ -112,7 +111,6 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 		// sorted objects for playback
 		std::queue<DataModel::PublicObjectPtr> _objects;
 
-		double _playbackSpeed;
 		Core::Time playbackStartTime;
 		Core::Time objectsStartTime;
 		Core::Time syncTime;
@@ -122,7 +120,9 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 		DataModel::InventoryPtr inventory;
 
 		Autoloc::AutolocConfig _config;
-		int _wakeUpTimout;
+
+		// Wake up every 5 seconds to check pending operations
+		int _wakeUpTimout {5};
 
 		ObjectLog *_inputPicks {nullptr};
 		ObjectLog *_inputAmps  {nullptr};

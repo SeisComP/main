@@ -112,6 +112,16 @@ Autoloc3::Autoloc3() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Autoloc3::init() {
+	if ( ! scinventory) {
+		SEISCOMP_ERROR("Missing SeisComP Inventory");
+		return false;
+	}
+
+	if ( ! scconfig) {
+		SEISCOMP_WARNING("Missing SeisComP Config");
+		// return false;
+	}
+
 	_relocator.setSeiscompConfig(_config.scconfig);
 	if ( !_relocator.init() ) {
 		SEISCOMP_ERROR("Autoloc::init(): Failed to initialize relocator");
@@ -145,11 +155,126 @@ bool Autoloc3::init() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Autoloc3::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Time &time) {
+	bool found {false};
+	static std::set<std::string> configuredStreams;
+	std::string key = wfid.networkCode() + "." + wfid.stationCode();
+
+	if ( configuredStreams.find(key) != configuredStreams.end() ) {
+		return false;
+	}
+
+	for ( size_t n = 0; n < scinventory->networkCount() && !found; ++n ) {
+		DataModel::Network *network = scinventory->network(n);
+
+		if ( network->code() != wfid.networkCode() ) {
+			continue;
+		}
+
+		try {
+			if ( time < network->start() ) {
+				continue;
+			}
+		}
+		catch ( ... ) { }
+
+		try {
+			if ( time > network->end() ) {
+				continue;
+			}
+		}
+		catch ( ... ) { }
+
+		for ( size_t s = 0; s < network->stationCount(); ++s ) {
+			DataModel::Station *station = network->station(s);
+
+			if ( station->code() != wfid.stationCode() ) {
+				continue;
+			}
+
+			std::string epochStart="unset", epochEnd="unset";
+
+			try {
+				if ( time < station->start() ) {
+					continue;
+				}
+				epochStart = station->start().toString("%FT%TZ");
+			}
+			catch ( ... ) { }
+
+			try {
+				if ( time > station->end() ) {
+					continue;
+				}
+				epochEnd = station->end().toString("%FT%TZ");
+			}
+			catch ( ... ) { }
+
+			SEISCOMP_DEBUG("Station %s %s epoch %s ... %s",
+			               network->code(),
+			               station->code(),
+			               epochStart,
+			               epochEnd);
+
+			double elevation = 0;
+			try { elevation = station->elevation(); }
+			catch ( ... ) {}
+
+			Autoloc::Station *sta = new Autoloc::Station(station);
+			setStation(sta);
+			found = true;
+
+			break;
+		}
+	}
+
+	if ( !found ) {
+		SEISCOMP_WARNING("%s not found in station inventory", key);
+		return false;
+	}
+
+	configuredStreams.insert(key);
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Autoloc3::dumpState() const {
 	for ( const auto& item: _origins ) {
 		const Origin *origin = item.get();
 		SEISCOMP_INFO_S(printOneliner(origin));
 	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Autoloc3::xfeed(const Seiscomp::DataModel::Pick*) {
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Autoloc3::xfeed(const Seiscomp::DataModel::Amplitude*) {
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Autoloc3::xfeed(Seiscomp::DataModel::Origin*) {
+	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -346,6 +471,16 @@ const Pick* Autoloc3::pick(const std::string &id) const {
 	return nullptr;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Autoloc3::sync(const Core::Time &t) {
+	syncTime = t;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 
 
@@ -3024,6 +3159,24 @@ void Autoloc3::setLocatorProfile(const std::string &profile) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Autoloc3::setConfig(const AutolocConfig &config) {
 	_config = config;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Autoloc3::setConfig(const Seiscomp::Config::Config *conf) {
+	scconfig = conf;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Autoloc3::setInventory(const Seiscomp::DataModel::Inventory *inv) {
+	scinventory = inv;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

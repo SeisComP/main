@@ -38,17 +38,53 @@ class Autoloc3 {
 		virtual ~Autoloc3() = default;
 
 	public:
-		// initialization stuff
-		void setConfig(const AutolocConfig &config);
+		// Initialization stuff
+
+		// Set the *SeisComP* config
+		void setConfig(const Seiscomp::Config::Config*);
+
+		// Set the *SeisComP* inventory
+		void setInventory(const Seiscomp::DataModel::Inventory*);
+
+		void setConfig(const AutolocConfig&);
 		const AutolocConfig &config() const { return _config; }
 
 		bool setGridFile(const std::string &);
 		void setPickLogFilePrefix(const std::string &);
 		void setPickLogFileName(const std::string &);
+		
+		// Initialize one station at runtime
+		bool initOneStation(const DataModel::WaveformStreamID&, const Core::Time&);
 		bool setStation(Station *);
+
 		void setLocatorProfile(const std::string &);
 
 		bool init();
+
+	public:
+		// Current time. In offline mode time of the last pick.
+//		Seiscomp::Core::Time now();
+
+		// Synchronize the internal timing.
+		//
+		// This is necessary in playback mode were instead of
+		// using the hardware clock we either use the pick time
+		// or pick creation time.
+//		void sync(const Seiscomp::Core::Time &time);
+
+		// public object input interface
+
+		// Feed a Pick/Amplitude and eventually process it.
+		//
+		// If the call resulted in a new or updated result,
+		// return true, otherwise false.
+		bool xfeed(const Seiscomp::DataModel::Pick*);
+		bool xfeed(const Seiscomp::DataModel::Amplitude*);
+
+		// Feed an external or manual Origin
+		// TODO: Ensure that all needed picks/amplitudes have
+		//       been supplied *prior* to calling this.
+		bool xfeed(Seiscomp::DataModel::Origin*);
 
 	public:
 		// Feed a Pick and try to get something out of it.
@@ -93,7 +129,7 @@ class Autoloc3 {
 		// This is necessary in playback mode were instead of
 		// using the hardware clock we either use the pick time
 		// or pick creation time.
-		bool sync(const Time &t);
+		void sync(const Core::Time &t);
 
 	protected:
 		// This must be reimplemented in a subclass to properly
@@ -306,6 +342,8 @@ class Autoloc3 {
 		Time _now {0};
 		Time _nextCleanup {0};
 
+		Core::Time syncTime;
+
 	protected:
 		typedef std::map<std::string, PickCPtr> PickPool;
 		PickPool pickPool;
@@ -323,6 +361,9 @@ class Autoloc3 {
 		OriginVector _origins;
 		AutolocConfig _config;
 		StationConfig _stationConfig;
+
+		const Seiscomp::Config::Config *scconfig;
+		const Seiscomp::DataModel::Inventory *scinventory;
 };
 
 

@@ -14,6 +14,7 @@ SET(
 		sc3adapters.cpp
 		main.cpp
 		stationconfig.cpp
+		stationlocationfile.cpp
 )
 
 SET(
@@ -29,6 +30,7 @@ SET(
 		util.h
 		sc3adapters.h
 		stationconfig.h
+		stationlocationfile.h
 )
 
 SET(

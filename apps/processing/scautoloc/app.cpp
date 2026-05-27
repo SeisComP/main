@@ -32,7 +32,7 @@
 #include "sc3adapters.h"
 #include "scutil.h"
 #include "util.h"
-
+#include "stationlocationfile.h"
 
 using namespace Seiscomp::Client;
 using namespace Seiscomp::Math;
@@ -56,9 +56,6 @@ AutolocApp::AutolocApp(int argc, char **argv)
 	addMessagingSubscription("LOCATION");
 
 	_config = Autoloc3::config();
-	_wakeUpTimout = 5; // wake up every 5 seconds to check pending operations
-
-	_playbackSpeed = 1;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -556,15 +553,18 @@ bool AutolocApp::init() {
 	_inputOrgs = addInputObjectLog("origin");
 	_outputOrgs = addOutputObjectLog("origin", primaryMessagingGroup());
 
+	SEISCOMP_INFO("Starting Autoloc");
+
 	// This is the SeisComP configuration, which we need to pass through
 	// all the way to the locator.
-	_config.scconfig = &configuration();
-
-	SEISCOMP_INFO("Starting Autoloc");
+	_config.scconfig = &Client::Application::configuration();
+// TODO	_config.agencyID = agencyID();
+// TODO	_config.check(); // only prints warnings, no show stopper
 	setConfig(_config);
+
 	dumpConfig();
 
-	if ( !setGridFile(_gridConfigFile) ) {
+	if ( !Autoloc::Autoloc3::setGridFile(_gridConfigFile) ) {
 		return false;
 	}
 
@@ -597,126 +597,27 @@ bool AutolocApp::init() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool AutolocApp::initInventory() {
+bool AutolocApp::initInventory()
+{
 	if ( _stationLocationFile.empty() ) {
 		SEISCOMP_DEBUG("Initializing station inventory from DB");
-		inventory = Inventory::Instance()->inventory();
-		if ( !inventory ) {
-			SEISCOMP_ERROR("no inventory!");
-			return false;
-		}
-
-		// Remove unneeded inventory items to save some memory
-		for ( size_t n = 0; n < inventory->networkCount(); ++n ) {
-			DataModel::Network *network = inventory->network(n);
-
-			for ( size_t s = 0; s < network->stationCount(); ++s ) {
-				DataModel::Station *station = network->station(s);
-
-				for ( size_t l = 0; l < station->sensorLocationCount(); ++l ) {
-					DataModel::SensorLocation *sensorLocation = station->sensorLocation(l);
-					while (sensorLocation->streamCount())
-						sensorLocation->removeStream(0);
-					while (sensorLocation->auxStreamCount())
-						sensorLocation->removeAuxStream(0);
-					while (sensorLocation->commentCount())
-						sensorLocation->removeComment(0);
-				}
-			}
-		}
+		inventory = Client::Inventory::Instance()->inventory();
+		Autoloc::Utils::minimizeInventory(inventory.get());
 	}
 	else {
-		SEISCOMP_DEBUG_S("Initializing station inventory from file '" + _stationLocationFile + "'");
-		inventory = Autoloc::Utils::inventoryFromStationLocationFile(_stationLocationFile);
+		SEISCOMP_DEBUG_S(
+			"Initializing station inventory from file '" +
+			_stationLocationFile + "'");
+		inventory = Seiscomp::DataModel::inventoryFromStationLocationFile(_stationLocationFile);
 	}
 
-	return true;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool AutolocApp::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Time &time) {
-	bool found {false};
-	static std::set<std::string> configuredStreams;
-	std::string key = wfid.networkCode() + "." + wfid.stationCode();
-
-	if ( configuredStreams.find(key) != configuredStreams.end() ) {
+	if ( ! inventory ) {
+		SEISCOMP_ERROR("No station inventory!");
 		return false;
 	}
 
-	for ( size_t n = 0; n < inventory->networkCount() && !found; ++n ) {
-		DataModel::Network *network = inventory->network(n);
+	Autoloc::Autoloc3::setInventory(inventory.get());
 
-		if ( network->code() != wfid.networkCode() ) {
-			continue;
-		}
-
-		try {
-			if ( time < network->start() ) {
-				continue;
-			}
-		}
-		catch ( ... ) { }
-
-		try {
-			if ( time > network->end() ) {
-				continue;
-			}
-		}
-		catch ( ... ) { }
-
-		for ( size_t s = 0; s < network->stationCount(); ++s ) {
-			DataModel::Station *station = network->station(s);
-
-			if ( station->code() != wfid.stationCode() ) {
-				continue;
-			}
-
-			std::string epochStart="unset", epochEnd="unset";
-
-			try {
-				if ( time < station->start() ) {
-					continue;
-				}
-				epochStart = station->start().toString("%FT%TZ");
-			}
-			catch ( ... ) { }
-
-			try {
-				if ( time > station->end() ) {
-					continue;
-				}
-				epochEnd = station->end().toString("%FT%TZ");
-			}
-			catch ( ... ) { }
-
-			SEISCOMP_DEBUG("Station %s %s epoch %s ... %s",
-			               network->code(),
-			               station->code(),
-			               epochStart,
-			               epochEnd);
-
-			double elevation = 0;
-			try { elevation = station->elevation(); }
-			catch ( ... ) {}
-
-			Autoloc::Station *sta = new Autoloc::Station(station);
-			setStation(sta);
-			found = true;
-
-			break;
-		}
-	}
-
-	if ( !found ) {
-		SEISCOMP_WARNING("%s not found in station inventory", key);
-		return false;
-	}
-
-	configuredStreams.insert(key);
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

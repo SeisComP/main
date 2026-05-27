@@ -41,7 +41,6 @@ bool manual(const Pick*);
 char modeFlag(const Pick*);
 bool hasAmplitude(const Pick*);
 
-
 double meandev(const Origin* origin);
 
 double avgfn(double x);
@@ -63,6 +62,8 @@ Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::stri
 PickVector readPickFile();
 Pick*      readPickLine();
 Pick::Mode mode(const Seiscomp::DataModel::Pick *pick);
+
+void minimizeInventory(Seiscomp::DataModel::Inventory *inventory);
 
 }  // namespace Utils
 
