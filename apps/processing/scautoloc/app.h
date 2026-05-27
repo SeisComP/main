@@ -76,6 +76,7 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 		void addObject(const std::string& parentID, DataModel::Object *o) override;
 
 		bool _report(const Autoloc::Origin *origin) override;
+		bool _report(DataModel::Origin *scorigin);  // not const
 
 		void handleMessage(Core::Message* msg) override;
 		void handleTimeout() override;
@@ -92,8 +93,6 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 
 		std::string _inputFileXML; // for XML playback
 		std::string _inputEPFile;  // for offline processing
-		std::string _amplTypeAbs{"mb"};
-		std::string _amplTypeSNR{"snr"};
 		bool        _formatted{false};
 
 		// sorted objects for playback

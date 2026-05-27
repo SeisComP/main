@@ -41,7 +41,7 @@ namespace Seiscomp {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases) {
+DataModel::Origin *convertToSC(const Autoloc::Origin* origin, const std::string &author, const std::string &agencyID, bool allPhases) {
 	using namespace Autoloc;
 
 	DataModel::Origin *scorigin = DataModel::Origin::Create();
@@ -149,6 +149,11 @@ DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases) {
 	oq.setAzimuthalGap(aziGap);
 
 	scorigin->setQuality(oq);
+
+	DataModel::CreationInfo ci;
+	ci.setAgencyID(agencyID);
+	ci.setAuthor(author);
+	scorigin->setCreationInfo(ci);
 
 	return scorigin;
 }

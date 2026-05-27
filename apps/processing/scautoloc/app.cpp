@@ -311,8 +311,6 @@ bool AutolocApp::initConfiguration() {
 		return false;
 	}
 
-	_config.agencyID = agencyID();
-
 	// support deprecated configuration, deprecated since 2020-11-16
 	try {
 		_config.maxAge = configGetDouble("autoloc.maxAge");
@@ -594,12 +592,12 @@ bool AutolocApp::initConfiguration() {
 	}
 
 	try {
-		_amplTypeSNR = configGetString("autoloc.amplTypeSNR");
+		_config.amplTypeSNR = configGetString("autoloc.amplTypeSNR");
 	}
 	catch ( ... ) {}
 
 	try {
-		_amplTypeAbs = configGetString("autoloc.amplTypeAbs");
+		_config.amplTypeAbs = configGetString("autoloc.amplTypeAbs");
 	}
 	catch ( ... ) {}
 
@@ -665,8 +663,9 @@ bool AutolocApp::init() {
 	// This is the SeisComP configuration, which we need to pass through
 	// all the way to the locator.
 	_config.scconfig = &Client::Application::configuration();
-// TODO	_config.agencyID = agencyID();
-// TODO	_config.check(); // only prints warnings, no show stopper
+// TODO	_config.check(); // only prints warnings
+	_config.agencyID = agencyID();
+	_config.author = author();
 	setConfig(_config);
 
 	dumpConfig();
@@ -1147,22 +1146,20 @@ bool AutolocApp::feed(DataModel::Pick *scpick) {
 	}
 	catch ( ... ) {}
 
+	if ( status == "rejected" && !_config.allowRejectedPicks ) {
+		SEISCOMP_INFO("Ignoring pick %s due to evaluation status 'rejected'", pickID, status);
+		return false;
+	}
+
 	std::string mode = "unset";
 	try {
 		mode = scpick->evaluationMode().toString();
 	}
 	catch ( ... ) {}
+
 	SEISCOMP_INFO("Processing pick: %s with evaluation mode/status = '%s'/'%s'",
 	              pickID, mode, status);
 	SEISCOMP_INFO_S("  + label:  " + pickLabel(scpick));
-
-	try {
-		if ( scpick->evaluationStatus() == DataModel::REJECTED && !_config.allowRejectedPicks ) {
-			SEISCOMP_INFO("  + ignoring pick due to evaluation status");
-			return false;
-		}
-	}
-	catch ( ... ) {}
 
 	if ( mode == "unset" ) {
 		SEISCOMP_DEBUG("Pick %s: setting evaluation mode from '%s' to 'automatic'",
@@ -1170,14 +1167,12 @@ bool AutolocApp::feed(DataModel::Pick *scpick) {
 		scpick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
 	}
 
-	if ( _inputFileXML.size() || _inputEPFile.size() ) {
-		try {
-			const Core::Time &creationTime = scpick->creationInfo().creationTime();
-			sync(creationTime);
-		}
-		catch ( ... ) {
-			SEISCOMP_INFO_S("Pick " + pickID + ": creation time is not set");
-		}
+	try {
+		const Core::Time &creationTime = scpick->creationInfo().creationTime();
+		sync(creationTime);
+	}
+	catch ( ... ) {
+		SEISCOMP_WARNING_S("Pick " + pickID + ": creation time is not set");
 	}
 
 	if ( objectAgencyID(scpick) != agencyID() && isAgencyIDBlocked(objectAgencyID(scpick)) ) {
@@ -1194,17 +1189,7 @@ bool AutolocApp::feed(DataModel::Pick *scpick) {
 	// configure station if needed
 	initOneStation(scpick->waveformID(), scpick->time().value());
 
-	Autoloc::PickPtr pick = new Autoloc::Pick(scpick);
-	if ( !pick ) {
-		SEISCOMP_INFO("  + ignoring pick from SC");
-		return false;
-	}
-
-	if ( _config.offline ) {
-		timeStamp();
-	}
-
-	Autoloc::Autoloc3::feed(pick.get());
+	Autoloc::Autoloc3::feed(scpick);
 
 	if ( _config.offline ) {
 		_flush();
@@ -1221,9 +1206,9 @@ bool AutolocApp::feed(DataModel::Pick *scpick) {
 bool AutolocApp::feed(DataModel::Amplitude *scampl) {
 	const std::string &atype  = scampl->type();
 	const std::string &amplID = scampl->publicID();
-	if ( atype != _amplTypeAbs && atype != _amplTypeSNR ) {
+	if ( atype != _config.amplTypeAbs && atype != _config.amplTypeSNR ) {
 		SEISCOMP_DEBUG("Ignoring '%s' amplitude %s: neither of type %s nor %s",
-		               atype, amplID, _amplTypeAbs, _amplTypeSNR);
+		               atype, amplID, _config.amplTypeAbs, _config.amplTypeSNR);
 		return false;
 	}
 
@@ -1238,13 +1223,6 @@ bool AutolocApp::feed(DataModel::Amplitude *scampl) {
 		SEISCOMP_DEBUG("  + agency is: %s", objectAgencyID(scampl));
 	}
 
-	const std::string &pickID = scampl->pickID();
-	Autoloc::Pick *pick = (Autoloc::Pick *) Autoloc3::pick(pickID);
-	if ( !pick ) {
-		SEISCOMP_INFO("  + ignoring amplitude since reference pick cannot be found");
-		return false;
-	}
-
 	if ( _inputFileXML.size() || _inputEPFile.size() ) {
 		try {
 			const Core::Time &creationTime = scampl->creationInfo().creationTime();
@@ -1256,24 +1234,7 @@ bool AutolocApp::feed(DataModel::Amplitude *scampl) {
 		}
 	}
 
-	try {
-		// note that for testing it is allowed to use the same amplitude as
-		// _amplTypeSNR and _amplTypeAbs  -> no 'else if' here
-		if ( atype == _amplTypeSNR ) {
-			pick->snr = scampl->amplitude().value();
-		}
-		if ( atype == _amplTypeAbs ) {
-			pick->amp = scampl->amplitude().value();
-			pick->per = (_amplTypeAbs == "mb") ? scampl->period().value() : 1;
-		}
-	}
-	catch ( ... ) {
-		SEISCOMP_INFO("  + ignoring amplitude");
-		return false;
-	}
-
-	Autoloc::Autoloc3::feed(pick);
-	return true;
+	return Autoloc::Autoloc3::feed(scampl);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1366,85 +1327,85 @@ bool AutolocApp::feed(DataModel::Origin *scorigin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool AutolocApp::_report(DataModel::Origin *scorigin) {
+	if ( _config.offline || _config.test ) {
+		// Offline / playback / test mode
+		if ( _ep ) {
+			_ep->add(scorigin);
+		}
+	}
+	else {
+		// Online mode
+		DataModel::EventParameters ep;
+		bool wasEnabled = DataModel::Notifier::IsEnabled();
+		DataModel::Notifier::Enable();
+		ep.add(scorigin);
+		DataModel::Notifier::SetEnabled(wasEnabled);
+	
+		DataModel::NotifierMessagePtr nmsg = DataModel::Notifier::GetMessage(true);
+		connection()->send(nmsg.get());
+	}
+
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool AutolocApp::_report(const Autoloc::Origin *origin) {
 
 	// Log object flow
 	logObject(_outputOrgs, now());
 
+	DataModel::OriginPtr scorigin = convertToSC(origin, _config.author, _config.agencyID, _config.reportAllPhases);
+	scorigin->creationInfo().setCreationTime(now());
+
+	SEISCOMP_INFO("Reporting origin %ld\n%s", origin->id, Autoloc::printDetailed(origin));
+
+	_report(scorigin.get());
+
 	if ( _config.offline || _config.test ) {
-		std::string reportStr = Autoloc::printDetailed(origin);
-		SEISCOMP_INFO("Reporting origin %ld\n%s", origin->id, reportStr);
 		SEISCOMP_INFO ("Origin %ld not sent (test/offline mode)", origin->id);
-
-		if ( _ep ) {
-			DataModel::OriginPtr scorigin = convertToSC(origin, _config.reportAllPhases);
-			DataModel::CreationInfo ci;
-			ci.setAgencyID(agencyID());
-			ci.setAuthor(author());
-			ci.setCreationTime(now());
-			scorigin->setCreationInfo(ci);
-
-			_ep->add(scorigin.get());
-
-			std::cerr << reportStr << std::endl;
-		}
-		else
-			std::cout << reportStr << std::endl;
-
-		return true;
-	}
-
-	DataModel::OriginPtr scorigin = convertToSC(origin, _config.reportAllPhases);
-	DataModel::CreationInfo ci;
-	ci.setAgencyID(agencyID());
-	ci.setAuthor(author());
-	ci.setCreationTime(now());
-	scorigin->setCreationInfo(ci);
-
-	DataModel::EventParameters ep;
-	bool wasEnabled = DataModel::Notifier::IsEnabled();
-	DataModel::Notifier::Enable();
-	ep.add(scorigin.get());
-	DataModel::Notifier::SetEnabled(wasEnabled);
-
-	DataModel::NotifierMessagePtr nmsg = DataModel::Notifier::GetMessage(true);
-	connection()->send(nmsg.get());
-
-	if ( origin->preliminary ) {
-		SEISCOMP_INFO("Sent preliminary origin %ld (heads up)", origin->id);
-
-		// create and send journal entry
-		std::string str = "";
-		try {
-			str = scorigin->evaluationStatus().toString();
-		}
-		catch ( Core::ValueException & ) {}
-
-		if ( !str.empty() ) {
-			DataModel::JournalEntryPtr journalEntry = new DataModel::JournalEntry;
-			journalEntry->setAction("OrgEvalStatOK");
-			journalEntry->setObjectID(scorigin->publicID());
-			journalEntry->setSender(SCCoreApp->author().c_str());
-			journalEntry->setParameters(str);
-			journalEntry->setCreated(Core::Time::UTC());
-
-			DataModel::NotifierMessagePtr jm = new DataModel::NotifierMessage;
-			jm->attach(new DataModel::Notifier(DataModel::Journaling::ClassName(),
-			           DataModel::OP_ADD, journalEntry.get()));
-
-			if ( connection()->send(jm.get()) ) {
-				SEISCOMP_DEBUG("Sent origin journal entry for origin %s to the message group: %s",
-				               scorigin->publicID(), primaryMessagingGroup());
-			}
-			else {
-				SEISCOMP_ERROR("Sending origin journal entry failed with error: %s",
-				               connection()->lastError().toString());
-			}
-		}
-
 	}
 	else {
-		SEISCOMP_INFO("Sent origin %ld", origin->id);
+		if ( origin->preliminary ) {
+			SEISCOMP_INFO("Sent preliminary origin %ld (heads up)", origin->id);
+	
+			// create and send journal entry
+			std::string str = "";
+			try {
+				str = scorigin->evaluationStatus().toString();
+			}
+			catch ( Core::ValueException & ) {}
+	
+			if ( !str.empty() ) {
+				DataModel::JournalEntryPtr journalEntry = new DataModel::JournalEntry;
+				journalEntry->setAction("OrgEvalStatOK");
+				journalEntry->setObjectID(scorigin->publicID());
+				journalEntry->setSender(SCCoreApp->author().c_str());
+				journalEntry->setParameters(str);
+				journalEntry->setCreated(Core::Time::UTC());
+	
+				DataModel::NotifierMessagePtr jm = new DataModel::NotifierMessage;
+				jm->attach(new DataModel::Notifier(DataModel::Journaling::ClassName(),
+				           DataModel::OP_ADD, journalEntry.get()));
+	
+				if ( connection()->send(jm.get()) ) {
+					SEISCOMP_DEBUG("Sent origin journal entry for origin %s to the message group: %s",
+					               scorigin->publicID(), primaryMessagingGroup());
+				}
+				else {
+					SEISCOMP_ERROR("Sending origin journal entry failed with error: %s",
+					               connection()->lastError().toString());
+				}
+			}
+	
+		}
+		else {
+			SEISCOMP_INFO("Sent origin %ld", origin->id);
+		}
 	}
 
 	SEISCOMP_INFO_S(Autoloc::printOrigin(origin, false));

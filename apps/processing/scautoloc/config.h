@@ -37,8 +37,17 @@ struct AutolocConfig {
 		// Also defines priority in descending order.
 		std::vector<std::string> authors;
 
-		// Our agency ID. Used to distinguish between "own" and "imported" objects.
+		// Our agency ID.
+		//
+		// Used to distinguish between "own" and "imported" objects
+		// and to populate the creationInfo of newly created objects.
 		std::string agencyID;
+
+		// Our author ID.
+		//
+		// Used to distinguish between "own" and "imported" objects
+		// and to populate the creationInfo of newly created objects.
+		std::string author;
 
 		// The name of the grid file
 		//
@@ -215,6 +224,9 @@ struct AutolocConfig {
 		double xxlMaxDepth{100};            // unit: km
 
 		const Seiscomp::Config::Config* scconfig{nullptr};
+
+		std::string amplTypeSNR {"snr"};
+		std::string amplTypeAbs {"mb"};
 
 	public:
 		void dump() const;

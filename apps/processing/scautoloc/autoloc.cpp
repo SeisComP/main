@@ -259,8 +259,18 @@ void Autoloc3::dumpState() const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::xfeed(const Seiscomp::DataModel::Pick*) {
-	return true;
+bool Autoloc3::feed(const Seiscomp::DataModel::Pick *scpick) {
+	Autoloc::PickPtr pick = new Autoloc::Pick(scpick);
+	if ( !pick ) {
+		SEISCOMP_INFO("  + ignoring pick from SC");
+		return false;
+	}
+
+	if ( _config.offline ) {
+		timeStamp();
+	}
+
+	return feed(pick.get());
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -268,8 +278,33 @@ bool Autoloc3::xfeed(const Seiscomp::DataModel::Pick*) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::xfeed(const Seiscomp::DataModel::Amplitude*) {
-	return true;
+bool Autoloc3::feed(const Seiscomp::DataModel::Amplitude *scampl) {
+	const std::string &atype  = scampl->type();
+	const std::string &pickID = scampl->pickID();
+
+	Autoloc::Pick *pick = (Autoloc::Pick *) Autoloc3::pick(pickID);
+	if ( !pick ) {
+		SEISCOMP_INFO("  + ignoring amplitude since reference pick cannot be found");
+		return false;
+	}
+
+	try {
+		// note that for testing it is allowed to use the same amplitude as
+		// _config.amplTypeSNR and _config.amplTypeAbs  -> no 'else if' here
+		if ( atype == _config.amplTypeSNR ) {
+			pick->snr = scampl->amplitude().value();
+		}
+		if ( atype == _config.amplTypeAbs ) {
+			pick->amp = scampl->amplitude().value();
+			pick->per = (_config.amplTypeAbs == "mb") ? scampl->period().value() : 1;
+		}
+	}
+	catch ( ... ) {
+		SEISCOMP_INFO("  + ignoring amplitude");
+		return false;
+	}
+
+	return Autoloc::Autoloc3::feed(pick);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

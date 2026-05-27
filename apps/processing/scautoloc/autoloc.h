@@ -84,15 +84,15 @@ class Autoloc3 {
 		//
 		// If the call resulted in a new or updated result,
 		// return true, otherwise false.
-		bool xfeed(const Seiscomp::DataModel::Pick*);
-		bool xfeed(const Seiscomp::DataModel::Amplitude*);
+		bool feed(const Seiscomp::DataModel::Pick*);
+		bool feed(const Seiscomp::DataModel::Amplitude*);
 
 		// Feed an external or manual Origin
 		// TODO: Ensure that all needed picks/amplitudes have
 		//       been supplied *prior* to calling this.
 		bool feed(Seiscomp::DataModel::Origin*);
 
-	public:
+	private:
 		// Feed a Pick and try to get something out of it.
 		//
 		// The Pick may be associated to an existing Origin or
@@ -112,6 +112,7 @@ class Autoloc3 {
 		// This calls _report(Origin*) for each new Origin
 		bool report();
 
+	public:
 		void dumpState() const;
 		void dumpConfig() const { _config.dump(); }
 

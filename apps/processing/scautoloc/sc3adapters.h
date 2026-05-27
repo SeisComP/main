@@ -23,7 +23,7 @@
 
 namespace Seiscomp {
 
-DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases=true);
+DataModel::Origin *convertToSC(const Autoloc::Origin* origin,  const std::string &author, const std::string &agencyID, bool allPhases=true);
 // Origin *convertFromSC(const DataModel::Origin* scorigin);
 
 }  // namespace Seiscomp
