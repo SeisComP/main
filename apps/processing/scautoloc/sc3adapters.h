@@ -26,6 +26,4 @@ namespace Seiscomp {
 DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases=true);
 // Origin *convertFromSC(const DataModel::Origin* scorigin);
 
-Autoloc::Pick *convertFromSC(const DataModel::Pick *scpick);
-
 }  // namespace Seiscomp

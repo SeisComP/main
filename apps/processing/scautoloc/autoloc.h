@@ -46,6 +46,12 @@ class Autoloc3 {
 		// Set the *SeisComP* inventory
 		void setInventory(const Seiscomp::DataModel::Inventory*);
 
+		bool readInventoryFromFile();
+
+		// Initialize the *SeisComP* inventory according to config
+		// or use the global inventory.
+		bool initInventory();
+
 		void setConfig(const AutolocConfig&);
 		const AutolocConfig &config() const { return _config; }
 
@@ -84,7 +90,7 @@ class Autoloc3 {
 		// Feed an external or manual Origin
 		// TODO: Ensure that all needed picks/amplitudes have
 		//       been supplied *prior* to calling this.
-		bool xfeed(Seiscomp::DataModel::Origin*);
+		bool feed(Seiscomp::DataModel::Origin*);
 
 	public:
 		// Feed a Pick and try to get something out of it.
@@ -122,7 +128,7 @@ class Autoloc3 {
 		const Pick* pick(const std::string &id) const;
 
 		// Current time. In offline mode time of the last pick.
-		Time now();
+		Time now() const;
 
 		// Synchronize the internal timing.
 		//
@@ -130,6 +136,9 @@ class Autoloc3 {
 		// using the hardware clock we either use the pick time
 		// or pick creation time.
 		void sync(const Core::Time &t);
+
+		// Add a time stamp generated using now() to the debug log
+		void timeStamp() const;
 
 	protected:
 		// This must be reimplemented in a subclass to properly
@@ -362,8 +371,9 @@ class Autoloc3 {
 		AutolocConfig _config;
 		StationConfig _stationConfig;
 
-		const Seiscomp::Config::Config *scconfig;
-		const Seiscomp::DataModel::Inventory *scinventory;
+		const Seiscomp::Config::Config *scconfig {nullptr};
+		const Seiscomp::DataModel::Inventory *scinventory {nullptr};
+//		Seiscomp::DataModel::InventoryPtr inventory;
 };
 
 

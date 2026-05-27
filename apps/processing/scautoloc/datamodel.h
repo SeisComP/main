@@ -161,10 +161,13 @@ class Pick : public Seiscomp::Core::BaseObject {
 
 class Hypocenter : public Seiscomp::Core::BaseObject {
 	public:
+		Hypocenter() = default;
 		Hypocenter(double lat, double lon, double dep)
 			: lat(lat), lon(lon), dep(dep) { }
 
-		double lat, lon, dep;
+		double lat {0.};
+		double lon {0.};
+		double dep {0.};
 		double laterr {0.};
 		double lonerr {0.};
 		double deperr {0.};
@@ -301,6 +304,7 @@ class Origin : public Seiscomp::Core::BaseObject {
 
 	public:
 		Origin() = delete;
+//		Origin(const Seiscomp::DataModel::Origin*);  // TODO but not possible at the moment
 		Origin(double lat, double lon, double dep, const Time &time);
 		Origin(const Origin&);
 		~Origin();

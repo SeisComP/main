@@ -13,6 +13,7 @@
 
 
 #define SEISCOMP_COMPONENT Autoloc
+#include <seiscomp/client/inventory.h>
 #include <seiscomp/logging/log.h>
 #include <seiscomp/seismology/ttt.h>
 #include <algorithm>
@@ -23,6 +24,7 @@
 #include "sc3adapters.h"
 #include "nucleator.h"
 #include "autoloc.h"
+#include "stationlocationfile.h"
 
 
 namespace Seiscomp {
@@ -275,8 +277,180 @@ bool Autoloc3::xfeed(const Seiscomp::DataModel::Amplitude*) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::xfeed(Seiscomp::DataModel::Origin*) {
-	return true;
+bool Autoloc3::feed(Seiscomp::DataModel::Origin *scorigin) {
+	double lat = scorigin->latitude().value();
+	double lon = scorigin->longitude().value();
+	double dep = scorigin->depth().value();
+	double time = double(scorigin->time().value() - Core::Time());
+
+	Autoloc::Origin *origin = new Autoloc::Origin(lat, lon, dep, time);
+
+	try {
+		origin->hypocenter.laterr = 0.5 * (scorigin->latitude().lowerUncertainty()
+		                        + scorigin->latitude().upperUncertainty());
+	}
+	catch ( ... ) {
+		try {
+			origin->hypocenter.laterr = scorigin->latitude().uncertainty();
+		}
+		catch ( ... ) {
+			origin->hypocenter.laterr = 0;
+		}
+	}
+
+	try {
+		origin->hypocenter.lonerr = 0.5 * (scorigin->longitude().lowerUncertainty()
+		                        + scorigin->longitude().upperUncertainty());
+	}
+	catch ( ... ) {
+		try {
+			origin->hypocenter.lonerr = scorigin->longitude().uncertainty();
+		}
+		catch ( ... ) {
+			origin->hypocenter.lonerr = 0;
+		}
+	}
+
+	try {
+		origin->hypocenter.deperr = 0.5 * (scorigin->depth().lowerUncertainty()
+		                        + scorigin->depth().upperUncertainty());
+	}
+	catch ( ... ) {
+		try {
+			origin->hypocenter.deperr = scorigin->depth().uncertainty();
+		}
+		catch ( ... ) {
+			origin->hypocenter.deperr = 0;
+		}
+	}
+
+	try {
+		origin->timeerr = 0.5 * (scorigin->time().lowerUncertainty()
+		                         + scorigin->time().upperUncertainty());
+	}
+	catch ( ... ) {
+		try {
+			origin->timeerr = scorigin->time().uncertainty();
+		}
+		catch ( ... ) {
+			origin->timeerr = 0;
+		}
+	}
+
+	size_t arrivalCount = scorigin->arrivalCount();
+	for ( size_t i = 0; i < arrivalCount; i++ ) {
+		const std::string &pickID = scorigin->arrival(i)->pickID();
+/*
+		DataModel::Pick *scpick = DataModel::Pick::Find(pickID);
+		if ( ! scpick) {
+			SEISCOMP_ERROR_S("Pick " + pickID + " not found - cannot convert origin");
+			delete origin;
+			return nullptr;
+			// TODO:
+			// Trotzdem mal schauen, ob wir den Pick nicht
+			// als Autoloc-Pick schon haben
+		}
+*/
+		const Autoloc::Pick *pick {Autoloc3::pick(pickID)};
+		if ( !pick ) {
+// TODO: Use Cache here!
+			// XXX FIXME: This may also happen after Autoloc cleaned up older picks, so the pick isn't available any more!
+			SEISCOMP_ERROR_S("Pick " + pickID + " not found in internal pick pool - SKIPPING this pick");
+//			if (DataModel::PublicObject::Find(pickID))
+//				SEISCOMP_ERROR("HOWEVER, this pick is present in pool of public objects");
+			// This actually IS an error but we try to work around
+			// it instead of giving up in this origin completely.
+			continue;
+//			delete origin;
+//			return nullptr;
+		}
+
+		Autoloc::Arrival arr(pick /* , const std::string &phase="P", double residual=0 */ );
+		try {
+			arr.residual = scorigin->arrival(i)->timeResidual();
+		}
+		catch ( ... ) {
+			arr.residual = 0;
+			SEISCOMP_WARNING("got arrival with timeResidual not set");
+		}
+
+		try {
+			arr.distance = scorigin->arrival(i)->distance();
+		}
+		catch ( ... ) {
+			arr.distance = 0;
+			SEISCOMP_WARNING("got arrival with distance not set");
+		}
+
+		try {
+			arr.azimuth  = scorigin->arrival(i)->azimuth();
+		}
+		catch ( ... ) {
+			arr.azimuth = 0;
+			SEISCOMP_WARNING("got arrival with azimuth not set");
+		}
+
+		if ( scorigin->evaluationMode() == DataModel::MANUAL ) {
+			// for manual origins we do allow secondary phases like pP
+			arr.phase = scorigin->arrival(i)->phase();
+
+			try {
+				if ( !scorigin->arrival(i)->timeUsed() ) {
+					arr.excluded = Autoloc::Arrival::ManuallyExcluded;
+				}
+			}
+			catch ( ... ) {
+				// In a manual origin in which the time is not
+				// explicitly used we treat the arrival as if
+				// it was explicitly excluded.
+				arr.excluded = Autoloc::Arrival::ManuallyExcluded;
+			}
+		}
+
+		origin->arrivals.push_back(arr);
+	}
+
+	origin->publicID = scorigin->publicID();
+	try {
+		// FIXME: In scolv the Origin::depthType is not set!
+		DataModel::OriginDepthType dtype = scorigin->depthType();
+		if ( dtype == DataModel::OriginDepthType(DataModel::FROM_LOCATION) ) {
+			origin->depthType = Autoloc::Origin::DepthFree;
+		}
+
+		else if ( dtype == DataModel::OriginDepthType(DataModel::OPERATOR_ASSIGNED) ) {
+			origin->depthType = Autoloc::Origin::DepthManuallyFixed;
+		}
+	}
+	catch ( ... ) {
+		SEISCOMP_WARNING("Origin::depthType is not set!");
+		if ( scorigin->evaluationMode() == DataModel::MANUAL &&
+		    _config.adoptManualDepth ) {
+			// This is a hack! We cannot know wether the operator
+			// assigned a depth manually, but we can assume the
+			// depth to be opperator approved and this is better
+			// than nothing.
+			// TODO: Make this behavior configurable?
+			origin->depthType = Autoloc::Origin::DepthManuallyFixed;
+			SEISCOMP_WARNING("Treating depth as if it was manually fixed");
+		}
+		else {
+			origin->depthType = Autoloc::Origin::DepthFree;
+			SEISCOMP_WARNING("Leaving depth free");
+		}
+	}
+
+	// mark and log imported origin
+	if ( objectAgencyID(scorigin) == _config.agencyID ) {
+		SEISCOMP_INFO_S("Using origin from agency " + objectAgencyID(scorigin));
+		origin->imported = false;
+	}
+	else {
+		SEISCOMP_INFO_S("Using origin from agency " + objectAgencyID(scorigin));
+		origin->imported = true;
+	}
+
+	return feed(origin);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -488,12 +662,21 @@ void Autoloc3::sync(const Core::Time &t) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Time Autoloc3::now() {
+Time Autoloc3::now() const {
 	if ( _config.playback ) {
 		return _now;
 	}
 
 	return Time(Core::Time::UTC());
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Autoloc3::timeStamp() const {
+	SEISCOMP_DEBUG_S("Timestamp: " + sctime(now()).toString("%F %T.%f"));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -3161,6 +3344,8 @@ void Autoloc3::setLocatorProfile(const std::string &profile) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Autoloc3::setConfig(const AutolocConfig &config) {
 	_config = config;
+
+	setGridFile(_config.gridConfigFile);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -3170,6 +3355,59 @@ void Autoloc3::setConfig(const AutolocConfig &config) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Autoloc3::setConfig(const Seiscomp::Config::Config *conf) {
 	scconfig = conf;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Autoloc3::initInventory()
+{
+	using namespace Autoloc::Utils;
+
+	if ( ! _config.stationLocationFile.empty() ) {
+		return readInventoryFromFile();
+	}
+
+	SEISCOMP_DEBUG("Initializing station inventory from DB");
+	Seiscomp::DataModel::Inventory *inventory = Client::Inventory::Instance()->inventory();
+
+	if ( !inventory ) {
+		SEISCOMP_ERROR("No station inventory!");
+		return false;
+	}
+
+	minimizeInventory(inventory);
+	setInventory(inventory);
+
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Autoloc3::readInventoryFromFile()
+{
+	if ( _config.stationLocationFile.empty() ) {
+		SEISCOMP_ERROR("No station location file specified");
+		return false;
+	}
+
+	SEISCOMP_DEBUG_S("Initializing station inventory from file '" +
+	                 _config.stationLocationFile + "'");
+	Seiscomp::DataModel::Inventory *inventory = Seiscomp::DataModel::inventoryFromStationLocationFile(_config.stationLocationFile);
+	if ( !inventory) {
+		SEISCOMP_WARNING("Failed to initialize station inventory from file %s",
+		                 _config.stationLocationFile);
+		return false;
+	}
+
+	setInventory(inventory);
+
+	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

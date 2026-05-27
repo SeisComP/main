@@ -37,6 +37,19 @@ struct AutolocConfig {
 		// Also defines priority in descending order.
 		std::vector<std::string> authors;
 
+		// Our agency ID. Used to distinguish between "own" and "imported" objects.
+		std::string agencyID;
+
+		// The name of the grid file
+		//
+		// This is a required parameter.
+		std::string gridConfigFile{"@DATADIR@/scautoloc/grid.conf"};
+
+		// The name of a station locations file
+		//
+		// This is an optional parameter; the global inventory is used by default.
+		std::string stationLocationFile;
+
 		// During cleanup() all pick objects older than maxAge
 		// (in hours) are removed.
 		// If this parameter is <= 0, cleanup() is disabled.

@@ -46,14 +46,10 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 		bool init() override;
 		bool run() override;
 
-		// Initialize the internal inventory from the SeisComP inventory
-		bool initInventory();
-
 	private:
 		// Read past events from the database
 		void readHistoricEvents();
 
-	private:
 		// Playback
 		bool runFromXMLFile(const char *fname);
 		bool runFromEPFile(const char *fname);
@@ -68,21 +64,13 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 		// The latter is needed in playbacks.
 		const Core::Time now() const;
 
-		// Add a time stamp generated using now() to the debug log
-		void timeStamp() const;
-
 		double _playbackSpeed {1.};
-
-	protected:
-//		DataModel::Origin *convertToSC  (const Autoloc::Origin* origin, bool allPhases=true);
-		Autoloc::Origin *convertFromSC(const DataModel::Origin* scorigin);
-		Autoloc::Pick   *convertFromSC(const DataModel::Pick*   scpick);
 
 	private:
 		// Processing
-		bool feed(DataModel::Pick*);
-		bool feed(DataModel::Amplitude*);
-		bool feed(DataModel::Origin*);
+		bool feed(DataModel::Pick *scpick);
+		bool feed(DataModel::Amplitude *scamplitude);
+		bool feed(DataModel::Origin *scorigin);
 
 		// Receive SeisComP objects from messaging
 		void addObject(const std::string& parentID, DataModel::Object *o) override;
@@ -96,14 +84,14 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 
 	private:
 		// SeisComP standard shutdown
-		void done() override;
 		void handleAutoShutdown() override;
+		void done() override;
 
 	private:
+		Autoloc::AutolocConfig _config;
+
 		std::string _inputFileXML; // for XML playback
 		std::string _inputEPFile;  // for offline processing
-		std::string _stationLocationFile;
-		std::string _gridConfigFile{"@DATADIR@/scautoloc/grid.conf"};
 		std::string _amplTypeAbs{"mb"};
 		std::string _amplTypeSNR{"snr"};
 		bool        _formatted{false};
@@ -117,9 +105,6 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 		size_t objectCount {0};
 
 		DataModel::EventParametersPtr _ep;
-		DataModel::InventoryPtr inventory;
-
-		Autoloc::AutolocConfig _config;
 
 		// Wake up every 5 seconds to check pending operations
 		int _wakeUpTimout {5};

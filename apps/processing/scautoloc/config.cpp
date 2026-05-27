@@ -29,10 +29,15 @@ namespace Autoloc {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void AutolocConfig::dump() const {
 	SEISCOMP_INFO("Configuration:");
+	SEISCOMP_INFO("  generic");
+	SEISCOMP_INFO("    agencyID                         %s",     agencyID);
+//	SEISCOMP_INFO("    gridConfigFile                   %s",     gridConfigFile);
 	SEISCOMP_INFO("  locator");
 	SEISCOMP_INFO("    profile                          %s",     locatorProfile);
 	SEISCOMP_INFO("    default depth                    %g km",  defaultDepth);
 	SEISCOMP_INFO("    minimum depth                    %g km",  minimumDepth);
+	SEISCOMP_INFO("  associator");
+	SEISCOMP_INFO("    gridConfigFile                   %s",     gridConfigFile);
 	SEISCOMP_INFO("  buffer");
 	SEISCOMP_INFO("    picks kept in buffer             %.0f s", maxAge);
 	SEISCOMP_INFO("    origins kept in buffer           %.0f s", originKeep);

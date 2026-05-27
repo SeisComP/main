@@ -32,7 +32,6 @@
 #include "sc3adapters.h"
 #include "scutil.h"
 #include "util.h"
-#include "stationlocationfile.h"
 
 using namespace Seiscomp::Client;
 using namespace Seiscomp::Math;
@@ -111,12 +110,12 @@ void AutolocApp::createCommandLineDescription() {
 	commandline().addOption("Settings", "station-locations",
 	                        "The station-locations.conf file to use when in "
 	                        "offline mode. If no file is given, the database is used.",
-	                        &_stationLocationFile, false);
+	                        &_config.stationLocationFile, false);
 	commandline().addOption("Settings", "station-config",
 	                        "The station configuration file.",
 	                        &_config.staConfFile, false);
 	commandline().addOption("Settings", "grid", "The grid configuration file.",
-	                        &_gridConfigFile, false);
+	                        &_config.gridConfigFile, false);
 	commandline().addOption("Settings", "pick-log",
 	                        "The pick log file. Providing a file name enables "
 	                        "logging picks even when disabled by configuration.",
@@ -238,17 +237,13 @@ bool AutolocApp::validateParameters() {
 
 	if ( _config.offline ) {
 		setMessagingEnabled(false);
-		if ( !_stationLocationFile.empty() ) {
+		if ( !_config.stationLocationFile.empty() ) {
 			setDatabaseEnabled(false, false);
 		}
 	}
 
 	// Load inventory from database only if no station location file was specified.
-	if ( !_stationLocationFile.empty() ) {
-		setLoadStationsEnabled(false);
-		setDatabaseEnabled(false, false);
-	}
-	else {
+	if ( _config.stationLocationFile.empty() ) {
 		setLoadStationsEnabled(true);
 
 		if ( !isInventoryDatabaseEnabled() ) {
@@ -257,6 +252,10 @@ bool AutolocApp::validateParameters() {
 		else {
 			setDatabaseEnabled(true, true);
 		}
+	}
+	else {
+		setLoadStationsEnabled(false);
+		setDatabaseEnabled(false, false);
 	}
 
 	// Maybe we do want to allow sending of origins in offline mode?
@@ -311,6 +310,8 @@ bool AutolocApp::initConfiguration() {
 	if ( !Client::Application::initConfiguration() ) {
 		return false;
 	}
+
+	_config.agencyID = agencyID();
 
 	// support deprecated configuration, deprecated since 2020-11-16
 	try {
@@ -567,9 +568,9 @@ bool AutolocApp::initConfiguration() {
 	catch ( ... ) {}
 
 	try {
-		_gridConfigFile = Environment::Instance()->absolutePath(configGetString("autoloc.grid"));
+		_config.gridConfigFile = Environment::Instance()->absolutePath(configGetString("autoloc.grid"));
 	}
-	catch ( ... ) { _gridConfigFile = Environment::Instance()->shareDir() + "/scautoloc/grid.conf"; }
+	catch ( ... ) { _config.gridConfigFile = Environment::Instance()->shareDir() + "/scautoloc/grid.conf"; }
 
 	try {
 		_config.staConfFile = Environment::Instance()->absolutePath(configGetString("autoloc.stationConfig"));
@@ -603,7 +604,7 @@ bool AutolocApp::initConfiguration() {
 	catch ( ... ) {}
 
 	try {
-		_stationLocationFile = configGetString("autoloc.stationLocations");
+		_config.stationLocationFile = configGetString("autoloc.stationLocations");
 	}
 	catch ( ... ) {}
 
@@ -618,7 +619,8 @@ bool AutolocApp::initConfiguration() {
 	catch ( ... ) {}
 
 	_config.pickLogFile = Environment::Instance()->absolutePath(_config.pickLogFile);
-	_stationLocationFile = Environment::Instance()->absolutePath(_stationLocationFile);
+	_config.gridConfigFile = Environment::Instance()->absolutePath(_config.gridConfigFile);
+	_config.stationLocationFile = Environment::Instance()->absolutePath(_config.stationLocationFile);
 
 	// network type
 	std::string ntp = "global";
@@ -669,10 +671,6 @@ bool AutolocApp::init() {
 
 	dumpConfig();
 
-	if ( !Autoloc::Autoloc3::setGridFile(_gridConfigFile) ) {
-		return false;
-	}
-
 	if ( !initInventory() ) {
 		return false;
 	}
@@ -695,35 +693,6 @@ bool AutolocApp::init() {
 	}
 
 	return Autoloc3::init();
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool AutolocApp::initInventory()
-{
-	if ( _stationLocationFile.empty() ) {
-		SEISCOMP_DEBUG("Initializing station inventory from DB");
-		inventory = Client::Inventory::Instance()->inventory();
-		Autoloc::Utils::minimizeInventory(inventory.get());
-	}
-	else {
-		SEISCOMP_DEBUG_S(
-			"Initializing station inventory from file '" +
-			_stationLocationFile + "'");
-		inventory = Seiscomp::DataModel::inventoryFromStationLocationFile(_stationLocationFile);
-	}
-
-	if ( ! inventory ) {
-		SEISCOMP_ERROR("No station inventory!");
-		return false;
-	}
-
-	Autoloc::Autoloc3::setInventory(inventory.get());
-
-	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -814,14 +783,14 @@ bool AutolocApp::runFromXMLFile(const char *filename)
 	// retrieval of relevant objects from event parameters
 	// and subsequent DSU sort
 	TimeObjectVector objs;
-	while (ep->pickCount() > 0) {
+	while ( ep->pickCount() ) {
 		DataModel::PickPtr pick = ep->pick(0);
 		ep->removePick(0);
 		DataModel::PublicObjectPtr o(pick);
 		Core::Time t = pick->creationInfo().creationTime();
 		objs.push_back(TimeObject(t, 0, pick->publicID(), o));
 	}
-	while (ep->amplitudeCount() > 0) {
+	while ( ep->amplitudeCount() ) {
 		DataModel::AmplitudePtr amplitude = ep->amplitude(0);
 		ep->removeAmplitude(0);
 		DataModel::PublicObjectPtr o(amplitude);
@@ -829,7 +798,7 @@ bool AutolocApp::runFromXMLFile(const char *filename)
 		// t += Core::TimeSpan(0.00001);
 		objs.push_back(TimeObject(t, 1, amplitude->publicID(), o));
 	}
-	while (ep->originCount() > 0) {
+	while (ep->originCount() ) {
 		DataModel::OriginPtr origin = ep->origin(0);
 		ep->removeOrigin(0);
 		DataModel::PublicObjectPtr o(origin);
@@ -999,15 +968,6 @@ const Core::Time AutolocApp::now() const {
 	}
 
 	return Core::Time::UTC();
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void AutolocApp::timeStamp() const {
-	SEISCOMP_DEBUG_S("Timestamp: " + now().toString("%F %T.%f"));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1234,7 +1194,7 @@ bool AutolocApp::feed(DataModel::Pick *scpick) {
 	// configure station if needed
 	initOneStation(scpick->waveformID(), scpick->time().value());
 
-	Autoloc::PickPtr pick = convertFromSC(scpick);
+	Autoloc::PickPtr pick = new Autoloc::Pick(scpick);
 	if ( !pick ) {
 		SEISCOMP_INFO("  + ignoring pick from SC");
 		return false;
@@ -1373,6 +1333,8 @@ bool AutolocApp::feed(DataModel::Origin *scorigin) {
 		}
 	}
 
+	return Autoloc3::feed(scorigin);
+/*
 	Autoloc::Origin *origin = convertFromSC(scorigin);
 	if ( !origin ) {
 		SEISCOMP_ERROR_S("Failed to convert origin " + objectAgencyID(scorigin));
@@ -1396,6 +1358,7 @@ bool AutolocApp::feed(DataModel::Origin *scorigin) {
 	}
 
 	return true;
+*/
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

@@ -237,6 +237,8 @@ bool ArrivalVector::sort()
 
 static size_t _originCount {0};
 
+
+
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Origin::Origin(double lat, double lon, double dep, const Time &time)
 	: id(0), hypocenter(lat, lon, dep), time(time), timeerr(0),
