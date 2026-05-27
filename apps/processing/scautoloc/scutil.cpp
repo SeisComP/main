@@ -33,12 +33,12 @@ void logObjectCounts()
 	DataModel::PublicObject::Lock();
 	SEISCOMP_DEBUG("%-16s count = %d", "PublicObject", DataModel::PublicObject::ObjectCount());
 	std::map<const char*, std::size_t> count;
-	for (DataModel::PublicObject::Iterator
+	for ( DataModel::PublicObject::Iterator
 			it  = DataModel::PublicObject::Begin();
-			it != DataModel::PublicObject::End(); ++it) {
+			it != DataModel::PublicObject::End(); ++it ) {
 		++count[(*it).second->className()];
 	}
-	for (auto& item: count)
+	for ( auto& item: count )
 		SEISCOMP_DEBUG("%-16s count = %d", item.first, item.second);
 	DataModel::PublicObject::Unlock();
 }
@@ -50,7 +50,7 @@ void logObjectCounts()
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool manual(const DataModel::Origin *origin) {
 	try {
-		switch (origin->evaluationMode()) {
+		switch ( origin->evaluationMode() ) {
 		case DataModel::MANUAL:
 			return true;
 		default:

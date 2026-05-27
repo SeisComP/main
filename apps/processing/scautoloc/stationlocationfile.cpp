@@ -39,16 +39,16 @@ Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::stri
 	std::string sta, net;
 	double lat, lon, alt;
 
-	while (ifile >> net >> sta >> lat >> lon >> alt) {
-		std::string netId = "Network/"+net;
+	while ( ifile >> net >> sta >> lat >> lon >> alt ) {
+		std::string netId = "Network/" + net;
 		Seiscomp::DataModel::Network *network = inventory->findNetwork(netId);
-		if ( ! network) {
+		if ( ! network ) {
 			network = new Seiscomp::DataModel::Network(netId);
 			network->setCode(net);
 			inventory->add(network);
 		}
 
-		std::string staId = "Station/"+net+"/"+sta;
+		std::string staId = "Station/" + net + "/" + sta;
 		Seiscomp::DataModel::Station *station = new Seiscomp::DataModel::Station(staId);
 		station->setCode(sta);
 		station->setLatitude(lat);

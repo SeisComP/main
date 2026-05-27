@@ -64,20 +64,20 @@ DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases) {
 
 	switch ( origin->depthType ) {
 	case Autoloc::Origin::DepthFree:
-			scorigin->setDepthType(DataModel::OriginDepthType(DataModel::FROM_LOCATION));
-			break;
+		scorigin->setDepthType(DataModel::OriginDepthType(DataModel::FROM_LOCATION));
+		break;
 
 	case Autoloc::Origin::DepthMinimum:
-			break;
+		break;
 
 	case Autoloc::Origin::DepthDefault:
-			break;
+		break;
 
 	case Autoloc::Origin::DepthManuallyFixed:
-			scorigin->setDepthType(DataModel::OriginDepthType(DataModel::OPERATOR_ASSIGNED));
-			break;
+		scorigin->setDepthType(DataModel::OriginDepthType(DataModel::OPERATOR_ASSIGNED));
+		break;
 	default:
-			break;
+		break;
 	}
 
 	// This is a preliminary fix which prevents autoloc from producing
@@ -88,7 +88,7 @@ DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases) {
 
 	size_t arrivalCount = origin->arrivals.size();
 
-	for ( size_t i=0; i<arrivalCount; i++ ) {
+	for ( size_t i = 0; i < arrivalCount; i++ ) {
 		const Autoloc::Arrival &arr = origin->arrivals[i];
 
 		// If not all (automatic) phases are requested, only include P and PKP
@@ -106,8 +106,7 @@ DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases) {
 		}
 */
 		const DataModel::Phase phase(arr.phase);
-		DataModel::Arrival* scarr
-		        = new DataModel::Arrival();
+		DataModel::Arrival* scarr = new DataModel::Arrival();
 		scarr->setPickID(arr.pick->id());
 		scarr->setDistance(arr.distance);
 		scarr->setAzimuth(arr.azimuth);
@@ -218,7 +217,7 @@ Autoloc::Origin *Applications::AutolocApp::convertFromSC(const DataModel::Origin
 	}
 
 	int arrivalCount = scorigin->arrivalCount();
-	for ( int i=0; i<arrivalCount; i++ ) {
+	for ( int i = 0; i < arrivalCount; i++ ) {
 		const std::string &pickID = scorigin->arrival(i)->pickID();
 /*
 		DataModel::Pick *scpick = DataModel::Pick::Find(pickID);
@@ -292,15 +291,15 @@ Autoloc::Origin *Applications::AutolocApp::convertFromSC(const DataModel::Origin
 
 	origin->publicID = scorigin->publicID();
 	try {
-	// FIXME: In scolv the Origin::depthType is not set!
-	DataModel::OriginDepthType dtype = scorigin->depthType();
-	if ( dtype == DataModel::OriginDepthType(DataModel::FROM_LOCATION) ) {
-		origin->depthType = Autoloc::Origin::DepthFree;
-	}
+		// FIXME: In scolv the Origin::depthType is not set!
+		DataModel::OriginDepthType dtype = scorigin->depthType();
+		if ( dtype == DataModel::OriginDepthType(DataModel::FROM_LOCATION) ) {
+			origin->depthType = Autoloc::Origin::DepthFree;
+		}
 
-	else if ( dtype == DataModel::OriginDepthType(DataModel::OPERATOR_ASSIGNED) ) {
-		origin->depthType = Autoloc::Origin::DepthManuallyFixed;
-	}
+		else if ( dtype == DataModel::OriginDepthType(DataModel::OPERATOR_ASSIGNED) ) {
+			origin->depthType = Autoloc::Origin::DepthManuallyFixed;
+		}
 	}
 	catch ( ... ) {
 		SEISCOMP_WARNING("Origin::depthType is not set!");

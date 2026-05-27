@@ -52,8 +52,9 @@ typedef std::set<PickCPtr> PickSet;
 void Nucleator::setStation(const Station *station)
 {
 	std::string key = station->net + "." + station->code;
-	if (_stations.find(key) != _stations.end())
+	if ( _stations.find(key) != _stations.end() ) {
 		return; // nothing to insert
+	}
 	_stations.insert(StationMap::value_type(key, station));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -105,7 +106,7 @@ void GridSearch::setSeiscompConfig(const Seiscomp::Config::Config *scconfig) {
 bool GridSearch::init()
 {
 	_relocator.setSeiscompConfig(_scconfig);
-	if ( ! _relocator.init()) {
+	if ( ! _relocator.init() ) {
 		SEISCOMP_ERROR("GridSearch::init(): Failed to initialize relocator");
 		return false;
 	}
@@ -141,7 +142,7 @@ int GridSearch::cleanup(const Time& minTime)
 {
 	int count = 0;
 
-	for (auto& gridpoint: _grid) {
+	for ( auto& gridpoint: _grid ) {
 		count += gridpoint->cleanup(minTime);
 	}
 
@@ -226,7 +227,7 @@ GridPoint::feed(const Pick* pick)
 
 	std::map<std::string, StationWrapperCPtr>::const_iterator
 		xit = _wrappers.find(key);
-	if (xit==_wrappers.end())
+	if ( xit==_wrappers.end() )
 		// this grid cell may be out of range for that station
 		return nullptr;
 	StationWrapperCPtr wrapper = (*xit).second;
@@ -242,13 +243,15 @@ GridPoint::feed(const Pick* pick)
 
 	// If the station distance exceeds the maximum station distance
 	// configured for the grid point...
-	if ( wrapper->distance > maxStaDist )
+	if ( wrapper->distance > maxStaDist ) {
 		return nullptr;
+	}
 
 	// If the station distance exceeds the maximum nucleation distance
 	// configured for the station...
-	if ( wrapper->distance > wrapper->station->maxNucDist )
+	if ( wrapper->distance > wrapper->station->maxNucDist ) {
 		return nullptr;
+	}
 
 	// back-project pick to hypothetical origin time
 	ProjectedPick pp(pick, wrapper);
@@ -261,29 +264,31 @@ GridPoint::feed(const Pick* pick)
 	std::multiset<ProjectedPick>::iterator it,
 		lower  = _picks.lower_bound(pp.projectedTime() - _dt),
 		upper  = _picks.upper_bound(pp.projectedTime() + _dt);
-	for (it=lower; it!=upper; ++it)
+	for ( it=lower; it!=upper; ++it ) {
 		pps.push_back(*it);
+	}
 	size_t npick = pps.size();
 
 	// if the number of picks around the new pick is too low...
-	if (npick < _nmin)
+	if ( npick < _nmin ) {
 		return nullptr;
+	}
 
 	// now take a closer look at how tightly clustered the picks are
 	double dt0 = 4; // XXX
 	std::vector<size_t> _cnt(npick);
 	std::vector<size_t> _flg(npick);
-	for (size_t i=0; i<npick; i++) {
+	for ( size_t i = 0; i < npick; i++ ) {
 		_cnt[i] = _flg[i] = 0;
 	}
-	for (size_t i=0; i<npick; i++) {
+	for ( size_t i = 0; i < npick; i++) {
 
 		ProjectedPick &ppi = pps[i];
 		double t_i   = ppi.projectedTime();
 		double azi_i = ppi.wrapper->azimuth;
 		double slo_i = ppi.wrapper->hslow;
 
-		for (size_t k=i; k<npick; k++) {
+		for ( size_t k = i; k < npick; k++ ) {
 
 			ProjectedPick &ppk = pps[k];
 			double t_k   = ppk.projectedTime();
@@ -293,30 +298,32 @@ GridPoint::feed(const Pick* pick)
 			double azi_diff = std::abs(fmod(((azi_k-azi_i)+180.), 360.)-180.);
 			double dtmax = _radius*(slo_i+slo_k) * azi_diff/90. + dt0;
 
-			if (std::abs(t_i-t_k) < dtmax) {
+			if ( std::abs(t_i-t_k) < dtmax ) {
 				_cnt[i]++;
 				_cnt[k]++;
 
-				if (ppi.p == pp.p || ppk.p == pp.p)
+				if ( ppi.p == pp.p || ppk.p == pp.p )
 					_flg[k] = _flg[i] = 1;
 			}
 		}
 	}
 
 	size_t sum=0;
-	for (size_t i=0; i<npick; i++)
+	for ( size_t i = 0; i < npick; i++ ) {
 		sum += _flg[i];
-	if (sum < _nmin)
+	}
+	if ( sum < _nmin )
 		return nullptr;
 
 	std::vector<ProjectedPick> group;
 	size_t cntmax = 0;
 	Time otime;
-	for (size_t i=0; i<npick; i++) {
-		if ( ! _flg[i])
+	for ( size_t i = 0; i < npick; i++ ) {
+		if ( ! _flg[i]) {
 			continue;
+		}
 		group.push_back(pps[i]);
-		if (_cnt[i] > cntmax) {
+		if ( _cnt[i] > cntmax ) {
 			cntmax = _cnt[i];
 			otime = pps[i].projectedTime();
 		}
@@ -326,7 +333,7 @@ GridPoint::feed(const Pick* pick)
 // vvvvvvvvvvvvv Iteration
 
 	std::vector<double> ptime(npick);
-	for (size_t i=0; i<npick; i++) {
+	for ( size_t i = 0; i < npick; i++ ) {
 		ptime[i] = pps[i].projectedTime();
 	}
 
@@ -334,13 +341,13 @@ GridPoint::feed(const Pick* pick)
 
 	// add Picks/Arrivals to that newly created Origin
 	std::set<std::string> stations;
-	for (size_t i=0; i<group.size(); i++) {
+	for ( size_t i = 0; i < group.size(); i++ ) {
 		const ProjectedPick &pp = group[i];
 
 		PickCPtr pick = pp.p;
 		const std::string key = station_key(pick->station());
 		// avoid duplicate stations XXX ugly without amplitudes
-		if ( stations.count(key))
+		if ( stations.count(key) )
 			continue;
 		stations.insert(key);
 
@@ -356,7 +363,7 @@ GridPoint::feed(const Pick* pick)
 		_origin->arrivals.push_back(arr);
 	}
 
-	if (_origin->arrivals.size() < _nmin) {
+	if ( _origin->arrivals.size() < _nmin ) {
 		delete _origin;
 		return nullptr;
 	}
@@ -375,8 +382,9 @@ int GridPoint::cleanup(const Time& minTime)
 
 	// this is for counting only
 	std::multiset<ProjectedPick>::iterator it, upper=_picks.upper_bound(minTime);
-	for (it=_picks.begin(); it!=upper; ++it)
+	for ( it = _picks.begin(); it != upper; ++it ) {
 		count++;
+	}
 
 	_picks.erase(_picks.begin(), upper);
 
@@ -400,8 +408,9 @@ bool GridPoint::setupStation(const Station *station)
 		return false;
 
 	TravelTime tt;
-	if ( ! travelTimeP(hypocenter.lat, hypocenter.lon, hypocenter.dep, station->lat, station->lon, 0, delta, tt))
+	if ( ! travelTimeP(hypocenter.lat, hypocenter.lon, hypocenter.dep, station->lat, station->lon, 0, delta, tt)) {
 		return false;
+	}
 
 	StationWrapperCPtr sw = new StationWrapper(station, tt.phase, delta, az, tt.time, tt.dtdd);
 	std::string key = station_key (sw->station);
@@ -418,10 +427,12 @@ bool GridPoint::setupStation(const Station *station)
 static double avgfn2(double x) {
 	const double w = 0.2; // plateau width
 
-	if (x < -1 || x > 1)
+	if ( x < -1 || x > 1 ) {
 		return 0;
-	if (x > -w && x < w)
+	}
+	if ( x > -w && x < w ) {
 		return 1;
+	}
 
 	x = (x + (x>0 ? -w : w))/(1-w);
 //	x = cos(x*M_PI*0.5);
@@ -436,7 +447,7 @@ static double avgfn2(double x) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 static double depthFactor(double depth) {
 	// straight line, easy (but also risky!) to be made configurable
-	return 1+0.0005*(200-depth);
+	return 1 + 0.0005*(200-depth);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -468,7 +479,7 @@ double originScore(const Origin *origin, double maxRMS, double networkSizeKm) {
 	double score = 0, amplScoreMax=0;
 	size_t arrivalCount = origin->arrivals.size();
 	//int n = origin->definingPhaseCount();
-	for ( size_t i=0; i<arrivalCount; i++) {
+	for ( size_t i = 0; i < arrivalCount; i++) {
 		double phaseScore = 1; // 1 for P / 0.3 for PKP
 		Arrival &arr = ((Origin*)origin)->arrivals[i];
 		PickCPtr pick = arr.pick;
@@ -525,12 +536,12 @@ double originScore(const Origin *origin, double maxRMS, double networkSizeKm) {
 		// Amplitudes usually decrease with distance.
 		// This hack takes this fact into account for computing the score.
 		// A sudden big amplitude at large distance cannot increase the score too badly
-		if ( amplScoreMax==0 ) {
+		if ( amplScoreMax == 0 ) {
 			amplScoreMax = amplScore;
 		}
 		else {
-			if ( i>2 && amplScore > amplScoreMax+0.4 ) {
-				amplScore = amplScoreMax+0.4;
+			if ( i > 2 && amplScore > amplScoreMax + 0.4 ) {
+				amplScore = amplScoreMax + 0.4;
 			}
 			if ( amplScore > amplScoreMax ) {
 				amplScoreMax = amplScore;
@@ -552,9 +563,9 @@ double originScore(const Origin *origin, double maxRMS, double networkSizeKm) {
 		arr.ascore = amplScore;
 		arr.tscore = timeScore;
 
-		switch (arr.excluded) {
+		switch ( arr.excluded ) {
 			case Arrival::UnusedPhase:
-				if (arr.phase.substr(0,3) == "PKP")
+				if ( arr.phase.substr(0, 3) == "PKP" )
 					phaseScore = 0.3;
 				else
 					phaseScore = 0.1;
@@ -591,7 +602,7 @@ double originScore(const Origin *origin, double maxRMS, double networkSizeKm) {
 	// This is a function that penalizes rms > q*maxRMS
 	// At rms == maxRMS this function is 1.
 	double  q = 0.33, rmspenalty = 0;
-	if (rms > maxRMS) {
+	if ( rms > maxRMS ) {
 		double x = ((rms-maxRMS*q)/(maxRMS-maxRMS*q));
 		rmspenalty = x*x;
 	}
@@ -609,9 +620,9 @@ static Origin* bestOrigin(OriginVector &origins) {
 	double maxScore = 0;
 	Origin* best = nullptr;
 
-	for (auto& origin : origins) {
+	for ( auto& origin : origins ) {
 		double score = originScore(origin.get());
-		if (score > maxScore) {
+		if ( score > maxScore ) {
 			maxScore = score;
 			best = origin.get();
 		}
@@ -665,7 +676,7 @@ bool GridSearch::feed(const Pick *pick) {
 	// and save all "candidate" origins in originVector
 
 	double maxScore = 0;
-	for (GridPointPtr &gp : _grid) {
+	for ( GridPointPtr &gp : _grid ) {
 
 		if ( stationSetupNeeded )
 			gp->setupStation(pick->station());

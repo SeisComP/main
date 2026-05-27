@@ -443,7 +443,7 @@ Pick* readPickLine() {
 	pick->per  = per;
 	pick->snr  = snr;
 
-	switch(stat) {
+	switch ( stat ) {
 	case 'A': pick->mode = Pick::Automatic ; break;
 	case 'C': pick->mode = Pick::Confirmed ; break;
 	case 'M': pick->mode = Pick::Manual    ; break;
@@ -536,14 +536,14 @@ double rms(const std::vector<double> &v, double offset) {
 	if (v.empty())
 		return 0;
 
-	if (offset) {
-		for (double f : v) {
+	if ( offset ) {
+		for ( double f : v ) {
 			f -= offset;
 			r += f*f;
 		}
 	}
 	else {
-		for (double f : v) {
+		for ( double f : v ) {
 			r += f*f;
 		}
 	}

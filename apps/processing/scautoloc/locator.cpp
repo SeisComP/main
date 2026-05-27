@@ -59,14 +59,16 @@ void MySensorLocationDelegate::setStation(const Autoloc::Station *station) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 DataModel::SensorLocation *
 MySensorLocationDelegate::getSensorLocation(DataModel::Pick *pick) const {
-	if ( !pick )
+	if ( !pick ) {
 		return nullptr;
+	}
 
 	std::string key = pick->waveformID().networkCode() + "." + pick->waveformID().stationCode();
 
 	SensorLocationList::const_iterator it = _sensorLocations.find(key);
-	if ( it != _sensorLocations.end() )
+	if ( it != _sensorLocations.end() ) {
 		return it->second.get();
+	}
 
 	return nullptr;
 }
@@ -262,7 +264,7 @@ Origin* Locator::_screlocate(const Origin *origin) {
 */
 
 	size_t arrivalCount = origin->arrivals.size();
-	for ( size_t i=0; i<arrivalCount; i++ ) {
+	for ( size_t i = 0; i < arrivalCount; i++ ) {
 		const Arrival &arr = origin->arrivals[i];
 		DataModel::PickPtr scpick = DataModel::Pick::Find(arr.pick->id());
 
@@ -270,7 +272,7 @@ Origin* Locator::_screlocate(const Origin *origin) {
 			SEISCOMP_ERROR("THIS MUST NEVER HAPPEN: Pick '%s' not found", arr.pick->id());
 		}
 /*
-		if ( !scpick) {
+		if ( !scpick ) {
 			const DataModel::Phase phase(arr.phase);
 
 			scpick = DataModel::Pick::Create(arr.pick->id);
@@ -373,12 +375,12 @@ Origin* Locator::_screlocate(const Origin *origin) {
 	relo->methodID = screlo->methodID();
 	relo->earthModelID = screlo->earthModelID();
 
-	for (size_t i=0; i<arrivalCount; i++) {
+	for ( size_t i = 0; i < arrivalCount; i++ ) {
 
 		Arrival &arr = relo->arrivals[i];
 		const std::string &pickID = screlo->arrival(i)->pickID();
 
-		if (arr.pick->id() != pickID) {
+		if ( arr.pick->id() != pickID ) {
 			// If this should ever happen, complain loudly and fail
 			SEISCOMP_ERROR("Locator: FATAL ERROR: Inconsistent arrival order");
 			return nullptr;
@@ -431,18 +433,20 @@ bool determineAzimuthalGaps(const Origin *origin, double *primary, double *secon
 	std::vector<double> azi;
 
 	size_t arrivalCount = origin->arrivals.size();
-	for (size_t i=0; i<arrivalCount; i++) {
+	for ( size_t i = 0; i < arrivalCount; i++ ) {
 
 		const Arrival &arr = origin->arrivals[i];
 
-		if (arr.excluded)
+		if ( arr.excluded ) {
 			continue;
+		}
 
 		azi.push_back(arr.azimuth);
 	}
 
-	if (azi.size() < 2)
+	if ( azi.size() < 2 ) {
 		return false;
+	}
 
 	std::sort(azi.begin(), azi.end());
 
@@ -451,7 +455,7 @@ bool determineAzimuthalGaps(const Origin *origin, double *primary, double *secon
 	azi.push_back(azi[0] + 360.);
 	azi.push_back(azi[1] + 360.);
 
-	for (size_t i=0; i<aziCount; i++) {
+	for ( size_t i = 0; i < aziCount; i++ ) {
 		double gap = azi[i+1] - azi[i];
 		if (gap > *primary)
 			*primary = gap;

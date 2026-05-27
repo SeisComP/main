@@ -217,7 +217,9 @@ bool Autoloc3::initOneStation(const DataModel::WaveformStreamID &wfid, const Cor
 			               epochEnd);
 
 			double elevation = 0;
-			try { elevation = station->elevation(); }
+			try {
+				elevation = station->elevation();
+			}
 			catch ( ... ) {}
 
 			Autoloc::Station *sta = new Autoloc::Station(station);

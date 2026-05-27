@@ -163,10 +163,7 @@ StationConfig::get(const std::string &net, const std::string &sta) const
 	patterns.push_back("* " + sta);
 	patterns.push_back("* *");
 
-	for (std::vector<std::string>::iterator
-	     it = patterns.begin(); it != patterns.end(); ++it) {
-
-		const std::string &pattern = *it;
+	for ( const std::string &pattern : patterns ) {
 		std::map<std::string, StationConfigItem>::const_iterator
 			mit = _item.find(pattern);
 		if ( mit == _item.end() )

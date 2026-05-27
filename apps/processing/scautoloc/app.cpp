@@ -308,7 +308,9 @@ bool AutolocApp::validateParameters() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool AutolocApp::initConfiguration() {
-	if ( !Client::Application::initConfiguration() ) return false;
+	if ( !Client::Application::initConfiguration() ) {
+		return false;
+	}
 
 	// support deprecated configuration, deprecated since 2020-11-16
 	try {
@@ -316,15 +318,18 @@ bool AutolocApp::initConfiguration() {
 		SEISCOMP_ERROR("Configuration parameter autoloc.maxAge is deprecated."
 		               " Use buffer.pickKeep instead!");
 	}
-	catch (...) {}
+	catch ( ... ) {}
+
 	// override deprecated configuration if value is set
-	try { _config.maxAge = configGetDouble("buffer.pickKeep"); }
-	catch (...) {}
+	try {
+		_config.maxAge = configGetDouble("buffer.pickKeep");
+	}
+	catch ( ... ) {}
 
 	try {
 		_config.authors = configGetStrings("autoloc.authors");
 	}
-	catch (...) {}
+	catch ( ... ) {}
 
 	// support deprecated configuration, deprecated since 2020-11-16
 	try {
@@ -333,27 +338,40 @@ bool AutolocApp::initConfiguration() {
 		               " Use buffer.originKeep instead!");
 	}
 	catch ( ... ) {}
+
 	// override deprecated configuration if value is set
-	try { _config.originKeep = configGetInt("buffer.originKeep"); }
+	try {
+		_config.originKeep = configGetInt("buffer.originKeep");
+	}
 	catch ( ... ) {}
 
 
 	// support deprecated configuration, deprecated since 2020-11-16
-	try { _config.cleanupInterval = configGetDouble("autoloc.cleanupInterval");
+	try {
+		_config.cleanupInterval = configGetDouble("autoloc.cleanupInterval");
 		SEISCOMP_ERROR("Configuration parameter autoloc.cleanupInterval is deprecated."
 		               " Use buffer.cleanupIntervalinstead!");}
-	catch (...) {}
-	try { _config.cleanupInterval = configGetDouble("buffer.cleanupInterval"); }
-	catch (...) {}
+	catch ( ... ) {}
 
-	try { _config.defaultDepthStickiness = configGetDouble("autoloc.defaultDepthStickiness"); }
-	catch (...) {}
+	try {
+		_config.cleanupInterval = configGetDouble("buffer.cleanupInterval");
+	}
+	catch ( ... ) {}
 
-	try { _config.tryDefaultDepth = configGetBool("autoloc.tryDefaultDepth"); }
-	catch (...) {}
+	try {
+		_config.defaultDepthStickiness = configGetDouble("autoloc.defaultDepthStickiness");
+	}
+	catch ( ... ) {}
 
-	try { _config.adoptManualDepth = configGetBool("autoloc.adoptManualDepth"); }
-	catch (...) {}
+	try {
+		_config.tryDefaultDepth = configGetBool("autoloc.tryDefaultDepth");
+	}
+	catch ( ... ) {}
+
+	try {
+		_config.adoptManualDepth = configGetBool("autoloc.adoptManualDepth");
+	}
+	catch ( ... ) {}
 
 	// support deprecated configuration, deprecated since 2020-11-13
 	try {
@@ -361,157 +379,242 @@ bool AutolocApp::initConfiguration() {
 		SEISCOMP_ERROR("Configuration parameter autoloc.locator.profile is deprecated."
 		                 " Use locator.profile instead!");
 	}
-	catch (...) {}
+	catch ( ... ) {}
 
 	// override deprecated configuration if value is set
-	try { _config.locatorProfile = configGetString("locator.profile"); }
-	catch (...) {}
+	try {
+		_config.locatorProfile = configGetString("locator.profile");
+	}
+	catch ( ... ) {}
 
-	try { _config.defaultDepth = configGetDouble("locator.defaultDepth"); }
-	catch (...) {}
+	try {
+		_config.defaultDepth = configGetDouble("locator.defaultDepth");
+	}
+	catch ( ... ) {}
 
-	try { _config.minimumDepth = configGetDouble("locator.minimumDepth"); }
-	catch (...) {}
+	try {
+		_config.minimumDepth = configGetDouble("locator.minimumDepth");
+	}
+	catch ( ... ) {}
 
-	try { _config.maxAziGapSecondary = configGetDouble("autoloc.maxSGAP"); }
-	catch (...) {}
+	try {
+		_config.maxAziGapSecondary = configGetDouble("autoloc.maxSGAP");
+	}
+	catch ( ... ) {}
 
-	try { _config.maxRMS = configGetDouble("autoloc.maxRMS"); }
-	catch (...) {}
+	try {
+		_config.maxRMS = configGetDouble("autoloc.maxRMS");
+	}
+	catch ( ... ) {}
 
-	try { _config.maxDepth = configGetDouble("autoloc.maxDepth"); }
-	catch (...) {}
+	try {
+		_config.maxDepth = configGetDouble("autoloc.maxDepth");
+	}
+	catch ( ... ) {}
 
-	try { _config.maxResidualUse = configGetDouble("autoloc.maxResidual"); }
-	catch (...) {}
+	try {
+		_config.maxResidualUse = configGetDouble("autoloc.maxResidual");
+	}
+	catch ( ... ) {}
 
-	try { _config.maxStaDist = configGetDouble("autoloc.maxStationDistance"); }
-	catch (...) {}
+	try {
+		_config.maxStaDist = configGetDouble("autoloc.maxStationDistance");
+	}
+	catch ( ... ) {}
 
-	try { _config.defaultMaxNucDist = configGetDouble("autoloc.defaultMaxNucleationDistance"); }
-	catch (...) {}
+	try {
+		_config.defaultMaxNucDist = configGetDouble("autoloc.defaultMaxNucleationDistance");
+	}
+	catch ( ... ) {}
 
-	try { _config.xxlEnabled = configGetBool("autoloc.xxl.enable"); }
-	catch (...) {}
+	try {
+		_config.xxlEnabled = configGetBool("autoloc.xxl.enable");
+	}
+	catch ( ... ) {}
 
-	try { _config.xxlMinAmplitude = configGetDouble("autoloc.xxl.minAmplitude"); }
-	catch (...) {
+	try {
+		_config.xxlMinAmplitude = configGetDouble("autoloc.xxl.minAmplitude");
+	}
+	catch ( ... ) {
 		try {
 			// deprecated since 2013-06-26
 			_config.xxlMinAmplitude = configGetDouble("autoloc.thresholdXXL");
 			SEISCOMP_ERROR("Config parameter autoloc.thresholdXXL is deprecated."
 			               " Use autoloc.xxl.minAmplitude instead!");
 		}
-		catch (...) {}
+		catch ( ... ) {}
 	}
 
-	try { _config.xxlMaxStaDist = configGetDouble("autoloc.xxl.maxStationDistance"); }
-	catch (...) {
+	try {
+		_config.xxlMaxStaDist = configGetDouble("autoloc.xxl.maxStationDistance");
+		}
+	catch ( ... ) {
 		try {
 			// deprecated since 2013-06-26
 			_config.xxlMaxStaDist = configGetDouble("autoloc.maxStationDistanceXXL");
 			SEISCOMP_ERROR("Configuration parameter autoloc.maxStationDistanceXXL"
 			               " is deprecated. Use autoloc.xxl.maxStationDistance instead!");
 		}
-		catch (...) {}
+		catch ( ... ) {}
 	}
 
-	try { _config.xxlMinPhaseCount = configGetInt("autoloc.xxl.minPhaseCount"); }
-	catch (...) {
+	try {
+		_config.xxlMinPhaseCount = configGetInt("autoloc.xxl.minPhaseCount");
+		}
+	catch ( ... ) {
 		try {
 			// deprecated since 2013-06-26
 			_config.xxlMinPhaseCount = configGetInt("autoloc.minPhaseCountXXL");
 			SEISCOMP_ERROR("Configuration parameter autoloc.minPhaseCountXXL is"
 			               " deprecated. Use autoloc.xxl.minPhaseCount instead!");
 		}
-		catch (...) {}
+		catch ( ... ) {}
 	}
 
-	try { _config.xxlMinSNR = configGetDouble("autoloc.xxl.minSNR"); }
-	catch (...) {}
-
-	try { _config.xxlMaxDepth = configGetDouble("autoloc.xxl.maxDepth"); }
-	catch (...) {}
-
-	try { _config.xxlDeadTime = configGetDouble("autoloc.xxl.deadTime"); }
-	catch (...) {}
-
-	try { _config.minPickSNR = configGetDouble("autoloc.minPickSNR"); }
-	catch (...) {}
-
-	try { _config.minPickAffinity = configGetDouble("autoloc.minPickAffinity"); }
-	catch (...) {}
-
-	try { _config.minPhaseCount = configGetInt("autoloc.minPhaseCount"); }
-	catch (...) {}
-
-	try { _config.minScore = configGetDouble("autoloc.minScore"); }
-	catch (...) {}
-
-	try { _config.minScoreBypassNucleator = configGetDouble("autoloc.minScoreBypassNucleator"); }
-	catch (...) {}
-
-	try { _config.minStaCountIgnorePKP = configGetInt("autoloc.minStaCountIgnorePKP"); }
-	catch (...) {}
-
-	try { _config.reportAllPhases = configGetBool("autoloc.reportAllPhases"); }
-	catch (...) {}
-
-	try { _config.useManualPicks = configGetBool("autoloc.useManualPicks"); }
-	catch (...) {}
-
-	try { _config.useManualOrigins = configGetBool("autoloc.useManualOrigins"); }
-	catch (...) {}
-
-	try { _config.useImportedOrigins = configGetBool("autoloc.useImportedOrigins"); }
-	catch (...) {}
-
-	try { _wakeUpTimout = configGetInt("autoloc.wakeupInterval"); }
-	catch (...) {}
-
-	try { _config.maxRadiusFactor = configGetDouble("autoloc.gridsearch._maxRadiusFactor"); }
-	catch (...) {}
-
-	try { _config.publicationIntervalTimeSlope = configGetDouble("autoloc.publicationIntervalTimeSlope"); }
+	try {
+		_config.xxlMinSNR = configGetDouble("autoloc.xxl.minSNR");
+	}
 	catch ( ... ) {}
 
-	try { _config.publicationIntervalTimeIntercept = configGetDouble("autoloc.publicationIntervalTimeIntercept"); }
+	try {
+		_config.xxlMaxDepth = configGetDouble("autoloc.xxl.maxDepth");
+	}
 	catch ( ... ) {}
 
-	try { _config.publicationIntervalPickCount = configGetInt("autoloc.publicationIntervalPickCount"); }
+	try {
+		_config.xxlDeadTime = configGetDouble("autoloc.xxl.deadTime");
+	}
 	catch ( ... ) {}
 
-	try { _config.dynamicPickThresholdInterval = configGetDouble("autoloc.dynamicPickThresholdInterval"); }
+	try {
+		_config.minPickSNR = configGetDouble("autoloc.minPickSNR");
+	}
 	catch ( ... ) {}
 
-	try { _gridConfigFile = Environment::Instance()->absolutePath(configGetString("autoloc.grid")); }
-	catch (...) { _gridConfigFile = Environment::Instance()->shareDir() + "/scautoloc/grid.conf"; }
+	try {
+		_config.minPickAffinity = configGetDouble("autoloc.minPickAffinity");
+	}
+	catch ( ... ) {}
 
-	try { _config.staConfFile = Environment::Instance()->absolutePath(configGetString("autoloc.stationConfig")); }
-	catch (...) { _config.staConfFile = Environment::Instance()->shareDir() + "/scautoloc/station.conf"; }
+	try {
+		_config.minPhaseCount = configGetInt("autoloc.minPhaseCount");
+	}
+	catch ( ... ) {}
 
-	try { _config.pickLogFile = configGetString("autoloc.pickLog"); }
-	catch (...) { _config.pickLogFile = ""; }
+	try {
+		_config.minScore = configGetDouble("autoloc.minScore");
+	}
+	catch ( ... ) {}
 
-	try { _config.pickLogEnable = configGetBool("autoloc.pickLogEnable"); }
-	catch (...) { _config.pickLogEnable = false; }
+	try {
+		_config.minScoreBypassNucleator = configGetDouble("autoloc.minScoreBypassNucleator");
+	}
+	catch ( ... ) {}
+
+	try {
+		_config.minStaCountIgnorePKP = configGetInt("autoloc.minStaCountIgnorePKP");
+	}
+	catch ( ... ) {}
+
+	try {
+		_config.reportAllPhases = configGetBool("autoloc.reportAllPhases");
+	}
+	catch ( ... ) {}
+
+	try {
+		_config.useManualPicks = configGetBool("autoloc.useManualPicks");
+	}
+	catch ( ... ) {}
+
+	try {
+		_config.useManualOrigins = configGetBool("autoloc.useManualOrigins");
+	}
+	catch ( ... ) {}
+
+	try {
+		_config.useImportedOrigins = configGetBool("autoloc.useImportedOrigins");
+	}
+	catch ( ... ) {}
+
+	try {
+		_wakeUpTimout = configGetInt("autoloc.wakeupInterval");
+	}
+	catch ( ... ) {}
+
+	try {
+		_config.maxRadiusFactor = configGetDouble("autoloc.gridsearch._maxRadiusFactor");
+	}
+	catch ( ... ) {}
+
+	try {
+		_config.publicationIntervalTimeSlope = configGetDouble("autoloc.publicationIntervalTimeSlope");
+	}
+	catch ( ... ) {}
+
+	try {
+		_config.publicationIntervalTimeIntercept = configGetDouble("autoloc.publicationIntervalTimeIntercept");
+	}
+	catch ( ... ) {}
+
+	try {
+		_config.publicationIntervalPickCount = configGetInt("autoloc.publicationIntervalPickCount");
+	}
+	catch ( ... ) {}
+
+	try {
+		_config.dynamicPickThresholdInterval = configGetDouble("autoloc.dynamicPickThresholdInterval");
+	}
+	catch ( ... ) {}
+
+	try {
+		_gridConfigFile = Environment::Instance()->absolutePath(configGetString("autoloc.grid"));
+	}
+	catch ( ... ) { _gridConfigFile = Environment::Instance()->shareDir() + "/scautoloc/grid.conf"; }
+
+	try {
+		_config.staConfFile = Environment::Instance()->absolutePath(configGetString("autoloc.stationConfig"));
+	}
+	catch ( ... ) { _config.staConfFile = Environment::Instance()->shareDir() + "/scautoloc/station.conf"; }
+
+	try {
+		_config.pickLogFile = configGetString("autoloc.pickLog");
+	}
+	catch ( ... ) { _config.pickLogFile = ""; }
+
+	try {
+		_config.pickLogEnable = configGetBool("autoloc.pickLogEnable");
+	}
+	catch ( ... ) {
+		_config.pickLogEnable = false;
+	}
+
 	if ( !_config.pickLogEnable ) {
 		_config.pickLogFile = "";
 	}
 
-	try { _amplTypeSNR = configGetString("autoloc.amplTypeSNR"); }
-	catch (...) {}
-
-	try { _amplTypeAbs = configGetString("autoloc.amplTypeAbs"); }
-	catch (...) {}
-
-	try { _stationLocationFile = configGetString("autoloc.stationLocations"); }
-	catch (...) {}
-
-	try { _config.playback = configGetBool("autoloc.playback"); }
+	try {
+		_amplTypeSNR = configGetString("autoloc.amplTypeSNR");
+	}
 	catch ( ... ) {}
 
-	try { _config.test = configGetBool("autoloc.test"); }
+	try {
+		_amplTypeAbs = configGetString("autoloc.amplTypeAbs");
+	}
+	catch ( ... ) {}
+
+	try {
+		_stationLocationFile = configGetString("autoloc.stationLocations");
+	}
+	catch ( ... ) {}
+
+	try {
+		_config.playback = configGetBool("autoloc.playback");
+	}
+	catch ( ... ) {}
+
+	try {
+		_config.test = configGetBool("autoloc.test");
+	}
 	catch ( ... ) {}
 
 	_config.pickLogFile = Environment::Instance()->absolutePath(_config.pickLogFile);
@@ -519,7 +622,9 @@ bool AutolocApp::initConfiguration() {
 
 	// network type
 	std::string ntp = "global";
-	try { ntp = configGetString("autoloc.networkType"); }
+	try {
+		ntp = configGetString("autoloc.networkType");
+	}
 	catch ( ... ) {}
 	if ( ntp == "global" ) {
 		_config.networkType = Autoloc::GlobalNetwork;
@@ -731,7 +836,7 @@ bool AutolocApp::runFromXMLFile(const char *filename)
 		Core::Time t = origin->creationInfo().creationTime();
 		objs.push_back(TimeObject(t, 2, origin->publicID(), o));
 	}
-	std::sort(objs.begin(),objs.end());
+	std::sort(objs.begin(), objs.end());
 	for ( TimeObject &obj : objs ) {
 		_objects.push(std::get<3>(obj));
 	}
@@ -757,7 +862,7 @@ bool AutolocApp::runFromXMLFile(const char *filename)
 bool AutolocApp::runFromEPFile(const char *filename) {
 	SEISCOMP_INFO("App::runFromEPFile");
 	IO::XMLArchive ar;
-	if ( !ar.open(filename)) {
+	if ( !ar.open(filename) ) {
 		SEISCOMP_ERROR("Unable to open XML file: %s", filename);
 		return false;
 	}
@@ -976,23 +1081,23 @@ void AutolocApp::handleTimeout() {
 		DataModel::PublicObjectPtr o = _objects.front();
 
 		// retrieve the creationTime...
-		if (DataModel::Pick::Cast(o.get()))
+		if ( DataModel::Pick::Cast(o.get()) )
 			t = DataModel::Pick::Cast(o.get())->creationInfo().creationTime();
-		else if (DataModel::Amplitude::Cast(o.get()))
+		else if ( DataModel::Amplitude::Cast(o.get()) )
 			t = DataModel::Amplitude::Cast(o.get())->creationInfo().creationTime();
-		else if (DataModel::Origin::Cast(o.get()))
+		else if ( DataModel::Origin::Cast(o.get()) )
 			t = DataModel::Origin::Cast(o.get())->creationInfo().creationTime();
 		else continue;
 
 		// at the first object:
-		if (objectCount == 0)
+		if ( objectCount == 0 )
 			objectsStartTime = t;
 
-		if (_playbackSpeed > 0) {
+		if ( _playbackSpeed > 0 ) {
 			double dt = static_cast<double>(t - objectsStartTime);
 			Core::TimeSpan dp = dt / _playbackSpeed;
 			t = playbackStartTime + dp;
-			if (Core::Time::UTC() < t)
+			if ( Core::Time::UTC() < t )
 				break; // until next handleTimeout() call
 		} // otherwise no speed limit :)
 
@@ -1165,7 +1270,7 @@ bool AutolocApp::feed(DataModel::Amplitude *scampl) {
 	SEISCOMP_INFO("Processing '%s' amplitude %s from pick %s",
 	              scampl->type(), amplID, scampl->pickID());
 
-	if (objectAgencyID(scampl) != agencyID()) {
+	if ( objectAgencyID(scampl) != agencyID() ) {
 		if ( isAgencyIDBlocked(objectAgencyID(scampl)) ) {
 			SEISCOMP_INFO_S("  + ignoring amplitude since agency is: " + objectAgencyID(scampl));
 			return false;
@@ -1194,8 +1299,9 @@ bool AutolocApp::feed(DataModel::Amplitude *scampl) {
 	try {
 		// note that for testing it is allowed to use the same amplitude as
 		// _amplTypeSNR and _amplTypeAbs  -> no 'else if' here
-		if ( atype == _amplTypeSNR )
+		if ( atype == _amplTypeSNR ) {
 			pick->snr = scampl->amplitude().value();
+		}
 		if ( atype == _amplTypeAbs ) {
 			pick->amp = scampl->amplitude().value();
 			pick->per = (_amplTypeAbs == "mb") ? scampl->period().value() : 1;
@@ -1259,7 +1365,7 @@ bool AutolocApp::feed(DataModel::Origin *scorigin) {
 
 	// TODO: Vorher konsistente Picks/Arrivals sicher stellen.
 	size_t arrivalCount = scorigin->arrivalCount();
-	for ( size_t i=0; i<arrivalCount; i++ ) {
+	for ( size_t i = 0; i < arrivalCount; i++ ) {
 		const std::string &pickID = scorigin->arrival(i)->pickID();
 		DataModel::Pick *scpick = DataModel::Pick::Find(pickID);
 		if ( !scpick ) {
