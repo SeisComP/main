@@ -1140,64 +1140,26 @@ void AutolocApp::addObject(const std::string& parentID, DataModel::Object* o) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool AutolocApp::feed(DataModel::Pick *scpick) {
-	const std::string &pickID = scpick->publicID();
-
-	std::string status = "unset";
-	try {
-		status = scpick->evaluationStatus().toString();
-	}
-	catch ( ... ) {}
-
-	if ( status == "rejected" && !_config.allowRejectedPicks ) {
-		SEISCOMP_INFO("Ignoring pick %s due to evaluation status 'rejected'", pickID, status);
-		return false;
-	}
-
-	std::string mode = "unset";
-	try {
-		mode = scpick->evaluationMode().toString();
-	}
-	catch ( ... ) {}
-
-	SEISCOMP_INFO("Processing pick: %s with evaluation mode/status = '%s'/'%s'",
-	              pickID, mode, status);
-	SEISCOMP_INFO_S("  + label:  " + pickLabel(scpick));
-
-	if ( mode == "unset" ) {
-		SEISCOMP_DEBUG("Pick %s: setting evaluation mode from '%s' to 'automatic'",
-		               scpick->publicID(), mode);
-		scpick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
-	}
-
 	try {
 		const Core::Time &creationTime = scpick->creationInfo().creationTime();
 		sync(creationTime);
 	}
 	catch ( ... ) {
-		SEISCOMP_WARNING_S("Pick " + pickID + ": creation time is not set");
+		SEISCOMP_WARNING("Pick %s: creation time is not set", scpick->publicID());
 	}
 
 	if ( objectAgencyID(scpick) != agencyID() && isAgencyIDBlocked(objectAgencyID(scpick)) ) {
-		SEISCOMP_INFO("  + ignoring pick since agency is '%s'", objectAgencyID(scpick));
+		SEISCOMP_INFO("Ignoring pick %s due to blocked agency is '%s'", scpick->publicID(), objectAgencyID(scpick));
 		return false;
 	}
 
-	const int priority = _authorPriority(objectAuthor(scpick));
-	if ( priority == 0 ) {
-		SEISCOMP_INFO("  + ignoring pick since author is '%s'", objectAuthor(scpick));
-		return false;
-	}
-
-	// configure station if needed
-	initOneStation(scpick->waveformID(), scpick->time().value());
-
-	Autoloc::Autoloc3::feed(scpick);
+	bool feed_status = Autoloc::Autoloc3::feed(scpick);
 
 	if ( _config.offline ) {
 		_flush();
 	}
 
-	return true;
+	return feed_status;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1330,6 +1292,9 @@ bool AutolocApp::feed(DataModel::Origin *scorigin) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool AutolocApp::_report(DataModel::Origin *scorigin) {
+	// Log object flow
+	logObject(_outputOrgs, now());
+
 	if ( _config.offline || _config.test ) {
 		// Offline / playback / test mode
 		if ( _ep ) {
@@ -1337,15 +1302,47 @@ bool AutolocApp::_report(DataModel::Origin *scorigin) {
 		}
 	}
 	else {
-		// Online mode
+		// Online mode -> send origin to messaging
 		DataModel::EventParameters ep;
 		bool wasEnabled = DataModel::Notifier::IsEnabled();
 		DataModel::Notifier::Enable();
 		ep.add(scorigin);
 		DataModel::Notifier::SetEnabled(wasEnabled);
-	
+
 		DataModel::NotifierMessagePtr nmsg = DataModel::Notifier::GetMessage(true);
 		connection()->send(nmsg.get());
+
+		std::string status;
+		try {
+			status = scorigin->evaluationStatus().toString();
+		}
+		catch ( Core::ValueException & ) {}
+
+		// For preliminary origins, also create/send a corresponding journal entry
+		if ( status == "preliminary" ) {
+			SEISCOMP_INFO("Sent preliminary origin %ld (heads up)", scorigin->publicID());
+
+			// create and send journal entry
+			DataModel::JournalEntryPtr journalEntry = new DataModel::JournalEntry;
+			journalEntry->setAction("OrgEvalStatOK");
+			journalEntry->setObjectID(scorigin->publicID());
+			journalEntry->setSender(SCCoreApp->author().c_str());
+			journalEntry->setParameters(status);
+			journalEntry->setCreated(Core::Time::UTC());
+
+			DataModel::NotifierMessagePtr jm = new DataModel::NotifierMessage;
+			jm->attach(new DataModel::Notifier(DataModel::Journaling::ClassName(),
+			           DataModel::OP_ADD, journalEntry.get()));
+
+			if ( connection()->send(jm.get()) ) {
+				SEISCOMP_DEBUG("Sent origin journal entry for origin %s to the message group: %s",
+				               scorigin->publicID(), primaryMessagingGroup());
+			}
+			else {
+				SEISCOMP_ERROR("Sending origin journal entry failed with error: %s",
+				               connection()->lastError().toString());
+			}
+		}
 	}
 
 	return true;
@@ -1356,61 +1353,13 @@ bool AutolocApp::_report(DataModel::Origin *scorigin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool AutolocApp::_report(const Autoloc::Origin *origin) {
-
-	// Log object flow
-	logObject(_outputOrgs, now());
+bool AutolocApp::_report(Autoloc::Origin *origin) {
+	SEISCOMP_INFO("Reporting origin %ld\n%s", origin->id, Autoloc::printDetailed(origin));
 
 	DataModel::OriginPtr scorigin = convertToSC(origin, _config.author, _config.agencyID, _config.reportAllPhases);
 	scorigin->creationInfo().setCreationTime(now());
 
-	SEISCOMP_INFO("Reporting origin %ld\n%s", origin->id, Autoloc::printDetailed(origin));
-
 	_report(scorigin.get());
-
-	if ( _config.offline || _config.test ) {
-		SEISCOMP_INFO ("Origin %ld not sent (test/offline mode)", origin->id);
-	}
-	else {
-		if ( origin->preliminary ) {
-			SEISCOMP_INFO("Sent preliminary origin %ld (heads up)", origin->id);
-	
-			// create and send journal entry
-			std::string str = "";
-			try {
-				str = scorigin->evaluationStatus().toString();
-			}
-			catch ( Core::ValueException & ) {}
-	
-			if ( !str.empty() ) {
-				DataModel::JournalEntryPtr journalEntry = new DataModel::JournalEntry;
-				journalEntry->setAction("OrgEvalStatOK");
-				journalEntry->setObjectID(scorigin->publicID());
-				journalEntry->setSender(SCCoreApp->author().c_str());
-				journalEntry->setParameters(str);
-				journalEntry->setCreated(Core::Time::UTC());
-	
-				DataModel::NotifierMessagePtr jm = new DataModel::NotifierMessage;
-				jm->attach(new DataModel::Notifier(DataModel::Journaling::ClassName(),
-				           DataModel::OP_ADD, journalEntry.get()));
-	
-				if ( connection()->send(jm.get()) ) {
-					SEISCOMP_DEBUG("Sent origin journal entry for origin %s to the message group: %s",
-					               scorigin->publicID(), primaryMessagingGroup());
-				}
-				else {
-					SEISCOMP_ERROR("Sending origin journal entry failed with error: %s",
-					               connection()->lastError().toString());
-				}
-			}
-	
-		}
-		else {
-			SEISCOMP_INFO("Sent origin %ld", origin->id);
-		}
-	}
-
-	SEISCOMP_INFO_S(Autoloc::printOrigin(origin, false));
 
 	return true;
 }

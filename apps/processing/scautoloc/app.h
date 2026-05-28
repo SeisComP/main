@@ -75,8 +75,8 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 		// Receive SeisComP objects from messaging
 		void addObject(const std::string& parentID, DataModel::Object *o) override;
 
-		bool _report(const Autoloc::Origin *origin) override;
-		bool _report(DataModel::Origin *scorigin);  // not const
+		bool _report(Autoloc::Origin *origin) override;
+		bool _report(DataModel::Origin *scorigin);
 
 		void handleMessage(Core::Message* msg) override;
 		void handleTimeout() override;

@@ -44,7 +44,7 @@ class Nucleator
 		virtual bool feed(const Pick *pick) = 0;
 		const OriginVector &newOrigins() const;
 
-		virtual int  cleanup(const Time& minTime) = 0;
+		virtual int  cleanup(const Core::Time& minTime) = 0;
 		virtual void reset() = 0;
 		virtual void shutdown() = 0;
 
@@ -111,7 +111,7 @@ class GridSearch : public Nucleator
 		// with associated amplitude can be fed into the Nucleator.
 		bool feed(const Pick *pick);
 	
-		int cleanup(const Time& minTime);
+		int cleanup(const Core::Time& minTime);
 	
 		void reset()
 		{
@@ -223,7 +223,7 @@ class GridPoint : public Seiscomp::Core::BaseObject
 		const Origin* feed(const Pick*);
 
 		// remove all picks older than tmin
-		int cleanup(const Time& minTime);
+		int cleanup(const Core::Time& minTime);
 
 	public:
 		// void setStations(const StationMap *stations);

@@ -138,7 +138,7 @@ void GridSearch::setLocatorProfile(const std::string &profile) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-int GridSearch::cleanup(const Time& minTime)
+int GridSearch::cleanup(const Core::Time& minTime)
 {
 	int count = 0;
 
@@ -376,12 +376,12 @@ GridPoint::feed(const Pick* pick)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-int GridPoint::cleanup(const Time& minTime)
+int GridPoint::cleanup(const Core::Time& minTime)
 {
 	int count = 0;
 
 	// this is for counting only
-	std::multiset<ProjectedPick>::iterator it, upper=_picks.upper_bound(minTime);
+	std::multiset<ProjectedPick>::iterator it, upper=_picks.upper_bound(Time(minTime));
 	for ( it = _picks.begin(); it != upper; ++it ) {
 		count++;
 	}

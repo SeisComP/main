@@ -27,6 +27,8 @@ namespace Seiscomp {
 	// The goal is to display much information as possible as a relatively short string.
 	std::string pickLabel(const DataModel::Pick*);
 
+	bool rejected(const DataModel::Pick *scpick);
+
 } // namespace Seiscomp
 
 #endif

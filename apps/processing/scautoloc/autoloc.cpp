@@ -259,7 +259,51 @@ void Autoloc3::dumpState() const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::feed(const Seiscomp::DataModel::Pick *scpick) {
+bool Autoloc3::feed(Seiscomp::DataModel::Pick *scpick) {
+	try {
+		const Core::Time &creationTime = scpick->creationInfo().creationTime();
+		sync(creationTime);
+	}
+	catch ( ... ) {
+		SEISCOMP_WARNING("Pick %s: creation time is not set", scpick->publicID());
+	}
+
+	std::string status = "unset";
+	try {
+		status = scpick->evaluationStatus().toString();
+	}
+	catch ( ... ) {}
+
+	if ( status == "rejected" && !_config.allowRejectedPicks ) {
+		SEISCOMP_INFO("Ignoring pick %s due to evaluation status 'rejected'", scpick->publicID(), status);
+		return false;
+	}
+
+	std::string mode = "unset";
+	try {
+		mode = scpick->evaluationMode().toString();
+	}
+	catch ( ... ) {}
+
+	SEISCOMP_INFO("Processing pick %s with evaluation mode/status = '%s'/'%s'",
+	              scpick->publicID(), mode, status);
+	SEISCOMP_INFO_S("  + label:  " + pickLabel(scpick));
+
+	if ( mode == "unset" ) {
+		SEISCOMP_DEBUG("Pick %s: setting evaluation mode from '%s' to 'automatic'",
+		               scpick->publicID(), mode);
+		scpick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
+	}
+
+	const int priority = _authorPriority(objectAuthor(scpick));
+	if ( priority == 0 ) {
+		SEISCOMP_INFO("  + ignoring pick since author is '%s'", objectAuthor(scpick));
+		return false;
+	}
+
+	// configure station if needed
+	initOneStation(scpick->waveformID(), scpick->time().value());
+
 	Autoloc::PickPtr pick = new Autoloc::Pick(scpick);
 	if ( !pick ) {
 		SEISCOMP_INFO("  + ignoring pick from SC");
@@ -278,7 +322,7 @@ bool Autoloc3::feed(const Seiscomp::DataModel::Pick *scpick) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::feed(const Seiscomp::DataModel::Amplitude *scampl) {
+bool Autoloc3::feed(Seiscomp::DataModel::Amplitude *scampl) {
 	const std::string &atype  = scampl->type();
 	const std::string &pickID = scampl->pickID();
 
@@ -475,15 +519,9 @@ bool Autoloc3::feed(Seiscomp::DataModel::Origin *scorigin) {
 		}
 	}
 
-	// mark and log imported origin
-	if ( objectAgencyID(scorigin) == _config.agencyID ) {
-		SEISCOMP_INFO_S("Using origin from agency " + objectAgencyID(scorigin));
-		origin->imported = false;
-	}
-	else {
-		SEISCOMP_INFO_S("Using origin from agency " + objectAgencyID(scorigin));
-		origin->imported = true;
-	}
+	// Mark and log imported origin
+	SEISCOMP_INFO("Using origin from agency %s", objectAgencyID(scorigin));
+	origin->imported = ( objectAgencyID(scorigin) != _config.agencyID );
 
 	return feed(origin);
 }
@@ -493,7 +531,7 @@ bool Autoloc3::feed(Seiscomp::DataModel::Origin *scorigin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_report(const Origin *origin) {
+bool Autoloc3::_report(Origin *origin) {
 	// This is a dummy. Replace it by something suitable.
 	SEISCOMP_INFO_S(" OUT " + printOneliner(origin));
 
@@ -531,7 +569,7 @@ bool Autoloc3::report() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Autoloc3::_flush() {
-	Time t = now();
+	Time t { now() };
 	std::vector<OriginID> ids;
 
 	int dnmax = _config.publicationIntervalPickCount;
@@ -550,8 +588,8 @@ void Autoloc3::_flush() {
 		}
 	}
 
-	for ( const OriginID id : ids ) {
-		const Origin *origin = _outgoing[id].get();
+	for ( OriginID id : ids ) {
+		Origin *origin = _outgoing[id].get();
 
 		if ( !_publishable(origin) ) {
 			_outgoing.erase(id);
@@ -569,8 +607,8 @@ void Autoloc3::_flush() {
 			// like PKP and such origins should also be sent.
 			if (origin->definingPhaseCount() <= previous->definingPhaseCount()) {
 
-				if (origin->arrivals.size() <= previous->arrivals.size() ||
-				    now() - previous->timestamp < 150) {  // TODO: make this configurable
+				if ( origin->arrivals.size() <= previous->arrivals.size() ||
+				     now() - sctime(previous->timestamp) < Core::TimeSpan(150.) ) {  // TODO: make this configurable
 					// ... some more robust criteria perhaps
 					SEISCOMP_INFO("Origin %ld not sent (no improvement)", origin->id);
 					_outgoing.erase(id);
@@ -579,7 +617,23 @@ void Autoloc3::_flush() {
 			}
 		}
 
+		SEISCOMP_INFO("Reporting origin %ld\n%s", origin->id, Autoloc::printDetailed(origin));
+
+		DataModel::OriginPtr scorigin = convertToSC(origin, _config.author, _config.agencyID, _config.reportAllPhases);
+		scorigin->creationInfo().setCreationTime(now());
+
 		if ( _report(origin) ) {
+			if ( _config.offline || _config.test ) {
+				SEISCOMP_INFO ("Origin %ld not sent (test/offline mode)", origin->id);
+			}
+			else {
+				SEISCOMP_INFO("Sent origin %ld", origin->id);
+			}
+
+		}
+
+		if ( true ) {
+			SEISCOMP_INFO_S(Autoloc::printOrigin(origin, false));
 			SEISCOMP_INFO_S(" OUT " + printOneliner(origin));
 
 			// Compute the time at which the next origin in this
@@ -688,7 +742,9 @@ const Pick* Autoloc3::pick(const std::string &id) const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Autoloc3::sync(const Core::Time &t) {
-	syncTime = t;
+	if (_config.playback && t > _now) {
+		_now = t;
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -697,12 +753,12 @@ void Autoloc3::sync(const Core::Time &t) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Time Autoloc3::now() const {
+Core::Time Autoloc3::now() const {
 	if ( _config.playback ) {
 		return _now;
 	}
 
-	return Time(Core::Time::UTC());
+	return Core::Time::UTC();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -711,7 +767,7 @@ Time Autoloc3::now() const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Autoloc3::timeStamp() const {
-	SEISCOMP_DEBUG_S("Timestamp: " + sctime(now()).toString("%F %T.%f"));
+	SEISCOMP_DEBUG_S("Timestamp: " + now().toString("%F %T.%f"));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -741,14 +797,13 @@ bool Autoloc3::_store(const Pick *pick) {
 	}
 
 	// pick too old? -> ignored completely
-	if ( pick->time < now() - _config.maxAge ) {
+	if ( pick->scpick->time().value() < now() - Core::TimeSpan(_config.maxAge) ) {
 		SEISCOMP_DEBUG_S("ignoring old pick " + pick->label);
 		return false;
 	}
 
 	// adjust time in offline mode
-	if (_config.playback && pick->time > _now)
-		_now = pick->time;
+	sync(pick->scpick->time().value());
 
 	// physically store the pick
 	if ( !Autoloc3::pick(pick->id()) )
@@ -1086,7 +1141,9 @@ bool Autoloc3::log(const Pick *pick) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 static bool mightBeAssociated(const Pick *pick, const Origin *origin) {
-	// a crude first check
+	// A very crude first check whether a pick might be related to the origin.
+	// This is for teleseismic applications where PKP needs to be taken into
+	// account.
 	double dt = pick->time - origin->time;
 	if ( dt < -10 || dt > 1300 ) {
 		return false;
@@ -3544,30 +3601,35 @@ void Autoloc3::shutdown()
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Autoloc3::cleanup() {
+	double extra = 1800; // extra time to add to maxAge (REVIEW!)
+	Core::Time minTime = now() - Core::TimeSpan(_config.maxAge + extra);
+
+	if ( now() < _nextCleanup ) {
+		return;
+	}
+
+	if ( _config.maxAge <= 0 ) {
+		return;
+	}
+
+	cleanup(minTime);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::cleanup(Time minTime)
-{
-	if ( !minTime) {
-		double extra = 1800; // extra time to add to maxAge (REVIEW!)
-		minTime = now() - (_config.maxAge + extra);
-
-		if ( now() < _nextCleanup ) {
-			return;
-		}
-		if ( _config.maxAge <= 0 ) {
-			return;
-		}
-	}
-
+void Autoloc3::cleanup(Core::Time minTime) {
 	size_t beforePickCount   = Pick::count();
 	size_t beforeOriginCount = Origin::count();
 	size_t beforeObjectCount = DataModel::PublicObject::ObjectCount();
 
 	PickPool tempPickPool;
 	for (auto& item : pickPool) {
-		if ( item.second->time < minTime ) {
+		if ( sctime(item.second->time) < minTime ) {
 			continue;
 		}
 		tempPickPool[item.first] = item.second;
@@ -3576,7 +3638,7 @@ void Autoloc3::cleanup(Time minTime)
 
 	OriginVector _originsTmp;
 	for (OriginPtr origin : _origins) {
-		if ( origin->time < minTime ) {
+		if ( sctime(origin->time) < minTime ) {
 			continue;
 		}
 
@@ -3587,7 +3649,7 @@ void Autoloc3::cleanup(Time minTime)
 	std::vector<OriginID> ids;  // origins to remove
 	for (auto& item: _lastSent) {
 		const Origin *origin = item.second.get();
-		if ( origin->time < minTime ) {
+		if ( sctime(origin->time) < minTime ) {
 			ids.push_back(origin->id);
 		}
 	}
@@ -3597,7 +3659,7 @@ void Autoloc3::cleanup(Time minTime)
 
 	size_t nclean = _nucleator.cleanup(minTime);
 	SEISCOMP_DEBUG("CLEANUP: Nucleator:  %ld items removed", nclean);
-	_nextCleanup = now() + _config.cleanupInterval;
+	_nextCleanup = now() + Core::TimeSpan(_config.cleanupInterval);
 	SEISCOMP_DEBUG("CLEANUP ********** pick count   = %d/%d (%d)", beforePickCount, Pick::count(), pickPool.size());
 	SEISCOMP_DEBUG("CLEANUP ********** origin count = %d/%d (%d)", beforeOriginCount, Origin::count(), _origins.size()+_lastSent.size());
 	SEISCOMP_DEBUG("CLEANUP ********** object count = %d/%d", beforeObjectCount, DataModel::PublicObject::ObjectCount());

@@ -40,20 +40,22 @@ class Autoloc3 {
 	public:
 		// Initialization stuff
 
+		// Set the *Autoloc* config
+		void setConfig(const AutolocConfig&);
+		const AutolocConfig &config() const { return _config; }
+
 		// Set the *SeisComP* config
 		void setConfig(const Seiscomp::Config::Config*);
 
 		// Set the *SeisComP* inventory
 		void setInventory(const Seiscomp::DataModel::Inventory*);
 
+		// Initialize the inventory from a station location file
 		bool readInventoryFromFile();
 
 		// Initialize the *SeisComP* inventory according to config
 		// or use the global inventory.
 		bool initInventory();
-
-		void setConfig(const AutolocConfig&);
-		const AutolocConfig &config() const { return _config; }
 
 		bool setGridFile(const std::string &);
 
@@ -82,8 +84,8 @@ class Autoloc3 {
 		//
 		// If the call resulted in a new or updated result,
 		// return true, otherwise false.
-		bool feed(const Seiscomp::DataModel::Pick*);
-		bool feed(const Seiscomp::DataModel::Amplitude*);
+		bool feed(Seiscomp::DataModel::Pick*);
+		bool feed(Seiscomp::DataModel::Amplitude*);
 
 		// Feed an external or manual Origin
 		// TODO: Ensure that all needed picks/amplitudes have
@@ -116,18 +118,20 @@ class Autoloc3 {
 
 	public:
 		// Trigger removal of old objects.
-		void cleanup(Time minTime=0);
+		void cleanup();
+		void cleanup(Core::Time minTime);
 
 		void reset();
 		void shutdown();
 
-	public:
+	private:
 		// Get a Pick from Autoloc's internal buffer by ID.
 		// If the pick is not found, return NULL
 		const Pick* pick(const std::string &id) const;
 
+	public:
 		// Current time. In offline mode time of the last pick.
-		Time now() const;
+		Core::Time now() const;
 
 		// Synchronize the internal timing.
 		//
@@ -142,12 +146,12 @@ class Autoloc3 {
 	protected:
 		// This must be reimplemented in a subclass to properly
 		// print/send/etc. the origin
-		virtual bool _report(const Origin *);
+		virtual bool _report(Origin *);
 
-	protected:
 		// flush any pending (Origin) messages by calling _report()
 		void _flush();
 
+	protected:
 		// Compute author priority. First in list gets highest
 		// priority. Not in list gets priority 0. No priority list
 		// defined gives 1 for all authors.
@@ -347,7 +351,6 @@ class Autoloc3 {
 		GridSearch _nucleator;
 		Locator    _relocator;
 
-	private:
 		// origins that were created/modified during the last
 		// feed() call
 		OriginVector _newOrigins;
@@ -357,16 +360,12 @@ class Autoloc3 {
 		std::map<int, OriginPtr> _lastSent;
 		std::map<int, OriginPtr> _outgoing;
 
-		Time _now {0};
-		Time _nextCleanup {0};
+		Core::Time _now {Core::Time(0.)};
+		Core::Time _nextCleanup {Core::Time::UTC()};
 
-		Core::Time syncTime;
-
-	protected:
 		typedef std::map<std::string, PickCPtr> PickPool;
 		PickPool pickPool;
 
-	private:
 		StationMap _stations;
 
 		// a list of NET.STA strings for missing stations
