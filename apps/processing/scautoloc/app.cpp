@@ -215,97 +215,6 @@ void AutolocApp::createCommandLineDescription() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool AutolocApp::validateParameters() {
-	if ( !Client::Application::validateParameters() ) {
-		return false;
-	}
-
-	if ( commandline().hasOption("offline") ) {
-		_config.offline = true;
-		_config.playback = true;
-		_config.test = true;
-	}
-	else {
-		_config.offline = false;
-	}
-
-	if ( !_inputEPFile.empty() ) {
-		_config.playback = true;
-		_config.offline = true;
-	}
-
-
-	if ( _config.offline ) {
-		setMessagingEnabled(false);
-		if ( !_config.stationLocationFile.empty() ) {
-			setDatabaseEnabled(false, false);
-		}
-	}
-
-	// Load inventory from database only if no station location file was specified.
-	if ( _config.stationLocationFile.empty() ) {
-		setLoadStationsEnabled(true);
-
-		if ( !isInventoryDatabaseEnabled() ) {
-			setDatabaseEnabled(false, false);
-		}
-		else {
-			setDatabaseEnabled(true, true);
-		}
-	}
-	else {
-		setLoadStationsEnabled(false);
-		setDatabaseEnabled(false, false);
-	}
-
-	// Maybe we do want to allow sending of origins in offline mode?
-	if ( commandline().hasOption("test") ) {
-		_config.test = true;
-	}
-
-	if ( commandline().hasOption("playback") ) {
-		_config.playback = true;
-	}
-
-	if ( commandline().hasOption("use-manual-picks") ) {
-		_config.useManualPicks = true;
-	}
-
-	if ( commandline().hasOption("use-manual-origins") ) {
-		_config.useManualOrigins = true;
-	}
-
-	_config.allowRejectedPicks = commandline().hasOption("allow-rejected-picks");
-
-	if ( commandline().hasOption("use-imported-origins") ) {
-		_config.useImportedOrigins = true;
-	}
-
-	if ( commandline().hasOption("try-default-depth") ) {
-		_config.tryDefaultDepth = true;
-	}
-
-	if ( commandline().hasOption("adopt-manual-depth") ) {
-		_config.adoptManualDepth = true;
-	}
-
-	if ( !_config.pickLogFile.empty() ) {
-		_config.pickLogEnable = true;
-	}
-
-	// derived parameter
-	_config.maxResidualKeep = 3 * _config.maxResidualUse;
-
-	_formatted = commandline().hasOption("formatted");
-
-	return true;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool AutolocApp::initConfiguration() {
 	if ( !Client::Application::initConfiguration() ) {
 		return false;
@@ -648,7 +557,102 @@ bool AutolocApp::initConfiguration() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool AutolocApp::validateParameters() {
+	if ( !Client::Application::validateParameters() ) {
+		return false;
+	}
+
+	if ( commandline().hasOption("offline") ) {
+		_config.offline = true;
+		_config.playback = true;
+		_config.test = true;
+	}
+	else {
+		_config.offline = false;
+	}
+
+	if ( !_inputEPFile.empty() ) {
+		_config.playback = true;
+		_config.offline = true;
+	}
+
+
+	if ( _config.offline ) {
+		setMessagingEnabled(false);
+		if ( !_config.stationLocationFile.empty() ) {
+			setDatabaseEnabled(false, false);
+		}
+	}
+
+	// Load inventory from database only if no station location file was specified.
+	if ( _config.stationLocationFile.empty() ) {
+		setLoadStationsEnabled(true);
+
+		if ( !isInventoryDatabaseEnabled() ) {
+			setDatabaseEnabled(false, false);
+		}
+		else {
+			setDatabaseEnabled(true, true);
+		}
+	}
+	else {
+		setLoadStationsEnabled(false);
+		setDatabaseEnabled(false, false);
+	}
+
+	// Maybe we do want to allow sending of origins in offline mode?
+	if ( commandline().hasOption("test") ) {
+		_config.test = true;
+	}
+
+	if ( commandline().hasOption("playback") ) {
+		_config.playback = true;
+	}
+
+	if ( commandline().hasOption("use-manual-picks") ) {
+		_config.useManualPicks = true;
+	}
+
+	if ( commandline().hasOption("use-manual-origins") ) {
+		_config.useManualOrigins = true;
+	}
+
+	_config.allowRejectedPicks = commandline().hasOption("allow-rejected-picks");
+
+	if ( commandline().hasOption("use-imported-origins") ) {
+		_config.useImportedOrigins = true;
+	}
+
+	if ( commandline().hasOption("try-default-depth") ) {
+		_config.tryDefaultDepth = true;
+	}
+
+	if ( commandline().hasOption("adopt-manual-depth") ) {
+		_config.adoptManualDepth = true;
+	}
+
+	if ( !_config.pickLogFile.empty() ) {
+		_config.pickLogEnable = true;
+	}
+
+	// derived parameter
+	_config.maxResidualKeep = 3 * _config.maxResidualUse;
+
+	_formatted = commandline().hasOption("formatted");
+
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool AutolocApp::init() {
+	// Call in this order:
+	// - createCommandLineDescription
+	// - initConfiguration
+	// - validateParameters
 	if ( !Client::Application::init() ) {
 		return false;
 	}
