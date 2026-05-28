@@ -187,7 +187,7 @@ struct AutolocConfig {
 
 		// The pick log file
 		bool        pickLogEnable{false};
-		std::string pickLogFile{""};
+		std::string pickLogFilePrefix;
 		int         pickLogDate;
 
 		// locator profile, e.g. "iasp91", "tab" etc.

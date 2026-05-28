@@ -119,7 +119,7 @@ void AutolocApp::createCommandLineDescription() {
 	commandline().addOption("Settings", "pick-log",
 	                        "The pick log file. Providing a file name enables "
 	                        "logging picks even when disabled by configuration.",
-	                        &_config.pickLogFile, false);
+	                        &_config.pickLogFilePrefix, false);
 	commandline().addOption("Settings", "default-depth",
 	                        "Default depth for locating",
 	                        &_config.defaultDepth);
@@ -485,9 +485,9 @@ bool AutolocApp::initConfiguration() {
 	catch ( ... ) { _config.staConfFile = Environment::Instance()->shareDir() + "/scautoloc/station.conf"; }
 
 	try {
-		_config.pickLogFile = configGetString("autoloc.pickLog");
+		_config.pickLogFilePrefix = configGetString("autoloc.pickLog");
 	}
-	catch ( ... ) { _config.pickLogFile = ""; }
+	catch ( ... ) { _config.pickLogFilePrefix = ""; }
 
 	try {
 		_config.pickLogEnable = configGetBool("autoloc.pickLogEnable");
@@ -497,7 +497,7 @@ bool AutolocApp::initConfiguration() {
 	}
 
 	if ( !_config.pickLogEnable ) {
-		_config.pickLogFile = "";
+		_config.pickLogFilePrefix = "";
 	}
 
 	try {
@@ -525,7 +525,7 @@ bool AutolocApp::initConfiguration() {
 	}
 	catch ( ... ) {}
 
-	_config.pickLogFile = Environment::Instance()->absolutePath(_config.pickLogFile);
+	_config.pickLogFilePrefix = Environment::Instance()->absolutePath(_config.pickLogFilePrefix);
 	_config.gridConfigFile = Environment::Instance()->absolutePath(_config.gridConfigFile);
 	_config.stationLocationFile = Environment::Instance()->absolutePath(_config.stationLocationFile);
 
@@ -631,7 +631,7 @@ bool AutolocApp::validateParameters() {
 		_config.adoptManualDepth = true;
 	}
 
-	if ( !_config.pickLogFile.empty() ) {
+	if ( !_config.pickLogFilePrefix.empty() ) {
 		_config.pickLogEnable = true;
 	}
 
@@ -664,22 +664,20 @@ bool AutolocApp::init() {
 
 	SEISCOMP_INFO("Starting Autoloc");
 
+	_config.agencyID = agencyID();
+	_config.author = author();
+
 	// This is the SeisComP configuration, which we need to pass through
 	// all the way to the locator.
 	_config.scconfig = &Client::Application::configuration();
-// TODO	_config.check(); // only prints warnings
-	_config.agencyID = agencyID();
-	_config.author = author();
+
+	// TODO	_config.check();
 	setConfig(_config);
 
 	dumpConfig();
 
 	if ( !initInventory() ) {
 		return false;
-	}
-
-	if ( !_config.pickLogFile.empty() ) {
-		setPickLogFilePrefix(_config.pickLogFile);
 	}
 
 	if ( _config.playback ) {

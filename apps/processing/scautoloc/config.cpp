@@ -61,7 +61,7 @@ void AutolocConfig::dump() const {
 	SEISCOMP_INFO("    publicationIntervalTimeIntercept %.1f",   publicationIntervalTimeIntercept);
 	SEISCOMP_INFO("    publicationIntervalPickCount     %d",     publicationIntervalPickCount);
 	SEISCOMP_INFO("    reportAllPhases                  %s",     reportAllPhases ? "true":"false");
-	SEISCOMP_INFO("    pickLogFile                      %s",     pickLogFile.size() ? pickLogFile : "pick logging is disabled");
+	SEISCOMP_INFO("    pickLogFilePrefix                %s",     pickLogFilePrefix.size() ? pickLogFilePrefix : "pick logging is disabled");
 	SEISCOMP_INFO("    dynamicPickThresholdInterval     %g",     dynamicPickThresholdInterval);
 	SEISCOMP_INFO("  offline                            %s",     offline ? "true":"false");
 	SEISCOMP_INFO("  test                               %s",     test ? "true":"false");

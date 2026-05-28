@@ -1025,24 +1025,55 @@ double Autoloc3::_score(const Origin *origin) const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_log(const Pick *pick) {
-	if ( _pickLogFilePrefix != "" ) {
-		Time now = Time(Core::Time::UTC());
-		setPickLogFileName(_pickLogFilePrefix+"."+sctime(now).toString("%F"));
+void Autoloc3::setPickLogFileName(const std::string &fname)
+{
+	if (fname == _pickLogFileName && _pickLogFile.is_open() ) {
+		return;
 	}
 
-	if ( !_pickLogFile.good() ) {
-		return false;
+	if ( _pickLogFile.is_open() ) {
+		_pickLogFile.close();
 	}
 
+	_pickLogFileName = fname;
+	if ( _pickLogFileName.empty() ) {
+		return;
+	}
+
+	_pickLogFile.open(_pickLogFileName.c_str(), std::ios_base::app);
+	if ( !_pickLogFile.is_open() ) {
+		SEISCOMP_ERROR_S("Failed to open pick log file " + fname);
+		return;
+	}
+	SEISCOMP_INFO_S("Logging picks to file " + _pickLogFileName);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Autoloc3::log(const Pick *pick) {
+	if ( !_config.pickLogFilePrefix.empty() ) {
+		Core::Time now = Core::Time::UTC();
+		setPickLogFileName(_config.pickLogFilePrefix + "." + now.toString("%F"));
+	}
+
+	const DataModel::WaveformStreamID &wfid = pick->scpick->waveformID();
 	char line[200];
-	std::string loc = pick->loc() == "" ? "__" : pick->loc();
-	sprintf(line, "%s %-2s %-6s %-3s %-2s %6.1f %10.3f %4.1f %c %s",
-	      time2str(pick->time).c_str(),
-	      pick->net().c_str(), pick->sta().c_str(), pick->cha().c_str(), loc.c_str(),
+	const std::string &net = wfid.networkCode();
+	const std::string &sta = wfid.stationCode();
+	const std::string  loc = wfid.locationCode() == "" ? "__" : wfid.locationCode();
+	const std::string &cha = wfid.channelCode();
+	const std::string tstr = pick->scpick->time().value().toString("%F %T.%f000000").substr(0, 21);
+	snprintf(line, 200, "%s %-2s %-6s %-3s %-2s %6.1f %10.3f %4.1f %c %s",
+	      tstr.c_str(), net.c_str(), sta.c_str(), cha.c_str(), loc.c_str(),
 	      pick->snr, pick->amp, pick->per, modeFlag(pick),
 	      pick->label.c_str());
-	_pickLogFile << line << std::endl;
+
+	if ( _pickLogFile.good() ) {
+		_pickLogFile << line << std::endl;
+	}
 
 	SEISCOMP_INFO("%s", line);
 
@@ -1812,7 +1843,7 @@ bool Autoloc3::_process(const Pick *pick) {
 		return false;
 	}
 
-	_log(pick);
+	log(pick);
 
 	if ( _blacklisted(pick) ) {
 		SEISCOMP_INFO("process pick %s blacklisted -> ignored",
@@ -3467,44 +3498,6 @@ bool Autoloc3::setGridFile(const std::string &gridfile)
 
 	_nucleator._config.maxRadiusFactor = _config.maxRadiusFactor;
 	return true;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::setPickLogFilePrefix(const std::string &fname)
-{
-	_pickLogFilePrefix = fname;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::setPickLogFileName(const std::string &fname)
-{
-	if (fname == _pickLogFileName && _pickLogFile.is_open() ) {
-		return;
-	}
-
-	if ( _pickLogFile.is_open() ) {
-		_pickLogFile.close();
-	}
-
-	_pickLogFileName = fname;
-	if ( _pickLogFileName.empty() ) {
-		return;
-	}
-
-	_pickLogFile.open(_pickLogFileName.c_str(), std::ios_base::app);
-	if ( !_pickLogFile.is_open() ) {
-		SEISCOMP_ERROR_S("Failed to open pick log file " + fname);
-		return;
-	}
-	SEISCOMP_INFO_S("Logging picks to file " + _pickLogFileName);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

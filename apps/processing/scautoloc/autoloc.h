@@ -56,9 +56,7 @@ class Autoloc3 {
 		const AutolocConfig &config() const { return _config; }
 
 		bool setGridFile(const std::string &);
-		void setPickLogFilePrefix(const std::string &);
-		void setPickLogFileName(const std::string &);
-		
+
 		// Initialize one station at runtime
 		bool initOneStation(const DataModel::WaveformStreamID&, const Core::Time&);
 		bool setStation(Station *);
@@ -292,13 +290,12 @@ class Autoloc3 {
 		// NOTE that the behavior is partly controlled through the configuration of _relocator
 		bool _trimResiduals(Origin*);
 
-		bool _log(const Pick*);
-
+		// Skip automatic picks with insufficient SNR
 		bool _tooLowSNR(const Pick*) const;
 
 		bool _followsBiggerPick(const Pick*) const;
 
-		// checks if the pick could be a Pdiff of a known origin
+		// Check if the pick could be a Pdiff of a known origin
 		bool _perhapsPdiff(const Pick *) const;
 
 		// Suppress picks with low amplitude if station is producing
@@ -333,6 +330,17 @@ class Autoloc3 {
 		// for a newly fed origin, find an equivalent internal origin
 		Origin *_findMatchingOrigin(const Origin*);
 
+	private:
+		// Pick log
+
+		// Form a pick log file name from prefix and date and
+		// open that file for writing picks.
+		void setPickLogFileName(const std::string &);
+		// Log pick
+		bool log(const Pick*);
+
+		std::string   _pickLogFileName;
+		std::ofstream _pickLogFile;
 
 	private:
 		Associator _associator;
@@ -357,9 +365,6 @@ class Autoloc3 {
 	protected:
 		typedef std::map<std::string, PickCPtr> PickPool;
 		PickPool pickPool;
-		std::string   _pickLogFilePrefix;
-		std::string   _pickLogFileName;
-		std::ofstream _pickLogFile;
 
 	private:
 		StationMap _stations;
