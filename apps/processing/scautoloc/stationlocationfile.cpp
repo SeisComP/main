@@ -42,7 +42,7 @@ Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::stri
 	while ( ifile >> net >> sta >> lat >> lon >> alt ) {
 		std::string netId = "Network/" + net;
 		Seiscomp::DataModel::Network *network = inventory->findNetwork(netId);
-		if ( ! network ) {
+		if ( !network ) {
 			network = new Seiscomp::DataModel::Network(netId);
 			network->setCode(net);
 			inventory->add(network);

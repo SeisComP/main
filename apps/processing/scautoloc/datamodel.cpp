@@ -414,7 +414,7 @@ double Origin::rms() const
 
 	std::vector<double> res;
 	for ( const Arrival& arr : arrivals ) {
-		if ( ! arr.excluded )
+		if ( !arr.excluded )
 			res.push_back(arr.residual);
 	}
 
@@ -431,7 +431,7 @@ double Origin::medianStationDistance() const
 	std::vector<double> distance;
 
 	for ( const Arrival& arr : arrivals ) {
-		if ( ! arr.excluded ) {
+		if ( !arr.excluded ) {
 			distance.push_back(arr.distance);
 		}
 	}

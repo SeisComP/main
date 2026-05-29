@@ -60,6 +60,9 @@ class Autoloc3 {
 		bool setGridFile(const std::string &);
 
 		// Initialize one station at runtime
+		//
+		// Returns true if successful or if the station has already been
+		// initialized, false in case of error.
 		bool initOneStation(const DataModel::WaveformStreamID&, const Core::Time&);
 
 		void setLocatorProfile(const std::string &);

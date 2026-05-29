@@ -198,8 +198,8 @@ Origin *Locator::relocate(const Origin *origin) {
 	}
 
 	if ( relo->hypocenter.dep <= _minDepth &&
-	    relo->depthType != Origin::DepthManuallyFixed &&
-	    ! _sclocator->usingFixedDepth() ) {
+	     relo->depthType != Origin::DepthManuallyFixed &&
+	     !_sclocator->usingFixedDepth() ) {
 
 		// relocate again, this time fixing the depth to _minDepth
 		// NOTE: This reconfigures the locator temporarily!
@@ -406,7 +406,7 @@ Origin* Locator::_screlocate(const Origin *origin) {
 		     arr.distance > 104 && arr.distance < 112) {
 
 			TravelTime tt;
-			if ( ! travelTimeP(arr.distance, origin->dep, tt))
+			if ( !travelTimeP(arr.distance, origin->dep, tt))
 				continue;
 			arr.residual = arr.pick->time - (origin->time + tt.time);
 		}

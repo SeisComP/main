@@ -114,12 +114,12 @@ Autoloc3::Autoloc3() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Autoloc3::init() {
-	if ( ! scinventory) {
+	if ( !scinventory) {
 		SEISCOMP_ERROR("Missing SeisComP Inventory");
 		return false;
 	}
 
-	if ( ! scconfig) {
+	if ( !scconfig) {
 		SEISCOMP_WARNING("Missing SeisComP Config");
 		// return false;
 	}
@@ -158,12 +158,13 @@ bool Autoloc3::init() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Autoloc3::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Time &time) {
-	bool found {false};
 	static std::set<std::string> configuredStreams;
 	std::string key = wfid.networkCode() + "." + wfid.stationCode();
 
-	if ( configuredStreams.find(key) != configuredStreams.end() ) {
-		return false;
+	// Have we configured this stream already? If yes -> nothing to do.
+	bool found = configuredStreams.find(key) != configuredStreams.end();
+	if (found) {
+		return true;
 	}
 
 	for ( size_t n = 0; n < scinventory->networkCount() && !found; ++n ) {
@@ -295,8 +296,10 @@ bool Autoloc3::feed(Seiscomp::DataModel::Pick *scpick) {
 		return false;
 	}
 
-	// configure station if needed
-	initOneStation(scpick->waveformID(), scpick->time().value());
+	// Configure station if needed
+	if ( !initOneStation(scpick->waveformID(), scpick->time().value())) {
+		return false;
+	}
 
 	Autoloc::PickPtr pick = new Autoloc::Pick(scpick);
 	if ( !pick ) {
@@ -3047,7 +3050,7 @@ double Autoloc3::_testFake(Origin *origin) const
 			int iarr = otherOrigin->findArrival(arr.pick.get());
 			if ( iarr != -1 ) {
 				const Arrival &oarr = otherOrigin->arrivals[iarr];
-//				if ( ! arr.excluded) {
+//				if ( !arr.excluded) {
 					arr.excluded = Arrival::DeterioratesSolution;
 					SEISCOMP_DEBUG("_testFake: doubly associated pick %s", oarr.pick->label);
 					count ++;
@@ -3462,7 +3465,7 @@ bool Autoloc3::initInventory()
 {
 	using namespace Autoloc::Utils;
 
-	if ( ! _config.stationLocationFile.empty() ) {
+	if ( !_config.stationLocationFile.empty() ) {
 		return readInventoryFromFile();
 	}
 

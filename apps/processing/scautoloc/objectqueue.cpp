@@ -85,7 +85,7 @@ bool PublicObjectQueue::fill(const EventParameters *ep)
 	for ( TimeObject &obj : objs )
 		q.push(get<2>(obj));
 
-	return ! q.empty();
+	return !q.empty();
 }
 
 

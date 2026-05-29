@@ -237,7 +237,7 @@ double avgfn(double x) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 std::string printOrigin(const Origin *origin, bool oneliner) {
-	if ( ! origin ) {
+	if ( !origin ) {
 		return "invalid origin";
 	}
 

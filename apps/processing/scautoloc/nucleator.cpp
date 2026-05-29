@@ -105,7 +105,7 @@ void GridSearch::setSeiscompConfig(const Seiscomp::Config::Config *scconfig) {
 bool GridSearch::init()
 {
 	_relocator.setSeiscompConfig(_scconfig);
-	if ( ! _relocator.init() ) {
+	if ( !_relocator.init() ) {
 		SEISCOMP_ERROR("GridSearch::init(): Failed to initialize relocator");
 		return false;
 	}
@@ -230,7 +230,7 @@ GridPoint::feed(const Pick* pick)
 		// this grid cell may be out of range for that station
 		return nullptr;
 	StationWrapperCPtr wrapper = (*xit).second;
-	if ( ! wrapper->station ) {
+	if ( !wrapper->station ) {
 		SEISCOMP_ERROR("Nucleator: station '%s' not found", key);
 		return nullptr;
 
@@ -318,7 +318,7 @@ GridPoint::feed(const Pick* pick)
 	size_t cntmax = 0;
 	Time otime;
 	for ( size_t i = 0; i < npick; i++ ) {
-		if ( ! _flg[i]) {
+		if ( !_flg[i]) {
 			continue;
 		}
 		group.push_back(pps[i]);
@@ -407,7 +407,7 @@ bool GridPoint::setupStation(const Station *station)
 		return false;
 
 	TravelTime tt;
-	if ( ! travelTimeP(hypocenter.lat, hypocenter.lon, hypocenter.dep, station->lat, station->lon, 0, delta, tt)) {
+	if ( !travelTimeP(hypocenter.lat, hypocenter.lon, hypocenter.dep, station->lat, station->lon, 0, delta, tt)) {
 		return false;
 	}
 
@@ -647,7 +647,7 @@ bool GridSearch::feed(const Pick *pick) {
 
 	// link pick to station through pointer
 
-	if ( ! pick->station() ) {
+	if ( !pick->station() ) {
 		StationMap::const_iterator it = _stations.find(net_sta);
 		if ( it == _stations.end() ) {
 			SEISCOMP_ERROR_S("\nGridSearch::feed() NO STATION " + net_sta + "\n");
@@ -681,7 +681,7 @@ bool GridSearch::feed(const Pick *pick) {
 			gp->setupStation(pick->station());
 
 		OriginCPtr origin = gp->feed(pick);
-		if ( ! origin )
+		if ( !origin )
 			continue;
 
 		// look at the origin, check whether
@@ -718,7 +718,7 @@ bool GridSearch::feed(const Pick *pick) {
 /*
 		_relocator.useFixedDepth(true);
 		OriginPtr relo = _relocator.relocate(origin.get());
-		if ( ! relo)
+		if ( !relo)
 			continue;
 
 		double delta, az, baz;
@@ -793,7 +793,7 @@ bool GridSearch::_readGrid(const std::string &gridfile) {
 	}
 
 	_grid.clear();
-	while ( ! ifile.eof() ) {
+	while ( !ifile.eof() ) {
 		std::string line;
 		std::getline(ifile, line);
 

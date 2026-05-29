@@ -37,7 +37,7 @@ namespace Autoloc {
 static void ltrim(std::string &s)
 {
 	s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {
-		return ! std::isspace(ch);
+		return !std::isspace(ch);
 	}));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -60,7 +60,7 @@ StationConfig::StationConfig()
 StationConfig::StationConfig(const std::string &filename)
 {
 	setFilename(filename);
-	if ( ! read() ) {
+	if ( !read() ) {
 		throw std::runtime_error("Could not read station config from " + filename);
 	}
 }
@@ -95,13 +95,13 @@ bool StationConfig::read()
 	_item[defaultkey] = StationConfigItem();
 
 	std::ifstream ifile(_filename.c_str());
-	if ( ! ifile.good() ) {
+	if ( !ifile.good() ) {
 		SEISCOMP_ERROR_S("Failed to open station config file " + _filename);
 		return false;
 	}
 
 	StationConfigItem item;
-	while( ! ifile.eof() ) {
+	while( !ifile.eof() ) {
 		std::getline(ifile, line);
 		ltrim(line);
 //		line.erase(0, line.find_first_not_of(" \n\r\t"));
