@@ -49,9 +49,7 @@ bool PublicObjectQueue::fill(const EventParameters *ep)
 			objs.push_back(TimeObject(t, 0, pick));
 		}
 		catch ( ... ) {
-			SEISCOMP_WARNING(
-				"Pick %s: no creation time set",
-				pick->publicID().c_str());
+			SEISCOMP_WARNING("Pick %s: no creation time set", pick->publicID());
 		}
 	}
 
@@ -62,9 +60,7 @@ bool PublicObjectQueue::fill(const EventParameters *ep)
 			objs.push_back(TimeObject(t, 1, amplitude));
 		}
 		catch ( ... ) {
-			SEISCOMP_WARNING(
-				"Amplitude %s: no creation time set",
-				amplitude->publicID().c_str());
+			SEISCOMP_WARNING("Amplitude %s: no creation time set", amplitude->publicID());
 		}
 	}
 
@@ -75,9 +71,7 @@ bool PublicObjectQueue::fill(const EventParameters *ep)
 			objs.push_back(TimeObject(t, 2, origin));
 		}
 		catch ( ... ) {
-			SEISCOMP_WARNING(
-				"Origin %s: no creation time set",
-				origin->publicID().c_str());
+			SEISCOMP_WARNING("Origin %s: no creation time set", origin->publicID());
 		}
 	}
 

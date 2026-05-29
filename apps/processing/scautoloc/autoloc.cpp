@@ -79,7 +79,7 @@ static int arrivalWithLargestResidual(const Origin *origin) {
 	size_t arrivalCount = origin->arrivals.size(), imax;
 	bool found {false};
 	double resmax {0};
-	for ( size_t i=0; i<arrivalCount; i++ ) {
+	for ( size_t i = 0; i < arrivalCount; i++ ) {
 		const Arrival &arr = origin->arrivals[i];
 		if (arr.excluded)
 			continue;
@@ -159,11 +159,9 @@ bool Autoloc3::init() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Autoloc3::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Time &time) {
-	static std::set<std::string> configuredStreams;
-	std::string key = wfid.networkCode() + "." + wfid.stationCode();
-
 	// Have we configured this stream already? If yes -> nothing to do.
-	if ( configuredStreams.find(key) != configuredStreams.end() ) {
+	std::string key = wfid.networkCode() + "." + wfid.stationCode();
+	if ( _stations.find(key) != _stations.end() ) {
 		return true;
 	}
 
@@ -197,7 +195,6 @@ bool Autoloc3::initOneStation(const DataModel::WaveformStreamID &wfid, const Cor
 		return false;
 	}
 
-	configuredStreams.insert(key);
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -822,7 +819,7 @@ Origin *Autoloc3::_findMatchingOrigin(const Origin *origin) {
 		size_t identical=0, similar=0;
 
 		// go through this origin and look for manual picks
-		for (size_t i1=0; i1 < existing->arrivals.size(); i1++) {
+		for ( size_t i1 = 0; i1 < existing->arrivals.size(); i1++) {
 			const Pick *pick = existing->arrivals[i1].pick.get();
 
 			if ( !pick->station() ) {
@@ -833,7 +830,7 @@ Origin *Autoloc3::_findMatchingOrigin(const Origin *origin) {
 			}
 
 			// try to find a matching pick in our newly fed origin
-			for (size_t i2=0; i2 < origin->arrivals.size(); i2++) {
+			for ( size_t i2 = 0; i2 < origin->arrivals.size(); i2++ ) {
 				const Pick *pick2 = origin->arrivals[i2].pick.get();
 
 				// identical picks?
@@ -993,7 +990,7 @@ int Autoloc3::_authorPriority(const std::string &author) const {
 	}
 
 	size_t n = _config.authors.size();
-	for (size_t i=0; i<n; i++) {
+	for ( size_t i = 0; i < n; i++ ) {
 		if (_config.authors[i] == author) {
 			return n-i;
 		}
@@ -1038,10 +1035,10 @@ void Autoloc3::setPickLogFileName(const std::string &fname)
 
 	_pickLogFile.open(_pickLogFileName.c_str(), std::ios_base::app);
 	if ( !_pickLogFile.is_open() ) {
-		SEISCOMP_ERROR_S("Failed to open pick log file " + fname);
+		SEISCOMP_ERROR("Failed to open pick log file %s", fname);
 		return;
 	}
-	SEISCOMP_INFO_S("Logging picks to file " + _pickLogFileName);
+	SEISCOMP_INFO("Logging picks to file %s", _pickLogFileName);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1237,11 +1234,7 @@ Origin *Autoloc3::merge(const Origin *origin1, const Origin *origin2) {
 		               origin2->id, origin1->id,arr2.pick->label);
 	}
 
-#ifdef LOG_RELOCATOR_CALLS
-	SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
-	// This was previously missing:
-	_relocator.useFixedDepth(false);  // TODO: extensive testing!
+	_relocator.useFixedDepth(false);
 
 	OriginPtr relo = _relocator.relocate(combined);
 	if ( !relo ) {
@@ -1316,6 +1309,15 @@ bool Autoloc3::_perhapsPdiff(const Pick *pick) const {
 	// This is a very crude test that won't harm. If at all, only a few
 	// picks with low SNR following a large event are affected.
 
+	// Approximate Pdiff delta range
+	const double minDeltaPdiff { 98.};
+	const double maxDeltaPdiff {120.};
+	// We don't expect Pdiff to play a role for small events, so we set
+	// a minimum score here. For any origin with lower score, no Pdiff
+	// check will be performed.
+	// Perhaps make this value configurable.
+	const double minScorePdiff {100.};
+
 	if ( pick->snr > 6 ) {  // TODO: make this configurable? not very important
 		// High SNR -> process anyway (even if it may be Pdiff)
 		return false;
@@ -1330,15 +1332,14 @@ bool Autoloc3::_perhapsPdiff(const Pick *pick) const {
 			continue;
 		}
 
-		// TODO: perhaps make this configurable
-		if ( origin->score < 100 ) {
+		if ( origin->score < minScorePdiff ) {
 			continue;
 		}
 
 		double delta, az, baz;
 		delazi(&(origin->hypocenter), station, delta, az, baz);
 
-		if ( delta < 98 || delta > 120 ) {
+		if ( delta < minDeltaPdiff || delta > maxDeltaPdiff ) {
 			continue;
 		}
 
@@ -1444,23 +1445,23 @@ OriginPtr Autoloc3::_xxlPreliminaryOrigin(const Pick *newPick)
 		return nullptr;
 	}
 
-	double lat = earliest->station()->lat+0.03;
-	double lon = earliest->station()->lon+0.03;
-	double tim = earliest->time-0.05;
+	double lat = earliest->station()->lat + 0.03;
+	double lon = earliest->station()->lon + 0.03;
+	double tim = earliest->time - 0.05;
 	double dep {0};
 
 	// loop over several trial depths, which are multiples of the default depth
 	std::vector<double> trialDepths;
-	for (int i=0; dep <= _config.xxlMaxDepth; i++) {
+	for (int i = 0; dep <= _config.xxlMaxDepth; i++) {
 		dep = _config.defaultDepth*(1+i);
 		trialDepths.push_back(dep);
 
 		// in case of "sticky" default depth, we don't need any more trial depths
-		if (_config.defaultDepthStickiness > 0.9)
+		if ( _config.defaultDepthStickiness > 0.9 )
 			break;
 	}
 
-	for ( size_t i=0; i<trialDepths.size(); i++ ) {
+	for ( size_t i = 0; i < trialDepths.size(); i++ ) {
 		dep = trialDepths[i];
 		OriginPtr origin = new Origin(lat, lon, dep, tim);
 
@@ -2224,7 +2225,7 @@ bool Autoloc3::_rework(Origin *origin) {
 		double dmax=0;
 		int imax=-1;
 		// find the farthest used station
-		for (size_t i=0; i<arrivalCount; i++) {
+		for ( size_t i = 0; i < arrivalCount; i++ ) {
 			Arrival &arr = origin->arrivals[i];
 			if ( arr.excluded ) {
 				continue;
@@ -2236,7 +2237,7 @@ bool Autoloc3::_rework(Origin *origin) {
 		}
 
 		Arrival &arr = origin->arrivals[imax];
-		if (arr.distance < _config.maxStaDist) {
+		if ( arr.distance < _config.maxStaDist ) {
 			break;
 		}
 		arr.excluded = Arrival::StationDistance;
@@ -2421,7 +2422,7 @@ bool Autoloc3::_passedFilter(Origin *origin)
 	size_t arrivalCount = origin->arrivals.size();
 	size_t phaseCount = origin->definingPhaseCount();
 	size_t consistentPhaseCount = 0;
-	for (size_t i=0; i<arrivalCount; i++) {
+	for ( size_t i = 0; i < arrivalCount; i++ ) {
 
 		Arrival &arr = origin->arrivals[i];
 		if (arr.excluded)
@@ -2833,7 +2834,7 @@ bool Autoloc3::_enhanceScore(Origin *origin, size_t maxloops) {
 			// earliest XXL pick
 			size_t excludedcount = 0;
 			size_t arrivalCount = origin->arrivals.size();
-			for ( size_t i=0; i < arrivalCount; i++ ) {
+			for ( size_t i = 0; i < arrivalCount; i++ ) {
 				Arrival &arr = origin->arrivals[i];
 				if ( !arr.pick->xxl && arr.pick->time < earliestxxl->time) {
 					copy->arrivals[i].excluded = Arrival::ManuallyExcluded;
@@ -2841,7 +2842,7 @@ bool Autoloc3::_enhanceScore(Origin *origin, size_t maxloops) {
 				}
 			}
 
-			if (excludedcount) {
+			if ( excludedcount ) {
 				bool fix = _config.defaultDepthStickiness > 0.9;
 				_relocator.useFixedDepth(fix);
 
@@ -2861,7 +2862,7 @@ bool Autoloc3::_enhanceScore(Origin *origin, size_t maxloops) {
 
 	// try to enhance score by excluding outliers
 //	while (origin->definingPhaseCount() >= _config.minPhaseCount) {
-	for (size_t loop=0; loop < maxloops; loop++) {
+	for ( size_t loop = 0; loop < maxloops; loop++ ) {
 		if ( maxloops > 0 && ++loops > maxloops ) {
 			break;
 		}
@@ -2871,7 +2872,7 @@ bool Autoloc3::_enhanceScore(Origin *origin, size_t maxloops) {
 		int    bestExcluded = -1;
 
 		size_t arrivalCount = origin->arrivals.size();
-		for (size_t i=0; i<arrivalCount; i++) {
+		for ( size_t i = 0; i < arrivalCount; i++ ) {
 
 			Arrival &arr = origin->arrivals[i];
 			if ( arr.excluded ) {
@@ -3271,7 +3272,7 @@ bool Autoloc3::_trimResiduals(Origin *origin){
 		size_t index;
 		bool found {false};
 
-		for (size_t i=0; i<arrivalCount; i++) {
+		for ( size_t i = 0; i < arrivalCount; i++ ) {
 
 			Arrival &arr = origin->arrivals[i];
 			if ( arr.excluded ) {
@@ -3321,7 +3322,7 @@ bool Autoloc3::_trimResiduals(Origin *origin){
 		size_t index {0};
 		bool found {false};
 
-		for (size_t i=0; i<arrivalCount; i++) {
+		for ( size_t i = 0; i < arrivalCount; i++ ) {
 
 			Arrival &arr = origin->arrivals[i];
 			if ( arr.excluded == Arrival::LargeResidual ) {
