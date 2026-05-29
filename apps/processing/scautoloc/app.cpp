@@ -30,8 +30,6 @@
 #include "app.h"
 #include "scutil.h"
 
-//using namespace Seiscomp::Math;
-
 
 namespace Seiscomp {
 
@@ -772,42 +770,9 @@ bool AutolocApp::runFromXMLFile(const char *filename)
 	SEISCOMP_INFO("  number of amplitudes: %d", ep->amplitudeCount());
 	SEISCOMP_INFO("  number of origins:    %d", ep->originCount());
 
-	// Tuple to be used in DSU sorting. The second member is used to place picks
-	// before amplitudes with identical creation times.
-	typedef std::tuple<Core::Time, int, std::string, DataModel::PublicObjectPtr> TimeObject;
-	typedef std::vector<TimeObject> TimeObjectVector;
+	objectQueue.fill(ep.get());
 
-	// retrieval of relevant objects from event parameters
-	// and subsequent DSU sort
-	TimeObjectVector objs;
-	while ( ep->pickCount() ) {
-		DataModel::PickPtr pick = ep->pick(0);
-		ep->removePick(0);
-		DataModel::PublicObjectPtr o(pick);
-		Core::Time t = pick->creationInfo().creationTime();
-		objs.push_back(TimeObject(t, 0, pick->publicID(), o));
-	}
-	while ( ep->amplitudeCount() ) {
-		DataModel::AmplitudePtr amplitude = ep->amplitude(0);
-		ep->removeAmplitude(0);
-		DataModel::PublicObjectPtr o(amplitude);
-		Core::Time t = amplitude->creationInfo().creationTime();
-		// t += Core::TimeSpan(0.00001);
-		objs.push_back(TimeObject(t, 1, amplitude->publicID(), o));
-	}
-	while (ep->originCount() ) {
-		DataModel::OriginPtr origin = ep->origin(0);
-		ep->removeOrigin(0);
-		DataModel::PublicObjectPtr o(origin);
-		Core::Time t = origin->creationInfo().creationTime();
-		objs.push_back(TimeObject(t, 2, origin->publicID(), o));
-	}
-	std::sort(objs.begin(), objs.end());
-	for ( TimeObject &obj : objs ) {
-		_objects.push(std::get<3>(obj));
-	}
-
-	if ( _objects.empty() )
+	if ( objectQueue.empty() )
 		return false;
 
 	if ( _playbackSpeed > 0 ) {
@@ -850,84 +815,12 @@ bool AutolocApp::runFromEPFile(const char *filename) {
 	     << _ep->pickCount() << " pick(s), "
 	     << _ep->amplitudeCount() << " amplitudes(s)"<< std::endl;
 
-	// Tuple to be used in DSU sorting. The second member is used to place picks
-	// before amplitudes with identical creation times.
-	typedef std::tuple<Core::Time, int, std::string, DataModel::PublicObjectPtr> TimeObject;
-	typedef std::vector<TimeObject> TimeObjectVector;
+	objectQueue.fill(_ep.get());
 
-	// retrieval of relevant objects from event parameters
-	// and subsequent DSU sort
-	TimeObjectVector objs;
+	while ( !objectQueue.empty() && !isExitRequested() ) {
+		DataModel::PublicObjectPtr o = objectQueue.front();
 
-	for ( size_t i = 0; i < _ep->pickCount(); ++i ) {
-		DataModel::PickPtr pick = _ep->pick(i);
-		bool add = true;
-		try {
-			if ( rejected(pick.get()) ) {
-				if ( !_config.allowRejectedPicks ) {
-					add = false;
-					SEISCOMP_INFO("Ignoring pick %s with evaluation status '%s'",
-					              pick->publicID(), pick->evaluationStatus().toString());
-					continue;
-				}
-				else {
-					SEISCOMP_DEBUG("Considering pick %s with evaluation status '%s'",
-					               pick->publicID(), pick->evaluationStatus().toString());
-				}
-			}
-		}
-		catch ( ... ) {}
-
-		Core::Time t;
-		try {
-			t = pick->creationInfo().creationTime();
-		}
-		catch ( ... ) {
-			add = false;
-			SEISCOMP_INFO("Ignoring pick %s: creation time not set",
-			              pick->publicID());
-			continue;
-		}
-
-		if ( add ) {
-			objs.push_back(TimeObject(t, 0, pick->publicID(), pick));
-		}
-	}
-
-	for ( size_t i = 0; i < _ep->amplitudeCount(); ++i ) {
-		DataModel::AmplitudePtr amplitude = _ep->amplitude(i);
-		try {
-			Core::Time t = amplitude->creationInfo().creationTime();
-			// t += Core::TimeSpan(0.00001);
-			objs.push_back(TimeObject(t, 1, amplitude->publicID(), amplitude));
-		}
-		catch ( ... ) {
-			SEISCOMP_INFO("Ignoring amplitude %s: creation time not et",
-			              amplitude->publicID());
-		}
-	}
-
-	for ( size_t i = 0; i < _ep->originCount(); ++i ) {
-		DataModel::OriginPtr origin = _ep->origin(i);
-		try {
-			Core::Time t = origin->creationInfo().creationTime();
-			objs.push_back(TimeObject(t, 2, origin->publicID(), origin));
-		}
-		catch ( ... ) {
-			SEISCOMP_INFO("Ignoring origin %s: creation time not set",
-			              origin->publicID());
-		}
-	}
-
-	std::sort(objs.begin(), objs.end());
-	for ( TimeObject &obj : objs ) {
-		_objects.push(std::get<3>(obj));
-	}
-
-	while ( !_objects.empty() && !isExitRequested() ) {
-		DataModel::PublicObjectPtr o = _objects.front();
-
-		_objects.pop();
+		objectQueue.pop();
 		addObject("", o.get());
 		++objectCount;
 	}
@@ -1010,40 +903,44 @@ void AutolocApp::handleTimeout() {
 
 	// The following is relevant (and executed) only for XML playback.
 
-	while ( !_objects.empty() && !isExitRequested() ) {
+	while ( ! objectQueue.empty() ) {
+
+		DataModel::PublicObjectPtr optr = objectQueue.front();
+		DataModel::PublicObject* o = optr.get();
 
 		Core::Time t;
-		DataModel::PublicObjectPtr o = _objects.front();
 
-		// retrieve the creationTime...
-		if ( DataModel::Pick::Cast(o.get()) )
-			t = DataModel::Pick::Cast(o.get())->creationInfo().creationTime();
-		else if ( DataModel::Amplitude::Cast(o.get()) )
-			t = DataModel::Amplitude::Cast(o.get())->creationInfo().creationTime();
-		else if ( DataModel::Origin::Cast(o.get()) )
-			t = DataModel::Origin::Cast(o.get())->creationInfo().creationTime();
+		// Retrieve the creationTime...
+		if ( DataModel::Pick::Cast(o) )
+			t = DataModel::Pick::Cast(o)->creationInfo().creationTime();
+		else if ( DataModel::Amplitude::Cast(o) )
+			t = DataModel::Amplitude::Cast(o)->creationInfo().creationTime();
+		else if ( DataModel::Origin::Cast(o) )
+			t = DataModel::Origin::Cast(o)->creationInfo().creationTime();
 		else continue;
 
-		// at the first object:
-		if ( objectCount == 0 )
+		// At the first object:
+		if ( objectCount == 0 ) {
 			objectsStartTime = t;
+		}
 
 		if ( _playbackSpeed > 0 ) {
 			double dt = static_cast<double>(t - objectsStartTime);
 			Core::TimeSpan dp = dt / _playbackSpeed;
 			t = playbackStartTime + dp;
-			if ( Core::Time::UTC() < t )
-				break; // until next handleTimeout() call
+			if ( Core::Time::UTC() < t ) {
+				break;  // until next handleTimeout() call
+			}
 		} // otherwise no speed limit :)
 
-		_objects.pop();
-		addObject("", o.get());
+		objectQueue.pop();
+		addObject("", o);
 		objectCount++;
 	}
 
-	// for an XML playback, we're done once the object queue is empty
-	if ( _objects.empty() )
+	if ( objectQueue.empty() ) {
 		quit();
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

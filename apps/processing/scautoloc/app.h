@@ -25,6 +25,7 @@
 #include <seiscomp/datamodel/waveformstreamid.h>
 #include <seiscomp/client/application.h>
 #include "autoloc.h"
+#include "objectqueue.h"
 
 
 namespace Seiscomp {
@@ -85,8 +86,8 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 		std::string _inputEPFile;
 		// Enable formatted XML output
 		bool _formatted{false};
-		// Sorted objects for playback
-		std::queue<Seiscomp::DataModel::PublicObjectPtr> _objects;
+		// Public object queue used for XML playback
+		DataModel::PublicObjectQueue objectQueue;
 		Seiscomp::DataModel::EventParametersPtr _ep;
 		Seiscomp::Core::Time playbackStartTime;
 		Seiscomp::Core::Time objectsStartTime;
