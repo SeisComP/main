@@ -9,6 +9,7 @@ SET(
 		datamodel.cpp
 		locator.cpp
 		nucleator.cpp
+		objectqueue.cpp
 		scutil.cpp
 		util.cpp
 		sc3adapters.cpp
@@ -26,6 +27,7 @@ SET(
 		datamodel.h
 		locator.h
 		nucleator.h
+		objectqueue.h
 		scutil.h
 		util.h
 		sc3adapters.h

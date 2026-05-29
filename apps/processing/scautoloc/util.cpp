@@ -260,11 +260,11 @@ std::string printOrigin(const Origin *origin, bool oneliner) {
 		double score = originScore(origin);
 		char s[200];
 		std::string tstr = time2str(origin->time).substr(11);
-		sprintf(s, "%-6lu %s %6.2f %7.2f %3.0f%c %4.1f %3ld %3ld s=%6.1f",
-			origin->id, tstr.c_str(),
-			origin->hypocenter.lat, origin->hypocenter.lon, origin->hypocenter.dep, depthFlag,
-			origin->rms(), origin->definingPhaseCount(),
-			origin->arrivals.size(), score);
+		snprintf(s, 200, "%-6lu %s %6.2f %7.2f %3.0f%c %4.1f %3ld %3ld s=%6.1f",
+		         origin->id, tstr.c_str(),
+		         origin->hypocenter.lat, origin->hypocenter.lon, origin->hypocenter.dep, depthFlag,
+		         origin->rms(), origin->definingPhaseCount(),
+		         origin->arrivals.size(), score);
 		out << s;
 	}
 	else {
