@@ -21,13 +21,21 @@ namespace Seiscomp {
 
 	void logObjectCounts();
 
-	bool manual(const DataModel::Origin *origin);
+	bool manual(const Seiscomp::DataModel::Origin*);
+	bool preliminary(const Seiscomp::DataModel::Origin*);
 
 	// Pick label used for logging.
 	// The goal is to display much information as possible as a relatively short string.
-	std::string pickLabel(const DataModel::Pick*);
+	std::string pickLabel(const Seiscomp::DataModel::Pick*);
 
-	bool rejected(const DataModel::Pick *scpick);
+	bool rejected(const Seiscomp::DataModel::Pick*);
+
+	std::string evaluationStatus(const Seiscomp::DataModel::Pick*);
+	std::string evaluationStatus(const Seiscomp::DataModel::Origin*);
+	std::string evaluationMode(const Seiscomp::DataModel::Origin*);
+	std::string depthType(const Seiscomp::DataModel::Origin*);
+
+	std::string summary(const Seiscomp::DataModel::Origin*);
 
 } // namespace Seiscomp
 

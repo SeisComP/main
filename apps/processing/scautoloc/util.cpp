@@ -204,7 +204,7 @@ static Time str2time(const std::string &s) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 std::string time2str(const Time &t) {
-	return sctime(t).toString("%F %T.%f000000").substr(0,21);
+	return sctime(t).toString("%F %T.%f000000").substr(0, 21);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -252,7 +252,9 @@ double avgfn(double x) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 std::string printOrigin(const Origin *origin, bool oneliner) {
-	assert(origin);
+	if ( ! origin ) {
+		return "invalid origin";
+	}
 
 	std::ostringstream out;
 
@@ -269,7 +271,7 @@ std::string printOrigin(const Origin *origin, bool oneliner) {
 	default:                         depthFlag = ' ';
 	}
 
-	if (oneliner) {
+	if ( oneliner ) {
 		double score = originScore(origin);
 		char s[200];
 		std::string tstr = time2str(origin->time).substr(11);
@@ -348,9 +350,9 @@ std::string printOrigin(const Origin *origin, bool oneliner) {
 		out << "SGAP  = " << origin->quality.aziGapSecondary << std::endl;
 		out << "SCORE = " << originScore(origin) << std::endl;
 		out << "preliminary = "  << (origin->preliminary ? "true":"false") << std::endl;
-
-		out.precision(precision);
 	}
+	out.precision(precision);
+
 	return out.str();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

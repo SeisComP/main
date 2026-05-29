@@ -28,13 +28,9 @@
 #include <list>
 
 #include "app.h"
-#include "datamodel.h"
-#include "sc3adapters.h"
 #include "scutil.h"
-#include "util.h"
 
-using namespace Seiscomp::Client;
-using namespace Seiscomp::Math;
+//using namespace Seiscomp::Math;
 
 
 namespace Seiscomp {
@@ -867,7 +863,7 @@ bool AutolocApp::runFromEPFile(const char *filename) {
 		DataModel::PickPtr pick = _ep->pick(i);
 		bool add = true;
 		try {
-			if ( pick->evaluationStatus() == DataModel::REJECTED ) {
+			if ( rejected(pick.get()) ) {
 				if ( !_config.allowRejectedPicks ) {
 					add = false;
 					SEISCOMP_INFO("Ignoring pick %s with evaluation status '%s'",
@@ -947,28 +943,6 @@ bool AutolocApp::runFromEPFile(const char *filename) {
 	std::cerr << "Output to XML: " << objectCount << " objects(s)" << std::endl;
 
 	return true;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void AutolocApp::sync(const Core::Time &t) {
-	syncTime = t;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-const Core::Time AutolocApp::now() const {
-	if ( _inputFileXML.size() || _inputEPFile.size() ) {
-		return syncTime;
-	}
-
-	return Core::Time::UTC();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1171,8 +1145,8 @@ bool AutolocApp::feed(DataModel::Amplitude *scampl) {
 	const std::string &atype  = scampl->type();
 	const std::string &amplID = scampl->publicID();
 	if ( atype != _config.amplTypeAbs && atype != _config.amplTypeSNR ) {
-		SEISCOMP_DEBUG("Ignoring '%s' amplitude %s: neither of type %s nor %s",
-		               atype, amplID, _config.amplTypeAbs, _config.amplTypeSNR);
+//		SEISCOMP_DEBUG("Ignoring '%s' amplitude %s: neither of type %s nor %s",
+//		               atype, amplID, _config.amplTypeAbs, _config.amplTypeSNR);
 		return false;
 	}
 
@@ -1209,12 +1183,11 @@ bool AutolocApp::feed(DataModel::Amplitude *scampl) {
 bool AutolocApp::feed(DataModel::Origin *scorigin) {
 
 	if ( !scorigin ) {
-		SEISCOMP_ERROR("This should never happen: origin=NULL");
 		return false;
 	}
 
-	SEISCOMP_INFO_S("got origin " + scorigin->publicID() +
-			"   agency: " + objectAgencyID(scorigin));
+	SEISCOMP_INFO("Got origin %s from agency %s",
+	              scorigin->publicID(), objectAgencyID(scorigin));
 
 	const bool ownOrigin = objectAgencyID(scorigin) == agencyID();
 
@@ -1258,32 +1231,13 @@ bool AutolocApp::feed(DataModel::Origin *scorigin) {
 		}
 	}
 
-	return Autoloc3::feed(scorigin);
-/*
-	Autoloc::Origin *origin = convertFromSC(scorigin);
-	if ( !origin ) {
-		SEISCOMP_ERROR_S("Failed to convert origin " + objectAgencyID(scorigin));
-		return false;
-	}
+	bool status = Autoloc3::feed(scorigin);
 
-	// mark and log imported origin
-	if ( objectAgencyID(scorigin) == agencyID() ) {
-		SEISCOMP_INFO_S("Using origin from agency " + objectAgencyID(scorigin));
-		origin->imported = false;
-	}
-	else {
-		SEISCOMP_INFO_S("Using origin from agency " + objectAgencyID(scorigin));
-		origin->imported = true;
-	}
-
-	Autoloc::Autoloc3::feed(origin);
-
-	if ( _config.offline ) {
+	if ( status == true && (_config.offline || _config.playback || _config.test) ) {
 		_flush();
 	}
 
-	return true;
-*/
+	return status;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1312,22 +1266,16 @@ bool AutolocApp::_report(DataModel::Origin *scorigin) {
 		DataModel::NotifierMessagePtr nmsg = DataModel::Notifier::GetMessage(true);
 		connection()->send(nmsg.get());
 
-		std::string status;
-		try {
-			status = scorigin->evaluationStatus().toString();
-		}
-		catch ( Core::ValueException & ) {}
-
 		// For preliminary origins, also create/send a corresponding journal entry
-		if ( status == "preliminary" ) {
-			SEISCOMP_INFO("Sent preliminary origin %ld (heads up)", scorigin->publicID());
+		if ( preliminary(scorigin) ) {
+			SEISCOMP_INFO("Sent preliminary origin %s (heads up)", scorigin->publicID());
 
-			// create and send journal entry
+			// Create and send journal entry
 			DataModel::JournalEntryPtr journalEntry = new DataModel::JournalEntry;
 			journalEntry->setAction("OrgEvalStatOK");
 			journalEntry->setObjectID(scorigin->publicID());
 			journalEntry->setSender(SCCoreApp->author().c_str());
-			journalEntry->setParameters(status);
+			journalEntry->setParameters("preliminary");
 			journalEntry->setCreated(Core::Time::UTC());
 
 			DataModel::NotifierMessagePtr jm = new DataModel::NotifierMessage;
@@ -1350,20 +1298,6 @@ bool AutolocApp::_report(DataModel::Origin *scorigin) {
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool AutolocApp::_report(Autoloc::Origin *origin) {
-	SEISCOMP_INFO("Reporting origin %ld\n%s", origin->id, Autoloc::printDetailed(origin));
-
-	DataModel::OriginPtr scorigin = convertToSC(origin, _config.author, _config.agencyID, _config.reportAllPhases);
-	scorigin->creationInfo().setCreationTime(now());
-
-	_report(scorigin.get());
-
-	return true;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 } // namespace Applications

@@ -50,35 +50,22 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 		// Read past events from the database
 		void readHistoricEvents();
 
-		// Playback
-		bool runFromXMLFile(const char *fname);
-		bool runFromEPFile(const char *fname);
-
-		void sync(const Core::Time &time);
-
-		// Return the current time.
-		//
-		// The current time is either
-		// - the system time or
-		// - a 'fake system time' from the creation times of the received objects
-		// The latter is needed in playbacks.
-		const Core::Time now() const;
-
-		double _playbackSpeed {1.};
-
 	private:
 		// Processing
-		bool feed(DataModel::Pick *scpick);
-		bool feed(DataModel::Amplitude *scamplitude);
-		bool feed(DataModel::Origin *scorigin);
+		bool feed(Seiscomp::DataModel::Pick *scpick);
+		bool feed(Seiscomp::DataModel::Amplitude *scamplitude);
+		bool feed(Seiscomp::DataModel::Origin *scorigin);
 
 		// Receive SeisComP objects from messaging
-		void addObject(const std::string& parentID, DataModel::Object *o) override;
+		void addObject(const std::string& parentID, Seiscomp::DataModel::Object *o) override;
 
-		bool _report(Autoloc::Origin *origin) override;
-		bool _report(DataModel::Origin *scorigin);
+		// This is the output handler. It takes an origin and depending
+		// on the mode of operation (online vs. playback) it sends it
+		// to the messaging or adds it to an EventParameters instance
+		// that is finally written to an XML file.
+		bool _report(Seiscomp::DataModel::Origin *scorigin) override;
 
-		void handleMessage(Core::Message* msg) override;
+		void handleMessage(Seiscomp::Core::Message* msg) override;
 		void handleTimeout() override;
 
 		virtual void printUsage() const override;
@@ -89,21 +76,26 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 		void done() override;
 
 	private:
+		// Playback
+		bool runFromXMLFile(const char *fname);
+		bool runFromEPFile(const char *fname);
+		double _playbackSpeed {1.};
+		// Input XML files for playback and offline processing
+		std::string _inputFileXML;
+		std::string _inputEPFile;
+		// Enable formatted XML output
+		bool _formatted{false};
+		// Sorted objects for playback
+		std::queue<Seiscomp::DataModel::PublicObjectPtr> _objects;
+		Seiscomp::DataModel::EventParametersPtr _ep;
+		Seiscomp::Core::Time playbackStartTime;
+		Seiscomp::Core::Time objectsStartTime;
+		Seiscomp::Core::Time syncTime;
+
+	private:
 		Autoloc::AutolocConfig _config;
 
-		std::string _inputFileXML; // for XML playback
-		std::string _inputEPFile;  // for offline processing
-		bool        _formatted{false};
-
-		// sorted objects for playback
-		std::queue<DataModel::PublicObjectPtr> _objects;
-
-		Core::Time playbackStartTime;
-		Core::Time objectsStartTime;
-		Core::Time syncTime;
 		size_t objectCount {0};
-
-		DataModel::EventParametersPtr _ep;
 
 		// Wake up every 5 seconds to check pending operations
 		int _wakeUpTimout {5};

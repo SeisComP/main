@@ -20,6 +20,9 @@
 #include <seiscomp/datamodel/pick.h>
 #include <seiscomp/datamodel/utils.h>
 #include <map>
+#include <string>
+#include <sstream>
+#include <iomanip>
 
 #include "scutil.h"
 
@@ -48,10 +51,10 @@ void logObjectCounts()
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool manual(const DataModel::Origin *origin) {
+bool manual(const Seiscomp::DataModel::Origin *origin) {
 	try {
 		switch ( origin->evaluationMode() ) {
-		case DataModel::MANUAL:
+		case Seiscomp::DataModel::MANUAL:
 			return true;
 		default:
 			break;
@@ -61,6 +64,25 @@ bool manual(const DataModel::Origin *origin) {
 	return false;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool preliminary(const Seiscomp::DataModel::Origin *origin) {
+	try {
+		switch (origin->evaluationStatus()) {
+		case Seiscomp::DataModel::PRELIMINARY:
+			return true;
+		default:
+			break;
+		}
+	}
+	catch ( Seiscomp::Core::ValueException & ) {}
+	return false;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 
 
@@ -122,9 +144,125 @@ std::string pickLabel(const DataModel::Pick *scpick) {
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool rejected(const DataModel::Pick *scpick) {
+	try {
+		return scpick->evaluationStatus() == DataModel::REJECTED;
+	}
+	catch ( ... ) {}
+
+	return false;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string time2str(const Core::Time &t) {
+	return t.toString("%F %T.%f000000").substr(0, 21);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string time2str(const DataModel::TimeQuantity &t) {
+	try {
+		return time2str(t.value());
+	}
+	catch ( ... ) {}
+
+	return "invalid time";
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string evaluationStatus(const Seiscomp::DataModel::Pick *scpick) {
+	try {
+		return scpick->evaluationStatus().toString();
+	}
+	catch ( ... ) {}
+
+	return "unset";
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string evaluationStatus(const Seiscomp::DataModel::Origin *scorigin) {
+	try {
+		return scorigin->evaluationStatus().toString();
+	}
+	catch ( ... ) {}
+
+	return "unset";
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string evaluationMode(const Seiscomp::DataModel::Origin *scorigin) {
+	try {
+		return scorigin->evaluationMode().toString();
+	}
+	catch ( ... ) {}
+
+	return "unset";
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string depthType(const Seiscomp::DataModel::Origin *scorigin) {
+	try {
+		return scorigin->depthType().toString();
+	}
+	catch ( ... ) {}
+
+	return "unset";
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string summary(const Seiscomp::DataModel::Origin *scorigin)
+{
+	std::ostringstream out;
+	out.precision(10);
+	out << "Origin " << std::endl << std::fixed << std::setprecision(3)
+	    << "  publicID    " << scorigin->publicID() << std::endl
+	    << "  time        " << time2str(scorigin->time()) << std::endl
+	    << "  latitude    " << std::setw(8) << scorigin->latitude().value() << std::endl
+	    << "  longitude   " << std::setw(8) << scorigin->longitude().value() << std::endl;
+	out.precision(3);
+	out << std::fixed << std::setprecision(1)
+	    << "  depth       " << std::setw(6) << scorigin->depth().value() << " km  "<< std::endl
+	    << "  depth type  " << depthType(scorigin) << std::endl
+	    << "  agencyID    " << objectAgencyID(scorigin) << std::endl
+	    << "  author      " << objectAuthor(scorigin) << std::endl
+	    << "  status      " << evaluationStatus(scorigin) << std::endl
+	    << "  mode        " << evaluationMode(scorigin);
+
+	out.setf(std::ios::right);
+	return out.str();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 } // namespace Seiscomp

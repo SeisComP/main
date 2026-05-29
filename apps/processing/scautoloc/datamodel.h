@@ -85,12 +85,14 @@ class Pick : public Seiscomp::Core::BaseObject {
 		} Mode;
 
 	public:
+		static size_t count();
+
+
+	public:
 		Pick() = delete;
 		Pick(const Seiscomp::DataModel::Pick*);
 //		Pick(const std::string &id, const std::string &label, const std::string &net, const std::string &sta, const Time &time);
 		~Pick();
-
-		static size_t count();
 
 		const std::string& id() const {
 			return scpick->publicID();
@@ -151,7 +153,7 @@ class Pick : public Seiscomp::Core::BaseObject {
 	private:
 		// The (one and only) origin this pick is associated to.
 		// Need to be able to re-associate the pick to another origin.
-		mutable OriginID _originID;
+		mutable OriginID _originID {0};
 
 		// Station information
 		mutable StationPtr _station {nullptr};
@@ -349,7 +351,7 @@ class Origin : public Seiscomp::Core::BaseObject {
 		void geoProperties(double &min, double &max, double &gap) const;
 
 	public:
-		OriginID id;
+		OriginID id{0};
 
 		bool imported {false};
 		bool manual {false};
@@ -359,15 +361,15 @@ class Origin : public Seiscomp::Core::BaseObject {
 		std::string methodID;
 		std::string earthModelID;
 
-		ProcessingStatus processingStatus;
-		LocationStatus locationStatus;
+		ProcessingStatus processingStatus{New};
+		LocationStatus locationStatus{Automatic};
 
-		double score;
+		double score{0};
 
 		Hypocenter hypocenter;
-		Time time, timestamp;
-		double timeerr;
-		DepthType depthType;
+		Time time{0}, timestamp{0};
+		double timeerr{0};
+		DepthType depthType{DepthFree};
 		ArrivalVector arrivals;
 		OriginQuality quality;
 		OriginError error;

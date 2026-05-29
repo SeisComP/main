@@ -218,12 +218,6 @@ bool Autoloc3::initOneStation(const DataModel::WaveformStreamID &wfid, const Cor
 			               epochStart,
 			               epochEnd);
 
-			double elevation = 0;
-			try {
-				elevation = station->elevation();
-			}
-			catch ( ... ) {}
-
 			Autoloc::Station *sta = new Autoloc::Station(station);
 			setStation(sta);
 			found = true;
@@ -419,29 +413,11 @@ bool Autoloc3::feed(Seiscomp::DataModel::Origin *scorigin) {
 	size_t arrivalCount = scorigin->arrivalCount();
 	for ( size_t i = 0; i < arrivalCount; i++ ) {
 		const std::string &pickID = scorigin->arrival(i)->pickID();
-/*
-		DataModel::Pick *scpick = DataModel::Pick::Find(pickID);
-		if ( ! scpick) {
-			SEISCOMP_ERROR_S("Pick " + pickID + " not found - cannot convert origin");
-			delete origin;
-			return nullptr;
-			// TODO:
-			// Trotzdem mal schauen, ob wir den Pick nicht
-			// als Autoloc-Pick schon haben
-		}
-*/
 		const Autoloc::Pick *pick {Autoloc3::pick(pickID)};
 		if ( !pick ) {
-// TODO: Use Cache here!
-			// XXX FIXME: This may also happen after Autoloc cleaned up older picks, so the pick isn't available any more!
+			// FIXME: This may also happen after Autoloc cleaned up older picks, so the pick isn't available any more!
 			SEISCOMP_ERROR_S("Pick " + pickID + " not found in internal pick pool - SKIPPING this pick");
-//			if (DataModel::PublicObject::Find(pickID))
-//				SEISCOMP_ERROR("HOWEVER, this pick is present in pool of public objects");
-			// This actually IS an error but we try to work around
-			// it instead of giving up in this origin completely.
 			continue;
-//			delete origin;
-//			return nullptr;
 		}
 
 		Autoloc::Arrival arr(pick /* , const std::string &phase="P", double residual=0 */ );
@@ -470,7 +446,7 @@ bool Autoloc3::feed(Seiscomp::DataModel::Origin *scorigin) {
 		}
 
 		if ( scorigin->evaluationMode() == DataModel::MANUAL ) {
-			// for manual origins we do allow secondary phases like pP
+			// For manual origins we do allow secondary phases like pP
 			arr.phase = scorigin->arrival(i)->phase();
 
 			try {
@@ -490,21 +466,19 @@ bool Autoloc3::feed(Seiscomp::DataModel::Origin *scorigin) {
 	}
 
 	origin->publicID = scorigin->publicID();
-	try {
-		// FIXME: In scolv the Origin::depthType is not set!
-		DataModel::OriginDepthType dtype = scorigin->depthType();
-		if ( dtype == DataModel::OriginDepthType(DataModel::FROM_LOCATION) ) {
-			origin->depthType = Autoloc::Origin::DepthFree;
-		}
+	std::string dtype = depthType(scorigin);
 
-		else if ( dtype == DataModel::OriginDepthType(DataModel::OPERATOR_ASSIGNED) ) {
-			origin->depthType = Autoloc::Origin::DepthManuallyFixed;
-		}
+	// FIXME: In scolv the Origin::depthType is not set!
+	if ( dtype == "from location" ) {
+		origin->depthType = Autoloc::Origin::DepthFree;
 	}
-	catch ( ... ) {
+	else if ( dtype == "operator assigned" ) {
+		origin->depthType = Autoloc::Origin::DepthManuallyFixed;
+	}
+	else if ( dtype == "unset" ) {
 		SEISCOMP_WARNING("Origin::depthType is not set!");
-		if ( scorigin->evaluationMode() == DataModel::MANUAL &&
-		    _config.adoptManualDepth ) {
+		std::string emode = evaluationMode(scorigin);
+		if ( emode == "manual" && _config.adoptManualDepth ) {
 			// This is a hack! We cannot know wether the operator
 			// assigned a depth manually, but we can assume the
 			// depth to be opperator approved and this is better
@@ -520,8 +494,8 @@ bool Autoloc3::feed(Seiscomp::DataModel::Origin *scorigin) {
 	}
 
 	// Mark and log imported origin
-	SEISCOMP_INFO("Using origin from agency %s", objectAgencyID(scorigin));
 	origin->imported = ( objectAgencyID(scorigin) != _config.agencyID );
+	SEISCOMP_INFO_S(summary(scorigin));
 
 	return feed(origin);
 }
@@ -531,9 +505,9 @@ bool Autoloc3::feed(Seiscomp::DataModel::Origin *scorigin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_report(Origin *origin) {
+bool Autoloc3::_report(DataModel::Origin *scorigin) {
 	// This is a dummy. Replace it by something suitable.
-	SEISCOMP_INFO_S(" OUT " + printOneliner(origin));
+	SEISCOMP_INFO_S(" OUT " + summary(scorigin));
 
 	return true;
 }
@@ -622,8 +596,10 @@ void Autoloc3::_flush() {
 		DataModel::OriginPtr scorigin = convertToSC(origin, _config.author, _config.agencyID, _config.reportAllPhases);
 		scorigin->creationInfo().setCreationTime(now());
 
-		if ( _report(origin) ) {
-			if ( _config.offline || _config.test ) {
+		SEISCOMP_INFO_S(summary(scorigin.get()));
+
+		if ( _report(scorigin.get()) ) {
+			if ( _config.offline || _config.test || _config.playback ) {
 				SEISCOMP_INFO ("Origin %ld not sent (test/offline mode)", origin->id);
 			}
 			else {
@@ -767,7 +743,7 @@ Core::Time Autoloc3::now() const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Autoloc3::timeStamp() const {
-	SEISCOMP_DEBUG_S("Timestamp: " + now().toString("%F %T.%f"));
+	SEISCOMP_DEBUG("Timestamp: %s", now().toString("%F %T.%f"));
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -801,9 +777,6 @@ bool Autoloc3::_store(const Pick *pick) {
 		SEISCOMP_DEBUG_S("ignoring old pick " + pick->label);
 		return false;
 	}
-
-	// adjust time in offline mode
-	sync(pick->scpick->time().value());
 
 	// physically store the pick
 	if ( !Autoloc3::pick(pick->id()) )
@@ -1051,8 +1024,8 @@ int Autoloc3::_authorPriority(const std::string &author) const {
 		return 1;
 	}
 
-	int n = _config.authors.size();
-	for (int i=0; i<n; i++) {
+	size_t n = _config.authors.size();
+	for (size_t i=0; i<n; i++) {
 		if (_config.authors[i] == author) {
 			return n-i;
 		}
@@ -1372,12 +1345,11 @@ bool Autoloc3::_followsBiggerPick(const Pick *newPick) const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Autoloc3::_perhapsPdiff(const Pick *pick) const {
-	// This is a very crude test that won't harm. if at all, only a few
+	// This is a very crude test that won't harm. If at all, only a few
 	// picks with low SNR following a large event are affected.
 
-	if ( pick->snr > 6 ) { // TODO: make this configurable? not very important
-		SEISCOMP_DEBUG("Ignoring pick %s with high SNR %.1f which might by Pdiff",
-		               pick->id(), pick->snr);
+	if ( pick->snr > 6 ) {  // TODO: make this configurable? not very important
+		// High SNR -> process anyway (even if it may be Pdiff)
 		return false;
 	}
 
@@ -1390,7 +1362,8 @@ bool Autoloc3::_perhapsPdiff(const Pick *pick) const {
 			continue;
 		}
 
-		if ( origin->score < 100 ) { // TODO: perhaps make this configurable
+		// TODO: perhaps make this configurable
+		if ( origin->score < 100 ) {
 			continue;
 		}
 
@@ -2477,10 +2450,10 @@ bool Autoloc3::_passedFilter(Origin *origin)
 /*
 	//////////////////////////////////////////////////////////////////
 	// new distance vs. min. pick count criterion
-	int arrivalCount = origin->arrivals.size();
-	int phaseCount = origin->definingPhaseCount();
-	int consistentPhaseCount = 0;
-	for (int i=0; i<arrivalCount; i++) {
+	size_t arrivalCount = origin->arrivals.size();
+	size_t phaseCount = origin->definingPhaseCount();
+	size_t consistentPhaseCount = 0;
+	for (size_t i=0; i<arrivalCount; i++) {
 
 		Arrival &arr = origin->arrivals[i];
 		if (arr.excluded)

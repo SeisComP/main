@@ -38,7 +38,7 @@ namespace Autoloc {
 Station::Station(const Seiscomp::DataModel::Station *scstation) {
 	const Seiscomp::DataModel::Network *scnetwork =
 		Seiscomp::DataModel::Network::Cast(scstation->parent());
-	if ( scnetwork == nullptr ) {
+	if ( !scnetwork ) {
 		throw Seiscomp::Core::ValueException("Network is unset");
 	}
 
@@ -60,7 +60,7 @@ Station::Station(const Seiscomp::DataModel::Station *scstation) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Station::Station(const std::string &code, const std::string &net, double lat, double lon, double alt)
-	: code(code), net(net), lat(lat), lon(lon), alt(alt), maxNucDist(180), maxLocDist(180), enabled(true)
+	: code(code), net(net), lat(lat), lon(lon), alt(alt)
 {
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -74,7 +74,6 @@ static size_t _pickCount=0;
 Pick::Pick(const Seiscomp::DataModel::Pick *scpick)
         : time(scpick->time().value()), scpick(scpick), label(pickLabel(scpick))
 {
-//	time = Autoloc::DataModel::Time(scpick->time().value());
 //	status = Autoloc::status(scpick);
 
 //	creationTime = Autoloc::DataModel::Time(scpick->creationInfo().creationTime());
@@ -83,7 +82,6 @@ Pick::Pick(const Seiscomp::DataModel::Pick *scpick)
 //	blacklisted = false;
 //	priority = 0;
 	_station = nullptr;
-	_originID = 0;
 
 	attachment = scpick;
 
@@ -184,9 +182,7 @@ void Pick::setAmplitudeAbs(const Seiscomp::DataModel::Amplitude *scampl)
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Arrival::Arrival(const Pick *pick, const std::string &phase, double residual)
-	: origin(nullptr), pick(pick), phase(phase), residual(residual),
-	  distance(0), azimuth(0), affinity(0),
-	  score(0), ascore(0), dscore(0), tscore(0), excluded(NotExcluded)
+	: origin(nullptr), pick(pick), phase(phase), residual(residual)
 {
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -196,9 +192,7 @@ Arrival::Arrival(const Pick *pick, const std::string &phase, double residual)
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Arrival::Arrival(const Origin *origin, const Pick *pick, const std::string &phase, double residual, double affinity)
-	: origin(origin), pick(pick), phase(phase), residual(residual),
-	  affinity(affinity),
-	  score(0), ascore(0), dscore(0), tscore(0), excluded(NotExcluded)
+	: origin(origin), pick(pick), phase(phase), residual(residual), affinity(affinity)
 {
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -241,15 +235,9 @@ static size_t _originCount {0};
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Origin::Origin(double lat, double lon, double dep, const Time &time)
-	: id(0), hypocenter(lat, lon, dep), time(time), timeerr(0),
-	  imported(false), preliminary(false)
+	: hypocenter(lat, lon, dep), time(time)
 {
 	_originCount++;
-	processingStatus = New;
-	locationStatus = Automatic;
-	depthType = DepthFree;
-	timestamp = 0.;
-	score = 0;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -293,8 +281,8 @@ size_t Origin::count()
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int Origin::findArrival(const Pick *pick) const
 {
-	int arrivalCount = arrivals.size();
-	for ( int i=0; i<arrivalCount; i++ ) {
+	size_t arrivalCount = arrivals.size();
+	for ( size_t i = 0; i < arrivalCount; i++ ) {
 		if ( arrivals[i].pick == pick ) {
 			return i;
 		}
@@ -380,11 +368,11 @@ size_t Origin::definingPhaseCount(double dmin, double dmax) const
 				continue;
 		}
 
-		if ( arr.excluded )
+		if ( arr.excluded ) {
 			continue;
+		}
 
 		count++;
-
 	}
 
 	return count;
@@ -401,8 +389,9 @@ size_t Origin::associatedStationCount() const
 
 	for ( const Arrival& arr : arrivals ) {
 
-		if ( !arr.pick )
+		if ( !arr.pick ) {
 			continue;
+		}
 
 		stations.insert(arr.pick->net() + "." + arr.pick->sta());
 	}
@@ -420,11 +409,13 @@ size_t Origin::definingStationCount() const {
 
 	for ( const Arrival& arr : arrivals ) {
 
-		if ( arr.excluded )
+		if ( arr.excluded ) {
 			continue;
+		}
 
-		if ( !arr.pick )
+		if ( !arr.pick ) {
 			continue;
+		}
 
 		stations.insert(arr.pick->net() + "." + arr.pick->sta());
 	}
@@ -463,12 +454,14 @@ double Origin::medianStationDistance() const
 	std::vector<double> distance;
 
 	for ( const Arrival& arr : arrivals ) {
-		if ( ! arr.excluded )
+		if ( ! arr.excluded ) {
 			distance.push_back(arr.distance);
+		}
 	}
 
-	if ( distance.empty() )
+	if ( distance.empty() ) {
 		return -1;
+	}
 
 	return Math::Statistics::median(distance);
 }
@@ -536,8 +529,9 @@ int OriginVector::mergeEquivalentOrigins(const Origin *start) {
 bool OriginVector::find(const Origin *origin) const
 {
 	for ( auto& item : *this ) {
-		if ( origin == item.get() )
+		if ( origin == item.get() ) {
 			return true;
+		}
 	}
 
 	return false;
@@ -550,9 +544,11 @@ bool OriginVector::find(const Origin *origin) const
 Origin* OriginVector::find(const OriginID &id)
 {
 	for ( auto& item: *this ) {
-		if ( id == item->id )
+		if ( id == item->id ) {
 			return item.get();
+		}
 	}
+
 	return nullptr;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -564,9 +560,11 @@ Origin* OriginVector::find(const OriginID &id)
 const Origin* OriginVector::find(const OriginID &id) const
 {
 	for ( const auto& item: *this ) {
-		if ( id == item->id )
+		if ( id == item->id ) {
 			return item.get();
+		}
 	}
+
 	return nullptr;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -578,6 +576,7 @@ const Origin* OriginVector::find(const OriginID &id) const
 static size_t countCommonPicks(const Origin *origin1, const Origin *origin2)
 {
 	size_t count {0};
+
 	for ( const Arrival& arr1 : origin1->arrivals ) {
 		for ( const Arrival& arr2 : origin2->arrivals ) {
 			if ( arr1.pick == arr2.pick ) {

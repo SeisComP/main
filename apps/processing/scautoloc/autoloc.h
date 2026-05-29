@@ -61,24 +61,13 @@ class Autoloc3 {
 
 		// Initialize one station at runtime
 		bool initOneStation(const DataModel::WaveformStreamID&, const Core::Time&);
-		bool setStation(Station *);
 
 		void setLocatorProfile(const std::string &);
 
 		bool init();
 
 	public:
-		// Current time. In offline mode time of the last pick.
-//		Seiscomp::Core::Time now();
-
-		// Synchronize the internal timing.
-		//
-		// This is necessary in playback mode were instead of
-		// using the hardware clock we either use the pick time
-		// or pick creation time.
-//		void sync(const Seiscomp::Core::Time &time);
-
-		// public object input interface
+		// Public object input interface
 
 		// Feed a Pick/Amplitude and eventually process it.
 		//
@@ -92,7 +81,35 @@ class Autoloc3 {
 		//       been supplied *prior* to calling this.
 		bool feed(Seiscomp::DataModel::Origin*);
 
+	public:
+		// Synchronize the internal timing.
+		//
+		// This is necessary in playback mode were instead of
+		// using the hardware clock we either use the pick time
+		// or pick creation time.
+		void sync(const Seiscomp::Core::Time &time);
+
+		// Current time. In offline mode time of the last pick.
+		Seiscomp::Core::Time now() const;
+
+		// Add a time stamp generated using now() to the debug log
+		void timeStamp() const;
+
+	public:
+		void dumpState() const;
+		void dumpConfig() const { _config.dump(); }
+
+	public:
+		// Trigger removal of old objects.
+		void cleanup();
+		void cleanup(Seiscomp::Core::Time minTime);
+
+		void reset();
+		void shutdown();
+
 	private:
+		bool setStation(Station *);
+
 		// Feed a Pick and try to get something out of it.
 		//
 		// The Pick may be associated to an existing Origin or
@@ -112,46 +129,20 @@ class Autoloc3 {
 		// This calls _report(Origin*) for each new Origin
 		bool report();
 
-	public:
-		void dumpState() const;
-		void dumpConfig() const { _config.dump(); }
-
-	public:
-		// Trigger removal of old objects.
-		void cleanup();
-		void cleanup(Core::Time minTime);
-
-		void reset();
-		void shutdown();
-
 	private:
 		// Get a Pick from Autoloc's internal buffer by ID.
 		// If the pick is not found, return NULL
 		const Pick* pick(const std::string &id) const;
 
-	public:
-		// Current time. In offline mode time of the last pick.
-		Core::Time now() const;
-
-		// Synchronize the internal timing.
-		//
-		// This is necessary in playback mode were instead of
-		// using the hardware clock we either use the pick time
-		// or pick creation time.
-		void sync(const Core::Time &t);
-
-		// Add a time stamp generated using now() to the debug log
-		void timeStamp() const;
-
 	protected:
 		// This must be reimplemented in a subclass to properly
 		// print/send/etc. the origin
-		virtual bool _report(Origin *);
+		virtual bool _report(DataModel::Origin *);
 
 		// flush any pending (Origin) messages by calling _report()
 		void _flush();
 
-	protected:
+	private:
 		// Compute author priority. First in list gets highest
 		// priority. Not in list gets priority 0. No priority list
 		// defined gives 1 for all authors.
@@ -159,7 +150,7 @@ class Autoloc3 {
 
 	private:
 		//
-		// tool box
+		// Tool box
 		//
 
 		// Compute the score.
@@ -340,6 +331,7 @@ class Autoloc3 {
 		// Form a pick log file name from prefix and date and
 		// open that file for writing picks.
 		void setPickLogFileName(const std::string &);
+
 		// Log pick
 		bool log(const Pick*);
 
@@ -360,8 +352,8 @@ class Autoloc3 {
 		std::map<int, OriginPtr> _lastSent;
 		std::map<int, OriginPtr> _outgoing;
 
-		Core::Time _now {Core::Time(0.)};
-		Core::Time _nextCleanup {Core::Time::UTC()};
+		Seiscomp::Core::Time _now {Core::Time(0.)};
+		Seiscomp::Core::Time _nextCleanup {Core::Time::UTC()};
 
 		typedef std::map<std::string, PickCPtr> PickPool;
 		PickPool pickPool;
