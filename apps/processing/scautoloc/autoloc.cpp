@@ -14,6 +14,7 @@
 
 #define SEISCOMP_COMPONENT Autoloc
 #include <seiscomp/client/inventory.h>
+#include <seiscomp/datamodel/utils.h>
 #include <seiscomp/logging/log.h>
 #include <seiscomp/seismology/ttt.h>
 #include <algorithm>
@@ -162,72 +163,36 @@ bool Autoloc3::initOneStation(const DataModel::WaveformStreamID &wfid, const Cor
 	std::string key = wfid.networkCode() + "." + wfid.stationCode();
 
 	// Have we configured this stream already? If yes -> nothing to do.
-	bool found = configuredStreams.find(key) != configuredStreams.end();
-	if (found) {
+	if ( configuredStreams.find(key) != configuredStreams.end() ) {
 		return true;
 	}
 
-	for ( size_t n = 0; n < scinventory->networkCount() && !found; ++n ) {
-		DataModel::Network *network = scinventory->network(n);
+	const DataModel::Station *station = DataModel::getStation(scinventory, wfid.networkCode(), wfid.stationCode(), time);
+	if ( station ) {
+		const DataModel::Network *network = DataModel::Network::Cast(station->parent());
 
-		if ( network->code() != wfid.networkCode() ) {
-			continue;
-		}
+		std::string epochStart="unset", epochEnd="unset";
 
 		try {
-			if ( time < network->start() ) {
-				continue;
-			}
+			epochStart = station->start().toString("%FT%TZ");
 		}
 		catch ( ... ) { }
 
 		try {
-			if ( time > network->end() ) {
-				continue;
-			}
+			epochEnd = station->end().toString("%FT%TZ");
 		}
 		catch ( ... ) { }
 
-		for ( size_t s = 0; s < network->stationCount(); ++s ) {
-			DataModel::Station *station = network->station(s);
+		SEISCOMP_DEBUG("Station %s %s epoch %s ... %s",
+		               network->code(),
+		               station->code(),
+		               epochStart,
+		               epochEnd);
 
-			if ( station->code() != wfid.stationCode() ) {
-				continue;
-			}
-
-			std::string epochStart="unset", epochEnd="unset";
-
-			try {
-				if ( time < station->start() ) {
-					continue;
-				}
-				epochStart = station->start().toString("%FT%TZ");
-			}
-			catch ( ... ) { }
-
-			try {
-				if ( time > station->end() ) {
-					continue;
-				}
-				epochEnd = station->end().toString("%FT%TZ");
-			}
-			catch ( ... ) { }
-
-			SEISCOMP_DEBUG("Station %s %s epoch %s ... %s",
-			               network->code(),
-			               station->code(),
-			               epochStart,
-			               epochEnd);
-
-			Autoloc::Station *sta = new Autoloc::Station(station);
-			setStation(sta);
-			found = true;
-
-			break;
-		}
+		Autoloc::Station *sta = new Autoloc::Station(station);
+		setStation(sta);
 	}
-
-	if ( !found ) {
+	else {
 		SEISCOMP_WARNING("%s not found in station inventory", key);
 		return false;
 	}
