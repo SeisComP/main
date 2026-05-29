@@ -22,7 +22,6 @@
 #include <seiscomp/seismology/ttt.h>
 
 #include "util.h"
-#include "sc3adapters.h"
 #include "associator.h"
 
 using namespace std;

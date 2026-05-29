@@ -27,7 +27,6 @@
 #include <cmath>
 
 #include "util.h"
-#include "sc3adapters.h"
 #include "locator.h"
 #include "nucleator.h"
 

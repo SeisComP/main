@@ -18,9 +18,6 @@
 
 #include <queue>
 #include <seiscomp/datamodel/publicobject.h>
-#include <seiscomp/datamodel/pick.h>
-#include <seiscomp/datamodel/amplitude.h>
-#include <seiscomp/datamodel/origin.h>
 #include <seiscomp/datamodel/eventparameters.h>
 
 namespace Seiscomp {
@@ -29,11 +26,15 @@ namespace DataModel {
 
 // PublicObjectQueue
 //
-// Queue of PublicObject's to be used for playbacks.
+// Queue of PublicObject's read from EventParameters to be used in playbacks.
+//
+// Only supports Pick, Amplitude, Origin
 
 class PublicObjectQueue {
 
 	public:
+		PublicObjectQueue() = default;
+
 		// Fill the queue with the PublicObjects taken from
 		// the specified EventParameters instance. Objects
 		// are sorted according to creation time, with the oldest

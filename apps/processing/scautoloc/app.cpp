@@ -818,10 +818,11 @@ bool AutolocApp::runFromEPFile(const char *filename) {
 	objectQueue.fill(_ep.get());
 
 	while ( !objectQueue.empty() && !isExitRequested() ) {
-		DataModel::PublicObjectPtr o = objectQueue.front();
+		DataModel::PublicObjectPtr optr = objectQueue.front();
+		DataModel::PublicObject* o = optr.get();
 
 		objectQueue.pop();
-		addObject("", o.get());
+		addObject("", o);
 		++objectCount;
 	}
 
@@ -903,7 +904,7 @@ void AutolocApp::handleTimeout() {
 
 	// The following is relevant (and executed) only for XML playback.
 
-	while ( ! objectQueue.empty() ) {
+	while ( !objectQueue.empty() ) {
 
 		DataModel::PublicObjectPtr optr = objectQueue.front();
 		DataModel::PublicObject* o = optr.get();

@@ -91,7 +91,6 @@ class Pick : public Seiscomp::Core::BaseObject {
 	public:
 		Pick() = delete;
 		Pick(const Seiscomp::DataModel::Pick*);
-//		Pick(const std::string &id, const std::string &label, const std::string &net, const std::string &sta, const Time &time);
 		~Pick();
 
 		const std::string& id() const {
@@ -142,11 +141,9 @@ class Pick : public Seiscomp::Core::BaseObject {
 
 	public:
 		// Attached SC objects. The pick must never be null.
-		Seiscomp::DataModel::PickCPtr      scpick;
-		Seiscomp::DataModel::AmplitudeCPtr scamplAbs;
-		Seiscomp::DataModel::AmplitudeCPtr scamplSNR;
-
-		Seiscomp::Core::BaseObjectCPtr attachment;
+		Seiscomp::DataModel::PickCPtr      scpick {nullptr};
+		Seiscomp::DataModel::AmplitudeCPtr scamplAbs {nullptr};
+		Seiscomp::DataModel::AmplitudeCPtr scamplSNR {nullptr};
 
 		const std::string label;
 

@@ -34,7 +34,6 @@
 #include "util.h"
 #include "nucleator.h"
 #include "datamodel.h"
-#include "sc3adapters.h"
 
 
 namespace Seiscomp {
@@ -182,20 +181,6 @@ bool travelTimeP(double lat1, double lon1, double dep1, double lat2, double lon2
 	delete ttlist;
 
 	return true;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-static Time str2time(const std::string &s) {
-	Core::Time t;
-	if ( !t.fromString(s.c_str(), "%F %T.%f") ) {
-		SEISCOMP_ERROR_S("Failed to convert time string " + s);
-		exit(3);
-	}
-	return Time(t);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -419,55 +404,6 @@ DataModel::Inventory* inventoryFromStationLocationFile(const std::string &filena
 	delete stationMap;
 
 	return inventory;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Pick* readPickLine() {
-	PickVector picks;
-	std::string sta, net, cha, loc, date, time, id;
-	double snr, amp, per;
-	char stat;
-
-	if ( !(std::cin >>date >>time >>net >>sta >>cha >>loc >>snr >>amp >>per >>stat >>id) ) {
-		return nullptr;
-	}
-
-	std::string key = net + "." + sta;
-	std::string label = date + "." + time + "-" + net + "." + sta + "." + loc + "." + cha + "-" + stat;
-	Time ptime = str2time(date+" "+time);
-//	Pick *pick = new Pick(id, label, net, sta, ptime);
-	Pick *pick = nullptr; // XXX XXX XXX
-	pick->amp  = amp;
-	pick->per  = per;
-	pick->snr  = snr;
-
-	switch ( stat ) {
-	case 'A': pick->mode = Pick::Automatic ; break;
-	case 'C': pick->mode = Pick::Confirmed ; break;
-	case 'M': pick->mode = Pick::Manual    ; break;
-	default: SEISCOMP_ERROR("Pick mode: %c", stat);
-	}
-
-	return pick;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-PickVector readPickFile() {
-	PickVector picks;
-	PickPtr pick = 0;
-
-	while ( (pick = readPickLine()) != nullptr)
-		picks.push_back(pick);
-
-	return picks;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

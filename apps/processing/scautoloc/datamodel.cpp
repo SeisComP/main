@@ -26,7 +26,6 @@
 #include "datamodel.h"
 #include "util.h"
 #include "scutil.h"
-#include "sc3adapters.h"
 
 namespace Seiscomp {
 
@@ -74,32 +73,10 @@ static size_t _pickCount=0;
 Pick::Pick(const Seiscomp::DataModel::Pick *scpick)
         : time(scpick->time().value()), scpick(scpick), label(pickLabel(scpick))
 {
-//	status = Autoloc::status(scpick);
-
-//	creationTime = Autoloc::DataModel::Time(scpick->creationInfo().creationTime());
-	amp = snr = per = 0;
-	xxl = false;
-//	blacklisted = false;
-//	priority = 0;
-	_station = nullptr;
-
-	attachment = scpick;
-
 	_pickCount++;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-/*
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Pick::Pick(const std::string &id, const std::string &label, const std::string &net, const std::string &sta, const Time &time)
-	: id(id), label(label), net(net), sta(sta),
-	  time(time), amp(0), per(0), snr(0), normamp(0),
-	  mode(Automatic), xxl(false), _originID(0), _station(nullptr)
-{
-	_pickCount++;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-*/
 
 
 
