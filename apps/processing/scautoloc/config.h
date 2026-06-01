@@ -25,11 +25,13 @@
 
 namespace Seiscomp {
 
-namespace Autoloc {
+namespace Processing {
 
-typedef enum { GlobalNetwork, RegionalNetwork, LocalNetwork } NetworkType;
 
 struct AutolocConfig {
+
+	typedef enum { GlobalNetwork, RegionalNetwork, LocalNetwork } NetworkType;
+
 	public:
 		AutolocConfig() = default;
 
@@ -64,23 +66,23 @@ struct AutolocConfig {
 		// If this parameter is <= 0, cleanup() is disabled.
 		double maxAge{6.0 * 3600.0};   // unit: s
 
-		// time to keep origins in buffer
+		// Time to keep origins in buffer
 		double originKeep{86400};
 
-		// time span within which we search for picks
+		// Time span within which we search for picks
 		// which may indicate extraordinary activity
 		double dynamicPickThresholdInterval{3600.0};  // unit: s
 
-		// typically good RMS in our network
+		// Typically good RMS in our network
 		double goodRMS{1.5};   // unit: s
 
-		// maximum RMS of all used picks
+		// Maximum RMS of all used picks
 		double maxRMS{3.5};   // unit: s
 
-		// maximum residual of any pick to be used for location
+		// Maximum residual of any pick to be used for location
 		double maxResidualUse{7.0};   // unit: s
 
-		// maximum residual of any pick to be kept associated
+		// Maximum residual of any pick to be kept associated
 		double maxResidualKeep{21.0};   // unit: s
 
 		// NOTE: maxRMS < maxResidualUse < maxResidualKeep
@@ -141,7 +143,7 @@ struct AutolocConfig {
 		// Minimum station count for which we ignore PKP phases
 		size_t minStaCountIgnorePKP{15};
 
-		// if a pick can be associated to an origin with at
+		// If a pick can be associated to an origin with at
 		// least this high a score, bypass the nucleator,
 		// which will improve speed
 		double minScoreBypassNucleator{40.0};
@@ -157,7 +159,7 @@ struct AutolocConfig {
 		double maxRadiusFactor{1.0};
 
 		// EXPERIMENTAL!!!
-		NetworkType networkType{Autoloc::GlobalNetwork};
+		NetworkType networkType{GlobalNetwork};
 
 		double cleanupInterval{3600.0};
 
@@ -165,62 +167,77 @@ struct AutolocConfig {
 		double publicationIntervalTimeIntercept{0.0};
 		size_t publicationIntervalPickCount{20};
 
-		// If true, offline mode is selected. In offline mode,
-		// no database is accessed, and station locations are
-		// read from a plain text file.
+		// If true, offline mode is selected.
+		//
+		// Offline mode means
+		// - no messaging connection
+		// - no database connection
+		// - station locations are read from file.
 		bool offline{false};
 
-		// If true, test mode is selected. In test mode, no
-		// origins are sent. This is not the same as offline
-		// mode. Test mode is like normal online mode except
-		// no origins are sent (only logging output is
-		// produced).
-		bool test{false};
-
-		// If true, playback mode is selected. In playback mode,
-		// origins are sent immediately without delay.
+		// If true, playback mode is selected.
+		//
+		// In playback mode, origins are sent immediately without delay.
 		bool playback{false};
 
-		// If true then manual picks are being used as automatics
-		// picks are
+		// If true, test mode is selected.
+		//
+		// In test mode, no origins are sent. This is not the same as
+		// offline mode. Test mode is like normal online mode except
+		// no origins are sent (only log output is produced).
+		bool test{false};
+
+		// Process manual origins with the same agencyID
+		//
+		// - Use the manual picks associated to the origin
+		// - Adopt the origin depth if adoptManualOriginsFixedDepth is true
+		bool useManualOrigins{false};
+
+		// If useManualOrigins is true, then the depth of manual
+		// origins will be adopted.
+		bool adoptManualOriginsFixedDepth;
+
+		// If true then unassociated manual picks are processed
+		// automatically.
 		bool useManualPicks{false};
+
+		// Also use imported origins, i.e. origins imported from a
+		// third party.
+		bool useImportedOrigins{false};
 
 		// The pick log file
 		bool        pickLogEnable{false};
 		std::string pickLogFilePrefix;
 
-		// locator profile, e.g. "iasp91", "tab" etc.
+		// Locator profile, e.g. "iasp91", "tab" etc.
 		std::string locatorProfile{"iasp91"};
 
 		// The station configuration file
 		std::string staConfFile{"@DATADIR@/scautoloc/station.conf"};
 
-		// misc. experimental options
+		// Misc. experimental options
 		bool aggressivePKP{true};
 		bool reportAllPhases{true};
-		bool useManualOrigins{false};
 		bool allowRejectedPicks{false};
-		bool adoptManualOriginsFixedDepth;
-		bool useImportedOrigins{false};
 
-		// enable the XXL feature
+		// Enable the XXL feature
 		bool xxlEnabled{false};
 
-		// minimum absolute amplitude to flag a pick as XXL
+		// Minimum absolute amplitude to flag a pick as XXL
 		double xxlMinAmplitude{1000.0};     // default unit: nm/s
 
-		// minimum SNR to flag a pick as XXL
+		// Minimum SNR to flag a pick as XXL
 		double xxlMinSNR{8.0};
 
-		// ignore all picks within this time window
+		// Ignore all picks within this time window
 		// length (in sec) following an XXL pick
 		double xxlDeadTime{120.0};
 
 		// Minimum number of picks for an XXL origin
 		// to be reported
 		size_t xxlMinPhaseCount{4};   // default 4 picks
-		double xxlMaxStaDist{10.0};         // unit: degrees
-		double xxlMaxDepth{100};            // unit: km
+		double xxlMaxStaDist{10.0};   // unit: degrees
+		double xxlMaxDepth{100.0};    // unit: km
 
 		const Seiscomp::Config::Config* scconfig{nullptr};
 
@@ -232,7 +249,7 @@ struct AutolocConfig {
 };
 
 
-}  // namespace Autoloc
+}  // namespace AutolocInternal
 
 }  // namespace Seiscomp
 

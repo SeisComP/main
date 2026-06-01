@@ -25,12 +25,12 @@
 
 namespace Seiscomp {
 
-namespace Autoloc {
+namespace AutolocInternal {
 
 // Compute the distance in degrees between two stations on a sphere
 double distance(
-	const Autoloc::Station* s1,
-	const Autoloc::Station* s2);
+	const Station* s1,
+	const Station* s2);
 
 // Compute the distance and azimuths in degrees between two points on a sphere
 void delazi(
@@ -41,17 +41,17 @@ void delazi(
 // Compute the distance and azimuths in degrees between a hypocenter and a
 // station on a sphere.
 void delazi(
-	const Autoloc::Hypocenter*,
-	const Autoloc::Station*,
+	const Hypocenter*,
+	const Station*,
 	double &delta, double &az1, double &az2);
 
 
 // Various formatters to generate debug output for scautoloc
-std::string printDetailed(const Autoloc::Origin*);
-std::string printOneliner(const Autoloc::Origin*);
-std::string printOrigin(const Autoloc::Origin *origin, bool=false);
+std::string printDetailed(const Origin*);
+std::string printOneliner(const Origin*);
+std::string printOrigin(const Origin *origin, bool=false);
 
-double meandev(const Autoloc::Origin* origin);
+double meandev(const Origin* origin);
 
 double avgfn(double x);
 
@@ -65,10 +65,10 @@ bool travelTimeP (
 
 
 // Format an Autoloc::DataModel::Time time as time stamp.
-std::string time2str(const Autoloc::Time &t);
+std::string time2str(const Time &t);
 
 // Convert an Autoloc::DataModel::Time time to a Seiscomp::Core::Time
-Seiscomp::Core::Time sctime(const Autoloc::Time &time);
+Seiscomp::Core::Time sctime(const Time &time);
 
 
 bool automatic(const Pick*);
@@ -96,7 +96,7 @@ void minimizeInventory(Seiscomp::DataModel::Inventory *inventory);
 
 }  // namespace Utils
 
-}  // namespace Autoloc
+}  // namespace AutolocInternal
 
 
 

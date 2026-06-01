@@ -25,7 +25,7 @@
 
 namespace Seiscomp {
 
-namespace Autoloc {
+namespace AutolocInternal {
 
 DEFINE_SMARTPOINTER(MySensorLocationDelegate);
 
@@ -90,7 +90,7 @@ class Locator {
 
 bool determineAzimuthalGaps(const Origin*, double *primary, double *secondary);
 
-}  // namespace Autoloc
+}  // namespace AutolocInternal
 
 }  // namespace Seiscomp
 

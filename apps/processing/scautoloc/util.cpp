@@ -38,11 +38,11 @@
 
 namespace Seiscomp {
 
-namespace Autoloc {
+namespace AutolocInternal {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Seiscomp::Core::Time sctime(const Autoloc::Time &time)
+Seiscomp::Core::Time sctime(const Time &time)
 {
 	return Seiscomp::Core::Time() + Seiscomp::Core::TimeSpan(time);
 }
@@ -461,8 +461,8 @@ void minimizeInventory(Seiscomp::DataModel::Inventory *inventory) {
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-} // namespace Autoloc::Utils
-} // namespace Autoloc
+} // namespace AutolocInternal::Utils
+} // namespace AutolocInternal
 
 
 namespace Math {

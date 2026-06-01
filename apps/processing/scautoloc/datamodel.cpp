@@ -29,7 +29,7 @@
 
 namespace Seiscomp {
 
-namespace Autoloc {
+namespace AutolocInternal {
 
 // namespace DataModel {
 
@@ -602,6 +602,6 @@ const Origin *OriginVector::bestEquivalentOrigin(const Origin *origin) const
 
 // }  // namespace DataModel
 
-}  // namespace Autoloc
+}  // namespace AutolocInternal
 
 }  // namespace Seiscomp

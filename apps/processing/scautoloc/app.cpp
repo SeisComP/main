@@ -38,7 +38,7 @@ namespace Applications {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 AutolocApp::AutolocApp(int argc, char **argv)
-: Application(argc, argv), Autoloc3()
+: Application(argc, argv), Processing::Autoloc()
 {
 	setMessagingEnabled(true);
 
@@ -48,7 +48,7 @@ AutolocApp::AutolocApp(int argc, char **argv)
 	addMessagingSubscription("AMPLITUDE");
 	addMessagingSubscription("LOCATION");
 
-	_config = Autoloc3::config();
+	_config = Processing::Autoloc::config();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -86,16 +86,16 @@ void AutolocApp::createCommandLineDescription() {
 	commandline().addOption("Mode", "xml-playback", "TODO"); // TODO
 
 	commandline().addGroup("Input");
-	commandline().addOption("Input", "input,i",
-	                        "Name of input XML file for --xml-playback.",
-	                        &_inputFileXML, false);
 	commandline().addOption("Input", "ep",
 	                        "Name of input XML file (SCML) with all picks and "
 	                        "origins for offline processing.  Use '-' to read "
 	                        "from stdin. The database connection is not received "
 	                        "from messaging and must be provided. Results are "
 	                        "sent in XML to stdout." ,
-	                        &_inputEPFile, false);
+	                        &_inputFileXML, false);
+	commandline().addOption("Input", "input,i",
+	                        "Identical to --ep and provided for compatibility",
+	                        &_inputFileXML, false);
 
 	commandline().addGroup("Settings");
 	commandline().addOption("Settings", "allow-rejected-picks",
@@ -214,7 +214,7 @@ bool AutolocApp::initConfiguration() {
 		return false;
 	}
 
-	// support deprecated configuration, deprecated since 2020-11-16
+	// Support deprecated configuration, deprecated since 2020-11-16
 	try {
 		_config.maxAge = configGetDouble("autoloc.maxAge");
 		SEISCOMP_ERROR("Configuration parameter autoloc.maxAge is deprecated."
@@ -222,7 +222,7 @@ bool AutolocApp::initConfiguration() {
 	}
 	catch ( ... ) {}
 
-	// override deprecated configuration if value is set
+	// Override deprecated configuration if value is set
 	try {
 		_config.maxAge = configGetDouble("buffer.pickKeep");
 	}
@@ -233,7 +233,7 @@ bool AutolocApp::initConfiguration() {
 	}
 	catch ( ... ) {}
 
-	// support deprecated configuration, deprecated since 2020-11-16
+	// Support deprecated configuration, deprecated since 2020-11-16
 	try {
 		_config.originKeep = configGetInt("keepEventsTimeSpan");
 		SEISCOMP_ERROR("Configuration parameter keepEventsTimeSpan is deprecated."
@@ -241,14 +241,14 @@ bool AutolocApp::initConfiguration() {
 	}
 	catch ( ... ) {}
 
-	// override deprecated configuration if value is set
+	// Override deprecated configuration if value is set
 	try {
 		_config.originKeep = configGetInt("buffer.originKeep");
 	}
 	catch ( ... ) {}
 
 
-	// support deprecated configuration, deprecated since 2020-11-16
+	// Support deprecated configuration, deprecated since 2020-11-16
 	try {
 		_config.cleanupInterval = configGetDouble("autoloc.cleanupInterval");
 		SEISCOMP_ERROR("Configuration parameter autoloc.cleanupInterval is deprecated."
@@ -275,7 +275,7 @@ bool AutolocApp::initConfiguration() {
 	}
 	catch ( ... ) {}
 
-	// support deprecated configuration, deprecated since 2020-11-13
+	// Support deprecated configuration, deprecated since 2020-11-13
 	try {
 		_config.locatorProfile = configGetString("autoloc.locator.profile");
 		SEISCOMP_ERROR("Configuration parameter autoloc.locator.profile is deprecated."
@@ -283,7 +283,7 @@ bool AutolocApp::initConfiguration() {
 	}
 	catch ( ... ) {}
 
-	// override deprecated configuration if value is set
+	// Override deprecated configuration if value is set
 	try {
 		_config.locatorProfile = configGetString("locator.profile");
 	}
@@ -530,13 +530,13 @@ bool AutolocApp::initConfiguration() {
 	}
 	catch ( ... ) {}
 	if ( ntp == "global" ) {
-		_config.networkType = Autoloc::GlobalNetwork;
+		_config.networkType = Processing::AutolocConfig::GlobalNetwork;
 	}
 	else if ( ntp == "regional" ) {
-		_config.networkType = Autoloc::RegionalNetwork;
+		_config.networkType = Processing::AutolocConfig::RegionalNetwork;
 	}
 	else if ( ntp == "local" ) {
-		_config.networkType = Autoloc::LocalNetwork;
+		_config.networkType = Processing::AutolocConfig::LocalNetwork;
 	}
 	else {
 		SEISCOMP_ERROR("Illegal value '%s' for autoloc.networkType", ntp);
@@ -565,9 +565,11 @@ bool AutolocApp::validateParameters() {
 		_config.offline = false;
 	}
 
-	if ( !_inputEPFile.empty() ) {
+	if ( !_inputFileXML.empty() ) {
 		_config.playback = true;
 		_config.offline = true;
+		// Do not produce any output objects
+		_config.test = true;
 	}
 
 
@@ -594,7 +596,6 @@ bool AutolocApp::validateParameters() {
 		setDatabaseEnabled(false, false);
 	}
 
-	// Maybe we do want to allow sending of origins in offline mode?
 	if ( commandline().hasOption("test") ) {
 		_config.test = true;
 	}
@@ -674,11 +675,8 @@ bool AutolocApp::init() {
 		return false;
 	}
 
-	if ( _config.playback ) {
-		if ( _inputEPFile.empty() ) {
-			// XML playback, set timer to 1 sec
-			enableTimer(1);
-		}
+	if ( _config.playback || _config.offline ) {
+		enableTimer(1);
 	}
 	else {
 		// readHistoricEvents();
@@ -687,7 +685,7 @@ bool AutolocApp::init() {
 		}
 	}
 
-	return Autoloc3::init();
+	return Processing::Autoloc::init();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -753,88 +751,30 @@ void AutolocApp::readHistoricEvents() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool AutolocApp::runFromXMLFile(const char *filename)
-{
-	SEISCOMP_INFO("App::runFromXMLFile");
-
+bool AutolocApp::fillObjectQueueFromXMLFile(const char *filename) {
 	IO::XMLArchive ar;
 	if ( !ar.open(filename) ) {
-		SEISCOMP_ERROR("unable to open XML playback file '%s'", filename);
+		SEISCOMP_ERROR("unable to open XML file '%s'", filename);
 		return false;
 	}
 
-	DataModel::EventParametersPtr ep = new DataModel::EventParameters();
-	ar >> ep;
-	SEISCOMP_INFO("finished reading event parameters from XML");
-	SEISCOMP_INFO("  number of picks:      %d", ep->pickCount());
-	SEISCOMP_INFO("  number of amplitudes: %d", ep->amplitudeCount());
-	SEISCOMP_INFO("  number of origins:    %d", ep->originCount());
-
-	objectQueue.fill(ep.get());
-
-	if ( objectQueue.empty() )
-		return false;
-
-	if ( _playbackSpeed > 0 ) {
-		SEISCOMP_DEBUG("playback speed factor %g", _playbackSpeed);
-	}
-
-	objectsStartTime = playbackStartTime = Core::Time::UTC();
-	objectCount = 0;
-
-	return true;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool AutolocApp::runFromEPFile(const char *filename) {
-	SEISCOMP_INFO("App::runFromEPFile");
-	IO::XMLArchive ar;
-	if ( !ar.open(filename) ) {
-		SEISCOMP_ERROR("Unable to open XML file: %s", filename);
-		return false;
-	}
-
-	ar >> _ep;
+	ar >> _inputEP;
 	ar.close();
 
-	if ( !_ep ) {
-		SEISCOMP_ERROR("No event parameters found: %s", filename);
+	if ( !_inputEP ) {
+		SEISCOMP_ERROR("No event parameters found in %s", filename);
 		return false;
 	}
 
 	SEISCOMP_INFO("Finished reading event parameters from XML");
-	SEISCOMP_INFO("  number of picks:      %d", _ep->pickCount());
-	SEISCOMP_INFO("  number of amplitudes: %d", _ep->amplitudeCount());
-	SEISCOMP_INFO("  number of origins:    %d", _ep->originCount());
+	SEISCOMP_INFO("  number of picks:      %d", _inputEP->pickCount());
+	SEISCOMP_INFO("  number of amplitudes: %d", _inputEP->amplitudeCount());
+	SEISCOMP_INFO("  number of origins:    %d", _inputEP->originCount());
 
-	std::cerr << "Read from file: " << _ep->originCount() << " origin(s), "
-	     << _ep->pickCount() << " pick(s), "
-	     << _ep->amplitudeCount() << " amplitudes(s)"<< std::endl;
-
-	objectQueue.fill(_ep.get());
-
-	while ( !objectQueue.empty() && !isExitRequested() ) {
-		DataModel::PublicObjectPtr optr = objectQueue.front();
-		DataModel::PublicObject* o = optr.get();
-
-		objectQueue.pop();
-		addObject("", o);
-		++objectCount;
+	objectQueue.fill(_inputEP.get());
+	if ( objectQueue.empty() ) {
+		return false;
 	}
-
-	_flush();
-
-
-	ar.create("-");
-	ar.setFormattedOutput(_formatted);
-	ar << _ep;
-	ar.close();
-
-	std::cerr << "Output to XML: " << objectCount << " objects(s)" << std::endl;
 
 	return true;
 }
@@ -845,21 +785,31 @@ bool AutolocApp::runFromEPFile(const char *filename) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool AutolocApp::run() {
-	if ( !_inputEPFile.empty() )
-		return runFromEPFile(_inputEPFile.c_str());
 
-	// normal online mode
-	if ( !Autoloc3::config().offline ) {
-		return Application::run();
+	if ( !_inputFileXML.empty() ) {
+		// Initialize playback
+		bool success = fillObjectQueueFromXMLFile(_inputFileXML.c_str());
+		if ( !success ) {
+			SEISCOMP_ERROR("Could not read input from XML file %s",
+			               _inputFileXML);
+			return false;
+		}
+		SEISCOMP_DEBUG("Length of object queue: %d", objectQueue.size());
+
+		// Playback output will be added to the input.
+	 	_outputEP = _inputEP;
+
+		if ( _playbackSpeed > 0 ) {
+			SEISCOMP_DEBUG("playback speed factor %g", _playbackSpeed);
+		}
+
+		objectsStartTime = playbackStartTime = Core::Time::UTC();
+		objectCount = 0;
 	}
+	
+	// TODO: Initialize playback from database
 
-	// XML playback: first fill object queue, then run()
-	if ( _config.playback && _inputFileXML.size() > 0 ) {
-		runFromXMLFile(_inputFileXML.c_str());
-		return Application::run();
-	}
-
-	return true;
+	return Application::run();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -874,19 +824,19 @@ void AutolocApp::done() {
 	// final log of public object counts
 	logObjectCounts();
 
+	_flush();
+
+	if ( _outputEP ) {
+		IO::XMLArchive ar;
+		ar.create("-");
+		ar.setFormattedOutput(_formatted);
+		ar << _outputEP;
+		ar.close();
+		std::cerr << "Output to XML: " << objectCount << " objects(s)" << std::endl;
+		_outputEP = nullptr;
+	}
+
 	Application::done();
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void AutolocApp::handleMessage(Core::Message* msg) {
-	// Call the original method to make sure that the
-	// interpret callbacks (addObject, updateObject -> see below)
-	// will be called
-	Application::handleMessage(msg);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -896,7 +846,7 @@ void AutolocApp::handleMessage(Core::Message* msg) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void AutolocApp::handleTimeout() {
 
-	if ( !_config.playback || _inputFileXML.empty() ) {
+	if ( !_config.playback ) {
 		_flush();
 		return;
 	}
@@ -911,7 +861,7 @@ void AutolocApp::handleTimeout() {
 
 		Core::Time t;
 
-		// Retrieve the creationTime...
+		// Retrieve the object creationTime...
 		if ( DataModel::Pick::Cast(o) )
 			t = DataModel::Pick::Cast(o)->creationInfo().creationTime();
 		else if ( DataModel::Amplitude::Cast(o) )
@@ -920,7 +870,7 @@ void AutolocApp::handleTimeout() {
 			t = DataModel::Origin::Cast(o)->creationInfo().creationTime();
 		else continue;
 
-		// At the first object:
+		// Save time of first object
 		if ( objectCount == 0 ) {
 			objectsStartTime = t;
 		}
@@ -930,9 +880,10 @@ void AutolocApp::handleTimeout() {
 			Core::TimeSpan dp = dt / _playbackSpeed;
 			t = playbackStartTime + dp;
 			if ( Core::Time::UTC() < t ) {
-				break;  // until next handleTimeout() call
+				// Pause until next handleTimeout() call
+				break;
 			}
-		} // otherwise no speed limit :)
+		}
 
 		objectQueue.pop();
 		addObject("", o);
@@ -1025,7 +976,7 @@ bool AutolocApp::feed(DataModel::Pick *scpick) {
 		return false;
 	}
 
-	bool feed_status = Autoloc::Autoloc3::feed(scpick);
+	bool feed_status = Processing::Autoloc::feed(scpick);
 
 	if ( _config.offline ) {
 		_flush();
@@ -1043,8 +994,8 @@ bool AutolocApp::feed(DataModel::Amplitude *scampl) {
 	const std::string &atype  = scampl->type();
 	const std::string &amplID = scampl->publicID();
 	if ( atype != _config.amplTypeAbs && atype != _config.amplTypeSNR ) {
-//		SEISCOMP_DEBUG("Ignoring '%s' amplitude %s: neither of type %s nor %s",
-//		               atype, amplID, _config.amplTypeAbs, _config.amplTypeSNR);
+		//	SEISCOMP_DEBUG("Ignoring '%s' amplitude %s: neither of type %s nor %s",
+		//	               atype, amplID, _config.amplTypeAbs, _config.amplTypeSNR);
 		return false;
 	}
 
@@ -1059,7 +1010,7 @@ bool AutolocApp::feed(DataModel::Amplitude *scampl) {
 		SEISCOMP_DEBUG("  + agency is: %s", objectAgencyID(scampl));
 	}
 
-	if ( _inputFileXML.size() || _inputEPFile.size() ) {
+	if ( _config.playback ) {
 		try {
 			const Core::Time &creationTime = scampl->creationInfo().creationTime();
 			sync(creationTime);
@@ -1070,7 +1021,7 @@ bool AutolocApp::feed(DataModel::Amplitude *scampl) {
 		}
 	}
 
-	return Autoloc::Autoloc3::feed(scampl);
+	return Processing::Autoloc::feed(scampl);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1129,7 +1080,7 @@ bool AutolocApp::feed(DataModel::Origin *scorigin) {
 		}
 	}
 
-	bool status = Autoloc3::feed(scorigin);
+	bool status = Processing::Autoloc::feed(scorigin);
 
 	if ( status == true && (_config.offline || _config.playback || _config.test) ) {
 		_flush();
@@ -1147,10 +1098,12 @@ bool AutolocApp::_report(DataModel::Origin *scorigin) {
 	// Log object flow
 	logObject(_outputOrgs, now());
 
-	if ( _config.offline || _config.test ) {
-		// Offline / playback / test mode
-		if ( _ep ) {
-			_ep->add(scorigin);
+	if ( _config.offline || _config.playback || _config.test ) {
+		// In offline/playback/test mode do not send origin to messaging
+
+		// But add it to the output EventParameters (except test mode)
+		if ( _outputEP ) {
+			_outputEP->add(scorigin);
 		}
 	}
 	else {

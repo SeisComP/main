@@ -29,7 +29,7 @@
 
 namespace Seiscomp {
 
-namespace Autoloc {
+namespace AutolocInternal {
 
 // namespace DataModel {
 
@@ -403,7 +403,7 @@ typedef std::vector<Pick*>   PickGroup;
 
 // }  // namespace DataModel
 
-}  // namespace Autoloc
+}  // namespace AutolocInternal
 
 }  // namespace Seiscomp
 

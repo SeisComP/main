@@ -33,7 +33,7 @@ namespace Seiscomp {
 namespace Applications {
 
 
-class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
+class AutolocApp : public Client::Application, protected Processing::Autoloc
 {
 	public:
 		AutolocApp(int argc, char **argv);
@@ -66,7 +66,6 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 		// that is finally written to an XML file.
 		bool _report(Seiscomp::DataModel::Origin *scorigin) override;
 
-		void handleMessage(Seiscomp::Core::Message* msg) override;
 		void handleTimeout() override;
 
 		virtual void printUsage() const override;
@@ -77,30 +76,34 @@ class AutolocApp : public Client::Application, protected Autoloc::Autoloc3
 		void done() override;
 
 	private:
-		// Playback
-		bool runFromXMLFile(const char *fname);
-		bool runFromEPFile(const char *fname);
+		// --ep and --playback modes
+		bool fillObjectQueueFromXMLFile(const char *fname);
 		double _playbackSpeed {1.};
 		// Input XML files for playback and offline processing
 		std::string _inputFileXML;
-		std::string _inputEPFile;
+		std::string _inputFileEP;
 		// Enable formatted XML output
 		bool _formatted{false};
 		// Public object queue used for XML playback
 		DataModel::PublicObjectQueue objectQueue;
-		Seiscomp::DataModel::EventParametersPtr _ep;
+		Seiscomp::DataModel::EventParametersPtr _inputEP;
+		Seiscomp::DataModel::EventParametersPtr _outputEP;
 		Seiscomp::Core::Time playbackStartTime;
+		// The time of the first object in a playback
 		Seiscomp::Core::Time objectsStartTime;
+		// The sync time is the playback equivalent of the system time
 		Seiscomp::Core::Time syncTime;
 
 	private:
-		Autoloc::AutolocConfig _config;
+		Processing::AutolocConfig _config;
 
 		size_t objectCount {0};
 
 		// Wake up every 5 seconds to check pending operations
 		int _wakeUpTimout {5};
 
+	private:
+		// Keep track of number of objects per time interval
 		ObjectLog *_inputPicks {nullptr};
 		ObjectLog *_inputAmps  {nullptr};
 		ObjectLog *_inputOrgs  {nullptr};

@@ -28,7 +28,7 @@ using namespace std;
 
 namespace Seiscomp {
 
-namespace Autoloc {
+namespace AutolocInternal {
 
 #define AFFMIN 0.1
 
@@ -258,6 +258,6 @@ Associator::Phase::Phase(const string &code, double dmin, double dmax)
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-}  // namespace Autoloc
+}  // namespace AutolocInternal
 
 }  // namespace Seiscomp

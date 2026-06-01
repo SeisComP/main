@@ -28,7 +28,7 @@
 
 namespace Seiscomp {
 
-namespace Autoloc {
+namespace AutolocInternal {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -41,7 +41,7 @@ MySensorLocationDelegate::~MySensorLocationDelegate() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void MySensorLocationDelegate::setStation(const Autoloc::Station *station) {
+void MySensorLocationDelegate::setStation(const AutolocInternal::Station *station) {
 	std::string key = station->net + "." + station->code;
 
 	DataModel::SensorLocationPtr sloc = DataModel::SensorLocation::Create();
@@ -142,7 +142,7 @@ Locator::~Locator()
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Locator::setStation(const Autoloc::Station *station) {
+void Locator::setStation(const AutolocInternal::Station *station) {
 	sensorLocationDelegate->setStation(station);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -470,6 +470,6 @@ bool determineAzimuthalGaps(const Origin *origin, double *primary, double *secon
 
 
 
-}  // namespace Autoloc
+}  // namespace AutolocInternal
 
 }  // namespace Seiscomp

@@ -23,7 +23,7 @@
 
 namespace Seiscomp {
 
-namespace Autoloc {
+namespace AutolocInternal {
 
 class StationConfigItem {
 	public:
@@ -72,7 +72,7 @@ class StationConfig {
 		std::map<std::string, StationConfigItem> _item;
 };
 
-}  // namespace Autoloc
+}  // namespace AutolocInternal
 
 }  // namespace Seiscomp
 

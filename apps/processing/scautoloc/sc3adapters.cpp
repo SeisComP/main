@@ -41,8 +41,8 @@ namespace Seiscomp {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-DataModel::Origin *convertToSC(const Autoloc::Origin* origin, const std::string &author, const std::string &agencyID, bool allPhases) {
-	using namespace Autoloc;
+DataModel::Origin *convertToSC(const AutolocInternal::Origin* origin, const std::string &author, const std::string &agencyID, bool allPhases) {
+	using namespace AutolocInternal;
 
 	DataModel::Origin *scorigin = DataModel::Origin::Create();
 
@@ -65,17 +65,17 @@ DataModel::Origin *convertToSC(const Autoloc::Origin* origin, const std::string 
 	}
 
 	switch ( origin->depthType ) {
-	case Autoloc::Origin::DepthFree:
+	case AutolocInternal::Origin::DepthFree:
 		scorigin->setDepthType(DataModel::OriginDepthType(DataModel::FROM_LOCATION));
 		break;
 
-	case Autoloc::Origin::DepthMinimum:
+	case AutolocInternal::Origin::DepthMinimum:
 		break;
 
-	case Autoloc::Origin::DepthDefault:
+	case AutolocInternal::Origin::DepthDefault:
 		break;
 
-	case Autoloc::Origin::DepthManuallyFixed:
+	case AutolocInternal::Origin::DepthManuallyFixed:
 		scorigin->setDepthType(DataModel::OriginDepthType(DataModel::OPERATOR_ASSIGNED));
 		break;
 	default:
@@ -91,7 +91,7 @@ DataModel::Origin *convertToSC(const Autoloc::Origin* origin, const std::string 
 	size_t arrivalCount = origin->arrivals.size();
 
 	for ( size_t i = 0; i < arrivalCount; i++ ) {
-		const Autoloc::Arrival &arr = origin->arrivals[i];
+		const AutolocInternal::Arrival &arr = origin->arrivals[i];
 
 		// If not all (automatic) phases are requested, only include P and PKP
 		if ( !allPhases && automatic(arr.pick.get()) && arr.phase != "P" && arr.phase != "PKP") {

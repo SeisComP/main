@@ -21,7 +21,7 @@
 
 namespace Seiscomp {
 
-namespace Autoloc {
+namespace AutolocInternal {
 
 
 typedef Arrival Association;
@@ -83,7 +83,7 @@ class Associator::Phase
 		double dmin, dmax;
 };
 
-} // namespace Autoloc
+} // namespace AutolocInternal
 
 } // namespace Seiscomp
 
