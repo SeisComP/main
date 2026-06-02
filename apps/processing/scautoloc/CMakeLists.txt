@@ -15,6 +15,7 @@ SET(
 		main.cpp
 		stationconfig.cpp
 		stationlocationfile.cpp
+		picklog.cpp
 )
 
 SET(
@@ -31,6 +32,7 @@ SET(
 		util.h
 		stationconfig.h
 		stationlocationfile.h
+		picklog.h
 )
 
 SET(

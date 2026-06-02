@@ -22,7 +22,6 @@
 
 #include "util.h"
 #include "scutil.h"
-#include "nucleator.h"
 #include "autoloc.h"
 #include "stationlocationfile.h"
 
@@ -33,10 +32,6 @@ namespace Processing {
 
 
 using namespace AutolocInternal;
-
-
-
-
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -948,66 +943,6 @@ double Autoloc::_score(const Origin *origin) const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc::setPickLogFileName(const std::string &fname)
-{
-	if ( fname == _pickLogFileName && _pickLogFile.is_open() ) {
-		return;
-	}
-
-	if ( _pickLogFile.is_open() ) {
-		_pickLogFile.close();
-	}
-
-	_pickLogFileName = fname;
-	if ( _pickLogFileName.empty() ) {
-		return;
-	}
-
-	_pickLogFile.open(_pickLogFileName.c_str(), std::ios_base::app);
-	if ( !_pickLogFile.is_open() ) {
-		SEISCOMP_ERROR("Failed to open pick log file %s", fname);
-		return;
-	}
-	SEISCOMP_INFO("Logging picks to file %s", _pickLogFileName);
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc::log(const Pick *pick) {
-	if ( !_config.pickLogFilePrefix.empty() ) {
-		Core::Time now = Core::Time::UTC();
-		setPickLogFileName(_config.pickLogFilePrefix + "." + now.toString("%F"));
-	}
-
-	const DataModel::WaveformStreamID &wfid = pick->scpick->waveformID();
-	char line[200];
-	const std::string &net = wfid.networkCode();
-	const std::string &sta = wfid.stationCode();
-	const std::string  loc = wfid.locationCode() == "" ? "__" : wfid.locationCode();
-	const std::string &cha = wfid.channelCode();
-	const std::string tstr = pick->scpick->time().value().toString("%F %T.%f000000").substr(0, 21);
-	snprintf(line, 200, "%s %-2s %-6s %-3s %-2s %6.1f %10.3f %4.1f %c %s",
-	      tstr.c_str(), net.c_str(), sta.c_str(), cha.c_str(), loc.c_str(),
-	      pick->snr, pick->amp, pick->per, modeFlag(pick),
-	      pick->label.c_str());
-
-	if ( _pickLogFile.good() ) {
-		_pickLogFile << line << std::endl;
-	}
-
-	SEISCOMP_INFO("%s", line);
-
-	return true;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 static bool mightBeAssociated(const Pick *pick, const Origin *origin) {
 	// A very crude first check whether a pick might be related to the origin.
 	// This is for teleseismic applications where PKP needs to be taken into
@@ -1774,7 +1709,7 @@ bool Autoloc::_process(const Pick *pick) {
 		return false;
 	}
 
-	log(pick);
+	_pickLog.log(pick);
 
 	if ( _blacklisted(pick) ) {
 		SEISCOMP_INFO("process pick %s blacklisted -> ignored",
@@ -3347,6 +3282,9 @@ void Autoloc::setConfig(const AutolocConfig &config) {
 	_config = config;
 
 	setGridFile(_config.gridConfigFile);
+
+	_pickLog.setPrefix(_config.pickLogPrefix);
+	_pickLog.setEnabled(_config.pickLogEnable);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

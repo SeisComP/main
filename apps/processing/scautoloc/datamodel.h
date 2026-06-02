@@ -31,8 +31,6 @@ namespace Seiscomp {
 
 namespace AutolocInternal {
 
-// namespace DataModel {
-
 typedef std::size_t OriginID;
 typedef double Time;
 
@@ -400,8 +398,6 @@ class OriginVector : public std::vector<OriginPtr> {
 
 typedef std::vector<PickPtr> PickVector;
 typedef std::vector<Pick*>   PickGroup;
-
-// }  // namespace DataModel
 
 }  // namespace AutolocInternal
 

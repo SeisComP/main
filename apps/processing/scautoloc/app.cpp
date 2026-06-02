@@ -108,7 +108,7 @@ void AutolocApp::createCommandLineDescription() {
 	commandline().addOption("Settings", "pick-log",
 	                        "The pick log file. Providing a file name enables "
 	                        "logging picks even when disabled by configuration.",
-	                        &_config.pickLogFilePrefix, false);
+	                        &_config.pickLogPrefix, false);
 	commandline().addOption("Settings", "default-depth",
 	                        "Default depth for locating",
 	                        &_config.defaultDepth);
@@ -474,19 +474,15 @@ bool AutolocApp::initConfiguration() {
 	catch ( ... ) { _config.staConfFile = Environment::Instance()->shareDir() + "/scautoloc/station.conf"; }
 
 	try {
-		_config.pickLogFilePrefix = configGetString("autoloc.pickLog");
+		_config.pickLogPrefix = configGetString("autoloc.pickLog");
 	}
-	catch ( ... ) { _config.pickLogFilePrefix = ""; }
+	catch ( ... ) { _config.pickLogPrefix = ""; }
 
 	try {
 		_config.pickLogEnable = configGetBool("autoloc.pickLogEnable");
 	}
 	catch ( ... ) {
 		_config.pickLogEnable = false;
-	}
-
-	if ( !_config.pickLogEnable ) {
-		_config.pickLogFilePrefix = "";
 	}
 
 	try {
@@ -514,7 +510,7 @@ bool AutolocApp::initConfiguration() {
 	}
 	catch ( ... ) {}
 
-	_config.pickLogFilePrefix = Environment::Instance()->absolutePath(_config.pickLogFilePrefix);
+	_config.pickLogPrefix = Environment::Instance()->absolutePath(_config.pickLogPrefix);
 	_config.gridConfigFile = Environment::Instance()->absolutePath(_config.gridConfigFile);
 	_config.stationLocationFile = Environment::Instance()->absolutePath(_config.stationLocationFile);
 
@@ -619,10 +615,6 @@ bool AutolocApp::validateParameters() {
 
 	if ( commandline().hasOption("adopt-manual-depth") ) {
 		_config.adoptManualDepth = true;
-	}
-
-	if ( !_config.pickLogFilePrefix.empty() ) {
-		_config.pickLogEnable = true;
 	}
 
 	// derived parameter

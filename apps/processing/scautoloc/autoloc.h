@@ -26,6 +26,8 @@
 #include "locator.h"
 #include "config.h"
 #include "stationconfig.h"
+#include "picklog.h"
+
 
 namespace Seiscomp {
 
@@ -331,17 +333,7 @@ class Autoloc {
 		AutolocInternal::Origin *_findMatchingOrigin(const AutolocInternal::Origin*);
 
 	private:
-		// Pick log
-
-		// Form a pick log file name from prefix and date and
-		// open that file for writing picks.
-		void setPickLogFileName(const std::string &);
-
-		// Log pick
-		bool log(const AutolocInternal::Pick*);
-
-		std::string   _pickLogFileName;
-		std::ofstream _pickLogFile;
+		AutolocInternal::PickLog _pickLog;
 
 	private:
 		AutolocInternal::Associator _associator;

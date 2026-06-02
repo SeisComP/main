@@ -207,7 +207,7 @@ struct AutolocConfig {
 
 		// The pick log file
 		bool        pickLogEnable{false};
-		std::string pickLogFilePrefix;
+		std::string pickLogPrefix;
 
 		// Locator profile, e.g. "iasp91", "tab" etc.
 		std::string locatorProfile{"iasp91"};
@@ -246,6 +246,7 @@ struct AutolocConfig {
 
 	public:
 		void dump() const;
+		void check();
 };
 
 
