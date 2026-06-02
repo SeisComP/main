@@ -101,7 +101,7 @@ bool StationConfig::read()
 	}
 
 	StationConfigItem item;
-	while( !ifile.eof() ) {
+	while ( !ifile.eof() ) {
 		std::getline(ifile, line);
 		ltrim(line);
 //		line.erase(0, line.find_first_not_of(" \n\r\t"));

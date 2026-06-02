@@ -37,6 +37,7 @@ namespace Seiscomp {
 
 	std::string summary(const Seiscomp::DataModel::Origin*);
 
+	void minimizeInventory(Seiscomp::DataModel::Inventory *inventory);
 } // namespace Seiscomp
 
 #endif

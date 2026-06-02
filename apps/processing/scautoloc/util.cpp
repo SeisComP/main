@@ -42,7 +42,7 @@ namespace AutolocInternal {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Seiscomp::Core::Time sctime(const Time &time)
+Seiscomp::Core::Time sctime(const AutolocInternal::Time &time)
 {
 	return Seiscomp::Core::Time() + Seiscomp::Core::TimeSpan(time);
 }
@@ -62,7 +62,8 @@ void delazi(double lat1, double lon1, double lat2, double lon2,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void delazi(const Hypocenter *hypo, const Station *station,
+void delazi(const AutolocInternal::Hypocenter *hypo,
+            const AutolocInternal::Station *station,
             double &delta, double &az1, double &az2) {
 	Math::Geo::delazi(hypo->lat, hypo->lon, station->lat, station->lon, &delta, &az1, &az2);
 }
@@ -72,7 +73,8 @@ void delazi(const Hypocenter *hypo, const Station *station,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-double distance(const Station* s1, const Station* s2) {
+double distance(const AutolocInternal::Station* s1,
+                const AutolocInternal::Station* s2) {
 	double delta, az, baz;
 	delazi(s1->lat, s1->lon, s2->lat, s2->lon, delta, az, baz);
 	return delta;
@@ -83,7 +85,7 @@ double distance(const Station* s1, const Station* s2) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-std::string printDetailed(const Origin *origin) {
+std::string printDetailed(const AutolocInternal::Origin *origin) {
 	return printOrigin(origin, false);
 }
 
@@ -93,7 +95,7 @@ std::string printDetailed(const Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-std::string printOneliner(const Origin *origin) {
+std::string printOneliner(const AutolocInternal::Origin *origin) {
 	return printOrigin(origin, true);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -102,7 +104,7 @@ std::string printOneliner(const Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool automatic(const Pick *pick) {
+bool automatic(const AutolocInternal::Pick *pick) {
 	return pick->mode == Pick::Automatic;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -111,7 +113,7 @@ bool automatic(const Pick *pick) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool ignored(const Pick *pick) {
+bool ignored(const AutolocInternal::Pick *pick) {
 	return pick->mode == Pick::IgnoredAutomatic;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -120,7 +122,7 @@ bool ignored(const Pick *pick) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool manual(const Pick *pick) {
+bool manual(const AutolocInternal::Pick *pick) {
 	return pick->mode == Pick::Manual;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -129,7 +131,7 @@ bool manual(const Pick *pick) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-char modeFlag(const Pick *pick) {
+char modeFlag(const AutolocInternal::Pick *pick) {
 	return automatic(pick) ? 'A' : 'M';
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -138,7 +140,7 @@ char modeFlag(const Pick *pick) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool hasAmplitude(const Pick *pick) {
+bool hasAmplitude(const AutolocInternal::Pick *pick) {
 	if ( pick->amp <= 0 ) {
 		return false;
 	}
@@ -188,7 +190,7 @@ bool travelTimeP(double lat1, double lon1, double dep1, double lat2, double lon2
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-std::string time2str(const Time &t) {
+std::string time2str(const AutolocInternal::Time &t) {
 	return sctime(t).toString("%F %T.%f000000").substr(0, 21);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -197,11 +199,11 @@ std::string time2str(const Time &t) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-double meandev(const Origin* origin) {
+double meandev(const AutolocInternal::Origin* origin) {
 	double cumresid {0};
 	double cumweight {0};
 
-	for (const Arrival &arr : origin->arrivals) {
+	for ( const AutolocInternal::Arrival &arr : origin->arrivals ) {
 		if ( arr.excluded ) {
 			continue;
 		}
@@ -236,7 +238,7 @@ double avgfn(double x) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-std::string printOrigin(const Origin *origin, bool oneliner) {
+std::string printOrigin(const AutolocInternal::Origin *origin, bool oneliner) {
 	if ( !origin ) {
 		return "invalid origin";
 	}
@@ -248,7 +250,7 @@ std::string printOrigin(const Origin *origin, bool oneliner) {
 	out.precision(10);
 
 	char depthFlag = ' ';
-	switch (origin->depthType) {
+	switch ( origin->depthType ) {
 	case Origin::DepthMinimum:       depthFlag = 'i'; break;
 	case Origin::DepthPhases:        depthFlag = 'p'; break;
 	case Origin::DepthDefault:       depthFlag = 'd'; break;
@@ -278,11 +280,11 @@ std::string printOrigin(const Origin *origin, bool oneliner) {
 		out.setf(std::ios::right);
 
 		size_t lineno = 0;
-		for (const Arrival &arr : origin->arrivals) {
+		for ( const Arrival &arr : origin->arrivals ) {
 			const Pick* pick = arr.pick.get();
 
 			std::string excludedFlag;
-			switch (arr.excluded) {
+			switch ( arr.excluded ) {
 			case Arrival::NotExcluded:          excludedFlag = "  "; break;
 			case Arrival::LargeResidual:        excludedFlag = "Xr"; break;
 			case Arrival::StationDistance:      excludedFlag = "Xd"; break;
@@ -345,16 +347,86 @@ std::string printOrigin(const Origin *origin, bool oneliner) {
 
 
 
-namespace Utils {
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool valid(const Pick *pick) {
+	// don't look any further at a pick for which we don't have station info
+	if ( !pick->station() ) {
+		SEISCOMP_WARNING("Rejecting pick %s without station information",
+		                 pick->label);
+		return false;
+	}
+
+	// any non-automatic pick is considered valid anyway
+	if ( !automatic(pick) ) {
+		return true;
+	}
+
+	if ( pick->snr > 1.0E7 ) {
+		// SNR is very high, something *must* be wrong
+		SEISCOMP_WARNING("Rejecting pick %s with too high SNR of %g",
+		                 pick->label, pick->snr);
+		return false;
+	}
+
+	if ( pick->snr <= 0 ) {
+		// If SNR is 0 or negative, something *must* be wrong
+		SEISCOMP_WARNING("Rejecting pick %s with too low SNR of %g",
+		                 pick->label, pick->snr);
+		return false;
+	}
+
+	if ( !hasAmplitude(pick) ) {
+		SEISCOMP_WARNING("Rejecting pick %s without amplitude",
+		                 pick->label);
+		return false;
+	}
+
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-StationMap *readStationLocations(const std::string &fname) {
+int arrivalWithLargestResidual(const Origin *origin) {
+	size_t arrivalCount = origin->arrivals.size(), imax;
+	bool found {false};
+	double resmax {0};
+	for ( size_t i = 0; i < arrivalCount; i++ ) {
+		const Arrival &arr = origin->arrivals[i];
+		if ( arr.excluded )
+			continue;
+
+		double absres = std::abs(arr.residual);
+		if ( absres > resmax ) {
+			resmax = absres;
+			imax = i;
+			found = true;
+		}
+	}
+
+	if ( !found ) {
+		return -1;
+	}
+
+	return imax;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+namespace Util {
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+AutolocInternal::StationMap *readStationLocations(const std::string &fname) {
 	StationMap *stations = new StationMap;
 	std::string code, net;
 	double lat, lon, alt;
 
 	std::ifstream ifile(fname.c_str());
-	while (ifile >> net >> code >> lat >> lon >> alt) {
+	while ( ifile >> net >> code >> lat >> lon >> alt ) {
 
 		Station* station = new Station(code, net, lat, lon, alt);
 		station->maxNucDist = 180; // TODO make this default configurable
@@ -363,7 +435,7 @@ StationMap *readStationLocations(const std::string &fname) {
 		stations->insert(std::pair<std::string, Station*>(key, station));
 	}
 
-	if ( stations->size() == 0) {
+	if ( stations->empty() ) {
 		SEISCOMP_ERROR_S("No stations read from file " + fname);
 		delete stations;
 		return nullptr;
@@ -379,7 +451,7 @@ StationMap *readStationLocations(const std::string &fname) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 DataModel::Inventory* inventoryFromStationLocationFile(const std::string &filename) {
 	// read inventory from station locations file
-	StationMap *stationMap = readStationLocations(filename);
+	AutolocInternal::StationMap *stationMap = readStationLocations(filename);
 
 	DataModel::Inventory *inventory = new DataModel::Inventory;
 	for ( auto& item : *stationMap ) {
@@ -387,7 +459,7 @@ DataModel::Inventory* inventoryFromStationLocationFile(const std::string &filena
 		const Station *s = item.second.get();
 		std::string netId = "Network/"+s->net;
 		DataModel::Network *network = inventory->findNetwork(netId);
-		if ( !network) {
+		if ( !network ) {
 			network = new DataModel::Network(netId);
 			network->setCode(s->net);
 			inventory->add(network);
@@ -411,22 +483,23 @@ DataModel::Inventory* inventoryFromStationLocationFile(const std::string &filena
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Pick::Mode mode(const DataModel::Pick *pick) {
+AutolocInternal::Pick::Mode mode(const DataModel::Pick *pick) {
 	try {
 		switch ( pick->evaluationMode() ) {
 			case DataModel::AUTOMATIC:
-				return Pick::Automatic;
+				return AutolocInternal::Pick::Automatic;
 			case DataModel::MANUAL:
-				return Pick::Manual;
+				return AutolocInternal::Pick::Manual;
 			//case DataModel::CONFIRMED_PICK:
-			//	return Pick::Confirmed;
+			//	return AutolocInternal::Pick::Confirmed;
 			default:
 				break;
 		}
 	}
 	catch ( ... ) {}
 
-	return Pick::Automatic;
+	// Fallback
+	return AutolocInternal::Pick::Automatic;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -434,34 +507,125 @@ Pick::Mode mode(const DataModel::Pick *pick) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void minimizeInventory(Seiscomp::DataModel::Inventory *inventory) {
-	// Remove unneeded inventory items to save some memory
-	if ( !inventory ) {
-		return;
+DataModel::Origin *convertToSC(const AutolocInternal::Origin* origin, const std::string &author, const std::string &agencyID, bool allPhases) {
+
+	DataModel::Origin *scorigin = DataModel::Origin::Create();
+
+	DataModel::TimeQuantity sctim(sctime(origin->time), origin->timeerr, Core::None, Core::None, Core::None);
+	DataModel::RealQuantity sclat(origin->hypocenter.lat, origin->hypocenter.laterr, Core::None, Core::None, Core::None);
+	DataModel::RealQuantity sclon(origin->hypocenter.lon, origin->hypocenter.lonerr, Core::None, Core::None, Core::None);
+	DataModel::RealQuantity scdep(origin->hypocenter.dep, origin->hypocenter.deperr, Core::None, Core::None, Core::None);
+
+	scorigin->setTime(sctim);
+	scorigin->setLatitude(sclat);
+	scorigin->setLongitude(sclon);
+	scorigin->setDepth(scdep);
+
+	scorigin->setMethodID(origin->methodID);
+	scorigin->setEarthModelID(origin->earthModelID);
+
+	scorigin->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
+	if ( origin->preliminary ) {
+		scorigin->setEvaluationStatus(DataModel::EvaluationStatus(DataModel::PRELIMINARY));
 	}
-	
-	for ( size_t n = 0; n < inventory->networkCount(); ++n ) {
-		DataModel::Network *network = inventory->network(n);
 
-		for ( size_t s = 0; s < network->stationCount(); ++s ) {
-			DataModel::Station *station = network->station(s);
+	switch ( origin->depthType ) {
+	case AutolocInternal::Origin::DepthFree:
+		scorigin->setDepthType(DataModel::OriginDepthType(DataModel::FROM_LOCATION));
+		break;
 
-			for ( size_t l = 0; l < station->sensorLocationCount(); ++l ) {
-				DataModel::SensorLocation *sensorLocation = station->sensorLocation(l);
-				while (sensorLocation->streamCount())
-					sensorLocation->removeStream(0);
-				while (sensorLocation->auxStreamCount())
-					sensorLocation->removeAuxStream(0);
-				while (sensorLocation->commentCount())
-					sensorLocation->removeComment(0);
-			}
+	case AutolocInternal::Origin::DepthMinimum:
+		break;
+
+	case AutolocInternal::Origin::DepthDefault:
+		break;
+
+	case AutolocInternal::Origin::DepthManuallyFixed:
+		scorigin->setDepthType(DataModel::OriginDepthType(DataModel::OPERATOR_ASSIGNED));
+		break;
+	default:
+		break;
+	}
+
+	// This is a preliminary fix which prevents autoloc from producing
+	// origins with fixed depth, as this caused some problems at BMG
+	// where the fixed-depth checkbox was not unchecked and an incorrect
+	// depth was retained. Need a better way, though.
+//	scorigin->setDepthType(DataModel::OriginDepthType(DataModel::FROM_LOCATION));
+
+	size_t arrivalCount = origin->arrivals.size();
+
+	for ( size_t i = 0; i < arrivalCount; i++ ) {
+		const AutolocInternal::Arrival &arr = origin->arrivals[i];
+
+		// If not all (automatic) phases are requested, only include P and PKP
+		if ( !allPhases && automatic(arr.pick.get()) && arr.phase != "P" && arr.phase != "PKP" ) {
+			SEISCOMP_DEBUG_S("SKIPPING 1  " + arr.pick->id());
+			continue;
 		}
+
+		// Don't include arrivals with huge residuals as (unless by
+		// accident) these are excluded from the location anyway.
+/*
+		if ( arr.excluded && std::abs(arr.residual) > 30. ) { // FIXME: quick+dirty fix
+			SEISCOMP_DEBUG_S("SKIPPING 1  "+arr.pick->id);
+			continue;
+		}
+*/
+		const DataModel::Phase phase(arr.phase);
+		DataModel::Arrival* scarr = new DataModel::Arrival();
+		scarr->setPickID(arr.pick->id());
+		scarr->setDistance(arr.distance);
+		scarr->setAzimuth(arr.azimuth);
+		scarr->setTimeResidual(arr.residual);
+		scarr->setTimeUsed(arr.excluded == Arrival::NotExcluded);
+		if ( arr.backazimuthUsed ) {
+			scarr->setBackazimuthUsed(arr.excluded == Arrival::NotExcluded);
+		}
+		else {
+			scarr->setBackazimuthUsed(false);
+		}
+		if ( arr.slownessUsed ) {
+			scarr->setHorizontalSlownessUsed(arr.excluded == Arrival::NotExcluded);
+		}
+		else {
+			scarr->setHorizontalSlownessUsed(false);
+		}
+		scarr->setWeight(arr.excluded == Arrival::NotExcluded ? 1. : 0.);
+		scarr->setPhase(phase);
+
+		scorigin->add(scarr);
 	}
+	DataModel::OriginQuality oq;
+	oq.setAssociatedPhaseCount(scorigin->arrivalCount());
+	oq.setUsedPhaseCount(origin->definingPhaseCount());
+	oq.setAssociatedStationCount(origin->associatedStationCount());
+	oq.setUsedStationCount(origin->definingStationCount());
+	double msd = origin->medianStationDistance();
+	if ( msd > 0 ) {
+		oq.setMedianDistance(msd);
+	}
+	oq.setStandardError(origin->rms());
+
+	double minDist, maxDist, aziGap;
+	origin->geoProperties(minDist, maxDist, aziGap);
+	oq.setMinimumDistance(minDist);
+	oq.setMaximumDistance(maxDist);
+	oq.setAzimuthalGap(aziGap);
+
+	scorigin->setQuality(oq);
+
+	DataModel::CreationInfo ci;
+	ci.setAgencyID(agencyID);
+	ci.setAuthor(author);
+	scorigin->setCreationInfo(ci);
+
+	return scorigin;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-} // namespace AutolocInternal::Utils
+} // namespace AutolocInternal::Util
 } // namespace AutolocInternal
 
 
@@ -471,8 +635,9 @@ namespace Statistics {
 double rms(const std::vector<double> &v, double offset) {
 	double r{0};
 
-	if (v.empty())
+	if ( v.empty() ) {
 		return 0;
+	}
 
 	if ( offset ) {
 		for ( double f : v ) {

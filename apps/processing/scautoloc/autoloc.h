@@ -12,8 +12,8 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_AUTOLOC_AUTOLOC3
-#define SEISCOMP_AUTOLOC_AUTOLOC3
+#ifndef SEISCOMP_PROCESSING_AUTOLOC
+#define SEISCOMP_PROCESSING_AUTOLOC
 
 
 #include <string>

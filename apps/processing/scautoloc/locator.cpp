@@ -22,7 +22,6 @@
 #include <seiscomp/datamodel/origin.h>
 #include <seiscomp/datamodel/sensorlocation.h>
 #include "util.h"
-#include "sc3adapters.h"
 #include "locator.h"
 
 
@@ -161,7 +160,7 @@ void Locator::setMinimumDepth(double depth) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 static bool hasFixedDepth(const Origin *origin) {
-	switch(origin->depthType) {
+	switch ( origin->depthType ) {
 		case Origin::DepthManuallyFixed:
 		case Origin::DepthDefault:
 			return true;
@@ -236,7 +235,7 @@ Origin *Locator::relocate(const Origin *origin) {
 Origin* Locator::_screlocate(const Origin *origin) {
 	// convert origin to SC, relocate, and convert the result back
 
-	DataModel::OriginPtr scorigin = convertToSC(origin, "", "");
+	DataModel::OriginPtr scorigin = AutolocInternal::Util::convertToSC(origin, "", "");
 	if ( !scorigin ) {
 		// give up
 		SEISCOMP_ERROR("Unexpected failure to relocate origin");
@@ -247,10 +246,10 @@ Origin* Locator::_screlocate(const Origin *origin) {
 	DataModel::RealQuantity scrq;
 
 /*
-	if (fixedDepth >= 0) {
+	if ( fixedDepth >= 0 ) {
 		setFixedDepth(fixedDepth);
 	}
-	else if (_useFixedDepth == true) {
+	else if ( _useFixedDepth ) {
 		setFixedDepth(origin->dep);
 	}
 	else
@@ -396,7 +395,7 @@ Origin* Locator::_screlocate(const Origin *origin) {
 			arr.phase = "PKP";
 		}
 
-//		if (arr.residual == -999.)
+//		if ( arr.residual == -999. )
 //			arr.residual = 0; // FIXME preliminary cosmetics;
 
 // We do not copy the weight back, because it is still there in the original arrival
@@ -406,7 +405,7 @@ Origin* Locator::_screlocate(const Origin *origin) {
 		     arr.distance > 104 && arr.distance < 112) {
 
 			TravelTime tt;
-			if ( !travelTimeP(arr.distance, origin->dep, tt))
+			if ( !travelTimeP(arr.distance, origin->dep, tt) )
 				continue;
 			arr.residual = arr.pick->time - (origin->time + tt.time);
 		}
@@ -457,11 +456,13 @@ bool determineAzimuthalGaps(const Origin *origin, double *primary, double *secon
 
 	for ( size_t i = 0; i < aziCount; i++ ) {
 		double gap = azi[i+1] - azi[i];
-		if (gap > *primary)
+		if ( gap > *primary ) {
 			*primary = gap;
+		}
 		gap = azi[i+2] - azi[i];
-		if (gap > *secondary)
+		if ( gap > *secondary ) {
 			*secondary = gap;
+		}
 	}
 
 	return true;

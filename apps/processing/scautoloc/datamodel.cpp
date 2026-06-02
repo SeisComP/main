@@ -145,7 +145,7 @@ void Pick::setAmplitudeSNR(const Seiscomp::DataModel::Amplitude *scampl)
 void Pick::setAmplitudeAbs(const Seiscomp::DataModel::Amplitude *scampl)
 {
 	amp = scampl->amplitude().value();
-//	if (amp <= 0)
+//	if ( amp <= 0 )
 //		SEISCOMP_WARNING(
 //			"setAmplitudeAbs: amp=%g <= 0 publicID=%s",
 //			amp, scampl->publicID());
@@ -341,8 +341,9 @@ size_t Origin::definingPhaseCount(double dmin, double dmax) const
 		if ( dmin!=0. || dmax!=180. ) {
 			double delta, az, baz;
 			delazi(&hypocenter, arr.pick->station(), delta, az, baz);
-			if (delta < dmin || delta > dmax)
+			if ( delta < dmin || delta > dmax ) {
 				continue;
+			}
 		}
 
 		if ( arr.excluded ) {
@@ -409,13 +410,15 @@ double Origin::rms() const
 {
 	// This essentially implies that for an imported origin RMS has
 	// no meaning, no matter if the origin has arrivals or not.
-	if ( imported )
+	if ( imported ) {
 		return 0;
+	}
 
 	std::vector<double> res;
 	for ( const Arrival& arr : arrivals ) {
-		if ( !arr.excluded )
+		if ( !arr.excluded ) {
 			res.push_back(arr.residual);
+		}
 	}
 
 	return Math::Statistics::rms(res);

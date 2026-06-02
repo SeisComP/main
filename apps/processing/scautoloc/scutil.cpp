@@ -18,6 +18,9 @@
 #include <seiscomp/logging/log.h>
 #include <seiscomp/datamodel/publicobject.h>
 #include <seiscomp/datamodel/pick.h>
+#include <seiscomp/datamodel/inventory.h>
+#include <seiscomp/datamodel/network.h>
+#include <seiscomp/datamodel/station.h>
 #include <seiscomp/datamodel/utils.h>
 #include <map>
 #include <string>
@@ -71,7 +74,7 @@ bool manual(const Seiscomp::DataModel::Origin *origin) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool preliminary(const Seiscomp::DataModel::Origin *origin) {
 	try {
-		switch (origin->evaluationStatus()) {
+		switch (origin->evaluationStatus() ) {
 		case Seiscomp::DataModel::PRELIMINARY:
 			return true;
 		default:
@@ -261,6 +264,36 @@ std::string summary(const Seiscomp::DataModel::Origin *scorigin)
 
 	out.setf(std::ios::right);
 	return out.str();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void minimizeInventory(Seiscomp::DataModel::Inventory *inventory) {
+	// Remove unneeded inventory items to save some memory
+	if ( !inventory ) {
+		return;
+	}
+
+	for ( size_t n = 0; n < inventory->networkCount(); ++n ) {
+		DataModel::Network *network = inventory->network(n);
+
+		for ( size_t s = 0; s < network->stationCount(); ++s ) {
+			DataModel::Station *station = network->station(s);
+
+			for ( size_t l = 0; l < station->sensorLocationCount(); ++l ) {
+				DataModel::SensorLocation *sensorLocation = station->sensorLocation(l);
+				while ( sensorLocation->streamCount() )
+					sensorLocation->removeStream(0);
+				while ( sensorLocation->auxStreamCount() )
+					sensorLocation->removeAuxStream(0);
+				while ( sensorLocation->commentCount() )
+					sensorLocation->removeComment(0);
+			}
+		}
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

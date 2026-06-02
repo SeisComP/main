@@ -41,14 +41,10 @@ AutolocApp::AutolocApp(int argc, char **argv)
 : Application(argc, argv), Processing::Autoloc()
 {
 	setMessagingEnabled(true);
-
 	setPrimaryMessagingGroup("LOCATION");
-
 	addMessagingSubscription("PICK");
 	addMessagingSubscription("AMPLITUDE");
 	addMessagingSubscription("LOCATION");
-
-	_config = Processing::Autoloc::config();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -83,7 +79,6 @@ void AutolocApp::createCommandLineDescription() {
 	                        "implies --test and --playback.");
 	commandline().addOption("Mode", "playback",
 	                        "Flush origins immediately without delay.");
-	commandline().addOption("Mode", "xml-playback", "TODO"); // TODO
 
 	commandline().addGroup("Input");
 	commandline().addOption("Input", "ep",
@@ -722,7 +717,7 @@ void AutolocApp::readHistoricEvents() {
 	it.close();
 
 	// Store all pickIDs of all origins and remove duplicates
-	for (auto& origin : preferredOrigins) {
+	for ( auto& origin : preferredOrigins ) {
 		if ( origin->arrivalCount() == 0 ) {
 			query()->loadArrivals(origin.get());
 			for ( size_t i = 0; i < origin->arrivalCount(); ++i )

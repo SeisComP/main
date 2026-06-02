@@ -723,8 +723,8 @@ bool GridSearch::feed(const Pick *pick) {
 
 		double delta, az, baz;
 		delazi(origin->lat, origin->lon, gp->lat, gp->lon, delta, az, baz);
-		if (_config.maxRadiusFactor > 0 &&
-		    delta > _config.maxRadiusFactor*gp->_radius) // XXX private
+		if ( _config.maxRadiusFactor > 0 &&
+		     delta > _config.maxRadiusFactor*gp->_radius ) // XXX private
 			continue;
 */
 

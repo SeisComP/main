@@ -76,13 +76,15 @@ bool ignored(const Pick*);
 bool manual(const Pick*);
 char modeFlag(const Pick*);
 bool hasAmplitude(const Pick*);
+bool valid(const Pick*);
 
 double meandev(const Origin* origin);
 
 int numberOfDefiningPhases(const Origin &origin);
 
+int arrivalWithLargestResidual(const Origin*);
 
-namespace Utils {
+namespace Util {
 
 StationMap *readStationLocations(const std::string &fname);
 Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::string &_stationLocationFile);
@@ -92,9 +94,9 @@ PickVector readPickFile();
 Pick*      readPickLine();
 Pick::Mode mode(const Seiscomp::DataModel::Pick *pick);
 
-void minimizeInventory(Seiscomp::DataModel::Inventory *inventory);
+DataModel::Origin *convertToSC(const Origin* origin, const std::string &author, const std::string &agencyID, bool allPhases=true);
 
-}  // namespace Utils
+}  // namespace Util
 
 }  // namespace AutolocInternal
 

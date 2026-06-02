@@ -12,7 +12,6 @@ SET(
 		objectqueue.cpp
 		scutil.cpp
 		util.cpp
-		sc3adapters.cpp
 		main.cpp
 		stationconfig.cpp
 		stationlocationfile.cpp
@@ -30,7 +29,6 @@ SET(
 		objectqueue.h
 		scutil.h
 		util.h
-		sc3adapters.h
 		stationconfig.h
 		stationlocationfile.h
 )
