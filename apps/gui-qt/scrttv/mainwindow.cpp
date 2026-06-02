@@ -1634,6 +1634,7 @@ TraceView* MainWindow::createTraceView() {
 	traceView->setFramesEnabled(_withFrames);
 	traceView->setFrameMargin(_frameMargin);
 	if ( _rowHeight > 0 ) {
+		traceView->setDefaultRowHeight(_rowHeight);
 		traceView->setMinimumRowHeight(_rowHeight);
 		traceView->setMaximumRowHeight(_rowHeight);
 	}

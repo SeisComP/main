@@ -163,6 +163,32 @@
 					than rows are loaded, the are accessible by a scroll bar.
 					</description>
 				</parameter>
+				<parameter name="height" type="int" unit="px">
+					<description>
+					Row height in pixels. Sets the minimum row height and the
+					initial maximum, so rows start at this size. Also defines the
+					lower bound for the vertical zoom hotkey (Y), replacing the
+					built-in 16 px default. After a Default Display reset or zoom-in
+					the maximum constraint is released and rows may grow above this
+					value.
+					</description>
+				</parameter>
+				<parameter name="rowSpacing" type="int" unit="px" default="0">
+					<description>
+					Pixel gap between rows.
+					</description>
+				</parameter>
+				<parameter name="withFrames" type="boolean" default="false">
+					<description>
+					Draw frames around individual trace rows.
+					</description>
+				</parameter>
+				<parameter name="frameMargin" type="int" unit="px" default="0">
+					<description>
+					Pixel margin inside each trace frame. Only effective when
+					streams.withFrames is enabled.
+					</description>
+				</parameter>
 				<group name="region">
 					<description>
 					Define a region used for clipping requested stations.
