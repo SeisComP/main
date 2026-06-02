@@ -23,33 +23,68 @@
 
 #include "datamodel.h"
 
-namespace Autoloc {
+namespace Seiscomp {
 
-void delazi(double lat1, double lon1, double lat2, double lon2, double &delta, double &az1, double &az2);
-void delazi(const Hypocenter *hypo, const Station *station, double &delta, double &az1, double &az2);
-double distance(const Station* s1, const Station* s2);
+namespace AutolocInternal {
+
+// Compute the distance in degrees between two stations on a sphere
+double distance(
+	const Station* s1,
+	const Station* s2);
+
+// Compute the distance and azimuths in degrees between two points on a sphere
+void delazi(
+	double lat1, double lon1,
+	double lat2, double lon2,
+	double &delta, double &az1, double &az2);
+
+// Compute the distance and azimuths in degrees between a hypocenter and a
+// station on a sphere.
+void delazi(
+	const Hypocenter*,
+	const Station*,
+	double &delta, double &az1, double &az2);
+
+
+// Various formatters to generate debug output for scautoloc
 std::string printDetailed(const Origin*);
 std::string printOneliner(const Origin*);
-bool automatic(const Pick*);
-bool ignored(const Pick*);
-bool manual(const Pick*);
-char modeFlag(const Pick*);
-bool hasAmplitude(const Pick*);
-
+std::string printOrigin(const Origin *origin, bool=false);
 
 double meandev(const Origin* origin);
 
 double avgfn(double x);
 
-std::string printOrigin(const Origin *origin, bool=false);
-int numberOfDefiningPhases(const Origin &origin);
-
+// Compute the P travel time between two points on a spherical Earth.
 typedef Seiscomp::TravelTime TravelTime;
-bool travelTimeP (double lat1, double lon1, double dep1, double lat2, double lon2, double alt2, double delta, TravelTime&);
 
+bool travelTimeP (
+	double lat1, double lon1, double dep1,
+	double lat2, double lon2, double alt2,
+	double delta, TravelTime&);
+
+
+// Format an Autoloc::DataModel::Time time as time stamp.
 std::string time2str(const Time &t);
 
-namespace Utils {
+// Convert an Autoloc::DataModel::Time time to a Seiscomp::Core::Time
+Seiscomp::Core::Time sctime(const Time &time);
+
+
+bool automatic(const Pick*);
+bool ignored(const Pick*);
+bool manual(const Pick*);
+char modeFlag(const Pick*);
+bool hasAmplitude(const Pick*);
+bool valid(const Pick*);
+
+double meandev(const Origin* origin);
+
+int numberOfDefiningPhases(const Origin &origin);
+
+int arrivalWithLargestResidual(const Origin*);
+
+namespace Util {
 
 StationMap *readStationLocations(const std::string &fname);
 Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::string &_stationLocationFile);
@@ -59,22 +94,22 @@ PickVector readPickFile();
 Pick*      readPickLine();
 Pick::Mode mode(const Seiscomp::DataModel::Pick *pick);
 
-}
+DataModel::Origin *convertToSC(const Origin* origin, const std::string &author, const std::string &agencyID, bool allPhases=true);
 
-}
+}  // namespace Util
 
-
-
-
+}  // namespace AutolocInternal
 
 
-namespace Seiscomp {
+
 namespace Math {
+
 namespace Statistics {
 
 double rms(const std::vector<double> &v, double offset = 0);
 
 } // namespace Statistics
-} // namespace Math
-} // namespace Seiscomp
 
+} // namespace Math
+
+} // namespace Seiscomp

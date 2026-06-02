@@ -12,32 +12,52 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_AUTOLOC_SCUTIL_H_INCLUDED
-#define SEISCOMP_AUTOLOC_SCUTIL_H_INCLUDED
 
-#include <seiscomp/datamodel/origin.h>
+#ifndef SEISCOMP_LIBAUTOLOC_OBJECTQUEUE_H_INCLUDED
+#define SEISCOMP_LIBAUTOLOC_OBJECTQUEUE_H_INCLUDED
+
+#include <queue>
+#include <seiscomp/datamodel/publicobject.h>
+#include <seiscomp/datamodel/eventparameters.h>
 
 namespace Seiscomp {
 
-	void logObjectCounts();
+namespace DataModel {
 
-	bool manual(const Seiscomp::DataModel::Origin*);
-	bool preliminary(const Seiscomp::DataModel::Origin*);
+// PublicObjectQueue
+//
+// Queue of PublicObject's read from EventParameters to be used in playbacks.
+//
+// Only supports Pick, Amplitude, Origin
 
-	// Pick label used for logging.
-	// The goal is to display much information as possible as a relatively short string.
-	std::string pickLabel(const Seiscomp::DataModel::Pick*);
+class PublicObjectQueue {
 
-	bool rejected(const Seiscomp::DataModel::Pick*);
+	public:
+		PublicObjectQueue() = default;
 
-	std::string evaluationStatus(const Seiscomp::DataModel::Pick*);
-	std::string evaluationStatus(const Seiscomp::DataModel::Origin*);
-	std::string evaluationMode(const Seiscomp::DataModel::Origin*);
-	std::string depthType(const Seiscomp::DataModel::Origin*);
+		// Fill the queue with the PublicObjects taken from
+		// the specified EventParameters instance. Objects
+		// are sorted according to creation time, with the oldest
+		// objects at the front.
+		bool fill(const Seiscomp::DataModel::EventParameters*);
 
-	std::string summary(const Seiscomp::DataModel::Origin*);
+		void push(Seiscomp::DataModel::PublicObject *o);
 
-	void minimizeInventory(Seiscomp::DataModel::Inventory *inventory);
+		Seiscomp::DataModel::PublicObject* front();
+
+		void pop();
+
+		bool empty() const;
+
+		size_t size() const;
+
+	private:
+		std::queue<Seiscomp::DataModel::PublicObjectPtr> q;
+};
+
+
+} // namespace DataModel
+
 } // namespace Seiscomp
 
 #endif

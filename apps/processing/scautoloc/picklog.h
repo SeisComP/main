@@ -12,18 +12,41 @@
  ***************************************************************************/
 
 
+#ifndef SEISCOMP_AUTOLOC_PICKLOG_H
+#define SEISCOMP_AUTOLOC_PICKLOG_H
 
 
 #include <string>
-#include <vector>
-#include <seiscomp/core/datetime.h>
-#include <seiscomp/datamodel/origin.h>
+#include <iostream>
+#include <fstream>
 
-#include "datamodel.h"
 
-Seiscomp::Core::Time sctime(const Autoloc::Time &time);
+namespace Seiscomp {
 
-Seiscomp::DataModel::Origin *convertToSC(const Autoloc::Origin* origin, bool allPhases=true);
-// Origin *convertFromSC(const Seiscomp::DataModel::Origin* scorigin);
+namespace AutolocInternal {
 
-Autoloc::Pick *convertFromSC(const Seiscomp::DataModel::Pick *scpick);
+
+class PickLog {
+	public:
+		PickLog() = default;
+		void setPrefix(const std::string &p);
+		void setEnabled(bool e);
+
+		void log(const Pick *pick);
+
+	private:
+		void setFileName(const std::string &f);
+
+		bool enabled {false};
+		std::string prefix;
+		std::string filename;
+		std::ofstream file;
+};
+
+
+
+}  // namespace AutolocInternal
+
+}  // namespace Seiscomp
+
+#endif

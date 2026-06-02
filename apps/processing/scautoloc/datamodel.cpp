@@ -25,14 +25,41 @@
 #include <seiscomp/math/mean.h>
 #include "datamodel.h"
 #include "util.h"
-#include "sc3adapters.h"
+#include "scutil.h"
 
-namespace Autoloc {
+namespace Seiscomp {
+
+namespace AutolocInternal {
+
+// namespace DataModel {
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Station::Station(const Seiscomp::DataModel::Station *scstation) {
+	const Seiscomp::DataModel::Network *scnetwork =
+		Seiscomp::DataModel::Network::Cast(scstation->parent());
+	if ( !scnetwork ) {
+		throw Seiscomp::Core::ValueException("Network is unset");
+	}
+
+	net  = scnetwork->code();
+	code = scstation->code();
+	lat = scstation->latitude();
+	lon = scstation->longitude();
+
+	try {
+		alt = scstation->elevation();
+	}
+	catch ( ... ) {
+		alt = 0.;
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Station::Station(const std::string &code, const std::string &net, double lat, double lon, double alt)
-	: code(code), net(net), lat(lat), lon(lon), alt(alt), used(true), maxNucDist(180), maxLocDist(180)
+	: code(code), net(net), lat(lat), lon(lon), alt(alt)
 {
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -43,10 +70,8 @@ Station::Station(const std::string &code, const std::string &net, double lat, do
 static size_t _pickCount=0;
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Pick::Pick(const std::string &id, const std::string &label, const std::string &net, const std::string &sta, const Time &time)
-	: id(id), label(label), net(net), sta(sta),
-	  time(time), amp(0), per(0), snr(0), normamp(0),
-	  mode(Automatic), xxl(false), _originID(0), _station(nullptr)
+Pick::Pick(const Seiscomp::DataModel::Pick *scpick)
+        : time(scpick->time().value()), scpick(scpick), label(pickLabel(scpick))
 {
 	_pickCount++;
 }
@@ -86,7 +111,17 @@ void Pick::setStation(const Station *sta) const
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Pick::setOrigin(OriginID id) const
+OriginID Pick::originID() const
+{
+	return _originID;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Pick::setOriginID(OriginID id) const
 {
 	_originID = id;
 }
@@ -96,10 +131,35 @@ void Pick::setOrigin(OriginID id) const
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Pick::setAmplitudeSNR(const Seiscomp::DataModel::Amplitude *scampl)
+{
+	snr = scampl->amplitude().value();
+	scamplSNR = scampl;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Pick::setAmplitudeAbs(const Seiscomp::DataModel::Amplitude *scampl)
+{
+	amp = scampl->amplitude().value();
+//	if ( amp <= 0 )
+//		SEISCOMP_WARNING(
+//			"setAmplitudeAbs: amp=%g <= 0 publicID=%s",
+//			amp, scampl->publicID());
+	per = (scampl->type() == "mb") ? scampl->period().value() : 1;
+	scamplAbs = scampl;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Arrival::Arrival(const Pick *pick, const std::string &phase, double residual)
-	: origin(nullptr), pick(pick), phase(phase), residual(residual),
-	  distance(0), azimuth(0), affinity(0),
-	  score(0), ascore(0), dscore(0), tscore(0), excluded(NotExcluded)
+	: origin(nullptr), pick(pick), phase(phase), residual(residual)
 {
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -109,9 +169,7 @@ Arrival::Arrival(const Pick *pick, const std::string &phase, double residual)
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Arrival::Arrival(const Origin *origin, const Pick *pick, const std::string &phase, double residual, double affinity)
-	: origin(origin), pick(pick), phase(phase), residual(residual),
-	  affinity(affinity),
-	  score(0), ascore(0), dscore(0), tscore(0), excluded(NotExcluded)
+	: origin(origin), pick(pick), phase(phase), residual(residual), affinity(affinity)
 {
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -122,14 +180,13 @@ Arrival::Arrival(const Origin *origin, const Pick *pick, const std::string &phas
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool operator<(const Arrival& a, const Arrival& b) {
 
-	if (a.distance < b.distance)
+	if ( a.distance < b.distance )
 		return true;
-	if (a.distance > b.distance)
+	if ( a.distance > b.distance )
 		return false;
-
-	if (a.pick->time < b.pick->time)
+	if ( a.pick->time < b.pick->time )
 		return true;
-	if (a.pick->time > b.pick->time)
+	if ( a.pick->time > b.pick->time )
 		return false;
 
 	return false;
@@ -151,17 +208,13 @@ bool ArrivalVector::sort()
 
 static size_t _originCount {0};
 
+
+
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Origin::Origin(double lat, double lon, double dep, const Time &time)
-	: id(0), hypocenter(lat, lon, dep), time(time), timeerr(0),
-	  imported(false), preliminary(false)
+	: hypocenter(lat, lon, dep), time(time)
 {
 	_originCount++;
-	processingStatus = New;
-	locationStatus = Automatic;
-	depthType = DepthFree;
-	timestamp = 0.;
-	score = 0;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -205,10 +258,11 @@ size_t Origin::count()
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int Origin::findArrival(const Pick *pick) const
 {
-	int arrivalCount = arrivals.size();
-	for (int i=0; i<arrivalCount; i++) {
-		if (arrivals[i].pick == pick)
+	size_t arrivalCount = arrivals.size();
+	for ( size_t i = 0; i < arrivalCount; i++ ) {
+		if ( arrivals[i].pick == pick ) {
 			return i;
+		}
 	}
 
 	return -1;
@@ -235,11 +289,11 @@ void Origin::updateFrom(const Origin *other)
 bool Origin::add(const Arrival &arr)
 {
 	if ( findArrival(arr.pick.get()) != -1 ) {
-		SEISCOMP_WARNING_S("Pick already present -> not added.  id = " + arr.pick->id);
+		SEISCOMP_WARNING_S("Pick already present -> not added.  id = " + arr.pick->id());
 		return false;
 	}
 
-	arr.pick->setOrigin(id);
+	arr.pick->setOriginID(id);
 	arrivals.push_back(arr);
 	return true;
 }
@@ -253,17 +307,19 @@ size_t Origin::phaseCount(double dmin, double dmax) const
 {
 	size_t count {0};
 
-	for (const Arrival &arr : arrivals) {
+	for ( const Arrival &arr : arrivals ) {
 
-		if (dmin==0. && dmax==180.) {
+		if ( dmin==0. && dmax==180. ) {
 			double delta, az, baz;
 			delazi(&hypocenter, arr.pick->station(), delta, az, baz);
-			if (delta < dmin || delta > dmax)
+			if ( delta < dmin || delta > dmax ) {
 				continue;
+			}
 		}
 
-		if (arr.excluded && arr.phase != "PKP")
+		if ( arr.excluded && arr.phase != "PKP" ) {
 			continue;
+		}
 
 		count++;
 	}
@@ -280,20 +336,21 @@ size_t Origin::definingPhaseCount(double dmin, double dmax) const
 {
 	size_t count {0};
 
-	for (const Arrival &arr : arrivals) {
+	for ( const Arrival &arr : arrivals ) {
 
-		if (dmin!=0. || dmax!=180.) {
+		if ( dmin!=0. || dmax!=180. ) {
 			double delta, az, baz;
 			delazi(&hypocenter, arr.pick->station(), delta, az, baz);
-			if (delta < dmin || delta > dmax)
+			if ( delta < dmin || delta > dmax ) {
 				continue;
+			}
 		}
 
-		if (arr.excluded)
+		if ( arr.excluded ) {
 			continue;
+		}
 
 		count++;
-
 	}
 
 	return count;
@@ -308,12 +365,13 @@ size_t Origin::associatedStationCount() const
 {
 	std::set<std::string> stations;
 
-	for (const Arrival& arr : arrivals) {
+	for ( const Arrival& arr : arrivals ) {
 
-		if ( !arr.pick )
+		if ( !arr.pick ) {
 			continue;
+		}
 
-		stations.insert(arr.pick->net + "." + arr.pick->sta);
+		stations.insert(arr.pick->net() + "." + arr.pick->sta());
 	}
 
 	return stations.size();
@@ -327,15 +385,17 @@ size_t Origin::associatedStationCount() const
 size_t Origin::definingStationCount() const {
 	std::set<std::string> stations;
 
-	for (const Arrival& arr : arrivals) {
+	for ( const Arrival& arr : arrivals ) {
 
-		if (arr.excluded)
+		if ( arr.excluded ) {
 			continue;
+		}
 
-		if ( !arr.pick )
+		if ( !arr.pick ) {
 			continue;
+		}
 
-		stations.insert(arr.pick->net + "." + arr.pick->sta);
+		stations.insert(arr.pick->net() + "." + arr.pick->sta());
 	}
 
 	return stations.size();
@@ -350,16 +410,18 @@ double Origin::rms() const
 {
 	// This essentially implies that for an imported origin RMS has
 	// no meaning, no matter if the origin has arrivals or not.
-	if (imported)
+	if ( imported ) {
 		return 0;
-
-	std::vector<double> res;
-	for (const Arrival& arr : arrivals) {
-		if ( ! arr.excluded)
-			res.push_back(arr.residual);
 	}
 
-	return Seiscomp::Math::Statistics::rms(res);
+	std::vector<double> res;
+	for ( const Arrival& arr : arrivals ) {
+		if ( !arr.excluded ) {
+			res.push_back(arr.residual);
+		}
+	}
+
+	return Math::Statistics::rms(res);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -371,15 +433,17 @@ double Origin::medianStationDistance() const
 {
 	std::vector<double> distance;
 
-	for (const Arrival& arr : arrivals) {
-		if ( ! arr.excluded)
+	for ( const Arrival& arr : arrivals ) {
+		if ( !arr.excluded ) {
 			distance.push_back(arr.distance);
+		}
 	}
 
-	if (distance.size() == 0)
+	if ( distance.empty() ) {
 		return -1;
+	}
 
-	return Seiscomp::Math::Statistics::median(distance);
+	return Math::Statistics::median(distance);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -407,7 +471,7 @@ void Origin::geoProperties(double &min, double &max, double &gap) const
 			azi.push_back(arr.azimuth);
 		}
 	}
-	if (azi.size() == 0) {
+	if ( azi.empty() ) {
 		// This may happen if for whatever reason all arrivals
 		// are excluded.
 		gap = 360.;
@@ -420,8 +484,8 @@ void Origin::geoProperties(double &min, double &max, double &gap) const
 
 	gap = 0.;
 
-	for ( size_t i = 0; i < azi.size()-1; ++i ) {
-		double azGap = azi[i+1]-azi[i];
+	for ( size_t i = 0; i < azi.size() - 1; ++i ) {
+		double azGap = azi[i+1] - azi[i];
 		if ( azGap > gap ) {
 			gap = azGap;
 		}
@@ -444,9 +508,10 @@ int OriginVector::mergeEquivalentOrigins(const Origin *start) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool OriginVector::find(const Origin *origin) const
 {
-	for (auto& item : *this) {
-		if (origin == item.get())
+	for ( auto& item : *this ) {
+		if ( origin == item.get() ) {
 			return true;
+		}
 	}
 
 	return false;
@@ -458,10 +523,28 @@ bool OriginVector::find(const Origin *origin) const
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Origin* OriginVector::find(const OriginID &id)
 {
-	for (auto& item: *this) {
-		if (id == item->id)
+	for ( auto& item: *this ) {
+		if ( id == item->id ) {
 			return item.get();
+		}
 	}
+
+	return nullptr;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+const Origin* OriginVector::find(const OriginID &id) const
+{
+	for ( const auto& item: *this ) {
+		if ( id == item->id ) {
+			return item.get();
+		}
+	}
+
 	return nullptr;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -473,10 +556,12 @@ Origin* OriginVector::find(const OriginID &id)
 static size_t countCommonPicks(const Origin *origin1, const Origin *origin2)
 {
 	size_t count {0};
-	for (const Arrival& arr1 : origin1->arrivals) {
-		for (const Arrival& arr2 : origin2->arrivals) {
-			if (arr1.pick == arr2.pick)
+
+	for ( const Arrival& arr1 : origin1->arrivals ) {
+		for ( const Arrival& arr2 : origin2->arrivals ) {
+			if ( arr1.pick == arr2.pick ) {
 				count++;
+			}
 		}
 	}
 
@@ -493,19 +578,21 @@ const Origin *OriginVector::bestEquivalentOrigin(const Origin *origin) const
 	const Origin *best {nullptr};
 	size_t maxCommonPickCount {0};
 
-	for (const auto& item : *this) {
+	for ( const auto& item : *this ) {
 
 		const Origin* this_origin = item.get();
 		const double max_dt = 1500;
 
-		if (std::abs(this_origin->time - origin->time) > max_dt)
+		if ( std::abs(this_origin->time - origin->time) > max_dt ) {
 			continue;
+		}
 
 		size_t commonPickCount = countCommonPicks(origin, this_origin);
-		if (commonPickCount < 3)
+		if ( commonPickCount < 3 ) {
 			continue; // FIXME: hackish
+		}
 
-		if (commonPickCount > maxCommonPickCount) {
+		if ( commonPickCount > maxCommonPickCount ) {
 			maxCommonPickCount = commonPickCount;
 			best = this_origin;
 		}
@@ -516,4 +603,8 @@ const Origin *OriginVector::bestEquivalentOrigin(const Origin *origin) const
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-}  // namespace Autoloc
+// }  // namespace DataModel
+
+}  // namespace AutolocInternal
+
+}  // namespace Seiscomp

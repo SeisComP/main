@@ -22,12 +22,13 @@
 #include <seiscomp/seismology/ttt.h>
 
 #include "util.h"
-#include "sc3adapters.h"
 #include "associator.h"
 
 using namespace std;
 
-namespace Autoloc {
+namespace Seiscomp {
+
+namespace AutolocInternal {
 
 #define AFFMIN 0.1
 
@@ -109,8 +110,8 @@ Associator::feed(const Pick* pick) {
 		return false;
 	}
 
-	static Seiscomp::TravelTimeTable ttt;
-	for (const OriginPtr& _origin : *_origins) {
+	static TravelTimeTable ttt;
+	for ( const OriginPtr& _origin : *_origins ) {
 
 		const Origin  *origin = _origin.get();
 		const Station *station = pick->station();
@@ -119,7 +120,7 @@ Associator::feed(const Pick* pick) {
 		double delta, az, baz;
 		delazi(&hypo, station, delta, az, baz);
 
-		Seiscomp::TravelTimeList *ttlist {nullptr};
+		TravelTimeList *ttlist {nullptr};
 
 		try {
 			ttlist = ttt.compute(hypo.lat, hypo.lon, std::max(hypo.dep, 0.01),
@@ -136,7 +137,7 @@ Associator::feed(const Pick* pick) {
 		// score. => Anything can be associated with it.
 		double origin_score = origin->imported ? 1000 : origin->score;
 
-		for (const Phase &phase : _phases) {
+		for ( const Phase &phase : _phases ) {
 			// TODO: make this configurable
 //			if (origin->definingPhaseCount() < (phase.code == "P" ? 8 : 30))
 			if ( origin_score < (phase.code == "P" ? 20 : 50) ) {
@@ -149,8 +150,8 @@ Associator::feed(const Pick* pick) {
 
 			double ttime = -1, x = 1;
 
-			if (phase.code == "P") {
-				for (const auto& tt: *ttlist) {
+			if ( phase.code == "P" ) {
+				for ( const auto& tt: *ttlist ) {
 					if ( delta < 114 ) {
 						// for delta < 114,
 						// always take 1st arrival
@@ -172,8 +173,8 @@ Associator::feed(const Pick* pick) {
 				x = 1 + 0.6*exp(-0.003*delta*delta) + 0.5*exp(-0.03*(15-delta)*(15-delta));
 			}
 			else {
-				for (const auto& tt: *ttlist) {
-					if (tt.phase.substr(0, phase.code.size()) == phase.code) {
+				for ( const auto& tt: *ttlist ) {
+					if ( tt.phase.substr(0, phase.code.size()) == phase.code ) {
 						ttime = tt.time;
 						break;
 					}
@@ -257,4 +258,6 @@ Associator::Phase::Phase(const string &code, double dmin, double dmax)
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-}  // namespace Autoloc
+}  // namespace AutolocInternal
+
+}  // namespace Seiscomp

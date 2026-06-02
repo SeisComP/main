@@ -12,24 +12,24 @@
  ***************************************************************************/
 
 
+#ifndef SEISCOMP_AUTOLOC_STATIONLOCATIONFILE_H_INCLUDED
+#define SEISCOMP_AUTOLOC_STATIONLOCATIONFILE_H_INCLUDED
 
-#define SEISCOMP_COMPONENT Autoloc
-#include <seiscomp/logging/log.h>
-
-#include "app.h"
+#include <seiscomp/datamodel/inventory.h>
+#include <string>
 
 
-int main(int argc, char **argv) {
-	int retCode = EXIT_SUCCESS;
+namespace Seiscomp {
 
-	// Create an own block to make sure the application object
-	// is destroyed when printing the overall objectcount
-	{
-		Seiscomp::Applications::AutolocApp app(argc, argv);
-		retCode = app.exec();
-	}
+namespace DataModel {
 
-	SEISCOMP_DEBUG("EXIT(%d), remaining objects: %d", retCode, Seiscomp::Core::BaseObject::ObjectCount());
+// Read an inventory from a text file consisting of lines of
+// network code, station code, latitude, longitude, elevation
 
-	return retCode;
-}
+Seiscomp::DataModel::Inventory* inventoryFromStationLocationFile(const std::string &filename);
+
+} // namespace DataModel
+
+} // namespace Seiscomp
+
+#endif

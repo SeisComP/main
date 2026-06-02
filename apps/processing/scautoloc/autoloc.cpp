@@ -13,6 +13,8 @@
 
 
 #define SEISCOMP_COMPONENT Autoloc
+#include <seiscomp/client/inventory.h>
+#include <seiscomp/datamodel/utils.h>
 #include <seiscomp/logging/log.h>
 #include <seiscomp/seismology/ttt.h>
 #include <algorithm>
@@ -20,87 +22,20 @@
 
 #include "util.h"
 #include "scutil.h"
-#include "sc3adapters.h"
-#include "nucleator.h"
 #include "autoloc.h"
+#include "stationlocationfile.h"
 
 
-namespace Autoloc {
+namespace Seiscomp {
+
+namespace Processing {
 
 
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-static bool valid(const Pick *pick) {
-	// don't look any further at a pick for which we don't have station info
-	if ( !pick->station() ) {
-		SEISCOMP_WARNING("Rejecting pick %s without station information",
-		                 pick->label);
-		return false;
-	}
-
-	// any non-automatic pick is considered valid anyway
-	if ( !automatic(pick) ) {
-		return true;
-	}
-
-	if ( pick->snr > 1.0E7 ) {
-		// SNR is very high, something *must* be wrong
-		SEISCOMP_WARNING("Rejecting pick %s with too high SNR of %g",
-		                 pick->label, pick->snr);
-		return false;
-	}
-
-	if ( pick->snr <= 0 ) {
-		// If SNR is 0 or negative, something *must* be wrong
-		SEISCOMP_WARNING("Rejecting pick %s with too low SNR of %g",
-		                 pick->label, pick->snr);
-		return false;
-	}
-
-	if ( !hasAmplitude(pick) ) {
-		SEISCOMP_WARNING("Rejecting pick %s without amplitude",
-		                 pick->label);
-		return false;
-	}
-
-	return true;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
+using namespace AutolocInternal;
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-static int arrivalWithLargestResidual(const Origin *origin) {
-	size_t arrivalCount = origin->arrivals.size(), imax;
-	bool found {false};
-	double resmax {0};
-	for ( size_t i=0; i<arrivalCount; i++ ) {
-		const Arrival &arr = origin->arrivals[i];
-		if (arr.excluded)
-			continue;
-
-		double absres = std::abs(arr.residual);
-		if ( absres > resmax ) {
-			resmax = absres;
-			imax = i;
-			found = true;
-		}
-	}
-
-	if ( !found ) {
-		return -1;
-	}
-
-	return imax;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Autoloc3::Autoloc3() {
-	_now = _nextCleanup = 0;
+Autoloc::Autoloc() {
 	_associator.setOrigins(&_origins);
 	_relocator.setMinimumDepth(_config.minimumDepth);
 }
@@ -110,15 +45,17 @@ Autoloc3::Autoloc3() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Autoloc3::~Autoloc3() {
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+bool Autoloc::init() {
+	if ( !scinventory ) {
+		SEISCOMP_ERROR("Missing SeisComP Inventory");
+		return false;
+	}
 
+	if ( !scconfig ) {
+		SEISCOMP_WARNING("Missing SeisComP Config");
+		// return false;
+	}
 
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::init() {
 	_relocator.setSeiscompConfig(_config.scconfig);
 	if ( !_relocator.init() ) {
 		SEISCOMP_ERROR("Autoloc::init(): Failed to initialize relocator");
@@ -127,10 +64,11 @@ bool Autoloc3::init() {
 
 	_relocator.setMinimumDepth(_config.minimumDepth);
 
-	if ( !_config.staConfFile.empty()) {
+	if ( !_config.staConfFile.empty() ) {
 		SEISCOMP_DEBUG_S("Reading station config from file " + _config.staConfFile);
 
-		if ( !_stationConfig.read(_config.staConfFile) ) {
+		_stationConfig.setFilename(_config.staConfFile);
+		if ( !_stationConfig.read() ) {
 			return false;
 		}
 	}
@@ -151,7 +89,53 @@ bool Autoloc3::init() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::dumpState() const {
+bool Autoloc::initOneStation(const DataModel::WaveformStreamID &wfid, const Core::Time &time) {
+	// Have we configured this stream already? If yes -> nothing to do.
+	std::string key = wfid.networkCode() + "." + wfid.stationCode();
+	if ( _stations.find(key) != _stations.end() ) {
+		return true;
+	}
+
+	const DataModel::Station *station = DataModel::getStation(scinventory, wfid.networkCode(), wfid.stationCode(), time);
+	if ( station ) {
+		const DataModel::Network *network = DataModel::Network::Cast(station->parent());
+
+		std::string epochStart="unset", epochEnd="unset";
+
+		try {
+			epochStart = station->start().toString("%FT%TZ");
+		}
+		catch ( ... ) { }
+
+		try {
+			epochEnd = station->end().toString("%FT%TZ");
+		}
+		catch ( ... ) { }
+
+		SEISCOMP_DEBUG("Station %s %s epoch %s ... %s",
+		               network->code(),
+		               station->code(),
+		               epochStart,
+		               epochEnd);
+
+		AutolocInternal::Station *sta = new AutolocInternal::Station(station);
+		setStation(sta);
+	}
+	else {
+		SEISCOMP_WARNING("%s not found in station inventory", key);
+		return false;
+	}
+
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Autoloc::dumpState() const {
 	for ( const auto& item: _origins ) {
 		const Origin *origin = item.get();
 		SEISCOMP_INFO_S(printOneliner(origin));
@@ -163,9 +147,263 @@ void Autoloc3::dumpState() const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_report(const Origin *origin) {
+bool Autoloc::feed(Seiscomp::DataModel::Pick *scpick) {
+	try {
+		const Core::Time &creationTime = scpick->creationInfo().creationTime();
+		sync(creationTime);
+	}
+	catch ( ... ) {
+		SEISCOMP_WARNING("Pick %s: creation time is not set", scpick->publicID());
+	}
+
+	std::string status = "unset";
+	try {
+		status = scpick->evaluationStatus().toString();
+	}
+	catch ( ... ) {}
+
+	if ( status == "rejected" && !_config.allowRejectedPicks ) {
+		SEISCOMP_INFO("Ignoring pick %s due to evaluation status 'rejected'", scpick->publicID(), status);
+		return false;
+	}
+
+	std::string mode = "unset";
+	try {
+		mode = scpick->evaluationMode().toString();
+	}
+	catch ( ... ) {}
+
+	SEISCOMP_INFO("Processing pick %s with evaluation mode/status = '%s'/'%s'",
+	              scpick->publicID(), mode, status);
+	SEISCOMP_INFO_S("  + label:  " + pickLabel(scpick));
+
+	if ( mode == "unset" ) {
+		SEISCOMP_DEBUG("Pick %s: setting evaluation mode from '%s' to 'automatic'",
+		               scpick->publicID(), mode);
+		scpick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
+	}
+
+	const int priority = _authorPriority(objectAuthor(scpick));
+	if ( priority == 0 ) {
+		SEISCOMP_INFO("  + ignoring pick since author is '%s'", objectAuthor(scpick));
+		return false;
+	}
+
+	// Configure station if needed
+	if ( !initOneStation(scpick->waveformID(), scpick->time().value()) ) {
+		return false;
+	}
+
+	AutolocInternal::PickPtr pick = new AutolocInternal::Pick(scpick);
+	if ( !pick ) {
+		SEISCOMP_INFO("  + ignoring pick from SC");
+		return false;
+	}
+
+	if ( _config.offline || _config.playback ) {
+		timeStamp();
+	}
+
+	return feed(pick.get());
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Autoloc::feed(Seiscomp::DataModel::Amplitude *scampl) {
+	const std::string &atype  = scampl->type();
+	const std::string &pickID = scampl->pickID();
+
+	AutolocInternal::Pick *pick = (AutolocInternal::Pick *) Processing::Autoloc::pick(pickID);
+	if ( !pick ) {
+		SEISCOMP_INFO("  + ignoring amplitude since reference pick cannot be found");
+		return false;
+	}
+
+	try {
+		// note that for testing it is allowed to use the same amplitude as
+		// _config.amplTypeSNR and _config.amplTypeAbs  -> no 'else if' here
+		if ( atype == _config.amplTypeSNR ) {
+			pick->snr = scampl->amplitude().value();
+		}
+		if ( atype == _config.amplTypeAbs ) {
+			pick->amp = scampl->amplitude().value();
+			pick->per = (_config.amplTypeAbs == "mb") ? scampl->period().value() : 1;
+		}
+	}
+	catch ( ... ) {
+		SEISCOMP_INFO("  + ignoring amplitude");
+		return false;
+	}
+
+	return Processing::Autoloc::feed(pick);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Autoloc::feed(Seiscomp::DataModel::Origin *scorigin) {
+	double lat = scorigin->latitude().value();
+	double lon = scorigin->longitude().value();
+	double dep = scorigin->depth().value();
+	double time = double(scorigin->time().value() - Core::Time());
+
+	AutolocInternal::Origin *origin = new AutolocInternal::Origin(lat, lon, dep, time);
+
+	try {
+		origin->hypocenter.laterr = 0.5 * (scorigin->latitude().lowerUncertainty()
+		                        + scorigin->latitude().upperUncertainty());
+	}
+	catch ( ... ) {
+		try {
+			origin->hypocenter.laterr = scorigin->latitude().uncertainty();
+		}
+		catch ( ... ) {
+			origin->hypocenter.laterr = 0;
+		}
+	}
+
+	try {
+		origin->hypocenter.lonerr = 0.5 * (scorigin->longitude().lowerUncertainty()
+		                        + scorigin->longitude().upperUncertainty());
+	}
+	catch ( ... ) {
+		try {
+			origin->hypocenter.lonerr = scorigin->longitude().uncertainty();
+		}
+		catch ( ... ) {
+			origin->hypocenter.lonerr = 0;
+		}
+	}
+
+	try {
+		origin->hypocenter.deperr = 0.5 * (scorigin->depth().lowerUncertainty()
+		                        + scorigin->depth().upperUncertainty());
+	}
+	catch ( ... ) {
+		try {
+			origin->hypocenter.deperr = scorigin->depth().uncertainty();
+		}
+		catch ( ... ) {
+			origin->hypocenter.deperr = 0;
+		}
+	}
+
+	try {
+		origin->timeerr = 0.5 * (scorigin->time().lowerUncertainty()
+		                         + scorigin->time().upperUncertainty());
+	}
+	catch ( ... ) {
+		try {
+			origin->timeerr = scorigin->time().uncertainty();
+		}
+		catch ( ... ) {
+			origin->timeerr = 0;
+		}
+	}
+
+	size_t arrivalCount = scorigin->arrivalCount();
+	for ( size_t i = 0; i < arrivalCount; i++ ) {
+		const std::string &pickID = scorigin->arrival(i)->pickID();
+		const AutolocInternal::Pick *pick {Autoloc::pick(pickID)};
+		if ( !pick ) {
+			// FIXME: This may also happen after Autoloc cleaned up older picks, so the pick isn't available any more!
+			SEISCOMP_ERROR_S("Pick " + pickID + " not found in internal pick pool - SKIPPING this pick");
+			continue;
+		}
+
+		AutolocInternal::Arrival arr(pick /* , const std::string &phase="P", double residual=0 */ );
+		try {
+			arr.residual = scorigin->arrival(i)->timeResidual();
+		}
+		catch ( ... ) {
+			arr.residual = 0;
+			SEISCOMP_WARNING("got arrival with timeResidual not set");
+		}
+
+		try {
+			arr.distance = scorigin->arrival(i)->distance();
+		}
+		catch ( ... ) {
+			arr.distance = 0;
+			SEISCOMP_WARNING("got arrival with distance not set");
+		}
+
+		try {
+			arr.azimuth  = scorigin->arrival(i)->azimuth();
+		}
+		catch ( ... ) {
+			arr.azimuth = 0;
+			SEISCOMP_WARNING("got arrival with azimuth not set");
+		}
+
+		if ( scorigin->evaluationMode() == DataModel::MANUAL ) {
+			// For manual origins we do allow secondary phases like pP
+			arr.phase = scorigin->arrival(i)->phase();
+
+			try {
+				if ( !scorigin->arrival(i)->timeUsed() ) {
+					arr.excluded = AutolocInternal::Arrival::ManuallyExcluded;
+				}
+			}
+			catch ( ... ) {
+				// In a manual origin in which the time is not
+				// explicitly used we treat the arrival as if
+				// it was explicitly excluded.
+				arr.excluded = AutolocInternal::Arrival::ManuallyExcluded;
+			}
+		}
+
+		origin->arrivals.push_back(arr);
+	}
+
+	origin->publicID = scorigin->publicID();
+	std::string dtype = depthType(scorigin);
+
+	// FIXME: In scolv the Origin::depthType is not set!
+	if ( dtype == "from location" ) {
+		origin->depthType = AutolocInternal::Origin::DepthFree;
+	}
+	else if ( dtype == "operator assigned" ) {
+		origin->depthType = AutolocInternal::Origin::DepthManuallyFixed;
+	}
+	else if ( dtype == "unset" ) {
+		SEISCOMP_WARNING("Origin::depthType is not set!");
+		std::string emode = evaluationMode(scorigin);
+		if ( emode == "manual" && _config.adoptManualDepth ) {
+			// This is a hack! We cannot know wether the operator
+			// assigned a depth manually, but we can assume the
+			// depth to be opperator approved and this is better
+			// than nothing.
+			// TODO: Make this behavior configurable?
+			origin->depthType = AutolocInternal::Origin::DepthManuallyFixed;
+			SEISCOMP_WARNING("Treating depth as if it was manually fixed");
+		}
+		else {
+			origin->depthType = AutolocInternal::Origin::DepthFree;
+			SEISCOMP_WARNING("Leaving depth free");
+		}
+	}
+
+	// Mark and log imported origin
+	origin->imported = ( objectAgencyID(scorigin) != _config.agencyID );
+	SEISCOMP_INFO_S(summary(scorigin));
+
+	return feed(origin);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Autoloc::_report(DataModel::Origin *scorigin) {
 	// This is a dummy. Replace it by something suitable.
-	SEISCOMP_INFO_S(" OUT " + printOneliner(origin));
+	SEISCOMP_INFO_S(" OUT " + summary(scorigin));
 
 	return true;
 }
@@ -175,7 +413,7 @@ bool Autoloc3::_report(const Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::report() {
+bool Autoloc::report() {
 	for ( OriginVector::iterator
 	     it = _newOrigins.begin(); it != _newOrigins.end(); ) {
 
@@ -200,13 +438,13 @@ bool Autoloc3::report() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::_flush() {
-	Time t = now();
+void Autoloc::_flush() {
+	Time t { now() };
 	std::vector<OriginID> ids;
 
 	int dnmax = _config.publicationIntervalPickCount;
 
-	for (auto& item: _outgoing) {
+	for ( auto& item: _outgoing ) {
 		const Origin *origin = item.second.get();
 		double dt = t - _nextDue[origin->id];
 		int dn = dnmax;
@@ -220,8 +458,8 @@ void Autoloc3::_flush() {
 		}
 	}
 
-	for ( const OriginID id : ids ) {
-		const Origin *origin = _outgoing[id].get();
+	for ( OriginID id : ids ) {
+		Origin *origin = _outgoing[id].get();
 
 		if ( !_publishable(origin) ) {
 			_outgoing.erase(id);
@@ -231,16 +469,16 @@ void Autoloc3::_flush() {
 		// Test if we have previously sent an earlier version of this origin.
 		// If so, test if the current version has improved.
 		// TODO: perhaps move this test to _publishable()
-		if (_lastSent.find(id) != _lastSent.end()) {
+		if ( _lastSent.find(id) != _lastSent.end() ) {
 			const Origin *previous = _lastSent[id].get();
 
 			// The main criterion is definingPhaseCount. However,
 			// there may be origins with additional but excluded phases
 			// like PKP and such origins should also be sent.
-			if (origin->definingPhaseCount() <= previous->definingPhaseCount()) {
+			if ( origin->definingPhaseCount() <= previous->definingPhaseCount() ) {
 
-				if (origin->arrivals.size() <= previous->arrivals.size() ||
-				    now() - previous->timestamp < 150) {  // TODO: make this configurable
+				if ( origin->arrivals.size() <= previous->arrivals.size() ||
+				     now() - sctime(previous->timestamp) < Core::TimeSpan(150.) ) {  // TODO: make this configurable
 					// ... some more robust criteria perhaps
 					SEISCOMP_INFO("Origin %ld not sent (no improvement)", origin->id);
 					_outgoing.erase(id);
@@ -249,7 +487,19 @@ void Autoloc3::_flush() {
 			}
 		}
 
-		if ( _report(origin) ) {
+		SEISCOMP_INFO("Reporting origin %ld\n%s", origin->id, AutolocInternal::printDetailed(origin));
+
+		DataModel::OriginPtr scorigin = AutolocInternal::Util::convertToSC(origin, _config.author, _config.agencyID, _config.reportAllPhases);
+		scorigin->creationInfo().setCreationTime(now());
+
+		SEISCOMP_INFO_S(summary(scorigin.get()));
+
+		if ( _report(scorigin.get()) ) {
+			SEISCOMP_INFO("Reported origin %ld", origin->id);
+		}
+
+		if ( true ) {
+			SEISCOMP_INFO_S(AutolocInternal::printOrigin(origin, false));
 			SEISCOMP_INFO_S(" OUT " + printOneliner(origin));
 
 			// Compute the time at which the next origin in this
@@ -266,14 +516,14 @@ void Autoloc3::_flush() {
 				B  = _config.publicationIntervalTimeIntercept,
 				dt = A*N + B;
 
-//			if (dt < 0 || _config.playback) {
+//			if ( dt < 0 || _config.playback ) {
 			if ( dt < 0 ) {
 				_nextDue[id] = 0;
-				SEISCOMP_INFO("Autoloc3::_flush() origin=%ld  next due IMMEDIATELY", id);
+				SEISCOMP_INFO("Autoloc::_flush() origin=%ld  next due IMMEDIATELY", id);
 			}
 			else {
 				_nextDue[id] = t + dt;
-				SEISCOMP_INFO("Autoloc3::_flush() origin=%ld  next due: %s", id, time2str(_nextDue[id]));
+				SEISCOMP_INFO("Autoloc::_flush() origin=%ld  next due: %s", id, time2str(_nextDue[id]));
 			}
 
 			// Save a copy of the origin to preserve the state of the last sent origin.
@@ -290,7 +540,7 @@ void Autoloc3::_flush() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_blacklisted(const Pick *pick) const {
+bool Autoloc::_blacklisted(const Pick *pick) const {
 	if ( _blacklist.find(pick) == _blacklist.end() ) {
 		// TODO to be implemented
 		return false;
@@ -304,7 +554,7 @@ bool Autoloc3::_blacklisted(const Pick *pick) const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::_setBlacklisted(const Pick *pick, bool yes) {
+void Autoloc::_setBlacklisted(const Pick *pick, bool yes) {
 	if ( yes ) {
 		SEISCOMP_INFO_S("process pick BLACKLISTING " + pick->label + " (manual pick)");
 		_blacklist.insert(pick);
@@ -319,17 +569,17 @@ void Autoloc3::_setBlacklisted(const Pick *pick, bool yes) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_addStationInfo(const Pick *pick) {
+bool Autoloc::_addStationInfo(const Pick *pick) {
 	if ( pick->station() ) {
 		return true; // nothing to do
 	}
 
-	const std::string net_sta = pick->net + "." + pick->sta;
+	const std::string net_sta = pick->net() + "." + pick->sta();
 	StationMap::const_iterator it = _stations.find(net_sta);
 	if ( it == _stations.end() ) {
 		// remember missing stations already complained about
-		if (_missingStations.find(net_sta) == _missingStations.end()) {
-			SEISCOMP_ERROR_S("Autoloc3: MISSING STATION "+net_sta);
+		if ( _missingStations.find(net_sta) == _missingStations.end() ) {
+			SEISCOMP_ERROR_S("Autoloc: MISSING STATION "+net_sta);
 			_missingStations.insert(net_sta);
 		}
 		return false;
@@ -343,7 +593,7 @@ bool Autoloc3::_addStationInfo(const Pick *pick) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-const Pick* Autoloc3::pick(const std::string &id) const {
+const Pick* Autoloc::pick(const std::string &id) const {
 	PickPool::const_iterator it = pickPool.find(id);
 	if ( it != pickPool.end() ) {
 		return it->second.get();
@@ -357,12 +607,24 @@ const Pick* Autoloc3::pick(const std::string &id) const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Time Autoloc3::now() {
+void Autoloc::sync(const Core::Time &t) {
+	if ( _config.playback && t > _now ) {
+		_now = t;
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Core::Time Autoloc::now() const {
 	if ( _config.playback ) {
 		return _now;
 	}
 
-	return Time(Seiscomp::Core::Time::UTC());
+	return Core::Time::UTC();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -370,18 +632,27 @@ Time Autoloc3::now() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_store(const Pick *pick) {
+void Autoloc::timeStamp() const {
+	SEISCOMP_DEBUG("Timestamp: %s", now().toString("%F %T.%f"));
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Autoloc::_store(const Pick *pick) {
 	if ( !_addStationInfo(pick) ) {
 		SEISCOMP_DEBUG_S("missing station info for pick " + pick->label);
 		return false;
 	}
 
-	if ( !pick->station()) {
+	if ( !pick->station() ) {
 		SEISCOMP_DEBUG_S("missing station info for pick " + pick->label);
 		return false;
 	}
 
-	if ( automatic(pick) && !pick->station()->used) {
+	if ( automatic(pick) && !pick->station()->enabled ) {
 		// This means that this pick is completely ignored!
 		// Nevertheless, we might want to loosely associate it to an
 		// origin, i.e. associate it without using it for location
@@ -392,18 +663,14 @@ bool Autoloc3::_store(const Pick *pick) {
 	}
 
 	// pick too old? -> ignored completely
-	if ( pick->time < now() - _config.maxAge ) {
+	if ( pick->scpick->time().value() < now() - Core::TimeSpan(_config.maxAge) ) {
 		SEISCOMP_DEBUG_S("ignoring old pick " + pick->label);
 		return false;
 	}
 
-	// adjust time in offline mode
-	if (_config.playback && pick->time > _now)
-		_now = pick->time;
-
 	// physically store the pick
-	if ( !Autoloc3::pick(pick->id) )
-		pickPool[ pick->id ] = pick;
+	if ( !Autoloc::pick(pick->id()) )
+		pickPool[ pick->id() ] = pick;
 
 	return true;
 }
@@ -413,9 +680,9 @@ bool Autoloc3::_store(const Pick *pick) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::feed(const Pick *pick) {
+bool Autoloc::feed(const Pick *pick) {
 	_newOrigins.clear();
-	bool isnew = !Autoloc3::pick(pick->id);
+	bool isnew = !Autoloc::pick(pick->id());
 
 	if ( !_store(pick) ) {
 		return false;
@@ -435,7 +702,7 @@ bool Autoloc3::feed(const Pick *pick) {
 	}
 
 	// A previous version of the new pick might have been updated in _store();
-	bool status = _process( Autoloc3::pick(pick->id));
+	bool status = _process( Autoloc::pick(pick->id()));
 	cleanup();
 	if ( !status ) {
 		return false;
@@ -450,37 +717,46 @@ bool Autoloc3::feed(const Pick *pick) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Origin *Autoloc3::_findMatchingOrigin(const Origin *origin) {
+Origin *Autoloc::_findMatchingOrigin(const Origin *origin) {
 	// find commonalities with existing origins
 	// * identical picks
 	// * similar picks (same stream but slightly different times)
 	// replace similar picks by the ones found in the new origin, incl. weight
+
+	// It makes no sense to compare origins too different in time.
+	// This maximum time difference is for teleseismic worst case
+	// where we might need to associate origins wrongly located
+	// e.g. by using PKP as P where time differences of up to
+	// 20 minutes are possible. This time difference may be made
+	// configurable but this is not crucial.
+	double maxOriginTimeDifference {20*60};
+
 	Origin *found = 0;
 	size_t bestmatch = 0;
 
 	// iterate over existing origins
-	for (auto& item : _origins) {
+	for ( auto& item : _origins ) {
 		Origin *existing = item.get();
 
-		// It makes no sense to compare origins too different in time. This maximum time difference is for teleseismic worst case where we might need to associate origins wrongly located e.g. by using PKP as P where time differences of up to 20 minutes are possible. This time difference may be made configurable but this is not crucial.
-		if (std::abs(origin->time - existing->time) > 20*60)
+		if ( std::abs(origin->time - existing->time) > maxOriginTimeDifference ) {
 			continue;
+		}
 
 		size_t identical=0, similar=0;
 
 		// go through this origin and look for manual picks
-		for (size_t i1=0; i1<existing->arrivals.size(); i1++) {
+		for ( size_t i1 = 0; i1 < existing->arrivals.size(); i1++ ) {
 			const Pick *pick = existing->arrivals[i1].pick.get();
 
 			if ( !pick->station() ) {
-				const std::string net_sta = pick->net + "." + pick->sta;
+				const std::string net_sta = pick->net() + "." + pick->sta();
 				SEISCOMP_WARNING("Pick %3d   %s    %s  without station info",i1,
 				                 net_sta, pick->label);
 				continue;
 			}
 
 			// try to find a matching pick in our newly fed origin
-			for (size_t i2=0; i2<origin->arrivals.size(); i2++) {
+			for ( size_t i2 = 0; i2 < origin->arrivals.size(); i2++ ) {
 				const Pick *pick2 = origin->arrivals[i2].pick.get();
 
 				// identical picks?
@@ -504,9 +780,9 @@ Origin *Autoloc3::_findMatchingOrigin(const Origin *origin) {
 			}
 		}
 
-		if (identical+similar > 0) {
-			if (identical+similar > bestmatch) {
-				bestmatch = identical+similar;
+		if ( identical + similar > 0 ) {
+			if ( identical + similar > bestmatch ) {
+				bestmatch = identical + similar;
 				found = existing;
 			}
 		}
@@ -520,7 +796,7 @@ Origin *Autoloc3::_findMatchingOrigin(const Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::feed(Origin *origin) {
+bool Autoloc::feed(Origin *origin) {
 	if ( origin->imported ) {
 		// external origin from trusted agency for passive association only
 		_store(origin);
@@ -586,7 +862,7 @@ bool Autoloc3::feed(Origin *origin) {
 					break;
 				}
 			}
-			if (have) {
+			if ( have ) {
 				// skip this arrival
 				continue;
 			}
@@ -599,14 +875,14 @@ bool Autoloc3::feed(Origin *origin) {
 		found->arrivals = arrivals;
 		found->id = id;
 
-		switch (manualOrigin->depthType) {
-		case Origin::DepthManuallyFixed:
-			_relocator.useFixedDepth(true);
-			break;
-		case Origin::DepthPhases:
-		case Origin::DepthFree:
-		default:
-			_relocator.useFixedDepth(false);
+		switch ( manualOrigin->depthType ) {
+			case Origin::DepthManuallyFixed:
+				_relocator.useFixedDepth(true);
+				break;
+			case Origin::DepthPhases:
+			case Origin::DepthFree:
+			default:
+				_relocator.useFixedDepth(false);
 		}
 
 		// TODO: consider making this relocation optional
@@ -618,7 +894,7 @@ bool Autoloc3::feed(Origin *origin) {
 			cleanup();
 		}
 		else {
-			SEISCOMP_WARNING("RELOCATION FAILED @Autoloc3::feed(Origin*) (not critical)");
+			SEISCOMP_WARNING("RELOCATION FAILED @Autoloc::feed(Origin*) (not critical)");
 		}
 	}
 	else {
@@ -634,14 +910,14 @@ bool Autoloc3::feed(Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-int Autoloc3::_authorPriority(const std::string &author) const {
+int Autoloc::_authorPriority(const std::string &author) const {
 	if ( _config.authors.empty() ) {
 		return 1;
 	}
 
-	int n = _config.authors.size();
-	for (int i=0; i<n; i++) {
-		if (_config.authors[i] == author) {
+	size_t n = _config.authors.size();
+	for ( size_t i = 0; i < n; i++ ) {
+		if ( _config.authors[i] == author ) {
 			return n-i;
 		}
 	}
@@ -654,7 +930,7 @@ int Autoloc3::_authorPriority(const std::string &author) const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-double Autoloc3::_score(const Origin *origin) const {
+double Autoloc::_score(const Origin *origin) const {
 	// compute the score of the origin as if there were no other origins
 	double score = originScore(origin);
 
@@ -668,37 +944,10 @@ double Autoloc3::_score(const Origin *origin) const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_log(const Pick *pick) {
-	if ( _pickLogFilePrefix != "" ) {
-		Time now = Time(Seiscomp::Core::Time::UTC());
-		setPickLogFileName(_pickLogFilePrefix+"."+sctime(now).toString("%F"));
-	}
-
-	if ( !_pickLogFile.good() ) {
-		return false;
-	}
-
-	char line[200];
-	std::string loc = pick->loc == "" ? "__" : pick->loc;
-	sprintf(line, "%s %-2s %-6s %-3s %-2s %6.1f %10.3f %4.1f %c %s",
-	      time2str(pick->time).c_str(),
-	      pick->net.c_str(), pick->sta.c_str(), pick->cha.c_str(), loc.c_str(),
-	      pick->snr, pick->amp, pick->per, modeFlag(pick),
-	      pick->label.c_str());
-	_pickLogFile << line << std::endl;
-
-	SEISCOMP_INFO("%s", line);
-
-	return true;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 static bool mightBeAssociated(const Pick *pick, const Origin *origin) {
-	// a crude first check
+	// A very crude first check whether a pick might be related to the origin.
+	// This is for teleseismic applications where PKP needs to be taken into
+	// account.
 	double dt = pick->time - origin->time;
 	if ( dt < -10 || dt > 1300 ) {
 		return false;
@@ -711,7 +960,7 @@ static bool mightBeAssociated(const Pick *pick, const Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_tooLowSNR(const Pick *pick) const {
+bool Autoloc::_tooLowSNR(const Pick *pick) const {
 	if ( !automatic(pick) ) {
 		return false;
 	}
@@ -728,7 +977,7 @@ bool Autoloc3::_tooLowSNR(const Pick *pick) const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_tooManyRecentPicks(const Pick *newPick) const {
+bool Autoloc::_tooManyRecentPicks(const Pick *newPick) const {
 	if ( !automatic(newPick) ) {
 		return false;
 	}
@@ -761,7 +1010,7 @@ bool Autoloc3::_tooManyRecentPicks(const Pick *newPick) const {
 			continue;
 		}
 
-		if ( newPick->origin() ) { // associated?
+		if ( newPick->originID() ) { // associated?
 			continue;
 		}
 
@@ -804,13 +1053,13 @@ bool Autoloc3::_tooManyRecentPicks(const Pick *newPick) const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Origin *Autoloc3::merge(const Origin *origin1, const Origin *origin2) {
+Origin *Autoloc::merge(const Origin *origin1, const Origin *origin2) {
 	// The second origin is merged into the first. A new instance
 	// is returned that has the ID of the first.
 	OriginID id = origin1->id;
 
 	// make origin1 the better origin
-	if (_score(origin2) > _score(origin1)) {
+	if ( _score(origin2) > _score(origin1) ) {
 		const Origin *tmp = origin1;
 		origin1 = origin2;
 		origin2 = tmp;
@@ -823,7 +1072,7 @@ Origin *Autoloc3::merge(const Origin *origin1, const Origin *origin2) {
 	SEISCOMP_DEBUG_S(" MRG2 " + printOneliner(origin2));
 
 	// This is a brute-force merge! Put everything into one origin.
-	for (const Arrival& arr2: origin2->arrivals) {
+	for ( const Arrival& arr2: origin2->arrivals ) {
 		// Skip pick if an arrival already references it
 		bool found = combined->findArrival(arr2.pick.get()) != -1;
 		if ( found ) {
@@ -832,9 +1081,9 @@ Origin *Autoloc3::merge(const Origin *origin1, const Origin *origin2) {
 
 		// Skip pick if origin1 already has a pick from that station
 		// for the same phase.
-		for (const Arrival &arr1: origin1->arrivals) {
-			if (arr1.pick->station() == arr2.pick->station() &&
-			    arr1.phase == arr2.phase) {
+		for ( const Arrival &arr1: origin1->arrivals ) {
+			if ( arr1.pick->station() == arr2.pick->station() &&
+			    arr1.phase == arr2.phase ) {
 				found = true;
 				break;
 			}
@@ -851,11 +1100,7 @@ Origin *Autoloc3::merge(const Origin *origin1, const Origin *origin2) {
 		               origin2->id, origin1->id,arr2.pick->label);
 	}
 
-#ifdef LOG_RELOCATOR_CALLS
-	SEISCOMP_DEBUG("RELOCATE autoloc.cpp line %d", __LINE__);
-#endif
-	// This was previously missing:
-	_relocator.useFixedDepth(false);  // TODO: extensive testing!
+	_relocator.useFixedDepth(false);
 
 	OriginPtr relo = _relocator.relocate(combined);
 	if ( !relo ) {
@@ -875,11 +1120,12 @@ Origin *Autoloc3::merge(const Origin *origin1, const Origin *origin2) {
 
 	// now see which of the temporarily excluded new arrivals have
 	// acceptable residuals
-	for (Arrival& arr : combined->arrivals) {
-		if (arr.excluded == Arrival::TemporarilyExcluded)
+	for ( Arrival& arr : combined->arrivals ) {
+		if ( arr.excluded == Arrival::TemporarilyExcluded ) {
 			arr.excluded = _residualOK(arr, 1.3, 1.8)
 				? Arrival::NotExcluded
 				: Arrival::LargeResidual;
+		}
 	}
 
 	_trimResiduals(combined);
@@ -892,9 +1138,9 @@ Origin *Autoloc3::merge(const Origin *origin1, const Origin *origin2) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_followsBiggerPick(const Pick *newPick) const {
+bool Autoloc::_followsBiggerPick(const Pick *newPick) const {
 	// Check whether this pick is within a short time after an XXL pick from the same station
-	for (auto& item : pickPool) {
+	for ( auto& item : pickPool ) {
 
 		const Pick *pick = item.second.get();
 		if ( pick == newPick ) {
@@ -926,13 +1172,21 @@ bool Autoloc3::_followsBiggerPick(const Pick *newPick) const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_perhapsPdiff(const Pick *pick) const {
-	// This is a very crude test that won't harm. if at all, only a few
+bool Autoloc::_perhapsPdiff(const Pick *pick) const {
+	// This is a very crude test that won't harm. If at all, only a few
 	// picks with low SNR following a large event are affected.
 
-	if ( pick->snr > 6 ) { // TODO: make this configurable? not very important
-		SEISCOMP_DEBUG("Ignoring pick %s with high SNR %.1f which might by Pdiff",
-		               pick->id, pick->snr);
+	// Approximate Pdiff delta range
+	const double minDeltaPdiff { 98.};
+	const double maxDeltaPdiff {120.};
+	// We don't expect Pdiff to play a role for small events, so we set
+	// a minimum score here. For any origin with lower score, no Pdiff
+	// check will be performed.
+	// Perhaps make this value configurable.
+	const double minScorePdiff {100.};
+
+	if ( pick->snr > 6 ) {  // TODO: make this configurable? not very important
+		// High SNR -> process anyway (even if it may be Pdiff)
 		return false;
 	}
 
@@ -945,19 +1199,19 @@ bool Autoloc3::_perhapsPdiff(const Pick *pick) const {
 			continue;
 		}
 
-		if ( origin->score < 100 ) { // TODO: perhaps make this configurable
+		if ( origin->score < minScorePdiff ) {
 			continue;
 		}
 
 		double delta, az, baz;
 		delazi(&(origin->hypocenter), station, delta, az, baz);
 
-		if ( delta < 98 || delta > 120 ) {
+		if ( delta < minDeltaPdiff || delta > maxDeltaPdiff ) {
 			continue;
 		}
 
-		Seiscomp::TravelTimeTable ttt;
-		Seiscomp::TravelTimeList *ttlist{nullptr};
+		TravelTimeTable ttt;
+		TravelTimeList *ttlist{nullptr};
 		try {
 			ttlist = ttt.compute(origin->hypocenter.lat,
 			                     origin->hypocenter.lon,
@@ -971,7 +1225,7 @@ bool Autoloc3::_perhapsPdiff(const Pick *pick) const {
 			continue;
 		}
 
-		const Seiscomp::TravelTime *tt;
+		const TravelTime *tt;
 		if ( (tt = getPhase(ttlist, "Pdiff")) == nullptr ) {
 			delete ttlist;
 			continue;
@@ -993,7 +1247,7 @@ bool Autoloc3::_perhapsPdiff(const Pick *pick) const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-OriginPtr Autoloc3::_xxlPreliminaryOrigin(const Pick *newPick)
+OriginPtr Autoloc::_xxlPreliminaryOrigin(const Pick *newPick)
 {
 	if ( !newPick->xxl ) {
 		return 0; // nothing else to do for this pick
@@ -1004,7 +1258,7 @@ OriginPtr Autoloc3::_xxlPreliminaryOrigin(const Pick *newPick)
 	std::vector<const Pick*> xxlpicks;
 	const Pick *earliest = newPick;
 	xxlpicks.push_back(newPick);
-	for (auto& item: pickPool) {
+	for ( auto& item: pickPool ) {
 		const Pick *oldPick = item.second.get();
 
 		if ( !oldPick->xxl ) {
@@ -1058,23 +1312,23 @@ OriginPtr Autoloc3::_xxlPreliminaryOrigin(const Pick *newPick)
 		return nullptr;
 	}
 
-	double lat = earliest->station()->lat+0.03;
-	double lon = earliest->station()->lon+0.03;
-	double tim = earliest->time-0.05;
+	double lat = earliest->station()->lat + 0.03;
+	double lon = earliest->station()->lon + 0.03;
+	double tim = earliest->time - 0.05;
 	double dep {0};
 
 	// loop over several trial depths, which are multiples of the default depth
 	std::vector<double> trialDepths;
-	for (int i=0; dep <= _config.xxlMaxDepth; i++) {
+	for ( int i = 0; dep <= _config.xxlMaxDepth; i++ ) {
 		dep = _config.defaultDepth*(1+i);
 		trialDepths.push_back(dep);
 
 		// in case of "sticky" default depth, we don't need any more trial depths
-		if (_config.defaultDepthStickiness > 0.9)
+		if ( _config.defaultDepthStickiness > 0.9 )
 			break;
 	}
 
-	for ( size_t i=0; i<trialDepths.size(); i++ ) {
+	for ( size_t i = 0; i < trialDepths.size(); i++ ) {
 		dep = trialDepths[i];
 		OriginPtr origin = new Origin(lat, lon, dep, tim);
 
@@ -1120,7 +1374,7 @@ OriginPtr Autoloc3::_xxlPreliminaryOrigin(const Pick *newPick)
 		SEISCOMP_INFO_S(printOneliner(origin.get()));
 
 		// TODO: The _depthIsResolvable part needs review and could probably be cleaned up a bit...
-		if (_config.defaultDepthStickiness < 0.9 && _depthIsResolvable(origin.get())) {
+		if ( _config.defaultDepthStickiness < 0.9 && _depthIsResolvable(origin.get()) ) {
 			_relocator.useFixedDepth(false);
 			relo = _relocator.relocate(origin.get());
 			if ( relo ) {
@@ -1146,7 +1400,7 @@ OriginPtr Autoloc3::_xxlPreliminaryOrigin(const Pick *newPick)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-OriginID Autoloc3::_newOriginID()
+OriginID Autoloc::_newOriginID()
 {
 	static OriginID id = 0;
 	return ++id;
@@ -1157,7 +1411,7 @@ OriginID Autoloc3::_newOriginID()
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-OriginPtr Autoloc3::_tryAssociate(const Pick *pick)
+OriginPtr Autoloc::_tryAssociate(const Pick *pick)
 {
 	//
 	// Try to associate the pick with existing, qualified origins.
@@ -1174,8 +1428,8 @@ OriginPtr Autoloc3::_tryAssociate(const Pick *pick)
 	const AssociationVector &associations = _associator.associations();
 
 	// logging only
-	if (associations.size() > 0)
-		SEISCOMP_INFO("resulting in %ld associations", (long int)associations.size());
+	if ( associations.size() > 0 )
+		SEISCOMP_INFO("resulting in %ld associations", (long int) associations.size());
 
 	// logging all associations
 	for ( const Association& asso : associations ) {
@@ -1188,7 +1442,7 @@ OriginPtr Autoloc3::_tryAssociate(const Pick *pick)
 	//
 
 	// first look for imported origins
-	for (const Association& asso : associations) {
+	for ( const Association& asso : associations ) {
 		if ( !(asso.origin->imported) ) {
 			continue;
 		}
@@ -1199,7 +1453,7 @@ OriginPtr Autoloc3::_tryAssociate(const Pick *pick)
 			continue;
 		}
 		int index = associatedOrigin->findArrival(pick);
-		if (index==-1) {
+		if ( index == -1 ) {
 			SEISCOMP_ERROR("THIS SHOULD NEVER HAPPEN @_tryAssociate");
 			return nullptr;
 		}
@@ -1252,7 +1506,7 @@ OriginPtr Autoloc3::_tryAssociate(const Pick *pick)
 
 		{ // logging only
 		int index = associatedOrigin->findArrival(pick);
-		if ( index==-1 ) {
+		if ( index == -1 ) {
 			SEISCOMP_ERROR("THIS SHOULD NEVER HAPPEN @_tryAssociate B");
 			return nullptr;
 		}
@@ -1272,8 +1526,9 @@ OriginPtr Autoloc3::_tryAssociate(const Pick *pick)
 		}
 	}
 
-	if (origin)
+	if ( origin ) {
 		return origin;
+	}
 
 	return 0;
 }
@@ -1283,7 +1538,7 @@ OriginPtr Autoloc3::_tryAssociate(const Pick *pick)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-OriginPtr Autoloc3::_tryNucleate(const Pick *pick) {
+OriginPtr Autoloc::_tryNucleate(const Pick *pick) {
 	if ( !_nucleator.feed(pick) ) {
 		return nullptr;
 	}
@@ -1298,10 +1553,10 @@ OriginPtr Autoloc3::_tryNucleate(const Pick *pick) {
 	OriginPtr newOrigin;
 	OriginVector candidates = _nucleator.newOrigins();
 
-	SEISCOMP_DEBUG("Autoloc3::_tryNucleate: found %d candidate origins", int(candidates.size()));
+	SEISCOMP_DEBUG("Autoloc::_tryNucleate: found %d candidate origins", int(candidates.size()));
 
 	double bestScore = 0;
-	for (auto& item: candidates) {
+	for ( auto& item: candidates ) {
 		Origin *candidate = item.get();
 
 		// We are in a dilemma here: We may have a new origin with a
@@ -1360,7 +1615,7 @@ OriginPtr Autoloc3::_tryNucleate(const Pick *pick) {
 
 	double epsilon = 1.E-07;
 	if ( std::abs(temp->rms()-rms)/rms < epsilon &&
-	    std::abs(_score(temp.get())-score)/score < epsilon ) {
+	     std::abs(_score(temp.get())-score)/score < epsilon ) {
 
 		SEISCOMP_DEBUG_S(" MRG " + printOneliner(temp.get()) + " UNCHANGED");
 	}
@@ -1398,7 +1653,7 @@ static size_t countCommonPicks(const Origin *origin1, const Origin *origin2) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Origin *Autoloc3::_findEquivalent(const Origin *origin) {
+Origin *Autoloc::_findEquivalent(const Origin *origin) {
 	Origin *result = nullptr;
 
 	for ( auto &item: _origins ) {
@@ -1425,7 +1680,7 @@ Origin *Autoloc3::_findEquivalent(const Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_process(const Pick *pick) {
+bool Autoloc::_process(const Pick *pick) {
 	// process a pick
 	if ( !valid(pick) ) {
 		SEISCOMP_DEBUG("Ignoring invalid pick %s", pick->label);
@@ -1455,7 +1710,7 @@ bool Autoloc3::_process(const Pick *pick) {
 		return false;
 	}
 
-	_log(pick);
+	_pickLog.log(pick);
 
 	if ( _blacklisted(pick) ) {
 		SEISCOMP_INFO("process pick %s blacklisted -> ignored",
@@ -1477,7 +1732,7 @@ bool Autoloc3::_process(const Pick *pick) {
 				return false;
 			}
 		}
-		SEISCOMP_INFO("Processing manual pick %s", pick->id);
+		SEISCOMP_INFO("Processing manual pick %s", pick->id());
 	}
 
 	SEISCOMP_INFO("process pick %s %s", pick->label, (pick->xxl ? " XXL":""));
@@ -1543,11 +1798,11 @@ bool Autoloc3::_process(const Pick *pick) {
 	// If up to now we haven't successfully procesed the new pick,
 	// finally try the XXL hack (if enabled).
 
-	if (_config.xxlEnabled) {
+	if ( _config.xxlEnabled ) {
 		OriginPtr origin = _xxlPreliminaryOrigin(pick);
 		if ( origin ) {
 			OriginPtr equivalent = _findEquivalent(origin.get());
-			if (equivalent) {
+			if ( equivalent ) {
 				equivalent->updateFrom(origin.get());
 				origin = equivalent;
 			}
@@ -1586,7 +1841,7 @@ static size_t depthPhaseCount(Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_setDefaultDepth(Origin *origin)
+bool Autoloc::_setDefaultDepth(Origin *origin)
 // Set origin depth to the configured default depth and relocate.
 // May be set in an origin far outside the network where depth resolution is expected to be poor,
 // or in testing that depth resolution.
@@ -1612,7 +1867,7 @@ bool Autoloc3::_setDefaultDepth(Origin *origin)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_setTheRightDepth(Origin *origin) {
+bool Autoloc::_setTheRightDepth(Origin *origin) {
 	if ( !_config.tryDefaultDepth ) {
 		return false;
 	}
@@ -1706,7 +1961,7 @@ bool Autoloc3::_setTheRightDepth(Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_epicenterRequiresDefaultDepth(const Origin *origin) const
+bool Autoloc::_epicenterRequiresDefaultDepth(const Origin *origin) const
 {
 	// TODO ;)
 	return false;
@@ -1717,14 +1972,14 @@ bool Autoloc3::_epicenterRequiresDefaultDepth(const Origin *origin) const
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::_ensureAcceptableRMS(Origin *origin, bool keepDepth) {
+void Autoloc::_ensureAcceptableRMS(Origin *origin, bool keepDepth) {
 	size_t minPhaseCount = 20; // TODO: make this configurable
 
 	if ( origin->definingPhaseCount() < minPhaseCount ) {
 		return;
 	}
 
-	if (origin->rms() <= _config.maxRMS) {
+	if ( origin->rms() <= _config.maxRMS ) {
 		return;
 	}
 
@@ -1771,7 +2026,7 @@ void Autoloc3::_ensureAcceptableRMS(Origin *origin, bool keepDepth) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::_updateScore(Origin *origin) {
+void Autoloc::_updateScore(Origin *origin) {
 	origin->score = _score(origin);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1780,7 +2035,7 @@ void Autoloc3::_updateScore(Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_rework(Origin *origin) {
+bool Autoloc::_rework(Origin *origin) {
 	// This is the minimum requirement
 	if ( origin->definingPhaseCount() < _config.minPhaseCount ) {
 		return false;
@@ -1792,7 +2047,7 @@ bool Autoloc3::_rework(Origin *origin) {
 	bool adoptManualDepth = false;
 
 	// TODO: move all depth related code to _setTheRightDepth()
-	if (_config.adoptManualDepth && (
+	if ( _config.adoptManualDepth && (
 			origin->depthType == Origin::DepthManuallyFixed ||
 			origin->depthType == Origin::DepthPhases ) ) {
 			SEISCOMP_INFO("Adopting depth of %g km from manual origin", origin->hypocenter.dep);
@@ -1803,7 +2058,7 @@ bool Autoloc3::_rework(Origin *origin) {
 			enforceDefaultDepth = true;
 			SEISCOMP_INFO("Enforcing default depth due to stickiness");
 		}
-		else if (_epicenterRequiresDefaultDepth(origin) && _setDefaultDepth(origin) ) {
+		else if ( _epicenterRequiresDefaultDepth(origin) && _setDefaultDepth(origin) ) {
 			enforceDefaultDepth = true;
 			SEISCOMP_INFO("Enforcing default depth due to epicenter location");
 		}
@@ -1833,12 +2088,12 @@ bool Autoloc3::_rework(Origin *origin) {
 	_trimResiduals(origin);  // calls _relocator
 
 	// only use nearest stations
-	while (origin->definingPhaseCount(0, _config.maxStaDist) > _config.minPhaseCount) {
+	while ( origin->definingPhaseCount(0, _config.maxStaDist) > _config.minPhaseCount ) {
 		size_t arrivalCount = origin->arrivals.size();
-		double dmax=0;
-		int imax=-1;
+		double dmax = 0;
+		int imax = -1;
 		// find the farthest used station
-		for (size_t i=0; i<arrivalCount; i++) {
+		for ( size_t i = 0; i < arrivalCount; i++ ) {
 			Arrival &arr = origin->arrivals[i];
 			if ( arr.excluded ) {
 				continue;
@@ -1850,7 +2105,7 @@ bool Autoloc3::_rework(Origin *origin) {
 		}
 
 		Arrival &arr = origin->arrivals[imax];
-		if (arr.distance < _config.maxStaDist) {
+		if ( arr.distance < _config.maxStaDist ) {
 			break;
 		}
 		arr.excluded = Arrival::StationDistance;
@@ -1873,11 +2128,11 @@ bool Autoloc3::_rework(Origin *origin) {
 	_excludeDistantStations(origin);
 	_excludePKP(origin);
 
-	if (origin->hypocenter.dep != _config.defaultDepth && origin->depthType == Origin::DepthDefault)
+	if ( origin->hypocenter.dep != _config.defaultDepth && origin->depthType == Origin::DepthDefault )
 		origin->depthType = Origin::DepthFree;
 
 	// once more (see also above)
-	if (origin->definingPhaseCount() < _config.minPhaseCount) {
+	if ( origin->definingPhaseCount() < _config.minPhaseCount ) {
 		return false;
 	}
 	return true;
@@ -1888,14 +2143,14 @@ bool Autoloc3::_rework(Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_excludePKP(Origin *origin)
+bool Autoloc::_excludePKP(Origin *origin)
 {
-	if (origin->definingPhaseCount(0,105.) < _config.minStaCountIgnorePKP)
+	if  (origin->definingPhaseCount(0,105.) < _config.minStaCountIgnorePKP )
 		// no need to do anything
 		return false;
 
 	bool relocate = false;
-	for (Arrival &arr : origin->arrivals) {
+	for ( Arrival &arr : origin->arrivals ) {
 		if ( arr.excluded ) {
 			continue;
 		}
@@ -1903,7 +2158,7 @@ bool Autoloc3::_excludePKP(Origin *origin)
 			continue;
 		}
 		// TODO/: how about PKiKP?
-		if (arr.phase == "P" || arr.phase == "PKP" /* || arr.phase == "PKiKP" */ ) {
+		if ( arr.phase == "P" || arr.phase == "PKP" /* || arr.phase == "PKiKP" */ ) {
 			// for times > 960, we expect P to be PKP
 			if ( arr.pick->time - origin->time > 960 ) {
 				arr.excluded = Arrival::UnusedPhase;
@@ -1933,12 +2188,12 @@ bool Autoloc3::_excludePKP(Origin *origin)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_excludeDistantStations(Origin *origin)
+bool Autoloc::_excludeDistantStations(Origin *origin)
 {
 	double q = 4;
 	std::vector<double> distance;
 
-	for (Arrival& arr : origin->arrivals) {
+	for ( Arrival& arr : origin->arrivals ) {
 
 		// ignore excluded arrivals except those that were previously
 		// excluded because of the distance criterion, because the
@@ -1960,10 +2215,10 @@ bool Autoloc3::_excludeDistantStations(Origin *origin)
 	sort(distance.begin(), distance.end());
 
 	int nx = 0.1*distanceCount > 2 ? int(0.1*distanceCount) : 2;
-//	double medDistance=Seiscomp::Math::Statistics::median(distance);
+//	double medDistance=Math::Statistics::median(distance);
 	double maxDistance=distance[distanceCount-nx];
 
-	for (int i=distanceCount-nx+1; i<distanceCount; i++) {
+	for ( int i = distanceCount - nx + 1; i < distanceCount; i++ ) {
 		if ( distance[i] > q*maxDistance ) {
 			break;
 		}
@@ -1971,7 +2226,7 @@ bool Autoloc3::_excludeDistantStations(Origin *origin)
 	}
 
 	int excludedCount = 0;
-	for (Arrival& arr : origin->arrivals) {
+	for ( Arrival& arr : origin->arrivals ) {
 
 		if ( arr.excluded ) {
 			continue;
@@ -1999,11 +2254,11 @@ bool Autoloc3::_excludeDistantStations(Origin *origin)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_passedFinalCheck(const Origin *origin)
+bool Autoloc::_passedFinalCheck(const Origin *origin)
 {
 // Do not execute the check here. It may result in missing origins which are
-// correct after relocation, move the check to: Autoloc3::_publishable
-//	if (origin->hypocenter.dep > _config.maxDepth) {
+// correct after relocation, move the check to: Autoloc::_publishable
+//	if ( origin->hypocenter.dep > _config.maxDepth ) {
 //		SEISCOMP_DEBUG("Ignore origin %ld: depth %.3f km > maxDepth %.3f km",
 //		               origin->id, origin->hypocenter.dep, _config.maxDepth);
 //		return false;
@@ -2022,9 +2277,9 @@ bool Autoloc3::_passedFinalCheck(const Origin *origin)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_passedFilter(Origin *origin)
+bool Autoloc::_passedFilter(Origin *origin)
 {
-	if (_config.offline || _config.test) {
+	if ( _config.offline || _config.playback ) {
 		SEISCOMP_DEBUG_S(" TRY " + printOneliner(origin));
 		SEISCOMP_DEBUG_S(printDetailed(origin));
 	}
@@ -2032,31 +2287,31 @@ bool Autoloc3::_passedFilter(Origin *origin)
 /*
 	//////////////////////////////////////////////////////////////////
 	// new distance vs. min. pick count criterion
-	int arrivalCount = origin->arrivals.size();
-	int phaseCount = origin->definingPhaseCount();
-	int consistentPhaseCount = 0;
-	for (int i=0; i<arrivalCount; i++) {
+	size_t arrivalCount = origin->arrivals.size();
+	size_t phaseCount = origin->definingPhaseCount();
+	size_t consistentPhaseCount = 0;
+	for ( size_t i = 0; i < arrivalCount; i++ ) {
 
 		Arrival &arr = origin->arrivals[i];
-		if (arr.excluded)
+		if ( arr.excluded )
 			continue;
-		if (arr.phase != "P" && arr.phase != "PKP")
+		if ( arr.phase != "P" && arr.phase != "PKP" )
 			continue;
 
 		// compute min. phase count of origin for this pick to be consistent with that origin
 		int minPhaseCount = _config.minPhaseCount + (arr.distance-arr.pick->station()->maxNucDist)*_config.distSlope;
 
 		SEISCOMP_DEBUG(" AAA origin=%d pick=%s  %d  %d", origin->id, arr.pick->label, phaseCount, minPhaseCount);
-		if (phaseCount < minPhaseCount) {
-//			if (_config.offline || _config.test)
+		if ( phaseCount < minPhaseCount ) {
+//			if ( _config.offline || _config.test )
 				SEISCOMP_DEBUG(" XXX inconsistent origin=%d pick=%s", origin->id, arr.pick->label);
 			continue;
 		}
 
 		consistentPhaseCount++;
 	}
-	if (consistentPhaseCount < _config.minPhaseCount) {
-//		if (_config.offline || _config.test)
+	if ( consistentPhaseCount < _config.minPhaseCount ) {
+//		if ( _config.offline || _config.test )
 			SEISCOMP_DEBUG_S(" XXX " + printOneliner(origin));
 		return false;
 	}
@@ -2084,28 +2339,28 @@ bool Autoloc3::_passedFilter(Origin *origin)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_publishable(const Origin *origin) const
+bool Autoloc::_publishable(const Origin *origin) const
 {
-	if (origin->quality.aziGapSecondary > _config.maxAziGapSecondary) {
+	if ( origin->quality.aziGapSecondary > _config.maxAziGapSecondary ) {
 		SEISCOMP_INFO("Origin %ld not sent (too large SGAP of %3.0f > %3.0f)",
 			      origin->id, origin->quality.aziGapSecondary, _config.maxAziGapSecondary);
 		return false;
 	}
 
-	if (origin->score < _config.minScore) {
+	if ( origin->score < _config.minScore ) {
 		SEISCOMP_INFO("Origin %ld not sent (too low score of %.1f < %.1f)",
 			      origin->id, origin->score, _config.minScore);
 		return false;
 	}
 
-	if (origin->rms() > _config.maxRMS) {
+	if ( origin->rms() > _config.maxRMS ) {
 		SEISCOMP_INFO("Origin %ld not sent (too large RMS of %.1f > %.1f)",
 			      origin->id, origin->rms(), _config.maxRMS);
 		return false;
 	}
 
 
-	if (origin->hypocenter.dep > _config.maxDepth) {
+	if ( origin->hypocenter.dep > _config.maxDepth ) {
 		SEISCOMP_INFO("Origin %ld too deep: %.1f km > %.1f km (maxDepth)",
 			      origin->id, origin->hypocenter.dep, _config.maxDepth);
 		return false;
@@ -2119,7 +2374,7 @@ bool Autoloc3::_publishable(const Origin *origin) const
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_store(Origin *origin)
+bool Autoloc::_store(Origin *origin)
 {
 	OriginPtr ptr{origin};
 
@@ -2134,11 +2389,11 @@ bool Autoloc3::_store(Origin *origin)
 	else _updateScore(origin);
 
 
-	if (depthPhaseCount(origin))
+	if ( depthPhaseCount(origin) )
 		origin->depthType = Origin::DepthPhases;
 
 	Origin *existing = origin->id ?_origins.find(origin->id) : nullptr;
-	if (existing) {
+	if ( existing ) {
 		existing->updateFrom(origin);
 		origin = existing;
 		SEISCOMP_INFO_S(" UPD " + printOneliner(origin));
@@ -2148,9 +2403,9 @@ bool Autoloc3::_store(Origin *origin)
 		_origins.push_back(origin);
 	}
 
-	// additional debug output in offline/test mode
-	if (_config.offline || _config.test)
-		SEISCOMP_DEBUG_S(printDetailed(origin));
+	// additional debug output in offline/playback mode
+	if ( _config.offline || _config.playback)
+		SEISCOMP_DEBUG_S(printDetailed(origin) );
 
 	if ( !origin->imported && origin->definingPhaseCount() >= _config.minPhaseCount ) {
 		origin->preliminary = false;
@@ -2173,7 +2428,7 @@ bool Autoloc3::_store(Origin *origin)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_associate(Origin *origin, const Pick *pick, const std::string &phase)
+bool Autoloc::_associate(Origin *origin, const Pick *pick, const std::string &phase)
 {
 	// first crude check
 	if ( !mightBeAssociated(pick, origin) ) {
@@ -2249,13 +2504,13 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const std::string &p
 
 			// Relocate once with fixed depth and in case of failure use free depth
 			bool fixed = false;
-			if (_config.defaultDepthStickiness > 0.9) {
+			if ( _config.defaultDepthStickiness > 0.9 ) {
 				fixed = true;
 				_relocator.setFixedDepth(_config.defaultDepth);
 			}
 
-//			else if (origin->depthType == Origin::DepthManuallyFixed || origin->depthType == Origin::DepthPhases) {
-			else if (origin->depthType == Origin::DepthManuallyFixed) {
+//			else if ( origin->depthType == Origin::DepthManuallyFixed || origin->depthType == Origin::DepthPhases ) {
+			else if ( origin->depthType == Origin::DepthManuallyFixed ) {
 				fixed = true;
 				_relocator.setFixedDepth(origin->hypocenter.dep);
 			}
@@ -2269,7 +2524,7 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const std::string &p
 					_relocator.setFixedDepth(origin->hypocenter.dep);
 					_relocator.useFixedDepth(true);
 					relo = _relocator.relocate(copy.get());
-					if ( !relo) { // if 2nd relocation attempt also fails
+					if ( !relo ) { // if 2nd relocation attempt also fails
 						return false;
 					}
 				}
@@ -2297,7 +2552,7 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const std::string &p
 				}
 				else {
 					double score_after_2nd_relocation = _score(relo.get());
-					if (score_after_2nd_relocation < original_score) {
+					if ( score_after_2nd_relocation < original_score ) {
 						// still no improvement
 						relo = nullptr;
 					}
@@ -2311,7 +2566,7 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const std::string &p
 					return false;
 				}
 				Arrival &arr = relo->arrivals[index];
-				if (std::abs(arr.residual) > _config.maxResidualUse) {
+				if ( std::abs(arr.residual) > _config.maxResidualUse ) {
 					// added arrival but pick is not used due to large residual
 					arr.excluded = Arrival::LargeResidual;
 					origin->add(arr);
@@ -2326,8 +2581,9 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const std::string &p
 		}
 		else {
 			copy = new Origin(*origin);
-			if (arr.excluded != Arrival::UnusedPhase)
+			if ( arr.excluded != Arrival::UnusedPhase ) {
 				arr.excluded = Arrival::DeterioratesSolution;
+			}
 			copy->add(arr);
 			origin->updateFrom(copy.get());
 		}
@@ -2345,7 +2601,7 @@ bool Autoloc3::_associate(Origin *origin, const Pick *pick, const std::string &p
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_addMorePicks(Origin *origin, bool keepDepth) {
+bool Autoloc::_addMorePicks(Origin *origin, bool keepDepth) {
 	// associate all matching picks
 	std::set<std::string> have;
 	for ( auto& arr : origin->arrivals ) {
@@ -2370,12 +2626,12 @@ bool Autoloc3::_addMorePicks(Origin *origin, bool keepDepth) {
 		}
 		if ( !_config.useManualPicks && manual(pick) ) {
 			SEISCOMP_INFO("Ignoring manual pick %s for origin %s",
-			              pick->id, origin->publicID);
+			              pick->id(), origin->publicID);
 			continue;
 		}
 		if ( ignored(pick) ) {
 			SEISCOMP_INFO("Ignoring pick %s for origin %s",
-			              pick->id, origin->publicID);
+			              pick->id(), origin->publicID);
 			continue;
 		}
 
@@ -2394,7 +2650,7 @@ bool Autoloc3::_addMorePicks(Origin *origin, bool keepDepth) {
 		if ( _blacklisted(pick) ) {
 			continue;
 		}
-//		if (pick->origin()) // associated to another origin?
+//		if ( pick->origin() ) // associated to another origin?
 //			continue;
 		if ( !_associate(origin, pick, "P") &&
 		     !_associate(origin, pick, "PKP") ) {
@@ -2418,7 +2674,7 @@ bool Autoloc3::_addMorePicks(Origin *origin, bool keepDepth) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_enhanceScore(Origin *origin, size_t maxloops) {
+bool Autoloc::_enhanceScore(Origin *origin, size_t maxloops) {
 	// TODO: make sure that the RMS doesn't increase too badly!
 	size_t count {0}, loops {0};
 
@@ -2431,10 +2687,10 @@ bool Autoloc3::_enhanceScore(Origin *origin, size_t maxloops) {
 		for ( Arrival &arr : origin->arrivals ) {
 			if ( arr.pick->xxl ) {
 				xxlcount++;
-				if ( earliestxxl==0 ) {
+				if ( earliestxxl == 0 ) {
 					earliestxxl = arr.pick;
 				}
-				else if (arr.pick->time < earliestxxl->time ) {
+				else if ( arr.pick->time < earliestxxl->time ) {
 					earliestxxl = arr.pick;
 				}
 			}
@@ -2447,15 +2703,15 @@ bool Autoloc3::_enhanceScore(Origin *origin, size_t maxloops) {
 			// earliest XXL pick
 			size_t excludedcount = 0;
 			size_t arrivalCount = origin->arrivals.size();
-			for ( size_t i=0; i < arrivalCount; i++ ) {
+			for ( size_t i = 0; i < arrivalCount; i++ ) {
 				Arrival &arr = origin->arrivals[i];
-				if ( !arr.pick->xxl && arr.pick->time < earliestxxl->time) {
+				if ( !arr.pick->xxl && arr.pick->time < earliestxxl->time ) {
 					copy->arrivals[i].excluded = Arrival::ManuallyExcluded;
 					excludedcount++;
 				}
 			}
 
-			if (excludedcount) {
+			if ( excludedcount ) {
 				bool fix = _config.defaultDepthStickiness > 0.9;
 				_relocator.useFixedDepth(fix);
 
@@ -2475,7 +2731,7 @@ bool Autoloc3::_enhanceScore(Origin *origin, size_t maxloops) {
 
 	// try to enhance score by excluding outliers
 //	while (origin->definingPhaseCount() >= _config.minPhaseCount) {
-	for (size_t loop=0; loop < maxloops; loop++) {
+	for ( size_t loop = 0; loop < maxloops; loop++ ) {
 		if ( maxloops > 0 && ++loops > maxloops ) {
 			break;
 		}
@@ -2485,7 +2741,7 @@ bool Autoloc3::_enhanceScore(Origin *origin, size_t maxloops) {
 		int    bestExcluded = -1;
 
 		size_t arrivalCount = origin->arrivals.size();
-		for (size_t i=0; i<arrivalCount; i++) {
+		for ( size_t i = 0; i < arrivalCount; i++ ) {
 
 			Arrival &arr = origin->arrivals[i];
 			if ( arr.excluded ) {
@@ -2524,7 +2780,7 @@ bool Autoloc3::_enhanceScore(Origin *origin, size_t maxloops) {
 		// new experimental criterion to avoid endless exclusions followed by
 		// inclusions of the same picks.
 		// TODO: review this criterion
-		if (bestScore < currentScore+0.2)
+		if ( bestScore < currentScore + 0.2 )
 			break;
 
 		OriginPtr copy = new Origin(*origin);
@@ -2558,8 +2814,8 @@ bool Autoloc3::_enhanceScore(Origin *origin, size_t maxloops) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::_rename_P_PKP(Origin *origin) {
-	for (Arrival &arr : origin->arrivals) {
+void Autoloc::_rename_P_PKP(Origin *origin) {
+	for ( Arrival &arr : origin->arrivals ) {
 		const Pick *pick = arr.pick.get();
 		double dt = pick->time-origin->time;
 
@@ -2577,7 +2833,7 @@ void Autoloc3::_rename_P_PKP(Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-double Autoloc3::_testFake(Origin *origin) const
+double Autoloc::_testFake(Origin *origin) const
 {
 	// Perform a series of tests to figure out of this origin is possibly
 	// a fake origin resulting from wrong phase identification. It
@@ -2596,7 +2852,7 @@ double Autoloc3::_testFake(Origin *origin) const
 
 	double maxProbability = 0;
 
-	for (auto& item : _origins) {
+	for ( auto& item : _origins ) {
 
 		const Origin *otherOrigin = item.get();
 		size_t count = 0;
@@ -2621,15 +2877,15 @@ double Autoloc3::_testFake(Origin *origin) const
 		// now, for our origin, count the possible conincidences with
 		// later phases of the other origin
 		int definingPhaseCount = origin->definingPhaseCount();
-		for (Arrival& arr : origin->arrivals) {
-//			if (arr.excluded)
+		for ( Arrival& arr : origin->arrivals ) {
+//			if ( arr.excluded )
 //				continue;
 
 			// see if otherOrigin references this pick already
 			int iarr = otherOrigin->findArrival(arr.pick.get());
 			if ( iarr != -1 ) {
 				const Arrival &oarr = otherOrigin->arrivals[iarr];
-//				if ( ! arr.excluded) {
+//				if ( !arr.excluded ) {
 					arr.excluded = Arrival::DeterioratesSolution;
 					SEISCOMP_DEBUG("_testFake: doubly associated pick %s", oarr.pick->label);
 					count ++;
@@ -2642,8 +2898,8 @@ double Autoloc3::_testFake(Origin *origin) const
 			const Station *sta = arr.pick->station();
 			double delta, az, baz, depth=otherOrigin->hypocenter.dep;
 			delazi(&(otherOrigin->hypocenter), sta, delta, az, baz);
-			Seiscomp::TravelTimeTable ttt;
-			Seiscomp::TravelTimeList *ttlist {nullptr};
+			TravelTimeTable ttt;
+			TravelTimeList *ttlist{nullptr};
 			try {
 				ttlist = ttt.compute(otherOrigin->hypocenter.lat,
 				                     otherOrigin->hypocenter.lon,
@@ -2658,15 +2914,15 @@ double Autoloc3::_testFake(Origin *origin) const
 			}
 
 			if ( delta > 30 ) {
-				const Seiscomp::TravelTime *tt = getPhase(ttlist, "PP");
+				const TravelTime *tt = getPhase(ttlist, "PP");
 				if ( tt && !arr.pick->xxl && arr.score < 1 ) {
 					double dt = arr.pick->time - (otherOrigin->time + tt->time);
-					if (dt > -20 && dt < 30) {
+					if ( dt > -20 && dt < 30 ) {
 						if ( std::abs(dt) < std::abs(arr.residual) ) {
 							arr.excluded = Arrival::DeterioratesSolution;
 						}
 						SEISCOMP_DEBUG("_testFake: %-6s %5lu %5lu PP   dt=%.1f", sta->code,origin->id, otherOrigin->id, dt);
-						count ++;
+						count++;
 						delete ttlist;
 						continue;
 					}
@@ -2674,14 +2930,15 @@ double Autoloc3::_testFake(Origin *origin) const
 			}
 
 			if ( delta > 100 ) {
-				const Seiscomp::TravelTime *tt = getPhase(ttlist, "PKP");
+				const TravelTime *tt = getPhase(ttlist, "PKP");
 				if ( tt && !arr.pick->xxl ) {
 					double dt = arr.pick->time - (otherOrigin->time + tt->time);
-					if (dt > -20 && dt < 50) { // a bit more generous for PKP
-						if (std::abs(dt) < std::abs(arr.residual))
+					if ( dt > -20 && dt < 50 ) { // a bit more generous for PKP
+						if ( std::abs(dt) < std::abs(arr.residual) ) {
 							arr.excluded = Arrival::DeterioratesSolution;
+						}
 						SEISCOMP_DEBUG("_testFake: %-6s %5lu %5lu PKP  dt=%.1f", sta->code,origin->id, otherOrigin->id, dt);
-						count ++;
+						count++;
 						delete ttlist;
 						continue;
 					}
@@ -2689,23 +2946,23 @@ double Autoloc3::_testFake(Origin *origin) const
 			}
 
 			if ( delta > 120 && delta < 142 ) {
-				const Seiscomp::TravelTime *tt = getPhase(ttlist, "SKP");
-				if ( tt && !arr.pick->xxl) {
+				const TravelTime *tt = getPhase(ttlist, "SKP");
+				if ( tt && !arr.pick->xxl ) {
 					double dt = arr.pick->time - (otherOrigin->time + tt->time);
 					if ( dt > -20 && dt < 50 ) { // a bit more generous for SKP
 						if ( std::abs(dt) < std::abs(arr.residual) ) {
 							arr.excluded = Arrival::DeterioratesSolution;
 						}
 						SEISCOMP_DEBUG("_testFake: %-6s %5lu %5lu SKP  dt=%.1f", sta->code,origin->id, otherOrigin->id, dt);
-						count ++;
+						count++;
 						delete ttlist;
 						continue;
 					}
 				}
 			}
 
-			if (delta > 100 && delta < 130) { // preliminary! TODO: need to check amplitudes
-				const Seiscomp::TravelTime *tt = getPhase(ttlist, "PKKP");
+			if ( delta > 100 && delta < 130 ) { // preliminary! TODO: need to check amplitudes
+				const TravelTime *tt = getPhase(ttlist, "PKKP");
 				if ( tt && !arr.pick->xxl ) {
 					double dt = arr.pick->time - (otherOrigin->time + tt->time);
 					if ( dt > -20 && dt < 50 ) { // a bit more generous for PKKP
@@ -2713,7 +2970,7 @@ double Autoloc3::_testFake(Origin *origin) const
 							arr.excluded = Arrival::DeterioratesSolution;
 						}
 						SEISCOMP_DEBUG("_testFake: %-6s %5lu %5lu PKKP dt=%.1f", sta->code,origin->id, otherOrigin->id, dt);
-						count ++;
+						count++;
 						delete ttlist;
 						continue;
 					}
@@ -2721,7 +2978,7 @@ double Autoloc3::_testFake(Origin *origin) const
 			}
 
 			if ( delta > 25 && depth > 60 ) {
-				const Seiscomp::TravelTime *tt = getPhase(ttlist, "pP");
+				const TravelTime *tt = getPhase(ttlist, "pP");
 				if ( tt ) {
 					double dt = arr.pick->time - (otherOrigin->time + tt->time);
 					if ( dt > -20 && dt < 30 ) {
@@ -2743,15 +3000,15 @@ double Autoloc3::_testFake(Origin *origin) const
 							arr.excluded = Arrival::DeterioratesSolution;
 						}
 						SEISCOMP_DEBUG("_testFake: %-6s %5lu %5lu sP   dt=%.1f", sta->code,origin->id, otherOrigin->id, dt);
-						count ++;
+						count++;
 						delete ttlist;
 						continue;
 					}
 				}
 			}
 
-			if (delta < 110) {
-				const Seiscomp::TravelTime *tt = getPhase(ttlist, "S"); // includes SKS!
+			if ( delta < 110 ) {
+				const TravelTime *tt = getPhase(ttlist, "S"); // includes SKS!
 				if ( tt && !arr.pick->xxl && arr.score < 1 ) {
 					double dt = arr.pick->time - (otherOrigin->time + tt->time);
 					if ( dt > -20 && dt < 30 ) {
@@ -2759,7 +3016,7 @@ double Autoloc3::_testFake(Origin *origin) const
 							arr.excluded = Arrival::DeterioratesSolution;
 						}
 						SEISCOMP_DEBUG("_testFake: %-6s %5lu %5lu S    dt=%.1f", sta->code,origin->id, otherOrigin->id, dt);
-						count ++;
+						count++;
 						delete ttlist;
 						continue;
 					}
@@ -2778,7 +3035,7 @@ double Autoloc3::_testFake(Origin *origin) const
 		}
 
 		double probability = double(count)/definingPhaseCount;
-//		if (count > maxCount)
+//		if ( count > maxCount )
 //			maxCount = count;
 		if ( probability > maxProbability ) {
 			maxProbability = probability;
@@ -2793,17 +3050,17 @@ double Autoloc3::_testFake(Origin *origin) const
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-size_t Autoloc3::_removeOutliers(Origin *origin) {
+size_t Autoloc::_removeOutliers(Origin *origin) {
 	size_t count = 0;
 
-	for (ArrivalVector::iterator
-	     it = origin->arrivals.begin(); it != origin->arrivals.end();) {
+	for ( ArrivalVector::iterator
+	      it = origin->arrivals.begin(); it != origin->arrivals.end(); ) {
 
 		Arrival &arr = *it;
 
 		if ( arr.excluded && std::abs(arr.residual) > _config.maxResidualKeep ) {
 
-			arr.pick->setOrigin(0); // disassociate the pick
+			arr.pick->setOriginID(0); // disassociate the pick
 			it = origin->arrivals.erase(it);
 			count++;
 			// TODO try to re-associate the released pick with other origin
@@ -2843,7 +3100,7 @@ static bool is_PKP_arrival(const Arrival &arr) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_residualOK(const Arrival &arr, double minFactor, double maxFactor) const {
+bool Autoloc::_residualOK(const Arrival &arr, double minFactor, double maxFactor) const {
 	double minResidual = -minFactor*_config.maxResidualUse;
 	double maxResidual =  maxFactor*_config.maxResidualUse;
 
@@ -2872,7 +3129,7 @@ bool Autoloc3::_residualOK(const Arrival &arr, double minFactor, double maxFacto
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_trimResiduals(Origin *origin){
+bool Autoloc::_trimResiduals(Origin *origin){
 	// This is expensive as it involves many relocations!
 
 	size_t arrivalCount { origin->arrivals.size() };
@@ -2880,12 +3137,12 @@ bool Autoloc3::_trimResiduals(Origin *origin){
 	double residualThreshold {_config.goodRMS + 0.5*_config.maxResidualUse};
 	residualThreshold *= 0.8;
 
-	while (origin->definingPhaseCount() >= _config.minPhaseCount) {
+	while ( origin->definingPhaseCount() >= _config.minPhaseCount ) {
 		double maxNormalizedResidual {0};
 		size_t index;
 		bool found {false};
 
-		for (size_t i=0; i<arrivalCount; i++) {
+		for ( size_t i = 0; i < arrivalCount; i++ ) {
 
 			Arrival &arr = origin->arrivals[i];
 			if ( arr.excluded ) {
@@ -2894,7 +3151,7 @@ bool Autoloc3::_trimResiduals(Origin *origin){
 
 			double normalizedResidual = arr.residual/residualThreshold;
 			// Increase penalty for positive residuals (obsolete)
-			// if (normalizedResidual > 0)
+			// if ( normalizedResidual > 0 )
 			//	normalizedResidual *= 1.5;
 
 			// If the residual is large, keep track of the largest residual
@@ -2935,14 +3192,14 @@ bool Autoloc3::_trimResiduals(Origin *origin){
 		size_t index {0};
 		bool found {false};
 
-		for (size_t i=0; i<arrivalCount; i++) {
+		for ( size_t i = 0; i < arrivalCount; i++ ) {
 
 			Arrival &arr = origin->arrivals[i];
 			if ( arr.excluded == Arrival::LargeResidual ) {
 
 				double normalizedResidual = arr.residual/residualThreshold;
 				// Increase penalty for positive residuals (obsolete)
-				// if (normalizedResidual > 0)
+				// if ( normalizedResidual > 0 )
 				//	normalizedResidual *= 1.5;
 	
 				if ( std::abs(normalizedResidual) < minNormalizedLargeResidual ) {
@@ -2959,8 +3216,9 @@ bool Autoloc3::_trimResiduals(Origin *origin){
 		}
 
 		// Stop here if smallest residual of the large-residual picks is too large.
-		if (minNormalizedLargeResidual > 1 )
+		if ( minNormalizedLargeResidual > 1 ) {
 			break;
+		}
 
 		OriginPtr copy = new Origin(*origin);
 		Arrival &arr = copy->arrivals[index];
@@ -2984,17 +3242,18 @@ bool Autoloc3::_trimResiduals(Origin *origin){
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::setStation(Station *station) {
+bool Autoloc::setStation(Station *station) {
 	std::string key = station->net + "." + station->code;
 	// if the station was configured already, there is nothing to do
-	if (_stations.find(key) != _stations.end())
+	if ( _stations.find(key) != _stations.end() ) {
 		return false;
+	}
 
-	const StationConfig::Entry &e
+	const StationConfigItem &item
 		= _stationConfig.get(station->net, station->code);
-	station->maxNucDist = e.maxNucDist;
+	station->maxNucDist = item.maxNucDist;
 	station->maxLocDist = 180;
-	station->used = e.usage > 0;
+	station->enabled = item.usage > 0;
 	_stations.insert(StationMap::value_type(key, station));
 
 	_relocator.setStation(station);
@@ -3010,7 +3269,7 @@ bool Autoloc3::setStation(Station *station) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::setLocatorProfile(const std::string &profile) {
+void Autoloc::setLocatorProfile(const std::string &profile) {
 	_nucleator.setLocatorProfile(profile);
 	_relocator.setProfile(profile);
 }
@@ -3020,8 +3279,13 @@ void Autoloc3::setLocatorProfile(const std::string &profile) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::setConfig(const Config &config) {
+void Autoloc::setConfig(const AutolocConfig &config) {
 	_config = config;
+
+	setGridFile(_config.gridConfigFile);
+
+	_pickLog.setPrefix(_config.pickLogPrefix);
+	_pickLog.setEnabled(_config.pickLogEnable);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -3029,7 +3293,78 @@ void Autoloc3::setConfig(const Config &config) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::setGridFile(const std::string &gridfile)
+void Autoloc::setConfig(const Seiscomp::Config::Config *conf) {
+	scconfig = conf;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Autoloc::initInventory()
+{
+	using namespace AutolocInternal::Util;
+
+	if ( !_config.stationLocationFile.empty() ) {
+		return readInventoryFromFile();
+	}
+
+	SEISCOMP_DEBUG("Initializing station inventory from DB");
+	Seiscomp::DataModel::Inventory *inventory = Client::Inventory::Instance()->inventory();
+
+	if ( !inventory ) {
+		SEISCOMP_ERROR("No station inventory!");
+		return false;
+	}
+
+	minimizeInventory(inventory);
+	setInventory(inventory);
+
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Autoloc::readInventoryFromFile()
+{
+	if ( _config.stationLocationFile.empty() ) {
+		SEISCOMP_ERROR("No station location file specified");
+		return false;
+	}
+
+	SEISCOMP_DEBUG_S("Initializing station inventory from file '" +
+	                 _config.stationLocationFile + "'");
+	Seiscomp::DataModel::Inventory *inventory = Seiscomp::DataModel::inventoryFromStationLocationFile(_config.stationLocationFile);
+	if ( !inventory ) {
+		SEISCOMP_WARNING("Failed to initialize station inventory from file %s",
+		                 _config.stationLocationFile);
+		return false;
+	}
+
+	setInventory(inventory);
+
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Autoloc::setInventory(const Seiscomp::DataModel::Inventory *inv) {
+	scinventory = inv;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool Autoloc::setGridFile(const std::string &gridfile)
 {
 	if ( !_nucleator.setGridFile(gridfile) ) {
 		return false;
@@ -3044,45 +3379,7 @@ bool Autoloc3::setGridFile(const std::string &gridfile)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::setPickLogFilePrefix(const std::string &fname)
-{
-	_pickLogFilePrefix = fname;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::setPickLogFileName(const std::string &fname)
-{
-	if (fname == _pickLogFileName && _pickLogFile.is_open() ) {
-		return;
-	}
-
-	if ( _pickLogFile.is_open() ) {
-		_pickLogFile.close();
-	}
-
-	_pickLogFileName = fname;
-	if ( _pickLogFileName.empty() ) {
-		return;
-	}
-
-	_pickLogFile.open(_pickLogFileName.c_str(), std::ios_base::app);
-	if ( !_pickLogFile.is_open() ) {
-		SEISCOMP_ERROR_S("Failed to open pick log file " + fname);
-		return;
-	}
-	SEISCOMP_INFO_S("Logging picks to file " + _pickLogFileName);
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::reset()
+void Autoloc::reset()
 {
 	SEISCOMP_INFO("reset requested");
 	_associator.reset();
@@ -3101,7 +3398,7 @@ void Autoloc3::reset()
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::shutdown()
+void Autoloc::shutdown()
 {
 	SEISCOMP_INFO("autoloc shutdown");
 
@@ -3109,10 +3406,10 @@ void Autoloc3::shutdown()
 	_associator.shutdown();
 	_nucleator.shutdown();
 
-	if (Pick::count()) {
+	if ( Pick::count() ) {
 		SEISCOMP_WARNING("remaining pick count   = %d (should be zero)", Pick::count());
 	}
-	if (Origin::count()) {
+	if ( Origin::count() ) {
 		SEISCOMP_WARNING("remaining origin count = %d (should be zero)", Origin::count());
 	}
 
@@ -3121,30 +3418,35 @@ void Autoloc3::shutdown()
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void Autoloc::cleanup() {
+	double extra = 1800; // extra time to add to maxAge (REVIEW!)
+	Core::Time minTime = now() - Core::TimeSpan(_config.maxAge + extra);
+
+	if ( now() < _nextCleanup ) {
+		return;
+	}
+
+	if ( _config.maxAge <= 0 ) {
+		return;
+	}
+
+	cleanup(minTime);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::cleanup(Time minTime)
-{
-	if ( !minTime) {
-		double extra = 1800; // extra time to add to maxAge (REVIEW!)
-		minTime = now() - (_config.maxAge + extra);
-
-		if ( now() < _nextCleanup ) {
-			return;
-		}
-		if ( _config.maxAge <= 0 ) {
-			return;
-		}
-	}
-
+void Autoloc::cleanup(Core::Time minTime) {
 	size_t beforePickCount   = Pick::count();
 	size_t beforeOriginCount = Origin::count();
-	size_t beforeObjectCount = Seiscomp::DataModel::PublicObject::ObjectCount();
+	size_t beforeObjectCount = DataModel::PublicObject::ObjectCount();
 
 	PickPool tempPickPool;
-	for (auto& item : pickPool) {
-		if ( item.second->time < minTime ) {
+	for ( auto& item : pickPool ) {
+		if ( sctime(item.second->time) < minTime ) {
 			continue;
 		}
 		tempPickPool[item.first] = item.second;
@@ -3152,8 +3454,8 @@ void Autoloc3::cleanup(Time minTime)
 	pickPool = tempPickPool;
 
 	OriginVector _originsTmp;
-	for (OriginPtr origin : _origins) {
-		if ( origin->time < minTime ) {
+	for ( OriginPtr origin : _origins ) {
+		if ( sctime(origin->time) < minTime ) {
 			continue;
 		}
 
@@ -3162,24 +3464,24 @@ void Autoloc3::cleanup(Time minTime)
 	_origins = _originsTmp;
 
 	std::vector<OriginID> ids;  // origins to remove
-	for (auto& item: _lastSent) {
+	for ( auto& item: _lastSent ) {
 		const Origin *origin = item.second.get();
-		if ( origin->time < minTime ) {
+		if ( sctime(origin->time) < minTime ) {
 			ids.push_back(origin->id);
 		}
 	}
-	for (OriginID id : ids) {
+	for ( OriginID id : ids ) {
 		_lastSent.erase(id);
 	}
 
 	size_t nclean = _nucleator.cleanup(minTime);
 	SEISCOMP_DEBUG("CLEANUP: Nucleator:  %ld items removed", nclean);
-	_nextCleanup = now() + _config.cleanupInterval;
+	_nextCleanup = now() + Core::TimeSpan(_config.cleanupInterval);
 	SEISCOMP_DEBUG("CLEANUP ********** pick count   = %d/%d (%d)", beforePickCount, Pick::count(), pickPool.size());
 	SEISCOMP_DEBUG("CLEANUP ********** origin count = %d/%d (%d)", beforeOriginCount, Origin::count(), _origins.size()+_lastSent.size());
-	SEISCOMP_DEBUG("CLEANUP ********** object count = %d/%d", beforeObjectCount, Seiscomp::DataModel::PublicObject::ObjectCount());
+	SEISCOMP_DEBUG("CLEANUP ********** object count = %d/%d", beforeObjectCount, DataModel::PublicObject::ObjectCount());
 
-	Seiscomp::logObjectCounts();
+	logObjectCounts();
 
 	dumpState();
 }
@@ -3189,20 +3491,20 @@ void Autoloc3::cleanup(Time minTime)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool Autoloc3::_depthIsResolvable(Origin *origin) {
-//	if (depthPhaseCount(origin)) {
+bool Autoloc::_depthIsResolvable(Origin *origin) {
+//	if ( depthPhaseCount(origin) ) {
 //		origin->depthType = Origin::DepthPhases;
 //		return true;
 //	}
 
-	if (origin->depthType == Origin::DepthDefault && origin->hypocenter.dep != _config.defaultDepth)
+	if ( origin->depthType == Origin::DepthDefault && origin->hypocenter.dep != _config.defaultDepth )
 		origin->depthType = Origin::DepthFree;
 
 	OriginPtr test = new Origin(*origin);
 	_relocator.useFixedDepth(false);
 	test->depthType = Origin::DepthFree;
 	OriginPtr relo = _relocator.relocate(test.get());
-	if ( relo)  {
+	if ( relo )  {
 		if ( relo->error.sdepth > 0. ) {
 			if ( relo->error.sdepth < 15*relo->error.stime ) {
 				return true;
@@ -3242,4 +3544,6 @@ bool Autoloc3::_depthIsResolvable(Origin *origin) {
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-}  // namespace Autoloc
+}  // namespace Processing
+
+}  // namespace Seiscomp
