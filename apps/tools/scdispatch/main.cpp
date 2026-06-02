@@ -41,10 +41,7 @@ class BaseObjectDispatcher : protected Visitor {
 		                     Client::Connection *connection, bool test)
 		: Visitor(tm)
 		, _connection(connection)
-		, _errors(0)
-		, _count(0)
-		, _test(test)
-		, _createNotifier(false) {}
+		, _test(test) {}
 
 
 	// ----------------------------------------------------------------------
@@ -59,6 +56,7 @@ class BaseObjectDispatcher : protected Visitor {
 		virtual bool operator()(Object *object) {
 			_errors = 0;
 			_count = 0;
+			_msgCount = 0;
 			_loggedObjects.clear();
 
 			if ( _createNotifier ) {
@@ -92,6 +90,8 @@ class BaseObjectDispatcher : protected Visitor {
 
 		//! Returns the number of errors while writing
 		int errors() const { return _errors; }
+
+		int messages() const { return _msgCount; }
 
 
 	// ----------------------------------------------------------------------
@@ -159,12 +159,13 @@ class BaseObjectDispatcher : protected Visitor {
 	// ----------------------------------------------------------------------
 	protected:
 		Client::Connection        *_connection;
-		int                        _errors;
-		int                        _count;
+		int                        _errors{0};
+		int                        _count{0};
+		int                        _msgCount{0};
 		RoutingTable               _routingTable;
 		bool                       _test;
 		std::set<std::string>      _loggedObjects;
-		bool                       _createNotifier;
+		bool                       _createNotifier{false};
 		int                        _ignoreTypes{};
 		NotifierMessagePtr         _outputNotifier;
 };
@@ -269,6 +270,7 @@ class ObjectDispatcherV1 : public BaseObjectDispatcher {
 			size_t counter = 0;
 			while ( counter <= 4 ) {
 				if ( _connection->send(targetIt->second, &notifierMessage) ) {
+					++_msgCount;
 					return true;
 				}
 
@@ -319,6 +321,7 @@ class ObjectDispatcherV2 : public BaseObjectDispatcher {
 	public:
 		bool operator()(Object *object) {
 			_parentID = "";
+			_msgCount = 0;
 			return BaseObjectDispatcher::operator()(object);
 		}
 
@@ -395,6 +398,7 @@ class ObjectDispatcherV2 : public BaseObjectDispatcher {
 			size_t counter = 0;
 			while ( counter <= 4 ) {
 				if ( _connection->send(targetIt->second, &notifierMessage) ) {
+					++_msgCount;
 					return _operation != OP_REMOVE;
 				}
 
@@ -437,7 +441,6 @@ class ObjectMerger : public BaseObjectDispatcher {
 		             DatabaseReader *db, bool test, bool allowRemove)
 		: BaseObjectDispatcher(Visitor::TM_TOPDOWN, connection, test)
 		, _db(db)
-		, _msgCount(0)
 		, _allowRemove(allowRemove)
 		{}
 
@@ -603,7 +606,6 @@ class ObjectMerger : public BaseObjectDispatcher {
 			if ( _test ) {
 				SEISCOMP_DEBUG("Would send %d notifiers to %s group",
 				               _msg->size(), _targetGroup.c_str());
-				++_msgCount;
 				_msg = nullptr;
 				return;
 			}
@@ -642,7 +644,6 @@ class ObjectMerger : public BaseObjectDispatcher {
 	private:
 		DatabaseReader     *_db;
 		NotifierMessagePtr  _msg;
-		int                 _msgCount;
 		string              _targetGroup;
 		string              _inputIndent;
 		bool                _allowRemove;
@@ -843,20 +844,22 @@ class DispatchTool : public Seiscomp::Client::Application {
 				return false;
 			}
 
+			auto testMode = commandline().hasOption("test");
+
 			BaseObjectDispatcher *dispatcher = nullptr;
 			if ( _notifierOperation == "merge" ) {
-				dispatcher = new ObjectMerger(connection(), query(), commandline().hasOption("test"), true);
+				dispatcher = new ObjectMerger(connection(), query(), testMode, true);
 			}
 			else if ( _notifierOperation == "merge-without-remove" ) {
-				dispatcher = new ObjectMerger(connection(), query(), commandline().hasOption("test"), false);
+				dispatcher = new ObjectMerger(connection(), query(), testMode, false);
 			}
 			else {
 				if ( _connection->isDeleteTreeSupported() ) {
-					dispatcher = new ObjectDispatcherV2(connection(), _operation, commandline().hasOption("test"));
+					dispatcher = new ObjectDispatcherV2(connection(), _operation, testMode);
 					SEISCOMP_INFO("Enable DeleteTree optimization");
 				}
 				else {
-					dispatcher = new ObjectDispatcherV1(connection(), _operation, commandline().hasOption("test"));
+					dispatcher = new ObjectDispatcherV1(connection(), _operation, testMode);
 				}
 			}
 
@@ -899,6 +902,9 @@ class DispatchTool : public Seiscomp::Client::Application {
 			SEISCOMP_INFO("Time needed to dispatch %d objects: %s",
 			              dispatcher->count(),
 			              (Core::Time() + timer.elapsed()).toString("%T.%f"));
+			if ( !testMode ) {
+				SEISCOMP_NOTICE("Sent %d messages", dispatcher->messages());
+			}
 
 			delete dispatcher;
 
