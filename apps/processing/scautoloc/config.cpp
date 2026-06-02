@@ -17,94 +17,25 @@
 #define SEISCOMP_COMPONENT Autoloc
 #include <seiscomp/logging/log.h>
 
-#include "autoloc.h"
+#include "config.h"
 
-using namespace std;
+namespace Seiscomp {
 
-namespace Autoloc {
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-StationConfig::StationConfig() {
-	string defaultkey = "* *";
-	_entry[defaultkey] = Entry();
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
+namespace Processing {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool StationConfig::read(const std::string &fname) {
-	string line;
-	string defaultkey = "* *";
-	_entry[defaultkey] = Entry();
-
-	ifstream ifile(fname.c_str());
-	if ( !ifile.good() ) {
-		SEISCOMP_ERROR_S("Failed to open station config file "+fname);
-		return false;
-	}
-
-	Entry entry;
-	while( !ifile.eof() ) {
-		getline(ifile, line);
-		line.erase(0, line.find_first_not_of(" \n\r\t"));
-		if ( line[0] == '#' ) {
-			continue;
-		}
-		char net[10], sta[10];
-		int n = sscanf(line.c_str(), "%8s %8s %d %f", net, sta, &entry.usage, &entry.maxNucDist);
-		if ( n != 4 ) {
-			break;
-		}
-		string key = string(net) + string(" ") + string(sta);
-		_entry[key] = entry;
-	}
-
-	return true;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-const StationConfig::Entry&
-StationConfig::get(const string &net, const string &sta) const {
-	vector<string> patterns;
-	patterns.push_back(net + " " + sta);
-	patterns.push_back(net + " *");
-	patterns.push_back("* " + sta);
-	patterns.push_back("* *");
-
-	for ( const string& pattern : patterns ) {
-		auto mit = _entry.find(pattern);
-		if ( mit == _entry.end() ) {
-			continue;
-		}
-
-		const Entry &e = (*mit).second;
-		SEISCOMP_DEBUG("Station %s %s  pattern %-8s config: usage=%d maxnucdist=%g",
-		               net, sta, pattern, e.usage, e.maxNucDist);
-
-		return e;
-	}
-
-	return _entry.begin()->second;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Autoloc3::Config::dump() const {
+void AutolocConfig::dump() const {
 	SEISCOMP_INFO("Configuration:");
+	SEISCOMP_INFO("  generic");
+	SEISCOMP_INFO("    author                           %s",     author);
+	SEISCOMP_INFO("    agencyID                         %s",     agencyID);
 	SEISCOMP_INFO("  locator");
 	SEISCOMP_INFO("    profile                          %s",     locatorProfile);
 	SEISCOMP_INFO("    default depth                    %g km",  defaultDepth);
 	SEISCOMP_INFO("    minimum depth                    %g km",  minimumDepth);
+	SEISCOMP_INFO("  associator");
+	SEISCOMP_INFO("    gridConfigFile                   %s",     gridConfigFile);
 	SEISCOMP_INFO("  buffer");
 	SEISCOMP_INFO("    picks kept in buffer             %.0f s", maxAge);
 	SEISCOMP_INFO("    origins kept in buffer           %.0f s", originKeep);
@@ -116,38 +47,43 @@ void Autoloc3::Config::dump() const {
 	SEISCOMP_INFO("    maxDepth                         %.1f km", maxDepth);
 	SEISCOMP_INFO("    minStaCountIgnorePKP             %d",     minStaCountIgnorePKP);
 	SEISCOMP_INFO("    defaultDepthStickiness           %g",     defaultDepthStickiness);
-	SEISCOMP_INFO("    tryDefaultDepth                  %s",     tryDefaultDepth ? "true":"false");
-	SEISCOMP_INFO("    adoptManualDepth                 %s",     adoptManualDepth ? "true":"false");
+	SEISCOMP_INFO("    tryDefaultDepth                  %s",     tryDefaultDepth ? "true" : "false");
+	SEISCOMP_INFO("    adoptManualDepth                 %s",     adoptManualDepth ? "true" : "false");
 	SEISCOMP_INFO("    minScore                         %.1f",   minScore);
 	SEISCOMP_INFO("    minPickSNR                       %.1f",   minPickSNR);
 	SEISCOMP_INFO("    goodRMS                          %.1f s", goodRMS);
-	SEISCOMP_INFO("    use manual picks                 %s",     useManualPicks ? "true":"false");
-	SEISCOMP_INFO("    use manual origins               %s",     useManualOrigins ? "true":"false");
-	SEISCOMP_INFO("    useImportedOrigins               %s",     useImportedOrigins ? "true":"false");
+	SEISCOMP_INFO("    use manual picks                 %s",     useManualPicks ? "true" : "false");
+	SEISCOMP_INFO("    use manual origins               %s",     useManualOrigins ? "true" : "false");
+	SEISCOMP_INFO("    useImportedOrigins               %s",     useImportedOrigins ? "true" : "false");
 	SEISCOMP_INFO("    publicationIntervalTimeSlope     %.2f",   publicationIntervalTimeSlope);
 	SEISCOMP_INFO("    publicationIntervalTimeIntercept %.1f",   publicationIntervalTimeIntercept);
 	SEISCOMP_INFO("    publicationIntervalPickCount     %d",     publicationIntervalPickCount);
-	SEISCOMP_INFO("    reportAllPhases                  %s",     reportAllPhases ? "true":"false");
-	SEISCOMP_INFO("    pickLogFile                      %s",     pickLogFile.size() ? pickLogFile : "pick logging is disabled");
+	SEISCOMP_INFO("    reportAllPhases                  %s",     reportAllPhases ? "true" : "false");
+	SEISCOMP_INFO("    pickLog (prefix)                 %s",     pickLogPrefix.size() ? pickLogPrefix : "(missing)");
+	SEISCOMP_INFO("    pickLogEnable                    %s",     pickLogEnable ? (pickLogPrefix.size() ? "true" : "false (missing prefix)") : "false");
 	SEISCOMP_INFO("    dynamicPickThresholdInterval     %g",     dynamicPickThresholdInterval);
-	SEISCOMP_INFO("  offline                            %s",     offline ? "true":"false");
-	SEISCOMP_INFO("  test                               %s",     test ? "true":"false");
-	SEISCOMP_INFO("  playback                           %s",     playback ? "true":"false");
+	SEISCOMP_INFO("  offline                            %s",     offline ? "true" : "false");
+	SEISCOMP_INFO("  test                               %s",     test ? "true" : "false");
+	SEISCOMP_INFO("  playback                           %s",     playback ? "true" : "false");
 // This isn't used still so we don't want to confuse the user....
-//	SEISCOMP_INFO("useImportedOrigins               %s",     useImportedOrigins ? "true":"false");
+//	SEISCOMP_INFO("useImportedOrigins               %s",     useImportedOrigins ? "true" : "false");
 
-	if ( ! xxlEnabled) {
+	if ( xxlEnabled ) {
+		SEISCOMP_INFO("  XXL feature is enabled");
+		SEISCOMP_INFO("  xxl.minPhaseCount                 %d",      xxlMinPhaseCount);
+		SEISCOMP_INFO("  xxl.minAmplitude                  %g",      xxlMinAmplitude);
+		SEISCOMP_INFO("  xxl.maxStationDistance           %.1f deg", xxlMaxStaDist);
+		SEISCOMP_INFO("  xxl.maxDepth                      %g km",   xxlMaxDepth);
+		SEISCOMP_INFO("  xxl.deadTime                      %g s",    xxlDeadTime);
+	}
+	else {
 		SEISCOMP_INFO("  XXL feature is not enabled");
 		return;
 	}
-	SEISCOMP_INFO("  XXL feature is enabled");
-	SEISCOMP_INFO("  xxl.minPhaseCount                 %d",     xxlMinPhaseCount);
-	SEISCOMP_INFO("  xxl.minAmplitude                  %g",     xxlMinAmplitude);
-	SEISCOMP_INFO("  xxl.maxStationDistance           %.1f deg", xxlMaxStaDist);
-	SEISCOMP_INFO("  xxl.maxDepth                      %g km",  xxlMaxDepth);
-	SEISCOMP_INFO("  xxl.deadTime                      %g s",  xxlDeadTime);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-}  // namespace Autoloc
+}  // namespace AutolocInternal
+
+}  // namespace Seiscomp

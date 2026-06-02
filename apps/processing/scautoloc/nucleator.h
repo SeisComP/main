@@ -28,7 +28,9 @@
 #include "locator.h"
 
 
-namespace Autoloc {
+namespace Seiscomp {
+
+namespace AutolocInternal {
 
 class Nucleator
 {
@@ -42,7 +44,7 @@ class Nucleator
 		virtual bool feed(const Pick *pick) = 0;
 		const OriginVector &newOrigins() const;
 
-		virtual int  cleanup(const Time& minTime) = 0;
+		virtual int  cleanup(const Core::Time& minTime) = 0;
 		virtual void reset() = 0;
 		virtual void shutdown() = 0;
 
@@ -109,7 +111,7 @@ class GridSearch : public Nucleator
 		// with associated amplitude can be fed into the Nucleator.
 		bool feed(const Pick *pick);
 	
-		int cleanup(const Time& minTime);
+		int cleanup(const Core::Time& minTime);
 	
 		void reset()
 		{
@@ -207,7 +209,9 @@ class GridPoint : public Seiscomp::Core::BaseObject
 {
 	public:
 		// normal grid point
-		GridPoint(double latitude, double longitude, double depth);
+		GridPoint(double latitude, double longitude, double depth,
+		          double radius=4, double dt=50, double maxdist=180,
+		          size_t nmin=6);
 
 		~GridPoint() {
 			_wrappers.clear();
@@ -219,23 +223,22 @@ class GridPoint : public Seiscomp::Core::BaseObject
 		const Origin* feed(const Pick*);
 
 		// remove all picks older than tmin
-		int cleanup(const Time& minTime);
+		int cleanup(const Core::Time& minTime);
 
 	public:
 		// void setStations(const StationMap *stations);
 
 		bool setupStation(const Station *station);
 
-	public:
+	private:
 		Hypocenter hypocenter;
 
-	public: // private:
 		// config
-		double _radius, _dt;
-		double maxStaDist;
-		size_t _nmin;
+		double _radius{4};
+		double _dt{50};
+		double maxStaDist{180};
+		size_t _nmin{6};
 
-	private:
 		std::map<std::string, StationWrapperCPtr> _wrappers;
 		std::multiset<ProjectedPick> _picks;
 };
@@ -243,6 +246,8 @@ class GridPoint : public Seiscomp::Core::BaseObject
 
 double originScore(const Origin *origin, double maxRMS=3.5, double radius=0.);
 
-}
+}  // namespace AutolocInternal
+
+}  // namespace Seiscomp
 
 #endif

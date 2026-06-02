@@ -14,8 +14,8 @@
 
 
 
-#ifndef SEISCOMP_APPLICATIONS_LOCATOR__
-#define SEISCOMP_APPLICATIONS_LOCATOR__
+#ifndef SEISCOMP_APPLICATIONS_AUTOLOC_APP_H
+#define SEISCOMP_APPLICATIONS_AUTOLOC_APP_H
 
 #include <queue>
 #include <seiscomp/datamodel/pick.h>
@@ -25,93 +25,91 @@
 #include <seiscomp/datamodel/waveformstreamid.h>
 #include <seiscomp/client/application.h>
 #include "autoloc.h"
+#include "objectqueue.h"
 
 
 namespace Seiscomp {
 
 namespace Applications {
 
-namespace Autoloc {
 
-
-class App : public Client::Application, protected ::Autoloc::Autoloc3
+class AutolocApp : public Client::Application, protected Processing::Autoloc
 {
 	public:
-		App(int argc, char **argv);
-		~App() override = default;
+		AutolocApp(int argc, char **argv);
+		~AutolocApp() override = default;
 
-	public:
-		bool feed(DataModel::Pick*);
-		bool feed(DataModel::Amplitude*);
-		bool feed(DataModel::Origin*);
-		virtual void printUsage() const override;
-
-	protected:
+	private:
+		// SeisComP standard startup
 		void createCommandLineDescription() override;
 		bool validateParameters() override;
 		bool initConfiguration() override;
-		bool initInventory();
-		// initialize one station at runtime
-		bool initOneStation(const DataModel::WaveformStreamID&, const Core::Time&);
-
-		void readHistoricEvents();
-
 		bool init() override;
 		bool run() override;
-		void done() override;
-
-		void handleMessage(Core::Message* msg) override;
-		void handleTimeout() override;
-		void handleAutoShutdown() override;
-
-		void addObject(const std::string& parentID, DataModel::Object *o) override;
-
-		bool _report(const ::Autoloc::Origin *origin) override;
-//		bool runFromPickFile();
-		bool runFromXMLFile(const char *fname);
-		bool runFromEPFile(const char *fname);
-
-		void sync(const Core::Time &time);
-		const Core::Time now() const;
-		void timeStamp() const;
-
-	protected:
-//		DataModel::Origin *convertToSC  (const ::Autoloc::Origin* origin, bool allPhases=true);
-		::Autoloc::Origin *convertFromSC(const DataModel::Origin* scorigin);
-		::Autoloc::Pick   *convertFromSC(const DataModel::Pick*   scpick);
 
 	private:
-		std::string _inputFileXML; // for XML playback
-		std::string _inputEPFile;  // for offline processing
-		std::string _stationLocationFile;
-		std::string _gridConfigFile{"@DATADIR@/scautoloc/grid.conf"};
-		std::string _amplTypeAbs{"mb"};
-		std::string _amplTypeSNR{"snr"};
-		bool        _formatted{false};
+		// Read past events from the database
+		void readHistoricEvents();
 
-		// sorted objects for playback
-		std::queue<DataModel::PublicObjectPtr> _objects;
+	private:
+		// Processing
+		bool feed(Seiscomp::DataModel::Pick *scpick);
+		bool feed(Seiscomp::DataModel::Amplitude *scamplitude);
+		bool feed(Seiscomp::DataModel::Origin *scorigin);
 
-		double _playbackSpeed;
-		Core::Time playbackStartTime;
-		Core::Time objectsStartTime;
-		Core::Time syncTime;
-		size_t objectCount;
+		// Receive SeisComP objects from messaging
+		void addObject(const std::string& parentID, Seiscomp::DataModel::Object *o) override;
 
-		DataModel::EventParametersPtr _ep;
-		DataModel::InventoryPtr inventory;
+		// This is the output handler. It takes an origin and depending
+		// on the mode of operation (online vs. playback) it sends it
+		// to the messaging or adds it to an EventParameters instance
+		// that is finally written to an XML file.
+		bool _report(Seiscomp::DataModel::Origin *scorigin) override;
 
-		::Autoloc::Autoloc3::Config _config;
-		int _wakeUpTimout;
+		void handleTimeout() override;
 
-		ObjectLog *_inputPicks;
-		ObjectLog *_inputAmps;
-		ObjectLog *_inputOrgs;
-		ObjectLog *_outputOrgs;
+		virtual void printUsage() const override;
+
+	private:
+		// SeisComP standard shutdown
+		void handleAutoShutdown() override;
+		void done() override;
+
+	private:
+		// --ep and --playback modes
+		bool fillObjectQueueFromXMLFile(const char *fname);
+		double _playbackSpeed {0.};
+		// Input XML files for playback and offline processing
+		std::string _inputFileXML;
+		std::string _inputFileEP;
+		// Enable formatted XML output
+		bool _formatted{false};
+		// Public object queue used for XML playback
+		DataModel::PublicObjectQueue objectQueue;
+		Seiscomp::DataModel::EventParametersPtr _inputEP;
+		Seiscomp::DataModel::EventParametersPtr _outputEP;
+		Seiscomp::Core::Time playbackStartTime;
+		// The time of the first object in a playback
+		Seiscomp::Core::Time objectsStartTime;
+		// The sync time is the playback equivalent of the system time
+		Seiscomp::Core::Time syncTime;
+
+	private:
+		Processing::AutolocConfig _config;
+
+		size_t objectCount {0};
+
+		// Wake up every 5 seconds to check pending operations
+		int _wakeUpTimout {5};
+
+	private:
+		// Keep track of number of objects per time interval
+		ObjectLog *_inputPicks {nullptr};
+		ObjectLog *_inputAmps  {nullptr};
+		ObjectLog *_inputOrgs  {nullptr};
+		ObjectLog *_outputOrgs {nullptr};
 };
 
-
-}
 
 }
 

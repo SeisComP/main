@@ -12,8 +12,8 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_AUTOLOC_AUTOLOC3
-#define SEISCOMP_AUTOLOC_AUTOLOC3
+#ifndef SEISCOMP_PROCESSING_AUTOLOC
+#define SEISCOMP_PROCESSING_AUTOLOC
 
 
 #include <string>
@@ -24,280 +24,131 @@
 #include "nucleator.h"
 #include "associator.h"
 #include "locator.h"
-
-namespace Autoloc {
-
-typedef enum { GlobalNetwork, RegionalNetwork, LocalNetwork } NetworkType;
-
-class StationConfig {
-	public:
-		struct Entry {
-			float maxNucDist{0.0};
-			float maxLocDist{0.0};
-			int usage{0};
-		};
-
-		StationConfig();
-		bool read(const std::string &filename);
-
-		const Entry& get(const std::string &net, const std::string &sta) const;
-
-	private:
-		std::map<std::string, Entry> _entry;
-};
+#include "config.h"
+#include "stationconfig.h"
+#include "picklog.h"
 
 
-class Autoloc3 {
+namespace Seiscomp {
+
+namespace Processing {
+
+
+class Autoloc {
 
 	public:
-		Autoloc3();
-		virtual ~Autoloc3();
+		Autoloc();
+		virtual ~Autoloc() = default;
 
 	public:
-		struct Config {
-		public:
-			// Config();
+		// Initialization stuff
 
-			// White list of allowed pick authors.
-			// Also defines priority in descending order.
-			std::vector<std::string> authors;
+		// Set the *Autoloc* config
+		void setConfig(const AutolocConfig&);
+		const AutolocConfig &config() const { return _config; }
 
-			// During cleanup() all pick objects older than maxAge
-			// (in hours) are removed.
-			// If this parameter is <= 0, cleanup() is disabled.
-			double maxAge{6.0 * 3600.0};   // unit: s
+		// Set the *SeisComP* config
+		void setConfig(const Seiscomp::Config::Config*);
 
-			// time to keep origins in buffer
-			double originKeep{86400};
+		// Set the *SeisComP* inventory
+		void setInventory(const Seiscomp::DataModel::Inventory*);
 
-			// time span within which we search for picks which may indicate extraordinary activity
-			double dynamicPickThresholdInterval{3600.0};   // unit: s
+		// Initialize the inventory from a station location file
+		bool readInventoryFromFile();
 
-			// typically good RMS in our network
-			double goodRMS{1.5};   // unit: s
-
-			// maximum RMS of all used picks
-			double maxRMS{3.5};   // unit: s
-
-			// maximum residual of any pick to be used for location
-			double maxResidualUse{7.0};   // unit: s
-
-			// maximum residual of any pick to be kept associated
-			double maxResidualKeep{21.0};   // unit: s
-
-			// NOTE: maxRMS < maxResidualUse < maxResidualKeep
-			// typically:
-			//    maxResidualKeep = 3*maxResidualUse
-			//    maxResidualUse  = 2*maxRMS
-
-
-			// Use this depth if there is no depth resolution
-			double defaultDepth{10.0};           // unit: km
-			double defaultDepthStickiness{0.5};  // 0...1
-
-			// Try to relocate an origin using the configured default depth.
-			// If the resulting origin is "not much worse" than the free-depth
-			// origin, fix the depth at the default depth.
-			bool tryDefaultDepth{true};         // default true
-
-			bool adoptManualDepth{false};
-
-			// Minimum depth in case there is depth resolution
-			double minimumDepth{5.0};          // uni: 5 km
-
-			// maximum depth of origin, checked before sending
-			double maxDepth{1000.0};
-
-			// Max. secondary azimuthal gap
-			double maxAziGapSecondary{360.0};
-
-			// Maximum distance of stations used in computing
-			// the azimuthal gap
-			// double maxAziGapDist; unused
-
-			// Max. distance of stations to be used
-			double maxStaDist{180.0};
-
-			// Default max. distance of stations to be used in
-			// the nucleator
-			// May be overridden by individual values per station.
-			double defaultMaxNucDist{180.0};
-
-			// Minimum signal-to-noise ratio for a pick to
-			// be processed
-			double minPickSNR{3.0};
-
-			// Unless we have a clear definition of "affinity",
-			// do not change this!
-			double minPickAffinity{0.05};
-
-			// Minimum number of picks for a normal origin
-			// to be reported
-			size_t minPhaseCount{6};
-
-			// Minimum score for an origin to be reported;
-			// this seems to be a more reliable criterion
-			// than number of phases.
-			double minScore{8.0};
-
-			// Minimum station count for which we ignore PKP phases
-			size_t minStaCountIgnorePKP{15};
-
-			// if a pick can be associated to an origin with at
-			// least this high a score, bypass the nucleator,
-			// which will improve speed
-			double minScoreBypassNucleator{40.0};
-
-			// Maximum allowes "probability" for an origin to be a
-			// fake event. Value between 0 and 1
-			double maxAllowedFakeProbability{0.2};
-
-			// EXPERIMENTAL!!!
-			double distSlope{1.0};
-
-			// EXPERIMENTAL!!!
-			double maxRadiusFactor{1.0};
-
-			// EXPERIMENTAL!!!
-			NetworkType networkType{Autoloc::GlobalNetwork};
-
-			double cleanupInterval{3600.0};
-
-			double publicationIntervalTimeSlope{0.5};
-			double publicationIntervalTimeIntercept{0.0};
-			size_t publicationIntervalPickCount{20};
-
-			// If true, offline mode is selected. In offline mode,
-			// no database is accessed, and station locations are
-			// read from a plain text file.
-			bool offline{false};
-
-			// If true, test mode is selected. In test mode, no
-			// origins are sent. This is not the same as offline
-			// mode. Test mode is like normal online mode except
-			// no origins are sent (only logging output is
-			// produced).
-			bool test{false};
-
-			// If true, playback mode is selected. In playback mode,
-			// origins are sent immediately without delay.
-			bool playback{false};
-
-			// If true then manual picks are being used as automatics
-			// picks are
-			bool useManualPicks{false};
-
-			// The pick log file
-			bool        pickLogEnable{false};
-			std::string pickLogFile{""};
-			int         pickLogDate;
-
-			// locator profile, e.g. "iasp91", "tab" etc.
-			std::string locatorProfile{"iasp91"};
-
-			// The station configuration file
-			std::string staConfFile{"@DATADIR@/scautoloc/station.conf"};
-
-			// misc. experimental options
-			bool aggressivePKP{true};
-			bool reportAllPhases{true};
-			bool useManualOrigins{false};
-			bool allowRejectedPicks{false};
-			bool adoptManualOriginsFixedDepth;
-			bool useImportedOrigins{false};
-
-			// enable the XXL feature
-			bool xxlEnabled{false};
-
-			// minimum absolute amplitude to flag a pick as XXL
-			double xxlMinAmplitude{1000.0};     // default unit: nm/s
-
-			// minimum SNR to flag a pick as XXL
-			double xxlMinSNR{8.0};
-
-			// ignore all picks within this time window
-			// length (in sec) following an XXL pick
-			double xxlDeadTime{120.0};
-
-			// Minimum number of picks for an XXL origin
-			// to be reported
-			size_t xxlMinPhaseCount{4};   // default 4 picks
-			double xxlMaxStaDist{10.0};         // unit: degrees
-			double xxlMaxDepth{100};            // unit: km
-
-			const Seiscomp::Config::Config* scconfig{nullptr};
-
-		public:
-			void dump() const;
-		};
-
-	public:
-		// initialization stuff
-		void setConfig(const Config &config);
-		const Config &config() const { return _config; }
+		// Initialize the *SeisComP* inventory according to config
+		// or use the global inventory.
+		bool initInventory();
 
 		bool setGridFile(const std::string &);
-		void setPickLogFilePrefix(const std::string &);
-		void setPickLogFileName(const std::string &);
-		bool setStation(Station *);
+
+		// Initialize one station at runtime
+		//
+		// Returns true if successful or if the station has already been
+		// initialized, false in case of error.
+		bool initOneStation(const DataModel::WaveformStreamID&, const Core::Time&);
+
 		void setLocatorProfile(const std::string &);
 
 		bool init();
 
 	public:
-		// Feed a Pick and try to get something out of it.
-		//
-		// The Pick may be associated to an existing Origin or
-		// trigger the creation of a new Origin. If "something"
-		// resulted, return true, otherwise false.
-		bool feed(const Pick *);
+		// Public object input interface
 
-		// Feed a PickGroup and try to get something out of it.
+		// Feed a Pick/Amplitude and eventually process it.
 		//
-		// This feeds all the picks in the PickGroup atomically.
-		bool feed(const PickGroup&); // TODO: NOT IMPLEMENTED YET
+		// If the call resulted in a new or updated result,
+		// return true, otherwise false.
+		bool feed(Seiscomp::DataModel::Pick*);
+		bool feed(Seiscomp::DataModel::Amplitude*);
 
 		// Feed an external or manual Origin
-		bool feed(Origin *);
-
-		// Report all new origins and thereafter empty _newOrigins.
-		// This calls _report(Origin*) for each new Origin
-		bool report();
-
-		void dumpState() const;
-		void dumpConfig() const { _config.dump(); }
+		// TODO: Ensure that all needed picks/amplitudes have
+		//       been supplied *prior* to calling this.
+		bool feed(Seiscomp::DataModel::Origin*);
 
 	public:
-		// Trigger removal of old objects.
-		void cleanup(Time minTime=0);
-
-		void reset();
-		void shutdown();
-
-	public:
-		// Get a Pick from Autoloc's internal buffer by ID.
-		// If the pick is not found, return NULL
-		const Pick* pick(const std::string &id) const;
-
-		// Current time. In offline mode time of the last pick.
-		Time now();
-
 		// Synchronize the internal timing.
 		//
 		// This is necessary in playback mode were instead of
 		// using the hardware clock we either use the pick time
 		// or pick creation time.
-		bool sync(const Time &t);
+		void sync(const Seiscomp::Core::Time &time);
+
+		// Current time. In offline mode time of the last pick.
+		Seiscomp::Core::Time now() const;
+
+		// Add a time stamp generated using now() to the debug log
+		void timeStamp() const;
+
+	public:
+		void dumpState() const;
+		void dumpConfig() const { _config.dump(); }
+
+	public:
+		// Trigger removal of old objects.
+		void cleanup();
+		void cleanup(Seiscomp::Core::Time minTime);
+
+		void reset();
+		void shutdown();
+
+	private:
+		bool setStation(AutolocInternal::Station *);
+
+		// Feed a Pick and try to get something out of it.
+		//
+		// The Pick may be associated to an existing Origin or
+		// trigger the creation of a new Origin. If "something"
+		// resulted, return true, otherwise false.
+		bool feed(const AutolocInternal::Pick *);
+
+		// Feed a PickGroup and try to get something out of it.
+		//
+		// This feeds all the picks in the PickGroup atomically.
+		bool feed(const AutolocInternal::PickGroup&); // TODO: NOT IMPLEMENTED YET
+
+		// Feed an external or manual Origin
+		bool feed(AutolocInternal::Origin *);
+
+		// Report all new origins and thereafter empty _newOrigins.
+		// This calls _report(Origin*) for each new Origin
+		bool report();
+
+	private:
+		// Get a Pick from Autoloc's internal buffer by ID.
+		// If the pick is not found, return NULL
+		const AutolocInternal::Pick* pick(const std::string &id) const;
 
 	protected:
 		// This must be reimplemented in a subclass to properly
 		// print/send/etc. the origin
-		virtual bool _report(const Origin *);
+		virtual bool _report(DataModel::Origin *);
 
-	protected:
 		// flush any pending (Origin) messages by calling _report()
 		void _flush();
 
+	private:
 		// Compute author priority. First in list gets highest
 		// priority. Not in list gets priority 0. No priority list
 		// defined gives 1 for all authors.
@@ -305,36 +156,36 @@ class Autoloc3 {
 
 	private:
 		//
-		// tool box
+		// Tool box
 		//
 
 		// Compute the score.
-		double _score(const Origin *) const;
-		void _updateScore(Origin *);
+		double _score(const AutolocInternal::Origin *) const;
+		void _updateScore(AutolocInternal::Origin *);
 
 		// Process the pick. Involves trying to associate with an
 		// existing origin and -upon failure- nucleate a new one.
-		bool _process(const Pick *);
+		bool _process(const AutolocInternal::Pick *);
 
 		// If the pick is an XXL pick, try to see if there are more
 		// XXL picks possibly giving rise to a preliminary origin
-		OriginPtr _xxlPreliminaryOrigin(const Pick*);
+		AutolocInternal::OriginPtr _xxlPreliminaryOrigin(const AutolocInternal::Pick*);
 
 		// Try to enhance the score by removing each pick
 		// and relocating.
 		//
 		// Returns true if the score could be enhanced.
-		bool _enhanceScore(Origin *, size_t maxloops=0);
+		bool _enhanceScore(AutolocInternal::Origin *, size_t maxloops=0);
 
 		// Rename P <-> PKP accoring to distance/traveltime
 		// FIXME: This is a hack we would want to avoid.
-		void _rename_P_PKP(Origin *);
+		void _rename_P_PKP(AutolocInternal::Origin *);
 
 		// Large outliers, resulting in an obviously wrong
 		// association, are excluded from the location.
 		//
 		// Returns number of removed outliers.
-		size_t _removeOutliers(Origin *);
+		size_t _removeOutliers(AutolocInternal::Origin *);
 
 		// Try all that can be done to improve the origin:
 		//
@@ -361,61 +212,61 @@ class Autoloc3 {
 //		bool _improve(Origin *);
 
 		// true, if this pick was marked as bad and must not be used
-		void _setBlacklisted(const Pick *, bool=true);
+		void _setBlacklisted(const AutolocInternal::Pick *, bool=true);
 
 		// true, if this pick was marked as bad and must not be used
-		bool _blacklisted(const Pick *) const;
+		bool _blacklisted(const AutolocInternal::Pick *) const;
 
 		// true if pick comes with valid station info
-		bool _addStationInfo(const Pick *);
+		bool _addStationInfo(const AutolocInternal::Pick *);
 
 		// feed pick to nucleator and return a new origin or NULL
-		OriginPtr _tryNucleate(const Pick*);
+		AutolocInternal::OriginPtr _tryNucleate(const AutolocInternal::Pick*);
 
 		// feed pick to nucleator and return a new origin or NULL
-		OriginPtr _tryAssociate(const Pick*);
+		AutolocInternal::OriginPtr _tryAssociate(const AutolocInternal::Pick*);
 
 		// one last check before the origin is accepted.
 		// doesn't modify the origin
-		bool _passedFinalCheck(const Origin *origin);
+		bool _passedFinalCheck(const AutolocInternal::Origin *origin);
 		// called by _passedFilter()
 		// TODO: integrate into _passedFilter()?
 
 		// check whether the origin is acceptable
-		bool _passedFilter(Origin*);
+		bool _passedFilter(AutolocInternal::Origin*);
 
 		// check whether the origin meets the publication criteria
-		bool _publishable(const Origin*) const;
+		bool _publishable(const AutolocInternal::Origin*) const;
 
 		// store a pick in internal buffer
-		bool _store(const Pick*);
+		bool _store(const AutolocInternal::Pick*);
 
 		// store an origin in internal buffer
-		bool _store(Origin*);
+		bool _store(AutolocInternal::Origin*);
 
 		// try to find and add more matching picks to origin
-		bool _addMorePicks(Origin*, bool keepDepth=false);
+		bool _addMorePicks(AutolocInternal::Origin*, bool keepDepth=false);
 
 		// try to associate a pick to an origin
 		// true if successful
-		bool _associate(Origin*, const Pick*, const std::string &phase);
+		bool _associate(AutolocInternal::Origin*, const AutolocInternal::Pick*, const std::string &phase);
 
 		// try to judge if an origin *may* be a fake, e.g.
 		// coincident PP phases if an earlier event
 		//
 		// returns a "probability" between 0 and 1
-		double _testFake(Origin*) const;
+		double _testFake(AutolocInternal::Origin*) const;
 
 		// set the depth of this origin to the default depth
 		//
 		// if successful, true is returned, otherwise false
-		bool _setDefaultDepth(Origin*);
+		bool _setDefaultDepth(AutolocInternal::Origin*);
 
 		// Attempt to decide whether the focal depth can be resolved considering
 		// the station distribution. Returns true if resolvable, false if not.
-		bool _depthIsResolvable(Origin*);
+		bool _depthIsResolvable(AutolocInternal::Origin*);
 
-		bool _setTheRightDepth(Origin*);
+		bool _setTheRightDepth(AutolocInternal::Origin*);
 
 		// Determine whether the epicenter location requires the use of the default depth.
 		// This may be due to the epicenter located
@@ -424,13 +275,13 @@ class Autoloc3 {
 		//   but on the other hand we can safely assume a certain (shallow) depth.
 		//
 		// returns true if the default depth should be used, false otherwise
-		bool _epicenterRequiresDefaultDepth(const Origin*) const;
+		bool _epicenterRequiresDefaultDepth(const AutolocInternal::Origin*) const;
 
 		// For convenience. Checks whether a residual is within bounds.
 		// TODO: Later this shall accomodate distance dependent limits.
 		// The factor allows somewhat more generous residuals e.g.
 		// for association.
-		bool _residualOK(const Arrival&, double minFactor=1, double maxFactor=1) const;
+		bool _residualOK(const AutolocInternal::Arrival&, double minFactor=1, double maxFactor=1) const;
 
 		// Don't allow Arrivals with residual > maxResidual. This
 		// criterion is currently enforced mercilessly, without
@@ -438,89 +289,90 @@ class Autoloc3 {
 		// what you get.
 		//
 		// NOTE that the behavior is partly controlled through the configuration of _relocator
-		bool _trimResiduals(Origin*);
+		bool _trimResiduals(AutolocInternal::Origin*);
 
-		bool _log(const Pick*);
+		// Skip automatic picks with insufficient SNR
+		bool _tooLowSNR(const AutolocInternal::Pick*) const;
 
-		bool _tooLowSNR(const Pick*) const;
+		bool _followsBiggerPick(const AutolocInternal::Pick*) const;
 
-		bool _followsBiggerPick(const Pick*) const;
-
-		// checks if the pick could be a Pdiff of a known origin
-		bool _perhapsPdiff(const Pick *) const;
+		// Check if the pick could be a Pdiff of a known origin
+		bool _perhapsPdiff(const AutolocInternal::Pick *) const;
 
 		// Suppress picks with low amplitude if station is producing
 		// many unassociated picks in a recent time span
-		bool _tooManyRecentPicks(const Pick *) const;
+		bool _tooManyRecentPicks(const AutolocInternal::Pick *) const;
 
 		// Merge two origins considered to be the same event
 		// The second is merged into the first. A new instance
 		// is returned that has the ID of the first
-		Origin *merge(const Origin*, const Origin*);
+		AutolocInternal::Origin *merge(const AutolocInternal::Origin*,
+		                               const AutolocInternal::Origin*);
 
-		bool _associated(const Pick *) const;
+		bool _associated(const AutolocInternal::Pick *) const;
 
-		bool _rework(Origin *);
+		bool _rework(AutolocInternal::Origin *);
 
-		void _ensureAcceptableRMS(Origin *, bool keepDepth=false);
+		void _ensureAcceptableRMS(AutolocInternal::Origin *, bool keepDepth=false);
 
 		// Exclude PKP phases if there are enough P phases.
 		// This is part of _rework()
-		bool _excludePKP(Origin *);
+		bool _excludePKP(AutolocInternal::Origin *);
 
 		// If all stations are close to the epicenter, but just a few
 		// are very far away, exclude the farthest by setting
 		// Arrival::exlcude to Arrival::StationDistance
-		bool _excludeDistantStations(Origin *);
+		bool _excludeDistantStations(AutolocInternal::Origin *);
 
-		OriginID _newOriginID();
+		AutolocInternal::OriginID _newOriginID();
 
 		// try to find an "equivalent" origin
-		Origin *_findEquivalent(const Origin*);
+		AutolocInternal::Origin *_findEquivalent(const AutolocInternal::Origin*);
 
 		// for a newly fed origin, find an equivalent internal origin
-		Origin *_findMatchingOrigin(const Origin*);
-
-
-	private:
-		Associator _associator;
-		GridSearch _nucleator;
-		Locator    _relocator;
+		AutolocInternal::Origin *_findMatchingOrigin(const AutolocInternal::Origin*);
 
 	private:
+		AutolocInternal::PickLog _pickLog;
+
+	private:
+		AutolocInternal::Associator _associator;
+		AutolocInternal::GridSearch _nucleator;
+		AutolocInternal::Locator    _relocator;
+
 		// origins that were created/modified during the last
 		// feed() call
-		OriginVector _newOrigins;
+		AutolocInternal::OriginVector _newOrigins;
 
 		// origins waiting for a _flush()
-		std::map<int, Time>      _nextDue;
-		std::map<int, OriginPtr> _lastSent;
-		std::map<int, OriginPtr> _outgoing;
+		std::map<int, AutolocInternal::Time>      _nextDue;
+		std::map<int, AutolocInternal::OriginPtr> _lastSent;
+		std::map<int, AutolocInternal::OriginPtr> _outgoing;
 
-		Time     _now;
-		Time     _nextCleanup;
+		Seiscomp::Core::Time _now {Core::Time(0.)};
+		Seiscomp::Core::Time _nextCleanup {Core::Time::UTC()};
 
-	protected:
-		typedef std::map<std::string, PickCPtr> PickPool;
+		typedef std::map<std::string, AutolocInternal::PickCPtr> PickPool;
 		PickPool pickPool;
-		std::string   _pickLogFilePrefix;
-		std::string   _pickLogFileName;
-		std::ofstream _pickLogFile;
 
-	private:
-		StationMap _stations;
+		AutolocInternal::StationMap _stations;
 
 		// a list of NET.STA strings for missing stations
 		std::set<std::string> _missingStations;
-		std::set<PickCPtr> _blacklist;
+		std::set<AutolocInternal::PickCPtr> _blacklist;
 
-		OriginVector _origins;
-		Config   _config;
-		StationConfig _stationConfig;
+		AutolocInternal::OriginVector _origins;
+		AutolocConfig _config;
+		AutolocInternal::StationConfig _stationConfig;
+
+		const Seiscomp::Config::Config *scconfig {nullptr};
+		const Seiscomp::DataModel::Inventory *scinventory {nullptr};
+//		Seiscomp::DataModel::InventoryPtr inventory;
 };
 
 
 }  // namespace Autoloc
 
+}  // namespace Seiscomp
 
 #endif

@@ -18,8 +18,14 @@
 #include <seiscomp/logging/log.h>
 #include <seiscomp/datamodel/publicobject.h>
 #include <seiscomp/datamodel/pick.h>
+#include <seiscomp/datamodel/inventory.h>
+#include <seiscomp/datamodel/network.h>
+#include <seiscomp/datamodel/station.h>
 #include <seiscomp/datamodel/utils.h>
 #include <map>
+#include <string>
+#include <sstream>
+#include <iomanip>
 
 #include "scutil.h"
 
@@ -33,13 +39,14 @@ void logObjectCounts()
 	DataModel::PublicObject::Lock();
 	SEISCOMP_DEBUG("%-16s count = %d", "PublicObject", DataModel::PublicObject::ObjectCount());
 	std::map<const char*, std::size_t> count;
-	for (DataModel::PublicObject::Iterator
-			it  = DataModel::PublicObject::Begin();
-			it != DataModel::PublicObject::End(); ++it) {
+	for ( auto it  = DataModel::PublicObject::Begin();
+	           it != DataModel::PublicObject::End(); ++it ) {
 		++count[(*it).second->className()];
 	}
-	for (auto& item: count)
+	for ( auto& item: count ) {
 		SEISCOMP_DEBUG("%-16s count = %d", item.first, item.second);
+	}
+
 	DataModel::PublicObject::Unlock();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -48,19 +55,38 @@ void logObjectCounts()
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool manual(const DataModel::Origin *origin) {
+bool manual(const Seiscomp::DataModel::Origin *origin) {
 	try {
-		switch (origin->evaluationMode()) {
-		case DataModel::MANUAL:
-			return true;
-		default:
-			break;
+		switch ( origin->evaluationMode() ) {
+			case Seiscomp::DataModel::MANUAL:
+				return true;
+			default:
+				break;
 		}
 	}
 	catch ( Core::ValueException & ) {}
 	return false;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool preliminary(const Seiscomp::DataModel::Origin *origin) {
+	try {
+		switch (origin->evaluationStatus() ) {
+			case Seiscomp::DataModel::PRELIMINARY:
+				return true;
+			default:
+				break;
+		}
+	}
+	catch ( Seiscomp::Core::ValueException & ) {}
+	return false;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 
 
@@ -119,6 +145,159 @@ std::string pickLabel(const DataModel::Pick *scpick) {
 	std::string a = objectAuthor(scpick);
 	std::string g = objectAgencyID(scpick);
 	return t + "-" + n + "." + s + "." + l + "." + c + "-" + evaluationModeToChar(scpick) + "-" + p + "-" + m + "-" + a + "-" + g;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool rejected(const DataModel::Pick *scpick) {
+	try {
+		return scpick->evaluationStatus() == DataModel::REJECTED;
+	}
+	catch ( ... ) {}
+
+	return false;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string time2str(const Core::Time &t) {
+	return t.toString("%F %T.%f000000").substr(0, 21);
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string time2str(const DataModel::TimeQuantity &t) {
+	try {
+		return time2str(t.value());
+	}
+	catch ( ... ) {}
+
+	return "invalid time";
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string evaluationStatus(const Seiscomp::DataModel::Pick *scpick) {
+	try {
+		return scpick->evaluationStatus().toString();
+	}
+	catch ( ... ) {}
+
+	return "unset";
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string evaluationStatus(const Seiscomp::DataModel::Origin *scorigin) {
+	try {
+		return scorigin->evaluationStatus().toString();
+	}
+	catch ( ... ) {}
+
+	return "unset";
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string evaluationMode(const Seiscomp::DataModel::Origin *scorigin) {
+	try {
+		return scorigin->evaluationMode().toString();
+	}
+	catch ( ... ) {}
+
+	return "unset";
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string depthType(const Seiscomp::DataModel::Origin *scorigin) {
+	try {
+		return scorigin->depthType().toString();
+	}
+	catch ( ... ) {}
+
+	return "unset";
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string summary(const Seiscomp::DataModel::Origin *scorigin)
+{
+	std::ostringstream out;
+	out.precision(10);
+	out << "Origin " << std::endl << std::fixed << std::setprecision(3)
+	    << "  publicID    " << scorigin->publicID() << std::endl
+	    << "  time        " << time2str(scorigin->time()) << std::endl
+	    << "  latitude    " << std::setw(8) << scorigin->latitude().value() << std::endl
+	    << "  longitude   " << std::setw(8) << scorigin->longitude().value() << std::endl;
+	out.precision(3);
+	out << std::fixed << std::setprecision(1)
+	    << "  depth       " << std::setw(6) << scorigin->depth().value() << " km  "<< std::endl
+	    << "  depth type  " << depthType(scorigin) << std::endl
+	    << "  agencyID    " << objectAgencyID(scorigin) << std::endl
+	    << "  author      " << objectAuthor(scorigin) << std::endl
+	    << "  status      " << evaluationStatus(scorigin) << std::endl
+	    << "  mode        " << evaluationMode(scorigin);
+
+	out.setf(std::ios::right);
+	return out.str();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void minimizeInventory(Seiscomp::DataModel::Inventory *inventory) {
+	// Remove unneeded inventory items to save some memory
+	if ( !inventory ) {
+		return;
+	}
+
+	for ( size_t n = 0; n < inventory->networkCount(); ++n ) {
+		DataModel::Network *network = inventory->network(n);
+
+		for ( size_t s = 0; s < network->stationCount(); ++s ) {
+			DataModel::Station *station = network->station(s);
+
+			for ( size_t l = 0; l < station->sensorLocationCount(); ++l ) {
+				DataModel::SensorLocation *sensorLocation = station->sensorLocation(l);
+				while ( sensorLocation->streamCount() ) {
+					sensorLocation->removeStream(0);
+				}
+				while ( sensorLocation->auxStreamCount() ) {
+					sensorLocation->removeAuxStream(0);
+				}
+				while ( sensorLocation->commentCount() ) {
+					sensorLocation->removeComment(0);
+				}
+			}
+		}
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

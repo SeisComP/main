@@ -9,10 +9,13 @@ SET(
 		datamodel.cpp
 		locator.cpp
 		nucleator.cpp
+		objectqueue.cpp
 		scutil.cpp
 		util.cpp
-		sc3adapters.cpp
 		main.cpp
+		stationconfig.cpp
+		stationlocationfile.cpp
+		picklog.cpp
 )
 
 SET(
@@ -20,12 +23,16 @@ SET(
 		app.h
 		associator.h
 		autoloc.h
+		config.h
 		datamodel.h
 		locator.h
 		nucleator.h
+		objectqueue.h
 		scutil.h
 		util.h
-		sc3adapters.h
+		stationconfig.h
+		stationlocationfile.h
+		picklog.h
 )
 
 SET(
