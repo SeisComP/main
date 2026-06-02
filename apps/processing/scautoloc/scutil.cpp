@@ -39,13 +39,14 @@ void logObjectCounts()
 	DataModel::PublicObject::Lock();
 	SEISCOMP_DEBUG("%-16s count = %d", "PublicObject", DataModel::PublicObject::ObjectCount());
 	std::map<const char*, std::size_t> count;
-	for ( DataModel::PublicObject::Iterator
-			it  = DataModel::PublicObject::Begin();
-			it != DataModel::PublicObject::End(); ++it ) {
+	for ( auto it  = DataModel::PublicObject::Begin();
+	           it != DataModel::PublicObject::End(); ++it ) {
 		++count[(*it).second->className()];
 	}
-	for ( auto& item: count )
+	for ( auto& item: count ) {
 		SEISCOMP_DEBUG("%-16s count = %d", item.first, item.second);
+	}
+
 	DataModel::PublicObject::Unlock();
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -57,10 +58,10 @@ void logObjectCounts()
 bool manual(const Seiscomp::DataModel::Origin *origin) {
 	try {
 		switch ( origin->evaluationMode() ) {
-		case Seiscomp::DataModel::MANUAL:
-			return true;
-		default:
-			break;
+			case Seiscomp::DataModel::MANUAL:
+				return true;
+			default:
+				break;
 		}
 	}
 	catch ( Core::ValueException & ) {}
@@ -75,10 +76,10 @@ bool manual(const Seiscomp::DataModel::Origin *origin) {
 bool preliminary(const Seiscomp::DataModel::Origin *origin) {
 	try {
 		switch (origin->evaluationStatus() ) {
-		case Seiscomp::DataModel::PRELIMINARY:
-			return true;
-		default:
-			break;
+			case Seiscomp::DataModel::PRELIMINARY:
+				return true;
+			default:
+				break;
 		}
 	}
 	catch ( Seiscomp::Core::ValueException & ) {}
@@ -285,12 +286,15 @@ void minimizeInventory(Seiscomp::DataModel::Inventory *inventory) {
 
 			for ( size_t l = 0; l < station->sensorLocationCount(); ++l ) {
 				DataModel::SensorLocation *sensorLocation = station->sensorLocation(l);
-				while ( sensorLocation->streamCount() )
+				while ( sensorLocation->streamCount() ) {
 					sensorLocation->removeStream(0);
-				while ( sensorLocation->auxStreamCount() )
+				}
+				while ( sensorLocation->auxStreamCount() ) {
 					sensorLocation->removeAuxStream(0);
-				while ( sensorLocation->commentCount() )
+				}
+				while ( sensorLocation->commentCount() ) {
 					sensorLocation->removeComment(0);
+				}
 			}
 		}
 	}

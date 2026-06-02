@@ -251,11 +251,11 @@ std::string printOrigin(const AutolocInternal::Origin *origin, bool oneliner) {
 
 	char depthFlag = ' ';
 	switch ( origin->depthType ) {
-	case Origin::DepthMinimum:       depthFlag = 'i'; break;
-	case Origin::DepthPhases:        depthFlag = 'p'; break;
-	case Origin::DepthDefault:       depthFlag = 'd'; break;
-	case Origin::DepthManuallyFixed: depthFlag = 'f'; break;
-	default:                         depthFlag = ' ';
+		case Origin::DepthMinimum:       depthFlag = 'i'; break;
+		case Origin::DepthPhases:        depthFlag = 'p'; break;
+		case Origin::DepthDefault:       depthFlag = 'd'; break;
+		case Origin::DepthManuallyFixed: depthFlag = 'f'; break;
+		default:                         depthFlag = ' ';
 	}
 
 	if ( oneliner ) {
@@ -285,14 +285,14 @@ std::string printOrigin(const AutolocInternal::Origin *origin, bool oneliner) {
 
 			std::string excludedFlag;
 			switch ( arr.excluded ) {
-			case Arrival::NotExcluded:          excludedFlag = "  "; break;
-			case Arrival::LargeResidual:        excludedFlag = "Xr"; break;
-			case Arrival::StationDistance:      excludedFlag = "Xd"; break;
-			case Arrival::ManuallyExcluded:     excludedFlag = "Xm"; break;
-			case Arrival::UnusedPhase:          excludedFlag = "Xp"; break;
-			case Arrival::DeterioratesSolution: excludedFlag = "X!"; break;
-			case Arrival::TemporarilyExcluded:  excludedFlag = "Xt"; break;
-			default:                            excludedFlag = "X ";
+				case Arrival::NotExcluded:          excludedFlag = "  "; break;
+				case Arrival::LargeResidual:        excludedFlag = "Xr"; break;
+				case Arrival::StationDistance:      excludedFlag = "Xd"; break;
+				case Arrival::ManuallyExcluded:     excludedFlag = "Xm"; break;
+				case Arrival::UnusedPhase:          excludedFlag = "Xp"; break;
+				case Arrival::DeterioratesSolution: excludedFlag = "X!"; break;
+				case Arrival::TemporarilyExcluded:  excludedFlag = "Xt"; break;
+				default:                            excludedFlag = "X ";
 			}
 			if ( !pick->station() ) {
 				out << pick->id() << "   missing station information" << std::endl;
@@ -530,21 +530,21 @@ DataModel::Origin *convertToSC(const AutolocInternal::Origin* origin, const std:
 	}
 
 	switch ( origin->depthType ) {
-	case AutolocInternal::Origin::DepthFree:
-		scorigin->setDepthType(DataModel::OriginDepthType(DataModel::FROM_LOCATION));
-		break;
+		case AutolocInternal::Origin::DepthFree:
+			scorigin->setDepthType(DataModel::OriginDepthType(DataModel::FROM_LOCATION));
+			break;
 
-	case AutolocInternal::Origin::DepthMinimum:
-		break;
+		case AutolocInternal::Origin::DepthMinimum:
+			break;
 
-	case AutolocInternal::Origin::DepthDefault:
-		break;
+		case AutolocInternal::Origin::DepthDefault:
+			break;
 
-	case AutolocInternal::Origin::DepthManuallyFixed:
-		scorigin->setDepthType(DataModel::OriginDepthType(DataModel::OPERATOR_ASSIGNED));
-		break;
-	default:
-		break;
+		case AutolocInternal::Origin::DepthManuallyFixed:
+			scorigin->setDepthType(DataModel::OriginDepthType(DataModel::OPERATOR_ASSIGNED));
+			break;
+		default:
+			break;
 	}
 
 	// This is a preliminary fix which prevents autoloc from producing

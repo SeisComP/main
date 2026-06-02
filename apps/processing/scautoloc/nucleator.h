@@ -234,10 +234,10 @@ class GridPoint : public Seiscomp::Core::BaseObject
 		Hypocenter hypocenter;
 
 		// config
-		double _radius {4};
-		double _dt {50};
-		double maxStaDist {180};
-		size_t _nmin {6};
+		double _radius{4};
+		double _dt{50};
+		double maxStaDist{180};
+		size_t _nmin{6};
 
 		std::map<std::string, StationWrapperCPtr> _wrappers;
 		std::multiset<ProjectedPick> _picks;

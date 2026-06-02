@@ -280,7 +280,7 @@ GridPoint::feed(const Pick* pick)
 	for ( size_t i = 0; i < npick; i++ ) {
 		_cnt[i] = _flg[i] = 0;
 	}
-	for ( size_t i = 0; i < npick; i++) {
+	for ( size_t i = 0; i < npick; i++ ) {
 
 		ProjectedPick &ppi = pps[i];
 		double t_i   = ppi.projectedTime();
@@ -318,7 +318,7 @@ GridPoint::feed(const Pick* pick)
 	size_t cntmax = 0;
 	Time otime;
 	for ( size_t i = 0; i < npick; i++ ) {
-		if ( !_flg[i]) {
+		if ( !_flg[i] ) {
 			continue;
 		}
 		group.push_back(pps[i]);
@@ -346,8 +346,9 @@ GridPoint::feed(const Pick* pick)
 		PickCPtr pick = pp.p;
 		const std::string key = station_key(pick->station());
 		// avoid duplicate stations XXX ugly without amplitudes
-		if ( stations.count(key) )
+		if ( stations.count(key) ) {
 			continue;
+		}
 		stations.insert(key);
 
 		StationWrapperCPtr sw( _wrappers[key]);
@@ -407,7 +408,7 @@ bool GridPoint::setupStation(const Station *station)
 		return false;
 
 	TravelTime tt;
-	if ( !travelTimeP(hypocenter.lat, hypocenter.lon, hypocenter.dep, station->lat, station->lon, 0, delta, tt)) {
+	if ( !travelTimeP(hypocenter.lat, hypocenter.lon, hypocenter.dep, station->lat, station->lon, 0, delta, tt) ) {
 		return false;
 	}
 
@@ -478,7 +479,7 @@ double originScore(const Origin *origin, double maxRMS, double networkSizeKm) {
 	double score = 0, amplScoreMax=0;
 	size_t arrivalCount = origin->arrivals.size();
 	//int n = origin->definingPhaseCount();
-	for ( size_t i = 0; i < arrivalCount; i++) {
+	for ( size_t i = 0; i < arrivalCount; i++ ) {
 		double phaseScore = 1; // 1 for P / 0.3 for PKP
 		Arrival &arr = ((Origin*)origin)->arrivals[i];
 		PickCPtr pick = arr.pick;

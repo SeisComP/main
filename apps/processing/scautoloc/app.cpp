@@ -81,15 +81,15 @@ void AutolocApp::createCommandLineDescription() {
 	                        "Flush origins immediately without delay.");
 
 	commandline().addGroup("Input");
+	commandline().addOption("Input", "input,i",
+	                        "Identical to --ep and provided for compatibility",
+	                        &_inputFileXML, false);
 	commandline().addOption("Input", "ep",
 	                        "Name of input XML file (SCML) with all picks and "
 	                        "origins for offline processing.  Use '-' to read "
 	                        "from stdin. The database connection is not received "
 	                        "from messaging and must be provided. Results are "
 	                        "sent in XML to stdout." ,
-	                        &_inputFileXML, false);
-	commandline().addOption("Input", "input,i",
-	                        "Identical to --ep and provided for compatibility",
 	                        &_inputFileXML, false);
 
 	commandline().addGroup("Settings");

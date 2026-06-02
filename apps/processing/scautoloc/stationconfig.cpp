@@ -34,8 +34,7 @@ namespace AutolocInternal {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 // trim leading/trailing space from line
-static void ltrim(std::string &s)
-{
+static void ltrim(std::string &s) {
 	s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {
 		return !std::isspace(ch);
 	}));
@@ -46,8 +45,7 @@ static void ltrim(std::string &s)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-StationConfig::StationConfig()
-{
+StationConfig::StationConfig() {
 	std::string defaultkey = "* *";
 	_item[defaultkey] = StationConfigItem();
 }
@@ -57,8 +55,7 @@ StationConfig::StationConfig()
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-StationConfig::StationConfig(const std::string &filename)
-{
+StationConfig::StationConfig(const std::string &filename) {
 	setFilename(filename);
 	if ( !read() ) {
 		throw std::runtime_error("Could not read station config from " + filename);
@@ -88,8 +85,7 @@ const std::string &StationConfig::filename() const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool StationConfig::read()
-{
+bool StationConfig::read() {
 	std::string line;
 	std::string defaultkey = "* *";
 	_item[defaultkey] = StationConfigItem();
@@ -127,8 +123,7 @@ bool StationConfig::read()
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-time_t StationConfig::mtime() const
-{
+time_t StationConfig::mtime() const {
 	struct stat buf;
 
 	if ( stat(_filename.c_str(), &buf) != 0 ) {
@@ -144,8 +139,7 @@ time_t StationConfig::mtime() const
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool StationConfig::hasChanged() const
-{
+bool StationConfig::hasChanged() const {
 	return mtime() != _mtime;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -155,8 +149,7 @@ bool StationConfig::hasChanged() const
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 const StationConfigItem&
-StationConfig::get(const std::string &net, const std::string &sta) const
-{
+StationConfig::get(const std::string &net, const std::string &sta) const {
 	std::vector<std::string> patterns;
 	patterns.push_back(net + " " + sta);
 	patterns.push_back(net + " *");

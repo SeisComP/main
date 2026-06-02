@@ -402,7 +402,7 @@ Origin* Locator::_screlocate(const Origin *origin) {
 //		arr.weight   = screlo->arrival(i)->weight();
 /*
 		if ( arr.residual > 800 && ( arr.phase == "P" || arr.phase == "Pdiff" ) && \
-		     arr.distance > 104 && arr.distance < 112) {
+		     arr.distance > 104 && arr.distance < 112 ) {
 
 			TravelTime tt;
 			if ( !travelTimeP(arr.distance, origin->dep, tt) )

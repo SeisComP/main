@@ -46,12 +46,12 @@ Autoloc::Autoloc() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Autoloc::init() {
-	if ( !scinventory) {
+	if ( !scinventory ) {
 		SEISCOMP_ERROR("Missing SeisComP Inventory");
 		return false;
 	}
 
-	if ( !scconfig) {
+	if ( !scconfig ) {
 		SEISCOMP_WARNING("Missing SeisComP Config");
 		// return false;
 	}
@@ -64,7 +64,7 @@ bool Autoloc::init() {
 
 	_relocator.setMinimumDepth(_config.minimumDepth);
 
-	if ( !_config.staConfFile.empty()) {
+	if ( !_config.staConfFile.empty() ) {
 		SEISCOMP_DEBUG_S("Reading station config from file " + _config.staConfFile);
 
 		_stationConfig.setFilename(_config.staConfFile);
@@ -190,7 +190,7 @@ bool Autoloc::feed(Seiscomp::DataModel::Pick *scpick) {
 	}
 
 	// Configure station if needed
-	if ( !initOneStation(scpick->waveformID(), scpick->time().value())) {
+	if ( !initOneStation(scpick->waveformID(), scpick->time().value()) ) {
 		return false;
 	}
 
@@ -647,12 +647,12 @@ bool Autoloc::_store(const Pick *pick) {
 		return false;
 	}
 
-	if ( !pick->station()) {
+	if ( !pick->station() ) {
 		SEISCOMP_DEBUG_S("missing station info for pick " + pick->label);
 		return false;
 	}
 
-	if ( automatic(pick) && !pick->station()->enabled) {
+	if ( automatic(pick) && !pick->station()->enabled ) {
 		// This means that this pick is completely ignored!
 		// Nevertheless, we might want to loosely associate it to an
 		// origin, i.e. associate it without using it for location
@@ -738,13 +738,14 @@ Origin *Autoloc::_findMatchingOrigin(const Origin *origin) {
 	for ( auto& item : _origins ) {
 		Origin *existing = item.get();
 
-		if ( std::abs(origin->time - existing->time) > maxOriginTimeDifference )
+		if ( std::abs(origin->time - existing->time) > maxOriginTimeDifference ) {
 			continue;
+		}
 
 		size_t identical=0, similar=0;
 
 		// go through this origin and look for manual picks
-		for ( size_t i1 = 0; i1 < existing->arrivals.size(); i1++) {
+		for ( size_t i1 = 0; i1 < existing->arrivals.size(); i1++ ) {
 			const Pick *pick = existing->arrivals[i1].pick.get();
 
 			if ( !pick->station() ) {
@@ -875,13 +876,13 @@ bool Autoloc::feed(Origin *origin) {
 		found->id = id;
 
 		switch ( manualOrigin->depthType ) {
-		case Origin::DepthManuallyFixed:
-			_relocator.useFixedDepth(true);
-			break;
-		case Origin::DepthPhases:
-		case Origin::DepthFree:
-		default:
-			_relocator.useFixedDepth(false);
+			case Origin::DepthManuallyFixed:
+				_relocator.useFixedDepth(true);
+				break;
+			case Origin::DepthPhases:
+			case Origin::DepthFree:
+			default:
+				_relocator.useFixedDepth(false);
 		}
 
 		// TODO: consider making this relocation optional
@@ -2686,7 +2687,7 @@ bool Autoloc::_enhanceScore(Origin *origin, size_t maxloops) {
 		for ( Arrival &arr : origin->arrivals ) {
 			if ( arr.pick->xxl ) {
 				xxlcount++;
-				if ( earliestxxl==0 ) {
+				if ( earliestxxl == 0 ) {
 					earliestxxl = arr.pick;
 				}
 				else if ( arr.pick->time < earliestxxl->time ) {
@@ -2704,7 +2705,7 @@ bool Autoloc::_enhanceScore(Origin *origin, size_t maxloops) {
 			size_t arrivalCount = origin->arrivals.size();
 			for ( size_t i = 0; i < arrivalCount; i++ ) {
 				Arrival &arr = origin->arrivals[i];
-				if ( !arr.pick->xxl && arr.pick->time < earliestxxl->time) {
+				if ( !arr.pick->xxl && arr.pick->time < earliestxxl->time ) {
 					copy->arrivals[i].excluded = Arrival::ManuallyExcluded;
 					excludedcount++;
 				}
@@ -2898,7 +2899,7 @@ double Autoloc::_testFake(Origin *origin) const
 			double delta, az, baz, depth=otherOrigin->hypocenter.dep;
 			delazi(&(otherOrigin->hypocenter), sta, delta, az, baz);
 			TravelTimeTable ttt;
-			TravelTimeList *ttlist {nullptr};
+			TravelTimeList *ttlist{nullptr};
 			try {
 				ttlist = ttt.compute(otherOrigin->hypocenter.lat,
 				                     otherOrigin->hypocenter.lon,
@@ -3338,7 +3339,7 @@ bool Autoloc::readInventoryFromFile()
 	SEISCOMP_DEBUG_S("Initializing station inventory from file '" +
 	                 _config.stationLocationFile + "'");
 	Seiscomp::DataModel::Inventory *inventory = Seiscomp::DataModel::inventoryFromStationLocationFile(_config.stationLocationFile);
-	if ( !inventory) {
+	if ( !inventory ) {
 		SEISCOMP_WARNING("Failed to initialize station inventory from file %s",
 		                 _config.stationLocationFile);
 		return false;

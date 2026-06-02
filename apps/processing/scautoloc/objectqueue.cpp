@@ -76,8 +76,9 @@ bool PublicObjectQueue::fill(const EventParameters *ep)
 	}
 
 	sort(objs.begin(), objs.end());
-	for ( TimeObject &obj : objs )
+	for ( TimeObject &obj : objs ) {
 		q.push(get<2>(obj));
+	}
 
 	return !q.empty();
 }
