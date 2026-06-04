@@ -216,5 +216,5 @@ DepthLookupPtr makeDepthLookup(const std::string &type,
 }
 
 
-}  // namespace Autoloc
+}  // namespace Processing
 }  // namespace Seiscomp
