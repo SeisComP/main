@@ -55,7 +55,7 @@ SC_INSTALL_INIT(${LOC_TARGET} ${INIT_TEMPLATE})
 # Install Slab2 depth-contour BNA files
 INSTALL(
     DIRECTORY share/slabs/
-    DESTINATION ${SC3_PACKAGE_DATA_DIR}/${LOC_TARGET}/slabs
+    DESTINATION share/${LOC_TARGET}/slabs
 )
 
 FILE(GLOB descs "${CMAKE_CURRENT_SOURCE_DIR}/descriptions/*.xml")
