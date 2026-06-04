@@ -160,7 +160,7 @@ double Slab2DepthLookup::_lookupDepth(double lat, double lon) const {
 
 double Slab2DepthLookup::fetch(double lat, double lon) const {
 	double d = _lookupDepth(lat, lon);
-	return d >= 0.0 ? d : _fallbackDepth;
+	return d > 0.0 ? d : _fallbackDepth;
 }
 
 
