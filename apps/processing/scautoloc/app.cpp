@@ -295,7 +295,7 @@ bool AutolocApp::initConfiguration() {
 	catch ( ... ) {}
 
 	try {
-		_config.slabDir = configGetPath("autoloc.slab2.directory");
+		_config.slabDir = Environment::Instance()->absolutePath(configGetString("autoloc.slab2.directory"));
 	}
 	catch ( ... ) {}
 

@@ -102,7 +102,7 @@ bool Slab2DepthLookup::init() {
 			if ( !std::regex_match(fname, m, bnaPattern) ) continue;
 
 			const std::string zoneName = m[1].str();
-			const std::string featureName = zoneName + "_" + dirName;
+			const std::string featureName = zoneName + " " + dirName + " km";
 
 			if ( features->readFile(entry.path().string(), nullptr) >= 0 ) {
 				zoneMap[zoneName].name = zoneName;

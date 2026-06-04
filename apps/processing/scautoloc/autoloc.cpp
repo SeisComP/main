@@ -39,6 +39,8 @@ using namespace AutolocInternal;
 Autoloc::Autoloc() {
 	_associator.setOrigins(&_origins);
 	_relocator.setMinimumDepth(_config.minimumDepth);
+	// Safe default until init() is called with the actual config
+	_depthLookup = makeDepthLookup("Constant", _config.defaultDepth, _config.maxDepth);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
