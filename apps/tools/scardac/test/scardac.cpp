@@ -445,16 +445,18 @@ BOOST_AUTO_TEST_CASE(multiday) {
 	auto mseedFile2 = basePath + "241"; // seg2
 	auto mseedFile3 = basePath + "242"; // seg2
 
-	Core::Time updated0;
-	Core::Time updated1;
-	auto mtime = boost::filesystem::last_write_time(mseedFile0);
-	if ( mtime >= 0 ) {
-		updated0 = mtime;
-	}
-	mtime = boost::filesystem::last_write_time(mseedFile1);
-	if ( mtime >= 0 ) {
-		updated1 = mtime;
-	}
+	Core::Time seg0Updated;
+	Core::Time seg1Updated;
+	Core::Time seg2Updated;
+	Core::Time extUpdated;
+	auto mtime0 = boost::filesystem::last_write_time(mseedFile0);
+	auto mtime1 = boost::filesystem::last_write_time(mseedFile1);
+	auto mtime2 = boost::filesystem::last_write_time(mseedFile2);
+	auto mtime3 = boost::filesystem::last_write_time(mseedFile3);
+	seg0Updated = max(mtime0, mtime1);
+	seg1Updated = mtime1;
+	seg2Updated = max(mtime1, max(mtime2, mtime3));
+	extUpdated = max(mtime0, max(mtime1, max(mtime2, mtime3)));
 
 	string ctx("initial scan");
 	BOOST_TEST_MESSAGE(ctx);
@@ -494,7 +496,7 @@ BOOST_AUTO_TEST_CASE(multiday) {
 	BOOST_CHECK_EQUAL(seg0->end().iso(), "2023-08-28T00:00:05.641Z");
 	BOOST_CHECK_EQUAL(seg0->sampleRate(), attExt->sampleRate());
 	BOOST_CHECK_EQUAL(seg0->quality(), attExt->quality());
-	BOOST_CHECK_EQUAL(seg0->updated().iso(), updated0.iso());
+	BOOST_CHECK_EQUAL(seg0->updated().iso(), seg0Updated.iso());
 	BOOST_CHECK(!seg0->outOfOrder());
 
 	auto *seg1 = ext->dataSegment(1);
@@ -502,7 +504,7 @@ BOOST_AUTO_TEST_CASE(multiday) {
 	BOOST_CHECK_EQUAL(seg1->end().iso(), "2023-08-28T01:09:43.661Z");
 	BOOST_CHECK_EQUAL(seg1->sampleRate(), attExt->sampleRate());
 	BOOST_CHECK_EQUAL(seg1->quality(), attExt->quality());
-	BOOST_CHECK_EQUAL(seg1->updated().iso(), updated1.iso());
+	BOOST_CHECK_EQUAL(seg1->updated().iso(), seg1Updated.iso());
 	BOOST_CHECK(!seg1->outOfOrder());
 
 	auto *seg2 = ext->dataSegment(2);
@@ -510,8 +512,11 @@ BOOST_AUTO_TEST_CASE(multiday) {
 	BOOST_CHECK_EQUAL(seg2->end().iso(), ext->end().iso());
 	BOOST_CHECK_EQUAL(seg2->sampleRate(), attExt->sampleRate());
 	BOOST_CHECK_EQUAL(seg2->quality(), attExt->quality());
-	BOOST_CHECK_EQUAL(seg2->updated().iso(), ext->updated().iso());
+	BOOST_CHECK_EQUAL(seg2->updated().iso(), seg2Updated.iso());
 	BOOST_CHECK(!seg2->outOfOrder());
+
+	BOOST_CHECK_EQUAL(attExt->updated().iso(), extUpdated.iso());
+	BOOST_CHECK_EQUAL(ext->updated().iso(), extUpdated.iso());
 
 	auto twoSeconds = Core::TimeSpan(2, 0);
 
