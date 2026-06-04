@@ -297,7 +297,9 @@ bool AutolocApp::initConfiguration() {
 	try {
 		_config.slabDir = Environment::Instance()->absolutePath(configGetString("autoloc.slab2.directory"));
 	}
-	catch ( ... ) {}
+	catch ( ... ) {
+		_config.slabDir = Environment::Instance()->shareDir() + "/scautoloc/slabs";
+	}
 
 	try {
 		_config.minimumDepth = configGetDouble("locator.minimumDepth");
