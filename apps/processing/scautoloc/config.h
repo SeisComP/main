@@ -91,7 +91,18 @@ struct AutolocConfig {
 		//    maxResidualUse  = 2*maxRMS
 
 
-		// Use this depth if there is no depth resolution
+		// DepthLookup backend: "Constant" (default) or "Slab2"
+		// "Constant" uses defaultDepth/maxDepth below — same as previous behaviour
+		std::string depthLookupType{"Constant"};
+
+		// Directory containing Slab2 BNA depth-contour files.
+		// Only used when depthLookupType = "Slab2".
+		// Default: @DATADIR@/spatial/vector/slabs
+		std::string slabDir{"@DATADIR@/spatial/vector/slabs"};
+
+		// Use this depth if there is no depth resolution.
+		// Used directly by the Constant backend; overridden geographically
+		// by Polygon and Slab2 backends.
 		double defaultDepth{10.0};           // unit: km
 		double defaultDepthStickiness{0.5};  // 0...1
 
@@ -105,7 +116,9 @@ struct AutolocConfig {
 		// Minimum depth in case there is depth resolution
 		double minimumDepth{5.0};          // uni: 5 km
 
-		// maximum depth of origin, checked before sending
+		// maximum depth of origin, checked before sending.
+		// Used directly by the Constant backend; overridden geographically
+		// by Polygon and Slab2 backends.
 		double maxDepth{1000.0};
 
 		// Max. secondary azimuthal gap

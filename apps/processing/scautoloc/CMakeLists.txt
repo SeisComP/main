@@ -16,6 +16,7 @@ SET(
 		stationconfig.cpp
 		stationlocationfile.cpp
 		picklog.cpp
+		depthlookup.cpp
 )
 
 SET(
@@ -33,6 +34,7 @@ SET(
 		stationconfig.h
 		stationlocationfile.h
 		picklog.h
+		depthlookup.h
 )
 
 SET(

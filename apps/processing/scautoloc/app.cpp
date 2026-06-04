@@ -290,6 +290,16 @@ bool AutolocApp::initConfiguration() {
 	catch ( ... ) {}
 
 	try {
+		_config.depthLookupType = configGetString("autoloc.depthLookup");
+	}
+	catch ( ... ) {}
+
+	try {
+		_config.slabDir = configGetPath("autoloc.slab2.directory");
+	}
+	catch ( ... ) {}
+
+	try {
 		_config.minimumDepth = configGetDouble("locator.minimumDepth");
 	}
 	catch ( ... ) {}

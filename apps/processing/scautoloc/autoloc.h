@@ -27,6 +27,7 @@
 #include "config.h"
 #include "stationconfig.h"
 #include "picklog.h"
+#include "depthlookup.h"
 
 
 namespace Seiscomp {
@@ -364,6 +365,7 @@ class Autoloc {
 		AutolocInternal::OriginVector _origins;
 		AutolocConfig _config;
 		AutolocInternal::StationConfig _stationConfig;
+		DepthLookupPtr _depthLookup;
 
 		const Seiscomp::Config::Config *scconfig {nullptr};
 		const Seiscomp::DataModel::Inventory *scinventory {nullptr};
