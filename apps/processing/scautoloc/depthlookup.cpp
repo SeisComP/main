@@ -142,15 +142,11 @@ double Slab2DepthLookup::_lookupDepth(double lat, double lon) const {
 	for ( const auto &zone : _zones ) {
 		// Scan deepest → shallowest; return depth of deepest level containing point
 		for ( const auto &level : zone.levels ) {
-			const Geo::GeoFeature *feature = nullptr;
+			// Check all features with matching name (a zone may have multiple sub-polygons)
 			for ( const auto *f : features->features() ) {
-				if ( f && f->name() == level.featureName ) {
-					feature = f;
-					break;
-				}
+				if ( f && f->name() == level.featureName && f->contains(coord) )
+					return static_cast<double>(level.depthKm);
 			}
-			if ( feature && feature->contains(coord) )
-				return static_cast<double>(level.depthKm);
 		}
 	}
 
@@ -170,18 +166,13 @@ double Slab2DepthLookup::fetchMaxDepth(double lat, double lon) const {
 	const Geo::GeoCoordinate coord(lat, lon);
 
 	for ( const auto &zone : _zones ) {
-		// Check if point is inside the shallowest (outermost) level
+		// Check if point is inside any sub-polygon of the shallowest (outermost) level
 		if ( zone.levels.empty() ) continue;
 		const auto &shallowest = zone.levels.back();
-		const Geo::GeoFeature *feature = nullptr;
 		for ( const auto *f : features->features() ) {
-			if ( f && f->name() == shallowest.featureName ) {
-				feature = f;
-				break;
-			}
+			if ( f && f->name() == shallowest.featureName && f->contains(coord) )
+				return static_cast<double>(zone.maxDepthKm);
 		}
-		if ( feature && feature->contains(coord) )
-			return static_cast<double>(zone.maxDepthKm);
 	}
 
 	return _fallbackMaxDepth;
