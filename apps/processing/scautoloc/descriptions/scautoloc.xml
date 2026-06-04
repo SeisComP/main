@@ -77,6 +77,29 @@
 				<parameter name="maxDepth" type="double" default="1000" unit="km">
 					<description>
 					Maximum permissible depth for reporting origins.
+					Used when depthLookup is set to Constant (default).
+					</description>
+				</parameter>
+				<parameter name="depthLookup" type="string" default="Constant">
+					<description>
+					Depth lookup backend for location-dependent default and maximum
+					depths. Available backends:
+
+					Constant (default): uses locator.defaultDepth and autoloc.maxDepth
+					globally. Behaviour is identical to previous versions.
+
+					Slab2: uses USGS Slab2.0 depth-footprint contour BNA files to
+					determine the default and maximum depth based on the epicenter
+					location. Falls back to locator.defaultDepth and autoloc.maxDepth
+					outside all slab zones.
+					</description>
+				</parameter>
+				<parameter name="slab2.directory" type="directory" default="@DATADIR@/scautoloc/slabs">
+					<description>
+					Directory containing USGS Slab2.0 depth-contour BNA files.
+					Only used when autoloc.depthLookup is set to Slab2.
+					The directory must contain depth-level subdirectories
+					(000, 020, 040, ...) each holding per-zone BNA files.
 					</description>
 				</parameter>
 				<parameter name="maxSGAP" type="double" default="360" unit="deg">

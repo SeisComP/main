@@ -44,7 +44,11 @@ void AutolocConfig::dump() const {
 	SEISCOMP_INFO("    maxResidual                      %.1f s", maxResidualUse);
 	SEISCOMP_INFO("    maxResidual for keeping picks    %.1f s", maxResidualKeep);
 	SEISCOMP_INFO("    minPhaseCount                    %d",     minPhaseCount);
-	SEISCOMP_INFO("    maxDepth                         %.1f km", maxDepth);
+	SEISCOMP_INFO("    depthLookup                      %s",     depthLookupType.c_str());
+	if ( depthLookupType == "Slab2" )
+		SEISCOMP_INFO("    slab2.directory                  %s",     slabDir.c_str());
+	else
+		SEISCOMP_INFO("    maxDepth                         %.1f km", maxDepth);
 	SEISCOMP_INFO("    minStaCountIgnorePKP             %d",     minStaCountIgnorePKP);
 	SEISCOMP_INFO("    defaultDepthStickiness           %g",     defaultDepthStickiness);
 	SEISCOMP_INFO("    tryDefaultDepth                  %s",     tryDefaultDepth ? "true" : "false");

@@ -98,7 +98,7 @@ struct AutolocConfig {
 		// Directory containing Slab2 BNA depth-contour files.
 		// Only used when depthLookupType = "Slab2".
 		// Default: @DATADIR@/spatial/vector/slabs
-		std::string slabDir{"@DATADIR@/spatial/vector/slabs"};
+		std::string slabDir{"@DATADIR@/scautoloc/slabs"};
 
 		// Use this depth if there is no depth resolution.
 		// Used directly by the Constant backend; overridden geographically
