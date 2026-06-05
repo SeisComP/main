@@ -518,78 +518,40 @@ bool App::init() {
 
 	for ( StationConfig::const_iterator it = _stationConfig.begin();
 	      it != _stationConfig.end(); ++it ) {
+
+		const string& cfgNet = it->first.first;
+		const string& cfgSta = it->first.second;
+		const string& cfgLoc = it->second.locationCode;
+		const string& cfgCha = it->second.channel;
+
+		auto addDataChannel = 
+			[this, cfgNet, cfgSta, cfgLoc, &subscribeStreams](const string & cha, bool verbose=true) {
+				string streamID = cfgNet + "." + cfgSta + "." + cfgLoc + "." + cha;
+				if ( subscribeStreams.find(streamID) == subscribeStreams.end() ) {
+					if (verbose) {
+						SEISCOMP_DEBUG("Adding data channel %s", streamID.c_str());
+					}
+					recordStream()->addStream(cfgNet, cfgSta, cfgLoc, cha);
+					subscribeStreams.insert(streamID);
+				}
+		};
+
 		// Ignore wildcards
-		if ( it->first.first == "*" ) continue;
-		if ( it->first.second == "*" ) continue;
+		if ( cfgNet == "*" ) continue;
+		if ( cfgSta == "*" ) continue;
 
 		// Ignore undefined channels
-		if ( it->second.channel.empty() ) continue;
+		if ( cfgCha.empty() ) continue;
 
 		// Ignore disabled channels
 		if ( !it->second.enabled ) {
 			SEISCOMP_INFO("Detector on station %s.%s disabled by config",
-			              it->first.first, it->first.second);
+			              cfgNet, cfgSta);
 			continue;
 		}
 
-		DataModel::SensorLocation *loc =
-			Client::Inventory::Instance()->getSensorLocation(it->first.first, it->first.second, it->second.locationCode, now);
-
-		string channel = it->second.channel;
-		char compCode = 'Z';
-		bool isFixedChannel = channel.size() > 2;
-
-		DataModel::ThreeComponents chan;
-
-		if ( loc )
-			DataModel::getThreeComponents(chan, loc, it->second.channel.substr(0,2).c_str(), now);
-
-		DataModel::Stream *compZ = chan.comps[DataModel::ThreeComponents::Vertical];
-		DataModel::Stream *compN = chan.comps[DataModel::ThreeComponents::FirstHorizontal];
-		DataModel::Stream *compE = chan.comps[DataModel::ThreeComponents::SecondHorizontal];
-
-		if ( !isFixedChannel ) {
-			if ( compZ )
-				channel = compZ->code();
-			else
-				channel += compCode;
-		}
-
-		std::string streamID = it->first.first + "." + it->first.second + "." + it->second.locationCode + "." + channel;
-
-		SEISCOMP_INFO("Adding detection channel %s", streamID);
-
-		_streamIDs.insert(streamID);
-		subscribeStreams.insert(streamID);
-
-		recordStream()->addStream(it->first.first, it->first.second, it->second.locationCode, channel);
-
-		if ( compZ && acquireComps[0] ) {
-			streamID = it->first.first + "." + it->first.second + "." + it->second.locationCode + "." + compZ->code();
-			if ( subscribeStreams.find(streamID) == subscribeStreams.end() ) {
-				SEISCOMP_DEBUG("Adding data channel %s", streamID);
-				recordStream()->addStream(it->first.first, it->first.second, it->second.locationCode, compZ->code());
-				subscribeStreams.insert(streamID);
-			}
-		}
-
-		if ( compN && acquireComps[1] ) {
-			streamID = it->first.first + "." + it->first.second + "." + it->second.locationCode + "." + compN->code();
-			if ( subscribeStreams.find(streamID) == subscribeStreams.end() ) {
-				SEISCOMP_DEBUG("Adding data channel %s", streamID);
-				recordStream()->addStream(it->first.first, it->first.second, it->second.locationCode, compN->code());
-				subscribeStreams.insert(streamID);
-			}
-		}
-
-		if ( compE && acquireComps[2] ) {
-			streamID = it->first.first + "." + it->first.second + "." + it->second.locationCode + "." + compE->code();
-			if ( subscribeStreams.find(streamID) == subscribeStreams.end() ) {
-				SEISCOMP_DEBUG("Adding data channel %s", streamID);
-				recordStream()->addStream(it->first.first, it->first.second, it->second.locationCode, compE->code());
-				subscribeStreams.insert(streamID);
-			}
-		}
+		bool isFixedChannel = cfgCha.size() > 2;
+		string compZFallback; // to be determined below
 
 		if ( _config.playback && inv ) {
 			// Figure out all historic epochs for locations and channels and
@@ -597,47 +559,113 @@ bool App::init() {
 			// required in playback mode if historic data is fed into the picker
 			// and where the current time check does not apply.
 
+			set<string> zCompAcrossEpochs;
 			for ( size_t n = 0; n < inv->networkCount(); ++n ) {
 				DataModel::Network *net = inv->network(n);
-				if ( net->code() != it->first.first ) continue;
+				if ( net->code() != cfgNet ) continue;
 
 				for ( size_t s = 0; s < net->stationCount(); ++s ) {
 					DataModel::Station *sta = net->station(s);
-					if ( sta->code() != it->first.second ) continue;
+					if ( sta->code() != cfgSta ) continue;
 
 					for ( size_t l = 0; l < sta->sensorLocationCount(); ++l ) {
 						DataModel::SensorLocation *loc = sta->sensorLocation(l);
-						if ( loc->code() != it->second.locationCode ) continue;
+						if ( loc->code() != cfgLoc ) continue;
 
+						Core::Time epoch;
 						for ( size_t c = 0; c < loc->streamCount(); ++c ) {
 							DataModel::Stream *cha = loc->stream(c);
+							if ( cfgCha.compare(0, 2, cha->code(), 0, 2) != 0 ) continue;
 
-							if ( it->second.channel.compare(0, 2, cha->code(), 0, 2) == 0 ) {
-								streamID = it->first.first + "." + it->first.second + "." + it->second.locationCode + "." + cha->code();
-								if ( subscribeStreams.find(streamID) == subscribeStreams.end() ) {
-									SEISCOMP_DEBUG("Adding data channel %s", streamID.c_str());
-									recordStream()->addStream(it->first.first, it->first.second, it->second.locationCode, cha->code());
-									subscribeStreams.insert(streamID);
+							addDataChannel(cha->code());
+
+							// if the bindings do not provide a fixed channel, check the
+							// vertical component for the current epoch
+							if ( !isFixedChannel && cha->start() != epoch) {
+								epoch = cha->start();
+								DataModel::Stream *compZ =
+									DataModel::getVerticalComponent(loc, cfgCha.c_str(), epoch);
+								if ( compZ ) {
+									zCompAcrossEpochs.insert(compZ->code());
 								}
 							}
 						}
 					}
 				}
 			}
+
+			// Verify the consistency of vertical components across epochs and use
+			// that as fall back component
+			if ( zCompAcrossEpochs.size() == 1 ) {
+				compZFallback = *zCompAcrossEpochs.begin();
+			}
+			else if ( zCompAcrossEpochs.size() > 1 ) {
+				string streamID = cfgNet + "." + cfgSta + "." + cfgLoc + "." + cfgCha;
+				SEISCOMP_ERROR(
+					"Ambiguous vertical component across epochs for %s. Please configure "
+					"a fixed component.", streamID.c_str());
+			}
+		}
+
+		DataModel::SensorLocation *loc =
+			Client::Inventory::Instance()->getSensorLocation(cfgNet, cfgSta, cfgLoc, now);
+
+		DataModel::ThreeComponents chan;
+
+		if ( loc ) {
+			DataModel::getThreeComponents(chan, loc, cfgCha.substr(0,2).c_str(), now);
+		}
+
+		DataModel::Stream *compZ = chan.comps[DataModel::ThreeComponents::Vertical];
+		DataModel::Stream *compN = chan.comps[DataModel::ThreeComponents::FirstHorizontal];
+		DataModel::Stream *compE = chan.comps[DataModel::ThreeComponents::SecondHorizontal];
+
+		string channel = cfgCha;
+
+		if ( !isFixedChannel ) {
+			if ( compZ ) {
+				channel = compZ->code();
+			}
+			else if ( !compZFallback.empty() ) {
+				channel = compZFallback;
+			}
+			else {
+				channel = channel + 'Z';
+			}
+		}
+
+		std::string streamID = cfgNet + "." + cfgSta + "." + cfgLoc + "." + channel;
+
+		SEISCOMP_INFO("Adding detection channel %s", streamID);
+
+		_streamIDs.insert(streamID);
+		addDataChannel(channel, false);
+
+		if ( compZ && acquireComps[0] ) {
+			addDataChannel(compZ->code());
+		}
+
+		if ( compN && acquireComps[1] ) {
+			addDataChannel(compN->code());
+		}
+
+		if ( compE && acquireComps[2] ) {
+			addDataChannel(compE->code());
 		}
 	}
 
-
 	if ( _streamIDs.empty() ) {
-		if ( _config.useAllStreams )
+		if ( _config.useAllStreams ) {
 			SEISCOMP_INFO("No stations added (empty module configuration?)");
+		}
 		else {
 			SEISCOMP_ERROR("No stations added (empty module configuration?) and thus nothing to do");
 			return false;
 		}
 	}
-	else
+	else {
 		SEISCOMP_INFO("%d channels added", (int)_streamIDs.size());
+	}
 
 	SEISCOMP_INFO("\nAmplitudes to calculate:\n%s", logAmplTypes.c_str());
 
