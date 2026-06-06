@@ -144,8 +144,11 @@ double Slab2DepthLookup::_lookupDepth(double lat, double lon) const {
 		for ( const auto &level : zone.levels ) {
 			// Check all features with matching name (a zone may have multiple sub-polygons)
 			for ( const auto *f : features->features() ) {
-				if ( f && f->name() == level.featureName && f->contains(coord) )
+				if ( f && f->name() == level.featureName && f->contains(coord) ) {
+					SEISCOMP_DEBUG("DepthLookup/Slab2: (%.2f, %.2f) → zone '%s' at %d km",
+					               lat, lon, zone.name.c_str(), level.depthKm);
 					return static_cast<double>(level.depthKm);
+				}
 			}
 		}
 	}
@@ -156,7 +159,12 @@ double Slab2DepthLookup::_lookupDepth(double lat, double lon) const {
 
 double Slab2DepthLookup::fetch(double lat, double lon) const {
 	double d = _lookupDepth(lat, lon);
-	return d > 0.0 ? d : _fallbackDepth;
+	if ( d > 0.0 ) {
+		return d;
+	}
+	SEISCOMP_DEBUG("DepthLookup/Slab2: (%.2f, %.2f) outside all zones → fallback %.0f km",
+	               lat, lon, _fallbackDepth);
+	return _fallbackDepth;
 }
 
 
@@ -170,11 +178,16 @@ double Slab2DepthLookup::fetchMaxDepth(double lat, double lon) const {
 		if ( zone.levels.empty() ) continue;
 		const auto &shallowest = zone.levels.back();
 		for ( const auto *f : features->features() ) {
-			if ( f && f->name() == shallowest.featureName && f->contains(coord) )
+			if ( f && f->name() == shallowest.featureName && f->contains(coord) ) {
+				SEISCOMP_DEBUG("DepthLookup/Slab2: (%.2f, %.2f) maxDepth → zone '%s' %d km",
+				               lat, lon, zone.name.c_str(), zone.maxDepthKm);
 				return static_cast<double>(zone.maxDepthKm);
+			}
 		}
 	}
 
+	SEISCOMP_DEBUG("DepthLookup/Slab2: (%.2f, %.2f) maxDepth outside all zones → fallback %.0f km",
+	               lat, lon, _fallbackMaxDepth);
 	return _fallbackMaxDepth;
 }
 
