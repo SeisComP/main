@@ -128,27 +128,34 @@
 			</parameter>
 			<parameter name="simplifiedIDs" type="boolean" default="false">
 				<description>
-				If enabled then simplified pick and amplitude IDs will be created.
+				If enabled, then simplified pick and amplitude IDs will be created.
 				Rather than the configured publicID pattern, the following pattern
 				will be used: &quot;%Y%m%d.%H%M%S.%f-@net.sta.loc.cha@&quot;.
 				</description>
 			</parameter>
 			<parameter name="fx" type="string" default="" values="DFX">
 				<description>
-				Configures the feature extraction type to use. Currently
-				available: &quot;DFX&quot;. Configure related parameters
-				in global bindings.
+				Configures the feature extraction method to be used. Currently
+				available: &quot;DFX&quot;. Other methods may be available by
+				plugins. Configure DFX-related parameters in global bindings.
 
 				When configured, the usability of the features for locating
-				events depends on the used locator, e.g. LOCSAT will by default
-				consider slowness and backazimuth when measured. Read the
-				locator's documentation and configuration parameters.
+				events depends on locator, e.g., LOCSAT may consider slowness
+				and backazimuth depending on the configuration of LOCSAT but
+				other locators such as Hypo71 or NonLinLoc do not.
+				Read the locator's documentation and configuration parameters.
 				</description>
 			</parameter>
 			<parameter name="amplitudes" type="list:string" default="MLv, mb, mB">
 				<description>
-				The amplitude types to be computed by the picker based on
-				picks.
+				The amplitude types to be computed by the picker based on picks.
+				Fix and potentially long time windows will apply for amplitude
+				measurements. scamp may be the preferable module reducing the
+				amount of amplitudes measured and stored in database and
+				allowing for distance-dependent time windows.
+
+				However, scautoloc needs mb amplitudes by default. mb amplitudes
+				should therefore be measured by scautopick.
 				</description>
 			</parameter>
 			<group name="thresholds">
@@ -225,13 +232,15 @@
 			<group name="amplitudes">
 				<parameter name="enableUpdate" type="list:string" default="" unit="">
 					<description>
-					Configure a list of magnitude types.
-					Update and send amplitudes for these magnitudes as soon as data are
-					available. Do not wait for complete time windows.
-					Only magnitudes computed by scautopick as given by the amplitudes parameter are considered.
-					This option is for rapid magnitude estimation and EEW.
+					Configure a list of amplitude types to be updated and sent
+					as soon as data is available. Prevents waiting for complete
+					data within	time windows speeding up magnitude computation.
+					This option therefore supports rapid magnitude estimation
+					for EEW but its configuration increases the load on your
+					SeisComP system!
 
-					WARNING: This option increases the load on the system!
+					Note: Amplitude types configured here must also be
+					configured in &quot;amplitudes&quot;
 					</description>
 				</parameter>
 			</group>
