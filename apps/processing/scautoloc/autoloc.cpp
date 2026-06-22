@@ -163,7 +163,7 @@ bool Autoloc::feed(Seiscomp::DataModel::Pick *scpick) {
 	catch ( ... ) {}
 
 	if ( status == "rejected" && !_config.allowRejectedPicks ) {
-		SEISCOMP_INFO("Ignoring pick %s due to evaluation status 'rejected'", scpick->publicID(), status);
+		SEISCOMP_INFO("Ignoring pick %s: evaluation status 'rejected'", scpick->publicID(), status);
 		return false;
 	}
 
@@ -178,14 +178,14 @@ bool Autoloc::feed(Seiscomp::DataModel::Pick *scpick) {
 	SEISCOMP_INFO_S("  + label:  " + pickLabel(scpick));
 
 	if ( mode == "unset" ) {
-		SEISCOMP_DEBUG("Pick %s: setting evaluation mode from '%s' to 'automatic'",
+		SEISCOMP_DEBUG("Pick %s: etting evaluation mode from '%s' to 'automatic'",
 		               scpick->publicID(), mode);
 		scpick->setEvaluationMode(DataModel::EvaluationMode(DataModel::AUTOMATIC));
 	}
 
 	const int priority = _authorPriority(objectAuthor(scpick));
 	if ( priority == 0 ) {
-		SEISCOMP_INFO("  + ignoring pick since author is '%s'", objectAuthor(scpick));
+		SEISCOMP_INFO("  + ignoring pick: author is '%s'", objectAuthor(scpick));
 		return false;
 	}
 
@@ -218,24 +218,38 @@ bool Autoloc::feed(Seiscomp::DataModel::Amplitude *scampl) {
 
 	AutolocInternal::Pick *pick = (AutolocInternal::Pick *) Processing::Autoloc::pick(pickID);
 	if ( !pick ) {
-		SEISCOMP_INFO("  + ignoring amplitude since reference pick cannot be found");
+		SEISCOMP_INFO("  + ignoring amplitude: Reference pick cannot be found");
 		return false;
 	}
 
-	try {
-		// note that for testing it is allowed to use the same amplitude as
-		// _config.amplTypeSNR and _config.amplTypeAbs  -> no 'else if' here
-		if ( atype == _config.amplTypeSNR ) {
+	// note that for testing it is allowed to use the same amplitude as
+	// _config.amplTypeSNR and _config.amplTypeAbs  -> no 'else if' here
+	if ( atype == _config.amplTypeSNR ) {
+		try {
 			pick->snr = scampl->amplitude().value();
 		}
-		if ( atype == _config.amplTypeAbs ) {
-			pick->amp = scampl->amplitude().value();
-			pick->per = (_config.amplTypeAbs == "mb") ? scampl->period().value() : 1;
+		catch ( ... ) {
+			SEISCOMP_INFO("  + ignoring amplitude: Value not fond");
+			return false;
 		}
 	}
-	catch ( ... ) {
-		SEISCOMP_INFO("  + ignoring amplitude");
-		return false;
+
+	if ( atype == _config.amplTypeAbs ) {
+		try {
+			pick->amp = scampl->amplitude().value();
+		}
+		catch ( ... ) {
+			SEISCOMP_INFO("  + ignoring amplitude: Value not found");
+			return false;
+		}
+
+		try {
+			pick->per = (_config.amplTypeAbs == "mb") ? scampl->period().value() : 1;
+		}
+		catch ( ... ) {
+			pick->per = 1;
+			SEISCOMP_INFO("  + amplitude not found: Considering %.1f", pick->per);
+		}
 	}
 
 	return Processing::Autoloc::feed(pick);
