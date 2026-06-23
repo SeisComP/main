@@ -148,12 +148,17 @@ void Autoloc::dumpState() const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool Autoloc::feed(Seiscomp::DataModel::Pick *scpick) {
-	try {
-		const Core::Time &creationTime = scpick->creationInfo().creationTime();
-		sync(creationTime);
+	if ( _config.playbackTimingByPickTime ) {
+		sync(scpick->time().value());
 	}
-	catch ( ... ) {
-		SEISCOMP_WARNING("Pick %s: creation time is not set", scpick->publicID());
+	else {
+		try {
+			const Core::Time &creationTime = scpick->creationInfo().creationTime();
+			sync(creationTime);
+		}
+		catch ( ... ) {
+			SEISCOMP_WARNING("Pick %s: creation time is not set", scpick->publicID());
+		}
 	}
 
 	std::string status = "unset";
@@ -215,6 +220,18 @@ bool Autoloc::feed(Seiscomp::DataModel::Pick *scpick) {
 bool Autoloc::feed(Seiscomp::DataModel::Amplitude *scampl) {
 	const std::string &atype  = scampl->type();
 	const std::string &pickID = scampl->pickID();
+
+	if ( _config.playback ) {
+		if ( !_config.playbackTimingByPickTime ) {
+			try {
+				const Core::Time &creationTime = scampl->creationInfo().creationTime();
+				sync(creationTime);
+			}
+			catch ( ... ) {
+				SEISCOMP_WARNING("Amplitude %s: creation time not set", scampl->publicID());
+			}
+		}
+	}
 
 	AutolocInternal::Pick *pick = (AutolocInternal::Pick *) Processing::Autoloc::pick(pickID);
 	if ( !pick ) {
