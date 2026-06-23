@@ -23,6 +23,8 @@
 
 #include <seiscomp/logging/log.h>
 #include <seiscomp/math/filter/butterworth.h>
+#include <seiscomp/datamodel/origin.h>
+#include <seiscomp/datamodel/sensorlocation.h>
 
 #include <algorithm>
 #include <cfloat>
@@ -100,6 +102,11 @@ AmplitudeProcessor_Mwpd::AmplitudeProcessor_Mwpd()
 : Processing::AmplitudeProcessor(MWPD_TYPE) {
 	setUsedComponent(Vertical);
 	setUnit(MWPD_AMP_UNIT);
+	// Compute progressively as data streams (Early-est style): the processor
+	// emits a growing Mwpd and finalizes as soon as T0 resolves/terminates,
+	// rather than waiting the full (long) signal window. maxDuration is just
+	// the upper bound on how long we keep looking.
+	setUpdateEnabled(true);
 	applyConfig();
 }
 
@@ -131,10 +138,50 @@ bool AmplitudeProcessor_Mwpd::setup(const Processing::Settings &settings) {
 
 	applyConfig();
 
-	SEISCOMP_DEBUG("%s: gainFreq=%.2fHz HF=%.1f-%.1fHz preP=%.1fs maxDur=%.0fs",
+	// Travel-time table for the S-P window cap (graceful if unavailable).
+	_ttt = nullptr;
+	if ( _cfg.useSpCap ) {
+		_ttt = Seiscomp::TravelTimeTableInterface::Create(_cfg.tttBackend.c_str());
+		if ( !_ttt || !_ttt->setModel(_cfg.tttModel) ) {
+			SEISCOMP_WARNING("%s: travel-time table '%s'/'%s' unavailable; "
+			                 "S-P window cap disabled",
+			                 type().c_str(), _cfg.tttBackend.c_str(),
+			                 _cfg.tttModel.c_str());
+			_ttt = nullptr;
+		}
+	}
+
+	SEISCOMP_DEBUG("%s: gainFreq=%.2fHz HF=%.1f-%.1fHz preP=%.1fs maxDur=%.0fs spCap=%d",
 	               type().c_str(), _cfg.gainFrequency, _cfg.hfFmin, _cfg.hfFmax,
-	               _cfg.analysisPreP, _cfg.maxDuration);
+	               _cfg.analysisPreP, _cfg.maxDuration, _ttt != nullptr);
 	return true;
+}
+
+
+double AmplitudeProcessor_Mwpd::computeSPSeconds() const {
+	if ( !_ttt || !_environment.hypocenter || !_environment.receiver ) {
+		return -1.0;
+	}
+	try {
+		const double slat = _environment.hypocenter->latitude().value();
+		const double slon = _environment.hypocenter->longitude().value();
+		double sdep = 0.0;
+		try { sdep = _environment.hypocenter->depth().value(); }
+		catch ( ... ) {}
+		const double rlat = _environment.receiver->latitude();
+		const double rlon = _environment.receiver->longitude();
+		double relev = 0.0;
+		try { relev = _environment.receiver->elevation(); }
+		catch ( ... ) {}
+
+		const double tP = _ttt->computeTime("P", slat, slon, sdep, rlat, rlon, relev);
+		const double tS = _ttt->computeTime("S", slat, slon, sdep, rlat, rlon, relev);
+		if ( tP > 0.0 && tS > 0.0 && tS > tP ) {
+			return tS - tP;
+		}
+	}
+	catch ( ... ) {}
+	return -1.0;
 }
 
 
@@ -170,7 +217,9 @@ bool AmplitudeProcessor_Mwpd::computeAmplitude(
 	const int preP   = static_cast<int>(_cfg.analysisPreP * fsamp + 0.5);
 	const int iStart = iPick - preP;                   // integration start
 	if ( iStart < 0 || n > static_cast<int>(data.size()) || n - iPick < 16 ) {
-		setStatus(Error, 2);
+		// Not enough data past the pick yet. With incremental updates this is a
+		// "keep waiting" state, NOT an error: leave the status InProgress so the
+		// base keeps feeding. (A terminal status here would kill the processor.)
 		return false;
 	}
 
@@ -212,12 +261,17 @@ bool AmplitudeProcessor_Mwpd::computeAmplitude(
 	}
 
 	// =====================================================================
-	//  2) High-frequency envelope and the source duration T0.
+	//  2) High-frequency envelope and the source duration T0 (durRaw).
 	// =====================================================================
-	double duration;
+	double durRaw;          // source-duration estimate [s] (used for the ramp)
+	bool   t0Resolved  = false;
+	bool   t0Terminated = false; // T0 search hit a termination criterion (final)
+	double peakRelSec  = -1.0;   // time of the envelope peak after P (debug)
 
 	if ( _cfg.fixedDuration ) {
-		duration = _cfg.fixedDurationVal;
+		durRaw = _cfg.fixedDurationVal;
+		t0Resolved  = true;
+		t0Terminated = true;
 	}
 	else {
 		std::vector<double> env(n);
@@ -231,9 +285,10 @@ bool AmplitudeProcessor_Mwpd::computeAmplitude(
 		}
 		const int smoothHW = static_cast<int>(_cfg.smoothHalfWidth * fsamp + 0.5);
 		boxcarSmooth(env, smoothHW);
-		for ( int i = 0; i < n; ++i ) {
-			env[i] = std::sqrt(std::max(0.0, env[i]));
-		}
+		// NOTE: env stays as the squared (power) envelope -- Early-est's
+		// data_float_t50 is squared-then-smoothed and is NOT square-rooted; the
+		// 90/80/50/20% level tracking below runs on power, so a "20% of peak"
+		// crossing is at 0.2 in power (= ~0.45 in amplitude).
 
 		// Level tracking from the pick onward (Early-est T0 loop).
 		double ampNoise = env[iPick];
@@ -241,12 +296,12 @@ bool AmplitudeProcessor_Mwpd::computeAmplitude(
 			ampNoise = DBL_MIN;
 		}
 		double ampPeak = -1.0;
+		int    idxPeak = 0;
 		double amp90 = -1.0, amp80 = -1.0, amp50 = -1.0, amp20 = -1.0;
 		int idx90 = 0, idx80 = 0, idx50 = 0, idx20 = 0;
 		const int minDurSamp = static_cast<int>(_cfg.minDuration * fsamp + 0.5);
 		const int smooth2    = static_cast<int>(2.0 * _cfg.smoothHalfWidth * fsamp + 0.5);
-		const double T0_INVALID = -1.0;
-		duration = T0_INVALID;
+		durRaw = -1.0;
 
 		for ( int i = iPick; i < n; ++i ) {
 			const double amp = env[i];
@@ -254,6 +309,7 @@ bool AmplitudeProcessor_Mwpd::computeAmplitude(
 
 			if ( amp > ampPeak ) {             // new peak: unset all levels
 				ampPeak = amp;
+				idxPeak = rel;
 				amp90 = amp80 = amp50 = amp20 = -1.0;
 			}
 			else {
@@ -278,8 +334,9 @@ bool AmplitudeProcessor_Mwpd::computeAmplitude(
 				if ( amp20 < 0.0 ) {
 					if ( amp <= 0.2 * ampPeak ) {
 						amp20 = amp; idx20 = rel;
-						duration = durationFromLevels(idx90, idx80, idx50, idx20,
-						                              deltaTime, _cfg.durationFloor);
+						durRaw = durationFromLevels(idx90, idx80, idx50, idx20,
+						                            deltaTime, _cfg.durationFloor);
+						t0Resolved = true;
 					}
 				}
 				else if ( amp > 0.2 * ampPeak ) {
@@ -290,62 +347,89 @@ bool AmplitudeProcessor_Mwpd::computeAmplitude(
 				if ( rel > minDurSamp &&
 				     ( amp / ampNoise < _cfg.snT0End ||
 				       amp / ampPeak  < _cfg.peakRatioT0End ) ) {
+					t0Terminated = true;
 					break;
 				}
 			}
 
 			// Terminate if well past twice the established duration.
-			if ( duration > 0.0 && amp20 > 0.0 &&
-			     rel > static_cast<int>(2.0 * duration * fsamp + 0.5) &&
+			if ( durRaw > 0.0 && amp20 > 0.0 &&
+			     rel > static_cast<int>(2.0 * durRaw * fsamp + 0.5) &&
 			     rel > smooth2 ) {
+				t0Terminated = true;
 				break;
 			}
 		}
 
-		if ( duration <= 0.0 ) {
-			// T0 not resolved within the window: fall back to the available
-			// post-pick length (capped), as Early-est does before T0 completes.
-			duration = (n - iPick) * deltaTime;
-		}
+		peakRelSec = idxPeak * deltaTime;
+		(void)t0Terminated;   // computed for diagnostics; not used to finalize
 	}
 
-	if ( duration > _cfg.maxDuration ) {
-		duration = _cfg.maxDuration;
+	if ( durRaw > _cfg.maxDuration ) {
+		durRaw = _cfg.maxDuration;
 	}
 
 	// =====================================================================
-	//  3) Displacement integral at T0 (greater of the pos/neg lobes).
+	//  3) Integration window (Early-est) + completeness requirement.
 	// =====================================================================
-	int idxDur = static_cast<int>((duration + _cfg.analysisPreP) / deltaTime + 0.5);
+	// Early-est integrates over MAX_MWPD_DUR (here maxDuration) and only
+	// shortens to T0 when T0 is robustly resolved (timedomain_processing.c
+	// ~1762). The window is also capped at the S-P time so the integral never
+	// includes S/surface-wave energy. Our envelope T0 estimate is not reliable
+	// enough to shorten the window, so we integrate over the full window
+	// (S-P capped), which captures the running displacement integral up to S.
+	const double sp = computeSPSeconds();
+	double windowDur = _cfg.maxDuration;
+	if ( sp > 0.0 && windowDur > sp ) {
+		windowDur = sp;
+	}
+
+	// Completeness: the data must cover the full integration window. While it
+	// does not, keep waiting (return false, stay InProgress). If the window is
+	// never covered (data ends short), the base finalizes a skip at progress
+	// >= 100 -- i.e. an incomplete station is skipped, not emitted on a partial
+	// window (Early-est flag_complete_mwpd / MWPD_INVALID behaviour).
+	const double availDur = (n - iPick) * deltaTime;
+	if ( availDur < windowDur - 1.0 ) {
+		return false;
+	}
+
+	double integDur = windowDur;
+	int idxDur = static_cast<int>((integDur + _cfg.analysisPreP) / deltaTime + 0.5);
 	if ( idxDur >= nAcc ) {
 		idxDur = nAcc - 1;
 	}
 	if ( idxDur < 1 ) {
-		setStatus(Error, 3);
 		return false;
 	}
 
 	double amplitudeIntegral = std::max(intPos[idxDur], intNeg[idxDur]);  // [m*s]
 	if ( amplitudeIntegral <= 0.0 ) {
-		setStatus(Error, 4);
 		return false;
 	}
 
-	// Emit the integral in nm*s (as Mwp emits nm); carry T0 as the period
-	// (the base divides period by fsamp, so multiply by fsamp here).
+	// Emit the integral in nm*s (as Mwp emits nm). Carry the source duration as
+	// the period (for the magnitude side / tsunami indicator): the resolved T0
+	// if available, otherwise the integration window. The base divides period
+	// by fsamp, so multiply here.
+	const double t0Report = ( durRaw > 0.0 ) ? durRaw : integDur;
 	amplitude->value = amplitudeIntegral * 1.0e9;
-	*period = duration * fsamp;
-	*snr = 1000000.0;   // T0 S/N gating already applied above
+	*period = t0Report * fsamp;
+	*snr = 1000000.0;
 
 	dt->index = iPick;
 	dt->begin = iStart - iPick;
 	dt->end   = idxDur + iStart - iPick;
 
-	SEISCOMP_DEBUG("%s.%s.%s: ampInt=%g nm*s T0=%.1fs (pos=%g neg=%g) gain=%g",
+	// The integration window is complete -> finalize (stop further updates).
+	setStatus(Finished, 100.0);
+	SEISCOMP_DEBUG("%s.%s.%s: Mwpd FINAL ampInt=%g nm*s T0raw=%.1fs%s peak@%.1fs "
+	               "S-P=%.1fs window=%.1fs win=%.0fs (pos=%g neg=%g) gain=%g",
 	               _environment.networkCode.c_str(),
 	               _environment.stationCode.c_str(),
 	               _environment.locationCode.c_str(),
-	               amplitude->value, duration,
+	               amplitude->value, durRaw, durRaw > 0.0 ? "" : "(unresolved)",
+	               peakRelSec, sp, integDur, availDur,
 	               intPos[idxDur] * 1.0e9, intNeg[idxDur] * 1.0e9, gain);
 
 	return true;

@@ -57,6 +57,15 @@
 				<parameter name="fixedDurationValue" type="double" default="60.0" unit="s">
 					<description>The fixed source duration used when fixedDuration is true.</description>
 				</parameter>
+				<parameter name="spWindowCap" type="boolean" default="true">
+					<description>Cap the displacement-integration window at the theoretical S-P time, as Early-est does, so the integral excludes S/surface-wave energy. The reported source duration T0 (and its ramp correction) is not capped.</description>
+				</parameter>
+				<parameter name="tttBackend" type="string" default="libtau">
+					<description>Travel-time table backend used to compute the S-P cap.</description>
+				</parameter>
+				<parameter name="tttModel" type="string" default="iasp91">
+					<description>Travel-time model used to compute the S-P cap.</description>
+				</parameter>
 			</extend-struct>
 
 			<!-- ============================ Magnitude ===================== -->

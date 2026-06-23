@@ -105,13 +105,14 @@ MagnitudeProcessor_Mwpd::computeMagnitude(
 		}
 	}
 
-	if ( _cfg.useDurationRamp && duration > _cfg.durRampLow ) {
-		double ramp = (duration - _cfg.durRampLow)
-		              / (_cfg.durRampHigh - _cfg.durRampLow);
-		if ( ramp > 1.0 ) {
-			ramp = 1.0;
-		}
-		corr += ramp * (raw - _cfg.magCutoff) * _cfg.rampPow;
+	// Moment scaling for large interplate-thrust / tsunami events, Lomax &
+	// Michelini (2009) eq (5a): M0pd = M0*(M0/M0cutoff)^0.45 for M0 >= M0cutoff
+	// (Mw ~ 7.2), i.e. in magnitude terms Mwpd = raw + 0.45*(raw - 7.2). The
+	// function is continuous at the cutoff. The paper restricts this to
+	// interplate-thrust/tsunami events; event-type classification is not
+	// available here, so it is applied to all large events (configurable).
+	if ( _cfg.useDurationRamp && raw > _cfg.magCutoff ) {
+		corr += (raw - _cfg.magCutoff) * _cfg.rampPow;
 	}
 
 	value = corr;

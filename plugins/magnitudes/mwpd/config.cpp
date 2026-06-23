@@ -98,6 +98,11 @@ bool readMwpdConfig(const Processing::Settings &settings,
 	settings.getValue(out.minDistanceDeg,  prefix + ".minimumDistance");
 	settings.getValue(out.maxDistanceDeg,  prefix + ".maximumDistance");
 
+	// S-P window cap.
+	settings.getValue(out.useSpCap,    prefix + ".spWindowCap");
+	settings.getValue(out.tttBackend,  prefix + ".tttBackend");
+	settings.getValue(out.tttModel,    prefix + ".tttModel");
+
 	if ( out.hfFmax <= out.hfFmin ) {
 		SEISCOMP_ERROR("%s: hfFmax (%f) must be > hfFmin (%f)",
 		               prefix.c_str(), out.hfFmax, out.hfFmin);

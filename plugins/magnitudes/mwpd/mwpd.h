@@ -18,6 +18,7 @@
 #include <seiscomp/core/version.h>
 #include <seiscomp/processing/amplitudeprocessor.h>
 #include <seiscomp/processing/magnitudeprocessor.h>
+#include <seiscomp/seismology/ttt.h>
 
 
 namespace Seiscomp {
@@ -44,14 +45,19 @@ struct MwpdConfig {
 	double analysisPreP    = 1.0;    //!< [s] START_ANALYSIS_BEFORE_P_BRB_HP
 
 	// --- HF envelope (T0 estimator) ---------------------------------------
-	double hfFmin          = 1.0;    //!< [Hz] HF band low edge (filter_bp_bu_co_1_5_n_4)
-	double hfFmax          = 5.0;    //!< [Hz] HF band high edge
-	int    hfOrder         = 4;      //!< HF band-pass order
-	double smoothHalfWidth = 5.0;    //!< [s] SMOOTHING_WINDOW_HALF_WIDTH_T50 boxcar half-width
+	// Lomax & Michelini (2009) use a narrow ~1.0 Hz Gaussian filter for the
+	// duration envelope (their Fig. 2). A narrow band centred on 1 Hz gives a
+	// broad, slowly-decaying envelope and hence the long apparent durations
+	// (40-200 s) in their Table 1. (Early-est's operational code instead uses a
+	// 1-5 Hz Butterworth, which yields much shorter T0.)
+	double hfFmin          = 0.5;    //!< [Hz] envelope band low edge (~1 Hz centre)
+	double hfFmax          = 1.5;    //!< [Hz] envelope band high edge
+	int    hfOrder         = 4;      //!< envelope band-pass order
+	double smoothHalfWidth = 5.0;    //!< [s] envelope boxcar smoothing half-width
 
 	// --- T0 source-duration estimation ------------------------------------
 	double minDuration     = 20.0;   //!< [s] MIN_MWPD_DUR: earliest the T0 search may terminate
-	double maxDuration     = 300.0;  //!< [s] cap on T0 / integration window (<= MAX_MWPD_DUR=1200)
+	double maxDuration     = 300.0;  //!< [s] integration / signal-window length (capped at S-P); Early-est integrates over this window unless a robust T0 shortens it
 	double durationFloor   = 0.2;    //!< [s] MINIMUN_DURATION
 	double snT0End         = 3.0;    //!< SIGNAL_TO_NOISE_RATIO_T0_END
 	double peakRatioT0End  = 0.025;  //!< SIGNAL_TO_PEAK_RATIO_T0_END
@@ -71,6 +77,11 @@ struct MwpdConfig {
 	double rampPow         = 0.45;   //!< MWPD_MOMENT_CORR_POW
 	double minDistanceDeg  = 5.0;    //!< accept station magnitudes from this distance
 	double maxDistanceDeg  = 105.0;  //!< ...up to this distance
+
+	// --- S-P window cap (Early-est limits the integral to the S-P time) ---
+	bool        useSpCap   = true;        //!< cap the displacement integral at the S-P time
+	std::string tttBackend = "libtau";    //!< travel-time backend for S-P
+	std::string tttModel   = "iasp91";    //!< travel-time model for S-P
 };
 
 
@@ -120,10 +131,13 @@ class SC_SYSTEM_CLIENT_API AmplitudeProcessor_Mwpd : public Processing::Amplitud
 
 	private:
 		void applyConfig();
+		//! Theoretical S-P time [s] at the current source/receiver, or -1.
+		double computeSPSeconds() const;
 
 	private:
 		MwpdConfig _cfg;
 		DoubleArray _processedData;
+		Seiscomp::TravelTimeTableInterfacePtr _ttt;
 };
 
 
