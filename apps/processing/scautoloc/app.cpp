@@ -91,6 +91,10 @@ void AutolocApp::createCommandLineDescription() {
 	                        "from messaging and must be provided. Results are "
 	                        "sent in XML to stdout." ,
 	                        &_inputFileXML, false);
+	commandline().addOption("Input", "timing",
+	                        "Specify playback timing. Possible values are "
+	                        "'pickTime' (default) or 'creationTime'.",
+	                        &_playbackTiming, false);
 
 	commandline().addGroup("Settings");
 	commandline().addOption("Settings", "allow-rejected-picks",
@@ -514,6 +518,19 @@ bool AutolocApp::initConfiguration() {
 	_config.gridConfigFile = Environment::Instance()->absolutePath(_config.gridConfigFile);
 	_config.stationLocationFile = Environment::Instance()->absolutePath(_config.stationLocationFile);
 
+	if ( _playbackTiming == "pickTime") {
+		_config.playbackTimingByPickTime = true;
+	}
+	else if ( _playbackTiming == "creationTime") {
+		_config.playbackTimingByPickTime = false;
+	}
+	else {
+		SEISCOMP_ERROR("Illegal value '%s' for playback timing. "
+		               "Allowed values are 'pickTime' and 'creationTime'",
+		               _playbackTiming);
+		return false;
+	}
+
 	// network type
 	std::string ntp = "global";
 	try {
@@ -758,6 +775,7 @@ bool AutolocApp::fillObjectQueueFromXMLFile(const char *filename) {
 	SEISCOMP_INFO("  number of amplitudes: %d", _inputEP->amplitudeCount());
 	SEISCOMP_INFO("  number of origins:    %d", _inputEP->originCount());
 
+	objectQueue.setOrderByCreationTime(_playbackTiming == "creationTime");
 	objectQueue.fill(_inputEP.get());
 	if ( objectQueue.empty() ) {
 		return false;
@@ -952,14 +970,6 @@ void AutolocApp::addObject(const std::string& parentID, DataModel::Object* o) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool AutolocApp::feed(DataModel::Pick *scpick) {
-	try {
-		const Core::Time &creationTime = scpick->creationInfo().creationTime();
-		sync(creationTime);
-	}
-	catch ( ... ) {
-		SEISCOMP_WARNING("Pick %s: creation time is not set", scpick->publicID());
-	}
-
 	if ( objectAgencyID(scpick) != agencyID() && isAgencyIDBlocked(objectAgencyID(scpick)) ) {
 		SEISCOMP_INFO("Ignoring pick %s due to blocked agency is '%s'", scpick->publicID(), objectAgencyID(scpick));
 		return false;
@@ -981,33 +991,21 @@ bool AutolocApp::feed(DataModel::Pick *scpick) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool AutolocApp::feed(DataModel::Amplitude *scampl) {
 	const std::string &atype  = scampl->type();
-	const std::string &amplID = scampl->publicID();
 	if ( atype != _config.amplTypeAbs && atype != _config.amplTypeSNR ) {
 		//	SEISCOMP_DEBUG("Ignoring '%s' amplitude %s: neither of type %s nor %s",
-		//	               atype, amplID, _config.amplTypeAbs, _config.amplTypeSNR);
+		//	               atype, scampl->publicID(), _config.amplTypeAbs, _config.amplTypeSNR);
 		return false;
 	}
 
 	SEISCOMP_INFO("Processing '%s' amplitude %s from pick %s",
-	              scampl->type(), amplID, scampl->pickID());
+	              scampl->type(), scampl->publicID(), scampl->pickID());
 
 	if ( objectAgencyID(scampl) != agencyID() ) {
 		if ( isAgencyIDBlocked(objectAgencyID(scampl)) ) {
-			SEISCOMP_INFO_S("  + ignoring amplitude since agency is: " + objectAgencyID(scampl));
+			SEISCOMP_INFO("  + ignoring amplitude: agency is %s", objectAgencyID(scampl));
 			return false;
 		}
-		SEISCOMP_DEBUG("  + agency is: %s", objectAgencyID(scampl));
-	}
-
-	if ( _config.playback ) {
-		try {
-			const Core::Time &creationTime = scampl->creationInfo().creationTime();
-			sync(creationTime);
-		}
-		catch ( ... ) {
-			SEISCOMP_WARNING("Amplitude %s: creation time not set",
-			                 amplID);
-		}
+		SEISCOMP_DEBUG("  + agency is %s", objectAgencyID(scampl));
 	}
 
 	return Processing::Autoloc::feed(scampl);

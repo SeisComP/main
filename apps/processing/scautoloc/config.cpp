@@ -65,6 +65,10 @@ void AutolocConfig::dump() const {
 	SEISCOMP_INFO("  offline                            %s",     offline ? "true" : "false");
 	SEISCOMP_INFO("  test                               %s",     test ? "true" : "false");
 	SEISCOMP_INFO("  playback                           %s",     playback ? "true" : "false");
+	if ( playback ) {
+		SEISCOMP_INFO("    timing                           %s",
+		              playbackTimingByPickTime ? "pickTime" : "creationTime");
+	}
 // This isn't used still so we don't want to confuse the user....
 //	SEISCOMP_INFO("useImportedOrigins               %s",     useImportedOrigins ? "true" : "false");
 

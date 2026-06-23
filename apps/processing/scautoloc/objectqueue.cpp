@@ -28,8 +28,11 @@ namespace Seiscomp {
 
 namespace DataModel {
 
-bool PublicObjectQueue::fill(const EventParameters *ep)
-{
+void PublicObjectQueue::setOrderByCreationTime(bool v) {
+	orderByCreationTime = v;
+}
+
+bool PublicObjectQueue::fill(const EventParameters *ep) {
 	using namespace Seiscomp::Core;
 	using namespace std;
 
@@ -41,37 +44,81 @@ bool PublicObjectQueue::fill(const EventParameters *ep)
 	// retrieval of relevant objects from event parameters
 	// and subsequent DSU sort
 	TimeObjectVector objs;
-
 	for ( size_t i = 0; i < ep->pickCount(); ++i ) {
 		PickPtr pick = ep->pick(i);
-		try {
-			Time t = pick->creationInfo().creationTime();
-			objs.push_back(TimeObject(t, 0, pick));
+		if ( orderByCreationTime ) {
+			try {
+				Time t = pick->creationInfo().creationTime();
+				objs.push_back(TimeObject(t, 0, pick));
+			}
+			catch ( ... ) {
+				SEISCOMP_WARNING("Pick %s: no creation time set", pick->publicID());
+			}
 		}
-		catch ( ... ) {
-			SEISCOMP_WARNING("Pick %s: no creation time set", pick->publicID());
+		else {
+			// Use the pick time as object time
+			try {
+				Time t = pick->time().value();
+				objs.push_back(TimeObject(t, 0, pick));
+			}
+			catch ( ... ) {
+				SEISCOMP_WARNING("Pick %s: no pick time set", pick->publicID());
+			}
 		}
 	}
 
 	for ( size_t i = 0; i < ep->amplitudeCount(); ++i ) {
 		AmplitudePtr amplitude = ep->amplitude(i);
-		try {
-			Time t = amplitude->creationInfo().creationTime();
-			objs.push_back(TimeObject(t, 1, amplitude));
+		if ( orderByCreationTime ) {
+			try {
+				Time t = amplitude->creationInfo().creationTime();
+				objs.push_back(TimeObject(t, 1, amplitude));
+			}
+			catch ( ... ) {
+				SEISCOMP_WARNING("Amplitude %s: no creation time set", amplitude->publicID());
+			}
 		}
-		catch ( ... ) {
-			SEISCOMP_WARNING("Amplitude %s: no creation time set", amplitude->publicID());
+		else {
+			// Use the amplitude reference time as object time
+			try {
+				Time t = amplitude->timeWindow().reference();
+				objs.push_back(TimeObject(t, 1, amplitude));
+			}
+			catch ( ... ) {
+				SEISCOMP_WARNING("Amplitude %s: no reference time set", amplitude->publicID());
+			}
 		}
 	}
 
 	for ( size_t i = 0; i < ep->originCount(); ++i ) {
 		OriginPtr origin = ep->origin(i);
-		try {
-			Time t = origin->creationInfo().creationTime();
-			objs.push_back(TimeObject(t, 2, origin));
+		if ( orderByCreationTime ) {
+			try {
+				Time t = origin->creationInfo().creationTime();
+				objs.push_back(TimeObject(t, 2, origin));
+			}
+			catch ( ... ) {
+				SEISCOMP_WARNING("Origin %s: no creation time set", origin->publicID());
+			}
 		}
-		catch ( ... ) {
-			SEISCOMP_WARNING("Origin %s: no creation time set", origin->publicID());
+		else {
+			// Use the pick time of the last associated pick as object time
+			Time t = origin->time().value();
+			for (size_t iarr = 0; iarr < origin->arrivalCount(); ++i) {
+				const std::string pickID = origin->arrival(iarr)->pickID();
+				const Pick *pick = Pick::Find(pickID);
+				if ( pick ) {
+					try {
+						if ( pick->time().value() > t) {
+							t = pick->time().value();
+						}
+					}
+					catch ( ... ) {
+						SEISCOMP_WARNING("Pick %s: no pick time set", pick->publicID());
+					}
+				}
+			}
+			objs.push_back(TimeObject(t, 2, origin));
 		}
 	}
 

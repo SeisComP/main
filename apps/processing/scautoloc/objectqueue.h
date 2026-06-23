@@ -35,6 +35,8 @@ class PublicObjectQueue {
 	public:
 		PublicObjectQueue() = default;
 
+		void setOrderByCreationTime(bool = false);
+
 		// Fill the queue with the PublicObjects taken from
 		// the specified EventParameters instance. Objects
 		// are sorted according to creation time, with the oldest
@@ -52,6 +54,7 @@ class PublicObjectQueue {
 		size_t size() const;
 
 	private:
+		bool orderByCreationTime{false};
 		std::queue<Seiscomp::DataModel::PublicObjectPtr> q;
 };
 

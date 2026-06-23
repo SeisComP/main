@@ -79,6 +79,7 @@ class AutolocApp : public Client::Application, protected Processing::Autoloc
 		// --ep and --playback modes
 		bool fillObjectQueueFromXMLFile(const char *fname);
 		double _playbackSpeed {0.};
+		std::string _playbackTiming{"pickTime"};
 		// Input XML files for playback and offline processing
 		std::string _inputFileXML;
 		std::string _inputFileEP;

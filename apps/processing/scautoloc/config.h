@@ -180,6 +180,18 @@ struct AutolocConfig {
 		// In playback mode, origins are sent immediately without delay.
 		bool playback{false};
 
+		// Control the timing in playback mode
+		//
+		// There are two options
+		//
+		// - timing by pick time (default)
+		//   Picks are played back as if they are created all without delay.
+		//
+		// - timing by creation time
+		//   The creation time is used for timing, allowing more accurate
+		//   analysis of the behavior in case of data latencies.
+		bool playbackTimingByPickTime{true};
+
 		// If true, test mode is selected.
 		//
 		// In test mode, no origins are sent. This is not the same as
