@@ -71,7 +71,7 @@ static size_t _pickCount=0;
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Pick::Pick(const Seiscomp::DataModel::Pick *scpick)
-        : time(scpick->time().value()), scpick(scpick), label(pickLabel(scpick))
+        : time(scpick->time().value()), mode(Util::mode(scpick)), scpick(scpick), label(pickLabel(scpick))
 {
 	_pickCount++;
 }
