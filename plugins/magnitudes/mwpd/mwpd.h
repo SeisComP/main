@@ -33,6 +33,19 @@ namespace Mwpd {
 #define MWPD_AMP_UNIT "nm*s"
 
 
+// All of this plugin's own symbols are used only inside the plugin (the loader
+// needs only createSCPlugin; the processors register via static factories), so
+// keep them out of the shared library's dynamic symbol table. Single-TU helpers
+// live in anonymous namespaces in the .cpp files; symbols shared across object
+// files (the config reader, the corrections, the processor classes) get hidden
+// visibility here.
+#if defined(__GNUC__) || defined(__clang__)
+	#define MWPD_LOCAL __attribute__((visibility("hidden")))
+#else
+	#define MWPD_LOCAL
+#endif
+
+
 /**
  * Configuration shared by the amplitude and magnitude processors. Defaults
  * reproduce the hard-coded Early-est 1.2.9 constants
@@ -87,21 +100,21 @@ struct MwpdConfig {
 
 /** Reads MwpdConfig from a binding. @p prefix is "amplitudes.Mwpd" or
  *  "magnitudes.Mwpd". Missing keys keep their (Early-est) defaults. */
-bool readMwpdConfig(const Processing::Settings &settings,
+MWPD_LOCAL bool readMwpdConfig(const Processing::Settings &settings,
                     const std::string &prefix, MwpdConfig &out);
 
 
 /** Tsuboi (1995) moment constant, reproduced from Early-est:
  *  4 pi * rho * Vp^3 * FP * (10000/90) deg->km * 1000 km->m. */
-double mwpdMomentConstant(const MwpdConfig &cfg);
+MWPD_LOCAL double mwpdMomentConstant(const MwpdConfig &cfg);
 
 /** INGV_EE distance correction (subtracted from the raw magnitude),
  *  calculate_Mwp_correction_INGV_EE: 0 if delta<0 or depth>100 km. */
-double mwpdDistanceCorrection(double deltaDeg, double depthKm);
+MWPD_LOCAL double mwpdDistanceCorrection(double deltaDeg, double depthKm);
 
 /** PREM step depth correction get_depth_corr_mwpd_prem (returns -999 if
  *  the depth is below the first table row). */
-double mwpdDepthCorrection(double depthKm);
+MWPD_LOCAL double mwpdDepthCorrection(double depthKm);
 
 
 // ---------------------------------------------------------------------------
@@ -112,7 +125,7 @@ double mwpdDepthCorrection(double depthKm);
 //  Emits the displacement integral over T0 (nm*s) and carries T0 as the
 //  amplitude "period".
 // ---------------------------------------------------------------------------
-class SC_SYSTEM_CLIENT_API AmplitudeProcessor_Mwpd : public Processing::AmplitudeProcessor {
+class MWPD_LOCAL AmplitudeProcessor_Mwpd : public Processing::AmplitudeProcessor {
 	public:
 		AmplitudeProcessor_Mwpd();
 
@@ -146,7 +159,7 @@ class SC_SYSTEM_CLIENT_API AmplitudeProcessor_Mwpd : public Processing::Amplitud
 //  integral into M0 and Mwpd, applying the distance, PREM depth and duration
 //  corrections. The source duration T0 arrives in the amplitude "period".
 // ---------------------------------------------------------------------------
-class SC_SYSTEM_CLIENT_API MagnitudeProcessor_Mwpd : public Processing::MagnitudeProcessor {
+class MWPD_LOCAL MagnitudeProcessor_Mwpd : public Processing::MagnitudeProcessor {
 	public:
 		MagnitudeProcessor_Mwpd();
 
