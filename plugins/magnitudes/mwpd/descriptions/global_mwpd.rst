@@ -85,11 +85,44 @@ identity; the network magnitude is a robust (median/trimmed) average.
 Calibration
 ===========
 
-Validated against GCMT moment magnitudes over ~1000 events (M 6.0--8.8, 2015--):
-:math:`M_{wpd}` tracks :math:`M_w^{\mathrm{CMT}}` with a slope of ~1.02, mean
-difference ~+0.05 and :math:`\sigma\approx0.15`, with **no saturation** across
-the magnitude range and no significant depth dependence --- consistent with
-Lomax & Michelini (2009) and with operational Early-est.
+The implementation was validated against GCMT moment magnitudes for 972 events
+(:math:`M_w` 6.0--8.8, 2015--2026), processed through this algorithm with
+broad-band stations from global networks. :math:`M_{wpd}` tracks
+:math:`M_w^{\mathrm{CMT}}` along the 1:1 line with **no saturation** and no
+significant depth dependence.
+
+.. figure:: mwpd_calibration.png
+   :width: 16cm
+   :align: center
+
+   :math:`M_{wpd}` (this plugin) versus GCMT :math:`M_w` for 972 events,
+   coloured by source depth. Overall slope 1.02, mean difference +0.05,
+   :math:`\sigma = 0.15`, correlation r = 0.95.
+
+Mean difference :math:`M_{wpd} - M_w^{\mathrm{CMT}}` by magnitude band:
+
+=============  ======  =====  ====
+:math:`M_w`    mean    sigma  N
+=============  ======  =====  ====
+6.0 -- 7.0     +0.07   0.14   831
+7.0 -- 7.5     -0.05   0.13    94
+7.5 -- 8.0     -0.04   0.20    40
+8.0 -- 9.5     -0.09   0.16     7
+=============  ======  =====  ====
+
+and by source depth:
+
+================  ======  =====  ====
+depth (km)        mean    sigma  N
+================  ======  =====  ====
+0 -- 70           +0.07   0.16   702
+70 -- 300         -0.02   0.13   175
+300 -- 800        +0.01   0.10    95
+================  ======  =====  ====
+
+These results are consistent with operational Early-est (slope ~1.01,
+:math:`\pm 0.13`) and with Lomax & Michelini (2009), which reports
+:math:`M_{wpd}` matching :math:`M_w^{\mathrm{CMT}}` within :math:`\pm 0.2`.
 
 Configuration
 =============
