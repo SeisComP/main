@@ -151,7 +151,7 @@ bool AmplitudeProcessor_Mwpd::setup(const Processing::Settings &settings) {
 		}
 	}
 
-	SEISCOMP_DEBUG("%s: gainFreq=%.2fHz HF=%.1f-%.1fHz preP=%.1fs maxDur=%.0fs spCap=%d",
+	SEISCOMP_DEBUG("%s: HPcorner=%.3fHz HF=%.1f-%.1fHz preP=%.1fs maxDur=%.0fs spCap=%d",
 	               type().c_str(), _cfg.highpassCorner, _cfg.hfFmin, _cfg.hfFmax,
 	               _cfg.analysisPreP, _cfg.maxDuration, _ttt != nullptr);
 	return true;
@@ -264,13 +264,11 @@ bool AmplitudeProcessor_Mwpd::computeAmplitude(
 	//  2) High-frequency envelope and the source duration T0 (durRaw).
 	// =====================================================================
 	double durRaw;          // source-duration estimate [s] (used for the ramp)
-	bool   t0Resolved  = false;
 	bool   t0Terminated = false; // T0 search hit a termination criterion (final)
 	double peakRelSec  = -1.0;   // time of the envelope peak after P (debug)
 
 	if ( _cfg.fixedDuration ) {
 		durRaw = _cfg.fixedDurationVal;
-		t0Resolved  = true;
 		t0Terminated = true;
 	}
 	else {
@@ -336,7 +334,6 @@ bool AmplitudeProcessor_Mwpd::computeAmplitude(
 						amp20 = amp; idx20 = rel;
 						durRaw = durationFromLevels(idx90, idx80, idx50, idx20,
 						                            deltaTime, _cfg.durationFloor);
-						t0Resolved = true;
 					}
 				}
 				else if ( amp > 0.2 * ampPeak ) {
