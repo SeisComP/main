@@ -4,7 +4,8 @@ broad-band *P*-wave ground displacement over the apparent source duration
 :math:`T_0`, after Lomax & Michelini (2009), and is a port of the Mwpd
 implementation in Early-est (A. Lomax). Because it integrates over the whole
 source duration rather than taking the peak (as :math:`M_{wp}` does), it does
-**not saturate** for great earthquakes.
+**not saturate** for events with long rupture duration, such as tsunami
+earthquakes and great earthquakes.
 
 The plugin contributes both an amplitude processor and a magnitude processor of
 type ``Mwpd``. Both use the vertical broad-band component only.
@@ -23,7 +24,7 @@ Michelini 2009)
 where :math:`t_P` is the *P*-arrival time. The implementation accumulates the
 running displacement integral separately over its **positive and negative
 lobes** (to separate the direct *P* wave from later reflected/secondary phases
-of opposite polarity, eq. 3 of the paper) and uses the larger of the two at
+of opposite polarity, eq. 3 of Lomax & Michelini 2009) and uses the larger of the two at
 :math:`T_0`. The moment magnitude follows the standard relation
 
 .. math::
@@ -42,7 +43,8 @@ moment-scaling term for great/slow events:
    \qquad r = \mathrm{clip}\!\left(\tfrac{T_0-90}{110-90},\,0,\,1\right).
 
 The duration ramp :math:`r` engages only for :math:`T_0 > 90` s (the moment
-scaling for large interplate-thrust / tsunamigenic events, eq. 5a).
+scaling for large interplate-thrust / tsunamigenic events, eq. 5a in Lomax &
+Michelini 2009).
 
 Amplitude
 =========
@@ -64,8 +66,9 @@ For each *P* pick on the vertical broad-band, the amplitude processor:
    *S* and surface-wave energy.
 
 The amplitude carries the displacement integral (unit ``nm*s``); :math:`T_0` is
-carried as the amplitude period. Computation is progressive: the value is
-updated as data stream in and finalised once :math:`T_0` is resolved.
+carried as the amplitude period. In real-time application, the computation is
+progressive: the processing is updated as new data arrives and finalised once
+:math:`T_0` is resolved.
 
 Magnitude
 =========
@@ -78,9 +81,11 @@ The magnitude processor reads the displacement integral (``nm*s``) and
    C_M = 4\pi\,\rho\,V_p^{3}\,F_p \cdot \tfrac{10000}{90}\cdot 1000
        \approx 4.68\times10^{21}
 
-(Tsuboi constant; :math:`\rho=3400`, :math:`V_p=7900`, :math:`F_p=2`). As
-:math:`M_{wpd}` is already a moment magnitude, the network estimation is the
-identity; the network magnitude is a robust (median/trimmed) average.
+(Tsuboi constant; :math:`\rho=3400`, :math:`V_p=7900`, :math:`F_p=2`). Since
+:math:`M_{wpd}` is already a moment magnitude, no further :math:`M_w` conversion
+is applied (SeisComP's per-station ``estimateMw`` step is the identity here);
+the network magnitude is a robust (median / trimmed-mean) average of the station
+:math:`M_{wpd}` values.
 
 Calibration
 ===========
@@ -134,6 +139,10 @@ reproduce Early-est; the most important amplitude parameter is
 parameter descriptions for the full list. Because :math:`M_{wpd}` integrates
 over the source duration, it requires a long post-*P* window (up to
 ``maxDuration``), so the final value has higher latency than :math:`M_{wp}`.
+For faster tsunami early warning, Lomax & Michelini (2013) describe
+:math:`M_{wpd}\mathrm{(RT)}`, a real-time variant that uses a smaller minimum
+station distance and avoids some of the duration estimation and re-scaling;
+it is not implemented in this plugin.
 
 References
 ==========
@@ -142,5 +151,7 @@ References
   procedure for rapid determination of earthquake magnitude and tsunamigenic
   potential from *P* waveforms. *Geophys. J. Int.* **176**, 200--214,
   doi:10.1111/j.1365-246X.2008.03974.x
+* Lomax, A. & Michelini, A. (2013). Tsunami early warning within five minutes.
+  *Pure Appl. Geophys.* **170**, 1385--1395, doi:10.1007/s00024-012-0512-6
 * Tsuboi, S. et al. (1995). Rapid determination of :math:`M_w` from broadband
   *P* waveforms. *Bull. Seismol. Soc. Am.* **85**, 606--613.
