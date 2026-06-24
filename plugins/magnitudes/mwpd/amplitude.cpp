@@ -152,7 +152,7 @@ bool AmplitudeProcessor_Mwpd::setup(const Processing::Settings &settings) {
 	}
 
 	SEISCOMP_DEBUG("%s: gainFreq=%.2fHz HF=%.1f-%.1fHz preP=%.1fs maxDur=%.0fs spCap=%d",
-	               type().c_str(), _cfg.gainFrequency, _cfg.hfFmin, _cfg.hfFmax,
+	               type().c_str(), _cfg.highpassCorner, _cfg.hfFmin, _cfg.hfFmax,
 	               _cfg.analysisPreP, _cfg.maxDuration, _ttt != nullptr);
 	return true;
 }
@@ -236,7 +236,7 @@ bool AmplitudeProcessor_Mwpd::computeAmplitude(
 		vel[i] = (raw[i] - offset) / gain;
 	}
 
-	ButterworthHighpass<double> hp(_cfg.hpOrder, _cfg.gainFrequency, fsamp);
+	ButterworthHighpass<double> hp(_cfg.hpOrder, _cfg.highpassCorner, fsamp);
 	hp.apply(n, vel);
 
 	// Running single integral (displacement) and double integral split into
@@ -362,39 +362,38 @@ bool AmplitudeProcessor_Mwpd::computeAmplitude(
 		}
 
 		peakRelSec = idxPeak * deltaTime;
-		(void)t0Terminated;   // computed for diagnostics; not used to finalize
+	}
+
+	// =====================================================================
+	//  3) S-P-capped integration over the source duration T0.
+	// =====================================================================
+	// Early-est integrates the displacement over min(T0, S-P, MAX_MWPD_DUR)
+	// (calculate_Raw_Mwpd_Mag / timedomain_processing.c ~1762). Under progressive
+	// updates we only finalize once T0 is stable -- its search terminated
+	// (t0Terminated) or the full window has streamed -- otherwise the value would
+	// be locked on a transient early T0. Until then, keep waiting (InProgress);
+	// if T0 never resolves by window end the base drops the station (MWPD_INVALID).
+	if ( durRaw <= 0.0 ) {
+		return false;                       // T0 not resolved yet -> wait
+	}
+	const double availDur = (n - iPick) * deltaTime;
+	const bool windowFull = availDur >= _cfg.maxDuration - 1.0;
+	if ( !t0Terminated && !windowFull ) {
+		return false;                       // T0 still provisional -> wait
 	}
 
 	if ( durRaw > _cfg.maxDuration ) {
 		durRaw = _cfg.maxDuration;
 	}
-
-	// =====================================================================
-	//  3) Integration window (Early-est) + completeness requirement.
-	// =====================================================================
-	// Early-est integrates over MAX_MWPD_DUR (here maxDuration) and only
-	// shortens to T0 when T0 is robustly resolved (timedomain_processing.c
-	// ~1762). The window is also capped at the S-P time so the integral never
-	// includes S/surface-wave energy. Our envelope T0 estimate is not reliable
-	// enough to shorten the window, so we integrate over the full window
-	// (S-P capped), which captures the running displacement integral up to S.
 	const double sp = computeSPSeconds();
-	double windowDur = _cfg.maxDuration;
-	if ( sp > 0.0 && windowDur > sp ) {
-		windowDur = sp;
+	double integDur = durRaw;
+	if ( sp > 0.0 && integDur > sp ) {
+		integDur = sp;                      // S-P cap on the integration window
+	}
+	if ( availDur < integDur - 1.0 ) {
+		return false;                       // data must cover the window -> wait
 	}
 
-	// Completeness: the data must cover the full integration window. While it
-	// does not, keep waiting (return false, stay InProgress). If the window is
-	// never covered (data ends short), the base finalizes a skip at progress
-	// >= 100 -- i.e. an incomplete station is skipped, not emitted on a partial
-	// window (Early-est flag_complete_mwpd / MWPD_INVALID behaviour).
-	const double availDur = (n - iPick) * deltaTime;
-	if ( availDur < windowDur - 1.0 ) {
-		return false;
-	}
-
-	double integDur = windowDur;
 	int idxDur = static_cast<int>((integDur + _cfg.analysisPreP) / deltaTime + 0.5);
 	if ( idxDur >= nAcc ) {
 		idxDur = nAcc - 1;
@@ -408,28 +407,23 @@ bool AmplitudeProcessor_Mwpd::computeAmplitude(
 		return false;
 	}
 
-	// Emit the integral in nm*s (as Mwp emits nm). Carry the source duration as
-	// the period (for the magnitude side / tsunami indicator): the resolved T0
-	// if available, otherwise the integration window. The base divides period
-	// by fsamp, so multiply here.
-	const double t0Report = ( durRaw > 0.0 ) ? durRaw : integDur;
+	// Emit the integral in nm*s (as Mwp emits nm); carry the source-duration T0
+	// as the period (the base divides period by fsamp, so multiply here).
 	amplitude->value = amplitudeIntegral * 1.0e9;
-	*period = t0Report * fsamp;
+	*period = durRaw * fsamp;
 	*snr = 1000000.0;
 
 	dt->index = iPick;
 	dt->begin = iStart - iPick;
 	dt->end   = idxDur + iStart - iPick;
 
-	// The integration window is complete -> finalize (stop further updates).
-	setStatus(Finished, 100.0);
-	SEISCOMP_DEBUG("%s.%s.%s: Mwpd FINAL ampInt=%g nm*s T0raw=%.1fs%s peak@%.1fs "
-	               "S-P=%.1fs window=%.1fs win=%.0fs (pos=%g neg=%g) gain=%g",
+	setStatus(Finished, 100.0);             // T0 stable -> finalize
+	SEISCOMP_DEBUG("%s.%s.%s: Mwpd FINAL ampInt=%g nm*s T0raw=%.1fs peak@%.1fs "
+	               "S-P=%.1fs integDur=%.1fs win=%.0fs (pos=%g neg=%g) gain=%g",
 	               _environment.networkCode.c_str(),
 	               _environment.stationCode.c_str(),
 	               _environment.locationCode.c_str(),
-	               amplitude->value, durRaw, durRaw > 0.0 ? "" : "(unresolved)",
-	               peakRelSec, sp, integDur, availDur,
+	               amplitude->value, durRaw, peakRelSec, sp, integDur, availDur,
 	               intPos[idxDur] * 1.0e9, intNeg[idxDur] * 1.0e9, gain);
 
 	return true;

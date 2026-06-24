@@ -40,24 +40,24 @@ namespace Mwpd {
  */
 struct MwpdConfig {
 	// --- BRB-HP restitution + displacement integral (amplitude side) ------
-	double gainFrequency   = 0.15;   //!< [Hz] MWPD_GAIN_FREQUENCY: BRB high-pass corner
-	int    hpOrder         = 4;      //!< Butterworth high-pass order for the BRB-HP trace
+	// Early-est high-passes the displacement trace with filter_hp_bu_co_0_005_n_2
+	// = Butterworth HP 0.005 Hz, order 2 (mkfilter -Bu -Hp -o 2 -a 2.5e-4).
+	// (MWPD_GAIN_FREQUENCY=0.15 is only the gain-reference frequency, NOT a
+	// filter. A 0.15 Hz HP removes periods >7 s and guts great-event moment.)
+	double highpassCorner  = 0.005;  //!< [Hz] BRB-HP corner (filter_hp_bu_co_0_005_n_2)
+	int    hpOrder         = 2;      //!< Butterworth high-pass order for the BRB-HP trace
 	double analysisPreP    = 1.0;    //!< [s] START_ANALYSIS_BEFORE_P_BRB_HP
 
 	// --- HF envelope (T0 estimator) ---------------------------------------
-	// Lomax & Michelini (2009) use a narrow ~1.0 Hz Gaussian filter for the
-	// duration envelope (their Fig. 2). A narrow band centred on 1 Hz gives a
-	// broad, slowly-decaying envelope and hence the long apparent durations
-	// (40-200 s) in their Table 1. (Early-est's operational code instead uses a
-	// 1-5 Hz Butterworth, which yields much shorter T0.)
-	double hfFmin          = 0.5;    //!< [Hz] envelope band low edge (~1 Hz centre)
-	double hfFmax          = 1.5;    //!< [Hz] envelope band high edge
+	// Early-est uses filter_bp_bu_co_1_5_n_4 = Butterworth band-pass 1-5 Hz o4.
+	double hfFmin          = 1.0;    //!< [Hz] envelope band low edge
+	double hfFmax          = 5.0;    //!< [Hz] envelope band high edge
 	int    hfOrder         = 4;      //!< envelope band-pass order
 	double smoothHalfWidth = 5.0;    //!< [s] envelope boxcar smoothing half-width
 
 	// --- T0 source-duration estimation ------------------------------------
 	double minDuration     = 20.0;   //!< [s] MIN_MWPD_DUR: earliest the T0 search may terminate
-	double maxDuration     = 300.0;  //!< [s] integration / signal-window length (capped at S-P); Early-est integrates over this window unless a robust T0 shortens it
+	double maxDuration     = 1200.0; //!< [s] MAX_MWPD_DUR: T0 search / integration cap
 	double durationFloor   = 0.2;    //!< [s] MINIMUN_DURATION
 	double snT0End         = 3.0;    //!< SIGNAL_TO_NOISE_RATIO_T0_END
 	double peakRatioT0End  = 0.025;  //!< SIGNAL_TO_PEAK_RATIO_T0_END

@@ -70,7 +70,7 @@ double mwpdDepthCorrection(double depthKm) {
 bool readMwpdConfig(const Processing::Settings &settings,
                     const std::string &prefix, MwpdConfig &out) {
 	// BRB-HP restitution + displacement integral.
-	settings.getValue(out.gainFrequency,   prefix + ".gainFrequency");
+	settings.getValue(out.highpassCorner,  prefix + ".highpassCorner");
 	settings.getValue(out.hpOrder,         prefix + ".highpassOrder");
 	settings.getValue(out.analysisPreP,    prefix + ".analysisPreP");
 
