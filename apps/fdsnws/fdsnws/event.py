@@ -41,7 +41,18 @@ from . import utils
 
 DBMaxUInt = 18446744073709551615  # 2^64 - 1
 
-VERSION = "1.2.7"
+VERSION = "1.2.8"
+
+# Source(s) of the agencyID mapped to the FDSNWS 'contributor' property. The
+# value is controlled by the 'eventIDPolicy' configuration parameter and used
+# in both, the text output and the contributor filter of the event service.
+#   Event       - read the agencyID from the event object only (default)
+#   Origin      - read the agencyID from the preferred origin object only
+#   EventOrigin - read the agencyID from the event and, if unset, fall back to
+#                 the preferred origin
+#   OriginEvent - read the agencyID from the preferred origin and, if unset,
+#                 fall back to the event
+EventIDPolicies = ("Event", "Origin", "EventOrigin", "OriginEvent")
 
 ################################################################################
 
@@ -295,6 +306,7 @@ class FDSNEvent(BaseResource):
         eventTypeWhitelist=None,
         eventTypeBlacklist=None,
         formatList=None,
+        eventIDPolicy="Event",
     ):
         super().__init__(VERSION)
 
@@ -304,6 +316,13 @@ class FDSNEvent(BaseResource):
         self._eventTypeWhitelist = eventTypeWhitelist
         self._eventTypeBlacklist = eventTypeBlacklist
         self._formatList = formatList
+
+        if eventIDPolicy not in EventIDPolicies:
+            seiscomp.logging.warning(
+                f"invalid eventIDPolicy '{eventIDPolicy}', using default 'Event'"
+            )
+            eventIDPolicy = "Event"
+        self._eventIDPolicy = eventIDPolicy
 
     # ---------------------------------------------------------------------------
     def render_OPTIONS(self, req):
@@ -383,6 +402,31 @@ class FDSNEvent(BaseResource):
             ci.setAuthorURI("")
         except ValueError:
             pass
+
+    # ---------------------------------------------------------------------------
+    @staticmethod
+    def _agencyID(obj):
+        # Return the agencyID of an object's creationInfo or an empty string if
+        # the creationInfo or the agencyID itself is unset.
+        try:
+            return obj.creationInfo().agencyID()
+        except ValueError:
+            return ""
+
+    # ---------------------------------------------------------------------------
+    def _contributor(self, e, o):
+        # Resolve the FDSNWS 'contributor' value (mapped to the SeisComP
+        # agencyID) according to the configured eventIDPolicy. 'e' is the event
+        # and 'o' its preferred origin.
+        if self._eventIDPolicy == "Origin":
+            return self._agencyID(o)
+        if self._eventIDPolicy == "EventOrigin":
+            return self._agencyID(e) or self._agencyID(o)
+        if self._eventIDPolicy == "OriginEvent":
+            return self._agencyID(o) or self._agencyID(e)
+
+        # "Event" (default)
+        return self._agencyID(e)
 
     # ---------------------------------------------------------------------------
     def _loadComments(self, dbq, obj):
@@ -651,11 +695,8 @@ class FDSNEvent(BaseResource):
                 except ValueError:
                     author = ""
 
-            # contributor
-            try:
-                contrib = e.creationInfo().agencyID()
-            except ValueError:
-                contrib = ""
+            # contributor (agencyID), source controlled by eventIDPolicy
+            contrib = self._contributor(e, o)
 
             # query for preferred magnitude (if any)
             mType, mVal, mAuthor = "", "", ""
@@ -871,13 +912,43 @@ class FDSNEvent(BaseResource):
             else:
                 q += f" AND {etqNotIn}"
 
-        # event agency id filter
+        # agency id filter, mapped to the FDSNWS 'contributor' parameter. The
+        # source of the agencyID (event, preferred origin or both) is controlled
+        # by the eventIDPolicy configuration parameter. The preferred origin is
+        # available under the alias 'o' (joined further below). The effective
+        # agencyID resolves to the empty string if the creationInfo or the
+        # agencyID itself is unset. This keeps the empty string a valid filter
+        # value, allowing to search for events without an agencyID.
         if ro.contributors:
-            contribStr = "', '".join(ro.contributors).upper()
-            q += (
-                f" AND e.{_T('creationinfo_used')}"
-                f" AND UPPER(e.{_T('creationinfo_agencyid')}) IN('{contribStr}')"
+            contribStr = ", ".join(
+                f"'{dbq.toString(c.upper())}'" for c in ro.contributors
             )
+            colUsed = _T("creationinfo_used")
+            colAgency = _T("creationinfo_agencyid")
+
+            def _agency(alias):
+                # effective agencyID of the table alias, '' if unset
+                return (
+                    f"CASE WHEN {alias}.{colUsed} "
+                    f"THEN COALESCE({alias}.{colAgency}, '') ELSE '' END"
+                )
+
+            agencyE = _agency("e")
+            agencyO = _agency("o")
+            if self._eventIDPolicy == "Origin":
+                effective = agencyO
+            elif self._eventIDPolicy == "EventOrigin":
+                # event agencyID, fall back to origin if the event agencyID is
+                # empty
+                effective = f"COALESCE(NULLIF({agencyE}, ''), {agencyO})"
+            elif self._eventIDPolicy == "OriginEvent":
+                # origin agencyID, fall back to event if the origin agencyID is
+                # empty
+                effective = f"COALESCE(NULLIF({agencyO}, ''), {agencyE})"
+            else:  # "Event" (default)
+                effective = agencyE
+
+            q += f" AND UPPER({effective}) IN({contribStr})"
 
         # origin information filter
         q += f" AND o._oid = po._oid AND po.{colPID} = e.{_T('preferredOriginID')}"

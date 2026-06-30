@@ -49,7 +49,7 @@ from seiscomp.fdsnws.dataselect import (
     FDSNDataSelectAuthRealm,
 )
 from seiscomp.fdsnws.dataselect import VERSION as DataSelectVersion
-from seiscomp.fdsnws.event import FDSNEvent
+from seiscomp.fdsnws.event import FDSNEvent, EventIDPolicies
 from seiscomp.fdsnws.event import VERSION as EventVersion
 from seiscomp.fdsnws.station import FDSNStation
 from seiscomp.fdsnws.station import VERSION as StationVersion
@@ -402,6 +402,7 @@ class FDSNWS(seiscomp.client.Application):
         self._evaluationMode = None
         self._eventTypeWhitelist = None
         self._eventTypeBlacklist = None
+        self._eventIDPolicy = "Event"
         self._eventFormats = None
         self._stationFilter = None
         self._invCoordinatePrecision = None
@@ -649,6 +650,19 @@ class FDSNWS(seiscomp.client.Application):
                 print(f"invalid evaluation mode string: {name}", file=sys.stderr)
                 return False
 
+        except Exception:
+            pass
+
+        try:
+            name = self.configGetString("eventIDPolicy")
+            if name not in EventIDPolicies:
+                print(
+                    f"invalid eventIDPolicy: {name}, expected one of "
+                    f"{', '.join(EventIDPolicies)}",
+                    file=sys.stderr,
+                )
+                return False
+            self._eventIDPolicy = name
         except Exception:
             pass
 
@@ -972,6 +986,7 @@ configuration read:
   hideAuthor               : {self._hideAuthor}
   hideComments             : {self._hideComments}
   evaluationMode           : {modeStr}
+  eventIDPolicy            : {self._eventIDPolicy}
   data availability
     enabled                : {self._daEnabled}
     cache duration         : {self._daCacheDuration}
@@ -1171,6 +1186,7 @@ configuration read:
                     self._eventTypeWhitelist,
                     self._eventTypeBlacklist,
                     self._eventFormats,
+                    self._eventIDPolicy,
                 ),
             )
 
