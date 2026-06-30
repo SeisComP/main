@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<plugin name="Mwpd">
+		<extends>global</extends>
+		<description>
+		Duration-amplitude moment magnitude Mwpd (Lomax &amp; Michelini 2009),
+		ported from Early-est 1.2.9. The vertical broadband is restituted to
+		displacement, high-passed at the BRB-HP corner and integrated over the
+		source duration T0; T0 is estimated from the high-frequency envelope.
+		The amplitude processor emits the displacement integral (nm*s) and
+		carries T0 as the amplitude period; the magnitude processor forms M0
+		and Mwpd with the distance, PREM depth and duration corrections.
+		</description>
+		<configuration>
+			<!-- ============================ Amplitude ===================== -->
+			<extend-struct type="GlobalAmplitudeProfile" match-name="Mwpd">
+				<description>
+				Measurement parameters for the Mwpd amplitude (displacement
+				integral over the source duration T0).
+				</description>
+				<parameter name="highpassCorner" type="double" default="0.005" unit="Hz">
+					<description>BRB-HP high-pass corner for the displacement trace (Early-est filter_hp_bu_co_0_005_n_2). Keep low (~0.005 Hz) to preserve the long-period moment of great events.</description>
+				</parameter>
+				<parameter name="highpassOrder" type="int" default="2">
+					<description>Butterworth order of the BRB-HP high-pass filter.</description>
+				</parameter>
+				<parameter name="analysisPreP" type="double" default="1.0" unit="s">
+					<description>Lead before P at which the displacement integration starts (START_ANALYSIS_BEFORE_P_BRB_HP).</description>
+				</parameter>
+				<parameter name="hfFmin" type="double" default="1.0" unit="Hz">
+					<description>Low edge of the high-frequency band used for the T0 envelope.</description>
+				</parameter>
+				<parameter name="hfFmax" type="double" default="5.0" unit="Hz">
+					<description>High edge of the high-frequency band used for the T0 envelope.</description>
+				</parameter>
+				<parameter name="hfOrder" type="int" default="4">
+					<description>Butterworth order of the high-frequency band-pass.</description>
+				</parameter>
+				<parameter name="smoothHalfWidth" type="double" default="5.0" unit="s">
+					<description>Boxcar half-width that smooths the squared HF trace into the envelope (SMOOTHING_WINDOW_HALF_WIDTH_T50).</description>
+				</parameter>
+				<parameter name="minDuration" type="double" default="20.0" unit="s">
+					<description>Earliest the T0 search may terminate (MIN_MWPD_DUR).</description>
+				</parameter>
+				<parameter name="maxDuration" type="double" default="1200.0" unit="s">
+					<description>MAX_MWPD_DUR: cap on T0 and on the post-pick signal/integration window.</description>
+				</parameter>
+				<parameter name="snT0End" type="double" default="3.0">
+					<description>Envelope signal-to-noise ratio below which the T0 search terminates (SIGNAL_TO_NOISE_RATIO_T0_END).</description>
+				</parameter>
+				<parameter name="peakRatioT0End" type="double" default="0.025">
+					<description>Envelope-to-peak ratio below which the T0 search terminates (SIGNAL_TO_PEAK_RATIO_T0_END).</description>
+				</parameter>
+				<parameter name="fixedDuration" type="boolean" default="false">
+					<description>If true, use a fixed source duration instead of the HF-envelope estimate.</description>
+				</parameter>
+				<parameter name="fixedDurationValue" type="double" default="60.0" unit="s">
+					<description>The fixed source duration used when fixedDuration is true.</description>
+				</parameter>
+				<parameter name="spWindowCap" type="boolean" default="true">
+					<description>Cap the displacement-integration window at the theoretical S-P time, as Early-est does, so the integral excludes S/surface-wave energy. The reported source duration T0 (and its ramp correction) is not capped.</description>
+				</parameter>
+				<parameter name="tttBackend" type="string" default="libtau">
+					<description>Travel-time table backend used to compute the S-P cap.</description>
+				</parameter>
+				<parameter name="tttModel" type="string" default="iasp91">
+					<description>Travel-time model used to compute the S-P cap.</description>
+				</parameter>
+			</extend-struct>
+
+			<!-- ============================ Magnitude ===================== -->
+			<extend-struct type="GlobalMagnitudeProfile" match-name="Mwpd">
+				<description>Moment-magnitude parameters and corrections for Mwpd.</description>
+				<parameter name="density" type="double" default="3400.0" unit="kg/m^3">
+					<description>Density in the Tsuboi moment constant.</description>
+				</parameter>
+				<parameter name="vp" type="double" default="7900.0" unit="m/s">
+					<description>P velocity in the Tsuboi moment constant.</description>
+				</parameter>
+				<parameter name="radiation" type="double" default="2.0">
+					<description>FP average radiation factor in the Tsuboi moment constant.</description>
+				</parameter>
+				<parameter name="distanceCorrection" type="boolean" default="true">
+					<description>Apply the INGV_EE epicentral-distance correction.</description>
+				</parameter>
+				<parameter name="depthCorrection" type="boolean" default="true">
+					<description>Apply the PREM step depth correction (0-600 km).</description>
+				</parameter>
+				<parameter name="durationRamp" type="boolean" default="true">
+					<description>Apply the &gt;90 s duration ramp correction that boosts great/slow events (USE_MPWD_CORR).</description>
+				</parameter>
+				<parameter name="minimumDistance" type="double" default="5" unit="deg">
+					<description>Reject station magnitudes closer than this epicentral distance.</description>
+				</parameter>
+				<parameter name="maximumDistance" type="double" default="105" unit="deg">
+					<description>Reject station magnitudes beyond this epicentral distance.</description>
+				</parameter>
+				<parameter name="multiplier" type="string" default="1.0">
+					<description>Linear station correction a in a*Mwpd+b. Leave 1.0 for none.</description>
+				</parameter>
+				<parameter name="offset" type="string" default="0.0">
+					<description>Constant station correction b in a*Mwpd+b. Leave 0.0 for none.</description>
+				</parameter>
+			</extend-struct>
+		</configuration>
+	</plugin>
+</seiscomp>
