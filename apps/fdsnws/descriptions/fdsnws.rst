@@ -214,6 +214,18 @@ Feature Notes
   parameter is mapped to the agencyID. The file
   ``@DATADIR@/share/fdsn/contributors.xml`` has to be filled manually with all
   available agency ids
+* The object from which the agencyID is read can be controlled with the
+  :confval:`eventIDPolicy` configuration parameter. This applies to both, the
+  ``Contributor`` column of the text output and the ``contributor`` request
+  parameter used for filtering:
+
+  * ``Event`` (default): Read the agencyID from the event object only. This
+    matches the behavior of previous versions.
+  * ``Origin``: Read the agencyID from the preferred origin object only.
+  * ``EventOrigin``: Read the agencyID from the event object and, if unset,
+    fall back to the preferred origin.
+  * ``OriginEvent``: Read the agencyID from the preferred origin object and,
+    if unset, fall back to the event.
 * Origin and magnitude filter parameters are always applied to preferred origin
   resp. preferred magnitude
 * ``updatedafter`` request parameter not implemented: The last modification time

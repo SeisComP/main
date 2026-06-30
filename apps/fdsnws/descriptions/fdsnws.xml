@@ -169,6 +169,27 @@
 				preferred origin with a matching evaluationMode property.
 				</description>
 			</parameter>
+			<parameter name="eventIDPolicy" type="string" default="Event" values="Event,Origin,EventOrigin,OriginEvent">
+				<description>
+				Control from which object the agencyID is read which is mapped
+				to the FDSNWS &quot;contributor&quot; property. The agencyID is
+				used both in the text output and when filtering events by the
+				&quot;contributor&quot; request parameter.
+
+				- Event: Read the agencyID from the event object only. This is
+				  the default and matches the behavior of previous versions.
+
+				- Origin: Read the agencyID from the preferred origin object
+				  only.
+
+				- EventOrigin: Read the agencyID from the event object and, if
+				  unset, fall back to the preferred origin.
+
+				- OriginEvent: Read the agencyID from the preferred origin
+				  object and, if unset, fall back to the event. This is the
+				  strategy used for event tables in SeisComP GUIs like scolv.
+				</description>
+			</parameter>
 			<group name="eventType">
 				<parameter name="whitelist" type="list:string">
 					<description>List of enabled event types</description>
