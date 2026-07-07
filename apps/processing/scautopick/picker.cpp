@@ -242,62 +242,80 @@ App::~App() {}
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::createCommandLineDescription() {
 	StreamApplication::createCommandLineDescription();
-	commandline().addOption("Database", "db-disable", "Do not use the database at all.");
+	commandline().addOption("Database", "db-disable",
+	                        "Do not use the database at all.");
 
 	commandline().addGroup("Mode");
-	commandline().addOption("Mode", "offline", "Do not connect to a messaging server.");
-	commandline().addOption("Mode", "amplitudes", "Enable/disable computation of amplitudes.",
+	commandline().addOption("Mode", "amplitudes",
+	                        "Enable/disable computation of amplitudes.",
 	                        &_config.calculateAmplitudes);
-	commandline().addOption("Mode", "test", "Do not send any object.");
-	commandline().addOption("Mode", "playback",
-	                        "Use playback mode that does not set a request time window and works best with files.");
-	commandline().addOption("Mode", "ep",
-	                        "Same as offline but outputs all result as an event "
-	                        "parameters XML file. Consider '--playback' or "
-	                        "configure accordingly for processing data from the past.");
-	commandline().addOption("Mode", "dump-config", "Dump the configuration and exit.");
+	commandline().addOption("Mode", "dump-config",
+	                        "Dump the configuration and exit.");
 	commandline().addOption("Mode", "dump-records",
 	                        "Dump records to ASCII when in offline mode.");
+	commandline().addOption("Mode", "ep",
+	                        "Same as offline but outputs all result as event "
+	                        "parameters to stdout in XML. Consider '--playback' "
+	                        "or configure accordingly for processing data from "
+	                        "the past.");
+	commandline().addOption("Mode", "offline",
+	                        "Do not connect to a messaging server.");
+	commandline().addOption("Mode", "playback",
+	                        "Use playback mode that does not set a request time "
+	                        "window and works best with files.");
+	commandline().addOption("Mode", "test", "Do not send any object.");
 
 	commandline().addGroup("Settings");
-	commandline().addOption("Settings", "filter", "The filter used for picking.",
-	                        &_config.defaultFilter, false);
-	commandline().addOption("Settings", "time-correction", "The time correction in seconds for a pick.",
-	                        &_config.defaultTimeCorrection);
-	commandline().addOption("Settings", "buffer-size", "The waveform ringbuffer size in seconds.",
-	                        &_config.ringBufferSize);
-	commandline().addOption("Settings", "before", "The timespan in seconds before now to start picking.",
-	                        &_config.leadTime);
-	commandline().addOption("Settings", "init-time",
-	                        "The initialization (inactive) time after the first record arrived per trace.",
-	                        &_config.initTime);
-
-	commandline().addOption("Settings", "trigger-on", "The trigger-on threshold.",
-	                        &_config.defaultTriggerOnThreshold);
-	commandline().addOption("Settings", "trigger-off", "The trigger-off threshold.",
-	                        &_config.defaultTriggerOffThreshold);
-	commandline().addOption("Settings", "trigger-dead-time",
-	                        "The dead-time after a pick has been detected.",
-	                        &_config.triggerDeadTime);
 	commandline().addOption("Settings", "ampl-max-time-window",
-	                        "The timewindow length after pick to calculate 'max' amplitude",
+	                        "The timewindow length after pick to calculate "
+	                        "'max' amplitude",
 	                        &_config.amplitudeMaxTimeWindow);
-	commandline().addOption("Settings", "min-ampl-offset",
-	                        "The amplitude offset for amplitude dependend dead time calculation.",
-	                        &_config.amplitudeMinOffset);
-	commandline().addOption("Settings", "gap-tolerance",
-	                        "The maximum gap length to tolerate (reset otherwise).",
-	                        &_config.maxGapLength);
-	commandline().addOption("Settings", "gap-interpolation",
-	                        "Enables/disables the linear interpolation of gaps",
-	                        &_config.interpolateGaps);
 	commandline().addOption("Settings", "any-stream",
 	                        "Use all/configured received Z streams for picking.",
 	                        &_config.useAllStreams);
-	commandline().addOption("Settings", "send-detections",
-	                        "If a picker is configured send detections as well.");
+	commandline().addOption("Settings", "before",
+	                        "The timespan in seconds before now to start picking.",
+	                        &_config.leadTime);
+	commandline().addOption("Settings", "buffer-size",
+	                        "The waveform ringbuffer size in seconds.",
+	                        &_config.ringBufferSize);
 	commandline().addOption("Settings", "extra-comments",
 	                        "Add extra comments to picks.\nSupported: SNR.");
+	commandline().addOption("Settings", "filter", "The filter used for picking.",
+	                        &_config.defaultFilter, false);
+	commandline().addOption("Settings", "gap-interpolation",
+	                        "Enables/disables the linear interpolation of gaps",
+	                        &_config.interpolateGaps);
+	commandline().addOption("Settings", "gap-tolerance",
+	                        "The maximum gap length to tolerate (reset otherwise).",
+	                        &_config.maxGapLength);
+	commandline().addOption("Settings", "init-time",
+	                        "The initialization (inactive) time after the first "
+	                        "record arrived per trace.",
+	                        &_config.initTime);
+	commandline().addOption("Settings", "min-ampl-offset",
+	                        "The amplitude offset for amplitude dependend dead "
+	                        "time calculation.",
+	                        &_config.amplitudeMinOffset);
+	commandline().addOption("Settings", "send-detections",
+	                        "If picker is configured, then initial "
+	                        "detections are sent as well. To distinguish "
+	                        "between detections and picks the evaluation status "
+	                        "of the pick is set to rejected. This is meant to "
+	                        "be a debug option which can be used to compare "
+	                        "detections and picks by their evaluation status.");
+	commandline().addOption("Settings", "time-correction",
+	                        "The time correction in seconds for a pick.",
+	                        &_config.defaultTimeCorrection);
+	commandline().addOption("Settings", "trigger-dead-time",
+	                        "The dead-time after a pick has been detected.",
+	                        &_config.triggerDeadTime);
+	commandline().addOption("Settings", "trigger-off",
+	                        "The trigger-off threshold.",
+	                        &_config.defaultTriggerOffThreshold);
+	commandline().addOption("Settings", "trigger-on",
+	                        "The trigger-on threshold.",
+	                        &_config.defaultTriggerOnThreshold);
 
 	commandline().addGroup("Output");
 	commandline().addOption("Output", "formatted,f",
