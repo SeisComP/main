@@ -270,84 +270,58 @@
 		</configuration>
 		<command-line>
 			<group name="Generic">
-				<optionReference>generic#help</optionReference>
-				<optionReference>generic#version</optionReference>
-				<optionReference>generic#config-file</optionReference>
-				<optionReference>generic#plugins</optionReference>
-				<optionReference>generic#daemon</optionReference>
 				<optionReference>generic#auto-shutdown</optionReference>
+				<optionReference>generic#config-file</optionReference>
+				<optionReference>generic#daemon</optionReference>
+				<optionReference>generic#help</optionReference>
+				<optionReference>generic#plugins</optionReference>
 				<optionReference>generic#shutdown-master-module</optionReference>
 				<optionReference>generic#shutdown-master-username</optionReference>
+				<optionReference>generic#version</optionReference>
 			</group>
 
 			<group name="Verbosity">
-				<optionReference>verbosity#verbosity</optionReference>
-				<optionReference>verbosity#v</optionReference>
-				<optionReference>verbosity#quiet</optionReference>
 				<optionReference>verbosity#component</optionReference>
-				<optionReference>verbosity#syslog</optionReference>
-				<optionReference>verbosity#lockfile</optionReference>
 				<optionReference>verbosity#console</optionReference>
 				<optionReference>verbosity#debug</optionReference>
 				<optionReference>verbosity#log-file</optionReference>
+				<optionReference>verbosity#lockfile</optionReference>
+				<optionReference>verbosity#quiet</optionReference>
+				<optionReference>verbosity#syslog</optionReference>
+				<optionReference>verbosity#v</optionReference>
+				<optionReference>verbosity#verbosity</optionReference>
 			</group>
 
 			<group name="Messaging">
-				<optionReference>messaging#user</optionReference>
-				<optionReference>messaging#host</optionReference>
-				<optionReference>messaging#timeout</optionReference>
-				<optionReference>messaging#primary-group</optionReference>
-				<optionReference>messaging#subscribe-group</optionReference>
 				<optionReference>messaging#content-type</optionReference>
+				<optionReference>messaging#host</optionReference>
+				<optionReference>messaging#primary-group</optionReference>
 				<optionReference>messaging#start-stop-msg</optionReference>
+				<optionReference>messaging#subscribe-group</optionReference>
+				<optionReference>messaging#timeout</optionReference>
+				<optionReference>messaging#user</optionReference>
 			</group>
 
 			<group name="Database">
-				<optionReference>database#db-driver-list</optionReference>
-				<optionReference>database#database</optionReference>
 				<optionReference>database#config-module</optionReference>
-				<optionReference>database#inventory-db</optionReference>
+				<optionReference>database#database</optionReference>
 				<option flag="" long-flag="db-disable" argument="" publicID="database#db-disable">
 					<description>Do not use the database at all</description>
 				</option>
+				<optionReference>database#db-driver-list</optionReference>
+				<optionReference>database#inventory-db</optionReference>
 			</group>
 
 			<group name="Records">
 				<optionReference>records#record-driver-list</optionReference>
-				<optionReference>records#record-url</optionReference>
 				<optionReference>records#record-file</optionReference>
+				<optionReference>records#record-url</optionReference>
 				<optionReference>records#record-type</optionReference>
 			</group>
 
 			<group name="Mode">
-				<option flag="" long-flag="offline">
-					<description>Do not connect to a messaging server and do not use the database.</description>
-				</option>
-				<option flag="" long-flag="playback">
-					<description>
-					Switches to playback mode which does not request a particular time window from
-					the input data source. This implies that all records are forwarded to scautopick
-					if files are being used. Without this option scautopick sets the requested
-					start time to NOW-leadTime and therefore would not work anymore with
-					older datasets in offline mode or when running playbacks.
-					</description>
-				</option>
-				<option flag="" long-flag="ep">
-					<description>
-					Outputs an XML event parameters file containing all
-					picks and amplitudes. This option implies '--offline'.
-					Consider '--playback' or configure accordingly for
-					processing data from the past.
-					</description>
-				</option>
 				<option flag="" long-flag="amplitudes" argument="arg" default="1">
 					<description>Enables or disables computation of amplitudes.</description>
-				</option>
-				<option flag="" long-flag="test">
-					<description>
-					Runs the picker as usual but does not send any messages. This can be useful to
-					test the picker within a running system.
-					</description>
 				</option>
 				<option flag="" long-flag="dump-config">
 					<description>
@@ -363,24 +337,50 @@
 					and a new amplitude is available. The output format is a simple ASCII format.
 					</description>
 				</option>
+				<option flag="" long-flag="ep">
+					<description>
+					Outputs an XML event parameters file containing all
+					picks and amplitudes. This option implies '--offline'.
+					Consider '--playback' or configure accordingly for
+					processing data from the past.
+					</description>
+				</option>
+				<option flag="" long-flag="offline">
+					<description>Do not connect to a messaging server and do not use the database.</description>
+				</option>
+				<option flag="" long-flag="playback">
+					<description>
+					Switches to playback mode which does not request a particular time window from
+					the input data source. This implies that all records are forwarded to scautopick
+					if files are being used. Without this option scautopick sets the requested
+					start time to NOW-leadTime and therefore would not work anymore with
+					older datasets in offline mode or when running playbacks.
+					</description>
+				</option>
+				<option flag="" long-flag="test">
+					<description>
+					Runs the picker as usual but does not send any messages. This can be useful to
+					test the picker within a running system.
+					</description>
+				</option>
 			</group>
 
 			<group name="Settings">
-				<option long-flag="filter" argument="filter" param-ref="filter"/>
-				<option long-flag="time-correction" argument="time" param-ref="timeCorrection"/>
-				<option long-flag="buffer-size" argument="timespan" param-ref="ringBufferSize"/>
-				<option long-flag="before" argument="timespan" param-ref="leadTime"/>
-				<option long-flag="init-time" argument="timespan" param-ref="initTime"/>
-				<option long-flag="trigger-on" argument="arg" param-ref="thresholds.triggerOn"/>
-				<option long-flag="trigger-off" argument="arg" param-ref="thresholds.triggerOff"/>
-				<option long-flag="trigger-dead-time" argument="arg" param-ref="thresholds.deadTime"/>
 				<option long-flag="ampl-max-time-window" argument="arg" param-ref="thresholds.amplMaxTimeWindow"/>
-				<option long-flag="min-ampl-offset" argument="arg" param-ref="thresholds.minAmplOffset"/>
-				<option long-flag="gap-tolerance" argument="arg" param-ref="thresholds.maxGapLength"/>
-				<option long-flag="gap-interpolation" argument="arg" param-ref="gapInterpolation"/>
 				<option long-flag="any-stream" argument="arg" param-ref="useAllStreams"/>
-				<option long-flag="send-detections" param-ref="sendDetections"/>
+				<option long-flag="before" argument="timespan" param-ref="leadTime"/>
+				<option long-flag="buffer-size" argument="timespan" param-ref="ringBufferSize"/>
 				<option long-flag="extra-comments" param-ref="extraPickComments"/>
+				<option long-flag="filter" argument="filter" param-ref="filter"/>
+				<option long-flag="gap-interpolation" argument="arg" param-ref="gapInterpolation"/>
+				<option long-flag="gap-tolerance" argument="arg" param-ref="thresholds.maxGapLength"/>
+				<option long-flag="init-time" argument="timespan" param-ref="initTime"/>
+				<option long-flag="min-ampl-offset" argument="arg" param-ref="thresholds.minAmplOffset"/>
+				<option long-flag="send-detections" param-ref="sendDetections"/>
+				<option long-flag="time-correction" argument="time" param-ref="timeCorrection"/>
+				<option long-flag="trigger-dead-time" argument="arg" param-ref="thresholds.deadTime"/>
+				<option long-flag="trigger-off" argument="arg" param-ref="thresholds.triggerOff"/>
+				<option long-flag="trigger-on" argument="arg" param-ref="thresholds.triggerOn"/>
 			</group>
 			<group name="Output">
 				<option flag="f" long-flag="formatted">
