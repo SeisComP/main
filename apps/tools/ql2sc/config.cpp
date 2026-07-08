@@ -74,18 +74,26 @@ bool Config::init() {
 	catch ( ... ) { strictModificationTime = false; }
 
 	try {
-		auto publicIDWhitelist = app->configGetStrings("processing.whitelist.publicIDs");
+		auto list = app->configGetStrings("processing.whitelist.publicIDs");
+		std::vector<std::string> publicIDlist;
+		for ( const auto &item : list ) {
+			publicIDlist.push_back(Seiscomp::Util::replace(item));
+		}
 		copy(
-			publicIDWhitelist.begin(), publicIDWhitelist.end(),
+			publicIDlist.begin(), publicIDlist.end(),
 			inserter(publicIDFilter.allow, publicIDFilter.allow.end())
 		);
 	}
 	catch ( ... ) {}
 
 	try {
-		auto publicIDBlacklist = app->configGetStrings("processing.blacklist.publicIDs");
+		auto list =  app->configGetStrings("processing.blacklist.publicIDs");
+		std::vector<std::string> publicIDlist;
+		for ( const auto &item : list ) {
+			publicIDlist.push_back(Seiscomp::Util::replace(item));
+		}
 		copy(
-			publicIDBlacklist.begin(), publicIDBlacklist.end(),
+			publicIDlist.begin(), publicIDlist.end(),
 			inserter(publicIDFilter.deny, publicIDFilter.deny.end())
 		);
 	}
@@ -216,34 +224,58 @@ bool Config::init() {
 
 		stringstream ss;
 		format(ss, cfg.routingTable);
-		SEISCOMP_DEBUG("Read host configuration '%s':\n"
-		               "  url         : %s\n"
-		               "  gzip        : %s\n"
-		               "  native      : %s\n"
-		               "  data\n"
-		               "    picks     : %s\n"
-		               "    amplitudes: %s\n"
-		               "    arrivals  : %s\n"
-		               "    staMags   : %s\n"
-		               "    staMts    : %s\n"
-		               "    preferred : %s\n"
-		               "  keepAlive   : %s\n"
-		               "  filter      : %s\n"
-		               "  routing     : %s\n",
-		               it->c_str(),
-		               cfg.url.c_str(),
-		               cfg.gzip                                      ? "true" : "false",
-		               cfg.native                                    ? "true" : "false",
-		               cfg.options & IO::QuakeLink::opDataPicks      ? "true" : "false",
-		               cfg.options & IO::QuakeLink::opDataAmplitudes ? "true" : "false",
-		               cfg.options & IO::QuakeLink::opDataArrivals   ? "true" : "false",
-		               cfg.options & IO::QuakeLink::opDataStaMags    ? "true" : "false",
-		               cfg.options & IO::QuakeLink::opDataStaMts     ? "true" : "false",
-		               cfg.options & IO::QuakeLink::opDataPreferred  ? "true" : "false",
-		               cfg.options & IO::QuakeLink::opKeepAlive      ? "true" : "false",
-		               cfg.filter.c_str(),
-		               ss.str().c_str());
+		SEISCOMP_INFO("Configuration of host '%s':\n"
+		             "  url         : %s\n"
+		             "  gzip        : %s\n"
+		             "  native      : %s\n"
+		             "  data\n"
+		             "    picks     : %s\n"
+		             "    amplitudes: %s\n"
+		             "    arrivals  : %s\n"
+		             "    staMags   : %s\n"
+		             "    staMts    : %s\n"
+		             "    preferred : %s\n"
+		             "  keepAlive   : %s\n"
+		             "  filter      : %s\n"
+		             "  routing     : %s\n",
+		             it->c_str(),
+		             cfg.url.c_str(),
+		             cfg.gzip                                      ? "true" : "false",
+		             cfg.native                                    ? "true" : "false",
+		             cfg.options & IO::QuakeLink::opDataPicks      ? "true" : "false",
+		             cfg.options & IO::QuakeLink::opDataAmplitudes ? "true" : "false",
+		             cfg.options & IO::QuakeLink::opDataArrivals   ? "true" : "false",
+		             cfg.options & IO::QuakeLink::opDataStaMags    ? "true" : "false",
+		             cfg.options & IO::QuakeLink::opDataStaMts     ? "true" : "false",
+		             cfg.options & IO::QuakeLink::opDataPreferred  ? "true" : "false",
+		             cfg.options & IO::QuakeLink::opKeepAlive      ? "true" : "false",
+		             cfg.filter.c_str(),
+		             ss.str().c_str());
 	}
+
+	std::ostringstream deny;
+	if ( publicIDFilter.deny.empty() ) {
+		deny << "none";
+	}
+	else {
+		for ( const auto &denyItem : publicIDFilter.deny ) {
+			deny << denyItem << " ";
+		}
+	}
+
+	std::ostringstream allow;
+	if ( publicIDFilter.allow.empty() ) {
+		allow << "none";
+	}
+	else {
+		for ( const auto &allowItem : publicIDFilter.allow ) {
+			allow << allowItem << " ";
+		}
+	}
+
+	SEISCOMP_INFO("Processing configuration:");
+	SEISCOMP_INFO("  allowed publicID prefixes: %s", allow.str().c_str());
+	SEISCOMP_INFO("  blocked publicID prefixes: %s", deny.str().c_str());
 
 	return true;
 }
