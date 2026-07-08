@@ -29,9 +29,8 @@ from .request import RequestOptions
 
 from . import utils
 
-
 DBMaxUInt = 18446744073709551615  # 2^64 - 1
-VERSION = "1.0.4"
+VERSION = "1.0.5"
 
 
 ###############################################################################
@@ -1330,8 +1329,9 @@ class FDSNAvailabilityQuery(_Availability):
     # --------------------------------------------------------------------------
     @staticmethod
     def _lineIter(db, parentOIDs, req, ro, oIDs):
-        def _T(name):
-            return db.convertColumnName(name)
+        # build a list of placeholders
+        def _PH(list_):
+            return ", ".join("?" * len(list_))
 
         dba = datamodel.DatabaseArchive(db)
 
@@ -1339,34 +1339,37 @@ class FDSNAvailabilityQuery(_Availability):
             if req._disconnected:  # pylint: disable=W0212
                 return
 
-            # build SQL query
-            idStr = ",".join(str(x) for x in idList)
-            q = f"SELECT * from DataSegment WHERE _parent_oid IN ({idStr}) "
+            # build generic SQL: @table / $column identifiers are converted and
+            # '?' values are escaped/quoted by DatabaseInterface.Query()
+            params = [int(x) for x in idList]
+            q = f"SELECT * from @DataSegment WHERE _parent_oid IN ({_PH(idList)}) "
             if ro.time:
                 if ro.time.start is not None:
+                    startTimeStr = db.timeToString(ro.time.start)
                     if ro.time.start.microseconds() == 0:
-                        q += f"AND {_T('end')} >= '{db.timeToString(ro.time.start)}' "
+                        q += "AND $end >= ? "
+                        params.append(startTimeStr)
                     else:
-                        startTimeStr = db.timeToString(ro.time.start)
-                        q += (
-                            f"AND ({_T('end')} > '{startTimeStr}' OR ("
-                            f"{_T('end')} = '{startTimeStr}' AND "
-                            f"end_ms >= {ro.time.start.microseconds()})) "
-                        )
+                        q += "AND ($end > ? OR ($end = ? AND $end_ms >= ?)) "
+                        params += [
+                            startTimeStr,
+                            startTimeStr,
+                            ro.time.start.microseconds(),
+                        ]
                 if ro.time.end is not None:
+                    endTimeStr = db.timeToString(ro.time.end)
                     if ro.time.end.microseconds() == 0:
-                        q += f"AND {_T('start')} < '{db.timeToString(ro.time.end)}' "
+                        q += "AND $start < ? "
+                        params.append(endTimeStr)
                     else:
-                        endTimeStr = db.timeToString(ro.time.end)
-                        q += (
-                            f"AND ({_T('start')} < '{endTimeStr}' OR ("
-                            f"{_T('start')} = '{endTimeStr}' AND "
-                            f"start_ms < {ro.time.end.microseconds()})) "
-                        )
+                        q += "AND ($start < ? OR ($start = ? AND $start_ms < ?)) "
+                        params += [endTimeStr, endTimeStr, ro.time.end.microseconds()]
             if ro.quality:
-                qualities = "', '".join(ro.quality)
-                q += f"AND {_T('quality')} IN ('{qualities}') "
-            q += f"ORDER BY _parent_oid, {_T('start')}, {_T('start_ms')}"
+                q += f"AND $quality IN ({_PH(ro.quality)}) "
+                params += list(ro.quality)
+            q += "ORDER BY _parent_oid, $start, $start_ms"
+
+            q = io.DatabaseInterface.Query(db, q, *params)
 
             segIt = dba.getObjectIterator(q, datamodel.DataSegment.TypeInfo())
             if segIt is None or not segIt.valid():

@@ -38,10 +38,9 @@ from .http import BaseResource
 from .request import RequestOptions
 from . import utils
 
-
 DBMaxUInt = 18446744073709551615  # 2^64 - 1
 
-VERSION = "1.2.8"
+VERSION = "1.2.9"
 
 # Source(s) of the agencyID mapped to the FDSNWS 'contributor' property. The
 # value is controlled by the 'eventIDPolicy' configuration parameter and used
@@ -816,8 +815,9 @@ class FDSNEvent(BaseResource):
     def _findEvents(self, ep, ro, dbq):
         db = Application.Instance().database()
 
-        def _T(name):
-            return db.convertColumnName(name)
+        # build a list of placeholders
+        def _PH(list_):
+            return ", ".join("?" * len(list_))
 
         def _time(time):
             return db.timeToString(time)
@@ -826,15 +826,10 @@ class FDSNEvent(BaseResource):
         reqMag = ro.mag or orderByMag
         reqMagType = ro.mag and ro.mag.type
         reqDist = ro.geo and ro.geo.bCircle
-        colPID = _T("publicID")
-        colTime = _T("time_value")
-        colMag = _T("magnitude_value")
-        colLat = _T("latitude_value")
-        colLon = _T("longitude_value")
         if orderByMag:
-            colOrderBy = f"m.{colMag}"
+            colOrderBy = "m.$magnitude_value"
         else:
-            colOrderBy = f"o.{colTime}"
+            colOrderBy = "o.$time_value"
 
         bBox = None
         if ro.geo:
@@ -843,25 +838,33 @@ class FDSNEvent(BaseResource):
             else:
                 bBox = ro.geo.bCircle.calculateBBox()
 
+        # Table names are prefixed with @ and column names with $; both are
+        # converted by the database backend. All request values are bound via '?'
+        # placeholders and passed to DatabaseInterface.Query(), which escapes and
+        # quotes them safely. 'params' is kept in the same left-to-right order as
+        # the placeholders.
+        params = []
+
         # SELECT --------------------------------
-        q = f"SELECT DISTINCT pe.{colPID} AS {colPID}, e.*, {colOrderBy} AS colOrderBy"
+        q = f"SELECT DISTINCT pe.$publicID AS $publicID, e.*, {colOrderBy} AS colOrderBy"
         if reqDist:  # Great circle distance calculated by Haversine formula
             c = ro.geo.bCircle
             q += (
                 ", DEGREES(ACOS("
-                f"COS(RADIANS(o.{colLat})) * COS(RADIANS({c.lat})) * "
-                f"COS(RADIANS(o.{colLon}) - RADIANS({c.lon})) + "
-                f"SIN(RADIANS(o.{colLat})) * SIN(RADIANS({c.lat})))) AS distance"
+                "COS(RADIANS(o.$latitude_value)) * COS(RADIANS(?)) * "
+                "COS(RADIANS(o.$longitude_value) - RADIANS(?)) + "
+                "SIN(RADIANS(o.$latitude_value)) * SIN(RADIANS(?)))) AS distance"
             )
+            params += [c.lat, c.lon, c.lat]
 
         # FROM ----------------------------------
-        q += " FROM Event AS e, PublicObject AS pe" ", Origin AS o, PublicObject AS po"
+        q += " FROM @Event AS e, @PublicObject AS pe, @Origin AS o, @PublicObject AS po"
         if reqMag:
-            q += ", Magnitude AS m"
+            q += ", @Magnitude AS m"
             if not reqMagType:
                 # the preferred magnitude is used if not specific magnitude type
                 # is requested
-                q += ", PublicObject AS pm"
+                q += ", @PublicObject AS pm"
 
         # WHERE ---------------------------------
         q += " WHERE e._oid = pe._oid"
@@ -885,32 +888,36 @@ class FDSNEvent(BaseResource):
             allowNull = -1 in types
             types = [x for x in types if x >= 0]
 
-            typesStr = "', '".join(datamodel.EEventTypeNames.name(x) for x in types)
-            etqIn = f"e.{_T('type')} IN ('{typesStr}')"
+            typeNames = [datamodel.EEventTypeNames.name(x) for x in types]
+            etqIn = f"e.$type IN ({_PH(typeNames)})"
             if allowNull:
-                etqNull = f"e.{_T('type')} is NULL"
+                etqNull = "e.$type is NULL"
                 if types:
                     q += f" AND ({etqNull} OR {etqIn})"
+                    params += typeNames
                 else:
                     q += f" AND {etqNull}"
             else:
                 q += f" AND {etqIn}"
+                params += typeNames
 
         # event type black list filter, defined in configuration
         if self._eventTypeBlacklist:
             allowNull = -1 not in self._eventTypeBlacklist
             types = [x for x in self._eventTypeBlacklist if x >= 0]
 
-            typesStr = "', '".join(datamodel.EEventTypeNames.name(x) for x in types)
-            etqNotIn = f"e.{_T('type')} NOT IN ('{typesStr}')"
+            typeNames = [datamodel.EEventTypeNames.name(x) for x in types]
+            etqNotIn = f"e.$type NOT IN ({_PH(typeNames)})"
             if allowNull:
-                etqNull = f"e.{_T('type')} is NULL"
+                etqNull = "e.$type is NULL"
                 if types:
                     q += f" AND ({etqNull} OR {etqNotIn})"
+                    params += typeNames
                 else:
                     q += f" AND {etqNull}"
             else:
                 q += f" AND {etqNotIn}"
+                params += typeNames
 
         # agency id filter, mapped to the FDSNWS 'contributor' parameter. The
         # source of the agencyID (event, preferred origin or both) is controlled
@@ -920,17 +927,12 @@ class FDSNEvent(BaseResource):
         # agencyID itself is unset. This keeps the empty string a valid filter
         # value, allowing to search for events without an agencyID.
         if ro.contributors:
-            contribStr = ", ".join(
-                f"'{dbq.toString(c.upper())}'" for c in ro.contributors
-            )
-            colUsed = _T("creationinfo_used")
-            colAgency = _T("creationinfo_agencyid")
 
             def _agency(alias):
                 # effective agencyID of the table alias, '' if unset
                 return (
-                    f"CASE WHEN {alias}.{colUsed} "
-                    f"THEN COALESCE({alias}.{colAgency}, '') ELSE '' END"
+                    f"CASE WHEN {alias}.$creationinfo_used "
+                    f"THEN COALESCE({alias}.$creationinfo_agencyid, '') ELSE '' END"
                 )
 
             agencyE = _agency("e")
@@ -948,111 +950,120 @@ class FDSNEvent(BaseResource):
             else:  # "Event" (default)
                 effective = agencyE
 
-            q += f" AND UPPER({effective}) IN({contribStr})"
+            q += f" AND UPPER({effective}) IN({_PH(ro.contributors)})"
+            params += [c.upper() for c in ro.contributors]
 
         # origin information filter
-        q += f" AND o._oid = po._oid AND po.{colPID} = e.{_T('preferredOriginID')}"
+        q += " AND o._oid = po._oid AND po.$publicID = e.$preferredOriginID"
 
         # evaluation mode config parameter
         if self._evaluationMode is not None:
-            q += (
-                f" AND o.{_T('evaluationMode')} = "
-                f"'{datamodel.EEvaluationModeNames.name(self._evaluationMode)}'"
-            )
+            q += " AND o.$evaluationMode = ?"
+            params.append(datamodel.EEvaluationModeNames.name(self._evaluationMode))
 
         # time
         if ro.time:
-            colTimeMS = _T("time_value_ms")
             if ro.time.start is not None:
                 t = _time(ro.time.start)
                 ms = ro.time.start.microseconds()
                 q += (
-                    f" AND (o.{colTime} > '{t}' OR ("
-                    f"o.{colTime} = '{t}' AND o.{colTimeMS} >= {ms}))"
+                    " AND (o.$time_value > ? OR ("
+                    "o.$time_value = ? AND o.$time_value_ms >= ?))"
                 )
+                params += [t, t, ms]
             if ro.time.end is not None:
                 t = _time(ro.time.end)
                 ms = ro.time.end.microseconds()
                 q += (
-                    f" AND (o.{colTime} < '{t}' OR ("
-                    f"o.{colTime} = '{t}' AND o.{colTimeMS} <= {ms}))"
+                    " AND (o.$time_value < ? OR ("
+                    "o.$time_value = ? AND o.$time_value_ms <= ?))"
                 )
+                params += [t, t, ms]
 
         # bounding box
         if bBox:
             if bBox.minLat is not None:
-                q += f" AND o.{colLat} >= {bBox.minLat}"
+                q += " AND o.$latitude_value >= ?"
+                params.append(bBox.minLat)
             if bBox.maxLat is not None:
-                q += f" AND o.{colLat} <= {bBox.maxLat}"
+                q += " AND o.$latitude_value <= ?"
+                params.append(bBox.maxLat)
             if bBox.dateLineCrossing():
-                q += (
-                    f" AND (o.{colLon} >= {bBox.minLon} OR o.{colLon} <= {bBox.maxLon})"
-                )
+                q += " AND (o.$longitude_value >= ? OR o.$longitude_value <= ?)"
+                params += [bBox.minLon, bBox.maxLon]
             else:
                 if bBox.minLon is not None:
-                    q += f" AND o.{colLon} >= {bBox.minLon}"
+                    q += " AND o.$longitude_value >= ?"
+                    params.append(bBox.minLon)
                 if bBox.maxLon is not None:
-                    q += f" AND o.{colLon} <= {bBox.maxLon}"
+                    q += " AND o.$longitude_value <= ?"
+                    params.append(bBox.maxLon)
 
         # depth
         if ro.depth:
-            q += f" AND o.{_T('depth_used')}"
-            colDepth = _T("depth_value")
+            q += " AND o.$depth_used"
             if ro.depth.min is not None:
-                q += f" AND o.{colDepth} >= {ro.depth.min}"
+                q += " AND o.$depth_value >= ?"
+                params.append(ro.depth.min)
             if ro.depth.max is not None:
-                q += f" AND o.{colDepth} <= {ro.depth.max}"
+                q += " AND o.$depth_value <= ?"
+                params.append(ro.depth.max)
 
         # updated after
         if ro.updatedAfter:
             t = _time(ro.updatedAfter)
             ms = ro.updatedAfter.microseconds()
-            colCTime = _T("creationinfo_creationtime")
-            colCTimeMS = _T("creationinfo_creationtime_ms")
-            colMTime = _T("creationinfo_modificationtime")
-            colMTimeMS = _T("creationinfo_modificationtime_ms")
-            tFilter = "(o.%s > '%s' OR (o.%s = '%s' AND o.%s > %i))"
 
-            q += " AND ("
-            q += f"{tFilter % (colCTime, t, colCTime, t, colCTimeMS, ms)} OR "
-            q += f"{tFilter % (colMTime, t, colMTime, t, colMTimeMS, ms)})"
+            q += (
+                " AND ("
+                "(o.$creationinfo_creationtime > ? "
+                "OR (o.$creationinfo_creationtime = ? "
+                "AND o.$creationinfo_creationtime_ms > ?)) "
+                "OR (o.$creationinfo_modificationtime > ? "
+                "OR (o.$creationinfo_modificationtime = ? "
+                "AND o.$creationinfo_modificationtime_ms > ?)))"
+            )
+            params += [t, t, ms, t, t, ms]
 
         # magnitude information filter
         if reqMag:
             if ro.mag and ro.mag.min is not None:
-                q += f" AND m.{colMag} >= {ro.mag.min}"
+                q += " AND m.$magnitude_value >= ?"
+                params.append(ro.mag.min)
             if ro.mag and ro.mag.max is not None:
-                q += f" AND m.{colMag} <= {ro.mag.max}"
+                q += " AND m.$magnitude_value <= ?"
+                params.append(ro.mag.max)
 
             # default case, no magnitude type filter:
             # join magnitude table on preferred magnitude id of event
             if not reqMagType:
                 q += (
-                    f" AND m._oid = pm._oid"
-                    f" AND pm.{colPID} = e.{_T('preferredMagnitudeID')}"
+                    " AND m._oid = pm._oid"
+                    " AND pm.$publicID = e.$preferredMagnitudeID"
                 )
 
             # magnitude type filter:
             # Specific mag type is searched in magnitudes of preferred origin or
             # in derived origin of moment tensors of preferred focal mechanism.
             else:
-                q += (
-                    f" AND m.{_T('type')} = '{dbq.toString(ro.mag.type)}'"
-                    " AND m._parent_oid "
-                )
+                q += " AND m.$type = ? AND m._parent_oid "
+                params.append(ro.mag.type)
 
                 # For performance reasons the query is split in two parts
                 # combined with a UNION statement. The subsequent ORDER BY,
                 # LIMIT/OFFSET or distance subquery is carried out on the entire
-                # UNION result set.
+                # UNION result set. The whole query built so far is embedded into
+                # itself, so its bound parameters must be duplicated in place to
+                # stay aligned with the duplicated '?' placeholders.
                 q += (
                     f"= po._oid UNION {q} IN ("
-                    "SELECT pdo._oid FROM PublicObject pfm, MomentTensor mt, "
-                    "PublicObject pdo WHERE "
-                    f"pfm.{colPID} = e.{_T('preferredFocalMechanismID')} AND "
+                    "SELECT pdo._oid FROM @PublicObject pfm, @MomentTensor mt, "
+                    "@PublicObject pdo WHERE "
+                    "pfm.$publicID = e.$preferredFocalMechanismID AND "
                     f"mt._parent_oid = pfm._oid AND "
-                    f"pdo.{colPID} = mt.{_T('derivedOriginID')})"
+                    "pdo.$publicID = mt.$derivedOriginID)"
                 )
+                params = params * 2
 
         # ORDER BY ------------------------------
         q += " ORDER BY colOrderBy "
@@ -1066,11 +1077,13 @@ class FDSNEvent(BaseResource):
             q = f"SELECT * FROM ({q}) AS subquery WHERE distance "
             c = ro.geo.bCircle
             if c.minRad is not None:
-                q += f">= {c.minRad}"
+                q += ">= ?"
+                params.append(c.minRad)
             if c.maxRad is not None:
                 if c.minRad is not None:
                     q += " AND distance "
-                q += f"<= {c.maxRad}"
+                q += "<= ?"
+                params.append(c.maxRad)
 
         # LIMIT/OFFSET --------------------------
         if ro.limit is not None or ro.offset is not None:
@@ -1080,9 +1093,16 @@ class FDSNEvent(BaseResource):
             limit = DBMaxUInt
             if ro.limit is not None:
                 limit = ro.limit
-            q += f" LIMIT {limit}"
+            q += " LIMIT ?"
+            params.append(limit)
             if ro.offset is not None:
-                q += f" OFFSET {ro.offset}"
+                q += " OFFSET ?"
+                params.append(ro.offset)
+
+        # resolve the generic SQL: @table / $column identifiers and '?'
+        # parameter placeholders are converted and safely escaped/quoted by the
+        # database backend (see DatabaseInterface.Query)
+        q = DatabaseInterface.Query(db, q, *params)
 
         seiscomp.logging.debug(f"event query: {q}")
 
