@@ -171,6 +171,11 @@
 						When creating an artificial origin this is the default depth used.
 					</description>
 				</parameter>
+				<parameter name="fixedDepths" type="list:double" unit="km" default="0, 10, 18">
+					<description>
+						List of drop-down options to choose from when fixing the depth.
+					</description>
+				</parameter>
 				<parameter name="artificialOriginAdvanced" type="boolean" default="false">
 					<description>
 						Adds advanced input parameters in artificial origin dialog.
@@ -343,7 +348,7 @@
 						<parameter name="options" type="list:string">
 							<description>
 							A list of options to select from. Actually the values
-							to populate the dropdown list with.
+							to populate the drop-down list with.
 							</description>
 						</parameter>
 						<parameter name="allowFreeText" type="boolean" default="false">
