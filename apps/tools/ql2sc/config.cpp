@@ -111,8 +111,7 @@ bool Config::init() {
 		return false;
 	}
 
-	for ( vector<string>::const_iterator it = hostNames.begin();
-	      it != hostNames.end(); ++it ) {
+	for ( auto it = hostNames.begin(); it != hostNames.end(); ++it ) {
 		HostConfig cfg;
 		string prefix = "host." + *it + ".";
 
@@ -139,6 +138,9 @@ bool Config::init() {
 
 		try { cfg.syncPreferred = app->configGetBool(prefix + "syncPreferred"); }
 		catch ( ... ) { cfg.syncPreferred = false; }
+
+		try { cfg.syncJournals = app->configGetBool(prefix + "syncJournals"); }
+		catch ( ... ) { cfg.syncJournals = false; }
 
 		try { cfg.syncEventDelay = app->configGetInt(prefix + "syncEventDelay"); }
 		catch ( ... ) { cfg.syncEventDelay = 0; }
@@ -220,7 +222,7 @@ bool Config::init() {
 				cfg.routingTable[DataModel::Event::TypeInfo().className()] = rit->second;
 		}
 
-		hosts.push_back(cfg);
+		hosts[*it] = cfg;
 
 		stringstream ss;
 		format(ss, cfg.routingTable);

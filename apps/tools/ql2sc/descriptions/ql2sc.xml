@@ -101,6 +101,19 @@
 						a particular magnitude type.
 						</description>
 					</parameter>
+					<parameter name="syncJournals" type="boolean" default="false">
+						<description>
+						Synchronize event journals from remote to local. That involves
+						checking if a journal entry has been confirmed with &quot;OK&quot;.
+						All journal entries which are more recent w.r.t. the creation time
+						than the corresponding location version (action) will be forwarded.
+						The creation time and the sender (author) will be set according
+						to the remote version. Synchronizing journals should replace
+						syncEventAttributes and syncPreferred altogether as any manual
+						or requested action will be forwarded to the local system which in
+						turn will apply the required event updates.
+						</description>
+					</parameter>
 					<parameter name="syncEventDelay" type="int" default="0">
 						<description>
 						Delays the synchronization of event attributes in seconds
