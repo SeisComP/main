@@ -33,7 +33,9 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filter/bzip2.hpp>
+
+#include <unordered_map>
+#include <unordered_set>
 
 
 using namespace std;
@@ -319,11 +321,38 @@ template<typename Container> class container_source {
 };
 
 
+void sort(Journaling *journaling) {
+	if ( !journaling ) {
+		return;
+	}
+
+	RegistrationDisableGuard disableRegistration;
+
+	vector<JournalEntryPtr> tmp;
+	while ( journaling->journalEntryCount() ) {
+		tmp.push_back(journaling->journalEntry(0));
+		journaling->removeJournalEntry(0);
+	}
+
+	std::sort(tmp.begin(), tmp.end(), [](const JournalEntryPtr &e1, const JournalEntryPtr &e2) {
+		try {
+			return e1->created() < e2->created();
+		}
+		catch ( ... ) {
+			return false;
+		}
+	});
+
+	for ( auto &entry : tmp ) {
+		journaling->add(entry.get());
+	}
+}
+
+
 bool load(EventParametersPtr &ep, JournalingPtr &ej,
           const string &data, bool gzip = false) {
 	bool retn = false;
-	bool registrationEnabled = PublicObject::IsRegistrationEnabled();
-	PublicObject::SetRegistrationEnabled(false);
+	RegistrationDisableGuard guard;
 	try {
 		io::filtering_istreambuf buf;
 		container_source<string> src(data);
@@ -333,12 +362,14 @@ bool load(EventParametersPtr &ep, JournalingPtr &ej,
 		buf.push(src);
 
 		IO::XMLArchive ar;
-		if ( !ar.open(&buf) )
+		if ( !ar.open(&buf) ) {
 			SEISCOMP_ERROR("[xml] could not open stream buffer for reading");
+		}
 		else {
 			ar >> ep >> ej;
 			retn = ar.success() && ep;
 			ar.close();
+			sort(ej.get());
 		}
 	}
 	catch (string &e) {
@@ -347,7 +378,6 @@ bool load(EventParametersPtr &ep, JournalingPtr &ej,
 	catch (exception &e) {
 		SEISCOMP_ERROR("[xml] %s", e.what());
 	}
-	PublicObject::SetRegistrationEnabled(registrationEnabled);
 	return retn;
 }
 
@@ -467,6 +497,17 @@ JournalEntryPtr getLastJournalEntry(const Journaling *journals, const string &ev
 }
 
 
+bool isMoreRecent(const JournalEntry *entry, const JournalEntry *reference) {
+	try {
+		if ( entry->created() > reference->created() ) {
+			return true;
+		}
+	}
+	catch ( ... ) {}
+	return false;
+}
+
+
 } // ns anonymous
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -506,6 +547,7 @@ void App::createCommandLineDescription() {
 	commandline().addGroup("Mode");
 	commandline().addOption("Mode", "test", "Do not send messages, just log output");
 	commandline().addOption("Mode", "ep", "Check differences with given XML file and exit, can be given more than once", &_ep);
+	commandline().addOption("Mode", "profile", "Which host profile to use in --ep mode", &_hostProfile);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -514,24 +556,26 @@ void App::createCommandLineDescription() {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool App::init() {
-	if ( !Client::Application::init() )
+	if ( !Client::Application::init() ) {
 		return false;
+	}
 
 	_test = commandline().hasOption("test");
 
-	if ( !_config.init() )
+	if ( !_config.init() ) {
 		return false;
+	}
 
 	int notificationID = -2;
-	for ( HostConfigs::const_iterator it = _config.hosts.begin();
-	      it != _config.hosts.end(); ++it, --notificationID ) {
-		SEISCOMP_INFO("Initializing host '%s'", it->host);
-		QLClient *client = new QLClient(notificationID, &*it, _config.backLog);
+	for ( auto &[name, cfg] : _config.hosts ) {
+		SEISCOMP_INFO("Initializing host '%s'", cfg.host);
+		auto client = new QLClient(notificationID, &cfg, _config.backLog);
 		_clients.push_back(client);
-		if ( !client->init(it->url, it->options) ) {
-			SEISCOMP_ERROR("Failed to initialize host '%s'", it->host);
+		if ( !client->init(cfg.url, cfg.options) ) {
+			SEISCOMP_ERROR("Failed to initialize host '%s'", cfg.host);
 			return false;
 		}
+		--notificationID;
 	}
 
 	// read previous update times
@@ -561,6 +605,16 @@ bool App::run() {
 		return Client::Application::run();
 	}
 	else {
+		HostConfig config;
+		if ( !_hostProfile.empty() ) {
+			if ( _config.hosts.find(_hostProfile) == _config.hosts.end() ) {
+				SEISCOMP_ERROR("Host profile '%s' not found", _hostProfile);
+				return false;
+			}
+
+			config = _config.hosts[_hostProfile];
+		}
+
 		for ( size_t ei = 0; ei < _ep.size(); ++ei ) {
 			SEISCOMP_INFO("---- %s", _ep[ei]);
 
@@ -569,21 +623,22 @@ bool App::run() {
 			JournalingPtr ej;
 			Notifiers notifiers, journals;
 			LogNodePtr logNode;
-
-			bool registrationEnabled = PublicObject::IsRegistrationEnabled();
-			PublicObject::SetRegistrationEnabled(false);
-
 			IO::XMLArchive ar;
-			if ( !ar.open(_ep[ei].c_str()) ) {
-				cerr << "Failed to open " << _ep[ei] << endl;
-				return false;
+
+			{
+				RegistrationDisableGuard disableRegistration;
+
+				if ( !ar.open(_ep[ei].c_str()) ) {
+					cerr << "Failed to open " << _ep[ei] << endl;
+					return false;
+				}
+
+				ar >> ep >> ej;
+
+				ar.close();
 			}
 
-			ar >> ep >> ej;
-
-			ar.close();
-
-			PublicObject::SetRegistrationEnabled(registrationEnabled);
+			sort(ej.get());
 
 			// log node is enabled for notice and debug level
 			if ( _baseSettings.logging.verbosity > 2 )
@@ -596,30 +651,52 @@ bool App::run() {
 					LogNode::OPERATIONS
 				);
 
+			string epRouting;
+			auto rt_it = config.routingTable.find(ep->typeInfo().className());
+			if ( rt_it != config.routingTable.end() ) {
+				epRouting = rt_it->second;
+			}
+
+			// Picks
 			const string &epID = ep->publicID();
 
-			for ( size_t i = 0; i < ep->pickCount(); ++i ) {
-				diffPO(ep->pick(i), epID, notifiers, logNode.get());
+			if ( !epRouting.empty() ||
+				 config.routingTable.find(Pick::TypeInfo().className()) != config.routingTable.end() ) {
+				for ( size_t i = 0; i < ep->pickCount(); ++i ) {
+					diffPO(ep->pick(i), epID, notifiers, logNode.get());
+				}
 			}
 
 			// Amplitudes
-			for ( size_t i = 0; i < ep->amplitudeCount(); ++i ) {
-				diffPO(ep->amplitude(i), epID, notifiers, logNode.get());
+			if ( !epRouting.empty() ||
+				 config.routingTable.find(Amplitude::TypeInfo().className()) != config.routingTable.end() ) {
+				for ( size_t i = 0; i < ep->amplitudeCount(); ++i ) {
+					diffPO(ep->amplitude(i), epID, notifiers, logNode.get());
+				}
 			}
 
 			// Origins
-			for ( size_t i = 0; i < ep->originCount(); ++i ) {
-				diffPO(ep->origin(i), epID, notifiers, logNode.get());
+			if ( !epRouting.empty() ||
+				 config.routingTable.find(Origin::TypeInfo().className()) != config.routingTable.end() ) {
+				for ( size_t i = 0; i < ep->originCount(); ++i ) {
+					diffPO(ep->origin(i), epID, notifiers, logNode.get());
+				}
 			}
 
 			// FocalMechanisms
-			for ( size_t i = 0; i < ep->focalMechanismCount(); ++i ) {
-				diffPO(ep->focalMechanism(i), epID, notifiers, logNode.get());
+			if ( !epRouting.empty() ||
+				 config.routingTable.find(FocalMechanism::TypeInfo().className()) != config.routingTable.end() ) {
+				for ( size_t i = 0; i < ep->focalMechanismCount(); ++i ) {
+					diffPO(ep->focalMechanism(i), epID, notifiers, logNode.get());
+				}
 			}
 
 			// Events
-			for ( size_t i = 0; i < ep->eventCount(); ++i ) {
-				diffPO(ep->event(i), epID, notifiers, logNode.get());
+			if ( !epRouting.empty() ||
+				 config.routingTable.find(Event::TypeInfo().className()) != config.routingTable.end() ) {
+				for ( size_t i = 0; i < ep->eventCount(); ++i ) {
+					diffPO(ep->event(i), epID, notifiers, logNode.get());
+				}
 			}
 
 			// log diffs
@@ -635,11 +712,16 @@ bool App::run() {
 				}
 			}
 
-			HostConfig config;
+			SEISCOMP_DEBUG("Sync event attributes: %s", config.syncEventAttributes ? "true" : "false");
+			SEISCOMP_DEBUG("Sync preferred: %s", config.syncPreferred ? "true" : "false");
+			SEISCOMP_DEBUG("Sync journals: %s", config.syncJournals ? "true" : "false");
 
 			// No event routing, forward event attributes
 			for ( size_t i = 0; i < ep->eventCount(); ++i ) {
-				syncEvent(ep.get(), ej.get(), ep->event(i), nullptr, config, journals);
+				syncEvent(ep.get(), ej.get(), ep->event(i), nullptr,
+				          config.syncEventAttributes,
+				          config.syncPreferred,
+				          config.syncJournals, journals);
 			}
 
 			cerr << "Notifiers: " << notifiers.size() << endl;
@@ -675,13 +757,13 @@ void App::done() {
 		auto ep = item.ep;
 		auto ej = item.ej;
 		auto event = item.event;
-		auto config = item.config;
-		auto &routing = config->routingTable;
+		auto *routing = item.routingTable;
 
 		Notifiers notifiers;
 		// No event routing, forward event attributes
-		syncEvent(ep.get(), ej.get(), event, &routing,
-		          *config, notifiers);
+		syncEvent(ep.get(), ej.get(), event, routing,
+		          item.syncEventAttributes, item.syncPreferred, item.syncJournals,
+		          notifiers);
 		sendNotifiers(notifiers);
 	}
 
@@ -902,14 +984,23 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 	}
 
 	if ( !_test ) {
-		if ( sendNotifiers(config->syncEventAttributes ? ep.get() : nullptr, notifiers, routing) ) {
-			if ( config->syncEventAttributes ) {
+		auto r = sendNotifiers(
+			config->syncEventAttributes || config->syncJournals ? ep.get() : nullptr,
+			notifiers, routing
+		);
+
+		if ( r ) {
+			notifiers = {};
+
+			if ( config->syncEventAttributes || config->syncJournals ) {
 				if ( config->syncEventDelay > 0 ) {
 					for ( size_t i = 0; i < ep->eventCount(); ++i ) {
 						auto event = ep->event(i);
 						auto itp = _eventDelayBuffer.insert({
 							event->publicID(), {
-								ep, ej, event, config,
+								ep, ej, event, &config->routingTable,
+								config->syncEventAttributes, config->syncPreferred,
+								config->syncJournals,
 								// Add one to incorporate the current
 								// running ticker.
 								config->syncEventDelay + 1
@@ -920,25 +1011,26 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 							// Element exists already, update the contents
 							itp.first->second.ep = ep;
 							itp.first->second.event = event;
-							SEISCOMP_INFO("%s: updated delay buffer",
+							SEISCOMP_INFO("%s: updated event delay buffer",
 							              event->publicID(), config->syncEventDelay);
 						}
 						else {
-							SEISCOMP_INFO("%s: synchronization delayed for %ds",
+							SEISCOMP_INFO("%s: event synchronization delayed for %ds",
 							              event->publicID(), config->syncEventDelay);
 						}
 					}
 				}
 				else {
-					Notifiers notifiers;
 					// No event routing, forward event attributes
 					for ( size_t i = 0; i < ep->eventCount(); ++i ) {
 						syncEvent(ep.get(), ej.get(), ep->event(i), &routing,
-						          *config, notifiers);
+						          config->syncEventAttributes, config->syncPreferred,
+						          config->syncJournals, notifiers);
 					}
-					sendNotifiers(notifiers);
 				}
 			}
+
+			sendNotifiers(notifiers);
 			client->setLastUpdate(msg->timestamp);
 			writeLastUpdates();
 			return true;
@@ -1038,15 +1130,15 @@ void App::handleTimeout() {
 			auto ep = item.ep;
 			auto ej = item.ej;
 			auto event = item.event;
-			auto config = item.config;
-			auto &routing = config->routingTable;
+			auto *routing = item.routingTable;
 
 			Notifiers notifiers;
 			SEISCOMP_DEBUG("%s: synchronize delayed event",
 			               event->publicID());
 			// No event routing, forward event attributes
-			syncEvent(ep.get(), ej.get(), event, &routing,
-			          *config, notifiers);
+			syncEvent(ep.get(), ej.get(), event, routing,
+			          item.syncEventAttributes, item.syncPreferred, item.syncJournals,
+			          notifiers);
 			sendNotifiers(notifiers);
 
 			it = _eventDelayBuffer.erase(it);
@@ -1305,7 +1397,7 @@ void App::checkUpdate(Notifiers &notifiers,
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void App::syncEvent(const EventParameters *ep, const Journaling *journals,
                     const Event *event, const RoutingTable *routing,
-                    const HostConfig &config,
+                    bool syncAttributes, bool syncPreferred, bool syncJournals,
                     Notifiers &notifiers) {
 	if ( !query() ) {
 		SEISCOMP_ERROR("No database query available for event attribute synchronization");
@@ -1384,7 +1476,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 	}
 
 	// Preferred origin
-	if ( config.syncPreferred ) {
+	if ( syncPreferred ) {
 		if ( !routing || checkRouting(origin, *routing) ) {
 			checkUpdate(notifiers, &Event::preferredOriginID, event, targetEvent.get(),
 			            "preferred origin", journals, "EvPrefOrgID");
@@ -1575,54 +1667,34 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 		}
 	}
 
-	// Event type
-	checkUpdate(notifiers, &Event::type, event, targetEvent.get(),
-	            "event type", journals, "EvType");
+	if ( syncAttributes ) {
+		// Event type
+		checkUpdate(notifiers, &Event::type, event, targetEvent.get(),
+		            "event type", journals, "EvType");
 
-	// Event type certainty
-	checkUpdate(notifiers, &Event::typeCertainty, event, targetEvent.get(),
-	            "event type certainty", journals, "EvTypeCertainty");
+		// Event type certainty
+		checkUpdate(notifiers, &Event::typeCertainty, event, targetEvent.get(),
+		            "event type certainty", journals, "EvTypeCertainty");
 
-	// Event name
-	{
-		auto remoteDesc = event->eventDescription(EventDescriptionIndex(EARTHQUAKE_NAME));
-		auto localDesc = targetEvent->eventDescription(EventDescriptionIndex(EARTHQUAKE_NAME));
+		// Event name
+		{
+			auto remoteDesc = event->eventDescription(EventDescriptionIndex(EARTHQUAKE_NAME));
+			auto localDesc = targetEvent->eventDescription(EventDescriptionIndex(EARTHQUAKE_NAME));
 
-		if ( remoteDesc && localDesc && (remoteDesc->text() == localDesc->text()) ) {
-			SEISCOMP_DEBUG("* check update of event name: '%s' => equal", remoteDesc->text());
-		}
-		else if ( !remoteDesc && !localDesc ) {
-			SEISCOMP_DEBUG("* check update of event name: not set at either end");
-		}
-		else {
-			SEISCOMP_DEBUG("* check update of event name: '%s'", remoteDesc ? remoteDesc->text() : string());
-
-			auto remoteChange = getLastModificationTime<void>(nullptr, "event name", journals, event->publicID(), "EvName", remoteDesc ? remoteDesc->text() : string());
-
-			if ( !localDesc ) {
-				// Local name is not set, but remote
-				// Apply the update
-				notifiers.push_back(
-					new Notifier(
-						"Journaling", OP_ADD,
-						createJournalEntry(
-							targetEvent->publicID(), "EvName",
-							remoteDesc->text(),
-							remoteChange ? addressof(remoteChange->timestamp) : nullptr,
-							remoteChange ? remoteChange->author : string_view()
-						)
-					)
-				);
-
-				SEISCOMP_DEBUG("  => no local event name found, apply the update");
+			if ( remoteDesc && localDesc && (remoteDesc->text() == localDesc->text()) ) {
+				SEISCOMP_DEBUG("* check update of event name: '%s' => equal", remoteDesc->text());
 			}
-			else if ( !remoteDesc ) {
-				SEISCOMP_DEBUG("  => no remote event name found, skip update");
+			else if ( !remoteDesc && !localDesc ) {
+				SEISCOMP_DEBUG("* check update of event name: not set at either end");
 			}
 			else {
-				// Both are set and different
-				JournalEntryPtr localJournal = getLastJournalEntry(*query(), targetEvent->publicID(), "EvName");
-				if ( !localJournal ) {
+				SEISCOMP_DEBUG("* check update of event name: '%s'", remoteDesc ? remoteDesc->text() : string());
+
+				auto remoteChange = getLastModificationTime<void>(nullptr, "event name", journals, event->publicID(), "EvName", remoteDesc ? remoteDesc->text() : string());
+
+				if ( !localDesc ) {
+					// Local name is not set, but remote
+					// Apply the update
 					notifiers.push_back(
 						new Notifier(
 							"Journaling", OP_ADD,
@@ -1635,112 +1707,112 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 						)
 					);
 
-					SEISCOMP_DEBUG("  => no local journal found, apply the update");
+					SEISCOMP_DEBUG("  => no local event name found, apply the update");
+				}
+				else if ( !remoteDesc ) {
+					SEISCOMP_DEBUG("  => no remote event name found, skip update");
 				}
 				else {
-					// There is a local journal entry
-					OPT(Core::Time) localChangeTime;
-
-					try {
-						localChangeTime = localJournal->created();
-						SEISCOMP_DEBUG("  - local change time is %s", localChangeTime->iso());
-					}
-					catch ( ... ) {}
-
-					if ( localChangeTime && remoteChange ) {
-						if ( remoteChange->timestamp > *localChangeTime ) {
-							notifiers.push_back(
-								new Notifier(
-									"Journaling", OP_ADD,
-									createJournalEntry(
-										targetEvent->publicID(), "EvName",
-										remoteDesc->text(),
-										addressof(remoteChange->timestamp),
-										remoteChange->author
-									)
+					// Both are set and different
+					JournalEntryPtr localJournal = getLastJournalEntry(*query(), targetEvent->publicID(), "EvName");
+					if ( !localJournal ) {
+						notifiers.push_back(
+							new Notifier(
+								"Journaling", OP_ADD,
+								createJournalEntry(
+									targetEvent->publicID(), "EvName",
+									remoteDesc->text(),
+									remoteChange ? addressof(remoteChange->timestamp) : nullptr,
+									remoteChange ? remoteChange->author : string_view()
 								)
-							);
+							)
+						);
 
-							SEISCOMP_DEBUG("  => the remote change time is more recent, apply the update");
-						}
-						else {
-							SEISCOMP_INFO("* skipping event name update because the "
-							              "local change %s the remote one",
-							              remoteChange->timestamp < localJournal->created() ?
-							                  "is more recent than" :
-							                  "happened at the same time as");
-						}
+						SEISCOMP_DEBUG("  => no local journal found, apply the update");
 					}
 					else {
-						if ( localJournal->sender() == author() ) {
-							SEISCOMP_DEBUG("  => self is the last author of the journal, apply the update");
-							notifiers.push_back(
-								new Notifier(
-									"Journaling", OP_ADD,
-									createJournalEntry(
-										targetEvent->publicID(), "EvName",
-										remoteDesc->text(),
-										remoteChange ? std::addressof(remoteChange->timestamp) : nullptr,
-										remoteChange ? remoteChange->author : string_view()
+						// There is a local journal entry
+						OPT(Core::Time) localChangeTime;
+
+						try {
+							localChangeTime = localJournal->created();
+							SEISCOMP_DEBUG("  - local change time is %s", localChangeTime->iso());
+						}
+						catch ( ... ) {}
+
+						if ( localChangeTime && remoteChange ) {
+							if ( remoteChange->timestamp > *localChangeTime ) {
+								notifiers.push_back(
+									new Notifier(
+										"Journaling", OP_ADD,
+										createJournalEntry(
+											targetEvent->publicID(), "EvName",
+											remoteDesc->text(),
+											addressof(remoteChange->timestamp),
+											remoteChange->author
+										)
 									)
-								)
-							);
+								);
+
+								SEISCOMP_DEBUG("  => the remote change time is more recent, apply the update");
+							}
+							else {
+								SEISCOMP_INFO("* skipping event name update because the "
+								              "local change %s the remote one",
+								              remoteChange->timestamp < localJournal->created() ?
+								                  "is more recent than" :
+								                  "happened at the same time as");
+							}
 						}
 						else {
-							SEISCOMP_INFO("* skipping event name update because it "
-							              "has been set already by %s",
-							              localJournal->sender());
+							if ( localJournal->sender() == author() ) {
+								SEISCOMP_DEBUG("  => self is the last author of the journal, apply the update");
+								notifiers.push_back(
+									new Notifier(
+										"Journaling", OP_ADD,
+										createJournalEntry(
+											targetEvent->publicID(), "EvName",
+											remoteDesc->text(),
+											remoteChange ? std::addressof(remoteChange->timestamp) : nullptr,
+											remoteChange ? remoteChange->author : string_view()
+										)
+									)
+								);
+							}
+							else {
+								SEISCOMP_INFO("* skipping event name update because it "
+								              "has been set already by %s",
+								              localJournal->sender());
+							}
 						}
 					}
 				}
 			}
 		}
-	}
 
-	// Operator comment
-	{
-		auto remoteCmt = event->comment(string("Operator"));
-		auto localCmt = targetEvent->comment(string("Operator"));
+		// Operator comment
+		{
+			auto remoteCmt = event->comment(string("Operator"));
+			auto localCmt = targetEvent->comment(string("Operator"));
 
-		if ( remoteCmt && localCmt && (remoteCmt->text() == localCmt->text()) ) {
-			SEISCOMP_DEBUG("* check update of event operator comment: '%s' => equal", remoteCmt->text());
-		}
-		else if ( !remoteCmt && !localCmt ) {
-			SEISCOMP_DEBUG("* check update of event operator comment: not set at either end");
-		}
-		else {
-			SEISCOMP_DEBUG("* check update of event operator comment: '%s'", remoteCmt ? remoteCmt->text() : string());
-
-			auto remoteChange = getLastModificationTime<void>(nullptr, "event operator comment", journals, event->publicID(), "EvOpComment", remoteCmt ? remoteCmt->text() : string());
-			if ( remoteChange ) {
-				SEISCOMP_DEBUG("  - remote change is at %s by %s",
-				               remoteChange->timestamp.iso(), remoteChange->author);
+			if ( remoteCmt && localCmt && (remoteCmt->text() == localCmt->text()) ) {
+				SEISCOMP_DEBUG("* check update of event operator comment: '%s' => equal", remoteCmt->text());
 			}
-
-			if ( !localCmt ) {
-				// Local name is not set, but remote
-				// Apply the update
-				notifiers.push_back(
-					new Notifier(
-						"Journaling", OP_ADD,
-						createJournalEntry(
-							targetEvent->publicID(), "EvOpComment",
-							remoteCmt->text(),
-							remoteChange ? addressof(remoteChange->timestamp) : nullptr,
-							remoteChange ? remoteChange->author : string_view()
-						)
-					)
-				);
-
-				SEISCOMP_DEBUG("  => no local event operator comment found, apply the update");
-			}
-			else if ( !remoteCmt ) {
-				SEISCOMP_DEBUG("  => no remote event operator comment found, skip update");
+			else if ( !remoteCmt && !localCmt ) {
+				SEISCOMP_DEBUG("* check update of event operator comment: not set at either end");
 			}
 			else {
-				// Both are set and different
-				JournalEntryPtr localJournal = getLastJournalEntry(*query(), targetEvent->publicID(), "EvOpComment");
-				if ( !localJournal ) {
+				SEISCOMP_DEBUG("* check update of event operator comment: '%s'", remoteCmt ? remoteCmt->text() : string());
+
+				auto remoteChange = getLastModificationTime<void>(nullptr, "event operator comment", journals, event->publicID(), "EvOpComment", remoteCmt ? remoteCmt->text() : string());
+				if ( remoteChange ) {
+					SEISCOMP_DEBUG("  - remote change is at %s by %s",
+					               remoteChange->timestamp.iso(), remoteChange->author);
+				}
+
+				if ( !localCmt ) {
+					// Local name is not set, but remote
+					// Apply the update
 					notifiers.push_back(
 						new Notifier(
 							"Journaling", OP_ADD,
@@ -1753,119 +1825,258 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 						)
 					);
 
-					SEISCOMP_DEBUG("  => no local journal found, apply the update");
+					SEISCOMP_DEBUG("  => no local event operator comment found, apply the update");
+				}
+				else if ( !remoteCmt ) {
+					SEISCOMP_DEBUG("  => no remote event operator comment found, skip update");
 				}
 				else {
-					// There is a local journal entry
-					OPT(Core::Time) localChangeTime;
-
-					try {
-						localChangeTime = localJournal->created();
-						SEISCOMP_DEBUG("  - local change time is %s", localChangeTime->iso());
-					}
-					catch ( ... ) {}
-
-					if ( localChangeTime && remoteChange ) {
-						if ( remoteChange->timestamp > *localChangeTime ) {
-							notifiers.push_back(
-								new Notifier(
-									"Journaling", OP_ADD,
-									createJournalEntry(
-										targetEvent->publicID(), "EvOpComment",
-										remoteCmt->text(),
-										addressof(remoteChange->timestamp),
-										remoteChange->author
-									)
+					// Both are set and different
+					JournalEntryPtr localJournal = getLastJournalEntry(*query(), targetEvent->publicID(), "EvOpComment");
+					if ( !localJournal ) {
+						notifiers.push_back(
+							new Notifier(
+								"Journaling", OP_ADD,
+								createJournalEntry(
+									targetEvent->publicID(), "EvOpComment",
+									remoteCmt->text(),
+									remoteChange ? addressof(remoteChange->timestamp) : nullptr,
+									remoteChange ? remoteChange->author : string_view()
 								)
-							);
+							)
+						);
 
-							SEISCOMP_DEBUG("  => the remote change time is more recent, apply the update");
-						}
-						else {
-							SEISCOMP_INFO("* skipping event operator comment update because the "
-							              "local change %s the remote one",
-							              remoteChange->timestamp < localJournal->created() ?
-							                  "is more recent than" :
-							                  "happened at the same time as");
-						}
+						SEISCOMP_DEBUG("  => no local journal found, apply the update");
 					}
 					else {
-						if ( localJournal->sender() == author() ) {
-							SEISCOMP_DEBUG("  => self is the last author of the journal, apply the update");
-							notifiers.push_back(
-								new Notifier(
-									"Journaling", OP_ADD,
-									createJournalEntry(
-										targetEvent->publicID(), "EvOpComment",
-										remoteCmt->text(),
-										remoteChange ? std::addressof(remoteChange->timestamp) : nullptr,
-										remoteChange ? remoteChange->author : string_view()
+						// There is a local journal entry
+						OPT(Core::Time) localChangeTime;
+
+						try {
+							localChangeTime = localJournal->created();
+							SEISCOMP_DEBUG("  - local change time is %s", localChangeTime->iso());
+						}
+						catch ( ... ) {}
+
+						if ( localChangeTime && remoteChange ) {
+							if ( remoteChange->timestamp > *localChangeTime ) {
+								notifiers.push_back(
+									new Notifier(
+										"Journaling", OP_ADD,
+										createJournalEntry(
+											targetEvent->publicID(), "EvOpComment",
+											remoteCmt->text(),
+											addressof(remoteChange->timestamp),
+											remoteChange->author
+										)
 									)
-								)
-							);
+								);
+
+								SEISCOMP_DEBUG("  => the remote change time is more recent, apply the update");
+							}
+							else {
+								SEISCOMP_INFO("* skipping event operator comment update because the "
+								              "local change %s the remote one",
+								              remoteChange->timestamp < localJournal->created() ?
+								                  "is more recent than" :
+								                  "happened at the same time as");
+							}
 						}
 						else {
-							SEISCOMP_INFO("* skipping event operator comment update because it "
-							              "has been set already by %s",
-							              localJournal->sender());
+							if ( localJournal->sender() == author() ) {
+								SEISCOMP_DEBUG("  => self is the last author of the journal, apply the update");
+								notifiers.push_back(
+									new Notifier(
+										"Journaling", OP_ADD,
+										createJournalEntry(
+											targetEvent->publicID(), "EvOpComment",
+											remoteCmt->text(),
+											remoteChange ? std::addressof(remoteChange->timestamp) : nullptr,
+											remoteChange ? remoteChange->author : string_view()
+										)
+									)
+								);
+							}
+							else {
+								SEISCOMP_INFO("* skipping event operator comment update because it "
+								              "has been set already by %s",
+								              localJournal->sender());
+							}
 						}
 					}
 				}
 			}
 		}
-	}
 
-	// Comments in general
-	for ( size_t i = 0; i < targetEvent->commentCount(); ++i ) {
-		Comment *localCmt = targetEvent->comment(i);
-		if ( localCmt->id() == "Operator" ) {
-			continue;
+		// Comments in general
+		for ( size_t i = 0; i < targetEvent->commentCount(); ++i ) {
+			Comment *localCmt = targetEvent->comment(i);
+			if ( localCmt->id() == "Operator" ) {
+				continue;
+			}
+
+			SEISCOMP_DEBUG("> %s", localCmt->id());
+
+			Comment *remoteCmt = event->comment(localCmt->id());
+			if ( !remoteCmt ) {
+				SEISCOMP_DEBUG("* remove comment '%s'", localCmt->id());
+				// Remove comment
+				notifiers.push_back(
+					new Notifier(targetEvent->publicID(), OP_REMOVE, localCmt)
+				);
+			}
+			else {
+				if ( remoteCmt->text() != localCmt->text() ) {
+					if ( checkUpdateOnTimeStamps(remoteCmt, localCmt) ) {
+						SEISCOMP_DEBUG("* update comment '%s'", localCmt->id());
+						*localCmt = *remoteCmt;
+						// Update comment
+						notifiers.push_back(
+							new Notifier(targetEvent->publicID(), OP_UPDATE, localCmt)
+						);
+					}
+					else {
+						SEISCOMP_INFO("* skipping update for comment '%s' because the "
+						              "local counterpart was updated later",
+						              localCmt->id());
+					}
+				}
+			}
 		}
 
-		SEISCOMP_DEBUG("> %s", localCmt->id());
+		for ( size_t i = 0; i < event->commentCount(); ++i ) {
+			Comment *remoteCmt = event->comment(i);
+			if ( remoteCmt->id() == "Operator" ) {
+				continue;
+			}
 
-		Comment *remoteCmt = event->comment(localCmt->id());
-		if ( !remoteCmt ) {
-			SEISCOMP_DEBUG("* remove comment '%s'", localCmt->id());
-			// Remove comment
-			notifiers.push_back(
-				new Notifier(targetEvent->publicID(), OP_REMOVE, localCmt)
-			);
-		}
-		else {
-			if ( remoteCmt->text() != localCmt->text() ) {
-				if ( checkUpdateOnTimeStamps(remoteCmt, localCmt) ) {
-					SEISCOMP_DEBUG("* update comment '%s'", localCmt->id());
-					*localCmt = *remoteCmt;
-					// Update comment
-					notifiers.push_back(
-						new Notifier(targetEvent->publicID(), OP_UPDATE, localCmt)
-					);
-				}
-				else {
-					SEISCOMP_INFO("* skipping update for comment '%s' because the "
-					              "local counterpart was updated later",
-					              localCmt->id());
-				}
+			SEISCOMP_DEBUG("< %s", remoteCmt->id());
+
+			Comment *localCmt = targetEvent->comment(remoteCmt->id());
+			if ( !localCmt ) {
+				SEISCOMP_DEBUG("* add comment '%s'", remoteCmt->id());
+				// Add comment
+				notifiers.push_back(
+					new Notifier(targetEvent->publicID(), OP_ADD, remoteCmt)
+				);
 			}
 		}
 	}
 
-	for ( size_t i = 0; i < event->commentCount(); ++i ) {
-		Comment *remoteCmt = event->comment(i);
-		if ( remoteCmt->id() == "Operator" ) {
-			continue;
+	if ( syncJournals && journals ) {
+		unordered_map<string, const JournalEntry*> journalEntries, pendingJournalEntries;
+
+		static unordered_set<string> supportedEventJournals = {
+			"EvPrefMagType",
+			"EvPrefOrgID",
+			"EvPrefOrgEvalMode",
+			"EvPrefOrgAutomatic",
+			"EvType",
+			"EvTypeCertainty",
+			"EvName",
+			"EvOpComment",
+			"EvPrefFocMecID",
+			"EvPrefFocEvalMode",
+			"EvPrefFocAutomatic",
+			"EvPrefMw"
+		};
+
+		for ( size_t i = 0; i < journals->journalEntryCount(); ++i ) {
+			auto entry = journals->journalEntry(i);
+			if ( entry->objectID() != event->publicID() ) {
+				continue;
+			}
+
+			if ( (entry->action().size() > 2)
+			  && !entry->action().compare(entry->action().size() - 2, 2, "OK") ) {
+				auto it = pendingJournalEntries.find(entry->action().substr(0, entry->action().size() - 2));
+				if ( it == pendingJournalEntries.end() ) {
+					// This is a special case which is only sent after merging two events.
+					// There is no corresponding EvDelete command.
+					if ( entry->action() != "EvDeleteOK" ) {
+						SEISCOMP_WARNING("no pending journal for confirmation: %s", entry->action());
+					}
+					continue;
+				}
+				else {
+					auto entry = it->second;
+					// It is confirmed and not pending anymore
+					pendingJournalEntries.erase(it);
+
+					if ( supportedEventJournals.find(entry->action()) == supportedEventJournals.end() ) {
+						// This action is not supported
+						SEISCOMP_INFO("* ignoring unsupported action %s", entry->action());
+						continue;
+					}
+
+					it = journalEntries.find(entry->action());
+					if ( it == journalEntries.end() ) {
+						journalEntries[entry->action()] = entry;
+					}
+					else {
+						try {
+							if ( entry->created() > it->second->created() ) {
+								it->second = entry;
+							}
+						}
+						catch ( ... ) {
+							// created is not set, take the latest with respect
+							// to data order
+							it->second = entry;
+						}
+					}
+				}
+			}
+			else if ( (entry->action().size() > 6)
+			          && !entry->action().compare(entry->action().size() - 6, 6, "Failed") ) {
+				// Erase the last pending one
+				auto it = pendingJournalEntries.find(entry->action().substr(0, entry->action().size() - 6));
+				if ( it == pendingJournalEntries.end() ) {
+					SEISCOMP_WARNING("no pending journal for rejection: %s", entry->action());
+				}
+				else {
+					pendingJournalEntries.erase(it);
+				}
+				continue;
+			}
+			else {
+				pendingJournalEntries[entry->action()] = entry;
+			}
 		}
 
-		SEISCOMP_DEBUG("< %s", remoteCmt->id());
+		// pendingJournals is a map of a journal action and the last (most recent) request.
+		// This map will be compared against the local journal and missing entries will be
+		// queued.
+		for ( const auto &[action, entry] : journalEntries ) {
+			auto localEntry = getLastJournalEntry(*query(), targetEvent->publicID(), action);
+			if ( !localEntry || isMoreRecent(entry, localEntry.get()) ) {
+				Core::Time creationTime;
+				try {
+					creationTime = entry->created();
+				}
+				catch ( ... ) {
+					creationTime = Core::Time::UTC();
+				}
 
-		Comment *localCmt = targetEvent->comment(remoteCmt->id());
-		if ( !localCmt ) {
-			SEISCOMP_DEBUG("* add comment '%s'", remoteCmt->id());
-			// Add comment
-			notifiers.push_back(
-				new Notifier(targetEvent->publicID(), OP_ADD, remoteCmt)
-			);
+				SEISCOMP_INFO("* apply%s journal action %s with parameters '%s' created at %s",
+				              localEntry ? "" : " new",
+				              action, entry->parameters(), creationTime.iso());
+
+				// Create one
+				notifiers.push_back(
+					new Notifier(
+						"Journaling", OP_ADD,
+						createJournalEntry(
+							targetEvent->publicID(), action,
+							entry->parameters(), &creationTime, entry->sender()
+						)
+					)
+				);
+			}
+			else {
+				SEISCOMP_INFO("* skipping remote journal %s because there is a more recent "
+				              "local version", action);
+			}
 		}
 	}
 }

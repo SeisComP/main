@@ -39,12 +39,13 @@ struct HostConfig {
 	int          delay{0};
 	std::string  filter;
 	RoutingTable routingTable;
-	bool         syncEventAttributes;
-	bool         syncPreferred;
+	bool         syncEventAttributes{true};
+	bool         syncPreferred{false};
+	bool         syncJournals{false};
 	int          syncEventDelay{0};
 };
 
-typedef std::vector<HostConfig> HostConfigs;
+using HostConfigs = std::map<std::string, HostConfig>;
 
 
 struct PrefixFirewall : Util::StringFirewall {

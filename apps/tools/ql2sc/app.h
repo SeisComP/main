@@ -89,7 +89,9 @@ class App : public Client::Application {
 		               const DataModel::Journaling *journals,
 		               const DataModel::Event *event,
 		               const RoutingTable *routing,
-		               const HostConfig &config,
+		               bool syncAttributes,
+		               bool syncPreferred,
+		               bool syncJournals,
 		               Notifiers &notifiers);
 
 		bool sendNotifiers(const DataModel::EventParameters *ep,
@@ -120,7 +122,10 @@ class App : public Client::Application {
 			DataModel::EventParametersPtr ep;
 			DataModel::JournalingPtr ej;
 			DataModel::Event *event; // Pointer from ep
-			const HostConfig *config;
+			const RoutingTable *routingTable;
+			bool syncEventAttributes{true};
+			bool syncPreferred{false};
+			bool syncJournals{false};
 			int timeout;
 		};
 
@@ -145,6 +150,7 @@ class App : public Client::Application {
 		std::string              _waitForEventIDResult;
 		int                      _waitForEventIDTimeout;
 		std::vector<std::string> _ep;
+		std::string              _hostProfile;
 		bool                     _test;
 };
 
