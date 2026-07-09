@@ -1900,8 +1900,8 @@ bool Autoloc::_setTheRightDepth(Origin *origin) {
 			return false;
 		}
 
-		double _dd = _depthLookup->fetch(origin->hypocenter.lat, origin->hypocenter.lon);
-		double radius = 5*(relo->hypocenter.dep >= _dd ? relo->hypocenter.dep : _dd)/111.2;
+		double dd = _depthLookup->fetch(origin->hypocenter.lat, origin->hypocenter.lon);
+		double radius = 5*(relo->hypocenter.dep >= dd ? relo->hypocenter.dep : dd)/111.2;
 
 		// XXX This is a hack, but better than nothing:
 		// if there are at least 2 stations within 5 times the source depth, we assume sufficient depth resolution.
@@ -2372,10 +2372,10 @@ bool Autoloc::_publishable(const Origin *origin) const
 	}
 
 
-	double _maxDep = _depthLookup->fetchMaxDepth(origin->hypocenter.lat, origin->hypocenter.lon);
-	if ( origin->hypocenter.dep > _maxDep ) {
+	double maxDep = _depthLookup->fetchMaxDepth(origin->hypocenter.lat, origin->hypocenter.lon);
+	if ( origin->hypocenter.dep > maxDep ) {
 		SEISCOMP_INFO("Origin %ld too deep: %.1f km > %.1f km (maxDepth)",
-			      origin->id, origin->hypocenter.dep, _maxDep);
+			      origin->id, origin->hypocenter.dep, maxDep);
 		return false;
 	}
 

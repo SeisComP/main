@@ -831,7 +831,7 @@ void AutolocApp::done() {
 		ar.setFormattedOutput(_formatted);
 		ar << _outputEP;
 		ar.close();
-		std::cerr << "Output to XML: " << objectCount << " objects(s)" << std::endl;
+		std::cerr << "Output to XML: " << objectCount << " object(s)" << std::endl;
 		_outputEP = nullptr;
 	}
 
