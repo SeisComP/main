@@ -47,6 +47,15 @@ double ConstantDepthLookup::fetchMaxDepth(double /*lat*/, double /*lon*/) const 
 
 
 // ---------------------------------------------------------------------------
+// DepthLookup base — default fetchCandidateDepths
+// ---------------------------------------------------------------------------
+
+std::vector<double> DepthLookup::fetchCandidateDepths(double lat, double lon) const {
+	return {fetch(lat, lon)};
+}
+
+
+// ---------------------------------------------------------------------------
 // Slab2DepthLookup
 // ---------------------------------------------------------------------------
 
@@ -189,6 +198,16 @@ double Slab2DepthLookup::fetchMaxDepth(double lat, double lon) const {
 	SEISCOMP_DEBUG("DepthLookup/Slab2: (%.2f, %.2f) maxDepth outside all zones → fallback %.0f km",
 	               lat, lon, _fallbackMaxDepth);
 	return _fallbackMaxDepth;
+}
+
+
+std::vector<double> Slab2DepthLookup::fetchCandidateDepths(double lat, double lon) const {
+	double d = _lookupDepth(lat, lon);
+	if ( d > 0.0 ) {
+		// Dual-seismicity: return slab depth first (primary), shallow crustal fallback second.
+		return {d, _fallbackDepth};
+	}
+	return {_fallbackDepth};
 }
 
 

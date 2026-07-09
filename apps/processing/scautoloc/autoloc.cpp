@@ -1857,17 +1857,31 @@ bool Autoloc::_setDefaultDepth(Origin *origin)
 // May be set in an origin far outside the network where depth resolution is expected to be poor,
 // or in testing that depth resolution.
 {
-	OriginPtr test = new Origin(*origin);
+	auto candidates = _depthLookup->fetchCandidateDepths(
+	    origin->hypocenter.lat, origin->hypocenter.lon);
 
-	_relocator.setFixedDepth(_depthLookup->fetch(origin->hypocenter.lat, origin->hypocenter.lon));
-	_relocator.useFixedDepth(true);
-	OriginPtr relo = _relocator.relocate(test.get());
-	if ( !relo ) {
+	OriginPtr bestRelo;
+	double bestScore = -1.0;
+
+	for ( double dep : candidates ) {
+		OriginPtr test = new Origin(*origin);
+		_relocator.setFixedDepth(dep);
+		_relocator.useFixedDepth(true);
+		OriginPtr relo = _relocator.relocate(test.get());
+		if ( !relo ) continue;
+		double score = _score(relo.get());
+		if ( score > bestScore ) {
+			bestScore = score;
+			bestRelo = relo;
+		}
+	}
+
+	if ( !bestRelo ) {
 		SEISCOMP_WARNING("_setDefaultDepth: failed relocation");
 		return false;
 	}
 
-	origin->updateFrom(relo.get());
+	origin->updateFrom(bestRelo.get());
 	origin->depthType = Origin::DepthDefault;
 
 	return true;

@@ -45,6 +45,12 @@ class DepthLookup {
 
 		// Returns the maximum allowed depth in km for the given location.
 		virtual double fetchMaxDepth(double lat, double lon) const = 0;
+
+		// Returns candidate seed depths (km) ordered by priority. In
+		// dual-seismicity zones a backend may return both a shallow crustal
+		// depth and a deep slab depth for the caller to evaluate independently.
+		// The default wraps fetch() and returns a single depth.
+		virtual std::vector<double> fetchCandidateDepths(double lat, double lon) const;
 };
 
 using DepthLookupPtr = std::unique_ptr<DepthLookup>;
@@ -88,6 +94,7 @@ class Slab2DepthLookup : public DepthLookup {
 
 		double fetch(double lat, double lon) const override;
 		double fetchMaxDepth(double lat, double lon) const override;
+		std::vector<double> fetchCandidateDepths(double lat, double lon) const override;
 
 	private:
 		struct SlabLevel {
