@@ -37,23 +37,25 @@ class DateTime : public Core::Time {
 
 
 inline bool fromString(DateTime &date, const std::string &str) {
-	int year = strtol(str.c_str(), NULL, 10);
-	if ( year < 1902 )
-		//return Core::Time(1902,1,1);
+	int year = strtol(str.c_str(), nullptr, 10);
+	if ( year < -32768 ) {
 		return false;
-	else if ( year > 2037 )
-		//return Core::Time(2037,12,31);
+	}
+	else if ( year >= 2500 ) {
 		return false;
+	}
 
 	return Core::fromString(static_cast<Core::Time&>(date), str);
 }
 
 
 inline std::string toString(const DateTime &date) {
-	if ( date.microseconds() == 0 )
+	if ( date.microseconds() == 0 ) {
 		return date.toString("%FT%TZ");
-	else
+	}
+	else {
 		return date.toString("%FT%T.%fZ");
+	}
 }
 
 
