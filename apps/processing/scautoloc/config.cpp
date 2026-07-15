@@ -45,9 +45,14 @@ void AutolocConfig::dump() const {
 	SEISCOMP_INFO("    maxResidual for keeping picks    %.1f s", maxResidualKeep);
 	SEISCOMP_INFO("    minPhaseCount                    %d",     minPhaseCount);
 	SEISCOMP_INFO("    depthLookup                      %s",     depthLookupType.c_str());
-	if ( depthLookupType == "Slab2" )
-		SEISCOMP_INFO("    slab2.directory                  %s",     slabDir.c_str());
-	else
+	if ( depthLookupType == "Slab2" || depthLookupType == "Composite" )
+		SEISCOMP_INFO("    slab2.directory                  %s", slabDir.c_str());
+	if ( depthLookupType == "Polygon" || depthLookupType == "Composite" ) {
+		std::string regions;
+		for ( const auto &r : polygonRegions ) regions += (regions.empty() ? "" : ", ") + r;
+		SEISCOMP_INFO("    polygon.regions                  %s", regions.c_str());
+	}
+	if ( depthLookupType == "Constant" || depthLookupType == "Composite" )
 		SEISCOMP_INFO("    maxDepth                         %.1f km", maxDepth);
 	SEISCOMP_INFO("    minStaCountIgnorePKP             %d",     minStaCountIgnorePKP);
 	SEISCOMP_INFO("    defaultDepthStickiness           %g",     defaultDepthStickiness);

@@ -33,12 +33,19 @@ namespace Processing {
  * dependency. Safe to use from standalone code and Python scripts.
  *
  * Backends:
- *   Constant — fixed values from config (default; existing behaviour)
- *   Slab2    — USGS Slab2.0 depth-footprint contours (geographic)
+ *   Constant  — fixed values from config (default; existing behaviour)
+ *   Polygon   — named GeoFeature regions with explicit defaultDepth attributes
+ *   Slab2     — USGS Slab2.0 depth-footprint contours (geographic)
+ *   Composite — chains Polygon → Slab2 → Constant in priority order
  */
 class DepthLookup {
 	public:
 		virtual ~DepthLookup() = default;
+
+		// Returns true if this backend positively identifies the location.
+		// Used by CompositeDepthLookup to select the first matching backend.
+		// Default returns true (backend always covers — suitable for Constant).
+		virtual bool covers(double lat, double lon) const;
 
 		// Returns the default depth in km for the given location.
 		virtual double fetch(double lat, double lon) const = 0;
@@ -75,14 +82,45 @@ class ConstantDepthLookup : public DepthLookup {
 
 
 // ---------------------------------------------------------------------------
+// Polygon backend
+// Queries named polygon features from SeisComP's global GeoFeatureSet.
+// Each polygon must carry a defaultDepth attribute (km); maxDepth is optional.
+// Falls back to fallbackDepth / fallbackMaxDepth when no polygon matches.
+// covers() returns true only when the point is inside a named polygon.
+// ---------------------------------------------------------------------------
+class PolygonDepthLookup : public DepthLookup {
+	public:
+		PolygonDepthLookup(const std::vector<std::string> &regions,
+		                   double fallbackDepth,
+		                   double fallbackMaxDepth);
+		~PolygonDepthLookup() override;
+
+		// Reads matching features from the global GeoFeatureSet.
+		// Call once after construction.
+		bool init();
+
+		bool covers(double lat, double lon) const override;
+		double fetch(double lat, double lon) const override;
+		double fetchMaxDepth(double lat, double lon) const override;
+
+	private:
+		std::vector<std::string> _regions;
+		double _fallbackDepth;
+		double _fallbackMaxDepth;
+		void *_entries{nullptr};  // opaque vector<PolygonEntry>*
+};
+
+
+// ---------------------------------------------------------------------------
 // Slab2 backend
 // Looks up depth from USGS Slab2.0 depth-footprint contour BNA files.
 // Falls back to fallbackDepth / fallbackMaxDepth when outside all slab zones.
+// covers() returns true only when the point is inside a slab zone.
 // ---------------------------------------------------------------------------
 class Slab2DepthLookup : public DepthLookup {
 	public:
-		// slabDir:        path to directory containing subdirs 000/, 025/, ...
-		// fallbackDepth:  depth returned outside all slab zones
+		// slabDir:          path to directory containing subdirs 000/, 025/, ...
+		// fallbackDepth:    depth returned outside all slab zones
 		// fallbackMaxDepth: maxDepth returned outside all slab zones
 		Slab2DepthLookup(const std::string &slabDir,
 		                 double fallbackDepth,
@@ -92,6 +130,7 @@ class Slab2DepthLookup : public DepthLookup {
 		// Returns false if slabDir is empty or contains no valid BNA files.
 		bool init();
 
+		bool covers(double lat, double lon) const override;
 		double fetch(double lat, double lon) const override;
 		double fetchMaxDepth(double lat, double lon) const override;
 		std::vector<double> fetchCandidateDepths(double lat, double lon) const override;
@@ -118,16 +157,38 @@ class Slab2DepthLookup : public DepthLookup {
 
 
 // ---------------------------------------------------------------------------
+// Composite backend
+// Chains an ordered list of backends; delegates to the first one where
+// covers() returns true. Constant is always the last backend in the chain.
+// ---------------------------------------------------------------------------
+class CompositeDepthLookup : public DepthLookup {
+	public:
+		explicit CompositeDepthLookup(std::vector<DepthLookupPtr> backends);
+
+		double fetch(double lat, double lon) const override;
+		double fetchMaxDepth(double lat, double lon) const override;
+		std::vector<double> fetchCandidateDepths(double lat, double lon) const override;
+
+	private:
+		const DepthLookup *_select(double lat, double lon) const;
+
+		std::vector<DepthLookupPtr> _backends;
+};
+
+
+// ---------------------------------------------------------------------------
 // Factory — instantiates the right backend from AutolocConfig fields.
-// depthLookupType:  "Constant" (default) or "Slab2"
-// defaultDepth:     used by Constant backend and as Slab2 fallback
-// maxDepth:         used by Constant backend and as Slab2 fallback
-// slabDir:          directory for Slab2 BNA files (ignored for Constant)
+// type:           "Constant" (default), "Polygon", "Slab2", or "Composite"
+// defaultDepth:   used by Constant backend and as fallback for others
+// maxDepth:       used by Constant backend and as fallback for others
+// slabDir:        directory for Slab2 BNA files
+// polygonRegions: named GeoFeature regions for Polygon backend
 // ---------------------------------------------------------------------------
 DepthLookupPtr makeDepthLookup(const std::string &type,
                                double defaultDepth,
                                double maxDepth,
-                               const std::string &slabDir = "");
+                               const std::string &slabDir = "",
+                               const std::vector<std::string> &polygonRegions = {});
 
 
 }  // namespace Processing

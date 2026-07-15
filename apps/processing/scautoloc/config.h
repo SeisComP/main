@@ -91,14 +91,17 @@ struct AutolocConfig {
 		//    maxResidualUse  = 2*maxRMS
 
 
-		// DepthLookup backend: "Constant" (default) or "Slab2"
-		// "Constant" uses defaultDepth/maxDepth below — same as previous behaviour
+		// DepthLookup backend: "Constant" (default), "Polygon", "Slab2", or "Composite"
 		std::string depthLookupType{"Constant"};
 
 		// Directory containing Slab2 BNA depth-contour files.
-		// Only used when depthLookupType = "Slab2".
-		// Default: @DATADIR@/spatial/vector/slabs
+		// Only used when depthLookupType = "Slab2" or "Composite".
 		std::string slabDir;
+
+		// Named GeoFeature regions for the Polygon backend.
+		// Each region must carry a defaultDepth attribute in its BNA/GeoJSON.
+		// Used when depthLookupType = "Polygon" or "Composite".
+		std::vector<std::string> polygonRegions;
 
 		// Use this depth if there is no depth resolution.
 		// Used directly by the Constant backend; overridden geographically

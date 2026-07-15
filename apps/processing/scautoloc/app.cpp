@@ -302,6 +302,11 @@ bool AutolocApp::initConfiguration() {
 	}
 
 	try {
+		_config.polygonRegions = configGetStrings("autoloc.polygon.regions");
+	}
+	catch ( ... ) {}
+
+	try {
 		_config.minimumDepth = configGetDouble("locator.minimumDepth");
 	}
 	catch ( ... ) {}

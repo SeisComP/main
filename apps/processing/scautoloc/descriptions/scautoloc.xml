@@ -88,16 +88,36 @@
 					Constant (default): uses locator.defaultDepth and autoloc.maxDepth
 					globally. Behaviour is identical to previous versions.
 
+					Polygon: queries named polygon features from the global GeoFeatureSet.
+					Each polygon must carry a defaultDepth attribute (km); maxDepth is
+					optional. Configure regions with autoloc.polygon.regions.
+					Falls back to locator.defaultDepth / autoloc.maxDepth outside all
+					polygons.
+
 					Slab2: uses USGS Slab2.0 depth-footprint contour BNA files to
 					determine the default and maximum depth based on the epicenter
 					location. Falls back to locator.defaultDepth and autoloc.maxDepth
 					outside all slab zones.
+
+					Composite: chains Polygon then Slab2 then Constant in priority order.
+					The first backend that covers the epicenter location is used.
+					Use this when you need explicit polygon overrides (e.g. induced
+					seismicity, mid-ocean ridges) in addition to slab-based depths.
+					</description>
+				</parameter>
+				<parameter name="polygon.regions" type="list:string" default="">
+					<description>
+					Comma-separated list of GeoFeature region names to query for the
+					Polygon and Composite depth lookup backends. Each named feature must
+					carry a defaultDepth attribute (km, required) and may carry a
+					maxDepth attribute (km, optional). Features are read from the global
+					GeoFeatureSet (BNA or GeoJSON files in share/spatial/vector/).
 					</description>
 				</parameter>
 				<parameter name="slab2.directory" type="directory" default="@DATADIR@/scautoloc/slabs">
 					<description>
 					Directory containing USGS Slab2.0 depth-contour BNA files.
-					Only used when autoloc.depthLookup is set to Slab2.
+					Used when autoloc.depthLookup is set to Slab2 or Composite.
 					The directory must contain depth-level subdirectories
 					(000, 020, 040, ...) each holding per-zone BNA files.
 					</description>

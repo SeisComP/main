@@ -88,7 +88,8 @@ bool Autoloc::init() {
 	    _config.depthLookupType,
 	    _config.defaultDepth,
 	    _config.maxDepth,
-	    _config.slabDir);
+	    _config.slabDir,
+	    _config.polygonRegions);
 	SEISCOMP_INFO("DepthLookup: using backend '%s'",
 	              _config.depthLookupType.c_str());
 
