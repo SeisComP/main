@@ -129,6 +129,18 @@ These results are consistent with operational Early-est (slope ~1.01,
 :math:`\pm 0.13`) and with Lomax & Michelini (2009), which reports
 :math:`M_{wpd}` matching :math:`M_w^{\mathrm{CMT}}` within :math:`\pm 0.2`.
 
+A small residual bias remains at the low-magnitude end (mean
+:math:`M_{wpd}-M_w^{\mathrm{CMT}}\approx +0.07` for :math:`M_w` 6.0--7.0, within
+the :math:`\sigma\approx 0.14` scatter). Because :math:`M_{wpd}` is reported as
+a moment magnitude, no correction is applied by default, but any residual trend
+can be flattened per network without code changes using the standard
+:ref:`scmag` mechanisms: a linear station correction
+:math:`M_{wpd}' = a\,M_{wpd} + b` via ``magnitudes.Mwpd.multiplier`` /
+``magnitudes.Mwpd.offset``, or a piecewise-linear proxy mapping
+:math:`M_w(M_{wpd})` via ``magnitudes.Mwpd.MwMapping`` (as used for other
+:math:`M_w` proxies). Operators should derive these from a regression against
+their own reference magnitudes.
+
 Configuration
 =============
 
