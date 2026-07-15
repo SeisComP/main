@@ -312,26 +312,36 @@ bool AmplitudeProcessor_Mwpd::computeAmplitude(
 			}
 			else {
 				if ( amp90 < 0.0 ) {
-					if ( amp <= 0.9 * ampPeak ) { amp90 = amp; idx90 = rel; }
+					if ( amp <= 0.9 * ampPeak ) {
+						amp90 = amp;
+						idx90 = rel;
+					}
 				}
 				else if ( amp > 0.9 * ampPeak ) {
 					amp90 = amp80 = amp50 = amp20 = -1.0;
 				}
 				if ( amp80 < 0.0 ) {
-					if ( amp <= 0.8 * ampPeak ) { amp80 = amp; idx80 = rel; }
+					if ( amp <= 0.8 * ampPeak ) {
+						amp80 = amp;
+						idx80 = rel;
+					}
 				}
 				else if ( amp > 0.8 * ampPeak ) {
 					amp80 = amp50 = amp20 = -1.0;
 				}
 				if ( amp50 < 0.0 ) {
-					if ( amp <= 0.5 * ampPeak ) { amp50 = amp; idx50 = rel; }
+					if ( amp <= 0.5 * ampPeak ) {
+						amp50 = amp;
+						idx50 = rel;
+					}
 				}
 				else if ( amp > 0.5 * ampPeak ) {
 					amp50 = amp20 = -1.0;
 				}
 				if ( amp20 < 0.0 ) {
 					if ( amp <= 0.2 * ampPeak ) {
-						amp20 = amp; idx20 = rel;
+						amp20 = amp;
+						idx20 = rel;
 						durRaw = durationFromLevels(idx90, idx80, idx50, idx20,
 						                            deltaTime, _cfg.durationFloor);
 					}
