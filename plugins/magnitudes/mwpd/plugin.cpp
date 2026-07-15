@@ -17,6 +17,6 @@ ADD_SC_PLUGIN(
 	"Duration-amplitude moment magnitude Mwpd: per-station moment magnitude "
 	"from the integral of the displacement over the source duration T0 "
 	"(port of Early-est 1.2.9, Lomax & Michelini 2009).",
-	"Early-est port",
+	"Mustafa Comoglu, Geoscience Australia",
 	MWPD_VERSION_MAJOR, MWPD_VERSION_MINOR, MWPD_VERSION_PATCH
 )
