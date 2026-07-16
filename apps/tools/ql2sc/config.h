@@ -21,11 +21,10 @@
 #include <map>
 #include <string>
 #include <sstream>
-#include <vector>
+#include <map>
 
 
-namespace Seiscomp {
-namespace QL2SC {
+namespace Seiscomp::QL2SC {
 
 
 typedef std::map<std::string, std::string> RoutingTable;
@@ -69,7 +68,7 @@ struct PrefixFirewall : Util::StringFirewall {
 
 struct Config {
 	bool init();
-	void format(std::stringstream &ss, const RoutingTable &table) const;
+	static void format(std::stringstream &ss, const RoutingTable &table);
 
 	int            batchSize;
 	size_t         backLog;
@@ -81,8 +80,7 @@ struct Config {
 };
 
 
-} // ns QL2SC
-} // ns Seiscomp
+} // ns Seiscomp::QL2SC
 
 
 #endif // SEISCOMP_QL2SC_CONFIG_H__

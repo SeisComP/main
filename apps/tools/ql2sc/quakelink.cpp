@@ -23,8 +23,7 @@
 
 using namespace std;
 
-namespace Seiscomp {
-namespace QL2SC {
+namespace Seiscomp::QL2SC {
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -32,8 +31,7 @@ namespace QL2SC {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 QLClient::QLClient(int notificationID, const HostConfig *config, size_t backLog)
-: IO::QuakeLink::Connection(), _notificationID(notificationID), _config(config)
-, _backLog(backLog) {
+: _notificationID(notificationID), _config(config), _backLog(backLog) {
 	setLogPrefix("[QL " + _config->host + "] ");
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -54,7 +52,7 @@ QLClient::~QLClient() {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void QLClient::run() {
 	SEISCOMP_INFO("%sconnecting to URL '%s'", _logPrefix, _config->url);
-	_thread = thread(bind(&QLClient::listen, this));
+	_thread = thread([this] { listen(); });
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -174,5 +172,4 @@ void QLClient::listen() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-} // ns QL2SC
-} // ns Seiscomp
+} // ns Seiscomp::QL2SC

@@ -22,6 +22,7 @@
 #include <seiscomp/datamodel/amplitude.h>
 #include <seiscomp/datamodel/event.h>
 #include <seiscomp/datamodel/eventparameters.h>
+#include <seiscomp/datamodel/catalog.h>
 #include <seiscomp/datamodel/focalmechanism.h>
 #include <seiscomp/datamodel/magnitude.h>
 #include <seiscomp/datamodel/origin.h>
@@ -37,8 +38,7 @@
 using namespace std;
 
 
-namespace Seiscomp {
-namespace QL2SC {
+namespace Seiscomp::QL2SC {
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -76,6 +76,7 @@ bool Config::init() {
 	try {
 		auto list = app->configGetStrings("processing.whitelist.publicIDs");
 		std::vector<std::string> publicIDlist;
+		publicIDlist.reserve(list.size());
 		for ( const auto &item : list ) {
 			publicIDlist.push_back(Seiscomp::Util::replace(item));
 		}
@@ -89,6 +90,7 @@ bool Config::init() {
 	try {
 		auto list =  app->configGetStrings("processing.blacklist.publicIDs");
 		std::vector<std::string> publicIDlist;
+		publicIDlist.reserve(list.size());
 		for ( const auto &item : list ) {
 			publicIDlist.push_back(Seiscomp::Util::replace(item));
 		}
@@ -101,7 +103,8 @@ bool Config::init() {
 
 	// host configurations
 	hosts.clear();
-	vector<string> hostNames, routings;
+	vector<string> hostNames;
+	vector<string> routings;
 
 	SEISCOMP_INFO("reading host configuration");
 	try { hostNames = app->configGetStrings("hosts"); }
@@ -111,12 +114,12 @@ bool Config::init() {
 		return false;
 	}
 
-	for ( auto it = hostNames.begin(); it != hostNames.end(); ++it ) {
+	for ( const auto& host : hostNames ) {
 		HostConfig cfg;
-		string prefix = "host." + *it + ".";
+		string prefix = "host." + host + ".";
 
 		// host
-		cfg.host = *it;
+		cfg.host = host;
 
 		// URL
 		try { cfg.url = app->configGetString(prefix + "url"); }
@@ -145,39 +148,31 @@ bool Config::init() {
 		try { cfg.syncEventDelay = app->configGetInt(prefix + "syncEventDelay"); }
 		catch ( ... ) { cfg.syncEventDelay = 0; }
 
-		// data options
-		bool isSet;
-		string dataPrefix = prefix + "data.";
+		// QuakeLink options
 		cfg.options = IO::QuakeLink::opIgnore;
 
-		try { isSet = app->configGetBool(dataPrefix + "picks"); }
-		catch ( ... ) { isSet = true; }
-		if ( isSet ) cfg.options |= IO::QuakeLink::opDataPicks;
+		auto setQLOption = [&] (const char *name, IO::QuakeLink::Options flag,
+		                        bool enabled = true) {
+			try {
+				enabled = app->configGetBool(prefix + name);
+			}
+			catch ( ... ) {}
 
-		try { isSet = app->configGetBool(dataPrefix + "amplitudes"); }
-		catch ( ... ) { isSet = true; }
-		if ( isSet ) cfg.options |= IO::QuakeLink::opDataAmplitudes;
+			if ( enabled ) {
+				cfg.options |= flag;
+			}
+		};
 
-		try { isSet = app->configGetBool(dataPrefix + "arrivals"); }
-		catch ( ... ) { isSet = true; }
-		if ( isSet ) cfg.options |= IO::QuakeLink::opDataArrivals;
-
-		try { isSet = app->configGetBool(dataPrefix + "staMags"); }
-		catch ( ... ) { isSet = true; }
-		if ( isSet ) cfg.options |= IO::QuakeLink::opDataStaMags;
-
-		try { isSet = app->configGetBool(dataPrefix + "staMts"); }
-		catch ( ... ) { isSet = true; }
-		if ( isSet ) cfg.options |= IO::QuakeLink::opDataStaMts;
-
-		try { isSet = app->configGetBool(dataPrefix + "preferred"); }
-		catch ( ... ) { isSet = true; }
-		if ( isSet ) cfg.options |= IO::QuakeLink::opDataPreferred;
+		// data options
+		setQLOption("data.picks", IO::QuakeLink::opDataPicks);
+		setQLOption("data.amplitudes", IO::QuakeLink::opDataAmplitudes);
+		setQLOption("data.arrivals", IO::QuakeLink::opDataArrivals);
+		setQLOption("data.staMags", IO::QuakeLink::opDataStaMags);
+		setQLOption("data.staMts", IO::QuakeLink::opDataStaMts);
+		setQLOption("data.preferred", IO::QuakeLink::opDataPreferred);
 
 		// keep alive messages
-		try { isSet = app->configGetBool(prefix + "keepAlive"); }
-		catch ( ... ) { isSet = true; }
-		if ( isSet ) cfg.options |= Seiscomp::IO::QuakeLink::opKeepAlive;
+		setQLOption("keepAlive", Seiscomp::IO::QuakeLink::opKeepAlive);
 
 		// filter
 		try { cfg.filter = app->configGetString(prefix + "filter"); }
@@ -187,11 +182,10 @@ bool Config::init() {
 		try {
 			routings = app->configGetStrings(prefix + "routingTable");
 			vector<string> toks;
-			for ( vector<string>::iterator it = routings.begin();
-			      it != routings.end(); ++it ) {
-				Core::split(toks, it->c_str(), ":");
+			for ( const auto &route : routings ) {
+				Core::split(toks, route, ":");
 				if ( toks.size() != 2 ) {
-					SEISCOMP_ERROR("Malformed routing table entry: %s", it->c_str());
+					SEISCOMP_ERROR("Malformed routing table entry: %s", route);
 					return false;
 				}
 				cfg.routingTable[toks[0]] = (toks[1] == "NULL" ? "" : toks[1]);
@@ -206,53 +200,56 @@ bool Config::init() {
 
 		// create explicit routing entries for top-level EventParameters
 		// children in case a routing entry for EventParameters is found
-		RoutingTable::const_iterator rit = cfg.routingTable.find(DataModel::EventParameters::TypeInfo().className());
+		const auto rit = cfg.routingTable.find(DataModel::EventParameters::TypeInfo().className());
 		if ( rit != cfg.routingTable.end() && !rit->second.empty() ) {
-			if ( cfg.routingTable[DataModel::Pick::TypeInfo().className()].empty() )
-				cfg.routingTable[DataModel::Pick::TypeInfo().className()] = rit->second;
-			if ( cfg.routingTable[DataModel::Amplitude::TypeInfo().className()].empty() )
-				cfg.routingTable[DataModel::Amplitude::TypeInfo().className()] = rit->second;
-			if ( cfg.routingTable[DataModel::Reading::TypeInfo().className()].empty() )
-				cfg.routingTable[DataModel::Reading::TypeInfo().className()] = rit->second;
-			if ( cfg.routingTable[DataModel::Origin::TypeInfo().className()].empty() )
-				cfg.routingTable[DataModel::Origin::TypeInfo().className()] = rit->second;
-			if ( cfg.routingTable[DataModel::FocalMechanism::TypeInfo().className()].empty() )
-				cfg.routingTable[DataModel::FocalMechanism::TypeInfo().className()] = rit->second;
-			if ( cfg.routingTable[DataModel::Event::TypeInfo().className()].empty() )
-				cfg.routingTable[DataModel::Event::TypeInfo().className()] = rit->second;
+			auto target = rit->second;
+			for ( const auto &type : {
+			          DataModel::Amplitude::TypeInfo(),
+			          DataModel::Catalog::TypeInfo(),
+			          DataModel::Event::TypeInfo(),
+			          DataModel::FocalMechanism::TypeInfo(),
+			          DataModel::Origin::TypeInfo(),
+			          DataModel::Pick::TypeInfo(),
+			          DataModel::Reading::TypeInfo()
+			      }) {
+				const auto *className = type.className();
+				if ( cfg.routingTable.find(className) == cfg.routingTable.end() ) {
+					cfg.routingTable[className] = target;
+				}
+			}
 		}
 
-		hosts[*it] = cfg;
+		hosts[host] = cfg;
 
 		stringstream ss;
 		format(ss, cfg.routingTable);
-		SEISCOMP_INFO("Configuration of host '%s':\n"
-		             "  url         : %s\n"
-		             "  gzip        : %s\n"
-		             "  native      : %s\n"
-		             "  data\n"
-		             "    picks     : %s\n"
-		             "    amplitudes: %s\n"
-		             "    arrivals  : %s\n"
-		             "    staMags   : %s\n"
-		             "    staMts    : %s\n"
-		             "    preferred : %s\n"
-		             "  keepAlive   : %s\n"
-		             "  filter      : %s\n"
-		             "  routing     : %s\n",
-		             it->c_str(),
-		             cfg.url.c_str(),
-		             cfg.gzip                                      ? "true" : "false",
-		             cfg.native                                    ? "true" : "false",
-		             cfg.options & IO::QuakeLink::opDataPicks      ? "true" : "false",
-		             cfg.options & IO::QuakeLink::opDataAmplitudes ? "true" : "false",
-		             cfg.options & IO::QuakeLink::opDataArrivals   ? "true" : "false",
-		             cfg.options & IO::QuakeLink::opDataStaMags    ? "true" : "false",
-		             cfg.options & IO::QuakeLink::opDataStaMts     ? "true" : "false",
-		             cfg.options & IO::QuakeLink::opDataPreferred  ? "true" : "false",
-		             cfg.options & IO::QuakeLink::opKeepAlive      ? "true" : "false",
-		             cfg.filter.c_str(),
-		             ss.str().c_str());
+		SEISCOMP_INFO("Read host configuration '%s':\n"
+		              "  url         : %s\n"
+		              "  gzip        : %s\n"
+		              "  native      : %s\n"
+		              "  data\n"
+		              "    picks     : %s\n"
+		              "    amplitudes: %s\n"
+		              "    arrivals  : %s\n"
+		              "    staMags   : %s\n"
+		              "    staMts    : %s\n"
+		              "    preferred : %s\n"
+		              "  keepAlive   : %s\n"
+		              "  filter      : %s\n"
+		              "  routing     : %s\n",
+		              host,
+		              cfg.url,
+		              cfg.gzip                                      ? "true" : "false",
+		              cfg.native                                    ? "true" : "false",
+		              cfg.options & IO::QuakeLink::opDataPicks      ? "true" : "false",
+		              cfg.options & IO::QuakeLink::opDataAmplitudes ? "true" : "false",
+		              cfg.options & IO::QuakeLink::opDataArrivals   ? "true" : "false",
+		              cfg.options & IO::QuakeLink::opDataStaMags    ? "true" : "false",
+		              cfg.options & IO::QuakeLink::opDataStaMts     ? "true" : "false",
+		              cfg.options & IO::QuakeLink::opDataPreferred  ? "true" : "false",
+		              cfg.options & IO::QuakeLink::opKeepAlive      ? "true" : "false",
+		              cfg.filter,
+		              ss.str());
 	}
 
 	std::ostringstream deny;
@@ -276,8 +273,8 @@ bool Config::init() {
 	}
 
 	SEISCOMP_INFO("Processing configuration:");
-	SEISCOMP_INFO("  allowed publicID prefixes: %s", allow.str().c_str());
-	SEISCOMP_INFO("  blocked publicID prefixes: %s", deny.str().c_str());
+	SEISCOMP_INFO("  allowed publicID prefixes: %s", allow.str());
+	SEISCOMP_INFO("  blocked publicID prefixes: %s", deny.str());
 
 	return true;
 }
@@ -287,12 +284,16 @@ bool Config::init() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Config::format(stringstream &ss, const RoutingTable &table) const {
+void Config::format(stringstream &ss, const RoutingTable &table) {
 	bool first = true;
-	for ( RoutingTable::const_iterator it = table.begin();
-	      it != table.end(); ++it, first = false) {
-		if ( !first ) ss << ", ";
-		ss << it->first << ":" << it->second;
+	for ( const auto &[name, target] : table ) {
+		if ( first ) {
+			first = false;
+		}
+		else {
+			ss << ", ";
+		}
+		ss << name << ":" << target;
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -301,5 +302,4 @@ void Config::format(stringstream &ss, const RoutingTable &table) const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-} // ns QL2SC
-} // ns Seiscomp
+} // ns Seiscomp::QL2SC

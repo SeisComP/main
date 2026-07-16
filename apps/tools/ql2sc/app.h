@@ -12,8 +12,8 @@
  ***************************************************************************/
 
 
-#ifndef SEISCOMP_QL2SC_APP_H__
-#define SEISCOMP_QL2SC_APP_H__
+#ifndef SEISCOMP_QL2SC_APP_H
+#define SEISCOMP_QL2SC_APP_H
 
 #include "config.h"
 #include "quakelink.h"
@@ -79,7 +79,7 @@ class App : public Client::Application {
 		void handleTimeout() override;
 
 		bool handleQLMessage(QLClient *client, const IO::QuakeLink::Response *msg);
-		bool dispatchResponse(QLClient *client, const IO::QuakeLink::Response *response);
+		bool dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg);
 
 		template <class T>
 		void diffPO(T *remotePO, const std::string &parentID,
@@ -148,10 +148,10 @@ class App : public Client::Application {
 		QLResponseBuffer         _qlDelayBuffer;
 		std::string              _waitForEventIDOriginID;
 		std::string              _waitForEventIDResult;
-		int                      _waitForEventIDTimeout;
+		int                      _waitForEventIDTimeout{0};
 		std::vector<std::string> _ep;
 		std::string              _hostProfile;
-		bool                     _test;
+		bool                     _test{false};
 };
 
 } // ns QL2SC

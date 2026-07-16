@@ -45,8 +45,7 @@ using namespace Seiscomp::DataModel;
 namespace io = boost::iostreams;
 
 
-namespace Seiscomp {
-namespace QL2SC {
+namespace Seiscomp::QL2SC {
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -106,17 +105,18 @@ class MyDiff : public Diff5 {
 
 	protected:
 		bool blocked(const Core::BaseObject *o, LogNode *node, bool local) override {
-			auto po = PublicObject::ConstCast(o);
+			const auto *po = PublicObject::ConstCast(o);
 			if ( po ) {
 				if ( _cfg.publicIDFilter.isDenied(po->publicID()) ) {
-					if ( node && node->level() >= LogNode::DIFFERENCES )
+					if ( node && node->level() >= LogNode::DIFFERENCES ) {
 						node->addChild(o2t(o), "SKIP (" + string(local?"local":"remote") +
 						               " publicID '" + po->publicID() + "' blocked)");
+					}
 					return true;
 				}
 			}
 
-			const Core::MetaProperty *prop = 0;
+			const Core::MetaProperty *prop = nullptr;
 			auto it = CreationInfoIndex.find(o->className());
 			if ( it == CreationInfoIndex.end() ) {
 				if ( o->meta() ) {
@@ -136,7 +136,7 @@ class MyDiff : public Diff5 {
 
 			try {
 				Core::MetaValue v = prop->read(o);
-				Core::BaseObject *bo = Core::metaValueCast<Core::BaseObject*>(v);
+				auto *bo = Core::metaValueCast<Core::BaseObject*>(v);
 				CreationInfo *ci = CreationInfo::Cast(bo);
 				if ( ci ) {
 					agencyID = ci->agencyID();
@@ -177,7 +177,8 @@ class MyDiff : public Diff5 {
 
 			try {
 				Core::MetaValue v;
-				CreationInfo *ciLocal, *ciRemote;
+				CreationInfo *ciLocal;
+				CreationInfo *ciRemote;
 
 				v = prop->read(localO);
 				ciLocal = CreationInfo::Cast(Core::metaValueCast<Core::BaseObject*>(v));
@@ -258,11 +259,11 @@ class MyDiff : public Diff5 {
 			return false;
 		}
 
-		bool confirmDescent(const Core::BaseObject *,
-		                    const Core::BaseObject *,
+		bool confirmDescent(const Core::BaseObject * /*localO*/,
+		                    const Core::BaseObject * /*remoteO*/,
 		                    bool updateConfirmed,
 		                    const Core::MetaProperty *prop,
-		                    LogNode *) override {
+		                    LogNode * /*node*/) override {
 			// If the object type of the child property does not contain
 			// a creationInfo then we consider that as part of the object
 			// and do not descent if the update of the parent is not
@@ -274,7 +275,7 @@ class MyDiff : public Diff5 {
 				const Core::MetaProperty *propCreationInfo = nullptr;
 				auto it = CreationInfoIndex.find(prop->type());
 				if ( it == CreationInfoIndex.end() ) {
-					auto meta = Core::MetaObject::Find(prop->type());
+					const auto *meta = Core::MetaObject::Find(prop->type());
 					if ( meta ) {
 						propCreationInfo = meta->property("creationInfo");
 						CreationInfoIndex[prop->type()] = propCreationInfo;
@@ -304,7 +305,7 @@ template<typename Container> class container_source {
 		container_source(const Container& container)
 		 : _con(container), _pos(0) {}
 		streamsize read(char_type* s, streamsize n) {
-			streamsize amt = static_cast<streamsize>(_con.size() - _pos);
+			auto amt = static_cast<streamsize>(_con.size() - _pos);
 			streamsize result = (min)(n, amt);
 			if (result != 0) {
 				copy(_con.begin() + _pos, _con.begin() + _pos + result, s);
@@ -330,7 +331,7 @@ void sort(Journaling *journaling) {
 
 	vector<JournalEntryPtr> tmp;
 	while ( journaling->journalEntryCount() ) {
-		tmp.push_back(journaling->journalEntry(0));
+		tmp.emplace_back(journaling->journalEntry(0));
 		journaling->removeJournalEntry(0);
 	}
 
@@ -386,46 +387,53 @@ bool load(EventParametersPtr &ep, JournalingPtr &ej,
 class SC_SYSTEM_CORE_API PublicObjectCacheFeeder : protected Visitor {
 	public:
 		PublicObjectCacheFeeder(PublicObjectCache &cache)
-		 : _cache(cache), _root(nullptr) {}
+		 : _cache(cache) {}
 
 		void feed(Object *o, bool skipRoot = false) {
 			_root = skipRoot ? o : nullptr;
-			if ( o )
+			if ( o ) {
 				o->accept(this);
+			}
 		}
 
 	private:
-		bool visit(PublicObject* po) {
-			if ( _root && _root == po ) // skip root node
+		bool visit(PublicObject* po) override {
+			if ( _root && _root == po ) { // skip root node
 				return true;
+			}
 			_cache.feed(po);
 			return true;
 		}
 
-		void visit(Object* o) {}
+		void visit(Object* o) override {}
 
 	private:
 		PublicObjectCache &_cache;
-		Object *_root;
+		Object *_root{nullptr};
 };
 
 
 /** Recursively resolves routing for a given object */
 bool checkRouting(const Object *o, const RoutingTable &routing) {
-	if ( !o ) return false;
+	if ( !o ) {
+		return false;
+	}
 
-	RoutingTable::const_iterator it = routing.find(o->typeInfo().className());
-	if ( it != routing.end() )
+	auto it = routing.find(o->typeInfo().className());
+	if ( it != routing.end() ) {
 		return !it->second.empty();
+	}
 
 	return checkRouting(o->parent(), routing);
 }
 
 
 bool resolveRouting(string &result, const Object *o, const RoutingTable &routing) {
-	if ( !o ) return false;
+	if ( !o ) {
+		return false;
+	}
 
-	RoutingTable::const_iterator it = routing.find(o->typeInfo().className());
+	auto it = routing.find(o->typeInfo().className());
 	if ( it != routing.end() ) {
 		result = it->second;
 		return !result.empty();
@@ -473,7 +481,7 @@ JournalEntryPtr getLastJournalEntry(const Journaling *journals, const string &ev
 	}
 
 	for ( size_t i = 0; i < journals->journalEntryCount(); ++i ) {
-		auto item = journals->journalEntry(i);
+		auto *item = journals->journalEntry(i);
 		if ( (item->objectID() == eventID) && (item->action() == action) ) {
 			if ( !journalEntry ) {
 				journalEntry = item;
@@ -516,9 +524,7 @@ bool isMoreRecent(const JournalEntry *entry, const JournalEntry *reference) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 App::App(int argc, char **argv)
-: Client::Application(argc, argv)
-, _waitForEventIDTimeout(0)
-, _test(false) {
+: Client::Application(argc, argv) {
 	setDatabaseEnabled(true, true);
 	setMessagingEnabled(true);
 	setPrimaryMessagingGroup("EVENT");
@@ -532,9 +538,7 @@ App::App(int argc, char **argv)
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 App::~App() {
 	for ( auto *client : _clients ) {
-		if ( client ) {
-			delete client;
-		}
+		delete client;
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -568,11 +572,11 @@ bool App::init() {
 
 	int notificationID = -2;
 	for ( auto &[name, cfg] : _config.hosts ) {
-		SEISCOMP_INFO("Initializing host '%s'", cfg.host);
-		auto client = new QLClient(notificationID, &cfg, _config.backLog);
+		SEISCOMP_INFO("Initializing host '%s'", name);
+		auto *client = new QLClient(notificationID, &cfg, _config.backLog);
 		_clients.push_back(client);
 		if ( !client->init(cfg.url, cfg.options) ) {
-			SEISCOMP_ERROR("Failed to initialize host '%s'", cfg.host);
+			SEISCOMP_ERROR("Failed to initialize host '%s'", name);
 			return false;
 		}
 		--notificationID;
@@ -604,146 +608,147 @@ bool App::run() {
 
 		return Client::Application::run();
 	}
-	else {
-		HostConfig config;
-		if ( !_hostProfile.empty() ) {
-			if ( _config.hosts.find(_hostProfile) == _config.hosts.end() ) {
-				SEISCOMP_ERROR("Host profile '%s' not found", _hostProfile);
+
+	HostConfig config;
+	if ( !_hostProfile.empty() ) {
+		if ( _config.hosts.find(_hostProfile) == _config.hosts.end() ) {
+			SEISCOMP_ERROR("Host profile '%s' not found", _hostProfile);
+			return false;
+		}
+
+		config = _config.hosts[_hostProfile];
+	}
+
+	for (auto &ei : _ep) {
+		SEISCOMP_INFO("---- %s", ei);
+
+		// Offline processing
+		EventParametersPtr ep;
+		JournalingPtr ej;
+		Notifiers notifiers;
+		Notifiers journals;
+		LogNodePtr logNode;
+		IO::XMLArchive ar;
+
+		{
+			RegistrationDisableGuard disableRegistration;
+
+			if ( !ar.open(ei.c_str()) ) {
+				cerr << "Failed to open " << ei << '\n';
 				return false;
 			}
 
-			config = _config.hosts[_hostProfile];
-		}
+			ar >> ep >> ej;
 
-		for ( size_t ei = 0; ei < _ep.size(); ++ei ) {
-			SEISCOMP_INFO("---- %s", _ep[ei]);
-
-			// Offline processing
-			EventParametersPtr ep;
-			JournalingPtr ej;
-			Notifiers notifiers, journals;
-			LogNodePtr logNode;
-			IO::XMLArchive ar;
-
-			{
-				RegistrationDisableGuard disableRegistration;
-
-				if ( !ar.open(_ep[ei].c_str()) ) {
-					cerr << "Failed to open " << _ep[ei] << endl;
-					return false;
-				}
-
-				ar >> ep >> ej;
-
-				ar.close();
-			}
-
-			sort(ej.get());
-
-			// log node is enabled for notice and debug level
-			if ( _baseSettings.logging.verbosity > 2 )
-				logNode = new LogNode(
-					EventParameters::TypeInfo().className(),
-					_baseSettings.logging.verbosity > 3
-					?
-					LogNode::DIFFERENCES
-					:
-					LogNode::OPERATIONS
-				);
-
-			string epRouting;
-			auto rt_it = config.routingTable.find(ep->typeInfo().className());
-			if ( rt_it != config.routingTable.end() ) {
-				epRouting = rt_it->second;
-			}
-
-			// Picks
-			const string &epID = ep->publicID();
-
-			if ( !epRouting.empty() ||
-				 config.routingTable.find(Pick::TypeInfo().className()) != config.routingTable.end() ) {
-				for ( size_t i = 0; i < ep->pickCount(); ++i ) {
-					diffPO(ep->pick(i), epID, notifiers, logNode.get());
-				}
-			}
-
-			// Amplitudes
-			if ( !epRouting.empty() ||
-				 config.routingTable.find(Amplitude::TypeInfo().className()) != config.routingTable.end() ) {
-				for ( size_t i = 0; i < ep->amplitudeCount(); ++i ) {
-					diffPO(ep->amplitude(i), epID, notifiers, logNode.get());
-				}
-			}
-
-			// Origins
-			if ( !epRouting.empty() ||
-				 config.routingTable.find(Origin::TypeInfo().className()) != config.routingTable.end() ) {
-				for ( size_t i = 0; i < ep->originCount(); ++i ) {
-					diffPO(ep->origin(i), epID, notifiers, logNode.get());
-				}
-			}
-
-			// FocalMechanisms
-			if ( !epRouting.empty() ||
-				 config.routingTable.find(FocalMechanism::TypeInfo().className()) != config.routingTable.end() ) {
-				for ( size_t i = 0; i < ep->focalMechanismCount(); ++i ) {
-					diffPO(ep->focalMechanism(i), epID, notifiers, logNode.get());
-				}
-			}
-
-			// Events
-			if ( !epRouting.empty() ||
-				 config.routingTable.find(Event::TypeInfo().className()) != config.routingTable.end() ) {
-				for ( size_t i = 0; i < ep->eventCount(); ++i ) {
-					diffPO(ep->event(i), epID, notifiers, logNode.get());
-				}
-			}
-
-			// log diffs
-			if ( logNode.get() && logNode->childCount() ) {
-				stringstream ss;
-				ss << endl;
-				logNode->write(ss);
-				if ( _baseSettings.logging.verbosity > 3 ) {
-					SEISCOMP_DEBUG_S(ss.str());
-				}
-				else {
-					SEISCOMP_INFO_S(ss.str());
-				}
-			}
-
-			SEISCOMP_DEBUG("Sync event attributes: %s", config.syncEventAttributes ? "true" : "false");
-			SEISCOMP_DEBUG("Sync preferred: %s", config.syncPreferred ? "true" : "false");
-			SEISCOMP_DEBUG("Sync journals: %s", config.syncJournals ? "true" : "false");
-
-			// No event routing, forward event attributes
-			for ( size_t i = 0; i < ep->eventCount(); ++i ) {
-				syncEvent(ep.get(), ej.get(), ep->event(i), nullptr,
-				          config.syncEventAttributes,
-				          config.syncPreferred,
-				          config.syncJournals, journals);
-			}
-
-			cerr << "Notifiers: " << notifiers.size() << endl;
-			cerr << "Journals: " << journals.size() << endl;
-
-			for ( size_t i = 0; i < notifiers.size(); ++i ) {
-				applyNotifier(notifiers[i].get());
-			}
-
-			for ( size_t i = 0; i < journals.size(); ++i ) {
-				applyNotifier(journals[i].get());
-			}
-
-			ar.create("-");
-			ar.setFormattedOutput(true);
-			ar & NAMED_OBJECT("", notifiers);
-			ar & NAMED_OBJECT("", journals);
 			ar.close();
 		}
 
-		return true;
+		sort(ej.get());
+
+		 // log node is enabled for notice and debug level
+		if ( _baseSettings.logging.verbosity > 2 ) {
+			logNode = new LogNode(
+			    EventParameters::TypeInfo().className(),
+			    _baseSettings.logging.verbosity > 3
+			        ?
+			        LogNode::DIFFERENCES
+			        :
+			        LogNode::OPERATIONS
+			    );
+		}
+
+		string epRouting;
+		auto rt_it = config.routingTable.find(ep->typeInfo().className());
+		if ( rt_it != config.routingTable.end() ) {
+			epRouting = rt_it->second;
+		}
+
+		// Picks
+		const string &epID = ep->publicID();
+
+		if ( !epRouting.empty() ||
+		     config.routingTable.find(Pick::TypeInfo().className()) != config.routingTable.end() ) {
+			for ( size_t i = 0; i < ep->pickCount(); ++i ) {
+				diffPO(ep->pick(i), epID, notifiers, logNode.get());
+			}
+		}
+
+		// Amplitudes
+		if ( !epRouting.empty() ||
+		     config.routingTable.find(Amplitude::TypeInfo().className()) != config.routingTable.end() ) {
+			for ( size_t i = 0; i < ep->amplitudeCount(); ++i ) {
+				diffPO(ep->amplitude(i), epID, notifiers, logNode.get());
+			}
+		}
+
+		// Origins
+		if ( !epRouting.empty() ||
+		     config.routingTable.find(Origin::TypeInfo().className()) != config.routingTable.end() ) {
+			for ( size_t i = 0; i < ep->originCount(); ++i ) {
+				diffPO(ep->origin(i), epID, notifiers, logNode.get());
+			}
+		}
+
+		// FocalMechanisms
+		if ( !epRouting.empty() ||
+		     config.routingTable.find(FocalMechanism::TypeInfo().className()) != config.routingTable.end() ) {
+			for ( size_t i = 0; i < ep->focalMechanismCount(); ++i ) {
+				diffPO(ep->focalMechanism(i), epID, notifiers, logNode.get());
+			}
+		}
+
+		// Events
+		if ( !epRouting.empty() ||
+		     config.routingTable.find(Event::TypeInfo().className()) != config.routingTable.end() ) {
+			for ( size_t i = 0; i < ep->eventCount(); ++i ) {
+				diffPO(ep->event(i), epID, notifiers, logNode.get());
+			}
+		}
+
+		// log diffs
+		if ( logNode.get() && logNode->childCount() ) {
+			stringstream ss;
+			ss << '\n';
+			logNode->write(ss);
+			if ( _baseSettings.logging.verbosity > 3 ) {
+				SEISCOMP_DEBUG_S(ss.str());
+			}
+			else {
+				SEISCOMP_INFO_S(ss.str());
+			}
+		}
+
+		SEISCOMP_DEBUG("Sync event attributes: %s", config.syncEventAttributes ? "true" : "false");
+		SEISCOMP_DEBUG("Sync preferred: %s", config.syncPreferred ? "true" : "false");
+		SEISCOMP_DEBUG("Sync journals: %s", config.syncJournals ? "true" : "false");
+
+		// No event routing, forward event attributes
+		for ( size_t i = 0; i < ep->eventCount(); ++i ) {
+			syncEvent(ep.get(), ej.get(), ep->event(i), nullptr,
+			          config.syncEventAttributes,
+			          config.syncPreferred,
+			          config.syncJournals, journals);
+		}
+
+		cerr << "Notifiers: " << notifiers.size() << '\n'
+		     << "Journals: " << journals.size() << '\n';
+
+		for ( const auto & notifier : notifiers ) {
+			applyNotifier(notifier.get());
+		}
+
+		for ( const auto &journal : journals ) {
+			applyNotifier(journal.get());
+		}
+
+		ar.create("-");
+		ar.setFormattedOutput(true);
+		ar & NAMED_OBJECT("", notifiers);
+		ar & NAMED_OBJECT("", journals);
+		ar.close();
 	}
+
+	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -756,8 +761,8 @@ void App::done() {
 	for ( auto &[eventID, item] : _eventDelayBuffer ) {
 		auto ep = item.ep;
 		auto ej = item.ej;
-		auto event = item.event;
-		auto *routing = item.routingTable;
+		auto *event = item.event;
+		const auto *routing = item.routingTable;
 
 		Notifiers notifiers;
 		// No event routing, forward event attributes
@@ -769,7 +774,7 @@ void App::done() {
 
 	// Wait for threads to terminate
 	if ( _ep.empty() ) {
-		for ( auto client : _clients ) {
+		for ( auto *client : _clients ) {
 			client->join();
 		}
 	}
@@ -813,8 +818,8 @@ bool App::dispatchNotification(int type, Core::BaseObject *obj) {
 		return false;
 	}
 
-	auto client = _clients[index];
-	auto msg = IO::QuakeLink::Response::Cast(obj);
+	auto *client = _clients[index];
+	auto *msg = IO::QuakeLink::Response::Cast(obj);
 	if ( !msg ) {
 		SEISCOMP_ERROR("received invalid message from host '%s'",
 		               client->config()->host);
@@ -867,9 +872,10 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 
 	// log node is enabled for notice and debug level
 	LogNodePtr logNode;
-	if ( _baseSettings.logging.verbosity > 2 )
+	if ( _baseSettings.logging.verbosity > 2 ) {
 		logNode = new LogNode(DataModel::EventParameters::TypeInfo().className(),
 		                      _baseSettings.logging.verbosity > 3 ? LogNode::DIFFERENCES : LogNode::OPERATIONS);
+	}
 
 	EventParametersPtr ep;
 	JournalingPtr ej;
@@ -973,7 +979,7 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 	// log diffs
 	if ( logNode.get() && logNode->childCount() ) {
 		stringstream ss;
-		ss << endl;
+		ss << '\n';
 		logNode->write(ss);
 		if ( _baseSettings.logging.verbosity > 3 ) {
 			SEISCOMP_DEBUG_S(ss.str());
@@ -995,7 +1001,7 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 			if ( config->syncEventAttributes || config->syncJournals ) {
 				if ( config->syncEventDelay > 0 ) {
 					for ( size_t i = 0; i < ep->eventCount(); ++i ) {
-						auto event = ep->event(i);
+						auto *event = ep->event(i);
 						auto itp = _eventDelayBuffer.insert({
 							event->publicID(), {
 								ep, ej, event, &config->routingTable,
@@ -1129,8 +1135,8 @@ void App::handleTimeout() {
 		if ( item.timeout <= 0 ) {
 			auto ep = item.ep;
 			auto ej = item.ej;
-			auto event = item.event;
-			auto *routing = item.routingTable;
+			auto *event = item.event;
+			const auto *routing = item.routingTable;
 
 			Notifiers notifiers;
 			SEISCOMP_DEBUG("%s: synchronize delayed event",
@@ -1212,7 +1218,7 @@ string App::waitForEventAssociation(const std::string &originID, int timeout) {
 		idle();
 	}
 
-	return string();
+	return {};
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1222,10 +1228,10 @@ string App::waitForEventAssociation(const std::string &originID, int timeout) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 JournalEntry *App::createJournalEntry(const string &id, const string &action, const string &params,
                                       const Core::Time *created, string_view author) {
-	JournalEntry *entry = new JournalEntry;
+	auto *entry = new JournalEntry;
 	entry->setCreated(created ? *created : Core::Time::UTC());
 	entry->setObjectID(id);
-	entry->setSender(author.length() ? string(author) : this->author());
+	entry->setSender(author.empty() ? this->author() : string(author));
 	entry->setAction(action);
 	entry->setParameters(params);
 	return entry;
@@ -1311,7 +1317,8 @@ void App::checkUpdate(Notifiers &notifiers,
                       R (T::*func)() const, const T *remote, const T *local,
                       const char *name, const Journaling *journals,
                       const std::string &action) {
-	typename OPT(remove_const_t<std::remove_reference_t<R>>) rR, lR;
+	typename OPT(remove_const_t<std::remove_reference_t<R>>) rR;
+	typename OPT(remove_const_t<std::remove_reference_t<R>>) lR;
 
 	try {
 		rR = (remote->*func)();
@@ -1404,7 +1411,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 		return;
 	}
 
-	auto origin = ep->findOrigin(event->preferredOriginID());
+	auto *origin = ep->findOrigin(event->preferredOriginID());
 	if ( !origin ) {
 		SEISCOMP_ERROR("Remote preferred origin '%s' not found: skipping event synchronization",
 		               event->preferredOriginID());
@@ -1451,8 +1458,8 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 
 	// Associate all focal mechanisms
 	for ( size_t i = 0; i < event->focalMechanismReferenceCount(); ++i ) {
-		auto fmRef = event->focalMechanismReference(i);
-		auto fm = ep->findFocalMechanism(fmRef->focalMechanismID());
+		auto *fmRef = event->focalMechanismReference(i);
+		auto *fm = ep->findFocalMechanism(fmRef->focalMechanismID());
 		if ( !fm ) {
 			SEISCOMP_WARNING("* referenced focal mechanism not found in event: '%s'",
 			                 fmRef->focalMechanismID());
@@ -1486,7 +1493,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 		}
 
 		if ( !event->preferredFocalMechanismID().empty() ) {
-			FocalMechanism *fm = ep->findFocalMechanism(event->preferredFocalMechanismID());
+			auto *fm = ep->findFocalMechanism(event->preferredFocalMechanismID());
 			if ( fm ) {
 				if ( !routing || checkRouting(fm, *routing) ) {
 					checkUpdate(notifiers, &Event::preferredFocalMechanismID, event, targetEvent.get(),
@@ -1520,9 +1527,9 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 			// Check if the preferred magnitude is part of a moment tensor
 			if ( prefMag->type() == "Mw" ) {
 				for ( size_t i = 0; i < ep->focalMechanismCount(); ++i ) {
-					auto fm = ep->focalMechanism(i);
+					auto *fm = ep->focalMechanism(i);
 					for ( size_t j = 0; j < fm->momentTensorCount(); ++j ) {
-						auto mt = fm->momentTensor(j);
+						auto *mt = fm->momentTensor(j);
 						if ( mt->derivedOriginID() == prefMag->origin()->publicID() ) {
 							isMw = true;
 							i = ep->focalMechanismCount();
@@ -1678,8 +1685,8 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 
 		// Event name
 		{
-			auto remoteDesc = event->eventDescription(EventDescriptionIndex(EARTHQUAKE_NAME));
-			auto localDesc = targetEvent->eventDescription(EventDescriptionIndex(EARTHQUAKE_NAME));
+			auto *remoteDesc = event->eventDescription(EventDescriptionIndex(EARTHQUAKE_NAME));
+			auto *localDesc = targetEvent->eventDescription(EventDescriptionIndex(EARTHQUAKE_NAME));
 
 			if ( remoteDesc && localDesc && (remoteDesc->text() == localDesc->text()) ) {
 				SEISCOMP_DEBUG("* check update of event name: '%s' => equal", remoteDesc->text());
@@ -1792,8 +1799,8 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 
 		// Operator comment
 		{
-			auto remoteCmt = event->comment(string("Operator"));
-			auto localCmt = targetEvent->comment(string("Operator"));
+			auto *remoteCmt = event->comment(string("Operator"));
+			auto *localCmt = targetEvent->comment(string("Operator"));
 
 			if ( remoteCmt && localCmt && (remoteCmt->text() == localCmt->text()) ) {
 				SEISCOMP_DEBUG("* check update of event operator comment: '%s' => equal", remoteCmt->text());
@@ -1964,7 +1971,8 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 	}
 
 	if ( syncJournals && journals ) {
-		unordered_map<string, const JournalEntry*> journalEntries, pendingJournalEntries;
+		unordered_map<string, const JournalEntry*> journalEntries;
+		unordered_map<string, const JournalEntry*> pendingJournalEntries;
 
 		static unordered_set<string> supportedEventJournals = {
 			"EvPrefMagType",
@@ -1982,7 +1990,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 		};
 
 		for ( size_t i = 0; i < journals->journalEntryCount(); ++i ) {
-			auto entry = journals->journalEntry(i);
+			auto *entry = journals->journalEntry(i);
 			if ( entry->objectID() != event->publicID() ) {
 				continue;
 			}
@@ -1998,32 +2006,31 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 					}
 					continue;
 				}
+
+				const auto *entry = it->second;
+				// It is confirmed and not pending anymore
+				pendingJournalEntries.erase(it);
+
+				if ( supportedEventJournals.find(entry->action()) == supportedEventJournals.end() ) {
+					// This action is not supported
+					SEISCOMP_INFO("* ignoring unsupported action %s", entry->action());
+					continue;
+				}
+
+				it = journalEntries.find(entry->action());
+				if ( it == journalEntries.end() ) {
+					journalEntries[entry->action()] = entry;
+				}
 				else {
-					auto entry = it->second;
-					// It is confirmed and not pending anymore
-					pendingJournalEntries.erase(it);
-
-					if ( supportedEventJournals.find(entry->action()) == supportedEventJournals.end() ) {
-						// This action is not supported
-						SEISCOMP_INFO("* ignoring unsupported action %s", entry->action());
-						continue;
-					}
-
-					it = journalEntries.find(entry->action());
-					if ( it == journalEntries.end() ) {
-						journalEntries[entry->action()] = entry;
-					}
-					else {
-						try {
-							if ( entry->created() > it->second->created() ) {
-								it->second = entry;
-							}
-						}
-						catch ( ... ) {
-							// created is not set, take the latest with respect
-							// to data order
+					try {
+						if ( entry->created() > it->second->created() ) {
 							it->second = entry;
 						}
+					}
+					catch ( ... ) {
+						// created is not set, take the latest with respect
+						// to data order
+						it->second = entry;
 					}
 				}
 			}
@@ -2094,12 +2101,15 @@ bool App::sendNotifiers(const EventParameters *ep, const Notifiers &notifiers,
 	}
 
 	// statistics
-	int add = 0, update = 0, remove = 0, msgTotal = 0;
+	int add = 0;
+	int update = 0;
+	int remove = 0;
 	map<string, int> groupMessages;
 
-	string group, prevGroup;
+	string group;
+	string prevGroup;
 	NotifierMessagePtr nm = new NotifierMessage();
-	for ( auto &n : notifiers ) {
+	for ( const auto &n : notifiers ) {
 		// check if a route exists
 		if ( !resolveRouting(group, n->object(), routing) ) {
 			SEISCOMP_DEBUG("Skip %s of %s: no routing",
@@ -2109,7 +2119,7 @@ bool App::sendNotifiers(const EventParameters *ep, const Notifiers &notifiers,
 
 		// the message has to be send if the batchSize is exceeded or the
 		// message group changed
-		if ( (nm->size() > 0 && group != prevGroup) ||
+		if ( (!nm->empty() && group != prevGroup) ||
 		     (_config.batchSize > 0 && nm->size() >= _config.batchSize) ) {
 			SEISCOMP_DEBUG("sending notifier message (#%i) to group '%s'",
 			               nm->size(), prevGroup);
@@ -2140,9 +2150,9 @@ bool App::sendNotifiers(const EventParameters *ep, const Notifiers &notifiers,
 					// adds a hint of the remote eventID for this particular
 					// origin so that scevent can grab this hint and assign that
 					// eventID if an event has to be created.
-					auto org = static_cast<Origin*>(n->object());
+					auto *org = static_cast<Origin*>(n->object());
 					for ( size_t i = 0; i < ep->eventCount(); ++i ) {
-						auto event = ep->event(i);
+						auto *event = ep->event(i);
 						if ( event->preferredOriginID() == org->publicID()
 						  || event->originReference(org->publicID()) ) {
 							// The origin is either the preferred origin or it
@@ -2177,7 +2187,7 @@ bool App::sendNotifiers(const EventParameters *ep, const Notifiers &notifiers,
 	}
 
 	// send last message
-	if ( nm->size() > 0 ) {
+	if ( !nm->empty() ) {
 		SEISCOMP_DEBUG("sending notifier message (#%i) to group '%s'",
 		               nm->size(), group);
 		if ( !connection()->send(group, nm.get()) ) {
@@ -2192,8 +2202,7 @@ bool App::sendNotifiers(const EventParameters *ep, const Notifiers &notifiers,
 	if ( !groupMessages.empty() ) {
 		stringstream ss;
 		for ( auto &[name, count] : groupMessages ) {
-			++msgTotal;
-			ss << "  " << name << ": " << count << endl;
+			ss << "  " << name << ": " << count << '\n';
 		}
 		SEISCOMP_INFO("sent %i notifiers (ADD: %i, UPDATE: %i, REMOVE: %i) "
 		              "to the following message groups:\n%s",
@@ -2221,7 +2230,7 @@ bool App::sendNotifiers(const Notifiers &notifiers) {
 	}
 
 	NotifierMessagePtr nm = new NotifierMessage();
-	for ( auto &n : notifiers ) {
+	for ( const auto &n : notifiers ) {
 		nm->attach(n.get());
 	}
 
@@ -2318,8 +2327,8 @@ void App::readLastUpdates() {
 	map<string, Core::Time> hostTimes;
 	while ( ifs.good() && getline(ifs, line) ) {
 		++i;
-		if ( Core::split(toks, line.c_str(), " ") == 2 &&
-		     time.fromString(toks[1].c_str(), "%FT%T.%fZ") ) {
+		if ( Core::split(toks, line, " ") == 2 &&
+		     time.fromString(toks[1], "%FT%T.%fZ") ) {
 			hostTimes[toks[0]] = time;
 		}
 		else {
@@ -2360,7 +2369,7 @@ void App::writeLastUpdates() {
 		if ( !client->lastUpdate() ) {
 			continue;
 		}
-		ofs << client->config()->host << " " << client->lastUpdate()->iso() << endl;
+		ofs << client->config()->host << " " << client->lastUpdate()->iso() << '\n';
 	}
 
 	if ( !ofs.good() ) {
@@ -2381,5 +2390,4 @@ void App::writeLastUpdates() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-} // ns QL2SC
-} // ns Seiscomp
+} // ns Seiscomp::QL2SC
