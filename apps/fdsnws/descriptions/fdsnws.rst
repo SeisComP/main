@@ -1,13 +1,14 @@
-fdsnws is a server that provides event, station and data availability
+:program:`fdsnws` is a server that provides event, station and data availability
 information from a |scname| database and waveforms from a
 :ref:`global_recordstream` source. fdsnws implements standards defined by
 :cite:t:`fdsn`. Some other data centers offering FDSNWS are listed in
 :cite:t:`fdsn-datacenters`.
 
 .. caution::
+
    If you expose the FDSN Web Service as a public service, make sure that
-   the database connection is read-only. fdsnws will never attempt to write
-   into the database.
+   the database connection is read-only. :program:`fdsnws` will never attempt to
+   write into the database.
 
 
 Service Overview
@@ -32,7 +33,7 @@ user inputs. The FDSN specifications can be found on :cite:t:`fdsn`.
 
 * http://localhost:8080/fdsnws
 
-If ``fdsnws`` is started, it accepts connections by default on port 8080 which
+If :program:`fdsnws` is started, it accepts connections by default on port 8080 which
 can be changed in the configuration. Also please read :ref:`sec-port` for
 running the services on a privileged port, e.g. port 80 as requested by the
 FDSNWS specification.
@@ -433,7 +434,7 @@ as follows:
 
    sysop@host:~$ authbind --deep seiscomp exec fdsnws
 
-In order use ``authbind`` when starting ``fdsnws`` as |scname| service the last
+In order use ``authbind`` when starting :program:`fdsnws` as |scname| service the last
 line in the ``~/seiscomp/etc/init/fdsnws.py`` have to be commented in.
 
 
@@ -482,7 +483,7 @@ passwords of users.
 
 
 GPG token authentication
------------------------
+------------------------
 
 * The user contacts an authentication service (based on eduGAIN AAI, e-mail,
   etc.) and receives a list of attributes (a token), signed by the
