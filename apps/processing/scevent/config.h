@@ -130,6 +130,7 @@ struct Config : System::Application::AbstractSettings {
 		& cfg(eventIDLookupMargin, "eventIDLookupMargin")
 		& cfg(populateFERegion, "populateFERegion")
 		& cfg(restAPI, "restAPI")
+		& cfg(eventIDSync, "eventIDSync")
 		;
 	}
 
@@ -225,6 +226,53 @@ struct Config : System::Application::AbstractSettings {
 		bool               enablePreferredFMSelection{true};
 		bool               setAutoEventTypeNotExisting{false};
 	}                  eventAssociation;
+
+	struct {
+		void accept(System::Application::SettingsLinker &linker) {
+			linker
+			& cfg(main, "main")
+			& cfg(mainTimeout, "mainTimeout")
+			& cfg(cacheRetention, "cacheRetention")
+			& cfg(db, "db")
+			& cfg(databaseRetention, "databaseRetention")
+			;
+		}
+
+		//! URL of the eventID main instance's REST API, e.g.,
+		//! "http://event-main.example.org:18180". When empty, this instance acts as a
+		//! main instance (or standalone) and allocates eventIDs locally. When set, this
+		//! instance is a secondary instance and will ask the main instance for an
+		//! eventID before falling back to local allocation.
+		std::string  main;
+
+		//! Maximum number of seconds a secondary instance waits for a response from the
+		//! main instance before falling back to local eventID allocation.
+		int          mainTimeout{5};
+
+		//! Number of seconds a main instance keeps a reserved eventID in its in-memory
+		//! cache (together with the foreign origin that triggered the reservation).
+		//! While the entry is cached, a local origin matching that foreign origin is
+		//! assigned the same eventID instead of allocating a new one. After this time
+		//! the entry is dropped from the cache; the eventID may then be reused by
+		//! subsequent allocations.
+		int          cacheRetention{1800};
+
+		//! Path to an SQLite database file used by a main instance to keep the eventIDs
+		//! it reserves on behalf of secondary instances beyond the lifetime of the
+		//! in-memory cache. When empty (the default) the reservations live only in
+		//! memory and are lost when scevent restarts. When set, reservations survive
+		//! restarts and may cover a much larger origin/eventID set than the in-memory
+		//! cache.
+		std::string  db;
+
+		//! Number of seconds a reserved eventID is kept in the persistent database
+		//! given by 'db', measured by origin time. Should be at least as large as
+		//! cacheRetention; a larger value lets the main instance keep answering
+		//! secondary-instance requests for older origins after a restart. A negative
+		//! value (the default) disables pruning entirely, so reservations are kept
+		//! indefinitely.
+		int          databaseRetention{-1};
+	}                  eventIDSync;
 };
 
 

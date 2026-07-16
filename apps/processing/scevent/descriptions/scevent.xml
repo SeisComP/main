@@ -28,6 +28,21 @@
 					%[w]X: upper case hexadecimal
 
 					[w] is an optional width parameter.
+
+					The time of the event within one year is roughly encoded
+					by the combination of characters or the decimal or hexadecimal
+					value. The year (%Y) must therefore not be dropped from the pattern.
+
+					The number of possible event IDs, hence SeisComP events, during one
+					calender year equals the number of possible combinations of [w]
+					characters or the largest number with [w] decimal or hexadecimal
+					places. The length of one time slot for one event ID is determined
+					as:
+
+					Length = (1 year) / (number of time slots)
+
+					If multiple events occur within one time slot, the next available
+					ID is consumed.
 				</description>
 			</parameter>
 			<parameter name="eventIDLookupMargin" type="int" default="-1">
@@ -53,12 +68,11 @@
 				with type 'region name' will be removed.
 				</description>
 			</parameter>
-			<parameter name="restAPI" type="string">
+			<parameter name="restAPI" type="host-with-port">
 				<description>
-				Defines the bind address of the REST API of form [address:]port.
-				This API currently provides one endpoint, /api/1/try-to-associate,
-				which allows to query for possible event associations of origin
-				candidates.
+				Defines the bind address of the REST API of form [address:]port. This
+				API currently provides one endpoint, /api/1/try-to-associate, which
+				allows to query for possible event associations of origin candidates.
 				</description>
 			</parameter>
 			<group name="processing">
@@ -318,11 +332,11 @@
 					automatic Origins. More recent Origins (creationTime) have higher priorities.
 
 					* SCORE: priority based on the score according to a configured
-					ScoreProcessor and prefers the Origin/Focalmechanism with
+					ScoreProcessor and prefers the Origin/FocalMechanism with
 					the highest score.
 
 					Empty priority list replicates the hard-wired default
-					behaviour: AGENCY,STATUS,PHASES_AUTOMATIC,TIME_AUTOMATIC
+					behavior: AGENCY,STATUS,PHASES_AUTOMATIC,TIME_AUTOMATIC
 					</description>
 				</parameter>
 
@@ -377,9 +391,9 @@
 
 				<parameter name="enablePreferredFMSelection" type="boolean" default="true">
 					<description>
-					Enables the selection of the preferred focalmechanism. If set
+					Enables the selection of the preferred FocalMechanism. If set
 					to false then only explicit commands will have effect on the
-					preferred focalmechanism selection, namely the EvPrefFocMecID
+					preferred FocalMechanism selection, namely the EvPrefFocMecID
 					command.
 					</description>
 				</parameter>
@@ -453,6 +467,87 @@
 						</description>
 					</parameter>
 				</group>
+			</group>
+			<group name="eventIDSync">
+				<description>
+				Parameters controlling the synchronization of event IDs between several
+				distributed :program:`scevent` instances deployed for redundancy. One
+				instance is designated the main instance and allocates event IDs on
+				behalf of all the secondary instances; each secondary instance asks the
+				main instance via its REST API before creating a new event so that all
+				instances converge on the same ID for the same earthquake.
+
+				When :confval:`eventIDSync.main` is empty this instance acts as a main
+				instance (or as a standalone instance if no secondary instance ever
+				connects). When set, it acts as a secondary instance. See
+				:ref:`scevent-eventid-sync` in the documentation for the full mechanism,
+				including the /api/1/try-to-associate?allocate endpoint used internally
+				for the handshake.
+				</description>
+				<parameter name="main" type="string">
+					<description>
+					URL of the main instance's REST API, for example
+					"http://event-main.example.org:18182". Leave empty to make this
+					instance a main instance (or a standalone instance). When set, this
+					instance acts as a secondary instance and asks the configured main
+					instance for an event ID before creating a new event. If the main
+					instance cannot be reached within :confval:`eventIDSync.mainTimeout`
+					seconds the secondary instance falls back to local event ID
+					allocation.
+
+					The URL may include an explicit path; if no path is given,
+					"/api/1/try-to-associate" is used. Both "http" and "https" schemes
+					are supported.
+					</description>
+				</parameter>
+				<parameter name="mainTimeout" type="int" unit="s" default="5">
+					<description>
+					Maximum number of seconds a secondary instance waits for the main
+					instance's response before falling back to local event ID
+					allocation. Only effective when :confval:`eventIDSync.main` is set.
+					Must be greater than zero.
+					</description>
+				</parameter>
+				<parameter name="cacheRetention" type="int" unit="s" default="1800">
+					<description>
+					Number of seconds a main instance keeps a reserved event ID in its
+					in-memory cache, together with the foreign origin that triggered the
+					reservation. While the entry is cached, a local origin matching that
+					foreign origin is assigned the same event ID instead of allocating a
+					new one. After this time the entry is dropped from the cache and the
+					event ID may be reused by subsequent allocations. Must be greater
+					than zero.
+					</description>
+				</parameter>
+				<parameter name="db" type="string" default="">
+					<description>
+					Path to an SQLite database file used by a main instance to keep the
+					event IDs it reserves on behalf of secondary instances beyond the
+					lifetime of the in-memory cache. When empty (the default) the
+					reservations live only in memory and are lost when scevent restarts.
+					When set, reservations survive restarts and may cover a much larger
+					origin/event-ID set than the in-memory cache: on a try-to-associate
+					request the main instance looks up the incoming origin both by its
+					public ID (fast path) and by a windowed epicenter/shared-pick
+					comparison over all stored origins around the incoming origin time
+					(bounded by :confval:`eventAssociation.eventTimeBefore` and
+					:confval:`eventAssociation.eventTimeAfter`), mirroring the strategy
+					used against the SeisComP database. Only relevant in main mode
+					(:confval:`eventIDSync.main` empty).
+					</description>
+				</parameter>
+				<parameter name="databaseRetention" type="int" unit="s" default="-1">
+					<description>
+					Number of seconds a reserved event ID is kept in the persistent
+					database given by :confval:`eventIDSync.db`, measured by origin
+					time. Should be at least as large as
+					:confval:`eventIDSync.cacheRetention`; a larger value lets the main
+					instance keep answering secondary-instance requests for older
+					origins after a restart. Rows older than this are pruned at startup
+					and periodically at runtime. A negative value (the default)
+					disables pruning, keeping reservations indefinitely.
+					</description>
+				</parameter>
 			</group>
 		</configuration>
 		<setup>

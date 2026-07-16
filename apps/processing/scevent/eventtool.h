@@ -16,6 +16,7 @@
 #define SEISCOMP_APPLICATIONS_EVENTTOOL_H
 
 #include <seiscomp/client/application.h>
+#include <seiscomp/core/datetime.h>
 #include <seiscomp/datamodel/publicobjectcache.h>
 #include <seiscomp/datamodel/eventparameters.h>
 #include <seiscomp/datamodel/journaling.h>
@@ -27,11 +28,15 @@
 #define SEISCOMP_COMPONENT SCEVENT
 #include <seiscomp/logging/log.h>
 
+#include <memory>
 #include <mutex>
 #include <thread>
 
 #include "eventinfo.h"
 #include "config.h"
+#ifdef SCEVENT_WITH_SQLITE3
+#include "allocationstore.h"
+#endif
 
 
 namespace Seiscomp {
@@ -55,15 +60,22 @@ class EventTool : public Application {
 
 	public:
 		/**
-		 * @brief Tries to associate the only origin in the EventParameters
-		 *        structure and returns the eventID.
-		 * No new eventID will be created if the origin cannot be associated
-		 * with an event.
-		 * @param ep The input EventParameters to be checked. Only one origin
-		 *           is allowed.
+		 * @brief Tries to associate the only origin in the EventParameters structure
+		 *        and returns the eventID.
+		 * No new eventID will be created if the origin cannot be associated with an
+		 * event, unless \p allocate is true in which case a new eventID is reserved on
+		 * behalf of the caller (typically a secondary instance asking the main instance
+		 * for an ID). The reserved ID and the supplied origin are cached for
+		 * eventIDSync.cacheRetention seconds so that a local origin matching the
+		 * foreign one can later be assigned the same eventID.
+		 * @param ep The input EventParameters to be checked. Only one origin is
+		 *        allowed.
+		 * @param allocate If true and the origin does not match any existing event,
+		 *        reserve a new eventID and cache it. If false, behave as before.
 		 * @return The eventID or an empty string.
 		 */
-		std::string tryToAssociate(const DataModel::EventParameters *ep);
+		std::string tryToAssociate(const DataModel::EventParameters *ep,
+		                           bool allocate = false);
 
 
 	protected:
@@ -112,7 +124,8 @@ class EventTool : public Application {
 		MatchResult compare(EventInformation *info, DataModel::Origin *origin,
 		                    const EventInformation::PickCache *cache = nullptr) const;
 
-		EventInformationPtr createEvent(DataModel::Origin *origin);
+		EventInformationPtr createEvent(DataModel::Origin *origin,
+		                                const std::string &reservedEventID = std::string());
 		EventInformationPtr findMatchingEvent(DataModel::Origin *origin,
 		                                      const EventInformation::PickCache *cache = nullptr) const;
 		EventInformationPtr findAssociatedEvent(DataModel::Origin *origin);
@@ -157,6 +170,53 @@ class EventTool : public Application {
 
 		bool hasDelayedEvent(const std::string &publicID,
 		                     DelayReason reason) const;
+
+		//! Asks the configured eventID main instance to allocate an eventID
+		//! for \p origin. Returns the main instance's eventID on success or
+		//! an empty string on timeout / error / 204 response. Picks
+		//! known to the caller can be supplied so that the main instance can
+		//! later match local origins against the foreign one.
+		std::string queryMainForEventID(
+			DataModel::Origin *origin,
+			const EventInformation::PickCache *picks = nullptr
+		);
+
+		//! Returns the eventID of a cached allocation whose foreign
+		//! origin matches \p origin according to the same
+		//! time / distance / matching-picks criteria used for live
+		//! events, and removes the matched entry from the cache.
+		//! Returns an empty string when no match is found. The caller
+		//! must hold _associationMutex.
+		std::string findAllocatedMatch(DataModel::Origin *origin);
+
+		//! Looks up a reserved eventID in the persistent allocation store
+		//! (if configured). First tries a direct origin-publicID match
+		//! (fast path), then a windowed epicenter/pick comparison over all
+		//! stored origins around the incoming origin's time. Returns an
+		//! empty string when no match is found or no store is configured.
+		//! The caller must hold _associationMutex.
+		std::string findPersistedMatch(
+			DataModel::Origin *origin,
+			const EventInformation::PickCache *picks);
+
+		//! Persists a reservation (origin time, eventID, origin publicID and
+		//! the origin/picks serialized as SCML) to the allocation store, if
+		//! configured. The caller must hold _associationMutex.
+		void persistAllocation(const std::string &eventID,
+		                       const DataModel::EventParameters *ep);
+
+		//! Shared matching predicate used by both the in-memory and the
+		//! persistent match paths: true if candidate matches incoming by
+		//! shared picks or by epicenter/time within the configured limits.
+		bool matchOrigin(
+			DataModel::Origin *incoming,
+			DataModel::Origin *candidate,
+			const EventInformation::PickCache &candidatePicks) const;
+
+		//! Decrements the TTL on every cached allocation and drops
+		//! expired entries. Called from handleTimeout(). The caller
+		//! must hold _associationMutex.
+		void cleanUpAllocatedEventIDs();
 
 
 	private:
@@ -238,8 +298,27 @@ class EventTool : public Application {
 			DelayReason reason;
 		};
 
+		//! Cache entry tracking an eventID reserved on behalf of a
+		//! secondary instance along with the foreign origin that triggered the
+		//! reservation. When a local origin later matches the foreign
+		//! one, the cached eventID is reused so that the main instance and the
+		//! secondary instance converge on the same identifier.
+		struct AllocatedEventID {
+			AllocatedEventID(const std::string &id,
+			                 const DataModel::OriginPtr &org,
+			                 EventInformation::PickCache pc,
+			                 int t)
+			: eventID(id), origin(org), picks(std::move(pc)), timeout(t) {}
+
+			std::string                 eventID;
+			DataModel::OriginPtr        origin;
+			EventInformation::PickCache picks;
+			int                         timeout;
+		};
+
 		typedef std::list<DelayedObject> DelayBuffer;
 		typedef std::list<DelayedEventUpdate> DelayEventBuffer;
+		typedef std::list<AllocatedEventID> AllocatedEventIDBuffer;
 		typedef std::set<std::string> IDSet;
 
 		typedef std::list<EventProcessorPtr> EventProcessors;
@@ -262,6 +341,18 @@ class EventTool : public Application {
 		IDSet                         _originBlackList;
 		DelayBuffer                   _delayBuffer;
 		DelayEventBuffer              _delayEventBuffer;
+		AllocatedEventIDBuffer        _allocatedEventIDs;
+
+#ifdef SCEVENT_WITH_SQLITE3
+		//! Optional persistent backing store for reserved eventIDs, enabled
+		//! via eventIDSync.db. Survives restarts and can hold a much larger
+		//! reservation set than the in-memory buffer above. Only available
+		//! when scevent is built with SQLite3 support
+		//! (SCEVENT_WITH_SQLITE3).
+		AllocationStorePtr            _allocationStore;
+		//! Prune store once every minute.
+		OPT(Core::Time)               _allocationStorePruneTime;
+#endif
 
 		Seiscomp::Wired::ServerPtr    _restAPI;
 		std::thread                   _restAPIThread;
