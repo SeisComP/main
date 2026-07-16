@@ -30,6 +30,7 @@
 #include <seiscomp/datamodel/utils.h>
 
 #include <seiscomp/io/archive/xmlarchive.h>
+#include <seiscomp/io/httpclient.h>
 #include <seiscomp/seismology/regions.h>
 
 #include <seiscomp/core/genericmessage.h>
@@ -38,7 +39,9 @@
 #include <seiscomp/wired/protocols/http.h>
 
 #include <functional>
+#include <sstream>
 #include <stdexcept>
+#include <vector>
 
 
 using namespace std;
@@ -48,7 +51,9 @@ using namespace Seiscomp::DataModel;
 using namespace Seiscomp::Client;
 using namespace Seiscomp::Private;
 
-#define DELAY_CHECK_INTERVAL 1
+enum {
+	DELAY_CHECK_INTERVAL = 1
+};
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -120,6 +125,9 @@ class GlobalRegion : public Client::Config::Region {
 		double latMax, lonMax;
 };
 
+// ignore -Wunused-function ClassName()
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
 
 DEFINE_SMARTPOINTER(ClearCacheRequestMessage);
 
@@ -133,10 +141,10 @@ class SC_SYSTEM_CLIENT_API ClearCacheRequestMessage : public Seiscomp::Core::Mes
 
 	public:
 		//! Constructor
-		ClearCacheRequestMessage() {}
+		ClearCacheRequestMessage() = default;
 
 		//! Implemented interface from Message
-		virtual bool empty() const  { return false; }
+		bool empty() const override { return false; }
 };
 
 void ClearCacheRequestMessage::serialize(Archive& ar) {}
@@ -156,7 +164,7 @@ class SC_SYSTEM_CLIENT_API ClearCacheResponseMessage : public Seiscomp::Core::Me
 
 	public:
 		//! Constructor
-		ClearCacheResponseMessage() {}
+		ClearCacheResponseMessage() = default;
 
 		//! Implemented interface from Message
 		bool empty() const override { return false; }
@@ -167,6 +175,9 @@ void ClearCacheResponseMessage::serialize(Archive& ar) {}
 IMPLEMENT_SC_CLASS_DERIVED(
 	ClearCacheResponseMessage, Message, "clear_cache_response_message"
 );
+
+// -Wunused-function ClassName()
+#pragma GCC diagnostic pop
 
 
 bool isRejected(Magnitude *mag) {
@@ -212,6 +223,19 @@ class RESTAPISession : public Wired::HttpSession {
 					return true;
 				}
 
+				// Parse query options; ?allocate (with or without a value)
+				// instructs the main instance to reserve an eventID on behalf of
+				// the secondary instance if no existing event matches the supplied
+				// origin.
+				bool allocate = false;
+				Wired::URLOptions opts(req.options);
+				while ( opts.next() ) {
+					if ( opts.nameEquals("allocate") ) {
+						allocate = true;
+						break;
+					}
+				}
+
 				IO::XMLArchive ar;
 				InputStringViewBuf buf(req.data);
 				if ( !ar.open(&buf) ) {
@@ -226,9 +250,10 @@ class RESTAPISession : public Wired::HttpSession {
 					return true;
 				}
 
-				SEISCOMP_DEBUG("Handle association REST request");
+				SEISCOMP_DEBUG("Handle association REST request (allocate=%s)",
+				               allocate ? "true" : "false");
 				try {
-					auto eventID = _app->tryToAssociate(ep.get());
+					auto eventID = _app->tryToAssociate(ep.get(), allocate);
 					if ( eventID.empty() ) {
 						sendStatus(Wired::HTTP_204);
 					}
@@ -311,15 +336,16 @@ EventTool::~EventTool() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-std::string EventTool::tryToAssociate(const DataModel::EventParameters *ep) {
+std::string EventTool::tryToAssociate(const DataModel::EventParameters *ep,
+                                      bool allocate) {
 	if ( ep->originCount() != 1 ) {
 		throw runtime_error("One origin is required and only one origin is allowed");
 	}
 
 	EventInformation::PickCache cache;
-	auto org = ep->origin(0);
+	auto *org = ep->origin(0);
 	for ( size_t i = 0; i < ep->pickCount(); ++i ) {
-		auto pick = ep->pick(i);
+		auto *pick = ep->pick(i);
 		cache[pick->publicID()] = pick;
 	}
 
@@ -330,7 +356,500 @@ std::string EventTool::tryToAssociate(const DataModel::EventParameters *ep) {
 		return info->event->publicID();
 	}
 
-	return std::string();
+	if ( !allocate ) {
+		return {};
+	}
+
+	// No existing event matched. The caller is a secondary instance asking the main
+	// instance to allocate an eventID; check whether we already reserved one for this
+	// same foreign origin (idempotent re-request) and otherwise allocate a fresh ID.
+	auto cachedID = findAllocatedMatch(org);
+	if ( !cachedID.empty() ) {
+		// Re-cache the entry (and refresh its TTL) so a quickly-repeated retry from the
+		// secondary instance keeps the same reservation alive rather than producing two
+		// IDs for one origin.
+		_allocatedEventIDs.emplace_back(cachedID, org, std::move(cache),
+		                                _config.eventIDSync.cacheRetention);
+		SEISCOMP_DEBUG("Re-using cached eventID %s for origin %s",
+		               cachedID, org->publicID());
+		persistAllocation(cachedID, ep);
+		return cachedID;
+	}
+
+	// Not in the in-memory cache: consult the persistent store (if configured). This
+	// covers reservations from before a restart and a larger origin/eventID set than
+	// the transient buffer holds.
+	std::string persistedID = findPersistedMatch(org, &cache);
+	if ( !persistedID.empty() ) {
+		// Promote the persisted hit back into the in-memory cache and
+		// refresh its stored copy so repeated retries stay consistent.
+		_allocatedEventIDs.emplace_back(persistedID, org, std::move(cache),
+		                                _config.eventIDSync.cacheRetention);
+		persistAllocation(persistedID, ep);
+		return persistedID;
+	}
+
+	// Build the set of currently-reserved IDs so allocateEventID() can avoid handing
+	// out the same ID twice in a row (two secondary-instance requests landing within
+	// cacheRetention would otherwise receive identical IDs if neither matched an
+	// existing event).
+	std::set<std::string> reserved;
+	for ( const auto &entry : _allocatedEventIDs ) {
+		reserved.insert(entry.eventID);
+	}
+
+	string eventID = allocateEventID(query(), org, _config, &reserved);
+	if ( eventID.empty() ) {
+		SEISCOMP_WARNING("Main instance: unable to allocate a new eventID for "
+		                 "secondary-instance origin %s (slots exhausted?)",
+		                 org->publicID());
+		return {};
+	}
+
+	SEISCOMP_INFO("Main instance: reserved eventID %s for secondary-instance origin %s "
+	              " (TTL %ds)",
+	              eventID, org->publicID(), _config.eventIDSync.cacheRetention);
+	SEISCOMP_LOG(_infoChannel,
+	             "Main instance reserved eventID %s for secondary-instance origin %s",
+	             eventID, org->publicID());
+
+	_allocatedEventIDs.emplace_back(eventID, org, std::move(cache),
+	                                _config.eventIDSync.cacheRetention);
+
+	persistAllocation(eventID, ep);
+
+	return eventID;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool EventTool::matchOrigin(
+	Origin *incoming, Origin *candidate,
+	const EventInformation::PickCache &candidatePicks) const {
+	const auto &cfg = _config.eventAssociation;
+
+	// Count matching picks if pick information is available on both sides.
+	// Otherwise this remains 0 and only the time/location test can drive a
+	// match.
+	size_t matchingPicks = 0;
+	if ( !candidatePicks.empty() && incoming->arrivalCount() ) {
+		for ( size_t i = 0; i < incoming->arrivalCount(); ++i ) {
+			auto *arr = incoming->arrival(i);
+			if ( candidatePicks.find(arr->pickID()) != candidatePicks.end() ) {
+				++matchingPicks;
+			}
+		}
+	}
+
+	if ( cfg.minMatchingPicks > 0 && matchingPicks >= cfg.minMatchingPicks ) {
+		return true;
+	}
+
+	// Time/location test - origins without time/lat/lon cannot be matched.
+	try {
+		double dist;
+		double azi1;
+		double azi2;
+		Math::Geo::delazi(
+			incoming->latitude().value(), incoming->longitude().value(),
+			candidate->latitude().value(), candidate->longitude().value(),
+			&dist, &azi1, &azi2);
+
+		if ( dist <= cfg.maxDist ) {
+			TimeSpan diffTime = candidate->time().value()
+			                  - incoming->time().value();
+			if ( diffTime.abs() <= cfg.maxTimeDiff ) {
+				return true;
+			}
+		}
+	}
+	catch ( Core::ValueException & ) {
+		// missing latitude/longitude/time on one of the origins; can only match by
+		// picks, which we already tested above.
+	}
+
+	return false;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string EventTool::findAllocatedMatch(Origin *origin) {
+	for ( auto it = _allocatedEventIDs.begin();
+	      it != _allocatedEventIDs.end(); ++it ) {
+		auto *cached = it->origin.get();
+		if ( !cached ) {
+			continue;
+		}
+
+		if ( matchOrigin(origin, cached, it->picks) ) {
+			string eventID = it->eventID;
+			SEISCOMP_INFO("Local origin %s matches reserved eventID %s",
+			              origin->publicID(), eventID);
+			SEISCOMP_LOG(_infoChannel,
+			             "Local origin %s matches reserved eventID %s",
+			             origin->publicID(), eventID);
+			_allocatedEventIDs.erase(it);
+			return eventID;
+		}
+	}
+
+	return {};
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#ifdef SCEVENT_WITH_SQLITE3
+namespace {
+
+// Serialize an EventParameters (origin + picks) to an SCML string. Public object
+// registration is disabled around the serialization so the transient container does not
+// clash with the live registered objects.
+//
+// The caller must retain its own owning reference to `ep` for the duration of this
+// call: SeisComp objects are intrusively reference-counted, so the local smart pointer
+// below merely bumps and then drops the count and never deletes the borrowed object.
+std::string serializeEP(const EventParameters *ep) {
+	if ( !ep ) {
+		return {};
+	}
+
+	DataModel::RegistrationDisableGuard registrationGuard;
+
+	std::ostringstream oss;
+	IO::XMLArchive ar;
+	if ( !ar.create(oss.rdbuf()) ) {
+		return {};
+	}
+	ar.setFormattedOutput(false);
+	EventParametersPtr tmp(const_cast<EventParameters *>(ep));
+	ar << tmp;
+	ar.close();
+
+	return oss.str();
+}
+
+// Parse an SCML string back into an EventParameters. Registration is disabled so the
+// parsed objects do not register their (foreign) public IDs.
+EventParametersPtr deserializeEP(const std::string &xml) {
+	if ( xml.empty() ) {
+		return nullptr;
+	}
+
+	DataModel::RegistrationDisableGuard registrationGuard;
+
+	std::istringstream iss(xml);
+	IO::XMLArchive ar;
+	if ( !ar.open(iss.rdbuf()) ) {
+		return nullptr;
+	}
+
+	EventParametersPtr ep;
+	ar >> ep;
+	ar.close();
+	return ep;
+}
+
+}
+
+
+void EventTool::persistAllocation(const std::string &eventID,
+                                  const EventParameters *ep) {
+	if ( !_allocationStore || !ep || ep->originCount() == 0 ) {
+		return;
+	}
+
+	auto *origin = ep->origin(0);
+
+	Core::Time originTime;
+	try {
+		originTime = origin->time().value();
+	}
+	catch ( Core::ValueException & ) {
+		SEISCOMP_WARNING("persistAllocation: origin %s has no time, not persisted",
+		                 origin->publicID());
+		return;
+	}
+
+	std::string xml = serializeEP(ep);
+	if ( xml.empty() ) {
+		SEISCOMP_WARNING("persistAllocation: could not serialize origin %s",
+		                 origin->publicID());
+		return;
+	}
+
+	if ( _allocationStore->put(originTime, eventID, origin->publicID(),
+	                           xml) ) {
+		SEISCOMP_DEBUG("persistAllocation: stored eventID %s for origin %s",
+		               eventID, origin->publicID());
+	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string EventTool::findPersistedMatch(
+	Origin *origin, const EventInformation::PickCache *picks) {
+	if ( !_allocationStore ) {
+		return {};
+	}
+
+	// Fast path: an exact origin-publicID hit returns immediately without any geometric
+	// comparison.
+	std::string byID = _allocationStore->findByOriginID(origin->publicID());
+	if ( !byID.empty() ) {
+		SEISCOMP_INFO("Origin %s directly matches persisted eventID %s",
+		              origin->publicID(), byID);
+		SEISCOMP_LOG(_infoChannel,
+		             "Origin %s directly matches persisted eventID %s",
+		             origin->publicID(), byID);
+		return byID;
+	}
+
+	// Windowed match: load all stored origins around the incoming origin's time and
+	// compare by epicenter and shared picks, mirroring the SeisComP database lookup
+	// strategy.
+	Core::Time originTime;
+	try {
+		originTime = origin->time().value();
+	}
+	catch ( Core::ValueException & ) {
+		return {};
+	}
+
+	Core::Time start = originTime - _config.eventAssociation.eventTimeBefore;
+	Core::Time end = originTime + _config.eventAssociation.eventTimeAfter;
+
+	std::vector<AllocationStore::Row> rows;
+	if ( !_allocationStore->loadRange(start, end, rows) ) {
+		return {};
+	}
+
+	for ( const auto &row : rows ) {
+		EventParametersPtr ep = deserializeEP(row.originXML);
+		if ( !ep || ep->originCount() == 0 ) {
+			continue;
+		}
+
+		auto *candidate = ep->origin(0);
+
+		// Rebuild the candidate's pick cache from the stored EP so pick matching uses
+		// the same publicIDs the secondary supplied.
+		EventInformation::PickCache candidatePicks;
+		for ( size_t i = 0; i < ep->pickCount(); ++i ) {
+			auto *pick = ep->pick(i);
+			candidatePicks[pick->publicID()] = pick;
+		}
+
+		if ( matchOrigin(origin, candidate, candidatePicks) ) {
+			SEISCOMP_INFO("Origin %s matches persisted eventID %s (stored origin %s)",
+			              origin->publicID(), row.eventID, row.originID);
+			SEISCOMP_LOG(_infoChannel,
+			             "Origin %s matches persisted eventID %s",
+			             origin->publicID(), row.eventID);
+			return row.eventID;
+		}
+	}
+
+	(void)picks;
+	return {};
+}
+#else // SCEVENT_WITH_SQLITE3
+
+// Persistence disabled at build time: the reservation cache is in-memory only,
+// so these become no-ops. The declarations stay unconditional so the call
+// sites in tryToAssociate() and cleanUpAllocatedEventIDs() need no guards.
+void EventTool::persistAllocation(const std::string &,
+                                  const EventParameters *) {}
+
+std::string EventTool::findPersistedMatch(
+	Origin *, const EventInformation::PickCache *) {
+	return {};
+}
+#endif // SCEVENT_WITH_SQLITE3
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void EventTool::cleanUpAllocatedEventIDs() {
+	for ( auto it = _allocatedEventIDs.begin();
+	      it != _allocatedEventIDs.end(); ) {
+		it->timeout -= DELAY_CHECK_INTERVAL;
+		if ( it->timeout <= 0 ) {
+			SEISCOMP_INFO("Reserved eventID %s expired, discarding cache entry",
+			              it->eventID);
+			SEISCOMP_LOG(_infoChannel, "Reserved eventID %s expired", it->eventID);
+			it = _allocatedEventIDs.erase(it);
+		}
+		else {
+			++it;
+		}
+	}
+
+#ifdef SCEVENT_WITH_SQLITE3
+	// Prune the persistent store by age, throttled so it does not run on every tick.
+	// The in-memory expiry above is independent of persistence: persisted rows live for
+	// eventIDSync.databaseRetention regardless of the (shorter) in-memory
+	// cacheRetention. A negative retention means "keep everything", so no pruning is
+	// done at all.
+	if ( _allocationStore && _config.eventIDSync.databaseRetention > 0 ) {
+		auto now = Core::Time::UTC();
+		if ( !_allocationStorePruneTime || now >= *_allocationStorePruneTime ) {
+			int deleted = _allocationStore->prune(
+				now - Core::TimeSpan(_config.eventIDSync.databaseRetention, 0));
+
+			if ( deleted > 0 ) {
+				SEISCOMP_DEBUG("eventIDSync: pruned %d expired persisted "
+				               "reservation(s)", deleted);
+			}
+
+			// prune again in 60s
+			_allocationStorePruneTime = now + Core::TimeSpan(60, 0);
+		}
+	}
+#endif
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string EventTool::queryMainForEventID(Origin *origin,
+                                           const EventInformation::PickCache *picks) {
+	const auto &mainURL = _config.eventIDSync.main;
+	if ( mainURL.empty() ) {
+		return {};
+	}
+
+	// Build a minimal EventParameters payload carrying a clone of the origin (and any
+	// picks the local instance is aware of). Cloning avoids re-parenting the caller's
+	// objects, which would otherwise detach them from their original container.
+	//
+	// Registration must be disabled while this throwaway container is built:
+	// EventParameters has the fixed public ID "EventParameters", and the running
+	// scevent already holds a live EventParameters registered under that ID.
+	// Constructing a second registered one makes add() fail with "element with same
+	// publicID has been added already". Registration is re-enabled as soon as the
+	// payload is built, whatever path we leave by, so the rest of the running client
+	// keeps registering objects normally.
+	DataModel::RegistrationDisableGuard registrationGuard;
+
+	EventParametersPtr ep = new EventParameters;
+	OriginPtr originClone = Origin::Cast(origin->clone());
+	if ( !originClone ) {
+		SEISCOMP_WARNING("Could not clone origin %s for main instance request",
+		                 origin->publicID());
+		return {};
+	}
+
+	// Preserve arrival links so the main instance can match by picks.
+	for ( size_t i = 0; i < origin->arrivalCount(); ++i ) {
+		ArrivalPtr arr = new Arrival(*origin->arrival(i));
+		originClone->add(arr.get());
+	}
+	ep->add(originClone.get());
+
+	if ( picks ) {
+		for ( const auto &[id, pick] : *picks ) {
+			if ( !pick ) {
+				continue;
+			}
+			PickPtr pickClone = Pick::Cast(pick->clone());
+			if ( pickClone ) {
+				ep->add(pickClone.get());
+			}
+		}
+	}
+
+	ostringstream xml;
+	{
+		IO::XMLArchive ar;
+		if ( !ar.create(xml.rdbuf() ) ) {
+			SEISCOMP_WARNING("Could not create XML archive for main instance request");
+			return {};
+		}
+		ar.setFormattedOutput(false);
+		ar << ep;
+		ar.close();
+	}
+
+	const auto body = xml.str();
+
+	// Decide whether the configured main instance URL already carries a path. We only
+	// inspect the main instance URL string here; the actual scheme/socket selection is
+	// delegated to HTTPClient::post() (which internally calls setURL) below.
+	Util::Url url(mainURL);
+	if ( !url.isValid() ) {
+		SEISCOMP_WARNING("Invalid eventIDSync.main URL '%s'", mainURL);
+		return {};
+	}
+
+	IO::HTTPClient http;
+
+	// Build the request URL. If the user already configured a path keep it, otherwise
+	// default to the /api/1/try-to-associate endpoint. The 'allocate' query parameter
+	// instructs the main instance to reserve an eventID.
+	string fullURL = mainURL;
+	if ( url.path().empty() ) {
+		// Strip trailing slash to avoid '//api/...'
+		if ( !fullURL.empty() && fullURL.back() == '/' ) {
+			fullURL.pop_back();
+		}
+		fullURL += "/api/1/try-to-associate?allocate";
+	}
+	else {
+		fullURL += "?allocate";
+	}
+
+	http.setTimeout(_config.eventIDSync.mainTimeout);
+
+	try {
+		// The new HTTPClient API takes the URL as the first parameter of post() and
+		// opens the connection (or reuses an existing keep-alive one) internally. We
+		// pass "text/xml" via the content-type parameter so the main instance's REST
+		// endpoint accepts the body.
+		http.post(fullURL, body, "text/xml");
+
+		int n = http.remainingBytes();
+		string response = http.chunked() ? http.readBinary(8192)
+		                                 : http.readBinary(n > 0 ? n : 0);
+
+		// A 204 response leaves remainingBytes() == 0 and yields an empty body, which
+		// we treat as "main instance could not allocate".
+		if ( response.empty() ) {
+			SEISCOMP_DEBUG("Main instance has no eventID to offer (empty response)");
+			return {};
+		}
+
+		// Trim possible whitespace / newline from the response body.
+		while ( !response.empty()
+		     && (response.back() == '\n' || response.back() == '\r'
+		         || response.back() == ' ' || response.back() == '\t') ) {
+			response.pop_back();
+		}
+
+		SEISCOMP_INFO("Main instance assigned eventID %s for origin %s",
+		              response, origin->publicID());
+		return response;
+	}
+	catch ( exception &e ) {
+		SEISCOMP_WARNING("Main instance request for origin %s failed: %s",
+		                 origin->publicID(), e.what());
+		return {};
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -461,7 +980,10 @@ bool EventTool::init() {
 	_outputFMRef = addOutputObjectLog("focmechref", primaryMessagingGroup());
 
 	if ( _config.eventAssociation.delayTimeSpan > 0
-	  || _config.eventAssociation.delayPrefFocMech > 0 ) {
+	  || _config.eventAssociation.delayPrefFocMech > 0
+	  || _config.restAPI.valid() ) {
+		// The timer is also required to expire entries from the
+		// allocated-eventID cache populated by the main instance REST API.
 		enableTimer(DELAY_CHECK_INTERVAL);
 	}
 
@@ -471,7 +993,7 @@ bool EventTool::init() {
 	_ep = new EventParameters;
 	_journal = new Journaling;
 
-	if ( auto services = EventProcessorFactory::Services(); services ) {
+	if ( auto *services = EventProcessorFactory::Services(); services ) {
 		for ( auto &service : *services ) {
 			EventProcessorPtr proc = EventProcessorFactory::Create(service.c_str());
 			if ( proc ) {
@@ -503,6 +1025,102 @@ bool EventTool::init() {
 
 		SEISCOMP_INFO("Bound REST API to port %d", _config.restAPI.port);
 		_restAPIThread = thread([&] { _restAPI->run(); });
+	}
+
+	// Announce the eventID synchronization role for ease of debugging when several
+	// scevent instances run side by side.
+	if ( !_config.eventIDSync.main.empty() ) {
+		Util::Url mainURL(_config.eventIDSync.main);
+		if ( !mainURL.isValid() ) {
+			SEISCOMP_ERROR("Invalid eventIDSync.main URL '%s': %s",
+			               _config.eventIDSync.main,
+			               mainURL.status().toString());
+			return false;
+		}
+		if ( _config.eventIDSync.mainTimeout <= 0 ) {
+			SEISCOMP_ERROR("eventIDSync.mainTimeout must be > 0, got %d",
+			               _config.eventIDSync.mainTimeout);
+			return false;
+		}
+		SEISCOMP_INFO("eventID synchronization: secondary mode, main=%s, "
+		              "main timeout=%ds",
+		              _config.eventIDSync.main,
+		              _config.eventIDSync.mainTimeout);
+	}
+	else {
+		if ( _config.eventIDSync.cacheRetention <= 0 ) {
+			SEISCOMP_ERROR("eventIDSync.cacheRetention must be > 0, got %d",
+			               _config.eventIDSync.cacheRetention);
+			return false;
+		}
+
+		// Optional persistent backing store for reserved eventIDs. Only a
+		// main/standalone instance allocates IDs, so the store is opened
+		// here (not in secondary mode).
+		if ( !_config.eventIDSync.db.empty() ) {
+#ifdef SCEVENT_WITH_SQLITE3
+			// A negative retention means "keep everything" (no pruning). Zero
+			// is rejected: it would delete every reservation immediately and
+			// defeat the point of the store.
+			if ( _config.eventIDSync.databaseRetention == 0 ) {
+				SEISCOMP_ERROR("eventIDSync.databaseRetention must not be 0 "
+				               "(use a negative value for unlimited retention)");
+				return false;
+			}
+
+			_allocationStore.reset(new AllocationStore());
+			if ( !_allocationStore->open(_config.eventIDSync.db) ) {
+				SEISCOMP_ERROR("Could not open eventIDSync.db '%s'",
+				               _config.eventIDSync.db);
+				_allocationStore.reset();
+				return false;
+			}
+
+			// Drop reservations that are already older than the retention
+			// window so a restart starts from a clean, bounded set. Skipped
+			// when retention is unlimited.
+			if ( _config.eventIDSync.databaseRetention > 0 ) {
+				int deleted = _allocationStore->prune(
+					Core::Time::UTC()
+					- Core::TimeSpan(
+						_config.eventIDSync.databaseRetention, 0));
+				if ( deleted > 0 ) {
+					SEISCOMP_INFO("eventIDSync: pruned %d expired persisted "
+					              "reservation(s) on startup", deleted);
+				}
+			}
+
+			if ( _config.eventIDSync.databaseRetention > 0 ) {
+				SEISCOMP_INFO("eventID synchronization: persistence enabled "
+				              "(db=%s, retention=%ds)",
+				              _config.eventIDSync.db,
+				              _config.eventIDSync.databaseRetention);
+			}
+			else {
+				SEISCOMP_INFO("eventID synchronization: persistence enabled "
+				              "(db=%s, unlimited retention)",
+				              _config.eventIDSync.db);
+			}
+#else
+			// scevent was built without SQLite3 support, so the persistent
+			// store is unavailable. Fail loudly rather than silently ignoring
+			// a configured database path.
+			SEISCOMP_ERROR("eventIDSync.db is set but scevent was built "
+			               "without SQLite3 support "
+			               "(rebuild with SCEVENT_WITH_SQLITE3=ON)");
+			return false;
+#endif
+		}
+
+		if ( _config.restAPI.valid() ) {
+			SEISCOMP_INFO("eventID synchronization: main mode "
+			              "(allocations cached for %ds)",
+			              _config.eventIDSync.cacheRetention);
+		}
+		else {
+			SEISCOMP_INFO("eventID synchronization: standalone mode "
+			              "(no main URL, no REST API)");
+		}
 	}
 
 	return true;
@@ -886,6 +1504,11 @@ void EventTool::handleMessage(Core::Message *msg) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventTool::handleTimeout() {
+	// Lock the entire timeout processing so concurrent REST API
+	// requests cannot mutate the event / allocated-eventID state
+	// while we are walking the delay buffers and the allocation cache.
+	scoped_lock l(_associationMutex);
+
 	// First pass: decrease delay time and try to associate
 	for ( auto it = _delayBuffer.begin(); it != _delayBuffer.end(); ) {
 		it->timeout -= DELAY_CHECK_INTERVAL;
@@ -985,6 +1608,10 @@ void EventTool::handleTimeout() {
 		else
 			++it;
 	}
+
+	// Expire foreign-origin / eventID reservations (outer scope
+	// already holds _associationMutex).
+	cleanUpAllocatedEventIDs();
 
 	// Clean up event cache
 	cleanUpEventCache();
@@ -1229,7 +1856,8 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 		if ( !org->registered() ) {
 			org = Origin::Find(org->publicID());
 			if ( !org ) {
-				SEISCOMP_WARNING("Unexpected behaviour: origin update does not have an registered counterpart");
+				SEISCOMP_WARNING("Unexpected behavior: origin update does not have an "
+				                 "registered counterpart");
 				return;
 			}
 		}
@@ -1248,7 +1876,8 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 		if ( !fm->registered() ) {
 			fm = FocalMechanism::Find(fm->publicID());
 			if ( !fm ) {
-				SEISCOMP_WARNING("Unexpected behaviour: fm update does not have an registered counterpart");
+				SEISCOMP_WARNING("Unexpected behavior: fm update does not have an "
+				                 "registered counterpart");
 				return;
 			}
 		}
@@ -1265,7 +1894,8 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 		if ( !mag->registered() ) {
 			mag = Magnitude::Find(mag->publicID());
 			if ( !mag ) {
-				SEISCOMP_WARNING("Unexpected behaviour: magnitude update does not have an registered counterpart");
+				SEISCOMP_WARNING("Unexpected behavior: magnitude update does not have "
+				                 "an registered counterpart");
 				return;
 			}
 		}
@@ -1293,7 +1923,8 @@ void EventTool::updateObject(const std::string &parentID, Object* object) {
 		if ( !evt->registered() ) {
 			evt = Event::Find(evt->publicID());
 			if ( !evt ) {
-				SEISCOMP_WARNING("Unexpected behaviour: event update does not have an registered counterpart");
+				SEISCOMP_WARNING("Unexpected behavior: event update does not have an "
+				                 "registered counterpart");
 				return;
 			}
 		}
@@ -1765,8 +2396,9 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 				choosePreferred(info.get(), info->preferredOrigin.get(), nullptr);
 				Notifier::Disable();
 			}
-			else
+			else {
 				response = createEntry(entry->objectID(), entry->action() + Failed, ":true or false expected:");
+			}
 		}
 	}
 	// Merge event in  parameters into event in objectID. The source
@@ -1774,8 +2406,9 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 	else if ( entry->action() == "EvMerge" ) {
 		SEISCOMP_DEBUG("...merge event '%s'", entry->parameters());
 
-		if ( entry->parameters().empty() )
+		if ( entry->parameters().empty() ) {
 			response = createEntry(entry->objectID(), entry->action() + Failed, ":empty source event id:");
+		}
 		else if ( info->event->publicID() == entry->parameters() ) {
 			response = createEntry(entry->objectID(), entry->action() + Failed, ":source and target are equal:");
 		}
@@ -1794,8 +2427,9 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 				}
 			}
 
-			if ( !sourceInfo )
+			if ( !sourceInfo ) {
 				response = createEntry(entry->objectID(), entry->action() + Failed, ":source event not found:");
+			}
 			else {
 				Notifier::Enable();
 				// Do the merge
@@ -1812,8 +2446,9 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 
 					response = createEntry(entry->objectID(), entry->action() + OK, sourceInfo->event->publicID());
 				}
-				else
+				else {
 					response = createEntry(entry->objectID(), entry->action() + Failed, ":internal error:");
+				}
 				Notifier::Disable();
 			}
 		}
@@ -1914,14 +2549,17 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 		OriginPtr org = _cache.get<Origin>(entry->parameters());
 		list<string> fmIDsToMove;
 
-		if ( !org )
+		if ( !org ) {
 			response = createEntry(entry->objectID(), entry->action() + Failed, ":origin not found:");
+		}
 		else {
-			if ( !info->event->originReference(org->publicID()) )
+			if ( !info->event->originReference(org->publicID()) ) {
 				response = createEntry(entry->objectID(), entry->action() + Failed, ":origin not associated:");
+			}
 			else {
-				if ( info->event->originReferenceCount() < 2 )
+				if ( info->event->originReferenceCount() < 2 ) {
 					response = createEntry(entry->objectID(), entry->action() + Failed, ":last origin cannot be removed:");
+				}
 				else {
 					EventInformationPtr newInfo = createEvent(org.get());
 					JournalEntryPtr newResponse;
@@ -1929,8 +2567,9 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 					if ( newInfo ) {
 						// Remove origin reference
 						Notifier::SetEnabled(true);
-						if ( info->event->removeOriginReference(org->publicID()) )
+						if ( info->event->removeOriginReference(org->publicID()) ) {
 							info->dirtyPickSet = true;
+						}
 
 						// Remove all focal mechanism references that
 						// used this origin as trigger
@@ -2013,8 +2652,9 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 							Notifier::Disable();
 						}
 					}
-					else
+					else {
 						response = createEntry(entry->objectID(), entry->action() + Failed, ":running out of eventIDs:");
+					}
 				}
 			}
 		}
@@ -2036,8 +2676,9 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 		       std::equal(OK.rbegin(), OK.rend(), entry->action().rbegin() ) ) )
 			SEISCOMP_ERROR("Ignoring already processed journal entry from %s: %s(%s)",
 			               entry->sender(), entry->action(), entry->parameters());
-		else
+		else {
 			response = createEntry(entry->objectID(), entry->action() + Failed, ":unknown command:");
+		}
 	}
 
 	if ( response ) {
@@ -2231,7 +2872,44 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 				return nullptr;
 			}
 
-			info = createEvent(origin);
+			// Decide what eventID the new event should carry. The search order is:
+			//  1. A reservation previously made by this instance on behalf of a
+			//     secondary instance (main-instance role).
+			//  2. An eventID issued by a configured main instance (secondary-instance
+			//     role).
+			//  3. Otherwise let createEvent() allocate one locally.
+			std::string reservedID;
+
+			if ( !_allocatedEventIDs.empty() ) {
+				// findAllocatedMatch logs the match itself.
+				reservedID = findAllocatedMatch(origin);
+			}
+
+			if ( reservedID.empty() && !_config.eventIDSync.main.empty() ) {
+				// Secondary-instance mode: ask the main instance for an ID. The main
+				// instance may either return the ID of an existing event it has already
+				// formed (HTTP 200) or reserve a new ID for the next time it sees a
+				// matching local origin.
+				//
+				// NOTE: this blocking HTTP call is made while _associationMutex is held
+				// by the main message thread (or by handleTimeout). Releasing and
+				// re-acquiring the lock around it would introduce a
+				// time-of-check/time-of-use race against the REST API thread which
+				// could create or delete events in _events while we wait. The call is
+				// bounded by mainTimeout, so the stall is short and bounded.
+				reservedID = queryMainForEventID(origin, pickCache);
+				if ( reservedID.empty() ) {
+					SEISCOMP_WARNING("Main instance did not provide an eventID for "
+					                 "origin %s, falling back to local allocation",
+					                 origin->publicID());
+					SEISCOMP_LOG(_infoChannel,
+					             "Main instance unreachable for origin %s, falling "
+					             "back to local eventID allocation",
+					             origin->publicID());
+				}
+			}
+
+			info = createEvent(origin, reservedID);
 			if ( info ) {
 				if ( createdEvent ) {
 					*createdEvent = true;
@@ -2243,7 +2921,8 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 		}
 	}
 	else {
-		SEISCOMP_DEBUG("... found cached event information %s for origin", info->event->publicID());
+		SEISCOMP_DEBUG("... found cached event information %s for origin",
+		               info->event->publicID());
 		SEISCOMP_LOG(_infoChannel, "Found matching event %s for origin %s",
 			         info->event->publicID(), origin->publicID());
 
@@ -2668,8 +3347,30 @@ EventTool::MatchResult EventTool::compare(EventInformation *info,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-EventInformationPtr EventTool::createEvent(Origin *origin) {
-	string eventID = allocateEventID(query(), origin, _config);
+EventInformationPtr EventTool::createEvent(Origin *origin,
+                                           const std::string &reservedEventID) {
+	string eventID;
+
+	if ( !reservedEventID.empty() ) {
+		// Caller provided an ID (e.g. reserved by the main instance or
+		// matched in the local foreign-origin cache). Skip slot
+		// allocation but still guard against double-creation.
+		eventID = reservedEventID;
+		SEISCOMP_DEBUG("Using reserved eventID %s for origin %s",
+		               eventID, origin->publicID());
+	}
+	else {
+		// Also exclude any IDs reserved on behalf of secondary instances. On a
+		// main instance this prevents the locally created event from
+		// stealing an ID we already promised to a secondary instance for a
+		// different origin within the same time slot.
+		std::set<std::string> reserved;
+		for ( const auto &entry : _allocatedEventIDs ) {
+			reserved.insert(entry.eventID);
+		}
+		eventID = allocateEventID(query(), origin, _config,
+		                          reserved.empty() ? nullptr : &reserved);
+	}
 
 	if ( eventID.empty() ) {
 		SEISCOMP_ERROR("Unable to allocate a new eventID, skipping origin %s\n"

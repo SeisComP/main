@@ -185,28 +185,39 @@ std::string generateEventID(int year, uint64_t x, const std::string &prefix,
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 string allocateEventID(DatabaseArchive *ar, const Origin *origin,
-                       const Seiscomp::Client::Config &config) {
+                       const Seiscomp::Client::Config &config,
+                       const set<string> *reservedIDs) {
 	if ( !origin ) {
-		return string();
+		return {};
 	}
 
 	int year, yday, hour, min, sec, usec;
 
 	if ( !origin->time().value().get2(&year, &yday, &hour, &min, &sec, &usec) ) {
-		return string();
+		return {};
 	}
 
+	// Helper: a slot is taken if an Event already lives there OR if the ID is on the
+	// caller-supplied reservation list. Reservations matter on the eventID main
+	// instance where IDs handed out to secondary instances via
+	// /api/1/try-to-associate?allocate must not collide with each other or with later
+	// locally created events, even though they have not yet materialized as Event
+	// objects.
+	auto isTaken = [&](const string &id) -> bool {
+		ObjectPtr o = ar ? ar->getObject(Event::TypeInfo(), id) : Event::Find(id);
+		return o || ( reservedIDs && reservedIDs->find(id) != reservedIDs->end() );
+	};
+
 	uint64_t width; // in milliseconds
-	// Maximum precission is 1 millisecond
+	// Maximum precision is 1 millisecond
 	uint64_t x = uint64_t((((yday * 24) + hour) * 60 + min) * 60 + sec) * 1000 + usec / 1000;
 
 	string text;
 	string eventID = generateEventID(year, x, config.eventIDPrefix,
 	                                 config.eventIDPattern, text, &width);
-	ObjectPtr o = ar?ar->getObject(Event::TypeInfo(), eventID):Event::Find(eventID);
 	bool blocked = config.blacklistIDs.find(text) != config.blacklistIDs.end();
 
-	if ( !o && !blocked ) {
+	if ( !isTaken(eventID) && !blocked ) {
 		return eventID;
 	}
 
@@ -226,9 +237,8 @@ string allocateEventID(DatabaseArchive *ar, const Origin *origin,
 		eventID = generateEventID(year, x+i*width, config.eventIDPrefix,
 		                          config.eventIDPattern, text);
 		blocked = config.blacklistIDs.find(text) != config.blacklistIDs.end();
-		o = ar?ar->getObject(Event::TypeInfo(), eventID):Event::Find(eventID);
 
-		if ( !o && !blocked ) {
+		if ( !isTaken(eventID) && !blocked ) {
 			return eventID;
 		}
 
@@ -247,9 +257,8 @@ string allocateEventID(DatabaseArchive *ar, const Origin *origin,
 		eventID = generateEventID(year, x-i*width, config.eventIDPrefix,
 		                          config.eventIDPattern, text);
 		blocked = config.blacklistIDs.find(text) != config.blacklistIDs.end();
-		o = ar?ar->getObject(Event::TypeInfo(), eventID):Event::Find(eventID);
 
-		if ( !o && !blocked ) {
+		if ( !isTaken(eventID) && !blocked ) {
 			return eventID;
 		}
 

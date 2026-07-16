@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="615.5"
+   height="506.5"
+   viewBox="0 0 615.5 506.5"
+   role="img"
+   version="1.1"
+   id="svg103"
+   sodipodi:docname="scevent_main_secondary_sync.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   inkscape:export-filename="scevent_main_secondary_sync.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview105"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="true"
+     inkscape:zoom="1.088442"
+     inkscape:cx="333.04485"
+     inkscape:cy="271.48898"
+     inkscape:window-width="1920"
+     inkscape:window-height="1052"
+     inkscape:window-x="1920"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg103" />
+  <title
+     id="title2">scevent main instance and secondary instance synchronizing event IDs over the REST API</title>
+  <desc
+     id="desc4">Two scevent processes, the main instance on host-a and the secondary instance on host-b, each consume origins from their own local origin pipeline. The secondary instance posts each new origin to the main instance's /api/1/try-to-associate?allocate endpoint and receives back an event ID, which is then used for local event creation. The main instance keeps its reservations in an in-memory cache and, when eventIDSync.db is configured, additionally in a persistent SQLite database that survives restarts. Configuration parameters appear next to the instance they belong to.</desc>
+  <style
+     id="style6">
+  text { font-family: sans-serif; }
+  .th { font-size: 14px; font-weight: 500; }
+  .ts { font-size: 12px; font-weight: 400; }
+  .gray-bg     { fill: #F1EFE8; stroke: #5F5E5A; }
+  .gray-title  { fill: #2C2C2A; }
+  .gray-sub    { fill: #444441; }
+  .teal-bg     { fill: #E1F5EE; stroke: #0F6E56; }
+  .teal-title  { fill: #04342C; }
+  .teal-sub    { fill: #085041; }
+  .purple-bg   { fill: #EEEDFE; stroke: #534AB7; }
+  .purple-title{ fill: #26215C; }
+  .purple-sub  { fill: #3C3489; }
+  .neutral-box { fill: #FFFFFF; stroke: #B4B2A9; }
+  .text-primary{ fill: #2C2C2A; }
+  .text-second { fill: #5F5E5A; }
+  .arr-stroke  { stroke: #5F5E5A; }
+</style>
+  <defs
+     id="defs11">
+    <marker
+       id="arrow"
+       viewBox="0 0 10 10"
+       refX="8"
+       refY="5"
+       markerWidth="6"
+       markerHeight="6"
+       orient="auto-start-reverse">
+      <path
+         d="M 2,1 8,5 2,9"
+         fill="none"
+         stroke="context-stroke"
+         stroke-width="1.5"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="path8" />
+    </marker>
+  </defs>
+  <rect
+     class="gray-bg"
+     x="27.75"
+     y="0.25"
+     width="240"
+     height="56"
+     rx="8"
+     stroke-width="0.5"
+     id="rect13" />
+  <text
+     class="th gray-title"
+     x="147.75"
+     y="20.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text15">Origin pipeline</text>
+  <text
+     class="ts gray-sub"
+     x="147.75"
+     y="38.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text17">scautopick, scautoloc, ...</text>
+  <rect
+     class="gray-bg"
+     x="347.75"
+     y="0.25"
+     width="240"
+     height="56"
+     rx="8"
+     stroke-width="0.5"
+     id="rect19" />
+  <text
+     class="th gray-title"
+     x="467.75"
+     y="20.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text21">Origin pipeline</text>
+  <text
+     class="ts gray-sub"
+     x="467.75"
+     y="38.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text23">scautopick, scautoloc, ...</text>
+  <line
+     x1="147.75"
+     y1="56.25"
+     x2="147.75"
+     y2="84.25"
+     class="arr-stroke"
+     stroke-width="1.5"
+     marker-end="url(#arrow)"
+     id="line25" />
+  <line
+     x1="467.75"
+     y1="56.25"
+     x2="467.75"
+     y2="84.25"
+     class="arr-stroke"
+     stroke-width="1.5"
+     marker-end="url(#arrow)"
+     id="line27" />
+  <rect
+     class="teal-bg"
+     x="27.75"
+     y="84.25"
+     width="240"
+     height="252"
+     rx="14"
+     stroke-width="0.5"
+     id="rect29" />
+  <text
+     class="th teal-title"
+     x="147.75"
+     y="104.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text31">Main instance</text>
+  <text
+     class="ts teal-sub"
+     x="147.75"
+     y="122.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text33">scevent on host-a</text>
+  <rect
+     class="neutral-box"
+     x="39.75"
+     y="140.25"
+     width="216"
+     height="72"
+     rx="8"
+     stroke-width="0.5"
+     id="rect35" />
+  <text
+     class="th text-primary"
+     x="147.75"
+     y="160.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text37">REST API endpoint</text>
+  <text
+     class="ts text-second"
+     x="147.75"
+     y="180.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text39">/api/1/try-to-associate</text>
+  <text
+     class="ts text-second"
+     x="147.75"
+     y="198.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text41">?allocate</text>
+  <rect
+     class="neutral-box"
+     x="39.75"
+     y="220.25"
+     width="216"
+     height="56"
+     rx="8"
+     stroke-width="0.5"
+     id="rect43" />
+  <text
+     class="th text-primary"
+     x="147.75"
+     y="238.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text45">Reservation cache</text>
+  <text
+     class="ts text-second"
+     x="147.75"
+     y="256.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text47">in-memory + optional SQLite</text>
+  <rect
+     class="neutral-box"
+     x="39.75"
+     y="284.25"
+     width="216"
+     height="44"
+     rx="8"
+     stroke-width="0.5"
+     id="rect49" />
+  <text
+     class="th text-primary"
+     x="147.75"
+     y="306.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text51">Local event creation</text>
+  <rect
+     class="purple-bg"
+     x="347.75"
+     y="84.25"
+     width="240"
+     height="252"
+     rx="14"
+     stroke-width="0.5"
+     id="rect53" />
+  <text
+     class="th purple-title"
+     x="467.75"
+     y="104.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text55">Secondary instance</text>
+  <text
+     class="ts purple-sub"
+     x="467.75"
+     y="122.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text57">scevent on host-b</text>
+  <rect
+     class="neutral-box"
+     x="359.75"
+     y="140.25"
+     width="216"
+     height="72"
+     rx="8"
+     stroke-width="0.5"
+     id="rect59" />
+  <text
+     class="th text-primary"
+     x="467.75"
+     y="168.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text61">HTTP client</text>
+  <text
+     class="ts text-second"
+     x="467.75"
+     y="186.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text63">POST origin, await ID</text>
+  <rect
+     class="neutral-box"
+     x="359.75"
+     y="220.25"
+     width="216"
+     height="56"
+     rx="8"
+     stroke-width="0.5"
+     id="rect65" />
+  <text
+     class="th text-primary"
+     x="467.75"
+     y="238.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text67">Fallback path</text>
+  <text
+     class="ts text-second"
+     x="467.75"
+     y="256.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text69">Local allocate on timeout</text>
+  <rect
+     class="neutral-box"
+     x="359.75"
+     y="284.25"
+     width="216"
+     height="44"
+     rx="8"
+     stroke-width="0.5"
+     id="rect71" />
+  <text
+     class="th text-primary"
+     x="467.75"
+     y="306.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text73">Local event creation</text>
+  <text
+     class="ts text-second"
+     x="307.75"
+     y="160.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text75">POST origin</text>
+  <line
+     x1="355.75"
+     y1="172.25"
+     x2="259.75"
+     y2="172.25"
+     stroke="#534ab7"
+     stroke-width="1.5"
+     marker-end="url(#arrow)"
+     id="line77" />
+  <text
+     class="ts text-second"
+     x="307.75"
+     y="196.25"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text79">eventID 200</text>
+  <line
+     x1="259.75"
+     y1="184.25"
+     x2="355.75"
+     y2="184.25"
+     stroke="#0f6e56"
+     stroke-width="1.5"
+     marker-end="url(#arrow)"
+     id="line81" />
+  <g
+     id="g3180"
+     transform="translate(-39.75,-23.75)">
+    <rect
+       class="gray-bg"
+       x="40"
+       y="380"
+       width="295"
+       height="150"
+       rx="10"
+       stroke-width="0.5"
+       id="rect83" />
+    <text
+       class="th gray-title"
+       x="54"
+       y="402"
+       dominant-baseline="central"
+       id="text85">Main instance config</text>
+    <text
+       class="ts gray-sub"
+       x="54"
+       y="428"
+       dominant-baseline="central"
+       id="text87">restAPI = 18182</text>
+    <text
+       class="ts gray-sub"
+       x="54"
+       y="452"
+       dominant-baseline="central"
+       id="text89">eventIDSync.cacheRetention = 1800</text>
+    <text
+       class="ts gray-sub"
+       x="54"
+       y="476"
+       dominant-baseline="central"
+       id="text91">eventIDSync.db = sync.db</text>
+    <text
+       class="ts gray-sub"
+       x="54"
+       y="500"
+       dominant-baseline="central"
+       id="text93">eventIDSync.databaseRetention = -1</text>
+  </g>
+  <g
+     id="g3192"
+     transform="translate(-24.75,-23.75)">
+    <rect
+       class="gray-bg"
+       x="345"
+       y="380"
+       width="295"
+       height="150"
+       rx="10"
+       stroke-width="0.5"
+       id="rect95" />
+    <text
+       class="th gray-title"
+       x="359"
+       y="402"
+       dominant-baseline="central"
+       id="text97">Secondary instance config</text>
+    <text
+       class="ts gray-sub"
+       x="359"
+       y="428"
+       dominant-baseline="central"
+       id="text99">eventIDSync.main = http://host-a:18182</text>
+    <text
+       class="ts gray-sub"
+       x="359"
+       y="452"
+       dominant-baseline="central"
+       id="text101">eventIDSync.mainTimeout = 5</text>
+  </g>
+</svg>

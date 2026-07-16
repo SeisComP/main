@@ -16,6 +16,7 @@
 #define SEISCOMP_APPLICATIONS_EVENTTOOL_UTIL_H__
 
 
+#include <set>
 #include <string>
 #include <stdint.h>
 #include "config.h"
@@ -53,7 +54,8 @@ std::string generateEventID(int year, uint64_t x,
 
 std::string allocateEventID(DataModel::DatabaseArchive *,
                             const DataModel::Origin *origin,
-                            const Seiscomp::Client::Config &config);
+                            const Seiscomp::Client::Config &config,
+                            const std::set<std::string> *reservedIDs = nullptr);
 
 std::string region(const DataModel::Origin *origin, bool withFERegions = true);
 
