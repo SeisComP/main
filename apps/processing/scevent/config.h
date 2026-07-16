@@ -94,7 +94,7 @@ struct Config : System::Application::AbstractSettings {
 			"Input", "event-id,E",
 			"Event ID to update preferred objects, updates will be sent unless --test is given", true
 		)
-		& cli(
+		& cliAsPath(
 			epFile,
 			"Input", "ep",
 			"Event parameters XML file for offline processing "
@@ -233,7 +233,7 @@ struct Config : System::Application::AbstractSettings {
 			& cfg(main, "main")
 			& cfg(mainTimeout, "mainTimeout")
 			& cfg(cacheRetention, "cacheRetention")
-			& cfg(db, "db")
+			& cfgAsPath(db, "db")
 			& cfg(databaseRetention, "databaseRetention")
 			;
 		}
