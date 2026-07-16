@@ -314,6 +314,11 @@ bool AutolocApp::initConfiguration() {
 	catch ( ... ) {}
 
 	try {
+		_config.depthLookupType = configGetString("autoloc.depthLookup");
+	}
+	catch ( ... ) {}
+
+	try {
 		_config.maxResidualUse = configGetDouble("autoloc.maxResidual");
 	}
 	catch ( ... ) {}

@@ -20,6 +20,8 @@
 #include <map>
 #include <set>
 
+#include <seiscomp/seismology/depthlookup.h>
+
 #include "datamodel.h"
 #include "nucleator.h"
 #include "associator.h"
@@ -262,6 +264,9 @@ class Autoloc {
 		// if successful, true is returned, otherwise false
 		bool _setDefaultDepth(AutolocInternal::Origin*);
 
+		double _defaultDepthAt(const AutolocInternal::Origin*) const;
+		double _maxDepthAt(const AutolocInternal::Origin*) const;
+
 		// Attempt to decide whether the focal depth can be resolved considering
 		// the station distribution. Returns true if resolvable, false if not.
 		bool _depthIsResolvable(AutolocInternal::Origin*);
@@ -364,6 +369,8 @@ class Autoloc {
 		AutolocInternal::OriginVector _origins;
 		AutolocConfig _config;
 		AutolocInternal::StationConfig _stationConfig;
+
+		Seismology::DepthLookupPtr _depthLookup;
 
 		const Seiscomp::Config::Config *scconfig {nullptr};
 		const Seiscomp::DataModel::Inventory *scinventory {nullptr};
