@@ -435,6 +435,14 @@
 							comments with spaces, e.g. &quot;Blast on Monday morning&quot;.
 							</description>
 						</parameter>
+						<parameter name="feltReport" type="string" default="">
+							<description>
+							Optional felt report event description which will be set.
+							This option exists for completeness and does not make much
+							sense to be applied on any event. Use quotes for reports
+							with spaces, e.g. &quot;Felt within a distance of 1000km&quot;.
+							</description>
+						</parameter>
 						<parameter name="returnToEventList" type="boolean" default="false">
 							<description>
 							Return to the event list after committing or not.
