@@ -1508,7 +1508,7 @@ class BulletinApp(seiscomp.client.Application):
             self.commandline().addOption(
                 "Output",
                 "enhanced,e",
-                "Enhanced output with hiher precision. Times: milliseconds, distances: "
+                "Enhanced output with higher precision. Times: milliseconds, distances: "
                 "meter. Use for bulletins of local earthquakes.",
             )
             self.commandline().addOption(
