@@ -77,6 +77,20 @@ class EventTool : public Application {
 		std::string tryToAssociate(const DataModel::EventParameters *ep,
 		                           bool allocate = false);
 
+		/**
+		 * @brief Always reserves a brand-new, distinct eventID for the single
+		 *        origin in \p ep, skipping the existing-event match entirely.
+		 *
+		 * This backs the /allocate REST endpoint. A secondary instance calls it
+		 * (via that endpoint) for the EvSplitOrg and EvNewEvent paths, where a
+		 * separate event must be formed even though the origin may still match an
+		 * existing event. The reserved ID and origin are cached exactly as for
+		 * tryToAssociate()'s allocation path.
+		 * @param ep The input EventParameters. Only one origin is allowed.
+		 * @return The freshly reserved eventID, or an empty string on failure.
+		 */
+		std::string allocateNewEventID(const DataModel::EventParameters *ep);
+
 
 	protected:
 		bool initConfiguration() override;
@@ -171,23 +185,57 @@ class EventTool : public Application {
 		bool hasDelayedEvent(const std::string &publicID,
 		                     DelayReason reason) const;
 
-		//! Asks the configured eventID main instance to allocate an eventID
-		//! for \p origin. Returns the main instance's eventID on success or
-		//! an empty string on timeout / error / 204 response. Picks
-		//! known to the caller can be supplied so that the main instance can
-		//! later match local origins against the foreign one.
+		//! Asks the configured eventID main instance which eventID to use for
+		//! \p origin via the main instance's /try-to-associate?allocate
+		//! endpoint. Returns the main instance's eventID on success or an empty
+		//! string on timeout / error / 204 response. Picks known to the caller
+		//! can be supplied so that the main instance can later match local
+		//! origins against the foreign one.
 		std::string queryMainForEventID(
 			DataModel::Origin *origin,
 			const EventInformation::PickCache *picks = nullptr
 		);
 
+		//! Asks the configured eventID main instance to reserve a brand-new,
+		//! distinct eventID for \p origin via the main instance's /allocate
+		//! endpoint, regardless of whether the origin matches an existing event.
+		//! Used by the EvSplitOrg and EvNewEvent paths on a secondary instance.
+		//! Returns the reserved eventID or an empty string on timeout / error /
+		//! 204 response.
+		std::string allocateMainEventID(
+			DataModel::Origin *origin,
+			const EventInformation::PickCache *picks = nullptr
+		);
+
+		//! Shared implementation of queryMainForEventID() and
+		//! allocateMainEventID(): builds the EventParameters payload from
+		//! \p origin (and \p picks) and POSTs it to \p endpoint on the
+		//! configured main instance, returning the eventID from the response.
+		std::string requestEventIDFromMain(
+			DataModel::Origin *origin,
+			const EventInformation::PickCache *picks,
+			const std::string &endpoint
+		);
+
 		//! Returns the eventID of a cached allocation whose foreign
 		//! origin matches \p origin according to the same
 		//! time / distance / matching-picks criteria used for live
-		//! events, and removes the matched entry from the cache.
-		//! Returns an empty string when no match is found. The caller
-		//! must hold _associationMutex.
+		//! events. The matched entry is kept (not removed) so its ID
+		//! stays reserved and is never re-handed out by allocateEventID();
+		//! it is dropped explicitly via releaseAllocatedEventID() once a
+		//! local event has been formed from it, or otherwise by TTL expiry.
+		//! Returns an empty string when no match is found. The caller must
+		//! hold _associationMutex.
 		std::string findAllocatedMatch(DataModel::Origin *origin);
+
+		//! Removes the reservation for \p eventID from the in-memory cache.
+		//! Called once a local event has actually been formed from a reserved
+		//! ID (see findAllocatedMatch): the event then guards the ID against
+		//! re-allocation, so the reservation is no longer needed. Reservations
+		//! handed to secondary instances via /allocate are not released this way
+		//! and expire by TTL instead. No-op if the ID is not cached. The caller
+		//! must hold _associationMutex.
+		void releaseAllocatedEventID(const std::string &eventID);
 
 		//! Looks up a reserved eventID in the persistent allocation store
 		//! (if configured). First tries a direct origin-publicID match
@@ -204,6 +252,16 @@ class EventTool : public Application {
 		//! configured. The caller must hold _associationMutex.
 		void persistAllocation(const std::string &eventID,
 		                       const DataModel::EventParameters *ep);
+
+		//! Reserves an eventID for \p org: reuses an existing reservation for
+		//! the same foreign origin (in-memory or persisted, for idempotent
+		//! re-requests) or allocates a fresh one, caching and persisting it.
+		//! Shared by tryToAssociate()'s allocation path and allocateNewEventID().
+		//! The caller must hold _associationMutex.
+		std::string reserveEventID(const DataModel::EventParameters *ep,
+		                           DataModel::Origin *org,
+		                           EventInformation::PickCache &cache,
+		                           bool forceFresh = false);
 
 		//! Shared matching predicate used by both the in-memory and the
 		//! persistent match paths: true if candidate matches incoming by

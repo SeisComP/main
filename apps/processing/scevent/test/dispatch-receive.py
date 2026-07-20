@@ -13,6 +13,15 @@ Behavior:
   * subscribe to the EVENT group
   * if --origin FILE is given, read the first origin from that SCML file and
     send it once messaging is up
+  * if --split-origin ORIGINID (together with --split-event EVENTID) is given,
+    send an "EvSplitOrg" journal request that asks scevent to remove ORIGINID
+    from event EVENTID and form a new event for it. This is used to exercise
+    the eventID synchronization on the split-origin code path.
+  * if --new-event FILE is given, read the first origin from that SCML file and
+    send it together with an "EvNewEvent" journal request (in a single message)
+    that asks scevent to form a new event from that (as yet unassociated)
+    origin. This exercises the eventID synchronization on the new-event code
+    path.
   * wait for the first Event object, print
 
         EVENTID <publicID>
@@ -26,10 +35,12 @@ Behavior:
 
 The harness reads the EVENTID / NOEVENT line back from the captured stdout.
 
-The two helper-specific options (--origin, --event-timeout) are parsed from argv here
-and stripped before the remaining arguments are handed to the SeisComP Application, so
-the app only ever sees options it natively understands (-H, --logging.level, --log-file,
-...). This avoids depending on the custom command-line-option registration API.
+The helper-specific options (--origin, --event-timeout, --split-origin,
+--split-event, --new-event) are parsed from argv here and stripped before the
+remaining
+arguments are handed to the SeisComP Application, so the app only ever sees
+options it natively understands (-H, --logging.level, --log-file, ...). This
+avoids depending on the custom command-line-option registration API.
 
 Compatible with Python >= 3.6.
 """
@@ -40,7 +51,7 @@ import sys
 import threading
 import time
 
-from seiscomp import client, datamodel, io as scio, logging
+from seiscomp import client, core, datamodel, io as scio, logging
 
 
 def _extractOption(argv, name):
@@ -63,7 +74,8 @@ def _extractOption(argv, name):
 
 
 class DispatchReceive(client.Application):
-    def __init__(self, argc, argv, originFile, eventTimeout):
+    def __init__(self, argc, argv, originFile, eventTimeout,
+                 splitOrigin=None, splitEvent=None, newEventFile=None):
         super().__init__(argc, argv)
         self.setMessagingEnabled(True)
         self.setDatabaseEnabled(False, False)
@@ -72,6 +84,9 @@ class DispatchReceive(client.Application):
         self.setLoggingToStdErr(True)
 
         self._originFile = originFile
+        self._splitOrigin = splitOrigin
+        self._splitEvent = splitEvent
+        self._newEventFile = newEventFile
         self._eventTimeout = eventTimeout
         self._secondsWaited = 0
         self._done = False
@@ -111,12 +126,36 @@ class DispatchReceive(client.Application):
                 print("ERROR " + repr(e), flush=True)
                 return False
 
+        if self._splitOrigin:
+            try:
+                logging.info("sending EvSplitOrg request")
+                self._sendSplitRequest(self._splitEvent, self._splitOrigin)
+            except Exception as e:  # noqa: BLE001
+                print("ERROR " + repr(e), flush=True)
+                return False
+
+        if self._newEventFile:
+            try:
+                logging.info("sending EvNewEvent request")
+                self._sendNewEvent(self._newEventFile)
+            except Exception as e:  # noqa: BLE001
+                print("ERROR " + repr(e), flush=True)
+                return False
+
         return True
 
     # Public ID of the EventParameters root object; used as the parent ID when
     # publishing origin and pick notifiers, matching what scevent expects to receive
     # over the messaging bus.
     EP_PARENT_ID = "EventParameters"
+
+    # Public ID of the Journaling root object; used as the parent ID when
+    # publishing JournalEntry notifiers. Journaling, like EventParameters, has a
+    # fixed public ID in the SeisComP data model.
+    JOURNALING_PARENT_ID = "Journaling"
+
+    # Messaging group scevent listens on for journal entries (its primary group).
+    EVENT_GROUP = "EVENT"
 
     def _sendOrigin(self, originFile):
         ep = self.readEventParameters(originFile)
@@ -158,6 +197,94 @@ class DispatchReceive(client.Application):
         # 'ep' (and thus the origin/picks referenced above) stays alive as a local until
         # the function returns here, well after send().
 
+    def _sendSplitRequest(self, eventID, originID):
+        """Send an "EvSplitOrg" journal request asking scevent to remove
+        origin ``originID`` from event ``eventID`` and form a new event for it.
+
+        The journal entry maps to scevent's handleJournalEntry():
+          * objectID   -> the event the origin currently belongs to
+          * action     -> "EvSplitOrg"
+          * parameters -> the origin to split off
+        The entry is published under the fixed Journaling parent and sent on the
+        EVENT group, which is where scevent expects journal entries.
+        """
+        if not eventID:
+            raise ValueError("EvSplitOrg requires the current event ID "
+                             "(--split-event)")
+
+        entry = datamodel.JournalEntry()
+        entry.setObjectID(eventID)
+        entry.setAction("EvSplitOrg")
+        entry.setParameters(originID)
+        entry.setSender("dispatch-receive")
+        entry.setCreated(core.Time.UTC())
+
+        datamodel.Notifier.SetEnabled(True)
+        datamodel.Notifier.Create(
+            self.JOURNALING_PARENT_ID, datamodel.OP_ADD, entry
+        )
+        msg = datamodel.Notifier.GetMessage()
+        datamodel.Notifier.SetEnabled(False)
+        if msg is None:
+            raise ValueError("no notifier message generated for EvSplitOrg")
+
+        self.connection().send(self.EVENT_GROUP, msg)
+        logging.info(
+            f"EvSplitOrg sent: event={eventID} origin={originID}"
+        )
+
+    def _sendNewEvent(self, originFile):
+        """Send the origin from ``originFile`` together with an "EvNewEvent"
+        journal request for it, in a single message.
+
+        EvNewEvent requires the origin to be present in scevent but not yet
+        associated with an event. scevent processes all objects of a message
+        first (running the EvNewEvent journal handler, which then forms the new
+        event) before it works its queued origin-association TODO list, so
+        packing the origin and the journal entry into one message lets the
+        journal handler claim the origin before automatic association would.
+
+        The journal entry maps to scevent's handleJournalEntry():
+          * objectID   -> the origin publicID to form the new event from
+          * action     -> "EvNewEvent"
+          * parameters -> unused
+        """
+        ep = self.readEventParameters(originFile)
+        if ep.originCount() == 0:
+            raise ValueError("no origin found")
+
+        origin = ep.origin(0)
+        originID = origin.publicID()
+
+        picks = []
+        for i in range(ep.pickCount()):
+            picks.append(ep.pick(i))
+
+        entry = datamodel.JournalEntry()
+        entry.setObjectID(originID)
+        entry.setAction("EvNewEvent")
+        entry.setParameters("")
+        entry.setSender("dispatch-receive")
+        entry.setCreated(core.Time.UTC())
+
+        datamodel.Notifier.SetEnabled(True)
+        # Picks and origin first so the origin is known when the journal entry
+        # (added last, in the same message) is handled.
+        for pick in picks:
+            datamodel.Notifier.Create(self.EP_PARENT_ID, datamodel.OP_ADD, pick)
+        datamodel.Notifier.Create(self.EP_PARENT_ID, datamodel.OP_ADD, origin)
+        datamodel.Notifier.Create(
+            self.JOURNALING_PARENT_ID, datamodel.OP_ADD, entry
+        )
+        msg = datamodel.Notifier.GetMessage()
+        datamodel.Notifier.SetEnabled(False)
+        if msg is None:
+            raise ValueError("no notifier message generated for EvNewEvent")
+
+        self.connection().send(self.EVENT_GROUP, msg)
+        logging.info(f"EvNewEvent sent: origin={originID}")
+        # 'ep' stays referenced until the function returns, after send().
+
     def handleTimeout(self):
         self._secondsWaited += 1
         if not self._done and self._secondsWaited >= self._eventTimeout:
@@ -179,6 +306,13 @@ class DispatchReceive(client.Application):
         self.quit()
 
     def updateObject(self, parentID, scobject):
+        # In split / new-event mode the interesting event is the *new* one
+        # created for the origin, which arrives via addObject(). Pre-existing
+        # events are only *modified* (e.g. origin reference removed) and show up
+        # here via updateObject(); ignore them so we report the freshly formed
+        # event rather than a modified pre-existing one.
+        if self._splitOrigin or self._newEventFile:
+            return
         event = datamodel.Event.Cast(scobject)
         if event:
             self._reportEvent(event)
@@ -249,6 +383,9 @@ def main():
     argv = list(sys.argv)
 
     originFile = _extractOption(argv, "origin")
+    splitOrigin = _extractOption(argv, "split-origin")
+    splitEvent = _extractOption(argv, "split-event")
+    newEventFile = _extractOption(argv, "new-event")
 
     eventTimeoutStr = _extractOption(argv, "event-timeout")
     try:
@@ -256,7 +393,10 @@ def main():
     except ValueError:
         eventTimeout = 5.0
 
-    app = DispatchReceive(len(argv), argv, originFile, eventTimeout)
+    app = DispatchReceive(
+        len(argv), argv, originFile, eventTimeout, splitOrigin, splitEvent,
+        newEventFile
+    )
     rc = app()
 
     # Graceful shutdown completed (app() returned). Cancel any pending

@@ -231,13 +231,17 @@ class DispatchReceive(Service):
         os.path.dirname(os.path.abspath(__file__)), "dispatch-receive.py"
     )
 
-    def __init__(self, name, schubPort, originFile=None, eventTimeout=TIMEOUT):
+    def __init__(self, name, schubPort, originFile=None, eventTimeout=TIMEOUT,
+                 splitOrigin=None, splitEvent=None, newEventFile=None):
         # No port to wait for: the helper is a messaging client, it does not
         # open a listening socket. Service.waitForSocket is therefore skipped
         # (port is None).
         super().__init__(name, port=None)
         self.schubPort = schubPort
         self.originFile = originFile
+        self.splitOrigin = splitOrigin
+        self.splitEvent = splitEvent
+        self.newEventFile = newEventFile
         self.eventTimeout = eventTimeout
         self.eventID = None
         self.error = None
@@ -254,6 +258,12 @@ class DispatchReceive(Service):
         ]
         if self.originFile:
             cmd.append(f"--origin={self.originFile}")
+        if self.splitOrigin:
+            cmd.append(f"--split-origin={self.splitOrigin}")
+        if self.splitEvent:
+            cmd.append(f"--split-event={self.splitEvent}")
+        if self.newEventFile:
+            cmd.append(f"--new-event={self.newEventFile}")
         return cmd
 
     def runToCompletion(self):
@@ -304,10 +314,12 @@ class DispatchReceive(Service):
 
 
 @contextmanager
-def ManagedDispatchReceive(name, schubPort, originFile=None, eventTimeout=TIMEOUT):
+def ManagedDispatchReceive(name, schubPort, originFile=None, eventTimeout=TIMEOUT,
+                          splitOrigin=None, splitEvent=None, newEventFile=None):
     """Context manager that runs the dispatch-receive helper to completion and
     yields the DispatchReceive object (with .eventID / .error populated)."""
-    dr = DispatchReceive(name, schubPort, originFile, eventTimeout)
+    dr = DispatchReceive(name, schubPort, originFile, eventTimeout,
+                         splitOrigin, splitEvent, newEventFile)
     dr.runToCompletion()
     try:
         yield dr
