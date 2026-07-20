@@ -1797,6 +1797,120 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 			}
 		}
 
+		// Felt report
+		{
+			auto *remoteDesc = event->eventDescription(EventDescriptionIndex(FELT_REPORT));
+			auto *localDesc = targetEvent->eventDescription(EventDescriptionIndex(FELT_REPORT));
+
+			if ( remoteDesc && localDesc && (remoteDesc->text() == localDesc->text()) ) {
+				SEISCOMP_DEBUG("* check update of felt report: '%s' => equal", remoteDesc->text());
+			}
+			else if ( !remoteDesc && !localDesc ) {
+				SEISCOMP_DEBUG("* check update of felt report: not set at either end");
+			}
+			else {
+				SEISCOMP_DEBUG("* check update of felt report: '%s'", remoteDesc ? remoteDesc->text() : string());
+
+				auto remoteChange = getLastModificationTime<void>(nullptr, "felt report", journals, event->publicID(), "EvFeltReport", remoteDesc ? remoteDesc->text() : string());
+
+				if ( !localDesc ) {
+					// Local felt report is not set, but remote
+					// Apply the update
+					notifiers.push_back(
+						new Notifier(
+							"Journaling", OP_ADD,
+							createJournalEntry(
+								targetEvent->publicID(), "EvFeltReport",
+								remoteDesc->text(),
+								remoteChange ? addressof(remoteChange->timestamp) : nullptr,
+								remoteChange ? remoteChange->author : string_view()
+							)
+						)
+					);
+
+					SEISCOMP_DEBUG("  => no local felt report found, apply the update");
+				}
+				else if ( !remoteDesc ) {
+					SEISCOMP_DEBUG("  => no remote felt report found, skip update");
+				}
+				else {
+					// Both are set and different
+					JournalEntryPtr localJournal = getLastJournalEntry(*query(), targetEvent->publicID(), "EvFeltReport");
+					if ( !localJournal ) {
+						notifiers.push_back(
+							new Notifier(
+								"Journaling", OP_ADD,
+								createJournalEntry(
+									targetEvent->publicID(), "EvFeltReport",
+									remoteDesc->text(),
+									remoteChange ? addressof(remoteChange->timestamp) : nullptr,
+									remoteChange ? remoteChange->author : string_view()
+								)
+							)
+						);
+
+						SEISCOMP_DEBUG("  => no local journal found, apply the update");
+					}
+					else {
+						// There is a local journal entry
+						OPT(Core::Time) localChangeTime;
+
+						try {
+							localChangeTime = localJournal->created();
+							SEISCOMP_DEBUG("  - local change time is %s", localChangeTime->iso());
+						}
+						catch ( ... ) {}
+
+						if ( localChangeTime && remoteChange ) {
+							if ( remoteChange->timestamp > *localChangeTime ) {
+								notifiers.push_back(
+									new Notifier(
+										"Journaling", OP_ADD,
+										createJournalEntry(
+											targetEvent->publicID(), "EvFeltReport",
+											remoteDesc->text(),
+											addressof(remoteChange->timestamp),
+											remoteChange->author
+										)
+									)
+								);
+
+								SEISCOMP_DEBUG("  => the remote change time is more recent, apply the update");
+							}
+							else {
+								SEISCOMP_INFO("* skipping felt report update because the "
+								              "local change %s the remote one",
+								              remoteChange->timestamp < localJournal->created() ?
+								                  "is more recent than" :
+								                  "happened at the same time as");
+							}
+						}
+						else {
+							if ( localJournal->sender() == author() ) {
+								SEISCOMP_DEBUG("  => self is the last author of the journal, apply the update");
+								notifiers.push_back(
+									new Notifier(
+										"Journaling", OP_ADD,
+										createJournalEntry(
+											targetEvent->publicID(), "EvFeltReport",
+											remoteDesc->text(),
+											remoteChange ? std::addressof(remoteChange->timestamp) : nullptr,
+											remoteChange ? remoteChange->author : string_view()
+										)
+									)
+								);
+							}
+							else {
+								SEISCOMP_INFO("* skipping felt report update because it "
+								              "has been set already by %s",
+								              localJournal->sender());
+							}
+						}
+					}
+				}
+			}
+		}
+
 		// Operator comment
 		{
 			auto *remoteCmt = event->comment(string("Operator"));
@@ -1983,6 +2097,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 			"EvTypeCertainty",
 			"EvName",
 			"EvOpComment",
+			"EvFeltReport",
 			"EvPrefFocMecID",
 			"EvPrefFocEvalMode",
 			"EvPrefFocAutomatic",
