@@ -223,6 +223,7 @@ Print IDs of all events in XML file
         return ep
 
     def processEventParameters(self, ep):
+        i_last = ep.eventCount() - 1
         for i in range(ep.eventCount()):
             evt = ep.event(i)
 
@@ -270,7 +271,7 @@ Print IDs of all events in XML file
                 except ValueError:
                     row += " 0"
 
-            print(row, end=self._delimiter)
+            print(row, end="\n" if i == i_last else self._delimiter)
 
     def queryDB(self):
         def addWhere(whereClause, filterStr):
@@ -343,14 +344,14 @@ Print IDs of all events in XML file
             return False
 
         cols = db.getRowFieldCount()
-        while db.fetchRow():
-            print(
-                " ".join(
-                    db.getRowFieldString(i) if db.getRowFieldString(i) else "-"
-                    for i in range(cols)
-                ),
-                end=self._delimiter,
+        has_next = db.fetchRow()
+        while has_next:
+            row = " ".join(
+                db.getRowFieldString(i) if db.getRowFieldString(i) else "-"
+                for i in range(cols)
             )
+            has_next = db.fetchRow()
+            print(row, end=self._delimiter if has_next else "\n")
 
         return True
 
