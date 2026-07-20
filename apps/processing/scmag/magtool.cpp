@@ -1567,21 +1567,24 @@ bool MagTool::processOrigin(DataModel::Origin *origin) {
 			// Highest priority has the amplitude which is already associated
 			// if reprocessing is active
 			if ( _allowReprocessing ) {
-				bool ok = false;
-
 				for ( size_t i = 0; i < origin->stationMagnitudeCount(); ++i ) {
 					StaMag *stamag = origin->stationMagnitude(i);
 					if ( stamag->type() == amp->type()
 					  && stamag->amplitudeID() == amp->publicID() ) {
 						amp_it->second = amp;
-						ok = true;
 						break;
 					}
 				}
-
-				if ( ok ) {
-					break;
-				}
+				// NOTE: this used to be "if (ok) break;", breaking out of the
+				// outer loop over itpi -- which iterates every amplitude
+				// *type* measured on this pick (MLa, MLa01, MLa05, MLa075,
+				// Mw(spec), mb_Lg, ...), not just amplitudes of the current
+				// type. As soon as any one type already had a matching
+				// stationMagnitude (e.g. an old, evaluated MLa untouched by
+				// a prior non-reprocess run), every other amplitude type on
+				// this same pick was silently skipped for the rest of this
+				// stream. Fixed: only resolve priority for the current
+				// type and continue on to the next amplitude/type.
 			}
 		}
 
