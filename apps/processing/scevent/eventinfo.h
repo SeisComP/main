@@ -79,6 +79,7 @@ struct EventInformation : public Seiscomp::Core::BaseObject {
 
 	bool setEventName(DataModel::JournalEntry *e, std::string &error);
 	bool setEventOpComment(DataModel::JournalEntry *e, std::string &error);
+	bool setFeltReport(DataModel::JournalEntry *e, std::string &error);
 
 	void insertPick(DataModel::Pick *p);
 

@@ -327,6 +327,13 @@ The following actions are supported by scevent:
    :param objectID: The ID of an existing event
    :param parameters: An event name
 
+.. function:: EvFeltReport(objectID, parameters)
+
+   Adds or updates the event description with type "felt report".
+
+   :param objectID: The ID of an existing event
+   :param parameters: A felt report
+
 .. function:: EvNewEvent(objectID, parameters)
 
    Creates a new event based on a given origin. The origin must not yet be
