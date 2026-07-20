@@ -533,6 +533,43 @@ bool EventInformation::setEventOpComment(DataModel::JournalEntry *e, string &err
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool EventInformation::setFeltReport(DataModel::JournalEntry *e, string &error) {
+	if ( !event ) {
+		error = ":internal:";
+		return false;
+	}
+
+	// Check for updating an existing event description
+	for ( size_t i = 0; i < event->eventDescriptionCount(); ++i ) {
+		if ( event->eventDescription(i)->type() != FELT_REPORT ) {
+			continue;
+		}
+		if ( event->eventDescription(i)->text() == e->parameters() ) {
+			error = ":no changes:";
+			return false;
+		}
+
+		event->eventDescription(i)->setText(e->parameters());
+		event->eventDescription(i)->update();
+
+		return true;
+	}
+
+	// Create a new one
+	EventDescriptionPtr ed = new EventDescription(e->parameters(), FELT_REPORT);
+	if ( !event->add(ed.get()) ) {
+		error = ":add:";
+		return false;
+	}
+
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void EventInformation::insertPick(Pick *p) {
 	string id = p->waveformID().networkCode() + "." + p->waveformID().stationCode();
 	picks.insert({ id, p });

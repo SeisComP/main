@@ -2435,6 +2435,19 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 			response = createEntry(entry->objectID(), entry->action() + Failed, error);
 		Notifier::Disable();
 	}
+	else if ( entry->action() == "EvFeltReport" ) {
+		SEISCOMP_DEBUG("...set felt report");
+
+		string error;
+		Notifier::Enable();
+		if ( info->setFeltReport(entry, error) ) {
+			response = createEntry(entry->objectID(), entry->action() + OK, entry->parameters());
+		}
+		else {
+			response = createEntry(entry->objectID(), entry->action() + Failed, error);
+		}
+		Notifier::Disable();
+	}
 	else if ( entry->action() == "EvOpComment" ) {
 		SEISCOMP_DEBUG("...set event operator's comment");
 
