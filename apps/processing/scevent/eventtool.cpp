@@ -217,59 +217,78 @@ class RESTAPISession : public Wired::HttpSession {
 		}
 
 		bool handlePOSTRequest(Wired::HttpRequest &req) override {
-			if ( req.path == "/api/1/try-to-associate" ) {
-				if ( req.contentType != "text/xml" ) {
-					sendStatus(Wired::HTTP_400, ErrorContentType);
-					return true;
-				}
+			bool isTryToAssociate = req.path == "/api/1/try-to-associate";
+			bool isAllocate = req.path == "/api/1/allocate";
 
-				// Parse query options; ?allocate (with or without a value)
-				// instructs the main instance to reserve an eventID on behalf of
-				// the secondary instance if no existing event matches the supplied
-				// origin.
-				bool allocate = false;
-				Wired::URLOptions opts(req.options);
-				while ( opts.next() ) {
-					if ( opts.nameEquals("allocate") ) {
-						allocate = true;
-						break;
-					}
-				}
-
-				IO::XMLArchive ar;
-				InputStringViewBuf buf(req.data);
-				if ( !ar.open(&buf) ) {
-					sendStatus(Wired::HTTP_400, ErrorInvalidXMLDocument);
-					return true;
-				}
-				PublicObject::SetRegistrationEnabled(false);
-				EventParametersPtr ep;
-				ar >> ep;
-				if ( !ep ) {
-					sendStatus(Wired::HTTP_400, ErrorInvalidInputDocument);
-					return true;
-				}
-
-				SEISCOMP_DEBUG("Handle association REST request (allocate=%s)",
-				               allocate ? "true" : "false");
-				try {
-					auto eventID = _app->tryToAssociate(ep.get(), allocate);
-					if ( eventID.empty() ) {
-						sendStatus(Wired::HTTP_204);
-					}
-					else {
-						sendStatus(Wired::HTTP_200, eventID);
-					}
-				}
-				catch ( exception &e ) {
-					SEISCOMP_WARNING("Association REST request: %s", e.what());
-					sendStatus(Wired::HTTP_400, e.what());
-				}
-
+			if ( !isTryToAssociate && !isAllocate ) {
+				sendStatus(Wired::HTTP_404);
 				return true;
 			}
 
-			sendStatus(Wired::HTTP_404);
+			if ( req.contentType != "text/xml" ) {
+				sendStatus(Wired::HTTP_400, ErrorContentType);
+				return true;
+			}
+
+			// Both endpoints take the same text/xml EventParameters body and
+			// return the eventID as text/plain (HTTP 200), HTTP 204 when none is
+			// produced, or an HTTP 400 error. Parse the body once, then dispatch
+			// to the method that matches the endpoint.
+			IO::XMLArchive ar;
+			InputStringViewBuf buf(req.data);
+			if ( !ar.open(&buf) ) {
+				sendStatus(Wired::HTTP_400, ErrorInvalidXMLDocument);
+				return true;
+			}
+			PublicObject::SetRegistrationEnabled(false);
+			EventParametersPtr ep;
+			ar >> ep;
+			if ( !ep ) {
+				sendStatus(Wired::HTTP_400, ErrorInvalidInputDocument);
+				return true;
+			}
+
+			try {
+				std::string eventID;
+				if ( isAllocate ) {
+					// /api/1/allocate: always reserve a brand-new, distinct
+					// eventID, skipping the existing-event match entirely. Used
+					// by a secondary instance for the EvSplitOrg and EvNewEvent
+					// paths, where a separate event must be formed even though
+					// the origin may match an existing one.
+					SEISCOMP_DEBUG("Handle allocate REST request");
+					eventID = _app->allocateNewEventID(ep.get());
+				}
+				else {
+					// /api/1/try-to-associate: match the origin against existing
+					// events; with ?allocate, reserve a fresh ID only if nothing
+					// matched (secondary-instance normal association).
+					bool allocate = false;
+					Wired::URLOptions opts(req.options);
+					while ( opts.next() ) {
+						if ( opts.nameEquals("allocate") ) {
+							allocate = true;
+							break;
+						}
+					}
+
+					SEISCOMP_DEBUG("Handle association REST request (allocate=%s)",
+					               allocate ? "true" : "false");
+					eventID = _app->tryToAssociate(ep.get(), allocate);
+				}
+
+				if ( eventID.empty() ) {
+					sendStatus(Wired::HTTP_204);
+				}
+				else {
+					sendStatus(Wired::HTTP_200, eventID);
+				}
+			}
+			catch ( exception &e ) {
+				SEISCOMP_WARNING("Association REST request: %s", e.what());
+				sendStatus(Wired::HTTP_400, e.what());
+			}
+
 			return true;
 		}
 
@@ -361,32 +380,73 @@ std::string EventTool::tryToAssociate(const DataModel::EventParameters *ep,
 	}
 
 	// No existing event matched. The caller is a secondary instance asking the main
-	// instance to allocate an eventID; check whether we already reserved one for this
-	// same foreign origin (idempotent re-request) and otherwise allocate a fresh ID.
-	auto cachedID = findAllocatedMatch(org);
-	if ( !cachedID.empty() ) {
-		// Re-cache the entry (and refresh its TTL) so a quickly-repeated retry from the
-		// secondary instance keeps the same reservation alive rather than producing two
-		// IDs for one origin.
-		_allocatedEventIDs.emplace_back(cachedID, org, std::move(cache),
-		                                _config.eventIDSync.cacheRetention);
-		SEISCOMP_DEBUG("Re-using cached eventID %s for origin %s",
-		               cachedID, org->publicID());
-		persistAllocation(cachedID, ep);
-		return cachedID;
+	// instance to allocate an eventID; reserve one for this origin.
+	return reserveEventID(ep, org, cache);
+}
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string EventTool::allocateNewEventID(const DataModel::EventParameters *ep) {
+	if ( ep->originCount() != 1 ) {
+		throw runtime_error("One origin is required and only one origin is allowed");
 	}
 
-	// Not in the in-memory cache: consult the persistent store (if configured). This
-	// covers reservations from before a restart and a larger origin/eventID set than
-	// the transient buffer holds.
-	std::string persistedID = findPersistedMatch(org, &cache);
-	if ( !persistedID.empty() ) {
-		// Promote the persisted hit back into the in-memory cache and
-		// refresh its stored copy so repeated retries stay consistent.
-		_allocatedEventIDs.emplace_back(persistedID, org, std::move(cache),
-		                                _config.eventIDSync.cacheRetention);
-		persistAllocation(persistedID, ep);
-		return persistedID;
+	EventInformation::PickCache cache;
+	auto *org = ep->origin(0);
+	for ( size_t i = 0; i < ep->pickCount(); ++i ) {
+		auto *pick = ep->pick(i);
+		cache[pick->publicID()] = pick;
+	}
+
+	scoped_lock l(_associationMutex);
+
+	// Unlike tryToAssociate(), this never matches the origin against existing
+	// events: it always reserves a brand-new, distinct eventID. Used by the
+	// /allocate endpoint, which a secondary instance calls for the EvSplitOrg
+	// and EvNewEvent paths where a separate event must be formed even though the
+	// origin may match an existing one.
+	return reserveEventID(ep, org, cache, /*forceFresh=*/true);
+}
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string EventTool::reserveEventID(const DataModel::EventParameters *ep,
+                                      DataModel::Origin *org,
+                                      EventInformation::PickCache &cache,
+                                      bool forceFresh) {
+	// Unless forceFresh is set, check whether we already reserved an eventID for
+	// this same foreign origin (idempotent re-request) and reuse it; otherwise
+	// allocate a fresh ID. forceFresh is used by the /allocate endpoint
+	// (EvSplitOrg / EvNewEvent), where the caller explicitly wants a brand-new
+	// event: reusing a prior reservation would hand back an ID whose event the
+	// secondary instance has already created, so the reservation must always be
+	// fresh. The caller must hold _associationMutex.
+	if ( !forceFresh ) {
+		auto cachedID = findAllocatedMatch(org);
+		if ( !cachedID.empty() ) {
+			// Re-cache the entry (and refresh its TTL) so a quickly-repeated retry from
+			// the secondary instance keeps the same reservation alive rather than
+			// producing two IDs for one origin.
+			_allocatedEventIDs.emplace_back(cachedID, org, std::move(cache),
+			                                _config.eventIDSync.cacheRetention);
+			SEISCOMP_DEBUG("Re-using cached eventID %s for origin %s",
+			               cachedID, org->publicID());
+			persistAllocation(cachedID, ep);
+			return cachedID;
+		}
+
+		// Not in the in-memory cache: consult the persistent store (if configured).
+		// This covers reservations from before a restart and a larger origin/eventID
+		// set than the transient buffer holds.
+		std::string persistedID = findPersistedMatch(org, &cache);
+		if ( !persistedID.empty() ) {
+			// Promote the persisted hit back into the in-memory cache and
+			// refresh its stored copy so repeated retries stay consistent.
+			_allocatedEventIDs.emplace_back(persistedID, org, std::move(cache),
+			                                _config.eventIDSync.cacheRetention);
+			persistAllocation(persistedID, ep);
+			return persistedID;
+		}
 	}
 
 	// Build the set of currently-reserved IDs so allocateEventID() can avoid handing
@@ -494,12 +554,40 @@ std::string EventTool::findAllocatedMatch(Origin *origin) {
 			SEISCOMP_LOG(_infoChannel,
 			             "Local origin %s matches reserved eventID %s",
 			             origin->publicID(), eventID);
-			_allocatedEventIDs.erase(it);
+			// Note: the match is non-destructive. The reservation is only
+			// dropped once a local event has actually been formed from it, via
+			// releaseAllocatedEventID(). Keeping it until then means
+			// allocateEventID() still treats the ID as taken and never re-hands
+			// it out to a concurrent /allocate request (whose reserved event
+			// only materializes in the secondary instance's separate database,
+			// so the reservation set is the main instance's only record that the
+			// ID is in use).
 			return eventID;
 		}
 	}
 
 	return {};
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void EventTool::releaseAllocatedEventID(const std::string &eventID) {
+	// Drop the in-memory reservation for eventID once a local event has been
+	// formed from it: from now on the event itself (present in this instance's
+	// database) is what keeps allocateEventID() from re-using the ID, so the
+	// reservation is no longer needed. Reservations handed to secondary
+	// instances via /allocate are never released here (no matching local event
+	// is formed) and instead expire by TTL.
+	for ( auto it = _allocatedEventIDs.begin();
+	      it != _allocatedEventIDs.end(); ++it ) {
+		if ( it->eventID == eventID ) {
+			_allocatedEventIDs.erase(it);
+			return;
+		}
+	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -727,8 +815,10 @@ void EventTool::cleanUpAllocatedEventIDs() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-std::string EventTool::queryMainForEventID(Origin *origin,
-                                           const EventInformation::PickCache *picks) {
+std::string EventTool::requestEventIDFromMain(
+	Origin *origin,
+	const EventInformation::PickCache *picks,
+	const std::string &endpoint) {
 	const auto &mainURL = _config.eventIDSync.main;
 	if ( mainURL.empty() ) {
 		return {};
@@ -799,19 +889,23 @@ std::string EventTool::queryMainForEventID(Origin *origin,
 
 	IO::HTTPClient http;
 
-	// Build the request URL. If the user already configured a path keep it, otherwise
-	// default to the /api/1/try-to-associate endpoint. The 'allocate' query parameter
-	// instructs the main instance to reserve an eventID.
+	// Build the request URL. If the user already configured a path keep it,
+	// otherwise default to the requested endpoint on the configured host.
 	string fullURL = mainURL;
 	if ( url.path().empty() ) {
 		// Strip trailing slash to avoid '//api/...'
 		if ( !fullURL.empty() && fullURL.back() == '/' ) {
 			fullURL.pop_back();
 		}
-		fullURL += "/api/1/try-to-associate?allocate";
+		fullURL += endpoint;
 	}
 	else {
-		fullURL += "?allocate";
+		// A custom path was configured; carry over only the query part of the
+		// endpoint (e.g. "?allocate"), keeping the operator-provided path.
+		auto queryPos = endpoint.find('?');
+		if ( queryPos != std::string::npos ) {
+			fullURL += endpoint.substr(queryPos);
+		}
 	}
 
 	http.setTimeout(_config.eventIDSync.mainTimeout);
@@ -850,6 +944,34 @@ std::string EventTool::queryMainForEventID(Origin *origin,
 		                 origin->publicID(), e.what());
 		return {};
 	}
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string EventTool::queryMainForEventID(
+	Origin *origin, const EventInformation::PickCache *picks) {
+	// Normal secondary-instance association: ask the main instance which event
+	// the origin belongs to, letting it reserve a fresh ID only if nothing
+	// matches (the ?allocate semantics of /try-to-associate).
+	return requestEventIDFromMain(origin, picks,
+	                              "/api/1/try-to-associate?allocate");
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+std::string EventTool::allocateMainEventID(
+	Origin *origin, const EventInformation::PickCache *picks) {
+	// Forced new-event paths (EvSplitOrg, EvNewEvent) on a secondary instance:
+	// ask the main instance to always reserve a brand-new, distinct eventID via
+	// the /allocate endpoint, regardless of whether the origin matches an
+	// existing event.
+	return requestEventIDFromMain(origin, picks, "/api/1/allocate");
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2067,7 +2189,27 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 				query()->loadMagnitudes(origin.get());
 			}
 
-			EventInformationPtr info = createEvent(origin.get());
+			// On a secondary instance (eventIDSync.main set) the new event must
+			// use an ID allocated by the main instance so both converge; ask the
+			// main via its /allocate endpoint, which always reserves a fresh,
+			// distinct ID. On a main/standalone instance createEvent() allocates
+			// locally as usual. Without this, a secondary handling EvNewEvent
+			// would allocate a local eventID and diverge from the main.
+			std::string reservedID;
+			if ( !_config.eventIDSync.main.empty() ) {
+				reservedID = allocateMainEventID(origin.get());
+				if ( reservedID.empty() ) {
+					SEISCOMP_WARNING("Main instance did not provide an eventID "
+					                 "for new-event origin %s, falling back to "
+					                 "local allocation", origin->publicID());
+					SEISCOMP_LOG(_infoChannel,
+					             "Main instance unreachable for new-event origin "
+					             "%s, falling back to local eventID allocation",
+					             origin->publicID());
+				}
+			}
+
+			EventInformationPtr info = createEvent(origin.get(), reservedID);
 			if ( info ) {
 				SEISCOMP_INFO("%s: created", info->event->publicID());
 				SEISCOMP_LOG(_infoChannel, "Origin %s created a new event %s",
@@ -2561,7 +2703,34 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 					response = createEntry(entry->objectID(), entry->action() + Failed, ":last origin cannot be removed:");
 				}
 				else {
-					EventInformationPtr newInfo = createEvent(org.get());
+					// Decide what eventID the split-off event should carry. On
+					// a secondary instance (eventIDSync.main set) the new event
+					// must use an ID allocated by the main instance so both
+					// converge; ask the main via its /allocate endpoint, which
+					// always reserves a fresh, distinct ID. On a main/standalone
+					// instance createEvent() allocates locally as usual. The
+					// caller holds _associationMutex.
+					// Without this, a secondary instance handling an EvSplitOrg
+					// command would allocate a local eventID and diverge from
+					// the main instance.
+					std::string reservedID;
+
+					if ( !_config.eventIDSync.main.empty() ) {
+						reservedID = allocateMainEventID(org.get());
+						if ( reservedID.empty() ) {
+							SEISCOMP_WARNING("Main instance did not provide an "
+							                 "eventID for split origin %s, "
+							                 "falling back to local allocation",
+							                 org->publicID());
+							SEISCOMP_LOG(_infoChannel,
+							             "Main instance unreachable for split "
+							             "origin %s, falling back to local "
+							             "eventID allocation",
+							             org->publicID());
+						}
+					}
+
+					EventInformationPtr newInfo = createEvent(org.get(), reservedID);
 					JournalEntryPtr newResponse;
 
 					if ( newInfo ) {
@@ -2879,10 +3048,12 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 			//     role).
 			//  3. Otherwise let createEvent() allocate one locally.
 			std::string reservedID;
+			bool reservedFromLocalMatch = false;
 
 			if ( !_allocatedEventIDs.empty() ) {
 				// findAllocatedMatch logs the match itself.
 				reservedID = findAllocatedMatch(origin);
+				reservedFromLocalMatch = !reservedID.empty();
 			}
 
 			if ( reservedID.empty() && !_config.eventIDSync.main.empty() ) {
@@ -2913,6 +3084,14 @@ EventInformationPtr EventTool::associateOrigin(Seiscomp::DataModel::Origin *orig
 			if ( info ) {
 				if ( createdEvent ) {
 					*createdEvent = true;
+				}
+				// The reservation, if any, has now been consumed by a real local
+				// event; drop it so the set does not keep a stale entry (the
+				// event itself now guards the ID against re-allocation). Only
+				// reservations that came from a local match are released here;
+				// IDs issued by a main instance were never in this set.
+				if ( reservedFromLocalMatch ) {
+					releaseAllocatedEventID(reservedID);
 				}
 				SEISCOMP_INFO("%s: created", info->event->publicID());
 				SEISCOMP_LOG(_infoChannel, "Origin %s created a new event %s",

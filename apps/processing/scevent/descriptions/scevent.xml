@@ -71,8 +71,10 @@
 			<parameter name="restAPI" type="host-with-port">
 				<description>
 				Defines the bind address of the REST API of form [address:]port. This
-				API currently provides one endpoint, /api/1/try-to-associate, which
-				allows to query for possible event associations of origin candidates.
+				API provides the endpoints /api/1/try-to-associate, which allows to
+				query for possible event associations of origin candidates, and
+				/api/1/allocate, which reserves a new, distinct event ID for an
+				origin.
 				</description>
 			</parameter>
 			<group name="processing">
@@ -482,7 +484,8 @@
 				connects). When set, it acts as a secondary instance. See
 				:ref:`scevent-eventid-sync` in the documentation for the full mechanism,
 				including the /api/1/try-to-associate?allocate endpoint used internally
-				for the handshake.
+				for the handshake and the /api/1/allocate endpoint used for the
+				split-origin and forced new-event commands.
 				</description>
 				<parameter name="main" type="string">
 					<description>

@@ -162,7 +162,8 @@ class TestRemote:
             assertResult("status code", 200, r.status_code)
             assertResult("content", eventID2, r.text)
 
-    def testEvenIDSync(self, tb1File1, tb1File2, tb2File1, tb2File2):
+    def testEvenIDSync(self, tb1File1, tb1File2, tb2File1, tb2File2, tb2File2a,
+                       tb2File2b):
         # sceventA is the main instance; sceventB is the secondary and is
         # pointed at sceventA's REST API via leaderPort. tb1 and tb2 carry the
         # same physical earthquakes under different publicID namespaces, so a
@@ -186,7 +187,7 @@ class TestRemote:
                 with ManagedDispatchReceive("dpA", PORT_SCHUB_A, tb1File1) as drA:
                     if drA.error:
                         raise ValueError(f"main side event 1: {drA.error}")
-                    idMain = drA.eventID
+                    idMain1 = drA.eventID
 
                 # 2) Push the same earthquake (other namespace) into the
                 #    secondary's broker; the secondary must obtain the main's ID
@@ -194,27 +195,93 @@ class TestRemote:
                 with ManagedDispatchReceive("dpB", PORT_SCHUB_B, tb2File1) as drB:
                     if drB.error:
                         raise ValueError(f"secondary side event 1: {drB.error}")
-                    idSecondary = drB.eventID
+                    idSecondary1 = drB.eventID
 
                 # Both instances must have converged on the same event ID. sceventB runs
                 # with prefix "B" but, having queried the main, must adopt the main's
                 # "A"-prefixed ID rather than minting its own — so equality here proves
                 # the handshake actually happened.
-                assertResult("synchronized eventID 1", idMain, idSecondary)
+                assertResult("synchronized eventID 1", idMain1, idSecondary1)
 
                 # 3) Reverse the order for the second event to prove that event forming
                 #    base on cached events also works
                 with ManagedDispatchReceive("dpB", PORT_SCHUB_B, tb2File2) as drB:
                     if drB.error:
                         raise ValueError(f"secondary side event 2: {drB.error}")
-                    idSecondary = drB.eventID
+                    idSecondary2 = drB.eventID
 
                 with ManagedDispatchReceive("dpA", PORT_SCHUB_A, tb1File2) as drA:
                     if drA.error:
                         raise ValueError(f"main side event 2: {drA.error}")
-                    idMain = drA.eventID
+                    idMain2 = drA.eventID
 
-                assertResult("synchronized eventID 2", idMain, idSecondary)
+                assertResult("synchronized eventID 2", idMain2, idSecondary2)
+
+                # 4) Send a second origin similar to tb2File2 which should be assigned
+                #    to the same event
+                with ManagedDispatchReceive("dpB", PORT_SCHUB_B, tb2File2a) as drB:
+                    if drB.error:
+                        raise ValueError(f"secondary side event 2a: {drB.error}")
+                    idSecondary2a = drB.eventID
+
+                assertResult(
+                    "synchronized eventID 2 second origin", idSecondary2, idSecondary2a
+                )
+
+                originToSplit = "de.gempa.tb2.Origin/20260528101507.770537.2A"
+
+                # 5) Split originToSplit out of its event on the SECONDARY. The
+                #    split-off origin needs a brand-new event, so the secondary
+                #    must query the main for the event ID (the EvSplitOrg sync
+                #    path). A working handshake makes it adopt the main's
+                #    freshly formed "A" ID instead of minting a "B" one.
+                with ManagedDispatchReceive(
+                    "dpBsplit",
+                    PORT_SCHUB_B,
+                    splitOrigin=originToSplit,
+                    splitEvent=idSecondary2,
+                ) as drB:
+                    if drB.error:
+                        raise ValueError(f"secondary side split: {drB.error}")
+                    idSecondary2split = drB.eventID
+
+                assertResult(
+                    "split eventID prefix secondary", "A", idSecondary2split[:1]
+                )
+                if idSecondary2split in (idMain1, idMain2, idSecondary1, idSecondary2):
+                    raise ValueError(
+                        "received split eventID seen before, expected value other than "
+                        f"{idSecondary2split}"
+                    )
+
+                # 6) Form a new event on the SECONDARY from a fresh origin
+                #    (2b.xml, origin ...2B) via an EvNewEvent command. The origin
+                #    and the command are sent together so scevent forms the event
+                #    from the journal command rather than by ordinary
+                #    association. As with the split, the new event needs a
+                #    brand-new ID which the secondary must obtain from the main
+                #    through the /allocate endpoint, so it again carries an
+                #    "A"-prefixed, previously unseen ID rather than a local "B"
+                #    one.
+                with ManagedDispatchReceive(
+                    "dpBnew",
+                    PORT_SCHUB_B,
+                    newEventFile=tb2File2b,
+                ) as drB:
+                    if drB.error:
+                        raise ValueError(f"secondary side new event: {drB.error}")
+                    idSecondary2new = drB.eventID
+
+                assertResult(
+                    "new event eventID prefix secondary", "A", idSecondary2new[:1]
+                )
+                if idSecondary2new in (
+                    idMain1, idMain2, idSecondary1, idSecondary2, idSecondary2split
+                ):
+                    raise ValueError(
+                        "received new event eventID seen before, expected value "
+                        f"other than {idSecondary2new}"
+                    )
 
     def testAPIDB(self, tb1File1, tb1File2, tb2File1, tb2File2):
         with open(tb1File1, "r", encoding="utf-8") as fd:
@@ -274,6 +341,8 @@ class TestRemote:
         tb1File2 = os.path.join(self.rootdir, "input/tb1/2.xml")
         tb2File1 = os.path.join(self.rootdir, "input/tb2/1.xml")
         tb2File2 = os.path.join(self.rootdir, "input/tb2/2.xml")
+        tb2File2a = os.path.join(self.rootdir, "input/tb2/2a.xml")
+        tb2File2b = os.path.join(self.rootdir, "input/tb2/2b.xml")
 
         with ManagedService(Schub("schubA", PORT_SCHUB_A)):
             self.testAPI(tb1File1, tb1File2, tb2File1, tb2File2)
@@ -281,7 +350,9 @@ class TestRemote:
             self.testAPIDB(tb1File1, tb1File2, tb2File1, tb2File2)
 
             with ManagedService(Schub("schubB", PORT_SCHUB_B)):
-                self.testEvenIDSync(tb1File1, tb1File2, tb2File1, tb2File2)
+                self.testEvenIDSync(
+                    tb1File1, tb1File2, tb2File1, tb2File2, tb2File2a, tb2File2b
+                )
 
 
 # ------------------------------------------------------------------------------

@@ -243,8 +243,8 @@ Role            Configuration
                 allocation only. This is the historical behavior and the default.
 **Main**        :confval:`eventIDSync.main` empty, :confval:`restAPI` set. Allocates IDs
                 locally and additionally serves ``/api/1/try-to-associate?allocate``
-                requests from secondary instances. Read also section
-                :ref:`scevent-restapi`.
+                and ``/api/1/allocate`` requests from secondary instances. Read also
+                section :ref:`scevent-restapi`.
 **Secondary**   :confval:`eventIDSync.main` set to the main instance's REST URL.
                 Queries the main instance for each new event and falls back to local
                 allocation on failure. Read also section :ref:`scevent-restapi`.
@@ -332,6 +332,12 @@ The following actions are supported by scevent:
    Creates a new event based on a given origin. The origin must not yet be
    associated with another event.
 
+   On a secondary instance (:confval:`eventIDSync.main` set) the event ID for
+   the new event is obtained from the main instance through its
+   :ref:`/api/1/allocate <scevent-restapi-allocate>` endpoint, so that main and
+   secondary instances stay synchronized; on failure the secondary falls back to
+   local allocation.
+
    :param objectID: The origin publicID of the origin which will be used to
                     create the new event.
    :param parameters: Unused
@@ -414,6 +420,12 @@ The following actions are supported by scevent:
 
    Remove an origin reference from an event and create a new event for
    this origin.
+
+   On a secondary instance (:confval:`eventIDSync.main` set) the event ID for
+   the new event is obtained from the main instance through its
+   :ref:`/api/1/allocate <scevent-restapi-allocate>` endpoint, so that main and
+   secondary instances stay synchronized; on failure the secondary falls back to
+   local allocation.
 
    :param objectID: The ID of an existing event holding a reference to the
                     given origin ID.
@@ -501,3 +513,49 @@ receiving instance which matches the cached or stored foreign origin (same time,
 distance and optionally matching pick IDs) will then reuse the reserved ID instead of
 allocating a new one, ensuring that the main instance and the secondary instance
 converge on the same event ID for the same earthquake.
+
+
+.. _scevent-restapi-allocate:
+
+allocate
+--------
+
+Reserve a brand-new, distinct event ID for a provided origin. Unlike
+:ref:`try-to-associate <scevent-restapi-associate>`, this endpoint never matches the
+origin against existing events: it always allocates and reserves a fresh event ID, even
+when the origin would match an event that already exists. It is used internally by a
+secondary instance when it must form a *separate* event for an origin that is already
+associated elsewhere — the :func:`EvSplitOrg` (split an origin into its own event) and
+:func:`EvNewEvent` (force a new event) journal commands. In those cases querying
+``try-to-associate`` would return the ID of the very event the origin already belongs
+to, which is not what a split or forced new event needs.
+
+==================  ===================================================================
+Request/Response    Description
+==================  ===================================================================
+**Location**        ``/api/1/allocate``
+**HTTP Methods**    POST
+**Request data**    :term:`SCML` containing an :ref:`EventParameters
+                    <api-python-datamodel-eventparameters>` element with one and only
+                    one :ref:`Origin <api-python-datamodel-origin>`. :ref:`Pick
+                    <api-python-datamodel-pick>` objects associated with the origin's
+                    arrivals may be included so that the receiver can match by pick IDs
+                    in addition to time and location.
+**Request header**  ``Content-Type: text/xml`` (no subtype allowed)
+**Response data**   Event ID string
+**Response code**   **200** (new event ID reserved), **204** (no event ID could be
+                    allocated), **400** (invalid input)
+==================  ===================================================================
+
+The following example reserves a new event ID for an origin defined in
+:file:`origin.xml`. It is assumed that :program:`scevent` is configured with
+``restAPI = 18182``.
+
+.. code-block:: sh
+
+   curl -v -X POST http://localhost:18182/api/1/allocate -H "Content-Type: text/xml" -d @origin.xml
+
+The reserved ID is cached (and, if :confval:`eventIDSync.db` is set, persisted) exactly
+as in the ``allocate`` mode of :ref:`try-to-associate <scevent-restapi-associate>`, so a
+repeated request for the same origin returns the same reserved ID rather than allocating
+a second one.
