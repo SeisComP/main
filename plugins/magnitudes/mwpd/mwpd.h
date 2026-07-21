@@ -40,10 +40,11 @@ static constexpr double MWPD_DEFAULT_MAX_DIST = 105.0;
 
 // All of this plugin's own symbols are used only inside the plugin (the loader
 // needs only createSCPlugin; the processors register via static factories), so
-// keep them out of the shared library's dynamic symbol table. Single-TU helpers
-// live in anonymous namespaces in the .cpp files; symbols shared across object
-// files (the config reader, the corrections, the processor classes) get hidden
-// visibility here.
+// keep them out of the shared library's dynamic symbol table. Everything that is
+// used within a single translation unit -- the processor classes and their
+// single-TU helpers -- lives in anonymous namespaces in the .cpp files. The few
+// symbols that genuinely cross object files (the config reader and the
+// corrections below) can't be anonymous, so they get hidden visibility instead.
 #if defined(__GNUC__) || defined(__clang__)
 	#define MWPD_LOCAL __attribute__((visibility("hidden")))
 #else
@@ -121,68 +122,11 @@ MWPD_LOCAL double mwpdDistanceCorrection(double deltaDeg, double depthKm);
 MWPD_LOCAL double mwpdDepthCorrection(double depthKm);
 
 
-// ---------------------------------------------------------------------------
-//  Amplitude processor (registered as "Mwpd"). Vertical broadband only. From
-//  the raw window it builds (a) the BRB-HP displacement and its running
-//  integral, separated into positive/negative displacement lobes, and (b) the
-//  high-frequency envelope from which the source duration T0 is estimated.
-//  Emits the displacement integral over T0 (nm*s) and carries T0 as the
-//  amplitude "period".
-// ---------------------------------------------------------------------------
-class MWPD_LOCAL AmplitudeProcessor_Mwpd : public Processing::AmplitudeProcessor {
-	public:
-		AmplitudeProcessor_Mwpd();
-
-	public:
-		bool setup(const Processing::Settings &settings) override;
-		const DoubleArray *processedData(Component comp) const override;
-
-	protected:
-		bool computeAmplitude(const DoubleArray &data,
-		                      size_t i1, size_t i2,
-		                      size_t si1, size_t si2,
-		                      double offset,
-		                      AmplitudeIndex *dt,
-		                      AmplitudeValue *amplitude,
-		                      double *period, double *snr) override;
-
-	private:
-		void applyConfig();
-		//! Theoretical S-P time [s] at the current source/receiver, or -1.
-		double computeSPSeconds() const;
-
-	private:
-		MwpdConfig _cfg;
-		DoubleArray _processedData;
-		Seiscomp::TravelTimeTableInterfacePtr _ttt;
-};
-
-
-// ---------------------------------------------------------------------------
-//  Magnitude processor (registered as "Mwpd"). Turns the displacement
-//  integral into M0 and Mwpd, applying the distance, PREM depth and duration
-//  corrections. The source duration T0 arrives in the amplitude "period".
-// ---------------------------------------------------------------------------
-class MWPD_LOCAL MagnitudeProcessor_Mwpd : public Processing::MagnitudeProcessor {
-	public:
-		MagnitudeProcessor_Mwpd();
-
-	public:
-		void setDefaults() override {}
-		bool setup(const Processing::Settings &settings) override;
-
-		Status computeMagnitude(double amplitude, const std::string &unit,
-		                        double period, double snr,
-		                        double delta, double depth,
-		                        const DataModel::Origin *hypocenter,
-		                        const DataModel::SensorLocation *receiver,
-		                        const DataModel::Amplitude *,
-		                        const Locale *,
-		                        double &value) override;
-
-	private:
-		MwpdConfig _cfg;
-};
+// The AmplitudeProcessor_Mwpd and MagnitudeProcessor_Mwpd classes are defined
+// in anonymous namespaces in amplitude.cpp / magnitude.cpp respectively: each is
+// used only within its own translation unit (it self-registers via a static
+// factory), so it needs no external linkage and stays out of the symbol table
+// entirely. Only the genuinely cross-TU helpers above are declared here.
 
 
 }

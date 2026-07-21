@@ -25,6 +25,34 @@ namespace Magnitudes {
 namespace Mwpd {
 
 
+namespace {
+
+// Magnitude processor (registered as "Mwpd"). Turns the displacement integral
+// into M0 and Mwpd, applying the distance, PREM depth and duration corrections.
+// The source duration T0 arrives in the amplitude "period". Kept in this
+// anonymous namespace: it self-registers below and is not used anywhere else.
+class MagnitudeProcessor_Mwpd : public Processing::MagnitudeProcessor {
+	public:
+		MagnitudeProcessor_Mwpd();
+
+	public:
+		void setDefaults() override {}
+		bool setup(const Processing::Settings &settings) override;
+
+		Status computeMagnitude(double amplitude, const std::string &unit,
+		                        double period, double snr,
+		                        double delta, double depth,
+		                        const DataModel::Origin *hypocenter,
+		                        const DataModel::SensorLocation *receiver,
+		                        const DataModel::Amplitude *,
+		                        const Locale *,
+		                        double &value) override;
+
+	private:
+		MwpdConfig _cfg;
+};
+
+
 REGISTER_MAGNITUDEPROCESSOR(MagnitudeProcessor_Mwpd, MWPD_TYPE);
 
 
@@ -126,6 +154,7 @@ MagnitudeProcessor_Mwpd::computeMagnitude(
 }
 
 
+}  // anonymous namespace
 }
 }
 }

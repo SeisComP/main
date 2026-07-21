@@ -92,7 +92,39 @@ double durationFromLevels(int idx90, int idx80, int idx50, int idx20,
 	return duration;
 }
 
-}  // namespace
+// Amplitude processor (registered as "Mwpd"). Vertical broadband only. From the
+// raw window it builds (a) the BRB-HP displacement and its running integral,
+// separated into positive/negative displacement lobes, and (b) the high-frequency
+// envelope from which the source duration T0 is estimated. Emits the displacement
+// integral over T0 (nm*s) and carries T0 as the amplitude "period". Kept in this
+// anonymous namespace: it self-registers below and is not used anywhere else.
+class AmplitudeProcessor_Mwpd : public Processing::AmplitudeProcessor {
+	public:
+		AmplitudeProcessor_Mwpd();
+
+	public:
+		bool setup(const Processing::Settings &settings) override;
+		const DoubleArray *processedData(Component comp) const override;
+
+	protected:
+		bool computeAmplitude(const DoubleArray &data,
+		                      size_t i1, size_t i2,
+		                      size_t si1, size_t si2,
+		                      double offset,
+		                      AmplitudeIndex *dt,
+		                      AmplitudeValue *amplitude,
+		                      double *period, double *snr) override;
+
+	private:
+		void applyConfig();
+		//! Theoretical S-P time [s] at the current source/receiver, or -1.
+		double computeSPSeconds() const;
+
+	private:
+		MwpdConfig _cfg;
+		DoubleArray _processedData;
+		Seiscomp::TravelTimeTableInterfacePtr _ttt;
+};
 
 
 REGISTER_AMPLITUDEPROCESSOR(AmplitudeProcessor_Mwpd, MWPD_TYPE);
@@ -445,6 +477,7 @@ bool AmplitudeProcessor_Mwpd::computeAmplitude(
 }
 
 
+}  // anonymous namespace
 }
 }
 }
