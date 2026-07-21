@@ -30,8 +30,8 @@ REGISTER_MAGNITUDEPROCESSOR(MagnitudeProcessor_Mwpd, MWPD_TYPE);
 
 MagnitudeProcessor_Mwpd::MagnitudeProcessor_Mwpd()
 : Processing::MagnitudeProcessor(MWPD_TYPE) {
-	_minimumDistanceDeg = _cfg.minDistanceDeg;
-	_maximumDistanceDeg = _cfg.maxDistanceDeg;
+	_minimumDistanceDeg = MWPD_DEFAULT_MIN_DIST;
+	_maximumDistanceDeg = MWPD_DEFAULT_MAX_DIST;
 }
 
 
@@ -45,11 +45,8 @@ bool MagnitudeProcessor_Mwpd::setup(const Processing::Settings &settings) {
 		return false;
 	}
 
-	_minimumDistanceDeg = _cfg.minDistanceDeg;
-	_maximumDistanceDeg = _cfg.maxDistanceDeg;
-
 	SEISCOMP_DEBUG("%s: dist=%.1f-%.1f deg distCorr=%d depthCorr=%d durRamp=%d",
-	               type().c_str(), _cfg.minDistanceDeg, _cfg.maxDistanceDeg,
+	               type().c_str(), *_minimumDistanceDeg, *_maximumDistanceDeg,
 	               _cfg.useDistanceCorr, _cfg.useDepthCorr, _cfg.useDurationRamp);
 	return true;
 }

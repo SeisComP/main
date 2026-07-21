@@ -32,6 +32,11 @@ namespace Mwpd {
 //! Amplitude unit: the displacement integral over T0, carried in nm*s (as Mwp).
 #define MWPD_AMP_UNIT "nm*s"
 
+//! Teleseismic distance range Mwpd is valid over (deg). Applied as the default;
+//! overridable via the standard amplitudes.Mwpd.minDist/maxDist settings.
+static constexpr double MWPD_DEFAULT_MIN_DIST =   5.0;
+static constexpr double MWPD_DEFAULT_MAX_DIST = 105.0;
+
 
 // All of this plugin's own symbols are used only inside the plugin (the loader
 // needs only createSCPlugin; the processors register via static factories), so
@@ -88,13 +93,12 @@ struct MwpdConfig {
 	double durRampHigh     = 110.0;  //!< [s] MWPD_MOMENT_CORR_DUR_CUTOFF_HIGH
 	double magCutoff       = 7.2;    //!< MWPD_MOMENT_CORR_MAG_CUTOFF
 	double rampPow         = 0.45;   //!< MWPD_MOMENT_CORR_POW
-	double minDistanceDeg  = 5.0;    //!< accept station magnitudes from this distance
-	double maxDistanceDeg  = 105.0;  //!< ...up to this distance
 
 	// --- S-P window cap (Early-est limits the integral to the S-P time) ---
+	// The travel-time backend/model come from the standard amplitudes.ttt.*
+	// settings (AmplitudeProcessor::Config::ttInterface/ttModel), not from
+	// plugin-specific keys.
 	bool        useSpCap   = true;        //!< cap the displacement integral at the S-P time
-	std::string tttBackend = "libtau";    //!< travel-time backend for S-P
-	std::string tttModel   = "iasp91";    //!< travel-time model for S-P
 };
 
 

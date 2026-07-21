@@ -102,11 +102,14 @@ AmplitudeProcessor_Mwpd::AmplitudeProcessor_Mwpd()
 : Processing::AmplitudeProcessor(MWPD_TYPE) {
 	setUsedComponent(Vertical);
 	setUnit(MWPD_AMP_UNIT);
-	// Compute progressively as data streams (Early-est style): the processor
-	// emits a growing Mwpd and finalizes as soon as T0 resolves/terminates,
-	// rather than waiting the full (long) signal window. maxDuration is just
-	// the upper bound on how long we keep looking.
-	setUpdateEnabled(true);
+	// Teleseismic default distance range; the standard amplitudes.Mwpd.minDist/
+	// maxDist settings (read by AmplitudeProcessor::setup) override it.
+	setMinDist(MWPD_DEFAULT_MIN_DIST);
+	setMaxDist(MWPD_DEFAULT_MAX_DIST);
+	// Amplitude updates are left application-controlled (default off): whether to
+	// emit progressive updates is scamp's decision, not the processor's. The Mwpd
+	// value finalizes once the T0 search terminates or the integration window
+	// (maxDuration) is complete.
 	applyConfig();
 }
 
@@ -119,8 +122,6 @@ void AmplitudeProcessor_Mwpd::applyConfig() {
 	setNoiseStart(-(_cfg.analysisPreP + 30.0));
 	setNoiseEnd(-_cfg.analysisPreP);
 
-	setMinDist(_cfg.minDistanceDeg);
-	setMaxDist(_cfg.maxDistanceDeg);
 	setMinSNR(0);   // T0 has its own S/N termination; no scalar SNR gate
 	computeTimeWindow();
 }
@@ -138,15 +139,22 @@ bool AmplitudeProcessor_Mwpd::setup(const Processing::Settings &settings) {
 
 	applyConfig();
 
-	// Travel-time table for the S-P window cap (graceful if unavailable).
+	// Travel-time table for the S-P window cap (graceful if unavailable). The
+	// backend/model come from the standard amplitudes.ttt.interface/model
+	// settings (AmplitudeProcessor::Config), defaulting to libtau/iasp91 as in
+	// Early-est when unset.
 	_ttt = nullptr;
 	if ( _cfg.useSpCap ) {
-		_ttt = Seiscomp::TravelTimeTableInterface::Create(_cfg.tttBackend.c_str());
-		if ( !_ttt || !_ttt->setModel(_cfg.tttModel) ) {
+		const std::string ttInterface =
+			config().ttInterface.empty() ? "libtau" : config().ttInterface;
+		const std::string ttModel =
+			config().ttModel.empty() ? "iasp91" : config().ttModel;
+		_ttt = Seiscomp::TravelTimeTableInterface::Create(ttInterface.c_str());
+		if ( !_ttt || !_ttt->setModel(ttModel) ) {
 			SEISCOMP_WARNING("%s: travel-time table '%s'/'%s' unavailable; "
 			                 "S-P window cap disabled",
-			                 type().c_str(), _cfg.tttBackend.c_str(),
-			                 _cfg.tttModel.c_str());
+			                 type().c_str(), ttInterface.c_str(),
+			                 ttModel.c_str());
 			_ttt = nullptr;
 		}
 	}

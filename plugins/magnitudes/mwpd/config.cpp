@@ -95,13 +95,12 @@ bool readMwpdConfig(const Processing::Settings &settings,
 	settings.getValue(out.useDistanceCorr, prefix + ".distanceCorrection");
 	settings.getValue(out.useDepthCorr,    prefix + ".depthCorrection");
 	settings.getValue(out.useDurationRamp, prefix + ".durationRamp");
-	settings.getValue(out.minDistanceDeg,  prefix + ".minimumDistance");
-	settings.getValue(out.maxDistanceDeg,  prefix + ".maximumDistance");
+	// Distance range is the standard AmplitudeProcessor minDist/maxDist config
+	// (read and enforced by the base class); no plugin-specific keys here.
 
-	// S-P window cap.
+	// S-P window cap. The travel-time backend/model use the standard
+	// amplitudes.ttt.interface/model settings, not plugin-specific keys.
 	settings.getValue(out.useSpCap,    prefix + ".spWindowCap");
-	settings.getValue(out.tttBackend,  prefix + ".tttBackend");
-	settings.getValue(out.tttModel,    prefix + ".tttModel");
 
 	if ( out.hfFmax <= out.hfFmin ) {
 		SEISCOMP_ERROR("%s: hfFmax (%f) must be > hfFmin (%f)",

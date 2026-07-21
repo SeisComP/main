@@ -58,13 +58,7 @@
 					<description>The fixed source duration used when fixedDuration is true.</description>
 				</parameter>
 				<parameter name="spWindowCap" type="boolean" default="true">
-					<description>Cap the displacement-integration window at the theoretical S-P time, as Early-est does, so the integral excludes S/surface-wave energy. The reported source duration T0 (and its ramp correction) is not capped.</description>
-				</parameter>
-				<parameter name="tttBackend" type="string" default="libtau">
-					<description>Travel-time table backend used to compute the S-P cap.</description>
-				</parameter>
-				<parameter name="tttModel" type="string" default="iasp91">
-					<description>Travel-time model used to compute the S-P cap.</description>
+					<description>Cap the displacement-integration window at the theoretical S-P time, as Early-est does, so the integral excludes S/surface-wave energy. The reported source duration T0 (and its ramp correction) is not capped. The travel-time backend and model are taken from the global amplitudes.ttt.interface / amplitudes.ttt.model settings (default libtau / iasp91).</description>
 				</parameter>
 			</extend-struct>
 
@@ -88,12 +82,6 @@
 				</parameter>
 				<parameter name="durationRamp" type="boolean" default="true">
 					<description>Apply the &gt;90 s duration ramp correction that boosts great/slow events (USE_MPWD_CORR).</description>
-				</parameter>
-				<parameter name="minimumDistance" type="double" default="5" unit="deg">
-					<description>Reject station magnitudes closer than this epicentral distance.</description>
-				</parameter>
-				<parameter name="maximumDistance" type="double" default="105" unit="deg">
-					<description>Reject station magnitudes beyond this epicentral distance.</description>
 				</parameter>
 				<parameter name="multiplier" type="string" default="1.0">
 					<description>Linear station correction a in a*Mwpd+b. Leave 1.0 for none.</description>
