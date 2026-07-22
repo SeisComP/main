@@ -40,10 +40,7 @@
 					<description>Boxcar half-width that smooths the squared HF trace into the envelope (SMOOTHING_WINDOW_HALF_WIDTH_T50).</description>
 				</parameter>
 				<parameter name="minDuration" type="double" default="20.0" unit="s">
-					<description>Earliest the T0 search may terminate (MIN_MWPD_DUR).</description>
-				</parameter>
-				<parameter name="maxDuration" type="double" default="1200.0" unit="s">
-					<description>MAX_MWPD_DUR: cap on T0 and on the post-pick signal/integration window.</description>
+					<description>Earliest the T0 search may terminate (MIN_MWPD_DUR). The upper cap (MAX_MWPD_DUR, default 1200 s) is the standard amplitudes.Mwpd.signalEnd window, not a separate key.</description>
 				</parameter>
 				<parameter name="snT0End" type="double" default="3.0">
 					<description>Envelope signal-to-noise ratio below which the T0 search terminates (SIGNAL_TO_NOISE_RATIO_T0_END).</description>

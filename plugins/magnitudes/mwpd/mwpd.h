@@ -37,6 +37,10 @@ namespace Mwpd {
 static constexpr double MWPD_DEFAULT_MIN_DIST =   5.0;
 static constexpr double MWPD_DEFAULT_MAX_DIST = 105.0;
 
+//! Default integration/T0-search cap [s] (MAX_MWPD_DUR). Applied as the default
+//! signalEnd; overridable via the standard amplitudes.Mwpd.signalEnd setting.
+static constexpr double MWPD_DEFAULT_MAX_DUR = 1200.0;
+
 
 // All of this plugin's own symbols are used only inside the plugin (the loader
 // needs only createSCPlugin; the processors register via static factories), so
@@ -75,8 +79,10 @@ struct MwpdConfig {
 	double smoothHalfWidth = 5.0;    //!< [s] envelope boxcar smoothing half-width
 
 	// --- T0 source-duration estimation ------------------------------------
+	// The integration / T0-search cap (MAX_MWPD_DUR) is the standard signalEnd
+	// window of the AmplitudeProcessor, default MWPD_DEFAULT_MAX_DUR; there is no
+	// separate maxDuration key.
 	double minDuration     = 20.0;   //!< [s] MIN_MWPD_DUR: earliest the T0 search may terminate
-	double maxDuration     = 1200.0; //!< [s] MAX_MWPD_DUR: T0 search / integration cap
 	double durationFloor   = 0.2;    //!< [s] MINIMUN_DURATION
 	double snT0End         = 3.0;    //!< SIGNAL_TO_NOISE_RATIO_T0_END
 	double peakRatioT0End  = 0.025;  //!< SIGNAL_TO_PEAK_RATIO_T0_END

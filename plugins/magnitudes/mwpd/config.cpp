@@ -80,9 +80,9 @@ bool readMwpdConfig(const Processing::Settings &settings,
 	settings.getValue(out.hfOrder,         prefix + ".hfOrder");
 	settings.getValue(out.smoothHalfWidth, prefix + ".smoothHalfWidth");
 
-	// T0 estimation.
+	// T0 estimation. The upper cap (MAX_MWPD_DUR) is the standard signalEnd
+	// window, not a plugin key.
 	settings.getValue(out.minDuration,     prefix + ".minDuration");
-	settings.getValue(out.maxDuration,     prefix + ".maxDuration");
 	settings.getValue(out.snT0End,         prefix + ".snT0End");
 	settings.getValue(out.peakRatioT0End,  prefix + ".peakRatioT0End");
 	settings.getValue(out.fixedDuration,   prefix + ".fixedDuration");
@@ -105,11 +105,6 @@ bool readMwpdConfig(const Processing::Settings &settings,
 	if ( out.hfFmax <= out.hfFmin ) {
 		SEISCOMP_ERROR("%s: hfFmax (%f) must be > hfFmin (%f)",
 		               prefix.c_str(), out.hfFmax, out.hfFmin);
-		return false;
-	}
-	if ( out.maxDuration <= out.minDuration ) {
-		SEISCOMP_ERROR("%s: maxDuration (%f) must be > minDuration (%f)",
-		               prefix.c_str(), out.maxDuration, out.minDuration);
 		return false;
 	}
 

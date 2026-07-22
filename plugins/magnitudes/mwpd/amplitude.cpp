@@ -124,6 +124,8 @@ class AmplitudeProcessor_Mwpd : public Processing::AmplitudeProcessor {
 		MwpdConfig _cfg;
 		DoubleArray _processedData;
 		Seiscomp::TravelTimeTableInterfacePtr _ttt;
+		//! Integration/T0-search cap [s], cached from the configured signalEnd.
+		double _maxDur = MWPD_DEFAULT_MAX_DUR;
 };
 
 
@@ -138,23 +140,29 @@ AmplitudeProcessor_Mwpd::AmplitudeProcessor_Mwpd()
 	// maxDist settings (read by AmplitudeProcessor::setup) override it.
 	setMinDist(MWPD_DEFAULT_MIN_DIST);
 	setMaxDist(MWPD_DEFAULT_MAX_DIST);
+	// signalEnd is the integration / T0-search cap and is user-configurable via
+	// the standard amplitudes.Mwpd.signalEnd key. Set the Mwpd default here (base
+	// setup() overrides it when configured); applyConfig() does not touch it, so
+	// the configured value wins.
+	setSignalEnd(MWPD_DEFAULT_MAX_DUR);
 	// Amplitude updates are left application-controlled (default off): whether to
 	// emit progressive updates is scamp's decision, not the processor's. The Mwpd
-	// value finalizes once the T0 search terminates or the integration window
-	// (maxDuration) is complete.
+	// value finalizes once the T0 search terminates or the signal window is
+	// complete.
 	applyConfig();
 }
 
 
 void AmplitudeProcessor_Mwpd::applyConfig() {
-	// Pick at signalStart=0; integration starts analysisPreP before it (taken
-	// from the noise side of the window). Signal end covers the longest T0.
+	// Integration runs from the pick (signalStart=0) to signalEnd; the noise
+	// window sits analysisPreP before the pick. signalEnd is left as configured
+	// (default MWPD_DEFAULT_MAX_DUR) so amplitudes.Mwpd.signalEnd controls the cap.
 	setSignalStart(0.0);
-	setSignalEnd(_cfg.maxDuration);
 	setNoiseStart(-(_cfg.analysisPreP + 30.0));
 	setNoiseEnd(-_cfg.analysisPreP);
 
 	setMinSNR(0);   // T0 has its own S/N termination; no scalar SNR gate
+	_maxDur = static_cast<double>(config().signalEnd);   // integration cap [s]
 	computeTimeWindow();
 }
 
@@ -193,7 +201,7 @@ bool AmplitudeProcessor_Mwpd::setup(const Processing::Settings &settings) {
 
 	SEISCOMP_DEBUG("%s: HPcorner=%.3fHz HF=%.1f-%.1fHz preP=%.1fs maxDur=%.0fs spCap=%d",
 	               type().c_str(), _cfg.highpassCorner, _cfg.hfFmin, _cfg.hfFmax,
-	               _cfg.analysisPreP, _cfg.maxDuration, _ttt != nullptr);
+	               _cfg.analysisPreP, _maxDur, _ttt != nullptr);
 	return true;
 }
 
@@ -424,13 +432,13 @@ bool AmplitudeProcessor_Mwpd::computeAmplitude(
 		return false;                       // T0 not resolved yet -> wait
 	}
 	const double availDur = (n - iPick) * deltaTime;
-	const bool windowFull = availDur >= _cfg.maxDuration - 1.0;
+	const bool windowFull = availDur >= _maxDur - 1.0;
 	if ( !t0Terminated && !windowFull ) {
 		return false;                       // T0 still provisional -> wait
 	}
 
-	if ( durRaw > _cfg.maxDuration ) {
-		durRaw = _cfg.maxDuration;
+	if ( durRaw > _maxDur ) {
+		durRaw = _maxDur;
 	}
 	const double sp = computeSPSeconds();
 	double integDur = durRaw;

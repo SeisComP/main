@@ -61,7 +61,7 @@ For each *P* pick on the vertical broad-band, the amplitude processor:
    high-frequency envelope: the velocity is band-passed 1--5 Hz, squared and
    boxcar-smoothed, and :math:`T_0` is derived from the times at which this
    envelope last drops below 90/80/50/20 % of its peak;
-#. integrates over :math:`\min(T_0,\ t_S-t_P,\ \mathtt{maxDuration})` --- the
+#. integrates over :math:`\min(T_0,\ t_S-t_P,\ \mathtt{signalEnd})` --- the
    :math:`S\!-\!P` cap (from a travel-time table) keeps the integral free of
    *S* and surface-wave energy.
 
@@ -150,7 +150,7 @@ reproduce Early-est; the most important amplitude parameter is
 ``amplitudes.Mwpd.highpassCorner`` (0.005 Hz --- keep low). See the binding
 parameter descriptions for the full list. Because :math:`M_{wpd}` integrates
 over the source duration, it requires a long post-*P* window (up to
-``maxDuration``), so the final value has higher latency than :math:`M_{wp}`.
+``signalEnd``), so the final value has higher latency than :math:`M_{wp}`.
 For faster tsunami early warning, Lomax & Michelini (2013) describe
 :math:`M_{wpd}\mathrm{(RT)}`, a real-time variant that uses a smaller minimum
 station distance and avoids some of the duration estimation and re-scaling;
