@@ -145,10 +145,14 @@ AmplitudeProcessor_Mwpd::AmplitudeProcessor_Mwpd()
 	// setup() overrides it when configured); applyConfig() does not touch it, so
 	// the configured value wins.
 	setSignalEnd(MWPD_DEFAULT_MAX_DUR);
-	// Amplitude updates are left application-controlled (default off): whether to
-	// emit progressive updates is scamp's decision, not the processor's. The Mwpd
-	// value finalizes once the T0 search terminates or the signal window is
-	// complete.
+	// Mwpd is a duration amplitude: it must observe the streaming data to detect
+	// when the source stops (T0) and can only integrate up to that point. That
+	// requires progressive evaluation -- with updates disabled the base calls
+	// computeAmplitude only once the full signalEnd window has streamed (~20 min),
+	// so the value would never finalize at T0. Enable updates so computeAmplitude
+	// runs as data arrives; it returns InProgress until T0 resolves and emits the
+	// amplitude exactly once, so no intermediate amplitudes reach the messaging.
+	setUpdateEnabled(true);
 	applyConfig();
 }
 
