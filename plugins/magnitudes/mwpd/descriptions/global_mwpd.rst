@@ -141,6 +141,18 @@ can be flattened per network without code changes using the standard
 :math:`M_w` proxies). Operators should derive these from a regression against
 their own reference magnitudes.
 
+Early-est itself is deliberately conservative with :math:`M_{wpd}` at smaller
+magnitudes: it is not reported/alerted below :math:`M_{wpd}\approx 7.0`
+(``alert.mwpd_min``, default 6.95) and is only set as the event's preferred
+magnitude once :math:`M_{wpd}\gtrsim 8.0` (``preferred.min_value.mwpd``; A.
+Lomax, pers. comm., 2026, suggests this could be lowered to approximately
+7.5). SeisComP's own preferred-magnitude selection (:ref:`scevent`) is a
+static per-type priority list rather than a value-gated threshold, so
+operators wanting equivalent behaviour should configure the :math:`M_{wpd}`
+priority accordingly: treat it with caution below :math:`M_w\approx 7` and
+avoid letting it override other magnitude types unless the event is
+confirmed large.
+
 Configuration
 =============
 
