@@ -334,7 +334,7 @@ class XMLDump : public Seiscomp::Client::Application {
 			          << std::endl << std::endl;
 			std::cout << "Dump the parameters for one object given by its public ID adding all child objects."
 			          << std::endl
-			          << "  " << name() << " -d localhost --public-id Origin/20250101.0000000 --with-childs"
+			          << "  " << name() << " -d localhost --public-id Origin/20250101.0000000 --with-children"
 			          << std::endl << std::endl;
 			std::cout << "Dump all event parameters received from local messaging into XML"
 			          << std::endl
@@ -1487,10 +1487,15 @@ class XMLDump : public Seiscomp::Client::Application {
 				)
 				& cliSwitch(
 					withChilds,
-					"Dump", "with-childs",
+					"Dump", "with-children",
 					"Dump also all child objects of dumped "
 					"objects. Valid only in combination with "
 					"--public-id."
+				)
+				& cliSwitch(
+					withChilds,
+					"Dump", "with-childs",
+					"Deprecated version of --with-children. Please use the latter."
 				)
 				& cliSwitch(
 					withRoot,
