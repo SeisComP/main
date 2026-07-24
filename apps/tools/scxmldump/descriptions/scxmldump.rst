@@ -62,12 +62,12 @@ object should be dumped, then the plugin dmsm must be loaded into scxmldump.
    scxmldump -d localhost --plugins dbmysql,dmsm --public-id StrongMotionOrigin/123456
 
 This command would only export the StrongMotionOrigin itself without all
-child objects. Option :option:`--with-childs` must be passed to export the
+child objects. Option :option:`--with-children` must be passed to export the
 full hierarchy:
 
 .. code-block:: sh
 
-   scxmldump -d localhost --plugins dbmysql,dmsm --public-id StrongMotionOrigin/123456 --with-childs
+   scxmldump -d localhost --plugins dbmysql,dmsm --public-id StrongMotionOrigin/123456 --with-children
 
 
 If the extension code resides in a library then LD_PRELOAD can be used to inject
@@ -75,7 +75,7 @@ the code into scxmldump:
 
 .. code-block:: sh
 
-   LD_PRELOAD=/home/sysop/seiscomp/lib/libseiscomp_datamodel_sm.so scxmldump -d localhost --public-id StrongMotionOrigin/123456 --with-childs
+   LD_PRELOAD=/home/sysop/seiscomp/lib/libseiscomp_datamodel_sm.so scxmldump -d localhost --public-id StrongMotionOrigin/123456 --with-children
 
 
 Format conversion

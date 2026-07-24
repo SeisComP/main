@@ -169,7 +169,7 @@
 					individual lines from stdin. No parent objects are dumped.
 					</description>
 				</option>
-				<option flag="" long-flag="with-childs">
+				<option flag="" long-flag="with-children">
 					<description>
 					Dump also all child objects of dumped objects. Valid only in
 					combination with --public-id.
