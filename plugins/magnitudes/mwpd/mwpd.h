@@ -1,0 +1,143 @@
+/***************************************************************************
+ * SeisComP duration-amplitude moment-magnitude plugin (mwpd)              *
+ *                                                                         *
+ * Per-station moment magnitude Mwpd (Lomax & Michelini 2009), porting     *
+ * Early-est 1.2.9. The displacement is integrated over the source         *
+ * duration T0 (estimated from the high-frequency envelope) rather than    *
+ * taking the running-integral peak as Mwp does.                           *
+ *                                                                         *
+ * GNU Affero General Public License Usage - see LICENSE.                  *
+ ***************************************************************************/
+
+
+#ifndef SEISCOMP_MAGNITUDES_MWPD_PLUGIN_H
+#define SEISCOMP_MAGNITUDES_MWPD_PLUGIN_H
+
+
+#include <seiscomp/core/plugin.h>
+#include <seiscomp/core/version.h>
+#include <seiscomp/processing/amplitudeprocessor.h>
+#include <seiscomp/processing/magnitudeprocessor.h>
+#include <seiscomp/seismology/ttt.h>
+
+
+namespace Seiscomp {
+namespace Magnitudes {
+namespace Mwpd {
+
+
+//! Registered amplitude/magnitude type string.
+#define MWPD_TYPE "Mwpd"
+
+//! Amplitude unit: the displacement integral over T0, carried in nm*s (as Mwp).
+#define MWPD_AMP_UNIT "nm*s"
+
+//! Teleseismic distance range Mwpd is valid over (deg). Applied as the default;
+//! overridable via the standard amplitudes.Mwpd.minDist/maxDist settings.
+static constexpr double MWPD_DEFAULT_MIN_DIST =   5.0;
+static constexpr double MWPD_DEFAULT_MAX_DIST = 105.0;
+
+//! Default integration/T0-search cap [s] (MAX_MWPD_DUR). Applied as the default
+//! signalEnd; overridable via the standard amplitudes.Mwpd.signalEnd setting.
+static constexpr double MWPD_DEFAULT_MAX_DUR = 1200.0;
+
+
+// All of this plugin's own symbols are used only inside the plugin (the loader
+// needs only createSCPlugin; the processors register via static factories), so
+// keep them out of the shared library's dynamic symbol table. Everything that is
+// used within a single translation unit -- the processor classes and their
+// single-TU helpers -- lives in anonymous namespaces in the .cpp files. The few
+// symbols that genuinely cross object files (the config reader and the
+// corrections below) can't be anonymous, so they get hidden visibility instead.
+#if defined(__GNUC__) || defined(__clang__)
+	#define MWPD_LOCAL __attribute__((visibility("hidden")))
+#else
+	#define MWPD_LOCAL
+#endif
+
+
+/**
+ * Configuration shared by the amplitude and magnitude processors. Defaults
+ * reproduce the hard-coded Early-est 1.2.9 constants
+ * (timedomain_processing.c / timedomain_processing_data.c).
+ */
+struct MwpdConfig {
+	// --- BRB-HP restitution + displacement integral (amplitude side) ------
+	// Early-est high-passes the displacement trace with filter_hp_bu_co_0_005_n_2
+	// = Butterworth HP 0.005 Hz, order 2 (mkfilter -Bu -Hp -o 2 -a 2.5e-4).
+	// (MWPD_GAIN_FREQUENCY=0.15 is only the gain-reference frequency, NOT a
+	// filter. A 0.15 Hz HP removes periods >7 s and guts great-event moment.)
+	double highpassCorner  = 0.005;  //!< [Hz] BRB-HP corner (filter_hp_bu_co_0_005_n_2)
+	int    hpOrder         = 2;      //!< Butterworth high-pass order for the BRB-HP trace
+	double analysisPreP    = 1.0;    //!< [s] START_ANALYSIS_BEFORE_P_BRB_HP
+
+	// --- HF envelope (T0 estimator) ---------------------------------------
+	// Early-est uses filter_bp_bu_co_1_5_n_4 = Butterworth band-pass 1-5 Hz o4.
+	double hfFmin          = 1.0;    //!< [Hz] envelope band low edge
+	double hfFmax          = 5.0;    //!< [Hz] envelope band high edge
+	int    hfOrder         = 4;      //!< envelope band-pass order
+	double smoothHalfWidth = 5.0;    //!< [s] envelope boxcar smoothing half-width
+
+	// --- T0 source-duration estimation ------------------------------------
+	// The integration / T0-search cap (MAX_MWPD_DUR) is the standard signalEnd
+	// window of the AmplitudeProcessor, default MWPD_DEFAULT_MAX_DUR; there is no
+	// separate maxDuration key.
+	double minDuration     = 20.0;   //!< [s] MIN_MWPD_DUR: earliest the T0 search may terminate
+	double durationFloor   = 0.2;    //!< [s] MINIMUN_DURATION
+	double snT0End         = 3.0;    //!< SIGNAL_TO_NOISE_RATIO_T0_END
+	double peakRatioT0End  = 0.025;  //!< SIGNAL_TO_PEAK_RATIO_T0_END
+	bool   fixedDuration   = false;  //!< use a fixed T0 instead of the HF-envelope estimate
+	double fixedDurationVal= 60.0;   //!< [s] the fixed T0 when fixedDuration is true
+
+	// --- magnitude formula + corrections ----------------------------------
+	double rho             = 3400.0; //!< [kg/m^3] density in MWP_CONST
+	double vp              = 7900.0; //!< [m/s] P velocity in MWP_CONST
+	double fp              = 2.0;    //!< FP average radiation factor in MWP_CONST
+	bool   useDistanceCorr = true;   //!< apply calculate_Mwp_correction (INGV_EE)
+	bool   useDepthCorr    = true;   //!< apply get_depth_corr_mwpd_prem (PREM step)
+	bool   useDurationRamp = true;   //!< USE_MPWD_CORR: >90 s duration ramp
+	double durRampLow      = 90.0;   //!< [s] MWPD_MOMENT_CORR_DUR_CUTOFF_LOW
+	double durRampHigh     = 110.0;  //!< [s] MWPD_MOMENT_CORR_DUR_CUTOFF_HIGH
+	double magCutoff       = 7.2;    //!< MWPD_MOMENT_CORR_MAG_CUTOFF
+	double rampPow         = 0.45;   //!< MWPD_MOMENT_CORR_POW
+
+	// --- S-P window cap (Early-est limits the integral to the S-P time) ---
+	// The travel-time backend/model come from the standard amplitudes.ttt.*
+	// settings (AmplitudeProcessor::Config::ttInterface/ttModel), not from
+	// plugin-specific keys.
+	bool        useSpCap   = true;        //!< cap the displacement integral at the S-P time
+};
+
+
+/** Reads MwpdConfig from a binding. @p prefix is "amplitudes.Mwpd" or
+ *  "magnitudes.Mwpd". Missing keys keep their (Early-est) defaults. */
+MWPD_LOCAL bool readMwpdConfig(const Processing::Settings &settings,
+                    const std::string &prefix, MwpdConfig &out);
+
+
+/** Tsuboi (1995) moment constant, reproduced from Early-est:
+ *  4 pi * rho * Vp^3 * FP * (10000/90) deg->km * 1000 km->m. */
+MWPD_LOCAL double mwpdMomentConstant(const MwpdConfig &cfg);
+
+/** INGV_EE distance correction (subtracted from the raw magnitude),
+ *  calculate_Mwp_correction_INGV_EE: 0 if delta<0 or depth>100 km. */
+MWPD_LOCAL double mwpdDistanceCorrection(double deltaDeg, double depthKm);
+
+/** PREM step depth correction get_depth_corr_mwpd_prem (returns -999 if
+ *  the depth is below the first table row). */
+MWPD_LOCAL double mwpdDepthCorrection(double depthKm);
+
+
+// The AmplitudeProcessor_Mwpd and MagnitudeProcessor_Mwpd classes are defined
+// in anonymous namespaces in amplitude.cpp / magnitude.cpp respectively: each is
+// used only within its own translation unit (it self-registers via a static
+// factory), so it needs no external linkage and stays out of the symbol table
+// entirely. Only the genuinely cross-TU helpers above are declared here.
+
+
+}
+}
+}
+
+
+#endif
