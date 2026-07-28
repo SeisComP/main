@@ -169,7 +169,7 @@
 				preferred origin with a matching evaluation mode.
 				</description>
 			</parameter>
-			<parameter name="eventIDPolicy" type="string" default="Event" values="Event,Origin,EventOrigin,OriginEvent">
+			<parameter name="agencyIDPolicy" type="string" default="Event" values="Event,Origin,EventOrigin,OriginEvent">
 				<description>
 				Control from which object the agencyID is read which is mapped
 				to the FDSNWS &quot;contributor&quot; property. The agency ID is

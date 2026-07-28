@@ -49,7 +49,7 @@ from seiscomp.fdsnws.dataselect import (
     FDSNDataSelectAuthRealm,
 )
 from seiscomp.fdsnws.dataselect import VERSION as DataSelectVersion
-from seiscomp.fdsnws.event import FDSNEvent, EventIDPolicies
+from seiscomp.fdsnws.event import FDSNEvent, AgencyIDPolicies
 from seiscomp.fdsnws.event import VERSION as EventVersion
 from seiscomp.fdsnws.station import FDSNStation
 from seiscomp.fdsnws.station import VERSION as StationVersion
@@ -402,7 +402,7 @@ class FDSNWS(seiscomp.client.Application):
         self._evaluationMode = None
         self._eventTypeWhitelist = None
         self._eventTypeBlacklist = None
-        self._eventIDPolicy = "Event"
+        self._agencyIDPolicy = "Event"
         self._eventFormats = None
         self._stationFilter = None
         self._invCoordinatePrecision = None
@@ -654,15 +654,15 @@ class FDSNWS(seiscomp.client.Application):
             pass
 
         try:
-            name = self.configGetString("eventIDPolicy")
-            if name not in EventIDPolicies:
+            name = self.configGetString("agencyIDPolicy")
+            if name not in AgencyIDPolicies:
                 print(
-                    f"invalid eventIDPolicy: {name}, expected one of "
-                    f"{', '.join(EventIDPolicies)}",
+                    f"invalid agencyIDPolicy: {name}, expected one of "
+                    f"{', '.join(AgencyIDPolicies)}",
                     file=sys.stderr,
                 )
                 return False
-            self._eventIDPolicy = name
+            self._agencyIDPolicy = name
         except Exception:
             pass
 
@@ -986,7 +986,7 @@ configuration read:
   hideAuthor               : {self._hideAuthor}
   hideComments             : {self._hideComments}
   evaluationMode           : {modeStr}
-  eventIDPolicy            : {self._eventIDPolicy}
+  agencyIDPolicy           : {self._agencyIDPolicy}
   data availability
     enabled                : {self._daEnabled}
     cache duration         : {self._daCacheDuration}
@@ -1186,7 +1186,7 @@ configuration read:
                     self._eventTypeWhitelist,
                     self._eventTypeBlacklist,
                     self._eventFormats,
-                    self._eventIDPolicy,
+                    self._agencyIDPolicy,
                 ),
             )
 

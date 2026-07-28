@@ -44,7 +44,7 @@ DBMaxUInt = 18446744073709551615  # 2^64 - 1
 VERSION = "1.2.8"
 
 # Source(s) of the agencyID mapped to the FDSNWS 'contributor' property. The
-# value is controlled by the 'eventIDPolicy' configuration parameter and used
+# value is controlled by the 'agencyIDPolicy' configuration parameter and used
 # in both, the text output and the contributor filter of the event service.
 #   Event       - read the agencyID from the event object only (default)
 #   Origin      - read the agencyID from the preferred origin object only
@@ -52,7 +52,7 @@ VERSION = "1.2.8"
 #                 the preferred origin
 #   OriginEvent - read the agencyID from the preferred origin and, if unset,
 #                 fall back to the event
-EventIDPolicies = ("Event", "Origin", "EventOrigin", "OriginEvent")
+AgencyIDPolicies = ("Event", "Origin", "EventOrigin", "OriginEvent")
 
 ################################################################################
 
@@ -306,7 +306,7 @@ class FDSNEvent(BaseResource):
         eventTypeWhitelist=None,
         eventTypeBlacklist=None,
         formatList=None,
-        eventIDPolicy="Event",
+        agencyIDPolicy="Event",
     ):
         super().__init__(VERSION)
 
@@ -317,12 +317,12 @@ class FDSNEvent(BaseResource):
         self._eventTypeBlacklist = eventTypeBlacklist
         self._formatList = formatList
 
-        if eventIDPolicy not in EventIDPolicies:
+        if agencyIDPolicy not in AgencyIDPolicies:
             seiscomp.logging.warning(
-                f"invalid eventIDPolicy '{eventIDPolicy}', using default 'Event'"
+                f"invalid agencyIDPolicy '{agencyIDPolicy}', using default 'Event'"
             )
-            eventIDPolicy = "Event"
-        self._eventIDPolicy = eventIDPolicy
+            agencyIDPolicy = "Event"
+        self._agencyIDPolicy = agencyIDPolicy
 
     # ---------------------------------------------------------------------------
     def render_OPTIONS(self, req):
@@ -416,13 +416,13 @@ class FDSNEvent(BaseResource):
     # ---------------------------------------------------------------------------
     def _contributor(self, e, o):
         # Resolve the FDSNWS 'contributor' value (mapped to the SeisComP
-        # agencyID) according to the configured eventIDPolicy. 'e' is the event
+        # agencyID) according to the configured agencyIDPolicy. 'e' is the event
         # and 'o' its preferred origin.
-        if self._eventIDPolicy == "Origin":
+        if self._agencyIDPolicy == "Origin":
             return self._agencyID(o)
-        if self._eventIDPolicy == "EventOrigin":
+        if self._agencyIDPolicy == "EventOrigin":
             return self._agencyID(e) or self._agencyID(o)
-        if self._eventIDPolicy == "OriginEvent":
+        if self._agencyIDPolicy == "OriginEvent":
             return self._agencyID(o) or self._agencyID(e)
 
         # "Event" (default)
@@ -695,7 +695,7 @@ class FDSNEvent(BaseResource):
                 except ValueError:
                     author = ""
 
-            # contributor (agencyID), source controlled by eventIDPolicy
+            # contributor (agencyID), source controlled by agencyIDPolicy
             contrib = self._contributor(e, o)
 
             # query for preferred magnitude (if any)
@@ -914,7 +914,7 @@ class FDSNEvent(BaseResource):
 
         # agency id filter, mapped to the FDSNWS 'contributor' parameter. The
         # source of the agencyID (event, preferred origin or both) is controlled
-        # by the eventIDPolicy configuration parameter. The preferred origin is
+        # by the agencyIDPolicy configuration parameter. The preferred origin is
         # available under the alias 'o' (joined further below). The effective
         # agencyID resolves to the empty string if the creationInfo or the
         # agencyID itself is unset. This keeps the empty string a valid filter
@@ -935,13 +935,13 @@ class FDSNEvent(BaseResource):
 
             agencyE = _agency("e")
             agencyO = _agency("o")
-            if self._eventIDPolicy == "Origin":
+            if self._agencyIDPolicy == "Origin":
                 effective = agencyO
-            elif self._eventIDPolicy == "EventOrigin":
+            elif self._agencyIDPolicy == "EventOrigin":
                 # event agencyID, fall back to origin if the event agencyID is
                 # empty
                 effective = f"COALESCE(NULLIF({agencyE}, ''), {agencyO})"
-            elif self._eventIDPolicy == "OriginEvent":
+            elif self._agencyIDPolicy == "OriginEvent":
                 # origin agencyID, fall back to event if the origin agencyID is
                 # empty
                 effective = f"COALESCE(NULLIF({agencyO}, ''), {agencyE})"
