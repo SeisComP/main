@@ -216,7 +216,7 @@ Feature Notes
   ``@DATADIR@/share/fdsn/contributors.xml`` has to be filled manually with all
   available agency ids
 * The object from which the agencyID is read can be controlled with the
-  :confval:`eventIDPolicy` configuration parameter. This applies to both, the
+  :confval:`agencyIDPolicy` configuration parameter. This applies to both, the
   ``Contributor`` column of the text output and the ``contributor`` request
   parameter used for filtering:
 
