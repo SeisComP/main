@@ -91,6 +91,10 @@ struct AutolocConfig {
 		//    maxResidualUse  = 2*maxRMS
 
 
+		// DepthLookup backend: "Constant" (default), or any registered plugin
+		// e.g. "Slab2" when slab2depthlookup plugin is loaded.
+		std::string depthLookupType{"Constant"};
+
 		// Use this depth if there is no depth resolution
 		double defaultDepth{10.0};           // unit: km
 		double defaultDepthStickiness{0.5};  // 0...1
