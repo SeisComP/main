@@ -559,12 +559,29 @@ void App::createCommandLineDescription() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool App::init() {
-	if ( !Client::Application::init() ) {
+bool App::validateParameters() {
+	if ( !Client::Application::validateParameters() ) {
 		return false;
 	}
 
 	_test = commandline().hasOption("test");
+
+	if ( _test && !databaseURI().empty() ) {
+		setMessagingEnabled(false);
+	}
+
+	return true;
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool App::init() {
+	if ( !Client::Application::init() ) {
+		return false;
+	}
 
 	if ( !_config.init() ) {
 		return false;

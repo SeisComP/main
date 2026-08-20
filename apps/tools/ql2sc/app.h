@@ -67,6 +67,7 @@ class App : public Client::Application {
 		using LogNodePtr = DataModel::Diff2::LogNodePtr;
 
 		void createCommandLineDescription() override;
+		bool validateParameters() override;
 
 		bool init() override;
 		bool run() override;
