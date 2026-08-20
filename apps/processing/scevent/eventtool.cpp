@@ -68,6 +68,49 @@ void makeUpper(std::string &src) {
 		src[i] = toupper(src[i]);
 }
 
+
+struct json {
+	json(string_view sv) : sv(sv) {}
+	string_view sv;
+};
+
+
+string operator+(string &&s, json js) {
+	auto out = move(s);
+	// Keep it simple and forward utf-8 unescaped bytes
+	size_t l = js.sv.length();
+	for ( size_t i = 0; i < l; ++i ) {
+		char c = js.sv[i];
+		switch ( c ) {
+			case '"':
+			case '\\':
+				out += '\\';
+				out += c;
+				break;
+			case '\b':
+				out += "\\b";
+				break;
+			case '\f':
+				out += "\\f";
+				break;
+			case '\n':
+				out += "\\n";
+				break;
+			case '\r':
+				out += "\\r";
+				break;
+			case '\t':
+				out += "\\t";
+				break;
+			default:
+				out += c;
+				break;
+		}
+	}
+	return out;
+}
+
+
 const char *PRIORITY_TOKENS[] = {
 	"AGENCY", "AUTHOR", "MODE", "STATUS", "METHOD",
 	"PHASES", "PHASES_AUTOMATIC",
@@ -2877,8 +2920,15 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 
 						// Create a journal which describes that the new event has been split
 						// from another event based on the origin in the parameters.
+						string splitDocument = "{"
+							"\"org\":\"" + json(entry->parameters()) + "\","
+							"\"evt\":\"" + json(info->event->publicID()) + "\","
+							"\"sender\":\"" + json(entry->sender()) + "\","
+							"\"created\":\"" + entry->created().iso() + "\""
+						"}";
+
 						newResponse = createEntry(
-							newInfo->event->publicID(), "EvSplitByOrgOK", entry->parameters()
+							newInfo->event->publicID(), "EvSplitByOrgOK", splitDocument
 						);
 						if ( newResponse ) {
 							newResponse->setSender(author());
