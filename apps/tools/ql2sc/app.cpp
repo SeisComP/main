@@ -1061,7 +1061,7 @@ bool App::dispatchResponse(QLClient *client, const IO::QuakeLink::Response *msg)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void App::addObject(const string& parentID, Object *obj) {
+void App::addObject(const string &parentID, Object *obj) {
 	PublicObject *po = PublicObject::Cast(obj);
 	if ( po ) {
 		Event *event = Event::Cast(po);
@@ -1227,7 +1227,7 @@ string App::waitForEventAssociation(const std::string &originID, int timeout) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 JournalEntry *App::createJournalEntry(const string &id, const string &action, const string &params,
-                                      const Core::Time *created, string_view author) {
+                                      OPT(Core::Time) created, string_view author) {
 	auto *entry = new JournalEntry;
 	entry->setCreated(created ? *created : Core::Time::UTC());
 	entry->setObjectID(id);
@@ -1347,7 +1347,11 @@ void App::checkUpdate(Notifiers &notifiers,
 	if ( !localJournal ) {
 		// Not a local journal yet, apply the change
 		SEISCOMP_DEBUG("  => no local journal found, apply the update");
-		localJournal = createJournalEntry(local->publicID(), action, rR ? Core::toString(*rR) : string(), remoteChange ? std::addressof(remoteChange->timestamp) : nullptr);
+		localJournal = createJournalEntry(
+			local->publicID(), action,
+			rR ? Core::toString(*rR) : string(),
+			remoteChange ? OPT(Core::Time)(remoteChange->timestamp) : Core::None
+		);
 		notifiers.push_back(
 			new Notifier("Journaling", OP_ADD, localJournal.get())
 		);
@@ -1366,7 +1370,11 @@ void App::checkUpdate(Notifiers &notifiers,
 			if ( remoteChange->timestamp > *localChangeTime ) {
 				// The remote change time is more recent, apply it
 				SEISCOMP_DEBUG("  => the remote change time is more recent, apply the update");
-				localJournal = createJournalEntry(local->publicID(), action, rR ? Core::toString(*rR) : string(), remoteChange ? std::addressof(remoteChange->timestamp) : nullptr);
+				localJournal = createJournalEntry(
+					local->publicID(), action,
+					rR ? Core::toString(*rR) : string(),
+					remoteChange ? OPT(Core::Time)(remoteChange->timestamp) : Core::None
+				);
 				notifiers.push_back(
 					new Notifier("Journaling", OP_ADD, localJournal.get())
 				);
@@ -1383,7 +1391,10 @@ void App::checkUpdate(Notifiers &notifiers,
 		else {
 			if ( localJournal->sender() == author() ) {
 				SEISCOMP_DEBUG("  => self is the last author of the journal, apply the update");
-				localJournal = createJournalEntry(local->publicID(), action, rR ? Core::toString(*rR) : "", remoteChange ? std::addressof(remoteChange->timestamp) : nullptr);
+				localJournal = createJournalEntry(
+					local->publicID(), action, rR ? Core::toString(*rR) : "",
+					remoteChange ? OPT(Core::Time)(remoteChange->timestamp) : Core::None
+				);
 				notifiers.push_back(
 					new Notifier("Journaling", OP_ADD, localJournal.get())
 				);
@@ -1429,6 +1440,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 	catch ( ... ) {}
 
 	EventPtr targetEvent = query()->getEvent(event->preferredOriginID());
+
 	if ( !targetEvent ) {
 		SEISCOMP_DEBUG("No event found for origin %s, need to wait",
 		               event->preferredOriginID());
@@ -1448,6 +1460,63 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 			SEISCOMP_ERROR("Failed to read target event %s from database, skipping event synchronisation for input event %s",
 			               eventID, event->publicID());
 			return;
+		}
+	}
+	else {
+		// Check if the event is a split event
+		auto remoteSplitJournal = getLastJournalEntry(journals, event->publicID(), "EvSplitByOrgOK");
+		if ( remoteSplitJournal && remoteSplitJournal->parameters() == event->preferredOriginID() ) {
+			// This is a split
+			// Check that the local event must not be a split of that origin according to
+			// the local journals.
+			auto localSplitJournal = getLastJournalEntry(*query(), targetEvent->publicID(), "EvSplitByOrgOK");
+			if ( !localSplitJournal || (localSplitJournal->parameters() != event->preferredOriginID()) ) {
+				if ( _test ) {
+					SEISCOMP_DEBUG("This event is a split event. A split from event %s would "
+					               "be request, but we are in test mode.", targetEvent->publicID());
+				}
+				else {
+					// Split the local event!
+					NotifierMessagePtr nm = new NotifierMessage();
+					nm->attach(
+						new Notifier(
+							"Journaling",
+							OP_ADD,
+							createJournalEntry(
+								targetEvent->publicID(),
+								"EvSplitOrg",
+								event->preferredOriginID(),
+								remoteSplitJournal->created(),
+								remoteSplitJournal->sender()
+							)
+						)
+					);
+
+					if ( !connection()->send(nm.get()) ) {
+						SEISCOMP_ERROR("sending message to '%s' failed with error: %s: discard event split",
+						               primaryMessagingGroup(),
+						               connection()->lastError().toString());
+					}
+					else {
+						string splitEventID = waitForEventAssociation(event->preferredOriginID(),
+						                                              _config.maxWaitForEventIDTimeout);
+						if ( splitEventID.empty() ) {
+							SEISCOMP_ERROR("Event association timeout reached, skipping event split for input event %s",
+							               event->publicID());
+						}
+						else {
+							SEISCOMP_INFO("Split event %s -> %s", targetEvent->publicID(), splitEventID);
+							// Fetch the new event
+							targetEvent = query()->getEventByPublicID(splitEventID);
+							if ( !targetEvent ) {
+								SEISCOMP_ERROR("Failed to read new split event %s from database, skipping event synchronisation for input event %s",
+								               splitEventID, event->publicID());
+								return;
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -1594,11 +1663,11 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 					if ( isMw ) {
 						SEISCOMP_DEBUG("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
 						entry = createJournalEntry(targetEvent->publicID(), "EvPrefMw", "true",
-						                           remoteChangeTime ? std::addressof(*remoteChangeTime) : nullptr);
+						                           remoteChangeTime);
 					}
 					else {
 						entry = createJournalEntry(targetEvent->publicID(), "EvPrefMagType", prefMag->type(),
-						                           remoteChangeTime ? std::addressof(*remoteChangeTime) : nullptr);
+						                           remoteChangeTime);
 					}
 					notifiers.push_back(
 						new Notifier("Journaling", OP_ADD, entry.get())
@@ -1621,11 +1690,11 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 							if ( isMw ) {
 								SEISCOMP_DEBUG("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
 								entry = createJournalEntry(targetEvent->publicID(), "EvPrefMw", "true",
-								                           remoteChangeTime ? std::addressof(*remoteChangeTime) : nullptr);
+								                           remoteChangeTime);
 							}
 							else {
 								entry = createJournalEntry(targetEvent->publicID(), "EvPrefMagType", prefMag->type(),
-								                           remoteChangeTime ? std::addressof(*remoteChangeTime) : nullptr);
+								                           remoteChangeTime);
 							}
 							notifiers.push_back(
 								new Notifier("Journaling", OP_ADD, entry.get())
@@ -1645,11 +1714,11 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 							if ( isMw ) {
 								SEISCOMP_DEBUG("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
 								entry = createJournalEntry(targetEvent->publicID(), "EvPrefMw", "true",
-								                           remoteChangeTime ? std::addressof(*remoteChangeTime) : nullptr);
+								                           remoteChangeTime);
 							}
 							else {
 								entry = createJournalEntry(targetEvent->publicID(), "EvPrefMagType", prefMag->type(),
-								                           remoteChangeTime ? std::addressof(*remoteChangeTime) : nullptr);
+								                           remoteChangeTime);
 							}
 							notifiers.push_back(
 								new Notifier("Journaling", OP_ADD, entry.get())
@@ -1708,7 +1777,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 							createJournalEntry(
 								targetEvent->publicID(), "EvName",
 								remoteDesc->text(),
-								remoteChange ? addressof(remoteChange->timestamp) : nullptr,
+								remoteChange ? OPT(Core::Time)(remoteChange->timestamp) : Core::None,
 								remoteChange ? remoteChange->author : string_view()
 							)
 						)
@@ -1729,7 +1798,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 								createJournalEntry(
 									targetEvent->publicID(), "EvName",
 									remoteDesc->text(),
-									remoteChange ? addressof(remoteChange->timestamp) : nullptr,
+									remoteChange ? OPT(Core::Time)(remoteChange->timestamp) : Core::None,
 									remoteChange ? remoteChange->author : string_view()
 								)
 							)
@@ -1755,7 +1824,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 										createJournalEntry(
 											targetEvent->publicID(), "EvName",
 											remoteDesc->text(),
-											addressof(remoteChange->timestamp),
+											OPT(Core::Time)(remoteChange->timestamp),
 											remoteChange->author
 										)
 									)
@@ -1780,7 +1849,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 										createJournalEntry(
 											targetEvent->publicID(), "EvName",
 											remoteDesc->text(),
-											remoteChange ? std::addressof(remoteChange->timestamp) : nullptr,
+											remoteChange ? OPT(Core::Time)(remoteChange->timestamp) : Core::None,
 											remoteChange ? remoteChange->author : string_view()
 										)
 									)
@@ -1822,7 +1891,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 							createJournalEntry(
 								targetEvent->publicID(), "EvFeltReport",
 								remoteDesc->text(),
-								remoteChange ? addressof(remoteChange->timestamp) : nullptr,
+								remoteChange ? OPT(Core::Time)(remoteChange->timestamp) : Core::None,
 								remoteChange ? remoteChange->author : string_view()
 							)
 						)
@@ -1843,7 +1912,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 								createJournalEntry(
 									targetEvent->publicID(), "EvFeltReport",
 									remoteDesc->text(),
-									remoteChange ? addressof(remoteChange->timestamp) : nullptr,
+									remoteChange ? OPT(Core::Time)(remoteChange->timestamp) : Core::None,
 									remoteChange ? remoteChange->author : string_view()
 								)
 							)
@@ -1869,7 +1938,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 										createJournalEntry(
 											targetEvent->publicID(), "EvFeltReport",
 											remoteDesc->text(),
-											addressof(remoteChange->timestamp),
+											remoteChange->timestamp,
 											remoteChange->author
 										)
 									)
@@ -1894,7 +1963,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 										createJournalEntry(
 											targetEvent->publicID(), "EvFeltReport",
 											remoteDesc->text(),
-											remoteChange ? std::addressof(remoteChange->timestamp) : nullptr,
+											remoteChange ? OPT(Core::Time)(remoteChange->timestamp) : Core::None,
 											remoteChange ? remoteChange->author : string_view()
 										)
 									)
@@ -1940,7 +2009,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 							createJournalEntry(
 								targetEvent->publicID(), "EvOpComment",
 								remoteCmt->text(),
-								remoteChange ? addressof(remoteChange->timestamp) : nullptr,
+								remoteChange ? OPT(Core::Time)(remoteChange->timestamp) : Core::None,
 								remoteChange ? remoteChange->author : string_view()
 							)
 						)
@@ -1961,7 +2030,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 								createJournalEntry(
 									targetEvent->publicID(), "EvOpComment",
 									remoteCmt->text(),
-									remoteChange ? addressof(remoteChange->timestamp) : nullptr,
+									remoteChange ? OPT(Core::Time)(remoteChange->timestamp) : Core::None,
 									remoteChange ? remoteChange->author : string_view()
 								)
 							)
@@ -1987,7 +2056,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 										createJournalEntry(
 											targetEvent->publicID(), "EvOpComment",
 											remoteCmt->text(),
-											addressof(remoteChange->timestamp),
+											remoteChange->timestamp,
 											remoteChange->author
 										)
 									)
@@ -2012,7 +2081,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 										createJournalEntry(
 											targetEvent->publicID(), "EvOpComment",
 											remoteCmt->text(),
-											remoteChange ? std::addressof(remoteChange->timestamp) : nullptr,
+											remoteChange ? OPT(Core::Time)(remoteChange->timestamp) : Core::None,
 											remoteChange ? remoteChange->author : string_view()
 										)
 									)
@@ -2190,7 +2259,7 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 						"Journaling", OP_ADD,
 						createJournalEntry(
 							targetEvent->publicID(), action,
-							entry->parameters(), &creationTime, entry->sender()
+							entry->parameters(), creationTime, entry->sender()
 						)
 					)
 				);

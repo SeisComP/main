@@ -104,7 +104,7 @@ class App : public Client::Application {
 		DataModel::JournalEntry *createJournalEntry(const std::string &id,
 		                                            const std::string &action,
 		                                            const std::string &params,
-		                                            const Core::Time *created = nullptr,
+		                                            OPT(Core::Time) created = Core::None,
 		                                            std::string_view author = {});
 
 		std::string waitForEventAssociation(const std::string &originID, int timeout);
