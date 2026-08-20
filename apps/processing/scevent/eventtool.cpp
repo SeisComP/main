@@ -2824,7 +2824,6 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 							info->preferredMagnitude = nullptr;
 							// Select the preferred origin again among all remaining origins
 							updatePreferredOrigin(info.get());
-
 						}
 
 						if ( updatedPrefFM ) {
@@ -2868,6 +2867,19 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 						Notifier::Disable();
 
 						newResponse = createEntry(newInfo->event->publicID(), "EvNewEventOK", "created by command");
+						if ( newResponse ) {
+							newResponse->setSender(author());
+							newInfo->addJournalEntry(newResponse.get(), author());
+							Notifier::Enable();
+							Notifier::Create(_journal->publicID(), OP_ADD, newResponse.get());
+							Notifier::Disable();
+						}
+
+						// Create a journal which describes that the new event has been split
+						// from another event based on the origin in the parameters.
+						newResponse = createEntry(
+							newInfo->event->publicID(), "EvSplitByOrgOK", entry->parameters()
+						);
 						if ( newResponse ) {
 							newResponse->setSender(author());
 							newInfo->addJournalEntry(newResponse.get(), author());
