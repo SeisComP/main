@@ -26,7 +26,7 @@ consists of the following steps:
 Pick filtering
 --------------
 
-:program:`scautoloc` receives and filters :term:`phase picks <picks>` to
+:program:`scautoloc` receives and filters :term:`phase picks <pick>` to
 generate :term:`origins <origin>`. These phase picks are used by default if
 
 * The phase hint is "P",

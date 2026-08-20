@@ -110,7 +110,7 @@ Service Configuration
 * Configure the :ref:`global_recordstream` in the module's global configuration.
   If the data is stored in a local waveform archive the
   :ref:`rs-sdsarchive` provides fast access to the data. For archives on remote hosts
-  use :ref:`rs-arclink` or :ref:`rs-fdsnws` instead.
+  use :ref:`rs-caps` or :ref:`rs-fdsnws` instead.
 
 .. warning::
 

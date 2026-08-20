@@ -69,7 +69,7 @@ preferred    include only preferred origin and magnitude information
 ============ ==============================================================
 
 
-.. _routing:
+.. _ql2sc-routing:
 
 Local Object Filter and Routing
 ===============================
