@@ -539,46 +539,50 @@ class DBTool : public Seiscomp::Client::Application {
 
 			Util::StopWatch timer;
 			Core::BaseObjectPtr obj;
-			ar >> obj;
-			ar.close();
 
+			ar >> FIRST_OBJECT(obj);
 			if ( !obj ) {
 				cout << "Error: no valid entry found in file '" << filename << "'" << endl;
 				return false;
 			}
 
-			auto msg = Core::Message::Cast(obj);
-			if ( msg ) {
-				handleMessage(msg);
-				return true;
+			while ( obj ) {
+				auto msg = Core::Message::Cast(obj);
+				if ( msg ) {
+					handleMessage(msg);
+				}
+				else {
+					DataModel::ObjectPtr doc = DataModel::Object::Cast(obj);
+
+					if ( !doc ) {
+						cerr << "Error: no valid object found in file '" << filename << "'" << endl;
+						return false;
+					}
+
+					ObjectWriter writer(*query(), !_remove, ObjectCounter(doc.get()).count(), 78);
+
+					cout << "Time needed to parse XML: " << timer.elapsed() << endl;
+					cout << "Document object type: " << doc->className() << endl;
+					cout << "Total number of objects: " << ObjectCounter(doc.get()).count() << endl;
+
+					cout << "Writing " << doc->className() << " into database" << endl;
+					timer.restart();
+
+					writer(doc.get());
+					cout << endl;
+
+					cout << "While writing " << writer.count() << " objects " << writer.errors() << " errors occured" << endl;
+					cout << "Time needed to write " << writer.count() << " objects: " << timer.elapsed() << endl;
+
+					if ( writer.errors() > 0 ) {
+						_returnCode = 1;
+					}
+				}
+
+				ar >> NEXT_OBJECT(obj);
 			}
 
-			DataModel::ObjectPtr doc = DataModel::Object::Cast(obj);
-
-			if ( !doc ) {
-				cerr << "Error: no valid object found in file '" << filename << "'" << endl;
-				return false;
-			}
-
-			ObjectWriter writer(*query(), !_remove, ObjectCounter(doc.get()).count(), 78);
-
-			cout << "Time needed to parse XML: " << timer.elapsed() << endl;
-			cout << "Document object type: " << doc->className() << endl;
-			cout << "Total number of objects: " << ObjectCounter(doc.get()).count() << endl;
-
-			cout << "Writing " << doc->className() << " into database" << endl;
-			timer.restart();
-
-			writer(doc.get());
-			cout << endl;
-
-			cout << "While writing " << writer.count() << " objects " << writer.errors() << " errors occured" << endl;
-			cout << "Time needed to write " << writer.count() << " objects: " << timer.elapsed() << endl;
-
-			if ( writer.errors() > 0 ) {
-				_returnCode = 1;
-			}
-
+			ar.close();
 			return true;
 		}
 
