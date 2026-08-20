@@ -34,6 +34,8 @@
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
+#include <rapidjson/document.h>
+
 #include <unordered_map>
 #include <unordered_set>
 
@@ -1482,53 +1484,78 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 	else {
 		// Check if the event is a split event
 		auto remoteSplitJournal = getLastJournalEntry(journals, event->publicID(), "EvSplitByOrgOK");
-		if ( remoteSplitJournal && remoteSplitJournal->parameters() == event->preferredOriginID() ) {
-			// This is a split
-			// Check that the local event must not be a split of that origin according to
-			// the local journals.
-			auto localSplitJournal = getLastJournalEntry(*query(), targetEvent->publicID(), "EvSplitByOrgOK");
-			if ( !localSplitJournal || (localSplitJournal->parameters() != event->preferredOriginID()) ) {
-				if ( _test ) {
-					SEISCOMP_DEBUG("This event is a split event. A split from event %s would "
-					               "be request, but we are in test mode.", targetEvent->publicID());
-				}
-				else {
-					// Split the local event!
-					NotifierMessagePtr nm = new NotifierMessage();
-					nm->attach(
-						new Notifier(
-							"Journaling",
-							OP_ADD,
-							createJournalEntry(
-								targetEvent->publicID(),
-								"EvSplitOrg",
-								event->preferredOriginID(),
-								remoteSplitJournal->created(),
-								remoteSplitJournal->sender()
-							)
-						)
-					);
+		rapidjson::Document doc;
+		doc.Parse(remoteSplitJournal->parameters().data());
+		if ( doc.HasParseError() ) {
+			SEISCOMP_ERROR("Invalid journal parameters for EvSplitByOrgOK: expected JSON document: %s",
+			               remoteSplitJournal->parameters());
+		}
+		else {
+			auto splitOrg = doc["org"].GetString();
+			auto splitSender = doc["sender"].GetString();
+			auto splitCreated = doc["created"].GetString();
 
-					if ( !connection()->send(nm.get()) ) {
-						SEISCOMP_ERROR("sending message to '%s' failed with error: %s: discard event split",
-						               primaryMessagingGroup(),
-						               connection()->lastError().toString());
+			if ( remoteSplitJournal && (event->preferredOriginID() == splitOrg) ) {
+				// This is a split
+				// Check that the local event must not be a split of that origin according to
+				// the local journals.
+				auto localSplitJournal = getLastJournalEntry(*query(), targetEvent->publicID(), "EvSplitByOrgOK");
+				if ( !localSplitJournal || (localSplitJournal->parameters() != event->preferredOriginID()) ) {
+					if ( _test ) {
+						SEISCOMP_DEBUG("This event is a split event. A split from event %s would "
+						               "be request, but we are in test mode.", targetEvent->publicID());
 					}
 					else {
-						string splitEventID = waitForEventAssociation(event->preferredOriginID(),
-						                                              _config.maxWaitForEventIDTimeout);
-						if ( splitEventID.empty() ) {
-							SEISCOMP_ERROR("Event association timeout reached, skipping event split for input event %s",
-							               event->publicID());
+						auto remoteSplitCmdJournal = getLastJournalEntry(journals, event->publicID(), "EvSplitOrg");
+						if ( !remoteSplitCmdJournal ) {
+							remoteSplitCmdJournal = remoteSplitJournal;
+						}
+
+						OPT(Core::Time) created;
+						if ( splitCreated ) {
+							Core::Time tmp;
+							if ( tmp.fromString(splitCreated) ) {
+								created = tmp;
+							}
+						}
+
+						// Split the local event!
+						NotifierMessagePtr nm = new NotifierMessage();
+						nm->attach(
+							new Notifier(
+								"Journaling",
+								OP_ADD,
+								createJournalEntry(
+									targetEvent->publicID(),
+									"EvSplitOrg",
+									event->preferredOriginID(),
+									created,
+									splitSender ? splitSender : remoteSplitCmdJournal->sender()
+								)
+							)
+						);
+
+						if ( !connection()->send(nm.get()) ) {
+							SEISCOMP_ERROR("sending message to '%s' failed with error: %s: discard event split",
+							               primaryMessagingGroup(),
+							               connection()->lastError().toString());
 						}
 						else {
-							SEISCOMP_INFO("Split event %s -> %s", targetEvent->publicID(), splitEventID);
-							// Fetch the new event
-							targetEvent = query()->getEventByPublicID(splitEventID);
-							if ( !targetEvent ) {
-								SEISCOMP_ERROR("Failed to read new split event %s from database, skipping event synchronisation for input event %s",
-								               splitEventID, event->publicID());
-								return;
+							string splitEventID = waitForEventAssociation(event->preferredOriginID(),
+							                                              _config.maxWaitForEventIDTimeout);
+							if ( splitEventID.empty() ) {
+								SEISCOMP_ERROR("Event association timeout reached, skipping event split for input event %s",
+								               event->publicID());
+							}
+							else {
+								SEISCOMP_INFO("Split event %s -> %s", targetEvent->publicID(), splitEventID);
+								// Fetch the new event
+								targetEvent = query()->getEventByPublicID(splitEventID);
+								if ( !targetEvent ) {
+									SEISCOMP_ERROR("Failed to read new split event %s from database, skipping event synchronisation for input event %s",
+									               splitEventID, event->publicID());
+									return;
+								}
 							}
 						}
 					}
