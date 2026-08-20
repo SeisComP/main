@@ -3580,20 +3580,14 @@ EventInformationPtr EventTool::createEvent(Origin *origin,
 			return nullptr;
 		}
 
-		Time now = Time::UTC();
-		logObject(_outputEvent, now);
+		logObject(_outputEvent, Time::UTC());
 
 		Notifier::Enable();
 
 		EventInformationPtr info = new EventInformation(&_cache, &_config);
 		info->event = new Event(eventID);
 
-		CreationInfo ci;
-		ci.setAgencyID(agencyID());
-		ci.setAuthor(author());
-		ci.setCreationTime(now);
-
-		info->event->setCreationInfo(ci);
+		info->event->setCreationInfo(generateCreationInfo());
 		info->created = true;
 		info->dirtyPickSet = true;
 
@@ -5491,17 +5485,15 @@ void EventTool::updateEvent(EventInformation *info, bool callProcessors) {
 	// Set the modification to current time
 	try {
 		ev->creationInfo().setModificationTime(now);
-		if ( ev->creationInfo().agencyID() != agencyID() )
+		if ( ev->creationInfo().agencyID() != agencyID() ) {
 			ev->creationInfo().setAgencyID(agencyID());
-		if ( ev->creationInfo().author() != author() )
+		}
+		if ( ev->creationInfo().author() != author() ) {
 			ev->creationInfo().setAuthor(author());
+		}
 	}
 	catch ( ... ) {
-		DataModel::CreationInfo ci;
-		ci.setAgencyID(agencyID());
-		ci.setAuthor(author());
-		ci.setModificationTime(now);
-		ev->setCreationInfo(ci);
+		ev->setCreationInfo(generateCreationInfo());
 	}
 
 	logObject(_outputEvent, now);
