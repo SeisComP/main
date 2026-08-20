@@ -2189,14 +2189,28 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 				query()->loadMagnitudes(origin.get());
 			}
 
-			// On a secondary instance (eventIDSync.main set) the new event must
-			// use an ID allocated by the main instance so both converge; ask the
-			// main via its /allocate endpoint, which always reserves a fresh,
-			// distinct ID. On a main/standalone instance createEvent() allocates
-			// locally as usual. Without this, a secondary handling EvNewEvent
-			// would allocate a local eventID and diverge from the main.
+			// Decide what eventID the new event should carry, mirroring the
+			// eventID synchronization done during normal association:
+			//  1. A reservation this instance already made for this origin
+			//     (main-instance role): reuse it so a repeated EvNewEvent for
+			//     the same origin converges on the ID handed to the secondary
+			//     instance instead of allocating a fresh one.
+			//  2. An eventID issued by a configured main instance
+			//     (secondary-instance role) via the /allocate endpoint.
+			//  3. Otherwise let createEvent() allocate one locally.
+			// Without this, a secondary handling EvNewEvent would allocate a
+			// local eventID and diverge from the main, and a main instance
+			// re-handling the same request would mint a second, different ID.
 			std::string reservedID;
-			if ( !_config.eventIDSync.main.empty() ) {
+			bool reservedFromLocalMatch = false;
+
+			if ( !_allocatedEventIDs.empty() ) {
+				// findAllocatedMatch logs the match itself.
+				reservedID = findAllocatedMatch(origin.get());
+				reservedFromLocalMatch = !reservedID.empty();
+			}
+
+			if ( reservedID.empty() && !_config.eventIDSync.main.empty() ) {
 				reservedID = allocateMainEventID(origin.get());
 				if ( reservedID.empty() ) {
 					SEISCOMP_WARNING("Main instance did not provide an eventID "
@@ -2211,6 +2225,13 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 
 			EventInformationPtr info = createEvent(origin.get(), reservedID);
 			if ( info ) {
+				// The reservation, if any, has now been consumed by a real local
+				// event; drop it so the set does not keep a stale entry. Only
+				// reservations that came from a local match are released here;
+				// IDs issued by a main instance were never in this set.
+				if ( reservedFromLocalMatch ) {
+					releaseAllocatedEventID(reservedID);
+				}
 				SEISCOMP_INFO("%s: created", info->event->publicID());
 				SEISCOMP_LOG(_infoChannel, "Origin %s created a new event %s",
 				             origin->publicID(), info->event->publicID());
@@ -2716,19 +2737,32 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 					response = createEntry(entry->objectID(), entry->action() + Failed, ":last origin cannot be removed:");
 				}
 				else {
-					// Decide what eventID the split-off event should carry. On
-					// a secondary instance (eventIDSync.main set) the new event
-					// must use an ID allocated by the main instance so both
-					// converge; ask the main via its /allocate endpoint, which
-					// always reserves a fresh, distinct ID. On a main/standalone
-					// instance createEvent() allocates locally as usual. The
-					// caller holds _associationMutex.
+					// Decide what eventID the split-off event should carry,
+					// mirroring the eventID synchronization done during normal
+					// association:
+					//  1. A reservation this instance already made for this
+					//     origin (main-instance role): reuse it so a repeated
+					//     EvSplitOrg for the same origin - or a matching local
+					//     origin - converges on the ID handed to the secondary
+					//     instance instead of allocating a fresh one.
+					//  2. An eventID issued by a configured main instance
+					//     (secondary-instance role) via the /allocate endpoint.
+					//  3. Otherwise let createEvent() allocate one locally.
 					// Without this, a secondary instance handling an EvSplitOrg
 					// command would allocate a local eventID and diverge from
-					// the main instance.
+					// the main instance, and a main instance re-handling the same
+					// split would mint a second, different ID. The caller holds
+					// _associationMutex.
 					std::string reservedID;
+					bool reservedFromLocalMatch = false;
 
-					if ( !_config.eventIDSync.main.empty() ) {
+					if ( !_allocatedEventIDs.empty() ) {
+						// findAllocatedMatch logs the match itself.
+						reservedID = findAllocatedMatch(org.get());
+						reservedFromLocalMatch = !reservedID.empty();
+					}
+
+					if ( reservedID.empty() && !_config.eventIDSync.main.empty() ) {
 						reservedID = allocateMainEventID(org.get());
 						if ( reservedID.empty() ) {
 							SEISCOMP_WARNING("Main instance did not provide an "
@@ -2747,6 +2781,14 @@ bool EventTool::handleJournalEntry(DataModel::JournalEntry *entry) {
 					JournalEntryPtr newResponse;
 
 					if ( newInfo ) {
+						// The reservation, if any, has now been consumed by a
+						// real local event; drop it so the set does not keep a
+						// stale entry. Only reservations that came from a local
+						// match are released here; IDs issued by a main instance
+						// were never in this set.
+						if ( reservedFromLocalMatch ) {
+							releaseAllocatedEventID(reservedID);
+						}
 						// Remove origin reference
 						Notifier::SetEnabled(true);
 						if ( info->event->removeOriginReference(org->publicID()) ) {

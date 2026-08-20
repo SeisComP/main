@@ -162,8 +162,9 @@ class TestRemote:
             assertResult("status code", 200, r.status_code)
             assertResult("content", eventID2, r.text)
 
-    def testEvenIDSync(self, tb1File1, tb1File2, tb2File1, tb2File2, tb2File2a,
-                       tb2File2b):
+    def testEvenIDSync(
+        self, tb1File1, tb1File2, tb2File1, tb2File2, tb2File2a, tb2File2b
+    ):
         # sceventA is the main instance; sceventB is the secondary and is
         # pointed at sceventA's REST API via leaderPort. tb1 and tb2 carry the
         # same physical earthquakes under different publicID namespaces, so a
@@ -182,106 +183,146 @@ class TestRemote:
                 )
             ) as sceventB:
 
-                # 1) Push the earthquake into the main's broker and capture the event
-                #    the main forms.
-                with ManagedDispatchReceive("dpA", PORT_SCHUB_A, tb1File1) as drA:
-                    if drA.error:
-                        raise ValueError(f"main side event 1: {drA.error}")
-                    idMain1 = drA.eventID
+                # ######################################################################
+                # Event 1: Send origin to create first event
+                #
+                # Push the earthquake into the main's broker and capture the event the
+                # main forms.
+                with ManagedDispatchReceive(
+                    "dp_ev1_new_A", PORT_SCHUB_A, tb1File1
+                ) as mdr:
+                    if mdr.error:
+                        raise ValueError(f"[main] event 1: {mdr.error}")
+                    ev1 = mdr.eventID
 
-                # 2) Push the same earthquake (other namespace) into the
-                #    secondary's broker; the secondary must obtain the main's ID
-                #    over REST and form an event with it.
-                with ManagedDispatchReceive("dpB", PORT_SCHUB_B, tb2File1) as drB:
-                    if drB.error:
-                        raise ValueError(f"secondary side event 1: {drB.error}")
-                    idSecondary1 = drB.eventID
+                # Push the same earthquake (other namespace) into the secondary's
+                # broker; the secondary must obtain the main's ID over REST and form an
+                # event with it.
+                with ManagedDispatchReceive(
+                    "dp_ev1_new_B", PORT_SCHUB_B, tb2File1
+                ) as mdr:
+                    if mdr.error:
+                        raise ValueError(f"[secondary] event 1: {mdr.error}")
 
-                # Both instances must have converged on the same event ID. sceventB runs
-                # with prefix "B" but, having queried the main, must adopt the main's
-                # "A"-prefixed ID rather than minting its own — so equality here proves
-                # the handshake actually happened.
-                assertResult("synchronized eventID 1", idMain1, idSecondary1)
+                    # Both instances must have converged on the same event ID. sceventB
+                    # runs with prefix "B" but, having queried the main, must adopt the
+                    # main's "A"-prefixed ID rather than minting its own — so equality
+                    # here proves the handshake actually happened.
+                    assertResult("[secondary] event 1", ev1, mdr.eventID)
 
-                # 3) Reverse the order for the second event to prove that event forming
-                #    base on cached events also works
-                with ManagedDispatchReceive("dpB", PORT_SCHUB_B, tb2File2) as drB:
-                    if drB.error:
-                        raise ValueError(f"secondary side event 2: {drB.error}")
-                    idSecondary2 = drB.eventID
+                # ######################################################################
+                # Event 2: Send second, different origin to create second event
+                #
+                # Reverse the order for the second event to prove that event forming
+                # based on cached events also works
+                with ManagedDispatchReceive(
+                    "dp_ev2_new_B", PORT_SCHUB_B, tb2File2
+                ) as mdr:
+                    if mdr.error:
+                        raise ValueError(f"[secondary] event 2: {mdr.error}")
+                    ev2 = mdr.eventID
+                    assertResult("[secondary] event 2 prefix", "A", ev2[:1])
 
-                with ManagedDispatchReceive("dpA", PORT_SCHUB_A, tb1File2) as drA:
-                    if drA.error:
-                        raise ValueError(f"main side event 2: {drA.error}")
-                    idMain2 = drA.eventID
+                with ManagedDispatchReceive(
+                    "dp_ev2_new_A", PORT_SCHUB_A, tb1File2
+                ) as mdr:
+                    if mdr.error:
+                        raise ValueError(f"[main] event 2: {mdr.error}")
+                    assertResult("[main] event 2", ev2, mdr.eventID)
 
-                assertResult("synchronized eventID 2", idMain2, idSecondary2)
+                # ######################################################################
+                # Event 2a: Associate similar origin associated to second event
 
-                # 4) Send a second origin similar to tb2File2 which should be assigned
-                #    to the same event
-                with ManagedDispatchReceive("dpB", PORT_SCHUB_B, tb2File2a) as drB:
-                    if drB.error:
-                        raise ValueError(f"secondary side event 2a: {drB.error}")
-                    idSecondary2a = drB.eventID
+                # Send a second origin similar to tb2File2 which should be associated to
+                # the same event
+                with ManagedDispatchReceive(
+                    "dp_ev2_assoc_B", PORT_SCHUB_B, tb2File2a
+                ) as mdr:
+                    if mdr.error:
+                        raise ValueError(f"[secondary] event 2 associate: {mdr.error}")
+                    assertResult("[secondary] eventID 2 associate", ev2, mdr.eventID)
 
-                assertResult(
-                    "synchronized eventID 2 second origin", idSecondary2, idSecondary2a
-                )
+                # Send the same second origin to the main instance
+                with ManagedDispatchReceive(
+                    "dp_ev2_assoc_A", PORT_SCHUB_A, tb2File2a
+                ) as mdr:
+                    if mdr.error:
+                        raise ValueError(f"[main] event 2 associate: {mdr.error}")
+                    assertResult("[main] event 2 associate", ev2, mdr.eventID)
 
                 originToSplit = "de.gempa.tb2.Origin/20260528101507.770537.2A"
 
-                # 5) Split originToSplit out of its event on the SECONDARY. The
-                #    split-off origin needs a brand-new event, so the secondary
-                #    must query the main for the event ID (the EvSplitOrg sync
-                #    path). A working handshake makes it adopt the main's
-                #    freshly formed "A" ID instead of minting a "B" one.
+                # ######################################################################
+                # Event 3: Send split event request (EvSplitOrg)
+
+                # Split originToSplit out of its event. The split-off origin needs a
+                # brand-new event, so the secondary must query the main for the event ID
+                # (the EvSplitOrg sync path). A working handshake makes it adopt the
+                # main's freshly formed "A" ID instead of minting a "B" one.
                 with ManagedDispatchReceive(
-                    "dpBsplit",
+                    "dp_ev3_split_B",
                     PORT_SCHUB_B,
                     splitOrigin=originToSplit,
-                    splitEvent=idSecondary2,
-                ) as drB:
-                    if drB.error:
-                        raise ValueError(f"secondary side split: {drB.error}")
-                    idSecondary2split = drB.eventID
+                    splitEvent=ev2,
+                ) as mdr:
+                    if mdr.error:
+                        raise ValueError(f"[secondary] event 3 split: {mdr.error}")
+                    ev3 = mdr.eventID
 
-                assertResult(
-                    "split eventID prefix secondary", "A", idSecondary2split[:1]
-                )
-                if idSecondary2split in (idMain1, idMain2, idSecondary1, idSecondary2):
+                assertResult("[secondary] event 3 split prefix", "A", ev3[:1])
+                if ev3 in (ev1, ev2):
                     raise ValueError(
                         "received split eventID seen before, expected value other than "
-                        f"{idSecondary2split}"
+                        f"{ev3}"
                     )
 
-                # 6) Form a new event on the SECONDARY from a fresh origin
-                #    (2b.xml, origin ...2B) via an EvNewEvent command. The origin
-                #    and the command are sent together so scevent forms the event
-                #    from the journal command rather than by ordinary
-                #    association. As with the split, the new event needs a
-                #    brand-new ID which the secondary must obtain from the main
-                #    through the /allocate endpoint, so it again carries an
-                #    "A"-prefixed, previously unseen ID rather than a local "B"
-                #    one.
                 with ManagedDispatchReceive(
-                    "dpBnew",
+                    "dp_ev3_split_A",
+                    PORT_SCHUB_A,
+                    splitOrigin=originToSplit,
+                    splitEvent=ev2,
+                ) as mdr:
+                    if mdr.error:
+                        raise ValueError(f"[main] event 3 split: {mdr.error}")
+                    assertResult("[main] event 3 split", ev3, mdr.eventID)
+
+                # ######################################################################
+                # Event 4: Send new event forming request (EvNewEvent)
+                #
+                # Form a new event on the SECONDARY from a fresh origin (2b.xml,
+                # origin ...2B) via an EvNewEvent command. The origin and the command
+                # are sent together so scevent forms the event from the journal command
+                # rather than by ordinary association. As with the split, the new event
+                # needs a brand-new ID which the secondary must obtain from the main
+                # through the /allocate endpoint, so it again carries an "A"-prefixed,
+                # previously unseen ID rather than a local "B" one.
+                with ManagedDispatchReceive(
+                    "dp_4_new_B",
                     PORT_SCHUB_B,
                     newEventFile=tb2File2b,
                 ) as drB:
                     if drB.error:
-                        raise ValueError(f"secondary side new event: {drB.error}")
-                    idSecondary2new = drB.eventID
-
-                assertResult(
-                    "new event eventID prefix secondary", "A", idSecondary2new[:1]
-                )
-                if idSecondary2new in (
-                    idMain1, idMain2, idSecondary1, idSecondary2, idSecondary2split
-                ):
+                        raise ValueError(f"[secondary] event 4: {drB.error}")
+                    ev4 = drB.eventID
+                    assertResult("[secondary] event 4 prefix", "A", ev4[:1])
+                if ev4 in (ev1, ev2, ev3):
                     raise ValueError(
-                        "received new event eventID seen before, expected value "
-                        f"other than {idSecondary2new}"
+                        "[secondary] received new event eventID seen before, expected "
+                        f"value other than {ev4}"
                     )
+
+                # Replay the same EvNewEvent on the MAIN. The main reserved ev4
+                # for origin ...2B when the secondary asked via /allocate, so the
+                # main must reuse that reservation and converge on ev4 instead of
+                # minting a fresh, different ID.
+                with ManagedDispatchReceive(
+                    "dp_4_new_A",
+                    PORT_SCHUB_A,
+                    newEventFile=tb2File2b,
+                ) as drA:
+                    if drA.error:
+                        raise ValueError(f"[main] event 4: {drA.error}")
+                    assertResult("[main] event 4", ev4, drA.eventID)
 
     def testAPIDB(self, tb1File1, tb1File2, tb2File1, tb2File2):
         with open(tb1File1, "r", encoding="utf-8") as fd:
