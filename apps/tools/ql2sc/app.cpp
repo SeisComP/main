@@ -1648,9 +1648,23 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 
 				// Get last journal entry
 				auto entry = getLastJournalEntry(journals, event->publicID(), "EvPrefMagType");
-				if ( !entry && isMw ) {
-					SEISCOMP_DEBUG("  - no remote EvPrefMagType entry, trying EvPrefMw");
-					entry = getLastJournalEntry(journals, event->publicID(), "EvPrefMagType");
+				if ( isMw ) {
+					SEISCOMP_DEBUG("  - trying EvPrefMw as well as the preferred magnitude is Mw type");
+					auto entryMw = getLastJournalEntry(journals, event->publicID(), "EvPrefMw");
+					if ( entryMw ) {
+						if ( entry ) {
+							try {
+								if ( entryMw->created() > entry->created() ) {
+									SEISCOMP_DEBUG("  - using more recent EvPrefMw journal");
+									entry = entryMw;
+								}
+							}
+							catch ( ... ) {}
+						}
+						else {
+							entry = entryMw;
+						}
+					}
 				}
 
 				if ( entry ) {
@@ -1669,9 +1683,26 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 				}
 
 				entry = getLastJournalEntry(*query(), targetEvent->publicID(), "EvPrefMagType");
-				if ( !entry ) {
-					SEISCOMP_DEBUG("  - no local EvPrefMagType entry, trying EvPrefMw");
-					entry = getLastJournalEntry(*query(), targetEvent->publicID(), "EvPrefMw");
+				{
+					auto entryMw = getLastJournalEntry(*query(), targetEvent->publicID(), "EvPrefMw");
+					if ( entryMw ) {
+						if ( entry ) {
+							try {
+								if ( entryMw->created() > entry->created() ) {
+									SEISCOMP_DEBUG("  - using more recent EvPrefMw journal");
+									entry = entryMw;
+								}
+							}
+							catch ( ... ) {}
+						}
+						else {
+							SEISCOMP_DEBUG("  - use local EvPrefMw journal");
+							entry = entryMw;
+						}
+					}
+					else {
+						SEISCOMP_DEBUG("  - no local EvPrefMw journal");
+					}
 				}
 
 				if ( !entry ) {
