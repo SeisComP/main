@@ -209,9 +209,6 @@ bool AmpTool::initConfiguration() {
 	try { _runningAcquisitionTimeout = configGetDouble("amptool.runningAcquisitionTimeout"); }
 	catch ( ... ) {}
 
-	try { _populateVersionInfo = configGetBool("amptool.populateVersion"); }
-	catch ( ... ) {}
-
 	_dumpRecords = commandline().hasOption("dump-records");
 	_reprocessAmplitudes = commandline().hasOption("reprocess");
 	_picks = commandline().hasOption("picks");
@@ -1392,18 +1389,9 @@ AmpTool::createAmplitude(const Seiscomp::Processing::AmplitudeProcessor *proc,
 
 	amp->setPickID(proc->referencingPickID());
 
-	Time now = Time::UTC();
-	ci.setAgencyID(agencyID());
-	ci.setAuthor(author());
-	ci.setCreationTime(now);
-	if ( _populateVersionInfo ) {
-		ci.setVersion(Core::CurrentVersion.version().toString());
-	}
-	amp->setCreationInfo(ci);
-
+	amp->setCreationInfo(generateCreationInfo());
 	proc->finalizeAmplitude(amp.get());
-
-	logObject(_outputAmps, now);
+	logObject(_outputAmps, amp->creationInfo().creationTime());
 
 	return amp;
 }

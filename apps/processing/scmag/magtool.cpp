@@ -514,11 +514,7 @@ DataModel::StationMagnitude *MagTool::getStationMagnitude(
 		Time now = Time::UTC();
 		SCCoreApp->logObject(outputMagLog, now);
 
-		DataModel::CreationInfo ci;
-		ci.setCreationTime(now);
-		ci.setAgencyID(SCCoreApp->agencyID());
-		ci.setAuthor(SCCoreApp->author());
-		mag->setCreationInfo(ci);
+		mag->setCreationInfo(SCCoreApp->generateCreationInfo());
 
 		mag->setType(type);
 		mag->setWaveformID(wfid);
@@ -593,11 +589,7 @@ DataModel::Magnitude *MagTool::getMagnitude(DataModel::Origin *origin,
 		Time now = Time::UTC();
 		SCCoreApp->logObject(outputMagLog, now);
 
-		DataModel::CreationInfo ci;
-		ci.setCreationTime(now);
-		ci.setAgencyID(SCCoreApp->agencyID());
-		ci.setAuthor(SCCoreApp->author());
-		mag->setCreationInfo(ci);
+		mag->setCreationInfo(SCCoreApp->generateCreationInfo());
 		mag->setType(type);
 		origin->add(mag);
 		if ( _updateParent ) {

@@ -29,12 +29,6 @@
 					Timeout in seconds of any subsequent data packet of waveform data acquisition.
 					</description>
 				</parameter>
-				<parameter name="populateVersion" type="boolean" default="false">
-					<description>
-					If enabled then the current SeisComP version will be used to populate
-					the Amplitude.creationInfo.version attribute.
-					</description>
-				</parameter>
 			</group>
 		</configuration>
 		<command-line>

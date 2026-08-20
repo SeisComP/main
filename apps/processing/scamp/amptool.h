@@ -168,7 +168,6 @@ class AmpTool : public Seiscomp::Client::StreamApplication {
 		double                     _runningAcquisitionTimeout{2.0};
 		double                     _acquisitionTimeout;
 		bool                       _hasRecordsReceived;
-		bool                       _populateVersionInfo{false};
 
 		Seiscomp::Util::Timer      _timer;
 		boost::mutex               _acquisitionMutex;
