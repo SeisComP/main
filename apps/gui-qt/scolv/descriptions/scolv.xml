@@ -91,6 +91,16 @@
 					list of the &quot;Commit with additional options&quot; dialog.
 					</description>
 				</parameter>
+				<parameter name="commonEventTypeCertainties" type="list:string">
+					<description>
+					A list of event type certainties which are commonly set. This defines
+					a priority list which will be displayed on top of the event
+					type certainty selection menu. Additionally the remaining (non-prioritized)
+					certainties are displayed with less contrast.
+					The order is preserved in the event editor as well as in the drop-down
+					list of the &quot;Commit with additional options&quot; dialog.
+					</description>
+				</parameter>
 				<parameter name="defaultMagnitudeAggregation" type="string" default="" values="mean,trimmedMean,median,medianTrimmedMean">
 					<description>
 					Sets the default magnitude aggregation method.
