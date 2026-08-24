@@ -1484,77 +1484,79 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 	else {
 		// Check if the event is a split event
 		auto remoteSplitJournal = getLastJournalEntry(journals, event->publicID(), "EvSplitByOrgOK");
-		rapidjson::Document doc;
-		doc.Parse(remoteSplitJournal->parameters().data());
-		if ( doc.HasParseError() ) {
-			SEISCOMP_ERROR("Invalid journal parameters for EvSplitByOrgOK: expected JSON document: %s",
-			               remoteSplitJournal->parameters());
-		}
-		else {
-			auto splitOrg = doc["org"].GetString();
-			auto splitSender = doc["sender"].GetString();
-			auto splitCreated = doc["created"].GetString();
+		if ( remoteSplitJournal ) {
+			rapidjson::Document doc;
+			doc.Parse(remoteSplitJournal->parameters().data());
+			if ( doc.HasParseError() ) {
+				SEISCOMP_ERROR("Invalid journal parameters for EvSplitByOrgOK: expected JSON document: %s",
+				               remoteSplitJournal->parameters());
+			}
+			else {
+				auto splitOrg = doc["org"].GetString();
+				auto splitSender = doc["sender"].GetString();
+				auto splitCreated = doc["created"].GetString();
 
-			if ( remoteSplitJournal && (event->preferredOriginID() == splitOrg) ) {
-				// This is a split
-				// Check that the local event must not be a split of that origin according to
-				// the local journals.
-				auto localSplitJournal = getLastJournalEntry(*query(), targetEvent->publicID(), "EvSplitByOrgOK");
-				if ( !localSplitJournal || (localSplitJournal->parameters() != event->preferredOriginID()) ) {
-					if ( _test ) {
-						SEISCOMP_DEBUG("This event is a split event. A split from event %s would "
-						               "be request, but we are in test mode.", targetEvent->publicID());
-					}
-					else {
-						auto remoteSplitCmdJournal = getLastJournalEntry(journals, event->publicID(), "EvSplitOrg");
-						if ( !remoteSplitCmdJournal ) {
-							remoteSplitCmdJournal = remoteSplitJournal;
-						}
-
-						OPT(Core::Time) created;
-						if ( splitCreated ) {
-							Core::Time tmp;
-							if ( tmp.fromString(splitCreated) ) {
-								created = tmp;
-							}
-						}
-
-						// Split the local event!
-						NotifierMessagePtr nm = new NotifierMessage();
-						nm->attach(
-							new Notifier(
-								"Journaling",
-								OP_ADD,
-								createJournalEntry(
-									targetEvent->publicID(),
-									"EvSplitOrg",
-									event->preferredOriginID(),
-									created,
-									splitSender ? splitSender : remoteSplitCmdJournal->sender()
-								)
-							)
-						);
-
-						if ( !connection()->send(nm.get()) ) {
-							SEISCOMP_ERROR("sending message to '%s' failed with error: %s: discard event split",
-							               primaryMessagingGroup(),
-							               connection()->lastError().toString());
+				if ( remoteSplitJournal && (event->preferredOriginID() == splitOrg) ) {
+					// This is a split
+					// Check that the local event must not be a split of that origin according to
+					// the local journals.
+					auto localSplitJournal = getLastJournalEntry(*query(), targetEvent->publicID(), "EvSplitByOrgOK");
+					if ( !localSplitJournal || (localSplitJournal->parameters() != event->preferredOriginID()) ) {
+						if ( _test ) {
+							SEISCOMP_DEBUG("This event is a split event. A split from event %s would "
+							               "be request, but we are in test mode.", targetEvent->publicID());
 						}
 						else {
-							string splitEventID = waitForEventAssociation(event->preferredOriginID(),
-							                                              _config.maxWaitForEventIDTimeout);
-							if ( splitEventID.empty() ) {
-								SEISCOMP_ERROR("Event association timeout reached, skipping event split for input event %s",
-								               event->publicID());
+							auto remoteSplitCmdJournal = getLastJournalEntry(journals, event->publicID(), "EvSplitOrg");
+							if ( !remoteSplitCmdJournal ) {
+								remoteSplitCmdJournal = remoteSplitJournal;
+							}
+
+							OPT(Core::Time) created;
+							if ( splitCreated ) {
+								Core::Time tmp;
+								if ( tmp.fromString(splitCreated) ) {
+									created = tmp;
+								}
+							}
+
+							// Split the local event!
+							NotifierMessagePtr nm = new NotifierMessage();
+							nm->attach(
+								new Notifier(
+									"Journaling",
+									OP_ADD,
+									createJournalEntry(
+										targetEvent->publicID(),
+										"EvSplitOrg",
+										event->preferredOriginID(),
+										created,
+										splitSender ? splitSender : remoteSplitCmdJournal->sender()
+									)
+								)
+							);
+
+							if ( !connection()->send(nm.get()) ) {
+								SEISCOMP_ERROR("sending message to '%s' failed with error: %s: discard event split",
+								               primaryMessagingGroup(),
+								               connection()->lastError().toString());
 							}
 							else {
-								SEISCOMP_INFO("Split event %s -> %s", targetEvent->publicID(), splitEventID);
-								// Fetch the new event
-								targetEvent = query()->getEventByPublicID(splitEventID);
-								if ( !targetEvent ) {
-									SEISCOMP_ERROR("Failed to read new split event %s from database, skipping event synchronisation for input event %s",
-									               splitEventID, event->publicID());
-									return;
+								string splitEventID = waitForEventAssociation(event->preferredOriginID(),
+								                                              _config.maxWaitForEventIDTimeout);
+								if ( splitEventID.empty() ) {
+									SEISCOMP_ERROR("Event association timeout reached, skipping event split for input event %s",
+									               event->publicID());
+								}
+								else {
+									SEISCOMP_INFO("Split event %s -> %s", targetEvent->publicID(), splitEventID);
+									// Fetch the new event
+									targetEvent = query()->getEventByPublicID(splitEventID);
+									if ( !targetEvent ) {
+										SEISCOMP_ERROR("Failed to read new split event %s from database, skipping event synchronisation for input event %s",
+										               splitEventID, event->publicID());
+										return;
+									}
 								}
 							}
 						}
@@ -1674,34 +1676,34 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 				}
 
 				// Get last journal entry
-				auto entry = getLastJournalEntry(journals, event->publicID(), "EvPrefMagType");
+				auto remoteJournal = getLastJournalEntry(journals, event->publicID(), "EvPrefMagType");
 				if ( isMw ) {
 					SEISCOMP_DEBUG("  - trying EvPrefMw as well as the preferred magnitude is Mw type");
 					auto entryMw = getLastJournalEntry(journals, event->publicID(), "EvPrefMw");
 					if ( entryMw ) {
-						if ( entry ) {
+						if ( remoteJournal ) {
 							try {
-								if ( entryMw->created() > entry->created() ) {
+								if ( entryMw->created() > remoteJournal->created() ) {
 									SEISCOMP_DEBUG("  - using more recent EvPrefMw journal");
-									entry = entryMw;
+									remoteJournal = entryMw;
 								}
 							}
 							catch ( ... ) {}
 						}
 						else {
-							entry = entryMw;
+							remoteJournal = entryMw;
 						}
 					}
 				}
 
-				if ( entry ) {
-					if ( !isMw && (entry->parameters() != prefMag->type()) ) {
+				if ( remoteJournal ) {
+					if ( !isMw && (remoteJournal->parameters() != prefMag->type()) ) {
 						SEISCOMP_WARNING("%s: preferred magnitude is not matching the last journal type, ignoring it",
 						                 event->publicID());
 					}
 					else {
 						try {
-							remoteChangeTime = entry->created();
+							remoteChangeTime = remoteJournal->created();
 							SEISCOMP_DEBUG("  - remote change time is now journal creation time %s",
 							               remoteChangeTime->iso());
 						}
@@ -1709,22 +1711,22 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 					}
 				}
 
-				entry = getLastJournalEntry(*query(), targetEvent->publicID(), "EvPrefMagType");
+				auto localJournal = getLastJournalEntry(*query(), targetEvent->publicID(), "EvPrefMagType");
 				{
 					auto entryMw = getLastJournalEntry(*query(), targetEvent->publicID(), "EvPrefMw");
 					if ( entryMw ) {
-						if ( entry ) {
+						if ( localJournal ) {
 							try {
-								if ( entryMw->created() > entry->created() ) {
+								if ( entryMw->created() > localJournal->created() ) {
 									SEISCOMP_DEBUG("  - using more recent EvPrefMw journal");
-									entry = entryMw;
+									localJournal = entryMw;
 								}
 							}
 							catch ( ... ) {}
 						}
 						else {
 							SEISCOMP_DEBUG("  - use local EvPrefMw journal");
-							entry = entryMw;
+							localJournal = entryMw;
 						}
 					}
 					else {
@@ -1732,15 +1734,18 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 					}
 				}
 
-				if ( !entry ) {
+				if ( !localJournal ) {
+					JournalEntryPtr entry;
+
 					// Not a local journal yet, apply the change
 					SEISCOMP_DEBUG("  => no local journal found, apply the update");
 					if ( isMw ) {
-						SEISCOMP_DEBUG("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
+						SEISCOMP_INFO("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
 						entry = createJournalEntry(targetEvent->publicID(), "EvPrefMw", "true",
 						                           remoteChangeTime);
 					}
 					else {
+						SEISCOMP_INFO("* update preferred magnitude type to '%s' because there is no local journal yet", prefMag->type());
 						entry = createJournalEntry(targetEvent->publicID(), "EvPrefMagType", prefMag->type(),
 						                           remoteChangeTime);
 					}
@@ -1753,21 +1758,31 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 					OPT(Core::Time) localChangeTime;
 
 					try {
-						localChangeTime = entry->created();
+						localChangeTime = localJournal->created();
 						SEISCOMP_DEBUG("  - local change time is %s", localChangeTime->iso());
 					}
 					catch ( ... ) {}
 
-					if ( localChangeTime && remoteChangeTime ) {
+					// Update times should only be considered if there is also a remote
+					// journal. Otherwise the situation is that there is a manually set
+					// state locally and a regular update from remote. This should
+					// rule out the modification time check.
+					// A special case as usual: the remote quakelink does not support
+					// attaching journals yet. Then a remotely requested magnitude
+					// type change would never propagate to the local instance.
+					if ( localChangeTime && remoteChangeTime && remoteJournal ) {
 						if ( *remoteChangeTime > *localChangeTime ) {
+							JournalEntryPtr entry;
+
 							// The remote change time is more recent, apply it
 							SEISCOMP_DEBUG("  => the remote change time is more recent, apply the update");
 							if ( isMw ) {
-								SEISCOMP_DEBUG("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
+								SEISCOMP_INFO("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
 								entry = createJournalEntry(targetEvent->publicID(), "EvPrefMw", "true",
 								                           remoteChangeTime);
 							}
 							else {
+								SEISCOMP_INFO("* update preferred magnitude type to '%s' because the remote change time is later", prefMag->type());
 								entry = createJournalEntry(targetEvent->publicID(), "EvPrefMagType", prefMag->type(),
 								                           remoteChangeTime);
 							}
@@ -1784,25 +1799,29 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 						}
 					}
 					else {
-						if ( entry->sender() == author() ) {
+						if ( localJournal->sender() == author() ) {
+							JournalEntryPtr entry;
+
 							SEISCOMP_DEBUG("  => self is the last author of the journal, apply the update");
 							if ( isMw ) {
-								SEISCOMP_DEBUG("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
+								SEISCOMP_INFO("* preferred magnitude is Mw of a moment tensor, send EvPrefMw");
 								entry = createJournalEntry(targetEvent->publicID(), "EvPrefMw", "true",
 								                           remoteChangeTime);
 							}
 							else {
+								SEISCOMP_INFO("* update preferred magnitude type to '%s', it has been requested earlier by myself",
+								              prefMag->type(), localJournal->sender());
 								entry = createJournalEntry(targetEvent->publicID(), "EvPrefMagType", prefMag->type(),
 								                           remoteChangeTime);
 							}
 							notifiers.push_back(
-								new Notifier("Journaling", OP_ADD, entry.get())
+								new Notifier("Journaling", OP_ADD, localJournal.get())
 							);
 						}
 						else {
 							SEISCOMP_INFO("* skipping preferred magnitude type update because it "
 							              "has been set already by %s",
-							              entry->sender());
+							              localJournal->sender());
 						}
 					}
 				}
