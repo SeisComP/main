@@ -1536,10 +1536,8 @@ void App::syncEvent(const EventParameters *ep, const Journaling *journals,
 								)
 							);
 
-							if ( !connection()->send(nm.get()) ) {
-								SEISCOMP_ERROR("sending message to '%s' failed with error: %s: discard event split",
-								               primaryMessagingGroup(),
-								               connection()->lastError().toString());
+							if ( !send(nm.get()) ) {
+								SEISCOMP_ERROR("Discard event split due to message sending error");
 							}
 							else {
 								string splitEventID = waitForEventAssociation(event->preferredOriginID(),
@@ -2401,9 +2399,7 @@ bool App::sendNotifiers(const EventParameters *ep, const Notifiers &notifiers,
 		     (_config.batchSize > 0 && nm->size() >= _config.batchSize) ) {
 			SEISCOMP_DEBUG("sending notifier message (#%i) to group '%s'",
 			               nm->size(), prevGroup);
-			if ( !connection()->send(prevGroup, nm.get()) ) {
-				SEISCOMP_ERROR("sending message to '%s' failed with error: %s",
-				               prevGroup, connection()->lastError().toString());
+			if ( !send(prevGroup, nm.get()) ) {
 				return false;
 			}
 
@@ -2468,9 +2464,7 @@ bool App::sendNotifiers(const EventParameters *ep, const Notifiers &notifiers,
 	if ( !nm->empty() ) {
 		SEISCOMP_DEBUG("sending notifier message (#%i) to group '%s'",
 		               nm->size(), group);
-		if ( !connection()->send(group, nm.get()) ) {
-			SEISCOMP_ERROR("sending message to '%s' failed with error: %s",
-			               group, connection()->lastError().toString());
+		if ( !send(group, nm.get()) ) {
 			return false;
 		}
 
@@ -2512,9 +2506,7 @@ bool App::sendNotifiers(const Notifiers &notifiers) {
 		nm->attach(n.get());
 	}
 
-	if ( !connection()->send(nm.get()) ) {
-		SEISCOMP_ERROR("sending message to primary group failed with error: %s",
-		               connection()->lastError().toString());
+	if ( !send(nm.get()) ) {
 		return false;
 	}
 
