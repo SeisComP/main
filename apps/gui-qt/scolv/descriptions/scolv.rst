@@ -574,7 +574,8 @@ For making a phase pick the picking mode must be activated by choosing a phase i
 Picking menu. Short cuts are:
 
 * Green P and S buttons for picking P and S phases, respectively (hot keys :kbd:`F1`, :kbd:`F2`),
-* Numbers shown in the picking menu used as hot keys.
+* Numbers shown in the picking menu used as hot keys. If the favourite phase
+  is named "P" or "S", its number acts exactly like :kbd:`F1` or :kbd:`F2`.
 
 Additional information can be added interactively to the picks:
 
@@ -589,6 +590,67 @@ immediately for :ref:`relocating <scolv-sec-relocating>`.
 
    All manual work will be lost when closing the picker window without sending
    the picks.
+
+
+.. _scolv-sec-repicking:
+
+Automatic repicking
+~~~~~~~~~~~~~~~~~~~~
+
+While picking mode is active, the current cursor pick can be refined
+automatically instead of being set manually. Choose an algorithm from the
+drop-down list in the picking toolbar and press :kbd:`R` (*Repick*). The
+picker then
+
+#. takes the current cursor position as trigger time,
+#. feeds the corresponding waveform data to the selected algorithm, and
+#. moves the cursor to the refined onset time returned by the algorithm, if any.
+
+The re-picker itself does not create a pick: press :kbd:`Space` or :kbd:`Enter`
+to create the pick at the new cursor position.
+
+.. note::
+
+   The drop-down list only offers the algorithms designed for re-picking
+   the primary, usually P, onset. Secondary S-phase picking algorithms are
+   not available in the picker window. Consequently, pressing :kbd:`R`
+   while picking any phase other than P still applies one of the primary
+   re-picking algorithms to the waveform.
+
+The waveform data used is always the single component currently active in
+the zoom trace, i.e. the one last selected with the :kbd:`Z`, :kbd:`N` or
+:kbd:`E` hot key.
+
+The algorithm is fed with either filtered or raw data depending on whether
+filtering is currently enabled for the trace or not. Some algorithms provide a
+configurable filter in their settings on top, independently of this selection,
+so make sure it is disabled when scolv filtering is active, or consider the
+consequences.
+
+The algorithms are configured by the :ref:`global` bindings parameters,
+similarly to the settings used by :ref:`scautopick`, e.g.
+:confval:`picker.AIC.noiseBegin`, :confval:`picker.AIC.signalBegin`,
+:confval:`picker.BK.f1`.
+
+It is possible to apply the same parameters to all stations without configuring
+bindings, although this is usually not the recommended way as the parameters are
+not exposed in :ref:`scconfig`. To do so add lines starting with "*module.trunk.*" to
+the module configuration, e.g. (:file:`scolv.cfg`):
+
+.. code-block:: properties
+
+   # Apply to all stations irrespective of any binding configuration
+   module.trunk.global.picker.AIC.signalBegin = -20
+   module.trunk.global.picker.AIC.signalEnd = 10
+
+Restrict the scope of a line by replacing "global" with a network code or
+with "*NET.STA*" for a single station, e.g. *module.trunk.GE.picker.AIC.signalBegin*
+or *module.trunk.GE.MORC.picker.AIC.signalBegin*.
+
+Parameters configured this way, directly in the module configuration, always take
+precedence over the same parameters configured by bindings. The configuration of
+parameters starting with "*module.trunk.*" is not supported by :ref:`scconfig`;
+it must be done by directly editing the configuration file.
 
 
 .. _scolv-sec-uncertainties:
