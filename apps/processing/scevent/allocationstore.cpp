@@ -117,10 +117,22 @@ bool AllocationStore::exec(const char *sql) {
 	char *err = nullptr;
 	int rc = sqlite3_exec(_db, sql, nullptr, nullptr, &err);
 	if ( rc != SQLITE_OK ) {
-		SEISCOMP_ERROR("AllocationStore: SQL error: %s",
-		               err ? err : sqlite3_errstr(rc));
 		if ( err ) {
+			SEISCOMP_ERROR("AllocationStore: SQL error: %s", err);
 			sqlite3_free(err);
+		}
+		else {
+			// Corner cases: If _db is NULL, already closed, or otherwise a bad handle
+			// err is unmodified. SQLITE_NOMEM is returned if the construction of the
+			// err string fails due to memory shortages.
+
+#if SQLITE_VERSION_NUMBER >= 3007015
+			SEISCOMP_ERROR("AllocationStore: SQL error: %s",
+			               sqlite3_errstr(rc));
+#else
+			// sqlite3_errstr() was added in SQLite 3.7.15, return numeric code instead
+			SEISCOMP_ERROR("AllocationStore: SQL error: code %d", rc);
+#endif
 		}
 		return false;
 	}
