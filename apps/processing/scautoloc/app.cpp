@@ -858,6 +858,11 @@ void AutolocApp::handleTimeout() {
 		return;
 	}
 
+	if ( _inputFileXML.empty() ) {
+		// Messaging playback
+		_flush();
+		return;
+	}
 
 	// The following is relevant (and executed) only for XML playback.
 
@@ -1085,7 +1090,7 @@ bool AutolocApp::_report(DataModel::Origin *scorigin) {
 	// Log object flow
 	logObject(_outputOrgs, now());
 
-	if ( _config.offline || _config.playback || _config.test ) {
+	if ( _config.offline || _config.test ) {
 		// In offline/playback/test mode do not send origin to messaging
 
 		// But add it to the output EventParameters (except test mode)
