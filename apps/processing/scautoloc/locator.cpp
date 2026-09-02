@@ -235,7 +235,7 @@ Origin *Locator::relocate(const Origin *origin) {
 Origin* Locator::_screlocate(const Origin *origin) {
 	// convert origin to SC, relocate, and convert the result back
 
-	DataModel::OriginPtr scorigin = AutolocInternal::Util::convertToSC(origin, "", "");
+	DataModel::OriginPtr scorigin = AutolocInternal::Util::convertToSC(origin);
 	if ( !scorigin ) {
 		// give up
 		SEISCOMP_ERROR("Unexpected failure to relocate origin");

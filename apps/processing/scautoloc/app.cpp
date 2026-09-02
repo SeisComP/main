@@ -1090,6 +1090,9 @@ bool AutolocApp::_report(DataModel::Origin *scorigin) {
 	// Log object flow
 	logObject(_outputOrgs, now());
 
+	DataModel::CreationInfo creationInfo = generateCreationInfo();
+	scorigin->setCreationInfo(creationInfo);
+
 	if ( _config.offline || _config.test ) {
 		// In offline/playback/test mode do not send origin to messaging
 

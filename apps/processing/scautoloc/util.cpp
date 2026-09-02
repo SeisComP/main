@@ -508,7 +508,7 @@ AutolocInternal::Pick::Mode mode(const DataModel::Pick *pick) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-DataModel::Origin *convertToSC(const AutolocInternal::Origin* origin, const std::string &author, const std::string &agencyID, bool allPhases) {
+DataModel::Origin *convertToSC(const AutolocInternal::Origin* origin, bool allPhases) {
 
 	DataModel::Origin *scorigin = DataModel::Origin::Create();
 
@@ -623,11 +623,6 @@ DataModel::Origin *convertToSC(const AutolocInternal::Origin* origin, const std:
 	}
 
 	scorigin->setQuality(oq);
-
-	DataModel::CreationInfo ci;
-	ci.setAgencyID(agencyID);
-	ci.setAuthor(author);
-	scorigin->setCreationInfo(ci);
 
 	return scorigin;
 }

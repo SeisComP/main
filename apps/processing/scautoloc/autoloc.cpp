@@ -520,8 +520,7 @@ void Autoloc::_flush() {
 
 		SEISCOMP_INFO("Reporting origin %ld\n%s", origin->id, AutolocInternal::printDetailed(origin));
 
-		DataModel::OriginPtr scorigin = AutolocInternal::Util::convertToSC(origin, _config.author, _config.agencyID, _config.reportAllPhases);
-		scorigin->creationInfo().setCreationTime(now());
+		DataModel::OriginPtr scorigin = AutolocInternal::Util::convertToSC(origin, _config.reportAllPhases);
 
 		SEISCOMP_INFO_S(summary(scorigin.get()));
 
