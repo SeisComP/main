@@ -177,7 +177,9 @@ struct AutolocConfig {
 
 		// If true, playback mode is selected.
 		//
-		// In playback mode, origins are sent immediately without delay.
+		// There are two types of playback:
+		// - messaging playback
+		// - XML playback
 		bool playback{false};
 
 		// Control the timing in playback mode

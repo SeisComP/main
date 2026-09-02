@@ -693,7 +693,7 @@ bool Autoloc::_store(const Pick *pick) {
 	}
 
 	// pick too old? -> ignored completely
-	if ( pick->scpick->time().value() < now() - Core::TimeSpan(_config.maxAge) ) {
+	if ( !_config.playback && pick->scpick->time().value() < now() - Core::TimeSpan(_config.maxAge) ) {
 		SEISCOMP_DEBUG_S("ignoring old pick " + pick->label);
 		return false;
 	}
@@ -3450,6 +3450,11 @@ void Autoloc::shutdown()
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Autoloc::cleanup() {
+	if ( _config.playback ) {
+		// No cleanup in playback mode!
+		return;
+	}
+
 	double extra = 1800; // extra time to add to maxAge (REVIEW!)
 	Core::Time minTime = now() - Core::TimeSpan(_config.maxAge + extra);
 

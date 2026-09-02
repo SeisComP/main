@@ -671,6 +671,9 @@ bool AutolocApp::init() {
 	_config.scconfig = &Client::Application::configuration();
 
 	// TODO	_config.check();
+	if ( _config.maxAge < 0 ) {
+		_config.maxAge = 0;
+	}
 	setConfig(_config);
 
 	dumpConfig();
