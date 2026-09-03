@@ -520,8 +520,7 @@ void Autoloc::_flush() {
 
 		SEISCOMP_INFO("Reporting origin %ld\n%s", origin->id, AutolocInternal::printDetailed(origin));
 
-		DataModel::OriginPtr scorigin = AutolocInternal::Util::convertToSC(origin, _config.author, _config.agencyID, _config.reportAllPhases);
-		scorigin->creationInfo().setCreationTime(now());
+		DataModel::OriginPtr scorigin = AutolocInternal::Util::convertToSC(origin, _config.reportAllPhases);
 
 		SEISCOMP_INFO_S(summary(scorigin.get()));
 
@@ -694,7 +693,7 @@ bool Autoloc::_store(const Pick *pick) {
 	}
 
 	// pick too old? -> ignored completely
-	if ( pick->scpick->time().value() < now() - Core::TimeSpan(_config.maxAge) ) {
+	if ( !_config.playback && pick->scpick->time().value() < now() - Core::TimeSpan(_config.maxAge) ) {
 		SEISCOMP_DEBUG_S("ignoring old pick " + pick->label);
 		return false;
 	}
@@ -3451,6 +3450,11 @@ void Autoloc::shutdown()
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void Autoloc::cleanup() {
+	if ( _config.playback ) {
+		// No cleanup in playback mode!
+		return;
+	}
+
 	double extra = 1800; // extra time to add to maxAge (REVIEW!)
 	Core::Time minTime = now() - Core::TimeSpan(_config.maxAge + extra);
 

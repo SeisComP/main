@@ -94,7 +94,10 @@ PickVector readPickFile();
 Pick*      readPickLine();
 Pick::Mode mode(const Seiscomp::DataModel::Pick *pick);
 
-DataModel::Origin *convertToSC(const Origin* origin, const std::string &author, const std::string &agencyID, bool allPhases=true);
+// Convert an internal origin to a Seiscomp::DataModel::Origin
+//
+// Note that the CreationInfo will be set later.
+DataModel::Origin *convertToSC(const Origin* origin, bool allPhases=true);
 
 }  // namespace Util
 
