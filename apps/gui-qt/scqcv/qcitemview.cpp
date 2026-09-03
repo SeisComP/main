@@ -302,8 +302,18 @@ void QcItemView::showInfo(const QModelIndex& index) {
 		_infoTable->setRecordStreamURL(static_cast<QcView*>(_parent)->recordStreamURL());
 		_infoTable->setDatabaseQueryInterface(static_cast<QcView*>(_parent)->databaseQueryInterface());
 
-		_infoTable->qTableView()->verticalHeader()->setStretchLastSection(true);
-		_infoTable->setMaximumHeight(2*(fontMetrics().height()+10));
+		QTableView *infoTableView = _infoTable->qTableView();
+		infoTableView->verticalHeader()->setStretchLastSection(true);
+
+		// Room for the horizontal header and the single data row, plus the
+		// table frame and the layout margins
+		QMargins margins = _infoTable->layout()->contentsMargins();
+		_infoTable->setMaximumHeight(
+		            infoTableView->horizontalHeader()->sizeHint().height()
+		            + infoTableView->verticalHeader()->defaultSectionSize()
+		            + 2 * infoTableView->frameWidth()
+		            + margins.top() + margins.bottom()
+		            );
 		_infoTable->hideFilterWidget(true);
 		_infoWidget->layout()->addWidget(_infoTable);
 	}
