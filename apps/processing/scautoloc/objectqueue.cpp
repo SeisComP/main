@@ -112,7 +112,7 @@ bool PublicObjectQueue::fill(const EventParameters *ep) {
 		else {
 			// Use the pick time of the last associated pick as object time
 			Time t = origin->time().value();
-			for (size_t iarr = 0; iarr < origin->arrivalCount(); ++i) {
+			for (size_t iarr = 0; iarr < origin->arrivalCount(); ++iarr) {
 				const std::string pickID = origin->arrival(iarr)->pickID();
 				const Pick *pick = Pick::Find(pickID);
 				if ( pick ) {
