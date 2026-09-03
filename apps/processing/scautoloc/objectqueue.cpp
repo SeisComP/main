@@ -40,12 +40,15 @@ bool PublicObjectQueue::fill(const EventParameters *ep) {
 	// place picks before amplitudes with identical creation times.
 	typedef tuple<Time, int, PublicObjectPtr> TimeObject;
 	typedef vector<TimeObject> TimeObjectVector;
+	typedef map<string, PickPtr> PickMap;
 
 	// retrieval of relevant objects from event parameters
 	// and subsequent DSU sort
 	TimeObjectVector objs;
+	PickMap picks;
 	for ( size_t i = 0; i < ep->pickCount(); ++i ) {
 		PickPtr pick = ep->pick(i);
+		picks[pick->publicID()] = pick;
 		if ( orderByCreationTime ) {
 			try {
 				Time t = pick->creationInfo().creationTime();
@@ -79,13 +82,18 @@ bool PublicObjectQueue::fill(const EventParameters *ep) {
 			}
 		}
 		else {
-			// Use the amplitude reference time as object time
+			// Use the time of the referenced pick as object time
+			string pickID = amplitude->pickID();
+			if ( pickID.empty() ) {
+				continue;
+			}
+
 			try {
-				Time t = amplitude->timeWindow().reference();
+				Time t = picks[pickID]->time().value();
 				objs.push_back(TimeObject(t, 1, amplitude));
 			}
 			catch ( ... ) {
-				SEISCOMP_WARNING("Amplitude %s: no reference time set", amplitude->publicID());
+				SEISCOMP_WARNING("Amplitude %s: referenced pick not found", amplitude->publicID());
 			}
 		}
 	}
