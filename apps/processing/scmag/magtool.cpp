@@ -545,7 +545,9 @@ DataModel::StationMagnitude *MagTool::getStationMagnitude(
 		origin->add(mag);
 		if ( _updateParent ) {
 			DataModel::touch(origin);
-			origin->update();
+			if ( DataModel::Notifier::IsEnabled() ) {
+				DataModel::Notifier::Create("EventParameters", DataModel::OP_UPDATE, origin);
+			}
 		}
 	}
 
@@ -594,7 +596,9 @@ DataModel::Magnitude *MagTool::getMagnitude(DataModel::Origin *origin,
 		origin->add(mag);
 		if ( _updateParent ) {
 			DataModel::touch(origin);
-			origin->update();
+			if ( DataModel::Notifier::IsEnabled() ) {
+				DataModel::Notifier::Create("EventParameters", DataModel::OP_UPDATE, origin);
+			}
 		}
 
 		if ( newInstance ) {
@@ -2246,7 +2250,9 @@ bool MagTool::feed(DataModel::Amplitude* amp, bool update, bool remove) {
 					origin->removeStationMagnitude(i);
 					if ( _updateParent ) {
 						DataModel::touch(origin);
-						origin->update();
+						if ( DataModel::Notifier::IsEnabled() ) {
+							DataModel::Notifier::Create("EventParameters", DataModel::OP_UPDATE, origin.get());
+						}
 					}
 					break;
 				}
