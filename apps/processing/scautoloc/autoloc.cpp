@@ -82,7 +82,10 @@ bool Autoloc::init() {
 	setLocatorProfile(_config.locatorProfile);
 
 	_depthLookup = Seismology::DepthLookupFactory::Create(_config.depthLookupType);
-	if ( !_depthLookup ) {
+	if ( _depthLookup ) {
+		SEISCOMP_DEBUG("DepthLookup '%s' created successfully", _config.depthLookupType);
+	}
+	else {
 		if ( _config.depthLookupType != "Constant" )
 			SEISCOMP_WARNING("DepthLookup '%s' not available — falling back to Constant",
 			                 _config.depthLookupType.c_str());
