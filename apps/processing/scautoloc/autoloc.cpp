@@ -91,11 +91,15 @@ bool Autoloc::init() {
 			                 _config.depthLookupType.c_str());
 		_depthLookup = Seismology::DepthLookupFactory::Create("Constant");
 	}
-	if ( _depthLookup && _config.scconfig )
+	if ( _depthLookup && _config.scconfig ) {
 		_depthLookup->init(*_config.scconfig);
+	}
 
 	return true; // ready to start processing
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -110,7 +114,6 @@ double Autoloc::_maxDepthAt(const Origin *origin) const {
 	    ? _depthLookup->fetchMaxDepth(origin->hypocenter.lat, origin->hypocenter.lon)
 	    : _config.maxDepth;
 }
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -157,7 +160,6 @@ bool Autoloc::initOneStation(const DataModel::WaveformStreamID &wfid, const Core
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
 
 
 
