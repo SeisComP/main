@@ -81,7 +81,38 @@ bool Autoloc::init() {
 	SEISCOMP_DEBUG("Setting configured locator profile: %s", _config.locatorProfile);
 	setLocatorProfile(_config.locatorProfile);
 
+	_depthLookup = Seismology::DepthLookupFactory::Create(_config.depthLookupType);
+	if ( _depthLookup ) {
+		SEISCOMP_DEBUG("DepthLookup '%s' created successfully", _config.depthLookupType);
+	}
+	else {
+		if ( _config.depthLookupType != "Constant" )
+			SEISCOMP_WARNING("DepthLookup '%s' not available — falling back to Constant",
+			                 _config.depthLookupType.c_str());
+		_depthLookup = Seismology::DepthLookupFactory::Create("Constant");
+	}
+	if ( _depthLookup && _config.scconfig ) {
+		_depthLookup->init(*_config.scconfig);
+	}
+
 	return true; // ready to start processing
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+double Autoloc::_defaultDepthAt(const Origin *origin) const {
+	return _depthLookup
+	    ? _depthLookup->fetch(origin->hypocenter.lat, origin->hypocenter.lon)
+	    : _config.defaultDepth;
+}
+
+double Autoloc::_maxDepthAt(const Origin *origin) const {
+	return _depthLookup
+	    ? _depthLookup->fetchMaxDepth(origin->hypocenter.lat, origin->hypocenter.lon)
+	    : _config.maxDepth;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -129,7 +160,6 @@ bool Autoloc::initOneStation(const DataModel::WaveformStreamID &wfid, const Core
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
 
 
 
@@ -1878,7 +1908,7 @@ bool Autoloc::_setDefaultDepth(Origin *origin)
 {
 	OriginPtr test = new Origin(*origin);
 
-	_relocator.setFixedDepth(_config.defaultDepth);
+	_relocator.setFixedDepth(_defaultDepthAt(origin));
 	_relocator.useFixedDepth(true);
 	OriginPtr relo = _relocator.relocate(test.get());
 	if ( !relo ) {
@@ -1919,7 +1949,8 @@ bool Autoloc::_setTheRightDepth(Origin *origin) {
 			return false;
 		}
 
-		double radius = 5*(relo->hypocenter.dep >= _config.defaultDepth ? relo->hypocenter.dep : _config.defaultDepth)/111.2;
+		double dd = _defaultDepthAt(origin);
+		double radius = 5*(relo->hypocenter.dep >= dd ? relo->hypocenter.dep : dd)/111.2;
 
 		// XXX This is a hack, but better than nothing:
 		// if there are at least 2 stations within 5 times the source depth, we assume sufficient depth resolution.
@@ -2109,7 +2140,7 @@ bool Autoloc::_rework(Origin *origin) {
 	}
 
 	if ( enforceDefaultDepth ) {
-		_relocator.setFixedDepth(_config.defaultDepth);
+		_relocator.setFixedDepth(_defaultDepthAt(origin));
 	}
 
 	bool keepDepth = adoptManualDepth || enforceDefaultDepth;
@@ -2158,7 +2189,7 @@ bool Autoloc::_rework(Origin *origin) {
 	_excludeDistantStations(origin);
 	_excludePKP(origin);
 
-	if ( origin->hypocenter.dep != _config.defaultDepth && origin->depthType == Origin::DepthDefault )
+	if ( origin->hypocenter.dep != _defaultDepthAt(origin) && origin->depthType == Origin::DepthDefault )
 		origin->depthType = Origin::DepthFree;
 
 	// once more (see also above)
@@ -2390,9 +2421,9 @@ bool Autoloc::_publishable(const Origin *origin) const
 	}
 
 
-	if ( origin->hypocenter.dep > _config.maxDepth ) {
+	if ( origin->hypocenter.dep > _maxDepthAt(origin) ) {
 		SEISCOMP_INFO("Origin %ld too deep: %.1f km > %.1f km (maxDepth)",
-			      origin->id, origin->hypocenter.dep, _config.maxDepth);
+			      origin->id, origin->hypocenter.dep, _maxDepthAt(origin));
 		return false;
 	}
 
@@ -2442,7 +2473,7 @@ bool Autoloc::_store(Origin *origin)
 	}
 
 	if ( origin->depthType == Origin::DepthDefault &&
-	    origin->hypocenter.dep != _config.defaultDepth ) {
+	    origin->hypocenter.dep != _defaultDepthAt(origin) ) {
 		origin->depthType = Origin::DepthFree;
 	}
 
@@ -2536,7 +2567,7 @@ bool Autoloc::_associate(Origin *origin, const Pick *pick, const std::string &ph
 			bool fixed = false;
 			if ( _config.defaultDepthStickiness > 0.9 ) {
 				fixed = true;
-				_relocator.setFixedDepth(_config.defaultDepth);
+				_relocator.setFixedDepth(_defaultDepthAt(origin));
 			}
 
 //			else if ( origin->depthType == Origin::DepthManuallyFixed || origin->depthType == Origin::DepthPhases ) {
@@ -3532,7 +3563,7 @@ bool Autoloc::_depthIsResolvable(Origin *origin) {
 //		return true;
 //	}
 
-	if ( origin->depthType == Origin::DepthDefault && origin->hypocenter.dep != _config.defaultDepth )
+	if ( origin->depthType == Origin::DepthDefault && origin->hypocenter.dep != _defaultDepthAt(origin) )
 		origin->depthType = Origin::DepthFree;
 
 	OriginPtr test = new Origin(*origin);
@@ -3551,7 +3582,7 @@ bool Autoloc::_depthIsResolvable(Origin *origin) {
 	}
 
 	test = new Origin(*origin);
-	test->hypocenter.dep = _config.defaultDepth;
+	test->hypocenter.dep = _defaultDepthAt(origin);
 	_relocator.useFixedDepth(true);
 	relo = _relocator.relocate(test.get());
 	if ( !relo ) {
