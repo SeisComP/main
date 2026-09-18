@@ -1610,10 +1610,21 @@ bool SCARDAC::run() {
 	}
 
 	if ( _threads > 1 && !strncmp("sqlite", databaseType().c_str(), 6) ) {
-		SEISCOMP_ERROR("Thread count set to %i, but database type '%s' "
-		               "supports only one simultaneous connection",
-		               _threads, databaseType());
-		return false;
+		// SQLite allows concurrent connections but serializes writers. Without
+		// a busy timeout the second concurrent write fails immediately.
+		if ( databaseURI().find("busy_timeout") == string::npos ) {
+			SEISCOMP_ERROR("Thread count set to %i but the SQLite connection "
+			               "defines no busy timeout. Concurrent writes would "
+			               "fail with 'database is locked'. Append "
+			               "'?busy_timeout=10000&journal=WAL' to the database "
+			               "URI or set threads to 1.",
+			                _threads);
+			return false;
+		}
+
+		SEISCOMP_WARNING("Thread count set to %i on a SQLite database, write "
+		                 "access is serialized by the database backend",
+		                 _threads);
 	}
 
 	// print configuration
