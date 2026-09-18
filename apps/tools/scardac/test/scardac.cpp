@@ -706,5 +706,95 @@ BOOST_AUTO_TEST_CASE(streamfilter) {
 
 
 
+//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+BOOST_AUTO_TEST_CASE(multithread) {
+	const vector<string> stations = {
+	    "R0F05", "R0F06", "R0F07", "R0F08", "R0F09", "R0F10", "R0F11", "R0F12",
+	    "R0F13", "R0F14", "R0F15", "R0F16", "R0F17", "R0F18", "R0F19", "R0F20",
+	};
+
+	// latest chunk mtime per station defines the expected extent update time
+	map<string, Core::Time> expectedUpdated;
+	for ( const auto &sta : stations ) {
+		SC_FS_DECLARE_PATH(dir, archiveDir + "/2023/AM/" + sta + "/SHZ.D");
+		ASSERT_MSG(fs::exists(dir), "Missing test data: " << dir.string());
+
+		time_t mtime = 0;
+		fs::directory_iterator end_it;
+		for ( fs::directory_iterator it(dir); it != end_it; ++it ) {
+			mtime = max(mtime, fs::last_write_time(SC_FS_DE_PATH(it)));
+		}
+		ASSERT_MSG(mtime > 0, "No chunks found in " << dir.string());
+		expectedUpdated[sta] = Core::Time(mtime);
+	}
+
+	string ctx("initial scan, 10 threads");
+	BOOST_TEST_MESSAGE(ctx);
+
+	// run scardac, measure execution time window
+	Core::TimeWindow tw;
+	tw.setStartTime(Core::Time::UTC());
+	DataModel::DatabaseReaderPtr reader = runApp(dbURI, { appName });
+	tw.setEndTime(Core::Time::UTC());
+
+	DataModel::DataAvailabilityPtr da = reader->loadDataAvailability();
+	BOOST_ASSERT_MSG(da, "Could not load data availability");
+	ASSERT_EQUAL_MSG(da->dataExtentCount(), stations.size(),
+	                 ctx << ": Different number of DataExtents");
+
+	// extents are written by concurrent workers, the order is not defined
+	set<string> found;
+	for ( size_t iExt = 0; iExt < da->dataExtentCount(); ++iExt ) {
+		auto *ext = da->dataExtent(iExt);
+		reader->load(ext);
+
+		const auto &wfid = ext->waveformID();
+		const auto &sta = wfid.stationCode();
+		auto it = expectedUpdated.find(sta);
+		ASSERT_MSG(it != expectedUpdated.end(),
+		           ctx << ": Unexpected station: " << sta);
+		BOOST_CHECK_MESSAGE(found.insert(sta).second,
+		                    ctx << ": Duplicate extent for station " << sta);
+
+		string extCtx = ctx + ": " + sta;
+		CHECK_EQUAL_MSG(wfid.networkCode(), "AM", extCtx);
+		CHECK_EQUAL_MSG(wfid.locationCode(), "00", extCtx);
+		CHECK_EQUAL_MSG(wfid.channelCode(), "SHZ", extCtx);
+		CHECK_EQUAL_MSG(ext->updated().iso(), it->second.iso(), extCtx);
+		BOOST_CHECK_MESSAGE(ext->dataAttributeExtentCount(),
+		                    extCtx << ": No attribute extent");
+		BOOST_CHECK_MESSAGE(ext->dataSegmentCount(), extCtx << ": No segment");
+		BOOST_CHECK_MESSAGE(tw.contains(ext->lastScan()),
+		                    extCtx << ": last scan time not in execution "
+		                              "time window");
+		BOOST_CHECK_MESSAGE(!ext->segmentOverflow(),
+		                    extCtx << ": unexpected segment overflow");
+
+		auto *attExt = ext->dataAttributeExtent(0);
+		CHECK_EQUAL_MSG(attExt->start().iso(), ext->start().iso(), extCtx);
+		CHECK_EQUAL_MSG(attExt->end().iso(), ext->end().iso(), extCtx);
+		CHECK_EQUAL_MSG(attExt->updated().iso(), ext->updated().iso(), extCtx);
+		CHECK_EQUAL_MSG(static_cast<size_t>(attExt->segmentCount()),
+		                ext->dataSegmentCount(), extCtx);
+	}
+
+	// a second multi threaded run must not change anything but the last scan
+	// time of each extent
+	ctx = "rescan, 10 threads";
+	BOOST_TEST_MESSAGE(ctx);
+	reader = runApp(dbURI, { appName });
+	checkEqual(reader, da.get(), ctx);
+
+	// results must be independent of the thread count
+	ctx = "rescan, 1 thread";
+	BOOST_TEST_MESSAGE(ctx);
+	reader = runApp(dbURI, { appName, "--threads", "1" });
+	checkEqual(reader, da.get(), ctx);
+}
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+
+
 //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 BOOST_AUTO_TEST_SUITE_END()

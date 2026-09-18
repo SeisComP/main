@@ -21,6 +21,11 @@
 			<parameter name="threads" type="int" default="1">
 				<description>
 				Number of threads scanning the archive in parallel.
+
+				Values greater than 1 require a database backend supporting
+				concurrent connections. For SQLite3 the busy_timeout
+				connection parameter must be set, see
+				:ref:`concepts_database_url`.
 				</description>
 			</parameter>
 			<parameter name="jitter" type="float" default="0.5">

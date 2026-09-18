@@ -145,6 +145,15 @@ Workflow
    #. Apply the collected operations to the database and recompute
       `DataAttributeExtents` and the overall `DataExtent`.
 
+.. note::
+
+   Each thread opens its own database connection. When using SQLite3 the
+   ``busy_timeout`` connection parameter must be set and ``journal=WAL`` is
+   recommended, see :ref:`concepts_database_url`. Note that WAL is unavailable
+   on network file systems, so the database file should reside on local
+   storage.
+
+
 Examples
 --------
 
