@@ -1804,6 +1804,7 @@ void SCARDAC::done() {
 
 	if ( _collector ) {
 		_collector->reset();
+		_collector = nullptr;
 	}
 
 	if ( _dataAvailability ) {
@@ -1834,9 +1835,19 @@ void SCARDAC::setTimeWindow(Collector *collector) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void SCARDAC::processExtents(int threadID) {
+	// Holds the per-thread collector instance when more than one thread is used
+	// and the collector is not maked as thread safe.
+	CollectorPtr threadCollector;
 	auto *collector = _collector.get();
 	if ( threadID > 1 && !_collector->threadSafe() ) {
-		collector = Collector::Open(_archive.c_str());
+		threadCollector = Collector::Open(_archive.c_str());
+		if ( !threadCollector ) {
+			SEISCOMP_ERROR("[%i] Could not create thread specific collector from "
+			               "source: %s", threadID, _archive);
+			return;
+		}
+
+		collector = threadCollector.get();
 		setTimeWindow(collector);
 	}
 	Worker worker(this, threadID, collector);
