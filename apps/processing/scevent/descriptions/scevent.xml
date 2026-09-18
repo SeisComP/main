@@ -274,7 +274,7 @@
 					</description>
 				</parameter>
 
-				<parameter name="priorities" type="list:string" default="AGENCY,STATUS,PHASES_AUTOMATIC,TIME_AUTOMATIC" values="'',AGENCY,AUTHOR,MODE,PHASES,PHASES_AUTOMATIC,RMS,RMS_AUTOMATIC,SCORE,STATUS,TIME,TIME_AUTOMATIC">
+				<parameter name="priorities" type="list:string" default="AGENCY,STATUS,PHASES_AUTOMATIC,TIME_AUTOMATIC" values="AGENCY,AUTHOR,MODE,PHASES,PHASES_AUTOMATIC,RMS,RMS_AUTOMATIC,SCORE,STATUS,TIME,TIME_AUTOMATIC">
 					<description>
 					The general priority list to decide if new Origins become
 					preferred.
