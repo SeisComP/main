@@ -217,12 +217,12 @@
 					</group>
 				</group>
 				<group name="arrivalTable">
-					<parameter name="visibleColumns" type="list:string">
+					<parameter name="visibleColumns" type="list:string"
+						values="Used, Status, Phase, Weight, Method, Polarity, Takeoff,
+								Net, Sta, Loc/Cha, Timeres, Dis, Az, Time, +/-, Slo,
+								Slores, Baz, Bazres, Created, Latency">
 						<description>
-							Defines the visible columns in the arrival table. Valid tokens are:
-							Used, Status, Phase, Weight, Method, Polarity, Takeoff,
-							Net, Sta, Loc/Cha, Timeres, Dis, Az, Time, +/-,
-							Slo, Slores, Baz, Bazres, Created, Latency
+							Defines the visible columns in the arrival table.
 						</description>
 					</parameter>
 				</group>

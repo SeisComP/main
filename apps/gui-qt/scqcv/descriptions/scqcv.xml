@@ -3,7 +3,8 @@
 	<module name="scqcv" category="GUI">
 		<description>Quality control view.</description>
 		<configuration>
-			<parameter name="parameter" type="list:string">
+			<parameter name="parameter" type="list:string"
+				  values="latency: latency,delay: delay,timing quality: timing,offset: offset,rms: rms,gaps count: gap,overlaps count: overlap,availability: availability,spikes count: spike,gaps interval: gapInterval,gaps length: gapLength,spikes interval: spikeInterval,spikes amplitude: spikeAmplitude,overlaps interval: overlapInterval,overlaps length: overlapLength">
 			<description>
 			List of QC parameters to be displayed in the details table.
 			Read the scqc documentation for a list of available QC parameters 
@@ -94,10 +95,8 @@
 					configured.
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="" unit="">
+				<parameter name="format" type="string" default="" unit="" values="int, float, percent, timeSpan">
 					<description>
-						Values are: int, float, percent, timeSpan
-
 						Displays raw values if unset.
 					</description>
 				</parameter>
@@ -170,10 +169,8 @@
 					configured.
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="" unit="">
+				<parameter name="format" type="string" default="" unit="" values="int, float, percent, timeSpan">
 					<description>
-						Values are: int, float, percent, timeSpan
-
 						Displays raw values if unset.
 					</description>
 				</parameter>
@@ -245,10 +242,8 @@
 					configured.
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="" unit="">
+				<parameter name="format" type="string" default="" unit="" values="int, float, percent, timeSpan">
 					<description>
-						Values are: int, float, percent, timeSpan
-
 						Displays raw values if unset.
 					</description>
 				</parameter>
@@ -321,10 +316,8 @@
 					configured.
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="" unit="">
+				<parameter name="format" type="string" default="" unit="" values="int, float, percent, timeSpan">
 					<description>
-						Values are: int, float, percent, timeSpan
-
 						Displays raw values if unset.
 					</description>
 				</parameter>
@@ -397,10 +390,8 @@
 					configured.
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="" unit="">
+				<parameter name="format" type="string" default="" unit="" values="int, float, percent, timeSpan">
 					<description>
-						Values are: int, float, percent, timeSpan
-
 						Displays raw values if unset.
 					</description>
 				</parameter>
@@ -472,10 +463,8 @@
 					configured.
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="" unit="">
+				<parameter name="format" type="string" default="" unit="" values="int, float, percent, timeSpan">
 					<description>
-						Values are: int, float, percent, timeSpan
-
 						Displays raw values if unset.
 					</description>
 				</parameter>
@@ -547,10 +536,8 @@
 					configured.
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="" unit="">
+				<parameter name="format" type="string" default="" unit="" values="int, float, percent, timeSpan">
 					<description>
-						Values are: int, float, percent, timeSpan
-
 						Displays raw values if unset.
 					</description>
 				</parameter>
@@ -622,12 +609,8 @@
 					configured.
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="" unit="">
+				<parameter name="format" type="string" default="" unit="" values="int, float, percent, timeSpan">
 					<description>
-						Values are: int, float, percent, timeSpan
-
-						Displays raw values if unset.
-
 						Displays raw values if unset.
 					</description>
 				</parameter>
@@ -699,10 +682,8 @@
 					configured.
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="" unit="">
+				<parameter name="format" type="string" default="" unit="" values="int, float, percent, timeSpan">
 					<description>
-						Values are: int, float, percent, timeSpan
-
 						Displays raw values if unset.
 					</description>
 				</parameter>
@@ -774,10 +755,8 @@
 					configured.
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="" unit="">
+				<parameter name="format" type="string" default="" unit="" values="int, float, percent, timeSpan">
 					<description>
-						Values are: int, float, percent, timeSpan
-
 						Displays raw values if unset.
 					</description>
 				</parameter>
@@ -850,10 +829,8 @@
 					configured.
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="" unit="">
+				<parameter name="format" type="string" default="" unit="" values="int, float, percent, timeSpan">
 					<description>
-						Values are: int, float, percent, timeSpan
-
 						Displays raw values if unset.
 					</description>
 				</parameter>
@@ -925,10 +902,8 @@
 					configured.
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="" unit="">
+				<parameter name="format" type="string" default="" unit="" values="int, float, percent, timeSpan">
 					<description>
-						Values are: int, float, percent, timeSpan
-
 						Displays raw values if unset.
 					</description>
 				</parameter>
@@ -1002,10 +977,8 @@
 					configured.
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="" unit="">
+				<parameter name="format" type="string" default="" unit="" values="int, float, percent, timeSpan">
 					<description>
-						Values are: int, float, percent, timeSpan
-
 						Displays raw values if unset.
 					</description>
 				</parameter>
@@ -1079,10 +1052,8 @@
 					configured.
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="" unit="">
+				<parameter name="format" type="string" default="" unit="" values="int, float, percent, timeSpan">
 					<description>
-						Values are: int, float, percent, timeSpan
-
 						Displays raw values if unset.
 					</description>
 				</parameter>
@@ -1155,10 +1126,8 @@
 					configured.
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="" unit="">
+				<parameter name="format" type="string" default="" unit="" values="int, float, percent, timeSpan">
 					<description>
-						Values are: int, float, percent, timeSpan
-
 						Displays raw values if unset.
 					</description>
 				</parameter>
@@ -1231,10 +1200,8 @@
 					configured.
 					</description>
 				</parameter>
-				<parameter name="format" type="string" default="" unit="">
+				<parameter name="format" type="string" default="" unit="" values="int, float, percent, timeSpan">
 					<description>
-						Values are: int, float, percent, timeSpan
-
 						Displays raw values if unset.
 					</description>
 				</parameter>
