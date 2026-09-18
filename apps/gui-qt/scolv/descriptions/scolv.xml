@@ -236,7 +236,7 @@
 					</parameter>
 				</group>
 				<group name="locator">
-					<parameter name="interface" type="string" default="LOCSAT" values="FixedHypocenter,Hypo71,LocExt,LocRouter,LOCSAT,NonLinLoc,StdLoc">
+					<parameter name="interface" type="string" default="LOCSAT" values="FixedHypocenter,Hypo71,LocExt,Router,LOCSAT,NonLinLoc,StdLoc">
 						<description>
 						The default locator interface to use.
 						</description>
