@@ -63,9 +63,9 @@ class Worker {
 		void readAttExtMillis(DataModel::DataAttributeExtent *attExt);
 
 	protected:
-		const SCARDAC*                  _app{nullptr};
+		const SCARDAC                  *_app{nullptr};
 		int                             _id{0};
-		CollectorPtr                    _collector;
+		Collector                      *_collector{nullptr};
 
 		// initialized by first processExtent call and reused subsequently
 		DataModel::DatabaseReaderPtr    _db;
