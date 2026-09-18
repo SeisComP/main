@@ -66,8 +66,7 @@
 					</description>
 					<parameter name="scaling" type="string" default="minmax" values="minmax,row">
 						<description>
-						Define the method to scale traces within rows. Possible
-						values are: 
+						Define the method to scale traces within rows:
 
 						minmax: Scale all rows to configured minimum and maximum
 						amplitudes configured by amplitudeRange.min and
