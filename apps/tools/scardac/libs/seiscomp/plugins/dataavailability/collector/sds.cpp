@@ -43,7 +43,7 @@ REGISTER_DATAAVAILABILITY_COLLECTOR(SDSCollector, "sds");
 SDSCollector::RecordIterator::RecordIterator(string file,
                                              const DataModel::WaveformStreamID &wid)
 : _file(std::move(file)), _sid(streamID(wid)),
-  _input(&_stream, Array::DOUBLE, Record::DATA_ONLY) {
+  _input(&_stream, Array::DOUBLE, Record::META_ONLY) {
 	if ( !_stream.setSource(_file) ) {
 		throw CollectorException("could not open record file");
 	}
