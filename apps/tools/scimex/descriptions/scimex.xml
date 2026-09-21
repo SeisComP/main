@@ -93,11 +93,37 @@
 						* configuration lines.
 						</description>
 					</parameter>
+					<parameter name="condition" type="string">
+						<description>
+						A Utils::V2::LeParser logical expression, evaluated in
+						addition to criteria (if both are set, an origin must
+						pass both). Unlike criteria it can filter on evaluation
+						mode/status and event type -- e.g. only exporting
+						reviewed/final solutions and never a false detection.
+						The key names and aliases match the ga-mla "magselect"
+						scevent plugin and scolv/scesv's eventlist.highlight
+						feature: mag/magnitude, lat/latitude, lon/longitude,
+						depth, agencyid, author, mode (alias: evaluationmode),
+						status (alias: evaluationstatus), type, typecertainty.
+						String values must be single-quoted; unset fields are
+						treated as null (!= returns true, == returns false).
+
+						Example, exporting only reviewed/final M4.5+ solutions
+						in a region of interest while excluding events flagged
+						as a false detection:
+						condition = "mag &gt;= 4.5 &amp;&amp; lat &gt;= 30 &amp;&amp; lat &lt;= 45 &amp;&amp;
+						             lon &gt;= 20 &amp;&amp; lon &lt;= 45 &amp;&amp;
+						             mode == 'manual' &amp;&amp; status == 'final' &amp;&amp;
+						             type != 'not existing'"
+						</description>
+					</parameter>
 					<parameter name="filter" type="boolean" default="true">
 						<description>
-						Enable/disable filtering based on defined criteria.
-						If set to false, all events will pass, even if one
-						or more criteria are defined.
+						Enable/disable filtering based on criteria and/or
+						condition. If set to false, all events will pass, even
+						if criteria and/or condition are defined. If set to
+						true, at least one of criteria or condition must be
+						defined.
 						</description>
 					</parameter>
 					<parameter name="conversion" type="string">
