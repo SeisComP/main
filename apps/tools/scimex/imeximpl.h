@@ -171,6 +171,7 @@ class ImExImpl {
 		Client::ConnectionPtr                  _sink;
 		ImEx*                                  _imex;
 		boost::shared_ptr<CriterionInterface>  _criterion;
+		Utils::V2::LeExpressionPtr             _condition;
 		boost::thread                         *_thread0;
 		boost::thread                         *_thread1;
 

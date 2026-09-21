@@ -175,6 +175,86 @@ bool findOrigin(const string& id, const ImExImpl::SentOriginList& list)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+/**
+ * Exposes an origin (plus its associated event, if any is already known)
+ * as named keys to a Utils::V2::LeParser condition (hosts.<sink>.condition).
+ * The key names and aliases intentionally match the other real-world users
+ * of this parser in the codebase (the ga-mla "magselect" scevent plugin and
+ * EventListView's eventlist.highlight feature), so a condition written for
+ * one reads the same way in the other.
+ *
+ * mag/magnitude resolves to the associated event's preferred magnitude when
+ * an event is already known, falling back to the origin's first magnitude
+ * otherwise -- the same resolution filterMagnitudeExport() already uses.
+ *
+ * type/typecertainty require an associated event and throw SeisComP's null
+ * (Core::ValueException) when none is known yet, same as any other unset
+ * field: e.g. "type != 'not existing'" still passes such an origin.
+ */
+class ScimexKeyValueContext : public Utils::V2::LeKeyValueContext {
+	public:
+		ScimexKeyValueContext(const DataModel::Origin *origin, const DataModel::Event *event)
+		: _origin(origin), _event(event) {}
+
+		double getDouble(string_view key) const override {
+			if ( key == "lat" || key == "latitude" ) return _origin->latitude().value();
+			if ( key == "lon" || key == "longitude" ) return _origin->longitude().value();
+			if ( key == "depth" ) return _origin->depth().value();
+			if ( key == "mag" || key == "magnitude" ) {
+				const DataModel::Magnitude *mag = preferredMagnitude();
+				if ( !mag ) throw Core::ValueException();
+				return mag->magnitude().value();
+			}
+			throw runtime_error("unknown key: " + string(key));
+		}
+
+		string getString(string_view key) const override {
+			if ( key == "agencyid" ) {
+				string id = objectAgencyID(_origin);
+				if ( id.empty() ) throw Core::ValueException();
+				return id;
+			}
+			if ( key == "author" ) {
+				string author = objectAuthor(_origin);
+				if ( author.empty() ) throw Core::ValueException();
+				return author;
+			}
+			if ( key == "mode" || key == "evaluationmode" ) {
+				return _origin->evaluationMode().toString();
+			}
+			if ( key == "status" || key == "evaluationstatus" ) {
+				return _origin->evaluationStatus().toString();
+			}
+			if ( key == "type" ) {
+				if ( !_event ) throw Core::ValueException();
+				return _event->type().toString();
+			}
+			if ( key == "typecertainty" ) {
+				if ( !_event ) throw Core::ValueException();
+				return _event->typeCertainty().toString();
+			}
+			throw runtime_error("unknown key: " + string(key));
+		}
+
+	private:
+		const DataModel::Magnitude *preferredMagnitude() const {
+			if ( _event ) {
+				auto *mag = _origin->findMagnitude(_event->preferredMagnitudeID());
+				if ( mag ) return mag;
+			}
+			return _origin->magnitudeCount() > 0 ? _origin->magnitude(0) : nullptr;
+		}
+
+	private:
+		const DataModel::Origin *_origin;
+		const DataModel::Event  *_event;
+};
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 ImExImpl::ImExImpl(ImEx* imex, const string& sinkName)
  : _sinkName(sinkName),
    _imex(imex),
@@ -247,7 +327,9 @@ bool ImExImpl::init() {
 	}
 	catch ( Config::Exception & ) {}
 
-	// Get criteria
+	// Get criteria (legacy syntax: fixed lat/lon/magnitude/arrivalcount/agencyID
+	// fields combined with &, |, !)
+	bool haveCriteria = false;
 	try {
 		string criteriaStr = _imex->configGetString("hosts." + _sinkName + ".criteria");
 
@@ -272,13 +354,44 @@ bool ImExImpl::init() {
 
 		if ( parser.error() )
 			SEISCOMP_ERROR("%s", parser.what());
+
+		haveCriteria = true;
 	}
-	catch ( Config::Exception& e ) {
-		if ( _filter ) {
-			SEISCOMP_DEBUG("(%s) %s ", e.what(), _sinkName.c_str());
+	catch ( Config::Exception& ) {
+		_criterion.reset();
+	}
+
+	// Get condition (Utils::V2::LeParser syntax: adds evaluation mode/status
+	// and event type on top of what criteria can express, using the same
+	// engine and key vocabulary as magselect/eventlist.highlight). Additive
+	// to criteria: if both are configured an origin must pass both.
+	bool haveCondition = false;
+	try {
+		string conditionStr = _imex->configGetString("hosts." + _sinkName + ".condition");
+
+		Utils::V2::LeKeyValueFactory factory;
+		auto symbols = Utils::V2::LeParser::DefaultSymbols();
+		symbols.reserved = Utils::V2::LeKeyValueFactory::Reserved();
+		Utils::V2::LeParser parser(&factory, &symbols);
+
+		try {
+			_condition = parser.parse(conditionStr);
+			haveCondition = true;
+		}
+		catch ( const std::exception &e ) {
+			SEISCOMP_ERROR("(%s) invalid condition '%s': %s",
+			               _sinkName.c_str(), conditionStr.c_str(), e.what());
 			return false;
 		}
-		_criterion.reset();
+	}
+	catch ( Config::Exception& ) {
+		_condition.reset();
+	}
+
+	if ( _filter && !haveCriteria && !haveCondition ) {
+		SEISCOMP_ERROR("(%s) filter is enabled but neither criteria nor "
+		               "condition is configured", _sinkName.c_str());
+		return false;
 	}
 
 	if ( _imex->mode() == ImEx::EXPORT ) {
@@ -998,34 +1111,65 @@ bool ImExImpl::filter(DataModel::Origin* origin) {
 	if ( !_filter )
 		return true;
 
-	SEISCOMP_DEBUG("Filtering origin: %s", origin->publicID().c_str());
-	SEISCOMP_DEBUG("Checking latitude/longitude");
-	if ( !_criterion->isInLatLonRange(origin->latitude(), origin->longitude()) ) {
-		SEISCOMP_DEBUG("= latitude/longitude mismatch =");
-		SEISCOMP_DEBUG("%s", _criterion->what().c_str());
-		_criterion->clearError();
-		return false;
+	// Legacy fixed-field criteria. _criterion is only set up when
+	// hosts.<sink>.criteria is configured -- a sink using condition only
+	// skips this block entirely.
+	if ( _criterion ) {
+		SEISCOMP_DEBUG("Filtering origin: %s", origin->publicID().c_str());
+		SEISCOMP_DEBUG("Checking latitude/longitude");
+		if ( !_criterion->isInLatLonRange(origin->latitude(), origin->longitude()) ) {
+			SEISCOMP_DEBUG("= latitude/longitude mismatch =");
+			SEISCOMP_DEBUG("%s", _criterion->what().c_str());
+			_criterion->clearError();
+			return false;
+		}
+
+		// Arrival count
+		SEISCOMP_DEBUG("Checking arrival count");
+		if ( !_criterion->checkArrivalCount(origin->arrivalCount()) ) {
+			SEISCOMP_DEBUG("Number of arrivals %ld is below the minimum", (long int)origin->arrivalCount());
+			SEISCOMP_DEBUG("%s", _criterion->what().c_str());
+			_criterion->clearError();
+			return false;
+		}
+
+		// Magnitude
+		SEISCOMP_DEBUG("Checking magnitude");
+		if ( !filterMagnitude(origin) )
+			return false;
+
+		SEISCOMP_DEBUG("Checking agencyID");
+		if ( !_criterion->checkAgencyID(objectAgencyID(origin)) ) {
+			SEISCOMP_DEBUG("Could not find agencyID: %s", objectAgencyID(origin).c_str());
+			_criterion->clearError();
+			return false;
+		}
 	}
 
-	// Arrival count
-	SEISCOMP_DEBUG("Checking arrival count");
-	if ( !_criterion->checkArrivalCount(origin->arrivalCount()) ) {
-		SEISCOMP_DEBUG("Number of arrivals %ld is below the minimum", (long int)origin->arrivalCount());
-		SEISCOMP_DEBUG("%s", _criterion->what().c_str());
-		_criterion->clearError();
-		return false;
-	}
+	// hosts.<sink>.condition: additive to criteria above -- if both are
+	// configured an origin must pass both.
+	if ( _condition ) {
+		const DataModel::Event *event = nullptr;
+		for ( auto &wrapper : _eventList ) {
+			if ( wrapper.preferredOriginID() == origin->publicID() ) {
+				event = wrapper.event();
+				break;
+			}
+		}
 
-	// Magnitude
-	SEISCOMP_DEBUG("Checking magnitude");
-	if ( !filterMagnitude(origin) )
-		return false;
-
-	SEISCOMP_DEBUG("Checking agencyID");
-	if ( !_criterion->checkAgencyID(objectAgencyID(origin)) ) {
-		SEISCOMP_DEBUG("Could not find agencyID: %s", objectAgencyID(origin).c_str());
-		_criterion->clearError();
-		return false;
+		SEISCOMP_DEBUG("Checking condition for origin: %s", origin->publicID().c_str());
+		ScimexKeyValueContext ctx(origin, event);
+		try {
+			if ( !_condition->eval(&ctx) ) {
+				SEISCOMP_DEBUG("= condition mismatch =");
+				return false;
+			}
+		}
+		catch ( const std::exception &e ) {
+			SEISCOMP_WARNING("(%s) condition evaluation error for origin %s: %s",
+			                 _sinkName.c_str(), origin->publicID().c_str(), e.what());
+			return false;
+		}
 	}
 
 	SEISCOMP_DEBUG("Origin passed filter");
