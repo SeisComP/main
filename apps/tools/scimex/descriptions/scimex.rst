@@ -8,8 +8,10 @@ By default all objects (picks, amplitudes, origins, arrivals, station
 magnitudes, magnitudes, magnitude references) are transferred to the other
 system. The user can define filters at both the sender and the receiver, to
 limit the events for which objects are transferred. Possible filter parameters
-are the event location, magnitude, arrival count and agency. scimex supports
-two modi: *import* and *export*. In export mode scimex collects all objects
+are the event location, magnitude, arrival count and agency
+(``hosts.$name.criteria``), plus evaluation mode, evaluation status and
+event type (``hosts.$name.condition``) -- see the examples below. scimex
+supports two modi: *import* and *export*. In export mode scimex collects all objects
 relevant for an event (e.g. picks, amplitudes, origins, magnitudes) from
 scmaster's message groups at the source and checks if the filter criteria
 match. Once the criteria are fulfilled, the whole package of objects is send
@@ -112,3 +114,20 @@ scimex_export.cfg
 
    hosts.exp2.address = 192.168.0.4
    hosts.exp2.criteria = globalM5
+
+``condition`` complements ``criteria`` with fields criteria cannot express:
+evaluation mode, evaluation status and event type. It is additive -- if both
+are set for a host, an origin must pass both -- and can also be used on its
+own. To export only reviewed/final solutions from exp1, never a false
+detection, in addition to the globalM5 criteria already defined above:
+
+.. code-block:: sh
+
+   hosts.exp1.condition = "mode == 'manual' && status == 'final' && \
+                            type != 'not existing'"
+
+The condition syntax, operators and key names (``mag``/``magnitude``,
+``lat``/``latitude``, ``lon``/``longitude``, ``depth``, ``agencyid``,
+``author``, ``mode``/``evaluationmode``, ``status``/``evaluationstatus``,
+``type``, ``typecertainty``) match the ga-mla ``magselect`` scevent plugin
+and scolv/scesv's ``eventlist.highlight`` feature.
