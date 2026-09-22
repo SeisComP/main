@@ -89,13 +89,13 @@
 			</group>
 			<group name="constraints">
 				<description>Constraints for executing scripts</description>
-				<parameter name="phaseHints" type="list::string" default="P,S">
+				<parameter name="phaseHints" type="list:string" default="P,S">
 					<description>
 					Start the pick script only when the phaseHint of the
 					received pick has one of the value(s).
 					</description>
 				</parameter>
-				<parameter name="phaseStreams" type="list::string" default="">
+				<parameter name="phaseStreams" type="list:string" default="">
 					<description>
 					Start the pick script only when the stream (NET.STA.LOC.CHA)
 					of the received pick belongs to the list of stream IDs. If empty,
@@ -118,6 +118,14 @@
 					'phaseNumber' is received within 'phaseInterval'.
 					</description> 
 				</parameter>  
+				<group name="event">
+					<description>Constraints for events</description>
+					<parameter name="type" type="list:string" default="">
+						<description>
+						List of event types. Separate multiple types by comma.
+						</description>
+					</parameter>
+				</group>
 			</group>
 		</configuration>
 		<command-line>

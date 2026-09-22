@@ -13,6 +13,7 @@
 # https://www.gnu.org/licenses/agpl-3.0.html.                              #
 ############################################################################
 
+import math
 import os
 import sys
 import re
@@ -67,10 +68,11 @@ class ObjectAlert(seiscomp.client.Application):
         self._oldEvents = []
         self._agencyIDs = []
         self._authors = []
-        self._phaseHints = []
+        self._phaseHints = ["P", "S"]
         self._phaseStreams = []
         self._phaseNumber = 1
         self._phaseInterval = 1
+        self._eventType = []
         self._cache = None
         self._pickCache = seiscomp.datamodel.PublicObjectTimeSpanBuffer()
 
@@ -142,24 +144,26 @@ class ObjectAlert(seiscomp.client.Application):
         except Exception:
             pass
 
-        try:
-            self._agencyIDs = [self.configGetString("agencyID")]
-        except Exception:
-            pass
-
+        agencyIDs = []
         try:
             agencyIDs = self.configGetStrings("agencyIDs")
-            self._agencyIDs = []
-            for item in agencyIDs:
-                item = item.strip()
-                if item and item not in self._agencyIDs:
-                    self._agencyIDs.append(item)
         except Exception:
+            try:
+                agencyIDs = [self.configGetString("agencyID")]
+                seiscomp.logging.info(
+                    "'agencyIDs' unset: Considering global configuration of 'agencyID'"
+                )
+            except Exception:
+                pass
             pass
+
+        for item in agencyIDs:
+            item = item.strip()
+            if item and item not in self._agencyIDs:
+                self._agencyIDs.append(item)
 
         try:
             authors = self.configGetStrings("authors")
-            self._authors = []
             for item in authors:
                 item = item.strip()
                 if item not in self._authors:
@@ -167,7 +171,6 @@ class ObjectAlert(seiscomp.client.Application):
         except Exception:
             pass
 
-        self._phaseHints = ["P", "S"]
         try:
             phaseHints = self.configGetStrings("constraints.phaseHints")
             self._phaseHints = []
@@ -178,7 +181,6 @@ class ObjectAlert(seiscomp.client.Application):
         except Exception:
             pass
 
-        self._phaseStreams = []
         try:
             phaseStreams = self.configGetStrings("constraints.phaseStreams")
             for item in phaseStreams:
@@ -189,6 +191,7 @@ class ObjectAlert(seiscomp.client.Application):
                         f"Wrong stream ID format in `constraints.phaseStreams`: {item}"
                     )
                     return False
+
                 # convert rule to a valid regular expression
                 rule = re.sub(r"\.", r"\.", rule)
                 rule = re.sub(r"\?", ".", rule)
@@ -211,6 +214,11 @@ class ObjectAlert(seiscomp.client.Application):
         if self._phaseNumber > 1:
             self._pickCache.setTimeSpan(seiscomp.core.TimeSpan(self._phaseInterval))
             self.enableTimer(1)
+
+        try:
+            self._eventType = self.configGetStrings("constraints.event.type")
+        except RuntimeError:
+            pass
 
         try:
             self._eventDescriptionPattern = self.configGetString("poi.message")
@@ -371,33 +379,36 @@ class ObjectAlert(seiscomp.client.Application):
                 "A new event is declared when I see it the first time"
             )
 
-        seiscomp.logging.info("Filtering:")
+        seiscomp.logging.info("Filtering")
         if self._agencyIDs:
-            agencies = " ".join(self._agencyIDs)
-            seiscomp.logging.info(
-                f" + agencyIDs filter for events and picks: {agencies}"
-            )
+            agencies = ", ".join(self._agencyIDs)
+            seiscomp.logging.info(f" + agencyID for events and picks: {agencies}")
         else:
-            seiscomp.logging.info(" + agencyIDs: no filter is applied")
+            seiscomp.logging.info(" + agencyID:                      no filtering")
 
         if " ".join(self._authors):
-            authors = " ".join(self._authors)
-            seiscomp.logging.info(f" + Authors filter for events and picks: {authors}")
+            authors = ", ".join(self._authors)
+            seiscomp.logging.info(f" + author for events and picks:   {authors}")
         else:
-            seiscomp.logging.info(" + authors: no filter is applied")
+            seiscomp.logging.info(" + author:                        no filtering")
 
         if " ".join(self._phaseHints):
-            phaseHints = " ".join(self._phaseHints)
-            seiscomp.logging.info(f" + phase hint filter for picks: '{phaseHints}'")
+            phaseHints = ", ".join(self._phaseHints)
+            seiscomp.logging.info(f" + phase hint for picks:          {phaseHints}")
         else:
-            seiscomp.logging.info(" + phase hints: no filter is applied")
+            seiscomp.logging.info(" + phase hints:                   no filtering")
 
         if " ".join(self._phaseStreams):
-            streams = " ".join(self._phaseStreams)
-            seiscomp.logging.info(f" + phase stream ID filter for picks: '{streams}'")
+            streams = ", ".join(self._phaseStreams)
+            seiscomp.logging.info(f" + phase stream ID for picks:     {streams}")
         else:
-            seiscomp.logging.info(" + phase stream ID: no filter is applied")
+            seiscomp.logging.info(" + phase stream ID:               no filtering")
 
+        if self._eventType:
+            types = ", ".join(self._eventType)
+            seiscomp.logging.info(f" + event type:                    {types}")
+        else:
+            seiscomp.logging.info(" + event type:                    no filtering")
         return True
 
     def run(self):
@@ -406,15 +417,14 @@ class ObjectAlert(seiscomp.client.Application):
                 eventID = self.commandline().optionString("eventid")
                 event = self._cache.get(seiscomp.datamodel.Event, eventID)
                 if event:
+                    seiscomp.logging.debug(f"Processing event '{event.publicID()}'")
                     self.notifyEvent(event)
             except Exception:
                 pass
 
             return seiscomp.client.Application.run(self)
         except Exception:
-            info = traceback.format_exception(*sys.exc_info())
-            for i in info:
-                sys.stderr.write(i)
+            traceback.print_exc(file=sys.stderr)
             return False
 
     def done(self):
@@ -540,9 +550,7 @@ class ObjectAlert(seiscomp.client.Application):
 
             seiscomp.client.Application.handleMessage(self, msg)
         except Exception:
-            info = traceback.format_exception(*sys.exc_info())
-            for i in info:
-                sys.stderr.write(i)
+            traceback.print_exc(file=sys.stderr)
 
     def addObject(self, parentID, scObject):
         try:
@@ -601,7 +609,7 @@ class ObjectAlert(seiscomp.client.Application):
             obj = seiscomp.datamodel.Origin.Cast(scObject)
             if obj:
                 self._cache.feed(obj)
-                seiscomp.logging.debug(f"got new origin '{obj.publicID()}'")
+                seiscomp.logging.debug(f"Got new origin '{obj.publicID()}'")
 
                 try:
                     if obj.evaluationStatus() == seiscomp.datamodel.PRELIMINARY:
@@ -615,44 +623,26 @@ class ObjectAlert(seiscomp.client.Application):
             obj = seiscomp.datamodel.Magnitude.Cast(scObject)
             if obj:
                 self._cache.feed(obj)
-                seiscomp.logging.debug(f"got new magnitude '{obj.publicID()}'")
+                seiscomp.logging.debug(f"Got new magnitude '{obj.publicID()}'")
                 return
 
             # event
             obj = seiscomp.datamodel.Event.Cast(scObject)
             if obj:
-                org = self._cache.get(
-                    seiscomp.datamodel.Origin, obj.preferredOriginID()
-                )
-                agencyID = org.creationInfo().agencyID()
-                author = org.creationInfo().author()
-                seiscomp.logging.debug(f"got new event '{obj.publicID()}'")
-                if not self._agencyIDs or agencyID in self._agencyIDs:
-                    if not self._authors or author in self._authors:
-                        self.notifyEvent(obj, True)
+                seiscomp.logging.debug(f"Got new event '{obj.publicID()}'")
+                self.notifyEvent(obj, True)
                 return
         except Exception:
-            info = traceback.format_exception(*sys.exc_info())
-            for i in info:
-                sys.stderr.write(i)
+            traceback.print_exc(file=sys.stderr)
 
     def updateObject(self, parentID, scObject):
         try:
             obj = seiscomp.datamodel.Event.Cast(scObject)
             if obj:
-                org = self._cache.get(
-                    seiscomp.datamodel.Origin, obj.preferredOriginID()
-                )
-                agencyID = org.creationInfo().agencyID()
-                author = org.creationInfo().author()
-                seiscomp.logging.debug(f"update event '{obj.publicID()}'")
-                if not self._agencyIDs or agencyID in self._agencyIDs:
-                    if not self._authors or author in self._authors:
-                        self.notifyEvent(obj, False)
+                seiscomp.logging.debug(f"Updating event '{obj.publicID()}'")
+                self.notifyEvent(obj, False)
         except Exception:
-            info = traceback.format_exception(*sys.exc_info())
-            for i in info:
-                sys.stderr.write(i)
+            traceback.print_exc(file=sys.stderr)
 
     def handleTimeout(self):
         self.checkEnoughPicks()
@@ -662,7 +652,7 @@ class ObjectAlert(seiscomp.client.Application):
             # wait until self._phaseInterval has elapsed before calling the
             # script (more picks might come)
             timeWindowLength = (
-                seiscomp.core.Time.GMT() - self._pickCache.oldest()
+                seiscomp.core.Time.UTC() - self._pickCache.oldest()
             ).length()
             if timeWindowLength >= self._phaseInterval:
                 picks = [seiscomp.datamodel.Pick.Cast(o) for o in self._pickCache]
@@ -684,10 +674,44 @@ class ObjectAlert(seiscomp.client.Application):
             org = self._cache.get(seiscomp.datamodel.Origin, evt.preferredOriginID())
             if not org:
                 seiscomp.logging.warning(
-                    f"unable to get origin {evt.preferredOriginID()}, ignoring event message"
+                    "  + ignoring: Unable to get preferred origin "
+                    f"{evt.preferredOriginID()}"
                 )
                 return
+        except Exception:
+            traceback.print_exc(file=sys.stderr)
+            return
 
+        agencyID = org.creationInfo().agencyID()
+        author = org.creationInfo().author()
+        if self._agencyIDs and agencyID not in self._agencyIDs:
+            seiscomp.logging.debug(
+                f"  + ignoring: Agency '{agencyID}' not in configured list "
+                f"{self._agencyIDs}"
+            )
+            return
+
+        if self._authors and author not in self._authors:
+            seiscomp.logging.debug(
+                f"  + ignoring: Author '{author}' not in configured list "
+                f"{self._authors}"
+            )
+            return
+
+        try:
+            evType = seiscomp.datamodel.EEventTypeNames.name(evt.type())
+            if self._eventType and evType not in self._eventType:
+                seiscomp.logging.debug(
+                    f"  + ignoring: Unsupported event type '{evType}'"
+                )
+                return
+        except Exception:
+            if self._eventType:
+                seiscomp.logging.debug("  + ignoring: Received without event type")
+                return
+            evType = "earthquake"
+
+        try:
             preliminary = False
             try:
                 if org.evaluationStatus() == seiscomp.datamodel.PRELIMINARY:
@@ -750,13 +774,8 @@ class ObjectAlert(seiscomp.client.Application):
 
             seiscomp.logging.debug(f"desc: {dsc}")
 
-            try:
-                evType = seiscomp.datamodel.EEventTypeNames.name(evt.type())
-            except Exception:
-                evType = "earthquake"
-
             dep = org.depth().value()
-            now = seiscomp.core.Time.GMT()
+            now = seiscomp.core.Time.UTC()
             otm = org.time().value()
 
             dt = (now - otm).seconds()
@@ -775,7 +794,8 @@ class ObjectAlert(seiscomp.client.Application):
                 message = f"{evType}, XXL, preliminary, {dt}, {dsc}"
             else:
                 message = (
-                    f"{evType}, {dt}, {dsc}, {mag}, depth {int(dep + 0.5)} kilometers"
+                    f"{evType}, {dt}, {dsc}, {mag}, depth "
+                    f"{int(dep + math.copysign(0.5, dep))} kilometers"
                 )
 
             seiscomp.logging.info(message)
@@ -831,9 +851,7 @@ class ObjectAlert(seiscomp.client.Application):
                     f"{param2} {param3} {param4}'"
                 )
         except Exception:
-            info = traceback.format_exception(*sys.exc_info())
-            for i in info:
-                sys.stderr.write(i)
+            traceback.print_exc(file=sys.stderr)
 
     def printUsage(self):
         print(
