@@ -59,7 +59,7 @@ namespace Applications {
 // debug
 #define PUBLIC_OBJECT_INFO(object, notifier) \
 	SEISCOMP_INFO("Sending %s with publicID %s and operation %s", \
-	              object->className(), object->publicID().c_str(), \
+	              object->className(), object->publicID(), \
 	              (*notifier)->operation().toString())
 
 
@@ -67,9 +67,10 @@ void dataMessageInfo(Core::DataMessage* dataMessage) {
 	Core::DataMessage::iterator it = dataMessage->begin();
 	for ( ; it != dataMessage->end(); it++ ) {
 		DataModel::Event* event = DataModel::Event::Cast(it->get());
-		if ( event )
+		if ( event ) {
 			SEISCOMP_INFO("Sending %s with publicID %s",
-			              event->className(), event->publicID().c_str());
+			              event->className(), event->publicID());
+		}
 	}
 }
 
@@ -85,59 +86,74 @@ void notifierMessageInfo(DataModel::NotifierMessage* notifierMessage) {
 	notifierIt = notifierMessage->begin();
 	*/
 	for ( ; notifierIt != notifierMessage->end(); ++notifierIt ) {
-		Core::BaseObject* object = (*notifierIt)->object();
-		if ( !object ) continue;
+		auto *object = (*notifierIt)->object();
+		if ( !object ) {
+			continue;
+		}
 
 		string className = object->className();
 		if ( className == DataModel::Pick::ClassName() ) {
-			DataModel::Pick* pick = DataModel::Pick::Cast(object);
-			if ( pick ) PUBLIC_OBJECT_INFO(pick, notifierIt);
+			auto *pick = DataModel::Pick::Cast(object);
+			if ( pick ) {
+				PUBLIC_OBJECT_INFO(pick, notifierIt);
+			}
 		}
 		else if ( className == DataModel::Amplitude::ClassName() ) {
-			DataModel::Amplitude* amplitude = DataModel::Amplitude::Cast(object);
-			if ( amplitude ) PUBLIC_OBJECT_INFO(amplitude, notifierIt);
+			auto *amplitude = DataModel::Amplitude::Cast(object);
+			if ( amplitude ) {
+				PUBLIC_OBJECT_INFO(amplitude, notifierIt);
+			}
 		}
 		else if ( className == DataModel::Origin::ClassName() ) {
-			DataModel::Origin* origin = DataModel::Origin::Cast(object);
-			if ( origin ) PUBLIC_OBJECT_INFO(origin, notifierIt);
+			auto *origin = DataModel::Origin::Cast(object);
+			if ( origin ) {
+				PUBLIC_OBJECT_INFO(origin, notifierIt);
+			}
 		}
 		else if ( className == DataModel::Arrival::ClassName() ) {
-			DataModel::Arrival* arrival = DataModel::Arrival::Cast(object);
-			if ( arrival )
+			auto *arrival = DataModel::Arrival::Cast(object);
+			if ( arrival ) {
 				SEISCOMP_INFO("Sending %s for pick %s and operation %s",
-				              arrival->className(), arrival->pickID().c_str(),
+				              arrival->className(), arrival->pickID(),
 				              (*notifierIt)->operation().toString());
+			}
 		}
 		else if ( className == DataModel::StationMagnitude::ClassName() ) {
-			DataModel::StationMagnitude* sm = DataModel::StationMagnitude::Cast(object);
-			if ( sm ) PUBLIC_OBJECT_INFO(sm, notifierIt);
+			auto *sm = DataModel::StationMagnitude::Cast(object);
+			if ( sm ) {
+				PUBLIC_OBJECT_INFO(sm, notifierIt);
+			}
 		}
 		else if ( className == DataModel::StationMagnitudeContribution::ClassName() ) {
-			DataModel::StationMagnitudeContribution* smc = DataModel::StationMagnitudeContribution::Cast(object);
-			if ( smc )
+			auto *smc = DataModel::StationMagnitudeContribution::Cast(object);
+			if ( smc ) {
 				SEISCOMP_INFO("Sending %s for stationmagnitude %s and operation %s",
-				              smc->className(), smc->stationMagnitudeID().c_str(),
+				              smc->className(), smc->stationMagnitudeID(),
 				              (*notifierIt)->operation().toString());
+			}
 		}
 		else if ( className == DataModel::Magnitude::ClassName() ) {
-			DataModel::Magnitude* magnitude = DataModel::Magnitude::Cast(object);
-			if ( magnitude ) PUBLIC_OBJECT_INFO(magnitude, notifierIt);
+			auto *magnitude = DataModel::Magnitude::Cast(object);
+			if ( magnitude ) {
+				PUBLIC_OBJECT_INFO(magnitude, notifierIt);
+			}
 		}
 		else if ( className == DataModel::Event::ClassName() ) {
-			DataModel::Event* event = DataModel::Event::Cast(object);
-			if ( event ) PUBLIC_OBJECT_INFO(event, notifierIt);
+			auto *event = DataModel::Event::Cast(object);
+			if ( event ) {
+				PUBLIC_OBJECT_INFO(event, notifierIt);
+			}
 		}
 		else {
-			SEISCOMP_ERROR("notiferMessageInfo: Received unhandled object: %s with notifier type: %s", className.c_str(), (*notifierIt)->operation().toString());
+			SEISCOMP_ERROR("notiferMessageInfo: Received unhandled object: %s with notifier type: %s", className, (*notifierIt)->operation().toString());
 		}
 	}
 }
 
 void messageInfo(Core::Message* message) {
-
-	DataModel::NotifierMessage* notifierMessage = DataModel::NotifierMessage::Cast(message);
-	IMEXMessage* imexMessage = IMEXMessage::Cast(message);
-	Core::DataMessage* dataMessage = Core::DataMessage::Cast(message);
+	auto *notifierMessage = DataModel::NotifierMessage::Cast(message);
+	auto *imexMessage = IMEXMessage::Cast(message);
+	auto *dataMessage = Core::DataMessage::Cast(message);
 
 	if ( notifierMessage ) {
 		notifierMessageInfo(notifierMessage);
@@ -151,7 +167,6 @@ void messageInfo(Core::Message* message) {
 	else {
 		SEISCOMP_ERROR("messageInfo: Unknown message found");
 	}
-
 }
 // end debug
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -161,12 +176,12 @@ void messageInfo(Core::Message* message) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool findOrigin(const string& id, const ImExImpl::SentOriginList& list)
-{
-	ImExImpl::SentOriginList::const_iterator it = list.begin();
-	for ( ; it != list.end(); ++it)
-		if ((*it)->publicID() == id)
+bool findOrigin(const string &id, const ImExImpl::SentOriginList &list) {
+	for ( auto it = list.begin(); it != list.end(); ++it ) {
+		if ( (*it)->publicID() == id ) {
 			return true;
+		}
+	}
 	return false;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -197,12 +212,20 @@ class ScimexKeyValueContext : public Utils::V2::LeKeyValueContext {
 		: _origin(origin), _event(event) {}
 
 		double getDouble(string_view key) const override {
-			if ( key == "lat" || key == "latitude" ) return _origin->latitude().value();
-			if ( key == "lon" || key == "longitude" ) return _origin->longitude().value();
-			if ( key == "depth" ) return _origin->depth().value();
+			if ( key == "lat" || key == "latitude" ) {
+				return _origin->latitude().value();
+			}
+			if ( key == "lon" || key == "longitude" ) {
+				return _origin->longitude().value();
+			}
+			if ( key == "depth" ) {
+				return _origin->depth().value();
+			}
 			if ( key == "mag" || key == "magnitude" ) {
 				const DataModel::Magnitude *mag = preferredMagnitude();
-				if ( !mag ) throw Core::ValueException();
+				if ( !mag ) {
+					throw Core::ValueException();
+				}
 				return mag->magnitude().value();
 			}
 			throw runtime_error("unknown key: " + string(key));
@@ -211,12 +234,16 @@ class ScimexKeyValueContext : public Utils::V2::LeKeyValueContext {
 		string getString(string_view key) const override {
 			if ( key == "agencyid" ) {
 				string id = objectAgencyID(_origin);
-				if ( id.empty() ) throw Core::ValueException();
+				if ( id.empty() ) {
+					throw Core::ValueException();
+				}
 				return id;
 			}
 			if ( key == "author" ) {
 				string author = objectAuthor(_origin);
-				if ( author.empty() ) throw Core::ValueException();
+				if ( author.empty() ) {
+					throw Core::ValueException();
+				}
 				return author;
 			}
 			if ( key == "mode" || key == "evaluationmode" ) {
@@ -230,7 +257,9 @@ class ScimexKeyValueContext : public Utils::V2::LeKeyValueContext {
 				return _event->type().toString();
 			}
 			if ( key == "typecertainty" ) {
-				if ( !_event ) throw Core::ValueException();
+				if ( !_event ) {
+					throw Core::ValueException();
+				}
 				return _event->typeCertainty().toString();
 			}
 			throw runtime_error("unknown key: " + string(key));
@@ -240,7 +269,9 @@ class ScimexKeyValueContext : public Utils::V2::LeKeyValueContext {
 		const DataModel::Magnitude *preferredMagnitude() const {
 			if ( _event ) {
 				auto *mag = _origin->findMagnitude(_event->preferredMagnitudeID());
-				if ( mag ) return mag;
+				if ( mag ) {
+					return mag;
+				}
 			}
 			return _origin->magnitudeCount() > 0 ? _origin->magnitude(0) : nullptr;
 		}
@@ -255,22 +286,22 @@ class ScimexKeyValueContext : public Utils::V2::LeKeyValueContext {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-ImExImpl::ImExImpl(ImEx* imex, const string& sinkName)
- : _sinkName(sinkName),
-   _imex(imex),
-   _thread0(NULL),
-   _thread1(NULL),
-   _sleepDuration(3),
-   _filter(true),
-   _useDefinedRoutingTable(false),
-   _isRunning(false),
-   _maxQueueSize(5000),
-   _messageQueue(_maxQueueSize),
-   _contentType(Client::Protocol::Binary),
-   _contentEncoding(Client::Protocol::Deflate),
-   isOriginEligibleImpl(&ImExImpl::isOriginEligibleImport),
-   filterMagnitudeImpl(&ImExImpl::filterMagnitudeImport),
-   sendMessageImpl(&ImExImpl::sendMessageImport) {
+ImExImpl::ImExImpl(ImEx *imex, const string &sinkName)
+: _sinkName(sinkName)
+, _imex(imex)
+, _thread0(nullptr)
+, _thread1(nullptr)
+, _sleepDuration(3)
+, _filter(true)
+, _useDefinedRoutingTable(false)
+, _isRunning(false)
+, _maxQueueSize(5000)
+, _messageQueue(_maxQueueSize)
+, _contentType(Client::Protocol::Binary)
+, _contentEncoding(Client::Protocol::Deflate)
+, isOriginEligibleImpl(&ImExImpl::isOriginEligibleImport)
+, filterMagnitudeImpl(&ImExImpl::filterMagnitudeImport)
+, sendMessageImpl(&ImExImpl::sendMessageImport) {
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -281,7 +312,7 @@ ImExImpl::ImExImpl(ImEx* imex, const string& sinkName)
 ImExImpl::~ImExImpl() {
 	if ( _sink ) {
 		if ( _sink->isConnected() ) {
-			SEISCOMP_DEBUG("Disconnecting from sink %s", _sink->source().c_str());
+			SEISCOMP_DEBUG("Disconnecting from sink %s", _sink->source());
 			_sink->disconnect();
 		}
 	}
@@ -297,14 +328,14 @@ bool ImExImpl::init() {
 		_filter = _imex->configGetBool("hosts." + _sinkName + ".filter");
 	}
 	catch ( Config::Exception &e ) {
-		SEISCOMP_DEBUG("(%s) %s - Default value is true", _sinkName.c_str(), e.what());
+		SEISCOMP_DEBUG("(%s) %s - Default value is true", _sinkName, e.what());
 	}
 
 	try {
 		_useDefinedRoutingTable = _imex->configGetBool("hosts." + _sinkName + ".useDefinedRoutingTable");
 	}
 	catch ( Config::Exception &e ) {
-		SEISCOMP_DEBUG("(%s) %s - Using default routing table", _sinkName.c_str(), e.what());
+		SEISCOMP_DEBUG("(%s) %s - Using default routing table", _sinkName, e.what());
 	}
 
 	try {
@@ -318,7 +349,7 @@ bool ImExImpl::init() {
 		_sinkAddress = _imex->configGetString("hosts." + _sinkName + ".address");
 	}
 	catch ( Config::Exception &e ) {
-		SEISCOMP_DEBUG("(%s) %s ", e.what(), _sinkName.c_str());
+		SEISCOMP_DEBUG("(%s) %s ", e.what(), _sinkName);
 		return false;
 	}
 
@@ -335,14 +366,14 @@ bool ImExImpl::init() {
 
 		Utils::LeTokenizer tokenizer(criteriaStr);
 		if( !tokenizer.tokenize() ) {
-			SEISCOMP_ERROR("%s", tokenizer.what().c_str());
+			SEISCOMP_ERROR("%s", tokenizer.what());
 			return false;
 		}
 		Utils::LeParserTypes::Tokens tokens = tokenizer.tokens();
 
-		SEISCOMP_DEBUG("= Parsed criterion for sink: %s =", _sinkName.c_str());
+		SEISCOMP_DEBUG("= Parsed criterion for sink: %s =", _sinkName);
 		for ( size_t i = 0; i < tokens.size(); ++i )
-			SEISCOMP_DEBUG("%s", tokens[i].c_str());
+			SEISCOMP_DEBUG("%s", tokens[i]);
 
 		CriterionFactory<CriterionInterface> factory(_sinkName, _imex);
 		Utils::LeParser<CriterionInterface> parser(tokens, &factory);
@@ -380,7 +411,7 @@ bool ImExImpl::init() {
 		}
 		catch ( const std::exception &e ) {
 			SEISCOMP_ERROR("(%s) invalid condition '%s': %s",
-			               _sinkName.c_str(), conditionStr.c_str(), e.what());
+			               _sinkName, conditionStr, e.what());
 			return false;
 		}
 	}
@@ -390,7 +421,7 @@ bool ImExImpl::init() {
 
 	if ( _filter && !haveCriteria && !haveCondition ) {
 		SEISCOMP_ERROR("(%s) filter is enabled but neither criteria nor "
-		               "condition is configured", _sinkName.c_str());
+		               "condition is configured", _sinkName);
 		return false;
 	}
 
@@ -422,26 +453,25 @@ bool ImExImpl::init() {
 Client::Result ImExImpl::connectToSink() {
 	Client::Result r;
 
-	_sink = new Client::Connection;
-
 	_sink = new Client::Connection();
 	r = _sink->setSource(_sinkAddress);
 	if ( r != Client::OK ) {
-		SEISCOMP_ERROR("Invalid sink URL: %s", _sinkAddress.c_str());
+		SEISCOMP_ERROR("Invalid sink URL: %s", _sinkAddress);
 		return r;
 	}
 
 	// Connect to the sink master and use a default name
 	while ( (r = _sink->connect(_userName, Client::Protocol::IMPORT_GROUP)) != Client::OK ) {
-		if ( _imex->isExitRequested() )
+		if ( _imex->isExitRequested() ) {
 			return Client::Error;
+		}
 
 		SEISCOMP_ERROR("Could not connect to the sink master %s due to error %s - Trying to reconnect ...",
-		              _sinkAddress.c_str(), r.toString());
+		              _sinkAddress, r.toString());
 		Core::sleep(_sleepDuration);
 	}
 
-	SEISCOMP_DEBUG("Successfully connected to sink master: %s", _sinkAddress.c_str());
+	SEISCOMP_DEBUG("Successfully connected to sink master: %s", _sinkAddress);
 
 	_isRunning = true;
 
@@ -463,7 +493,7 @@ Client::Result ImExImpl::connectToSink() {
 bool ImExImpl::handleMessage(Core::Message *message) {
 	if ( _messageQueue.size() >= _maxQueueSize ) {
 		SEISCOMP_DEBUG("(%s) message queue exceeded maximum size of %ld. Skipping message.",
-		               _sinkName.c_str(), (long int)_maxQueueSize);
+		               _sinkName, (long int)_maxQueueSize);
 		return false;
 	}
 
@@ -515,7 +545,7 @@ bool ImExImpl::handleMessage(Core::Message *message) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void ImExImpl::cleanUp() {
-	SEISCOMP_DEBUG("Cleaning up in implementation for %s", _sinkName.c_str());
+	SEISCOMP_DEBUG("Cleaning up in implementation for %s", _sinkName);
 	cleanUp(_eventList);
 
 	Core::Time now = Core::Time::UTC();
@@ -523,27 +553,32 @@ void ImExImpl::cleanUp() {
 	while ( it != _sentOrigins.end() ) {
 		if ( now - (*it)->time().value() > _imex->cleanUpInterval() ) {
 			SEISCOMP_DEBUG("One %s with id: %s removed",
-			               (*it)->className(), (*it)->publicID().c_str());
+			               (*it)->className(), (*it)->publicID());
 			// Remove sent arrivals and Amplitudes
 			for ( size_t i = 0; i < (*it)->arrivalCount(); ++i ) {
 				DataModel::Arrival* arrival = (*it)->arrival(i);
 
 				SentPicks::iterator pickIt = _sentPicks.begin();
 				while ( pickIt != _sentPicks.end() ) {
-					if ( arrival->pickID() == (*pickIt)->publicID() )
+					if ( arrival->pickID() == (*pickIt)->publicID() ) {
 						pickIt = _sentPicks.erase(pickIt);
-					else
+					}
+					else {
 						++pickIt;
+					}
 				}
 
 				SentAmplitudes::iterator saIt = _sentAmplitudes.begin();
 				while ( saIt != _sentAmplitudes.end() ) {
-					if ( arrival->pickID() == (*saIt)->pickID() )
+					if ( arrival->pickID() == (*saIt)->pickID() ) {
 						saIt = _sentAmplitudes.erase(saIt);
-					else
+					}
+					else {
 						++saIt;
+					}
 				}
 			}
+
 			it = _sentOrigins.erase(it);
 		}
 		else {
@@ -571,13 +606,13 @@ void ImExImpl::wait() {
 	if ( _thread0 ) {
 		_thread0->join();
 		delete _thread0;
-		_thread0 = NULL;
+		_thread0 = nullptr;
 	}
 
 	if ( _thread1 ) {
 		_thread1->join();
 		delete _thread1;
-		_thread1 = NULL;
+		_thread1 = nullptr;
 	}
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -595,14 +630,13 @@ string ImExImpl::sinkName() const {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void ImExImpl::cleanUp(EventList& eventList)
-{
+void ImExImpl::cleanUp(EventList& eventList) {
 	EventList::iterator it = eventList.begin();
 	while ( it != eventList.end() ) {
 		try {
 			if ( Core::Time::UTC() - it->event()->creationInfo().creationTime() > _imex->cleanUpInterval() ) {
 				SEISCOMP_DEBUG("One %s with id: %s removed",
-						it->event()->className(), it->event()->publicID().c_str());
+				               it->event()->className(), it->event()->publicID());
 				it = eventList.erase(it);
 			}
 			else {
@@ -611,7 +645,7 @@ void ImExImpl::cleanUp(EventList& eventList)
 		}
 		catch ( Core::ValueException& ) {
 			SEISCOMP_ERROR("Time member for %s with id: %s has not been set",
-					it->event()->className(), it->event()->publicID().c_str());
+			               it->event()->className(), it->event()->publicID());
 			it = eventList.erase(it);
 		}
 	}
@@ -622,12 +656,11 @@ void ImExImpl::cleanUp(EventList& eventList)
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-ImExImpl* ImExImpl::Create(ImEx* imex, const string& implName)
-{
+ImExImpl* ImExImpl::Create(ImEx* imex, const string& implName) {
 	ImExImpl* impl = new ImExImpl(imex, implName);
 	if ( !impl->init() ) {
 		delete impl;
-		return NULL;
+		return nullptr;
 	}
 	return impl;
 }
@@ -668,25 +701,29 @@ bool ImExImpl::buildRoutingTable() {
 	RoutingTable tmpRoutingTable = CreateDefaultRoutingTable();
 
 	if ( _useDefinedRoutingTable ) {
-		if (!configGetRoutingTable("hosts." + _sinkName, "routingTable", &_routingTable))
+		if ( !configGetRoutingTable("hosts." + _sinkName, "routingTable", &_routingTable) ) {
 			return false;
+		}
 	}
 
 	if ( _imex->mode() == ImEx::EXPORT ) {
 		if ( !_useDefinedRoutingTable ) {
-			for ( auto &&it : tmpRoutingTable )
+			for ( auto &&it : tmpRoutingTable ) {
 				_routingTable.insert(make_pair(it.first, Client::Protocol::IMPORT_GROUP));
+			}
 		}
 	}
 	else if ( _imex->mode() == ImEx::IMPORT ) {
-		if ( !_useDefinedRoutingTable )
+		if ( !_useDefinedRoutingTable ) {
 			_routingTable = tmpRoutingTable;
+		}
 	}
 
 	// Print routing table
 	SEISCOMP_DEBUG("Routing table:");
-	for ( auto &&it : _routingTable )
-		SEISCOMP_DEBUG("%s -> %s", it.first.c_str(), it.second.c_str());
+	for ( auto &&it : _routingTable ) {
+		SEISCOMP_DEBUG("%s -> %s", it.first, it.second);
+	}
 
 	return true;
 }
@@ -701,10 +738,12 @@ bool ImExImpl::fillRoutingTable(vector<string>& src, RoutingTable& dest) {
 	for ( size_t i = 0; i < src.size(); ++i ) {
 		vector<string> tokens;
 		Core::split(tokens, src[i].c_str(), ":");
-		if ( tokens.size() != 2 )
-			SEISCOMP_INFO("Malformed routing table entry: %s", src[i].c_str());
-		else
+		if ( tokens.size() != 2 ) {
+			SEISCOMP_INFO("Malformed routing table entry: %s", src[i]);
+		}
+		else {
 			dest[tokens[0]] = tokens[1];
+		}
 	}
 	return true;
 }
@@ -716,31 +755,36 @@ bool ImExImpl::fillRoutingTable(vector<string>& src, RoutingTable& dest) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void ImExImpl::handleNotifierMessage(DataModel::NotifierMessage* notifierMessage) {
 	SentOriginList tmpSentOrigins;
-	DataModel::NotifierMessage::iterator notifierIt = notifierMessage->begin();
+	auto notifierIt = notifierMessage->begin();
 	for ( ; notifierIt!= notifierMessage->end(); ++notifierIt ) {
-		Core::BaseObject* object = (*notifierIt)->object();
-		if ( !object ) continue;
+		auto *object = (*notifierIt)->object();
+		if ( !object ) {
+			continue;
+		}
 
-		DataModel::PublicObject *po = DataModel::PublicObject::Cast((*notifierIt)->object());
-		if ( po )
-			SEISCOMP_DEBUG("(%s) Handling notifier (%s, %s, %s [%s])", _sinkName.c_str(),
-			               (*notifierIt)->parentID().c_str(), (*notifierIt)->operation().toString(),
-			               (*notifierIt)->object()->className(), po->publicID().c_str());
-		else
-			SEISCOMP_DEBUG("(%s) Handling notifier (%s, %s, %s)", _sinkName.c_str(),
-			               (*notifierIt)->parentID().c_str(), (*notifierIt)->operation().toString(),
+		auto *po = DataModel::PublicObject::Cast((*notifierIt)->object());
+		if ( po ) {
+			SEISCOMP_DEBUG("(%s) Handling notifier (%s, %s, %s [%s])", _sinkName,
+			               (*notifierIt)->parentID(), (*notifierIt)->operation().toString(),
+			               (*notifierIt)->object()->className(), po->publicID());
+		}
+		else {
+			SEISCOMP_DEBUG("(%s) Handling notifier (%s, %s, %s)", _sinkName,
+			               (*notifierIt)->parentID(), (*notifierIt)->operation().toString(),
 			               (*notifierIt)->object()->className());
+		}
 
 		string className = object->className();
 		if ( className == DataModel::Origin::ClassName() ) {
-			DataModel::Origin* origin = DataModel::Origin::Cast(object);
+			auto *origin = DataModel::Origin::Cast(object);
 
 			bool hasBeenSentAlready = false;
-			if ( (*notifierIt)->operation() == DataModel::OP_UPDATE )
+			if ( (*notifierIt)->operation() == DataModel::OP_UPDATE ) {
 				hasBeenSentAlready = hasOriginBeenSent(origin->publicID());
+			}
 
 			SEISCOMP_DEBUG("(%s) Handling object of type: %s with id: %s",
-			               _sinkName.c_str(), className.c_str(), origin->publicID().c_str());
+			               _sinkName, className, origin->publicID());
 			if ( hasBeenSentAlready || isOriginEligible(origin) ) {
 				if ( hasBeenSentAlready || hasEventBeenSent(origin) || filter(origin) ) {
 					sendOrigin(origin, hasBeenSentAlready);
@@ -749,11 +793,15 @@ void ImExImpl::handleNotifierMessage(DataModel::NotifierMessage* notifierMessage
 			}
 		}
 		if ( className == DataModel::Arrival::ClassName() ) {
-			DataModel::Arrival* arrival = DataModel::Arrival::Cast(object);
+			auto *arrival = DataModel::Arrival::Cast(object);
 			SEISCOMP_DEBUG("(%s) Handling object of type: %s",
-			               _sinkName.c_str(), className.c_str());
-			DataModel::Origin* origin = arrival->origin();
-			if ( !origin ) { continue; }
+			               _sinkName, className);
+
+			auto *origin = arrival->origin();
+			if ( !origin ) {
+				continue;
+			}
+
 			if ( hasOriginBeenSent(origin->publicID()) ) {
 				ImEx::PickList::const_iterator pickIt = _imex->pickList().begin();
 				for ( ; pickIt != _imex->pickList().end(); ++pickIt ) {
@@ -781,14 +829,14 @@ void ImExImpl::handleNotifierMessage(DataModel::NotifierMessage* notifierMessage
 			}
 		}
 		else if ( className == DataModel::StationMagnitude::ClassName() ) {
-			DataModel::StationMagnitude* magnitude = DataModel::StationMagnitude::Cast(object);
+			auto *magnitude = DataModel::StationMagnitude::Cast(object);
 			SEISCOMP_DEBUG("(%s) Handling object of type: %s with id: %s",
-					_sinkName.c_str(), className.c_str(), magnitude->publicID().c_str());
+			               _sinkName, className, magnitude->publicID());
 			string parentID = (*notifierIt)->parentID();
 			if ( hasOriginBeenSent(parentID) ) {
 				if ( !Applications::findOrigin(parentID, tmpSentOrigins) ) {
 					SEISCOMP_DEBUG("(%s) Relaying object of type: %s with id: %s",
-						_sinkName.c_str(), className.c_str(), magnitude->publicID().c_str());
+					               _sinkName, className, magnitude->publicID());
 					IMEXMessage imexMessage;
 					imexMessage.notifierMessage().attach(notifierIt->get());
 					SEND_MSG(_routingTable[className], &imexMessage);
@@ -809,14 +857,12 @@ void ImExImpl::handleNotifierMessage(DataModel::NotifierMessage* notifierMessage
 		else if ( className == DataModel::StationMagnitudeContribution::ClassName() ) {
 			// DataModel::StationMagnitudeContribution* magReference = DataModel::StationMagnitudeContribution::Cast(object);
 			SEISCOMP_DEBUG("(%s) Handling object of type: %s",
-			               _sinkName.c_str(), className.c_str());
+			               _sinkName, className);
 			string magnitudeParentID = (*notifierIt)->parentID();
-			DataModel::Magnitude* magnitude;
-			magnitude = DataModel::Magnitude::Find(magnitudeParentID);
+			auto *magnitude = DataModel::Magnitude::Find(magnitudeParentID);
 			string parentID;
 			if ( magnitude ) {
-				DataModel::Origin* origin;
-				origin = magnitude->origin();
+				auto *origin = magnitude->origin();
 				if ( origin ) {
 					parentID = origin->publicID();
 				}
@@ -825,7 +871,7 @@ void ImExImpl::handleNotifierMessage(DataModel::NotifierMessage* notifierMessage
 			if ( hasOriginBeenSent(parentID) ) {
 				if ( !Applications::findOrigin(parentID, tmpSentOrigins) ) {
 					SEISCOMP_DEBUG("(%s) Relaying object of type: %s",
-					               _sinkName.c_str(), className.c_str());
+					               _sinkName, className);
 					IMEXMessage imexMessage;
 					imexMessage.notifierMessage().attach(notifierIt->get());
 					SEND_MSG(_routingTable[className], &imexMessage);
@@ -844,15 +890,15 @@ void ImExImpl::handleNotifierMessage(DataModel::NotifierMessage* notifierMessage
 			}
 		}
 		else if ( className == DataModel::Magnitude::ClassName() ) {
-			DataModel::Magnitude* magnitude = DataModel::Magnitude::Cast(object);
+			auto *magnitude = DataModel::Magnitude::Cast(object);
 			SEISCOMP_DEBUG("(%s) Handling object of type: %s with id: %s",
-					_sinkName.c_str(), className.c_str(), magnitude->publicID().c_str());
+			               _sinkName, className, magnitude->publicID());
 			string parentID = (*notifierIt)->parentID();
 			if ( hasOriginBeenSent(parentID) ) {
 				if ( !Applications::findOrigin(parentID, tmpSentOrigins) ) {
 					SEISCOMP_DEBUG("(%s) Relaying object of type: %s with id: %s",
-					               _sinkName.c_str(), className.c_str(),
-					               magnitude->publicID().c_str());
+					               _sinkName, className,
+					               magnitude->publicID());
 					IMEXMessage imexMessage;
 					imexMessage.notifierMessage().attach(notifierIt->get());
 					SEND_MSG(_routingTable[className], &imexMessage);
@@ -871,42 +917,41 @@ void ImExImpl::handleNotifierMessage(DataModel::NotifierMessage* notifierMessage
 			}
 		}
 		else if ( className == DataModel::Event::ClassName() ) {
-			DataModel::Event* event  = DataModel::Event::Cast(object);
+			auto *event  = DataModel::Event::Cast(object);
 			SEISCOMP_DEBUG("(%s) Handling object of type: %s with id: %s",
-			               _sinkName.c_str(), className.c_str(), event->publicID().c_str());
-			SEISCOMP_DEBUG("   * preferredOriginID = %s", event->preferredOriginID().c_str());
-			SEISCOMP_DEBUG("   * preferredMagnitudeID = %s", event->preferredMagnitudeID().c_str());
+			               _sinkName, className, event->publicID());
+			SEISCOMP_DEBUG("   * preferredOriginID = %s", event->preferredOriginID());
+			SEISCOMP_DEBUG("   * preferredMagnitudeID = %s", event->preferredMagnitudeID());
 			if ( event ) {
 				// handleEvent(event);
-				EventList::iterator eventIt = _eventList.begin();
-				for ( ; eventIt != _eventList.end(); ++eventIt)
-					if (eventIt->publicID() == event->publicID())
-						break;
-
-				if ( eventIt != _eventList.end() ) {
-					*eventIt = event;
-
-					// If the preferred origin changed, send origin
-					ImEx::OriginList::const_iterator originIt = findOrigin(event->preferredOriginID());
-					if ( originIt != _imex->originList().end() ) {
-						if ( hasEventBeenSent(originIt->get()) || filter(originIt->get()) ) {
-							if ( !hasOriginBeenSent((*originIt)->publicID()) ) {
-								sendOrigin(originIt->get());
-								tmpSentOrigins.push_back(originIt->get());
+				bool foundEvent = false;
+				for ( auto &item : _eventList ) {
+					if ( item.publicID() == event->publicID() ) {
+						foundEvent = true;
+						item = event;
+						// If the preferred origin changed, send origin
+						auto it = findOrigin(event->preferredOriginID());
+						if ( it != _imex->originList().end() ) {
+							if ( hasEventBeenSent(it->get()) || filter(it->get()) ) {
+								if ( !hasOriginBeenSent((*it)->publicID()) ) {
+									sendOrigin(it->get());
+									tmpSentOrigins.push_back(it->get());
+								}
+								sendEvent(item);
 							}
-							sendEvent(*eventIt);
 						}
 					}
 				}
-				else {
+
+				if ( !foundEvent ) {
 					// Send whole event
 					EventWrapper ew(event);
 					_eventList.push_back(ew);
-					ImEx::OriginList::const_iterator originIt = findOrigin(event->preferredOriginID());
-					if ( originIt != _imex->originList().end() ) {
-						if ( filter(originIt->get()) ) {
-							sendOrigin(originIt->get());
-							tmpSentOrigins.push_back(originIt->get());
+					auto it = findOrigin(event->preferredOriginID());
+					if ( it != _imex->originList().end() ) {
+						if ( filter(it->get()) ) {
+							sendOrigin(it->get());
+							tmpSentOrigins.push_back(it->get());
 							sendEvent(ew);
 						}
 					}
@@ -915,7 +960,7 @@ void ImExImpl::handleNotifierMessage(DataModel::NotifierMessage* notifierMessage
 		}
 		else {
 			SEISCOMP_DEBUG("(%s) Received object: %s with notifier type: %s",
-			               _sinkName.c_str(), className.c_str(),
+			               _sinkName, className,
 			               (*notifierIt)->operation().toString());
 		}
 	}
@@ -949,9 +994,10 @@ ImEx::OriginList::const_iterator ImExImpl::findOrigin(const DataModel::Origin *o
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 ImEx::OriginList::const_iterator ImExImpl::findOrigin(const string &publicID) {
-	ImEx::OriginList::const_iterator it = _imex->originList().begin();
-	for ( ; it != _imex->originList().end(); ++it ) {
-		if ( (*it)->publicID() == publicID ) return it;
+	for ( auto it = _imex->originList().begin(); it != _imex->originList().end(); ++it ) {
+		if ( (*it)->publicID() == publicID ) {
+			return it;
+		}
 	}
 	return _imex->originList().end();
 }
@@ -962,9 +1008,11 @@ ImEx::OriginList::const_iterator ImExImpl::findOrigin(const string &publicID) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool ImExImpl::hasOriginBeenSent(const string &originID) {
-	for ( auto &&org : _sentOrigins )
-		if ( org->publicID() == originID )
+	for ( auto &&org : _sentOrigins ) {
+		if ( org->publicID() == originID ) {
 			return true;
+		}
+	}
 	return false;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -975,16 +1023,16 @@ bool ImExImpl::hasOriginBeenSent(const string &originID) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool ImExImpl::hasEventBeenSent(const DataModel::Origin *origin) {
 	SEISCOMP_DEBUG("Checking if event for origin %s has been sent",
-	               origin->publicID().c_str());
+	               origin->publicID());
 
 	for ( auto &&wrapper : _eventList ) {
 		if ( wrapper.preferredOriginID() == origin->publicID() ) {
 			if ( wrapper.hasBeenSent() ) {
-				SEISCOMP_DEBUG("Event %s has been sent", wrapper.publicID().c_str());
+				SEISCOMP_DEBUG("Event %s has been sent", wrapper.publicID());
 				return true;
 			}
 			else {
-				SEISCOMP_DEBUG("Event %s has not been sent", wrapper.publicID().c_str());
+				SEISCOMP_DEBUG("Event %s has not been sent", wrapper.publicID());
 				break;
 			}
 		}
@@ -997,7 +1045,7 @@ bool ImExImpl::hasEventBeenSent(const DataModel::Origin *origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool ImExImpl::isOriginEligible(const DataModel::Origin* origin) {
+bool ImExImpl::isOriginEligible(const DataModel::Origin *origin) {
 	return (this->*isOriginEligibleImpl)(origin);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1006,8 +1054,8 @@ bool ImExImpl::isOriginEligible(const DataModel::Origin* origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool ImExImpl::isOriginEligibleExport(const DataModel::Origin* origin) {
-	SEISCOMP_DEBUG("(Export) Checking if origin %s is eligible", origin->publicID().c_str());
+bool ImExImpl::isOriginEligibleExport(const DataModel::Origin *origin) {
+	SEISCOMP_DEBUG("(Export) Checking if origin %s is eligible", origin->publicID());
 	if ( origin->magnitudeCount() == 0 || origin->stationMagnitudeCount() == 0 ) {
 		SEISCOMP_DEBUG("Origin is not eligible (no mags or stamags)");
 		return false;
@@ -1015,8 +1063,9 @@ bool ImExImpl::isOriginEligibleExport(const DataModel::Origin* origin) {
 
 	SEISCOMP_DEBUG("Checking if origin is preferred");
 	for ( auto &&wrapper : _eventList ) {
-		if ( wrapper.preferredOriginID() == origin->publicID() )
+		if ( wrapper.preferredOriginID() == origin->publicID() ) {
 			return true;
+		}
 	}
 
 	SEISCOMP_DEBUG("Origin is not eligible (not preferred)");
@@ -1028,8 +1077,8 @@ bool ImExImpl::isOriginEligibleExport(const DataModel::Origin* origin) {
 
 
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-bool ImExImpl::isOriginEligibleImport(const DataModel::Origin* origin) {
-	SEISCOMP_DEBUG("(Import) Checking if origin %s is eligible", origin->publicID().c_str());
+bool ImExImpl::isOriginEligibleImport(const DataModel::Origin *origin) {
+	SEISCOMP_DEBUG("(Import) Checking if origin %s is eligible", origin->publicID());
 	if ( origin->magnitudeCount() == 0 /*|| origin->stationMagnitudeCount() == 0*/ ) {
 		SEISCOMP_DEBUG("Origin is not eligible");
 		return false;
@@ -1043,19 +1092,20 @@ bool ImExImpl::isOriginEligibleImport(const DataModel::Origin* origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool ImExImpl::filterMagnitudeImport(const DataModel::Origin* origin) {
+bool ImExImpl::filterMagnitudeImport(const DataModel::Origin *origin) {
 	for ( size_t i = 0; i < origin->magnitudeCount(); ++i ) {
 		DataModel::Magnitude* magnitude = origin->magnitude(i);
-		if ( !magnitude )
+		if ( !magnitude ) {
 			continue;
+		}
 		if ( _criterion->isInMagnitudeRange(magnitude->magnitude().value()) ) {
 			SEISCOMP_DEBUG("Magnitude of type %s with valus %f matched",
-			               magnitude->type().c_str(), magnitude->magnitude().value());
+			               magnitude->type(), magnitude->magnitude().value());
 			return true;
 		}
 		else {
 			SEISCOMP_DEBUG("= Magnitude mismatch =");
-			SEISCOMP_DEBUG("%s", _criterion->what().c_str());
+			SEISCOMP_DEBUG("%s", _criterion->what());
 			_criterion->clearError();
 		}
 
@@ -1068,7 +1118,7 @@ bool ImExImpl::filterMagnitudeImport(const DataModel::Origin* origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool ImExImpl::filterMagnitudeExport(const DataModel::Origin* origin) {
+bool ImExImpl::filterMagnitudeExport(const DataModel::Origin *origin) {
 	string preferredMagnitude;
 	EventList::iterator eventIt = _eventList.begin();
 	for ( ; eventIt != _eventList.end(); ++eventIt) {
@@ -1077,18 +1127,23 @@ bool ImExImpl::filterMagnitudeExport(const DataModel::Origin* origin) {
 			break;
 		}
 	}
-	if ( preferredMagnitude.empty() )
+	if ( preferredMagnitude.empty() ) {
 		return false;
+	}
+
 	SEISCOMP_DEBUG("Preferred magnitude ID has been found");
-	DataModel::Magnitude* magnitude = origin->findMagnitude(preferredMagnitude);
-	if ( !magnitude )
+	auto *magnitude = origin->findMagnitude(preferredMagnitude);
+	if ( !magnitude ) {
 		return false;
+	}
+
 	SEISCOMP_DEBUG("Preferred magnitude has been found");
 	if ( !_criterion->isInMagnitudeRange(magnitude->magnitude().value()) ) {
 		SEISCOMP_DEBUG("= Magnitude mismatch =");
 		_criterion->clearError();
 		return false;
 	}
+
 	return true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1097,7 +1152,7 @@ bool ImExImpl::filterMagnitudeExport(const DataModel::Origin* origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool ImExImpl::filterMagnitude(const DataModel::Origin* origin) {
+bool ImExImpl::filterMagnitude(const DataModel::Origin *origin) {
 	return (this->*filterMagnitudeImpl)(origin);
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1107,19 +1162,20 @@ bool ImExImpl::filterMagnitude(const DataModel::Origin* origin) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-bool ImExImpl::filter(DataModel::Origin* origin) {
-	if ( !_filter )
+bool ImExImpl::filter(DataModel::Origin *origin) {
+	if ( !_filter ) {
 		return true;
+	}
 
 	// Legacy fixed-field criteria. _criterion is only set up when
 	// hosts.<sink>.criteria is configured -- a sink using condition only
 	// skips this block entirely.
 	if ( _criterion ) {
-		SEISCOMP_DEBUG("Filtering origin: %s", origin->publicID().c_str());
+		SEISCOMP_DEBUG("Filtering origin: %s", origin->publicID());
 		SEISCOMP_DEBUG("Checking latitude/longitude");
 		if ( !_criterion->isInLatLonRange(origin->latitude(), origin->longitude()) ) {
 			SEISCOMP_DEBUG("= latitude/longitude mismatch =");
-			SEISCOMP_DEBUG("%s", _criterion->what().c_str());
+			SEISCOMP_DEBUG("%s", _criterion->what());
 			_criterion->clearError();
 			return false;
 		}
@@ -1127,20 +1183,21 @@ bool ImExImpl::filter(DataModel::Origin* origin) {
 		// Arrival count
 		SEISCOMP_DEBUG("Checking arrival count");
 		if ( !_criterion->checkArrivalCount(origin->arrivalCount()) ) {
-			SEISCOMP_DEBUG("Number of arrivals %ld is below the minimum", (long int)origin->arrivalCount());
-			SEISCOMP_DEBUG("%s", _criterion->what().c_str());
+			SEISCOMP_DEBUG("Number of arrivals %ld is below the minimum", static_cast<long int>(origin->arrivalCount()));
+			SEISCOMP_DEBUG("%s", _criterion->what());
 			_criterion->clearError();
 			return false;
 		}
 
 		// Magnitude
 		SEISCOMP_DEBUG("Checking magnitude");
-		if ( !filterMagnitude(origin) )
+		if ( !filterMagnitude(origin) ) {
 			return false;
+		}
 
 		SEISCOMP_DEBUG("Checking agencyID");
 		if ( !_criterion->checkAgencyID(objectAgencyID(origin)) ) {
-			SEISCOMP_DEBUG("Could not find agencyID: %s", objectAgencyID(origin).c_str());
+			SEISCOMP_DEBUG("Could not find agencyID: %s", objectAgencyID(origin));
 			_criterion->clearError();
 			return false;
 		}
@@ -1157,7 +1214,7 @@ bool ImExImpl::filter(DataModel::Origin* origin) {
 			}
 		}
 
-		SEISCOMP_DEBUG("Checking condition for origin: %s", origin->publicID().c_str());
+		SEISCOMP_DEBUG("Checking condition for origin: %s", origin->publicID());
 		ScimexKeyValueContext ctx(origin, event);
 		try {
 			if ( !_condition->eval(&ctx) ) {
@@ -1167,7 +1224,7 @@ bool ImExImpl::filter(DataModel::Origin* origin) {
 		}
 		catch ( const std::exception &e ) {
 			SEISCOMP_WARNING("(%s) condition evaluation error for origin %s: %s",
-			                 _sinkName.c_str(), origin->publicID().c_str(), e.what());
+			                 _sinkName, origin->publicID(), e.what());
 			return false;
 		}
 	}
@@ -1184,7 +1241,7 @@ bool ImExImpl::filter(DataModel::Origin* origin) {
 void ImExImpl::serializeMessage(const string &destination, Core::Message *message) {
 	if ( _messageQueue.size() >= _maxQueueSize ) {
 		SEISCOMP_DEBUG("(%s) message queue exceeded maximum size of %ld. Skipping message.",
-		               _sinkName.c_str(), (long int)_maxQueueSize);
+		               _sinkName, (long int)_maxQueueSize);
 		return;
 	}
 
@@ -1206,7 +1263,7 @@ void ImExImpl::serializeMessage(const string &destination, Core::Message *messag
 	if ( !_conversion.empty() ) {
 		IO::ExporterPtr exporter = IO::ExporterFactory::Create(_conversion.c_str());
 		if ( !exporter.get() ) {
-			SEISCOMP_ERROR("ImExImpl: Could not create importer for type %s", _conversion.c_str());
+			SEISCOMP_ERROR("ImExImpl: Could not create importer for type %s", _conversion);
 			return;
 		}
 
@@ -1217,7 +1274,7 @@ void ImExImpl::serializeMessage(const string &destination, Core::Message *messag
 			filteredBuf.push(buf);
 
 			if ( !exporter->write(&filteredBuf, message) ) {
-				SEISCOMP_ERROR("ImExImpl: Could not export message for %s", _conversion.c_str());
+				SEISCOMP_ERROR("ImExImpl: Could not export message for %s", _conversion);
 				return;
 			}
 		}
@@ -1240,7 +1297,7 @@ void ImExImpl::serializeMessage(const string &destination, Core::Message *messag
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void ImExImpl::sendOrigin(DataModel::Origin *origin, bool update) {
 	string originID = origin->publicID();
-	SEISCOMP_DEBUG("Sending origin with id: %s", originID.c_str());
+	SEISCOMP_DEBUG("Sending origin with id: %s", originID);
 	DataModel::Notifier::Enable();
 
 	IMEXMessage imexMessage;
@@ -1273,8 +1330,8 @@ void ImExImpl::sendOrigin(DataModel::Origin *origin, bool update) {
 	}
 	SEISCOMP_DEBUG("Sending %d %s to %s in respect to origin %s",
 	               imexMessage.size(), DataModel::Pick::ClassName(),
-	               _routingTable[DataModel::Pick::ClassName()].c_str(),
-	               originID.c_str());
+	               _routingTable[DataModel::Pick::ClassName()],
+	               originID);
 	SEND_MSG(_routingTable[DataModel::Pick::ClassName()], &imexMessage);
 	imexMessage.clear();
 
@@ -1302,7 +1359,7 @@ void ImExImpl::sendOrigin(DataModel::Origin *origin, bool update) {
 	if ( separateOrigin ) {
 		SEISCOMP_DEBUG("Sending %sorigin %s to %s",
 		               update?"update for ":"",
-		               originID.c_str(), originTarget.c_str());
+		               originID, originTarget);
 		SEND_MSG(originTarget, &imexMessage);
 		imexMessage.clear();
 	}
@@ -1318,17 +1375,17 @@ void ImExImpl::sendOrigin(DataModel::Origin *origin, bool update) {
 		if ( separateOrigin )
 			SEISCOMP_DEBUG("Sending %d %s for origin %s to %s",
 			               imexMessage.size(), DataModel::Arrival::ClassName(),
-			               originID.c_str(), originTarget.c_str());
+			               originID, originTarget);
 		else
 			SEISCOMP_DEBUG("Sending %d %s and origin %s to %s",
 			               imexMessage.size(), DataModel::Arrival::ClassName(),
-			               originID.c_str(), originTarget.c_str());
+			               originID, originTarget);
 
 		SEND_MSG(arrivalTarget, &imexMessage);
 	}
 	else {
-		SEISCOMP_DEBUG("Sending update for origin %s to %s", originID.c_str(),
-		               originTarget.c_str());
+		SEISCOMP_DEBUG("Sending update for origin %s to %s", originID,
+		               originTarget);
 		SEND_MSG(originTarget, &imexMessage);
 	}
 
@@ -1376,8 +1433,8 @@ void ImExImpl::sendOrigin(DataModel::Origin *origin, bool update) {
 		               (long int)origin->stationMagnitudeCount(),
 		               DataModel::StationMagnitude::ClassName(),
 		               amplitudeCount, DataModel::Amplitude::ClassName(),
-		               _routingTable[DataModel::StationMagnitude::ClassName()].c_str(),
-		               originID.c_str());
+		               _routingTable[DataModel::StationMagnitude::ClassName()],
+		               originID);
 
 		SEND_MSG(_routingTable[DataModel::StationMagnitude::ClassName()], &imexMessage);
 		imexMessage.clear();
@@ -1410,12 +1467,12 @@ void ImExImpl::sendOrigin(DataModel::Origin *origin, bool update) {
 		}
 
 		SEISCOMP_DEBUG("Sending %ld %s and %ld %s to %s in respect to origin %s",
-		               (long int)origin->magnitudeCount(),
+		               static_cast<long int>(origin->magnitudeCount()),
 		               DataModel::Magnitude::ClassName(),
 		               (long int)stationMagnitudeContributionCount,
 		               DataModel::StationMagnitudeContribution::ClassName(),
-		               _routingTable[DataModel::Magnitude::ClassName()].c_str(),
-		               originID.c_str()
+		               _routingTable[DataModel::Magnitude::ClassName()],
+		               originID
 		);
 
 		SEND_MSG(_routingTable[DataModel::Magnitude::ClassName()], &imexMessage);
@@ -1435,8 +1492,8 @@ void ImExImpl::sendOrigin(DataModel::Origin *origin, bool update) {
 void ImExImpl::sendEvent(EventWrapper& eventWrapper) {
 	SEISCOMP_DEBUG("Sending %s to %s in respect to origin %s",
 	               DataModel::Event::ClassName(),
-	               _routingTable[DataModel::Event::ClassName()].c_str(),
-	               eventWrapper.preferredOriginID().c_str());
+	               _routingTable[DataModel::Event::ClassName()],
+	               eventWrapper.preferredOriginID());
 
 	Core::DataMessage dataMessage;
 	dataMessage.attach(eventWrapper.event());
@@ -1491,23 +1548,25 @@ void ImExImpl::sendMessageRaw() {
 			                                           _contentEncoding,
 			                                           _contentType)) != Client::OK ) {
 				SEISCOMP_ERROR("(%s) Could not send message to %s on sink master %s due to error %d",
-				               _sinkName.c_str(), packet->target.c_str(),
-				               _sink->source().c_str(), ret.toInt());
+				               _sinkName, packet->target,
+				               _sink->source(), ret.toInt());
 
-				if ( !_isRunning ) break;
+				if ( !_isRunning ) {
+					break;
+				}
 
 				if ( !_sink->isConnected() ) {
-					SEISCOMP_ERROR("(%s) Trying to reconnect to %s", _sinkName.c_str(), _sink->source().c_str());
+					SEISCOMP_ERROR("(%s) Trying to reconnect to %s", _sinkName, _sink->source());
 					_sink->reconnect();
 				}
 
 				Core::sleep(1);
 			}
 
-			SEISCOMP_DEBUG("(%s) Sent message to %s", _sinkName.c_str(), packet->target.c_str());
+			SEISCOMP_DEBUG("(%s) Sent message to %s", _sinkName, packet->target);
 		}
 		catch ( Core::GeneralException& ex ) {
-			SEISCOMP_INFO("(%s) Exception: %s, returning", _sinkName.c_str(), ex.what());
+			SEISCOMP_INFO("(%s) Exception: %s, returning", _sinkName, ex.what());
 			break;
 		}
 	}
@@ -1522,11 +1581,12 @@ void ImExImpl::sendMessageRaw() {
 bool ImExImpl::configGetRoutingTable(const string& prefix, const string& name, RoutingTable* routingTable) {
 	try {
 		vector<string> routingTableEntries = _imex->configGetStrings(prefix + "." + name);
-		if ( !fillRoutingTable(routingTableEntries, *routingTable) )
+		if ( !fillRoutingTable(routingTableEntries, *routingTable) ) {
 			return false;
+		}
 	}
 	catch ( Config::Exception& e ) {
-		SEISCOMP_DEBUG("(%s) %s ", e.what(), _sinkName.c_str());
+		SEISCOMP_DEBUG("(%s) %s ", e.what(), _sinkName);
 		return false;
 	}
 	return true;
