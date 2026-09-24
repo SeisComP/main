@@ -1656,9 +1656,6 @@ void EventTool::handleMessage(Core::Message *msg) {
 			connection()->send(nmsg.get());
 		}
 	}
-	else {
-		SEISCOMP_DEBUG("No notifier available");
-	}
 
 	_lastNetworkMessage = nullptr;
 }
@@ -1788,8 +1785,6 @@ void EventTool::handleTimeout() {
 			connection()->send(nmsg.get());
 		}
 	}
-	else
-		SEISCOMP_DEBUG("No notifier available");
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
