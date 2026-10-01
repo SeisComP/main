@@ -118,6 +118,7 @@ class SCARDAC : public Client::Application {
 		bool validateParameters() override;
 		bool run() override;
 		void done() override;
+		void exit(int returnCode) override;
 
 		void setTimeWindow(Collector *collector);
 		void processExtents(int threadID);

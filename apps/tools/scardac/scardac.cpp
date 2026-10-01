@@ -1599,6 +1599,18 @@ bool SCARDAC::validateParameters() {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+void SCARDAC::exit(int returnCode) {
+	Client::Application::exit(returnCode);
+
+	// wake up workers blocked in pop() and the producer blocked in push()
+	_workQueue.close();
+}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool SCARDAC::run() {
 	if ( !_testData.empty() ) {
 		return generateTestData();
@@ -1770,13 +1782,19 @@ bool SCARDAC::run() {
 
 	// add extents to work queue, push may block if queue size is exceeded
 	for ( auto &it : extentMap ) {
-		_workQueue.push(WorkQueueItem(it.second, true));
+		if ( _exitRequested || !_workQueue.push(WorkQueueItem(it.second, true)) ) {
+			break;
+		}
 	}
 
 	// search for new streams and create new extents
 	size_t oldSize = extentMap.size();
 	SEISCOMP_INFO("Processing new streams");
 	for ( const auto &wid : wids ) {
+		if ( _exitRequested ) {
+			break;
+		}
+
 		if ( extentMap.find(wid.first) != extentMap.end() ) {
 			continue;
 		}
@@ -1785,7 +1803,9 @@ bool SCARDAC::run() {
 		extent->setWaveformID(wid.second);
 		_dataAvailability->add(extent);
 		extentMap[wid.first] = extent;
-		_workQueue.push(WorkQueueItem(extent, false));
+		if ( !_workQueue.push(WorkQueueItem(extent, false)) ) {
+			break;
+		}
 	}
 	SEISCOMP_INFO("Found %zu new streams in archive", extentMap.size() - oldSize);
 
