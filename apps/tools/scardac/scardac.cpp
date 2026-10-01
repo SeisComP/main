@@ -1866,6 +1866,10 @@ void SCARDAC::setTimeWindow(Collector *collector) {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void SCARDAC::processExtents(int threadID) {
+	// both flags are thread local, disable them for the worker as well
+	PublicObject::SetRegistrationEnabled(false);
+	Notifier::Disable();
+
 	// Holds the per-thread collector instance when more than one thread is used
 	// and the collector is not maked as thread safe.
 	CollectorPtr threadCollector;
