@@ -940,8 +940,8 @@ bool Worker::readChunkSegments(Segments &segments, const std::string &chunk,
 		//		               (it->endTime() - it->startTime()).length());
 	}
 
-	if ( !records ) {
-		SEISCOMP_WARNING("[%i] %s: Found no data in chunk: %s ", _id, _sid, chunk);
+	if ( !segment ) {
+		SEISCOMP_WARNING("[%i] %s: Found no valid data in chunk: %s", _id, _sid, chunk);
 		return false;
 	}
 
