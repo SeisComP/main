@@ -956,19 +956,17 @@ bool Worker::readChunkSegments(Segments &segments, const std::string &chunk,
 	// check segments for duplicated start time, keep segment with largest
 	// time window
 	uint32_t dropped = 0;
-	auto seg = segments.begin();
-	auto last = seg++;
-	while ( seg != segments.end() ) {
-		if ( (*seg)->start() != (*last)->start() ) {
-			++seg;
-			++last;
+	for ( size_t i = 1; i < segments.size(); ) {
+		if ( segments[i]->start() != segments[i - 1]->start() ) {
+			++i;
 			continue;
 		}
 
 		SEISCOMP_DEBUG("[%i] %s: Dropping segment with duplicated start "
 		               "time: %s",
-		               _id, _sid, (*seg)->start().iso());
-		segments.erase((*seg)->end() > (*last)->end() ? last : seg);
+		               _id, _sid, segments[i]->start().iso());
+		segments.erase(segments.begin()
+		               + (segments[i]->end() > segments[i - 1]->end() ? i - 1 : i));
 		++dropped;
 	}
 
