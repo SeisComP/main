@@ -93,7 +93,7 @@ bool readIDParam(vector<string> &store, string &previousStdinParam,
 		if ( !previousStdinParam.empty() ) {
 			SEISCOMP_ERROR("Conflicting parameter value in '%s' and '%s'. "
 			               "Only one ID paramater may be specified via stdin.",
-			               previousStdinParam.c_str(), param.c_str());
+			               previousStdinParam, param);
 			return false;
 		}
 		previousStdinParam = param;
@@ -105,8 +105,7 @@ bool readIDParam(vector<string> &store, string &previousStdinParam,
 
 		// Assert at least one item
 		if ( store.empty() ) {
-			SEISCOMP_ERROR("No IDs found for parameter '%s' on stdin",
-			               param.c_str());
+			SEISCOMP_ERROR("No IDs found for parameter '%s' on stdin", param);
 			return false;
 		}
 	}
@@ -821,7 +820,7 @@ class XMLDump : public Seiscomp::Client::Application {
 						addEvent(ep.get(), event.get());
 					}
 					else {
-						SEISCOMP_ERROR("Event with ID '%s' has not been found", publicID.c_str());
+						SEISCOMP_ERROR("Event with ID '%s' has not been found", publicID);
 					}
 				}
 			}
@@ -839,7 +838,7 @@ class XMLDump : public Seiscomp::Client::Application {
 						addOrigin(ep.get(), origin.get());
 					}
 					else {
-						SEISCOMP_ERROR("Origin with ID '%s' has not been found", publicID.c_str());
+						SEISCOMP_ERROR("Origin with ID '%s' has not been found", publicID);
 					}
 				}
 			}
@@ -852,17 +851,17 @@ class XMLDump : public Seiscomp::Client::Application {
 
 				for ( const auto &publicID : _pickIDs ) {
 					if ( _pickIDSet.find(publicID) != _pickIDSet.end() ) {
-						SEISCOMP_INFO("Pick '%s' already exported", publicID.c_str());
+						SEISCOMP_INFO("Pick '%s' already exported", publicID);
 					}
 
 					PickPtr pick = Pick::Cast(PublicObjectPtr(
 					    query()->getObject(Pick::TypeInfo(), publicID)));
 					if ( pick ) {
-						SEISCOMP_INFO("Dumping Pick '%s'", pick->publicID().c_str());
+						SEISCOMP_INFO("Dumping Pick '%s'", pick->publicID());
 						ep->add(pick.get());
 					}
 					else {
-						SEISCOMP_ERROR("Pick with ID '%s' has not been found", publicID.c_str());
+						SEISCOMP_ERROR("Pick with ID '%s' has not been found", publicID);
 					}
 				}
 			}
@@ -951,7 +950,7 @@ class XMLDump : public Seiscomp::Client::Application {
 
 
 		void addOrigin(EventParameters *ep, Origin *origin) {
-			SEISCOMP_INFO("Dumping Origin '%s'", origin->publicID().c_str());
+			SEISCOMP_INFO("Dumping Origin '%s'", origin->publicID());
 			ep->add(origin);
 
 			query()->load(origin);
@@ -978,7 +977,7 @@ class XMLDump : public Seiscomp::Client::Application {
 					PickPtr pick = Pick::Cast(PublicObjectPtr(
 						query()->getObject(Pick::TypeInfo(), pickID)));
 					if ( !pick ) {
-						SEISCOMP_WARNING("Pick with id '%s' not found", pickID.c_str());
+						SEISCOMP_WARNING("Pick with id '%s' not found", pickID);
 						continue;
 					}
 
@@ -994,21 +993,21 @@ class XMLDump : public Seiscomp::Client::Application {
 			if ( _settings.withAmplitudes && _settings.withStationMagnitudes ) {
 				// Extract amplitudes corresponding to station magnitudes
 				for ( size_t m = 0; m < origin->magnitudeCount(); ++m ) {
-					Magnitude* netMag = origin->magnitude(m);
+					Magnitude *netMag = origin->magnitude(m);
 					for ( size_t s = 0; s < netMag->stationMagnitudeContributionCount(); ++s ) {
 						const string &stationMagnitudeID =
 							netMag->stationMagnitudeContribution(s)->stationMagnitudeID();
 						StationMagnitude* staMag = StationMagnitude::Find(stationMagnitudeID);
 						if ( !staMag ) {
 							SEISCOMP_WARNING("StationMagnitude with id '%s' not found",
-									 stationMagnitudeID.c_str());
+							                 stationMagnitudeID);
 							continue;
 						}
 
 						const string &amplitudeID = staMag->amplitudeID();
 						if ( amplitudeID.empty() ) {
 							SEISCOMP_DEBUG("StationMagnitude with id '%s' has no amplitude ID",
-							               staMag->publicID().c_str());
+							               staMag->publicID());
 							continue;
 						}
 
@@ -1020,7 +1019,7 @@ class XMLDump : public Seiscomp::Client::Application {
 							query()->getObject(Amplitude::TypeInfo(), amplitudeID)));
 						if ( !amplitude ) {
 							SEISCOMP_WARNING("Amplitude with id '%s' not found",
-									 amplitudeID.c_str());
+							                 amplitudeID);
 							continue;
 						}
 
@@ -1056,7 +1055,7 @@ class XMLDump : public Seiscomp::Client::Application {
 
 
 		void addEvent(EventParameters *ep, Event *event) {
-			SEISCOMP_INFO("Dumping Event '%s'", event->publicID().c_str());
+			SEISCOMP_INFO("Dumping Event '%s'", event->publicID());
 			ep->add(event);
 
 			if ( !_settings.preferredOnly ) {
@@ -1097,7 +1096,7 @@ class XMLDump : public Seiscomp::Client::Application {
 				OriginPtr origin = Origin::Cast(PublicObjectPtr(
 					query()->getObject(Origin::TypeInfo(), originID)));
 				if ( !origin ) {
-					SEISCOMP_WARNING("Origin with id '%s' not found", originID.c_str());
+					SEISCOMP_WARNING("Origin with id '%s' not found", originID);
 					continue;
 				}
 
@@ -1157,8 +1156,7 @@ class XMLDump : public Seiscomp::Client::Application {
 						PickPtr pick = Pick::Cast(PublicObjectPtr(
 							query()->getObject(Pick::TypeInfo(), pickID)));
 						if ( !pick ) {
-							SEISCOMP_WARNING("Pick with id '%s' not found",
-									 pickID.c_str());
+							SEISCOMP_WARNING("Pick with id '%s' not found", pickID);
 							continue;
 						}
 
@@ -1180,14 +1178,14 @@ class XMLDump : public Seiscomp::Client::Application {
 							StationMagnitude* staMag = StationMagnitude::Find(staMagID);
 							if ( !staMag ) {
 								SEISCOMP_WARNING("StationMagnitude with id '%s' not found",
-								                 staMagID.c_str());
+								                 staMagID);
 								continue;
 							}
 
 							const string &amplitudeID = staMag->amplitudeID();
 							if ( amplitudeID.empty() ) {
 								SEISCOMP_DEBUG("StationMagnitude with id '%s' has no amplitude ID",
-								               staMag->publicID().c_str());
+								               staMag->publicID());
 								continue;
 							}
 							if ( _amplitudeIDSet.find(amplitudeID) != _amplitudeIDSet.end() ) {
@@ -1199,7 +1197,7 @@ class XMLDump : public Seiscomp::Client::Application {
 
 							if ( !amplitude ) {
 								SEISCOMP_WARNING("Amplitude with id '%s' not found",
-										 amplitudeID.c_str());
+								                 amplitudeID);
 								continue;
 							}
 
@@ -1247,7 +1245,7 @@ class XMLDump : public Seiscomp::Client::Application {
 				FocalMechanismPtr fm = FocalMechanism::Cast(PublicObjectPtr(
 					query()->getObject(FocalMechanism::TypeInfo(), fmID)));
 				if ( !fm ) {
-					SEISCOMP_WARNING("FocalMechanism with id '%s' not found", fmID.c_str());
+					SEISCOMP_WARNING("FocalMechanism with id '%s' not found", fmID);
 					continue;
 				}
 
@@ -1268,7 +1266,7 @@ class XMLDump : public Seiscomp::Client::Application {
 							query()->getObject(Origin::TypeInfo(), fm->triggeringOriginID())));
 						if ( !triggeringOrigin ) {
 							SEISCOMP_WARNING("Triggering origin with id '%s' not found",
-									 fm->triggeringOriginID().c_str());
+							                 fm->triggeringOriginID());
 						}
 						else {
 							query()->load(triggeringOrigin.get());
@@ -1318,7 +1316,7 @@ class XMLDump : public Seiscomp::Client::Application {
 						query()->getObject(Origin::TypeInfo(), mt->derivedOriginID())));
 					if ( !derivedOrigin ) {
 						SEISCOMP_WARNING("Derived MT origin with id '%s' not found",
-								 mt->derivedOriginID().c_str());
+						                 mt->derivedOriginID());
 						continue;
 					}
 
