@@ -1030,6 +1030,34 @@ class XMLDump : public Seiscomp::Client::Application {
 						_amplitudeIDSet.insert(amplitudeID);
 					}
 				}
+
+				for ( size_t m = 0; m < origin->stationMagnitudeCount(); ++m ) {
+					StationMagnitude *staMag = origin->stationMagnitude(m);
+					const string &amplitudeID = staMag->amplitudeID();
+					if ( amplitudeID.empty() ) {
+						SEISCOMP_DEBUG("StationMagnitude with id '%s' has no amplitude ID",
+						               staMag->publicID());
+						continue;
+					}
+
+					if (_amplitudeIDSet.find(amplitudeID) != _amplitudeIDSet.end()) {
+						continue;
+					}
+
+					AmplitudePtr amplitude = Amplitude::Cast(PublicObjectPtr(
+						query()->getObject(Amplitude::TypeInfo(), amplitudeID)));
+					if ( !amplitude ) {
+						SEISCOMP_WARNING("Amplitude with id '%s' not found",
+						                 amplitudeID);
+						continue;
+					}
+
+					if ( !amplitude->eventParameters() ) {
+						ep->add(amplitude.get());
+					}
+
+					_amplitudeIDSet.insert(amplitudeID);
+				}
 			}
 
 			if ( _settings.withAmplitudes && !_settings.withStationMagnitudes ) {
@@ -1208,6 +1236,34 @@ class XMLDump : public Seiscomp::Client::Application {
 							_amplitudeIDSet.insert(amplitudeID);
 						}
 					}
+				}
+
+				for ( size_t m = 0; m < origin->stationMagnitudeCount(); ++m ) {
+					StationMagnitude *staMag = origin->stationMagnitude(m);
+					const string &amplitudeID = staMag->amplitudeID();
+					if ( amplitudeID.empty() ) {
+						SEISCOMP_DEBUG("StationMagnitude with id '%s' has no amplitude ID",
+						               staMag->publicID());
+						continue;
+					}
+
+					if (_amplitudeIDSet.find(amplitudeID) != _amplitudeIDSet.end()) {
+						continue;
+					}
+
+					AmplitudePtr amplitude = Amplitude::Cast(PublicObjectPtr(
+						query()->getObject(Amplitude::TypeInfo(), amplitudeID)));
+					if ( !amplitude ) {
+						SEISCOMP_WARNING("Amplitude with id '%s' not found",
+						                 amplitudeID);
+						continue;
+					}
+
+					if ( !amplitude->eventParameters() ) {
+						ep->add(amplitude.get());
+					}
+
+					_amplitudeIDSet.insert(amplitudeID);
 				}
 			}
 			// end of loop over origins referenced by event
