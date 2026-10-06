@@ -22,49 +22,50 @@
 #include <seiscomp/io/database.h>
 
 
-class DBQuery
-{
-	
+class DBQuery {
 	// ------------------------------------------------------------------
-	// X'struction
+	// X'truction
 	// ------------------------------------------------------------------
-public:
-	DBQuery(const std::string& name,
-	        const std::string& description,
-	        const std::string& query);
-	~DBQuery();
+	public:
+		//! C'tor
+		DBQuery(const std::string &name,
+		        const std::string &description,
+		        const std::string &query);
+		//! D'tor
+		~DBQuery();
 
-	
+
 	// ------------------------------------------------------------------
 	// Public interface
 	// ------------------------------------------------------------------
-public:
-	void setQuery(const std::string& query);
-	const std::string& query() const;
-	
-	const std::string& name() const;
-	const std::string& description() const;
-	
-	bool hasParameter() const;
-	const std::vector<std::string>& parameter() const;
-	bool setParameter(const std::vector<std::string>& param);
-		
-	
+	public:
+		void setQuery(const std::string& query);
+		const std::string& query() const;
+
+		const std::string& name() const;
+		const std::string& description() const;
+
+		bool hasParameter() const;
+		const std::vector<std::string>& parameter() const;
+		bool setParameter(const std::vector<std::string>& param);
+
+
 	// ------------------------------------------------------------------
 	// Private data members
 	// ------------------------------------------------------------------
-private:
-	std::string              _name;
-	std::string              _description;
-	std::string              _query;
-	std::string              _stopWord;
-	std::vector<std::string> _parameter;
+	private:
+		std::string              _name;
+		std::string              _description;
+		std::string              _query;
+		std::string              _stopWord;
+		std::vector<std::string> _parameter;
 };
 
 
 // ------------------------------------------------------------------
 // Operators
 // ------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& os, const DBQuery& query);
+std::ostream& operator<<(std::ostream &os, const DBQuery &query);
+
 
 #endif

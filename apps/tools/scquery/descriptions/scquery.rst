@@ -45,6 +45,18 @@ Choose any query profile defined in the :ref:`queries.cfg<scquery_queries>`.
 Provide the required parameters in the same order as in the database request.
 The required parameters are indicated by hashes, e.g. ##latMin##.
 
+The query itself can be provided inline as string or in a separate file indicated
+by a leading < (lower than) character.
+
+.. code-block:: properties
+
+   # Define query inline
+   query.sample1 = "SELECT count(*) FROM Event;"
+
+   # Define query in an external file
+   query.sample2 = <@CONFIGDIR@/query_sample2.txt
+
+
 #. List all available query profiles using the command-line option
    :confval:`showqueries`:
 
