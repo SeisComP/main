@@ -744,8 +744,8 @@ MainFrame::MainFrame(){
 	        this, SLOT(selectEvent(std::string)),
 	        Qt::QueuedConnection);
 
-	connect(_eventList, SIGNAL(visibleEventCountChanged()),
-	        this, SLOT(updateEventTabText()));
+	connect(_eventList, &EventListView::eventAddedToList, this, &MainFrame::eventAdded);
+	connect(_eventList, &EventListView::visibleEventCountChanged, this, &MainFrame::updateEventTabText);
 
 	_originLocator->map()->addLayer(eventMapLayer);
 
