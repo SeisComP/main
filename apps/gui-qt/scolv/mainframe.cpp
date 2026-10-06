@@ -744,7 +744,7 @@ MainFrame::MainFrame(){
 	        this, SLOT(selectEvent(std::string)),
 	        Qt::QueuedConnection);
 
-	connect(_eventList, &EventListView::eventAddedToList, this, &MainFrame::eventAdded);
+	connect(_eventList, &EventListView::eventAdded, this, &MainFrame::eventAdded);
 	connect(_eventList, &EventListView::visibleEventCountChanged, this, &MainFrame::updateEventTabText);
 
 	_originLocator->map()->addLayer(eventMapLayer);
@@ -1827,24 +1827,22 @@ void MainFrame::messageAvailable(Seiscomp::Core::Message *msg, Seiscomp::Client:
 }
 
 
-void MainFrame::eventAdded(Seiscomp::DataModel::Event *e, bool fromNotification) {
-	if ( fromNotification ) {
-		_trayMessageEventID = e->publicID();
+void MainFrame::eventAdded(Seiscomp::DataModel::Event *e, bool visible) {
+	_trayMessageEventID = e->publicID();
 
-		QString msg = tr("[%1] %2")
-		              .arg(windowTitle())
-		              .arg(e->publicID().c_str());
+	QString msg = tr("[%1] %2")
+	              .arg(windowTitle())
+	              .arg(e->publicID().c_str());
 
-		for ( size_t i = 0; i < e->eventDescriptionCount(); ++i ) {
-			if ( e->eventDescription(i)->type() == REGION_NAME ) {
-				msg += "\n";
-				msg += e->eventDescription(i)->text().c_str();
-			}
+	for ( size_t i = 0; i < e->eventDescriptionCount(); ++i ) {
+		if ( e->eventDescription(i)->type() == REGION_NAME ) {
+			msg += "\n";
+			msg += e->eventDescription(i)->text().c_str();
 		}
+	}
 
-		if ( _trayIcon ) {
-			_trayIcon->showMessage(tr("New event"), msg);
-		}
+	if ( _trayIcon ) {
+		_trayIcon->showMessage(tr("New event"), msg);
 	}
 }
 
