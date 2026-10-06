@@ -26,71 +26,66 @@
 
 
 
-using namespace Seiscomp;
 using namespace boost;
+using namespace std;
+using namespace Seiscomp;
 
 
-void showQueries(const Config::Config& conf)
-{
-	std::vector<std::string> sqlQueries;
+void showQueries(const Config::Config &conf) {
+	vector<string> sqlQueries;
 
 	try {
 		sqlQueries = conf.getStrings("queries");
 	}
 	catch ( Config::Exception & ) {
-		std::cerr << "No query found" << std::endl;
+		cerr << "No query found" << endl;
 		return;
 	}
 
-	std::cout << "[ " << sqlQueries.size() << " queries found ]\n"  << std::endl;
+	cout << "[ " << sqlQueries.size() << " queries found ]\n"  << endl;
 	for ( size_t i = 0; i < sqlQueries.size(); ++i ) {
-		std::string desc, query;
+		string desc, query;
 
 		try { desc = conf.getString("query." + sqlQueries[i] + ".description"); } catch ( ... ) {}
 		try { query = conf.getString("query." + sqlQueries[i]); } catch ( ... ) {}
 
 		DBQuery q(sqlQueries[i], desc, query);
-		std::cout << "Query name: " << q.name() << std::endl;
-		std::cout << "Description: " << q.description() << std::endl;
-		if (q.hasParameter()) {
-			std::cout << "number of parameters: " << q.parameter().size() << std::endl;
-			std::cout << "Parameter: ";
-			for (std::vector<std::string>::const_iterator it = q.parameter().begin();
-			        it < q.parameter().end(); ++it)
-				std::cout << *it << " ";
+		cout << "Query name: " << q.name() << endl;
+		cout << "Description: " << q.description() << endl;
+		if ( q.hasParameter() ) {
+			cout << "number of parameters: " << q.parameter().size() << endl;
+			cout << "Parameter: ";
+			for ( auto it = q.parameter().begin(); it < q.parameter().end(); ++it ) {
+				cout << *it << " ";
+			}
 		}
 		else {
-			std::cout << "number of parameters: none";
+			cout << "number of parameters: none";
 		}
-		std::cout << std::endl;
-		std::cout << std::endl;
+		cout << endl;
+		cout << endl;
 	}
 }
 
 
 
 
-DBQuery* findQuery(const Config::Config& conf, const std::string& name)
-{
-	DBQuery* q = nullptr;
+DBQuery *findQuery(const Config::Config &conf, const string &name) {
+	DBQuery *q = nullptr;
 
-	std::vector<std::string> sqlQueries;
-	try
-	{
+	vector<string> sqlQueries;
+	try {
 		sqlQueries = conf.getStrings("queries");
 	}
-	catch (const Config::Exception& e)
-	{
-		std::cout << e.what() << std::endl;
+	catch ( const Config::Exception &e ) {
+		cout << e.what() << endl;
 		return q;
 	}
 
-	for (size_t i = 0; i < sqlQueries.size(); ++i)
-	{
-		std::string desc, query;
+	for ( size_t i = 0; i < sqlQueries.size(); ++i ) {
+		string desc, query;
 
-		if (name == sqlQueries[i])
-		{
+		if ( name == sqlQueries[i] ) {
 			try { desc = conf.getString("query." + sqlQueries[i] + ".description"); } catch ( ... ) {}
 			try { query = conf.getString("query." + sqlQueries[i]); } catch ( ... ) {}
 
@@ -98,6 +93,7 @@ DBQuery* findQuery(const Config::Config& conf, const std::string& name)
 			break;
 		}
 	}
+
 	return q;
 }
 
@@ -149,27 +145,29 @@ class AppQuery : public Client::Application {
 		}
 
 		void printUsage() const {
-			std::cout << "Usage:" << std::endl << "  scquery [options] [queryname] parameter0 parameter1 ..."
-		              << std::endl << std::endl
-			          << "Query the database using predefined queries stored in 'queries.cfg'"
-			          << std::endl;
+			cout << "Usage:" << endl
+			     << "  scquery [options] [queryname] parameter0 parameter1 ..."
+			     << endl << endl
+			     << "Query the database using predefined queries stored in 'queries.cfg'"
+			     << endl;
 
 			Client::Application::printUsage();
 
-			std::cout << "Examples:" << std::endl;
-			std::cout << "List all configured queries" << std::endl
-			          << "  scquery --showqueries" << std::endl << std::endl;
-			std::cout << "Use the 'eventFilter' query, additionally print the column names as header"
-			          << std::endl
-			          << "  scquery -d localhost --print-column-name eventFilter 50 52 10.5 12.5 2.5 5 2021-01-01 2022-01-01"
-			          << std::endl;
+			cout << "Examples:" << endl;
+			cout << "List all configured queries" << endl
+			     << "  scquery --showqueries" << endl << endl;
+			cout << "Use the 'eventFilter' query, additionally print the column names as header"
+			     << endl
+			     << "  scquery -d localhost --print-column-name eventFilter 50 52 10.5 12.5 2.5 5 2021-01-01 2022-01-01"
+			     << endl;
 		}
 
 		bool run() {
 			Config::Config queriesConf;
 			if ( !queriesConf.readConfig(Environment::Instance()->configDir() + "/queries.cfg") ) {
-				if ( !queriesConf.readConfig(Environment::Instance()->appConfigDir() + "/queries.cfg") )
+				if ( !queriesConf.readConfig(Environment::Instance()->appConfigDir() + "/queries.cfg") ) {
 					return false;
+				}
 			}
 
 			if ( commandline().hasOption("showqueries") ) {
@@ -188,92 +186,90 @@ class AppQuery : public Client::Application {
 			if ( commandline().hasOption("print-query-only") ) {
 				_printOnly = true;
 			}
-			std::vector<std::string> qParameter = commandline().unrecognizedOptions();
 
-			if (!qParameter.empty())
-			{
-				std::unique_ptr<DBQuery> q(findQuery(queriesConf, qParameter[0]));
-				if (q.get())
-				{
-					std::vector<std::string> params;
-					std::vector<std::string>::iterator it = qParameter.begin();
-					std::copy(++it, qParameter.end(), std::back_inserter(params));
+			auto qParameter = commandline().unrecognizedOptions();
 
-					if (!q->setParameter(params))
-					{
-						std::cerr << "The amount of parameter is not corresponding with given query!" << std::endl;
-						std::cerr << "Given arguments: ";
-						for (size_t i = 0; i < params.size(); ++i) {
-							std::cerr << params[i] << " ";
+			if ( !qParameter.empty() ) {
+				unique_ptr<DBQuery> q(findQuery(queriesConf, qParameter[0]));
+				if ( q.get() ) {
+					vector<string> params;
+					auto it = qParameter.begin();
+					copy(++it, qParameter.end(), back_inserter(params));
+
+					if ( !q->setParameter(params) ) {
+						cerr << "The amount of parameter is not corresponding with given query!" << endl;
+						cerr << "Given arguments: ";
+						for ( size_t i = 0; i < params.size(); ++i ) {
+							cerr << params[i] << " ";
 						}
-						std::cerr << std::endl;
+						cerr << endl;
 
-						std::cerr << "Query parameter: ";
-						for (size_t i = 0; i < q->parameter().size(); ++i) {
-							std::cerr << q->parameter()[i] << " ";
+						cerr << "Query parameter: ";
+						for ( size_t i = 0; i < q->parameter().size(); ++i ) {
+							cerr << q->parameter()[i] << " ";
 						}
-						std::cerr << std::endl;
+						cerr << endl;
 
-						std::cerr << "Query: " << q->query() << std::endl;
+						cerr << "Query: " << q->query() << endl;
 						return false;
 					}
 
 					if ( _printOnly ) {
-						std::cout << "Query:" << std::endl << q->query() << std::endl;
+						cout << "Query:" << endl << q->query() << endl;
 						return true;
 					}
 
 					DBConnection dbConnection(database());
-					//std::cerr << *q << std::endl;
+					//cerr << *q << endl;
 					if ( !dbConnection.executeQuery(*q, _columnName, _columnDelimiter ) ) {
-						std::cerr << "Could not execute query: " << q->query() << std::endl;
+						cerr << "Could not execute query: " << q->query() << endl;
 					}
 					if ( _header ) {
-						std::cout << "# Name: " << q->name() << std::endl;
-						std::cout << "# Description: " << q->description() << std::endl;
-						std::cout << "# Query: " << q->query() << std::endl;
+						cout << "# Name: " << q->name() << endl;
+						cout << "# Description: " << q->description() << endl;
+						cout << "# Query: " << q->query() << endl;
 					}
-					std::cout << dbConnection.table() << std::endl;
+					cout << dbConnection.table() << endl;
 				}
-				else
-				{
-					std::cout << "Could not execute query: " << qParameter[0] << std::endl;
+				else {
+					cout << "Could not execute query: " << qParameter[0] << endl;
 				}
 			}
 			else if ( !_query.empty() ) {
 				if ( _printOnly ) {
-					std::cout << "Query:" << std::endl << _query << std::endl;
+					cout << "Query:" << endl << _query << endl;
 					return true;
 				}
 
 				DBQuery q("default", "default", _query);
 				DBConnection dbConnection(database());
+
 				if ( !dbConnection.executeQuery(q, _header, _columnDelimiter) ) {
-					std::cerr << "Could not execute query: " << _query << std::endl;
+					cerr << "Could not execute query: " << _query << endl;
 				}
+
 				if ( _header ) {
-					std::cout << "# Name: " << q.name() << std::endl;
-					std::cout << "# Description: " << q.description() << std::endl;
-					std::cout << "# Query: " << q.query() << std::endl;
+					cout << "# Name: " << q.name() << endl;
+					cout << "# Description: " << q.description() << endl;
+					cout << "# Query: " << q.query() << endl;
 				}
-				std::cout << dbConnection.table() << std::endl;
+
+				cout << dbConnection.table() << endl;
 			}
 
 			return true;
 		}
 
 	private:
-		std::string _query;
-		bool        _columnName{false};
-		bool        _header{false};
-		char        _columnDelimiter{'|'};
-		bool        _printOnly{false};
+		string _query;
+		bool   _columnName{false};
+		bool   _header{false};
+		char   _columnDelimiter{'|'};
+		bool   _printOnly{false};
 };
 
 
-
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
 	AppQuery app(argc, argv);
 	return app.exec();
 }
