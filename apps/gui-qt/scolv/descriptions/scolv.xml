@@ -680,12 +680,32 @@
 					Minimum data time window length.
 					</description>
 				</parameter>
-				<parameter name="alignmentPosition" type="double" unit="s" default="0.5">
+				<parameter name="alignmentPosition" type="double" default="0.5" range="0..1">
 					<description>
 					Defines the relative position of the alignment when traces are
 					aligned at a phase. This value is bound
 					to interval [0:1] where 0 is the left side and 1 is right
 					side of the trace window.
+					</description>
+				</parameter>
+				<parameter name="initialAlignment" type="string" default="OT">
+					<description>
+					The alignment of the traces applied when the picker is
+					opened or the default view is restored (Ctrl+N).
+					Supported values are "OT" for the origin time, a phase code,
+					e.g. "P", "S" or "Pn", for the manual, automatic or
+					theoretical arrival time of the phase and "&lt;phase&gt;:ttt",
+					e.g. "P:ttt", for the theoretical arrival time of the phase
+					only. Traces without an arrival of the requested phase are
+					aligned on origin time.
+					</description>
+				</parameter>
+				<parameter name="rememberAlignment" type="boolean" default="false">
+					<description>
+					If enabled, the picker is opened with the alignment that
+					was active when it was closed the last time instead of
+					"initialAlignment". The alignment is stored along with
+					the picker window state and is kept after restarting scolv.
 					</description>
 				</parameter>
 				<parameter name="rotation" type="string" default="123" values="123,ZNE,ZRT,LQT,ZH(L2)">

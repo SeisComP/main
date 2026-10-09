@@ -328,6 +328,15 @@ MainFrame::MainFrame(){
 	try { pickerConfig.alignmentPosition = SCApp->configGetDouble("picker.alignmentPosition"); }
 	catch ( ... ) {}
 
+	try { pickerConfig.initialAlignment = QString(SCApp->configGetString("picker.initialAlignment").c_str()).trimmed(); }
+	catch ( ... ) {}
+
+	if ( pickerConfig.initialAlignment.isEmpty() )
+		pickerConfig.initialAlignment = "OT";
+
+	try { pickerConfig.rememberAlignment = SCApp->configGetBool("picker.rememberAlignment"); }
+	catch ( ... ) {}
+
 	try { pickerConfig.integrationFilter = SCApp->configGetString("picker.integration.preFilter").c_str(); }
 	catch ( ... ) {}
 
@@ -1149,6 +1158,8 @@ void MainFrame::configureAcquisition() {
 		SCApp->configSetDouble("picker.postOffset", static_cast<double>(pc.postOffset));
 		SCApp->configSetDouble("picker.minimumTimeWindow", static_cast<double>(pc.minimumTimeWindow));
 		SCApp->configSetDouble("picker.alignmentPosition", pc.alignmentPosition);
+		SCApp->configSetString("picker.initialAlignment", pc.initialAlignment.toStdString());
+		SCApp->configSetBool("picker.rememberAlignment", pc.rememberAlignment);
 		SCApp->configSetBool("picker.removeAutomaticPicksFromStationAfterManualReview", pc.removeAutomaticStationPicks);
 		SCApp->configSetBool("picker.removeAllAutomaticPicksAfterManualReview", pc.removeAutomaticPicks);
 
