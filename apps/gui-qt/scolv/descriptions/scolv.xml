@@ -680,7 +680,7 @@
 					Minimum data time window length.
 					</description>
 				</parameter>
-				<parameter name="alignmentPosition" type="double" unit="s" default="0.5">
+				<parameter name="alignmentPosition" type="double" default="0.5" range="0..1">
 					<description>
 					Defines the relative position of the alignment when traces are
 					aligned at a phase. This value is bound
