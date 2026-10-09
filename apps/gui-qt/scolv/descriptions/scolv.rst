@@ -473,6 +473,23 @@ orange buttons or :ref:`hot keys <sec-scolv-hotkeys>` to load components not yet
 loaded.
 
 
+Trace alignment
+^^^^^^^^^^^^^^^
+
+By default the traces are aligned on origin time when the picker window opens.
+Configure :confval:`picker.initialAlignment` to align them initially on a phase
+instead, e.g. "P" for the manual, automatic or theoretical P arrival or "P:ttt"
+for the theoretical P arrival only. The same alignment is applied when restoring
+the default display with :kbd:`Ctrl+N`. Enable :confval:`picker.rememberAlignment`
+to open the picker with the alignment which was active when it was closed the
+last time. Traces without an arrival of the requested phase are aligned on
+origin time.
+
+The alignment can be changed interactively from the toolbar, the menu or with
+:ref:`hot keys <sec-scolv-hotkeys>`, e.g. :kbd:`Ctrl+0` for origin time and
+:kbd:`Ctrl+F1` / :kbd:`Ctrl+F2` for P / S arrivals.
+
+
 Data filtering
 ^^^^^^^^^^^^^^
 
@@ -2199,7 +2216,8 @@ actions in scolv. The hotkeys are provided for:
 +------------------------+-------------------------------------------------------------+
 | Ctrl+S                 | Show Fourier spectrum of selected trace                     |
 +------------------------+-------------------------------------------------------------+
-| Ctrl+N                 | Restore default display: Amplitude scaling and time window  |
+| Ctrl+N                 | Restore default display: Amplitude scaling, time window and |
+|                        | alignment, see :confval:`picker.initialAlignment`           |
 +------------------------+-------------------------------------------------------------+
 | Ctrl+T                 | Toggle display of theoretical arrivals                      |
 +------------------------+-------------------------------------------------------------+
