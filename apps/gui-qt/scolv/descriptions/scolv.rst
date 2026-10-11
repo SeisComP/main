@@ -599,27 +599,29 @@ Automatic repicking
 
 While picking mode is active, the current cursor pick can be refined
 automatically instead of being set manually. Choose an algorithm from the
-drop-down list in the picking toolbar and press :kbd:`R` (*Repick*). The
-picker then
+drop-down list in the picking toolbar and press :kbd:`R` (*Repick*).
 
-#. takes the current cursor position as trigger time,
-#. feeds the corresponding waveform data to the selected algorithm, and
-#. moves the cursor to the refined onset time returned by the algorithm, if any.
+The drop-down list contains two kinds of algorithms, separated by a line:
+
+* **Primary** pickers (e.g. AIC, BK, GFZ) refine the current cursor position
+  directly and can be applied while picking any phase.
+* **Secondary** pickers (e.g. S-V, S-L2) refine a phase relative to an
+  existing P pick belonging to the current origin. If several qualifying
+  arrivals exist, the earliest in time is used.
+
+In both cases the picker feeds the corresponding waveform data to the
+selected algorithm and moves the cursor to the refined onset time it
+returns, if any.
 
 The re-picker itself does not create a pick: press :kbd:`Space` or :kbd:`Enter`
 to create the pick at the new cursor position.
 
-.. note::
-
-   The drop-down list only offers the algorithms designed for re-picking
-   the primary, usually P, onset. Secondary S-phase picking algorithms are
-   not available in the picker window. Consequently, pressing :kbd:`R`
-   while picking any phase other than P still applies one of the primary
-   re-picking algorithms to the waveform.
-
-The waveform data used is always the single component currently active in
-the zoom trace, i.e. the one last selected with the :kbd:`Z`, :kbd:`N` or
-:kbd:`E` hot key.
+Which components are used depends on the algorithm. Most primary pickers and
+some secondary pickers (e.g. S-V) use a single component: the one currently
+active in the zoom trace, i.e. the one last selected with the :kbd:`Z`,
+:kbd:`N` or :kbd:`E` hot key. Other secondary pickers require fixed components
+regardless of what is currently displayed, e.g. S-L2 always uses both horizontal
+components.
 
 The algorithm is fed with either filtered or raw data depending on whether
 filtering is currently enabled for the trace or not. Some algorithms provide a
@@ -628,9 +630,8 @@ so make sure it is disabled when scolv filtering is active, or consider the
 consequences.
 
 The algorithms are configured by the :ref:`global` bindings parameters,
-similarly to the settings used by :ref:`scautopick`, e.g.
-:confval:`picker.AIC.noiseBegin`, :confval:`picker.AIC.signalBegin`,
-:confval:`picker.BK.f1`.
+similarly to the settings used by :ref:`scautopick`, e.g. :confval:`picker.*`
+for primary pickers and :confval:`spicker.*` for secondary pickers.
 
 It is possible to apply the same parameters to all stations without configuring
 bindings, although this is usually not the recommended way as the parameters are
