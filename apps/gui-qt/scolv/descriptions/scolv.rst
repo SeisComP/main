@@ -154,6 +154,54 @@ by pressing :kbd:`F8` or from the *View* menu.
    also for other GUI applications.
 
 
+.. _scolv-sec-station-map:
+
+Station map
+-----------
+
+The map shows the stations with arrivals color coded by their residuals. Stations
+of the inventory without arrival, unassociated stations, are drawn as idle
+stations depending on :confval:`olv.map.stations.unassociated`:
+
+* *all*: Show all unassociated stations up to
+  :confval:`olv.map.stations.unassociatedMaxDist`.
+* *auto*: Show unassociated stations up to
+  :confval:`olv.map.stations.unassociatedDistanceFactor` times the distance of
+  the farthest used station, the *used distance*. This adapts the map to local
+  and teleseismic events. If no station is used, all unassociated stations are
+  shown.
+* *off*: Do not show unassociated stations.
+
+Unassociated stations within the used distance are highlighted by the color
+:confval:`scheme.colors.stations.unassociatedInRange` if
+:confval:`olv.map.stations.highlightInRange` is enabled. They may indicate missed
+or not yet picked phases. Stations which are disabled in the configuration module
+are drawn by the color :confval:`scheme.colors.stations.disabled` and can be
+hidden by :confval:`olv.map.stations.hideDisabled`. Stations without bindings can
+be hidden by :confval:`olv.map.stations.hideUnconfigured`. Set
+:confval:`olv.map.stations.requiredBinding`, e.g. to *scautopick*, to require a
+binding of a particular module. The bindings are read from the database, so
+scolv running on a client machine without local bindings uses the bindings of
+the server. Without access to bindings, all stations are considered configured
+and enabled.
+
+A dashed circle is drawn at the used distance and, in mode *auto*, a dotted
+circle at the distance up to which unassociated stations are shown. Disable
+:confval:`olv.map.stations.drawDistanceCircles` to hide the circles. Their pens
+are configured by :confval:`scheme.colors.map.usedDistance.color` and
+:confval:`scheme.colors.map.distanceLimit.color` along with the corresponding
+style and width parameters. The tool tip of an unassociated station
+shows its distance and whether it is within the used distance, disabled or
+without bindings.
+
+The used distance follows interactive changes, e.g. when arrivals are activated
+or deactivated. All options can be changed interactively from the
+*Unassociated stations* menu in the context menu of the map. The menu also shows
+the number of unassociated stations within the used distance. The same options
+apply to the map of the Magnitudes tab where the used distance is defined by the
+stations with active station magnitudes.
+
+
 .. _scolv-sec-diagrams:
 
 Diagrams
