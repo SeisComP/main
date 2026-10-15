@@ -16,9 +16,9 @@
 
 #include <seiscomp/plugins/dataavailability/api.h>
 
+#include <seiscomp/core/baseobject.h>
 #include <seiscomp/core/exceptions.h>
 #include <seiscomp/core/interfacefactory.h>
-#include <seiscomp/core/interruptible.h>
 #include <seiscomp/core/optional.h>
 #include <seiscomp/core/timewindow.h>
 
@@ -39,8 +39,19 @@
  2
    - Add setStartTime() and setEndTime() methods
 
+ 3
+   - Add setAbortFlag() and aborted() methods to Collector and
+     Collector::RecordIterator
+   - Add optional abortFlag parameter to Collector::Open()
+   - Collector and Collector::RecordIterator derive from Core::BaseObject
+     instead of Core::InterruptibleObject: handleInterrupt() and
+     _abortRequested were removed, an abort is signalled solely via the
+     flag passed to setAbortFlag()
+   - chunkMTime() returns OPT(Core::Time), an unset value signals an unknown
+     modification time
+
  */
-#define SCARDAC_API_VERSION 2
+#define SCARDAC_API_VERSION 3
 
 
 namespace Seiscomp {
@@ -60,7 +71,7 @@ DEFINE_SMARTPOINTER(Collector);
  * data of a waveform archive, e.g., data files organized in a directory
  * structure.
  */
-class SC_DAPLUGIN_API Collector : public Core::InterruptibleObject {
+class SC_DAPLUGIN_API Collector : public Core::BaseObject {
 
 	// ------------------------------------------------------------------
 	//  Data file iterator
@@ -68,7 +79,7 @@ class SC_DAPLUGIN_API Collector : public Core::InterruptibleObject {
 	public:
 		DEFINE_SMARTPOINTER(RecordIterator);
 
-		class RecordIterator : public Seiscomp::Core::InterruptibleObject {
+		class RecordIterator : public Seiscomp::Core::BaseObject {
 			protected:
 				RecordIterator() = default;
 
@@ -82,10 +93,23 @@ class SC_DAPLUGIN_API Collector : public Core::InterruptibleObject {
 				virtual double sampleRate() const = 0;
 				virtual const std::string& quality() const = 0;
 
-				void handleInterrupt(int sig) override;
+				/**
+				 * @brief Set an external flag polled during iteration. The
+				 *        flag must outlive the iterator.
+				 * @param flag Pointer to the abort flag or nullptr to unset.
+				 * @since SCARDAC API 3
+				 */
+				void setAbortFlag(const bool *flag) { _abortFlag = flag; }
+
+				/**
+				 * @brief Whether iteration should stop because the abort flag
+				 *        is set.
+				 * @since SCARDAC API 3
+				 */
+				bool aborted() const { return _abortFlag && *_abortFlag; }
 
 			protected:
-				bool _abortRequested{false};
+				const bool *_abortFlag{nullptr};
 		};
 
 
@@ -176,9 +200,10 @@ class SC_DAPLUGIN_API Collector : public Core::InterruptibleObject {
 		 * @brief Return the chunk's last modification time.
 		 * @param chunk The chunk ID, e.g., the file name relative to the
 		 *        archive base path.
-		 * @return Chunk modification time.
+		 * @return Chunk modification time or an unset value if unknown.
+		 * @since SCARDAC API 3 the return type is OPT(Core::Time)
 		 */
-		virtual Core::Time chunkMTime(const std::string &chunk);
+		virtual OPT(Core::Time) chunkMTime(const std::string &chunk);
 
 
 		/**
@@ -204,6 +229,25 @@ class SC_DAPLUGIN_API Collector : public Core::InterruptibleObject {
 		 */
 		virtual bool threadSafe() const = 0;
 
+		/**
+		 * @brief Set an external flag polled during long-running operations.
+		 *        The flag is forwarded to record iterators created by
+		 *        begin(). It must outlive the collector and all its
+		 *        iterators. reset() does not clear it. Without a flag the
+		 *        collector cannot be aborted.
+		 * @param flag Pointer to the abort flag or nullptr to unset.
+		 * @since SCARDAC API 3
+		 */
+		void setAbortFlag(const bool *flag) { _abortFlag = flag; }
+
+		/**
+		 * @brief Whether an abort was requested via the abort flag. Results
+		 *        of setSource(), collectWaveformIDs() and collectChunks()
+		 *        are incomplete if this returns true.
+		 * @since SCARDAC API 3
+		 */
+		bool aborted() const { return _abortFlag && *_abortFlag; }
+
 
 	// ------------------------------------------------------------------
 	//  Collector static interface
@@ -222,26 +266,22 @@ class SC_DAPLUGIN_API Collector : public Core::InterruptibleObject {
 		 * @brief Open a data availability collector. This will call @Create.
 		 * @param url A source URL of format [service://]source,
 		 *        e.g., sds:///data/archive. Service defaults to 'sds'.
+		 * @param abortFlag Optional abort flag set before setSource() is
+		 *        called, see setAbortFlag(). Since SCARDAC API 3.
 		 * @return A pointer to the data availabiltiy collector object. If the
 		 *         requested service is not supported, nullptr will be returned.
 		 *         \note
 		 *         The returned pointer has to be deleted by the caller!
 		 */
-		static Collector *Open(const char *url);
-
-	// ------------------------------------------------------------------
-	//  Collector protected interface
-	// ------------------------------------------------------------------
-	protected:
-
-		void handleInterrupt(int) override;
+		static Collector *Open(const char *url,
+		                       const bool *abortFlag = nullptr);
 
 	// ------------------------------------------------------------------
 	//  Protected members
 	// ------------------------------------------------------------------
 	protected:
 		std::string     _source;
-		bool            _abortRequested{false};
+		const bool     *_abortFlag{nullptr};
 
 		OPT(Core::Time) _startTime;
 		OPT(Core::Time) _endTime;
