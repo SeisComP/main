@@ -88,7 +88,7 @@ class SDSCollector : public Collector {
 		                   const DataModel::WaveformStreamID &wid) override;
 		bool chunkTimeWindow(Core::TimeWindow &window,
 		                     const std::string &chunk) override;
-		Core::Time chunkMTime(const std::string &chunk) override;
+		OPT(Core::Time) chunkMTime(const std::string &chunk) override;
 		Collector::RecordIterator* begin(
 		        const std::string &chunk,
 		        const DataModel::WaveformStreamID &wid) override;

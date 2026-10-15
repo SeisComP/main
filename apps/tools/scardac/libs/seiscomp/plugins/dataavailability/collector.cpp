@@ -28,7 +28,7 @@ IMPLEMENT_INTERFACE_FACTORY(Seiscomp::DataAvailability::Collector, SC_DAPLUGIN_A
 namespace Seiscomp::DataAvailability {
 
 IMPLEMENT_SC_ABSTRACT_CLASS_DERIVED(Collector,
-                                    Seiscomp::Core::InterruptibleObject,
+                                    Seiscomp::Core::BaseObject,
                                     "Collector");
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -46,15 +46,6 @@ CollectorException::CollectorException()
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 CollectorException::CollectorException(std::string what)
 : Core::GeneralException(std::move(what)) {}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Collector::RecordIterator::handleInterrupt(int /*unused*/) {
-	_abortRequested = true;
-}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -90,16 +81,14 @@ void Collector::setEndTime(Core::Time endTime) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Collector::reset() {
-	_abortRequested = false;
-}
+void Collector::reset() {}
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Core::Time Collector::chunkMTime(const std::string &/*chunk*/) {
+OPT(Core::Time) Collector::chunkMTime(const std::string &/*chunk*/) {
 	return {};
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -121,7 +110,7 @@ Collector *Collector::Create(const char *service) {
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Collector* Collector::Open(const char *url) {
+Collector* Collector::Open(const char *url, const bool *abortFlag) {
 	const char *tmp;
 	std::string service;
 	std::string source;
@@ -141,6 +130,7 @@ Collector* Collector::Open(const char *url) {
 
 	auto *dac = Create(service.c_str());
 	if ( dac ) {
+		dac->setAbortFlag(abortFlag);
 		try {
 			if ( !dac->setSource(source.c_str()) ) {
 				delete dac;
@@ -154,15 +144,6 @@ Collector* Collector::Open(const char *url) {
 		}
 	}
 	return dac;
-}
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void Collector::handleInterrupt(int /*unused*/) {
-	_abortRequested = true;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

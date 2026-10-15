@@ -67,8 +67,13 @@ bool SDSCollector::RecordIterator::valid() const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool SDSCollector::RecordIterator::next() {
-	while ( !_abortRequested ) {
-		_rec = _input.next();
+	while ( !aborted() ) {
+		try {
+			_rec = _input.next();
+		}
+		catch ( std::exception &e ) {
+			throw CollectorException(_file + ": " + e.what());
+		}
 
 		if ( !valid() ) {
 			return false;
@@ -156,7 +161,7 @@ bool SDSCollector::setSource(const char *source) {
 	try {
 		_basePath = SC_FS_PATH(archive);
 		for ( fs::directory_iterator itr(archive); itr != end_itr; ++itr ) {
-			if ( _abortRequested ) {
+			if ( aborted() ) {
 				return false;
 			}
 
@@ -234,7 +239,7 @@ void SDSCollector::collectWaveformIDs(WaveformIDs &wids) {
 	wids.clear();
 
 	for ( const auto &year : _archiveYears ) {
-		if ( _abortRequested || (_endYear && year.first > *_endYear) ) {
+		if ( aborted() || (_endYear && year.first > *_endYear) ) {
 			break;
 		}
 
@@ -263,7 +268,7 @@ void SDSCollector::collectChunks(DataChunks &chunks,
 	auto sid = streamID(wid);
 
 	for ( const auto &yearItem : _archiveYears ) {
-		if ( _abortRequested || (_endYear && yearItem.first > *_endYear) ) {
+		if ( aborted() || (_endYear && yearItem.first > *_endYear) ) {
 			break;
 		}
 
@@ -278,7 +283,7 @@ void SDSCollector::collectChunks(DataChunks &chunks,
 		fs::directory_iterator end_it;
 		try {
 			for ( fs::directory_iterator it(year / widPath);
-			      it != end_it && !_abortRequested; ++it ) {
+			      it != end_it && !aborted(); ++it ) {
 				std::string file = SC_FS_FILE_NAME(SC_FS_DE_PATH(it));
 				auto idDate = fileStreamID(file);
 
@@ -291,7 +296,7 @@ void SDSCollector::collectChunks(DataChunks &chunks,
 		catch ( ... ) {}
 	}
 
-	if ( _abortRequested ) {
+	if ( aborted() ) {
 		return;
 	}
 
@@ -330,8 +335,7 @@ bool SDSCollector::chunkTimeWindow(Core::TimeWindow &window,
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-Core::Time SDSCollector::chunkMTime(const std::string &chunk) {
-	Core::Time t;
+OPT(Core::Time) SDSCollector::chunkMTime(const std::string &chunk) {
 	fs::path canonicalPath;
 	try {
 		// resolve softlinks
@@ -340,24 +344,19 @@ Core::Time SDSCollector::chunkMTime(const std::string &chunk) {
 	catch ( ... ) {
 		SEISCOMP_WARNING("Could not resolve canonical path of file: %s",
 		                 chunk);
-		return t;
+		return {};
 	}
 
 	try {
 		std::time_t mtime = boost::filesystem::last_write_time(canonicalPath);
 		if ( mtime >= 0 ) {
-			t = mtime;
-		}
-		else {
-			SEISCOMP_WARNING("Could not read mtime of file: %s", chunk);
+			return Core::Time(mtime);
 		}
 	}
-	catch ( ... ) {
-		SEISCOMP_WARNING("Could not read mtime of file: %s", chunk);
-		return t;
-	}
+	catch ( ... ) {}
 
-	return t;
+	SEISCOMP_WARNING("Could not read mtime of file: %s", chunk);
+	return {};
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -368,7 +367,9 @@ Core::Time SDSCollector::chunkMTime(const std::string &chunk) {
 Collector::RecordIterator*
 SDSCollector::begin(const std::string &chunk,
                     const DataModel::WaveformStreamID &wid) {
-	return new RecordIterator((_basePath / SC_FS_PATH(chunk)).string(), wid);
+	auto *it = new RecordIterator((_basePath / SC_FS_PATH(chunk)).string(), wid);
+	it->setAbortFlag(_abortFlag);
+	return it;
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -399,7 +400,7 @@ void SDSCollector::scanDirectory(WaveformIDs &wids, const fs::path &dir,
 	try {
 		--depth;
 		for ( fs::directory_iterator itr(dir);
-		      itr != end_itr && !_abortRequested; ++itr ) {
+		      itr != end_itr && !aborted(); ++itr ) {
 			fs::path path(SC_FS_DE_PATH(itr));
 			if ( fs::is_directory(path) ) {
 				scanDirectory(wids, path, depth);
@@ -418,7 +419,7 @@ void SDSCollector::scanFiles(WaveformIDs &wids, const fs::path &dir) {
 	fs::directory_iterator end_itr;
 	try {
 		for ( fs::directory_iterator itr(dir);
-		      itr != end_itr && !_abortRequested; ++itr ) {
+		      itr != end_itr && !aborted(); ++itr ) {
 
 			fs::path path = SC_FS_DE_PATH(itr);
 			if ( !SC_FS_IS_REGULAR_FILE(path) ) {

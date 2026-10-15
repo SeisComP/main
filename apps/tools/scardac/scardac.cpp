@@ -232,6 +232,12 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 	Collector::DataChunks chunks;
 	_collector->collectChunks(chunks, _extent->waveformID());
 
+	// an aborted collection is incomplete and must not be synchronized
+	if ( _collector->aborted() ) {
+		SEISCOMP_INFO("[%i] %s: Chunk collection aborted", _id, _sid);
+		return;
+	}
+
 	if ( chunks.empty() ) {
 		SEISCOMP_INFO("[%i] %s: Found no data chunks", _id, _sid);
 	}
@@ -330,10 +336,8 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 			continue;
 		}
 
-		p.mtime = _collector->chunkMTime(chunkPath);
-		if ( !p.mtime ) {
-			p.mtime = scanStart;
-		}
+		auto mtime = _collector->chunkMTime(chunkPath);
+		p.mtime = mtime ? *mtime : scanStart;
 
 		// time window restriction
 		if ( _app->_startTime && p.window.endTime() <= *_app->_startTime ) {
@@ -860,7 +864,17 @@ bool Worker::readChunkSegments(Segments &segments, const std::string &chunk,
 	uint32_t qualityChanges = 0;
 	double availability = 0; // in seconds
 
-	while ( rec->next() && !_app->_exitRequested ) {
+	while ( !_app->_exitRequested ) {
+		try {
+			if ( !rec->next() ) {
+				break;
+			}
+		}
+		catch ( CollectorException &e ) {
+			SEISCOMP_WARNING("[%i] %s: %s", _id, _sid, e.what());
+			return false;
+		}
+
 		// assert valid sampling rate
 		if ( rec->sampleRate() <= 0 ) {
 			++records;
@@ -938,6 +952,11 @@ bool Worker::readChunkSegments(Segments &segments, const std::string &chunk,
 		//		SEISCOMP_DEBUG("%s - %s (%.3fs)", it->startTime().iso(),
 		//		               it->endTime().iso(),
 		//		               (it->endTime() - it->startTime()).length());
+	}
+
+	// iterator may have stopped in the middle of the chunk
+	if ( _collector->aborted() ) {
+		return false;
 	}
 
 	if ( !segment ) {
@@ -1687,8 +1706,11 @@ bool SCARDAC::run() {
 	    (_endTime ? _endTime->iso() : string("-")), cfgInclude, cfgExclude, cfgMtime);
 
 	// create collector
-	_collector = Collector::Open(_archive.c_str());
+	_collector = Collector::Open(_archive.c_str(), &_exitRequested);
 	if ( !_collector ) {
+		if ( _exitRequested ) {
+			return false;
+		}
 		SEISCOMP_ERROR("Could not create data availability collector from "
 		               "URL: %s",
 		               _archive);
@@ -1711,6 +1733,10 @@ bool SCARDAC::run() {
 	if ( _wfidFile.empty() ) {
 		SEISCOMP_INFO("Scanning archive for waveform stream IDs");
 		_collector->collectWaveformIDs(wids);
+		if ( _exitRequested ) {
+			SEISCOMP_INFO("Scanning archive for waveform stream IDs aborted");
+			return false;
+		}
 	}
 	else if ( !readWFIDFile(wids, _wfidFile) ) {
 		return false;
