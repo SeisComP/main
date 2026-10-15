@@ -473,6 +473,23 @@ orange buttons or :ref:`hot keys <sec-scolv-hotkeys>` to load components not yet
 loaded.
 
 
+Arrival residuals
+^^^^^^^^^^^^^^^^^
+
+The tool tip of an arrival shows the time residual and the weight as computed by
+the locator. The time residual can also be shown next to the phase label of the
+arrival. This display is disabled by default and toggled with :kbd:`Ctrl+R`.
+The residuals are updated after
+relocating and removed from arrivals whose pick time has been changed. A
+residual is not shown next to the phase label if it would overlap the label of
+the next pick or arrival, the tool tip always shows it.
+
+Sorting the traces by residual, :kbd:`Alt+R`, puts the traces with the largest
+absolute residual of all active arrivals first. For new picks which have not
+been located yet, the difference to the theoretical arrival time of the same
+phase is used instead.
+
+
 Data filtering
 ^^^^^^^^^^^^^^
 
@@ -2203,6 +2220,8 @@ actions in scolv. The hotkeys are provided for:
 +------------------------+-------------------------------------------------------------+
 | Ctrl+T                 | Toggle display of theoretical arrivals                      |
 +------------------------+-------------------------------------------------------------+
+| Ctrl+R                 | Toggle display of arrival residuals                         |
++------------------------+-------------------------------------------------------------+
 | Ctrl+Right             | Time zoom in                                                |
 +------------------------+-------------------------------------------------------------+
 | Ctrl+Left              | Time zoom out                                               |
@@ -2269,7 +2288,7 @@ actions in scolv. The hotkeys are provided for:
 +------------------------+-------------------------------------------------------------+
 | Alt+D                  | Sort by distance                                            |
 +------------------------+-------------------------------------------------------------+
-| Alt+R                  | Sort by residual                                            |
+| Alt+R                  | Sort by largest absolute arrival residual                   |
 +------------------------+-------------------------------------------------------------+
 | Ctrl+F                 | Search for station code                                     |
 +------------------------+-------------------------------------------------------------+
