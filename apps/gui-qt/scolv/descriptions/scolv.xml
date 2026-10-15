@@ -700,6 +700,13 @@
 					aligned on origin time.
 					</description>
 				</parameter>
+				<parameter name="showArrivalResiduals" type="boolean" default="false">
+					<description>
+					Show the time residuals of the arrivals next to their phase
+					labels when the picker is opened. The display can be
+					toggled in the picker with Ctrl+R.
+					</description>
+				</parameter>
 				<parameter name="rotation" type="string" default="123" values="123,ZNE,ZRT,LQT,ZH(L2)">
 					<description>
 					The initially applied rotation component waveform rotation.
