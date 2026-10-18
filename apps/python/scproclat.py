@@ -195,6 +195,7 @@ class ProcLatency(seiscomp.client.Application):
         org = seiscomp.datamodel.Origin.Cast(obj)
         if org:
             status = ""
+            depth = ""
             lat = f"{org.latitude().value():.2f}"
             lon = f"{org.longitude().value():.2f}"
             try:
@@ -374,7 +375,7 @@ class ProcLatency(seiscomp.client.Application):
 
     def writeLog(self, file, text):
         with open(file, "a", encoding="utf8") as of:
-            of.print(text, file=of)
+            print(text, file=of)
 
 
 app = ProcLatency(len(sys.argv), sys.argv)
