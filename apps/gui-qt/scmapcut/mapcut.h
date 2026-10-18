@@ -19,11 +19,16 @@
 #include <seiscomp/gui/core/application.h>
 #include <seiscomp/gui/datamodel/originsymbol.h>
 #include <seiscomp/gui/map/canvas.h>
+#include <seiscomp/gui/map/annotations.h>
 #ifndef Q_MOC_RUN
+#include <seiscomp/datamodel/eventparameters.h>
+#include <seiscomp/datamodel/inventory.h>
 #include <seiscomp/datamodel/origin.h>
 #endif
 #include <string.h>
 
+
+class OriginSymbol2;
 
 
 class MapCut : public Seiscomp::Gui::Application {
@@ -39,9 +44,23 @@ class MapCut : public Seiscomp::Gui::Application {
 
 
 	private slots:
-		void drawArrivals(QPainter *p);
+		void drawCustomLayer(QPainter *p);
 		void renderingCompleted();
 		void renderCanvas();
+
+
+	private:
+		OriginSymbol2 *addEvent(Seiscomp::DataModel::Event *evt);
+		void resolveStations(OriginSymbol2 *symbol);
+		bool findStationLocation(const Seiscomp::DataModel::WaveformStreamID &wid,
+		                         const Seiscomp::Core::Time &time,
+		                         double &lat, double &lon) const;
+		bool fitRegion();
+
+		void drawArrivals(QPainter *p, QList<QRect> labelRects);
+		void drawStationSymbol(QPainter *p, const QPoint &pos) const;
+		QRect drawInfoBox(QPainter *p, bool paint);
+		QRect drawLegend(QPainter *p, bool paint);
 
 
 	private:
@@ -53,10 +72,13 @@ class MapCut : public Seiscomp::Gui::Application {
 		double                      _latitude;
 		double                      _longitude;
 		double                      _depth{10};
-		double                      _magnitude{3};
+		double                      _magnitude{0};
 
 		std::string                 _epFile;
 		std::string                 _eventID;
+		std::string                 _inventoryFile;
+		std::string                 _stationSymbol{"circle"};
+		std::string                 _title;
 
 		QRectF                      _reg;
 		QSizeF                      _margins;
@@ -64,8 +86,16 @@ class MapCut : public Seiscomp::Gui::Application {
 
 		bool                        _withArrivals{true};
 		bool                        _htmlArea{false};
+		bool                        _stationLabels{false};
+		bool                        _stationTriangles{false};
+		bool                        _infoBox{false};
+		bool                        _legend{false};
 
-		Seiscomp::Gui::Map::Canvas *_canvas{nullptr};
+		Seiscomp::DataModel::EventParametersPtr _ep;
+		Seiscomp::DataModel::InventoryPtr       _inventory;
+
+		Seiscomp::Gui::Map::Annotations        *_annotations{nullptr};
+		Seiscomp::Gui::Map::Canvas             *_canvas{nullptr};
 };
 
 
