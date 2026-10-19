@@ -288,12 +288,12 @@ class EventStreams(client.Application):
 
         try:
             networkStation = self.commandline().optionString("net-sta")
-        except RuntimeError:
+        except Exception:
             networkStation = None
 
         try:
             nslcFile = self.commandline().optionString("nslc")
-        except RuntimeError:
+        except Exception:
             nslcFile = None
 
         if nslcFile:
@@ -679,8 +679,10 @@ Get the time windows for all picks given in an XML file without origins and even
                     )
                     objIDs.append(ev.publicID())
             else:
-                print("Found no origins, trying to continue with picks only.",
-                      file=sys.stderr)
+                print(
+                    "Found no origins, trying to continue with picks only.",
+                    file=sys.stderr,
+                )
                 #  try reading picks only
                 picks = []
                 for i in range(ep.pickCount()):

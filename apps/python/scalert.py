@@ -139,12 +139,12 @@ class ObjectAlert(seiscomp.client.Application):
         # module configuration paramters
         try:
             self._newWhenFirstSeen = self.configGetBool("firstNew")
-        except RuntimeError:
+        except Exception:
             pass
 
         try:
             self._agencyIDs = [self.configGetString("agencyID")]
-        except RuntimeError:
+        except Exception:
             pass
 
         try:
@@ -154,7 +154,7 @@ class ObjectAlert(seiscomp.client.Application):
                 item = item.strip()
                 if item and item not in self._agencyIDs:
                     self._agencyIDs.append(item)
-        except RuntimeError:
+        except Exception:
             pass
 
         try:
@@ -164,7 +164,7 @@ class ObjectAlert(seiscomp.client.Application):
                 item = item.strip()
                 if item not in self._authors:
                     self._authors.append(item)
-        except RuntimeError:
+        except Exception:
             pass
 
         self._phaseHints = ["P", "S"]
@@ -175,7 +175,7 @@ class ObjectAlert(seiscomp.client.Application):
                 item = item.strip()
                 if item not in self._phaseHints:
                     self._phaseHints.append(item)
-        except RuntimeError:
+        except Exception:
             pass
 
         self._phaseStreams = []
@@ -195,17 +195,17 @@ class ObjectAlert(seiscomp.client.Application):
                 rule = re.sub(r"\*", ".*", rule)
                 if rule not in self._phaseStreams:
                     self._phaseStreams.append(rule)
-        except RuntimeError:
+        except Exception:
             pass
 
         try:
             self._phaseNumber = self.configGetInt("constraints.phaseNumber")
-        except RuntimeError:
+        except Exception:
             pass
 
         try:
             self._phaseInterval = self.configGetInt("constraints.phaseInterval")
-        except RuntimeError:
+        except Exception:
             pass
 
         if self._phaseNumber > 1:
@@ -214,47 +214,47 @@ class ObjectAlert(seiscomp.client.Application):
 
         try:
             self._eventDescriptionPattern = self.configGetString("poi.message")
-        except RuntimeError:
+        except Exception:
             pass
 
         try:
             self._citiesMaxDist = self.configGetDouble("poi.maxDist")
-        except RuntimeError:
+        except Exception:
             pass
 
         try:
             self._citiesMinPopulation = self.configGetInt("poi.minPopulation")
-        except RuntimeError:
+        except Exception:
             pass
 
         # mostly command-line options
         try:
             self._citiesMaxDist = self.commandline().optionDouble("max-dist")
-        except RuntimeError:
+        except Exception:
             pass
 
         try:
             if self.commandline().hasOption("first-new"):
                 self._newWhenFirstSeen = True
-        except RuntimeError:
+        except Exception:
             pass
 
         try:
             self._citiesMinPopulation = self.commandline().optionInt("min-population")
-        except RuntimeError:
+        except Exception:
             pass
 
         try:
             self._ampType = self.commandline().optionString("amp-type")
-        except RuntimeError:
+        except Exception:
             pass
 
         try:
             self._pickScript = self.commandline().optionString("pick-script")
-        except RuntimeError:
+        except Exception:
             try:
                 self._pickScript = self.configGetString("scripts.pick")
-            except RuntimeError:
+            except Exception:
                 seiscomp.logging.warning("No pick script defined")
 
         if self._pickScript:
@@ -275,10 +275,10 @@ class ObjectAlert(seiscomp.client.Application):
 
         try:
             self._ampScript = self.commandline().optionString("amp-script")
-        except RuntimeError:
+        except Exception:
             try:
                 self._ampScript = self.configGetString("scripts.amplitude")
-            except RuntimeError:
+            except Exception:
                 seiscomp.logging.warning("No amplitude script defined")
 
         if self._ampScript:
@@ -299,10 +299,10 @@ class ObjectAlert(seiscomp.client.Application):
 
         try:
             self._alertScript = self.commandline().optionString("alert-script")
-        except RuntimeError:
+        except Exception:
             try:
                 self._alertScript = self.configGetString("scripts.alert")
-            except RuntimeError:
+            except Exception:
                 seiscomp.logging.warning("No alert script defined")
 
         if self._alertScript:
@@ -323,10 +323,10 @@ class ObjectAlert(seiscomp.client.Application):
 
         try:
             self._eventScript = self.commandline().optionString("event-script")
-        except RuntimeError:
+        except Exception:
             try:
                 self._eventScript = self.configGetString("scripts.event")
-            except RuntimeError:
+            except Exception:
                 seiscomp.logging.warning("No event script defined")
 
         if self._eventScript:
@@ -407,7 +407,7 @@ class ObjectAlert(seiscomp.client.Application):
                 event = self._cache.get(seiscomp.datamodel.Event, eventID)
                 if event:
                     self.notifyEvent(event)
-            except RuntimeError:
+            except Exception:
                 pass
 
             return seiscomp.client.Application.run(self)
@@ -774,7 +774,9 @@ class ObjectAlert(seiscomp.client.Application):
             if preliminary:
                 message = f"{evType}, XXL, preliminary, {dt}, {dsc}"
             else:
-                message = f"{evType}, {dt}, {dsc}, {mag}, depth {int(dep + 0.5)} kilometers" 
+                message = (
+                    f"{evType}, {dt}, {dsc}, {mag}, depth {int(dep + 0.5)} kilometers"
+                )
 
             seiscomp.logging.info(message)
 

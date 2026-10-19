@@ -116,7 +116,7 @@ class OriginList(seiscomp.client.Application):
 
         try:
             self._inputFile = self.commandline().optionString("input")
-        except RuntimeError:
+        except Exception:
             pass
 
         if self._inputFile:
@@ -130,7 +130,7 @@ class OriginList(seiscomp.client.Application):
 
         try:
             start = self.commandline().optionString("begin")
-        except RuntimeError:
+        except Exception:
             start = "1900-01-01T00:00:00Z"
 
         self._startTime = seiscomp.core.Time.FromString(start)
@@ -140,7 +140,7 @@ class OriginList(seiscomp.client.Application):
 
         try:
             end = self.commandline().optionString("end")
-        except RuntimeError:
+        except Exception:
             end = "2500-01-01T00:00:00Z"
 
         self._endTime = seiscomp.core.Time.FromString(end)
@@ -157,12 +157,12 @@ class OriginList(seiscomp.client.Application):
         try:
             self.author = self.commandline().optionString("author")
             seiscomp.logging.debug(f"Filtering origins by author {self.author}")
-        except RuntimeError:
+        except Exception:
             self.author = False
 
         try:
             self._delimiter = self.commandline().optionString("delimiter")
-        except RuntimeError:
+        except Exception:
             self._delimiter = "\n"
 
         return True

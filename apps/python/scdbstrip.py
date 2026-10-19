@@ -323,8 +323,8 @@ class DBCleaner(seiscomp.client.Application):
         self._invertMode = False
         self._stripEP = True
         self._stripQC = True
-        self._keepModes = [] # Array with modes to keep
-        self._keepStatus = [] # Array with status to keep
+        self._keepModes = []  # Array with modes to keep
+        self._keepStatus = []  # Array with status to keep
 
         self._steps = 0
         self._currentStep = 0
@@ -334,95 +334,85 @@ class DBCleaner(seiscomp.client.Application):
 
     def createCommandLineDescription(self):
         try:
-            try:
-                self.commandline().addGroup("Mode")
-                self.commandline().addOption(
-                    "Mode", "check", "Checks if unreachable objects exist."
-                )
-                self.commandline().addOption(
-                    "Mode",
-                    "clean-unused",
-                    "Remove all unreachable objects "
-                    "when in checkmode. Default: off.",
-                )
+            self.commandline().addGroup("Mode")
+            self.commandline().addOption(
+                "Mode", "check", "Checks if unreachable objects exist."
+            )
+            self.commandline().addOption(
+                "Mode",
+                "clean-unused",
+                "Remove all unreachable objects " "when in checkmode. Default: off.",
+            )
 
-                self.commandline().addGroup("Objects")
+            self.commandline().addGroup("Objects")
+            self.commandline().addOption(
+                "Objects",
+                "ep-only,E",
+                "Delete only event parameters. Combining with " "'qc-only' is invalid.",
+            )
+            self.commandline().addStringOption(
+                "Objects",
+                "keep-events",
+                "Event-IDs to keep in the database. Combining with 'qc-only' "
+                "is invalid.",
+            )
+            self.commandline().addStringOption(
+                "Objects",
+                "keep-event-modes",
+                "Keep all events where is evaluation mode of the preferred origin is "
+                "one of the given modes.",
+            )
+            self.commandline().addStringOption(
+                "Objects",
+                "keep-event-status",
+                "Keep all events where is evaluation status of the preferred origin is "
+                "one of the given status.",
+            )
+            self.commandline().addOption(
+                "Objects",
+                "qc-only,Q",
+                "Delete only waveform QC. Combining with 'ep-only' is invalid.",
+            )
 
-                self.commandline().addOption(
-                    "Objects",
-                    "ep-only,E",
-                    "Delete only event parameters. Combining with "
-                    "'qc-only' is invalid.",
-                )
-                self.commandline().addStringOption(
-                    "Objects",
-                    "keep-events",
-                    "Event-IDs to keep in the database. Combining with 'qc-only' "
-                    "is invalid.",
-                )
-                self.commandline().addStringOption(
-                    "Objects",
-                    "keep-event-modes",
-                    "Keep all events where is evaluation mode of the preferred origin is "
-                    "one of the given modes."
-                )
-                self.commandline().addStringOption(
-                    "Objects",
-                    "keep-event-status",
-                    "Keep all events where is evaluation status of the preferred origin is "
-                    "one of the given status."
-                )
-                self.commandline().addOption(
-                    "Objects",
-                    "qc-only,Q",
-                    "Delete only waveform QC. Combining with 'ep-only' is invalid.",
-                )
+            self.commandline().addGroup("Timespan")
+            self.commandline().addStringOption(
+                "Timespan",
+                "datetime",
+                "Delete objects until the specified datetime (UTC). After that time "
+                "all events are kept. If given, days, minutes and hours are ignored. "
+                "Format: %Y-%m-%dT%H:%M:%S.",
+            )
+            self.commandline().addStringOption(
+                "Timespan",
+                "time-window,t",
+                "Delete objects in the specified time window. Before and after the "
+                "range all events are kept. If given, days, minutes and hours are "
+                "ignored. Format: [start-time]~[end-time].",
+            )
+            self.commandline().addIntOption(
+                "Timespan",
+                "days",
+                "The number of days to keep objects. Added to hours and minutes. "
+                "Default is 30 if no other times are given.",
+            )
+            self.commandline().addIntOption(
+                "Timespan",
+                "hours",
+                "The number of hours to keep objects. Added to days and minutes.",
+            )
+            self.commandline().addIntOption(
+                "Timespan",
+                "minutes",
+                "The number of minutes to keep objects. Added to days and hours.",
+            )
+            self.commandline().addOption(
+                "Timespan",
+                "invert,i",
+                "Invert the selection of the specified time period.",
+            )
 
-                self.commandline().addGroup("Timespan")
-                self.commandline().addStringOption(
-                    "Timespan",
-                    "datetime",
-                    "Delete objects until the specified datetime (UTC). After that time "
-                    "all events are kept. If given, days, minutes and hours are ignored. "
-                    "Format: %Y-%m-%dT%H:%M:%S.",
-                )
-                self.commandline().addStringOption(
-                    "Timespan",
-                    "time-window,t",
-                    "Delete objects in the specified time window. Before and after the "
-                    "range all events are kept. If given, days, minutes and hours are "
-                    "ignored. Format: [start-time]~[end-time].",
-                )
-                self.commandline().addIntOption(
-                    "Timespan",
-                    "days",
-                    "The number of days to keep objects. Added to hours and minutes. "
-                    "Default is 30 if no other times are given.",
-                )
-                self.commandline().addIntOption(
-                    "Timespan",
-                    "hours",
-                    "The number of hours to keep objects. Added to days and minutes.",
-                )
-                self.commandline().addIntOption(
-                    "Timespan",
-                    "minutes",
-                    "The number of minutes to keep objects. Added to days and hours.",
-                )
-                self.commandline().addOption(
-                    "Timespan",
-                    "invert,i",
-                    "Invert the selection of the specified time period.",
-                )
-
-            except RuntimeError:
-                seiscomp.logging.warning(f"caught unexpected error {sys.exc_info()}")
-            return True
-        except RuntimeError:
-            info = traceback.format_exception(*sys.exc_info())
-            for i in info:
-                sys.stderr.write(i)
-            sys.exit(-1)
+        except Exception as e:
+            seiscomp.logging.warning(f"caught unexpected error {e}")
 
     def initConfiguration(self):
         try:
@@ -430,7 +420,7 @@ class DBCleaner(seiscomp.client.Application):
                 return False
             try:
                 self._invertMode = self.configGetBool("database.cleanup.invertMode")
-            except RuntimeError:
+            except Exception:
                 pass
 
             try:
@@ -438,7 +428,7 @@ class DBCleaner(seiscomp.client.Application):
                     self._stripEP = True
                 else:
                     self._stripEP = False
-            except RuntimeError:
+            except Exception:
                 pass
 
             try:
@@ -446,27 +436,27 @@ class DBCleaner(seiscomp.client.Application):
                     self._stripQC = True
                 else:
                     self._stripQC = False
-            except RuntimeError:
+            except Exception:
                 pass
 
             try:
                 self._daysToKeep = self.configGetInt("database.cleanup.keep.days")
-            except RuntimeError:
+            except Exception:
                 pass
 
             try:
                 self._hoursToKeep = self.configGetInt("database.cleanup.keep.hours")
-            except RuntimeError:
+            except Exception:
                 pass
 
             try:
                 self._minutesToKeep = self.configGetInt("database.cleanup.keep.minutes")
-            except RuntimeError:
+            except Exception:
                 pass
 
             return True
 
-        except RuntimeError:
+        except Exception:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
@@ -500,17 +490,17 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
         try:
             try:
                 self._daysToKeep = self.commandline().optionInt("days")
-            except RuntimeError:
+            except Exception:
                 pass
 
             try:
                 self._hoursToKeep = self.commandline().optionInt("hours")
-            except RuntimeError:
+            except Exception:
                 pass
 
             try:
                 self._minutesToKeep = self.commandline().optionInt("minutes")
-            except RuntimeError:
+            except Exception:
                 pass
 
             if self.commandline().hasOption("invert"):
@@ -544,30 +534,30 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
             try:
                 eventIDs = self.commandline().optionString("keep-events")
                 self._keepEvents = [id.strip() for id in eventIDs.split(",")]
-            except RuntimeError:
+            except Exception:
                 pass
 
             try:
                 status = self.commandline().optionString("keep-event-status")
                 self._keepStatus = [s.strip() for s in status.split(",")]
                 print(status, self._keepStatus)
-            except RuntimeError:
+            except Exception:
                 pass
 
             try:
                 modes = self.commandline().optionString("keep-event-modes")
                 self._keepModes = [m.strip() for m in modes.split(",")]
-            except RuntimeError:
+            except Exception:
                 pass
 
             try:
                 dateTime = self.commandline().optionString("datetime")
-            except RuntimeError:
+            except Exception:
                 dateTime = None
 
             try:
                 dateRange = self.commandline().optionString("time-window")
-            except RuntimeError:
+            except Exception:
                 dateRange = None
 
             if dateTime or dateRange:
@@ -622,7 +612,7 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
 
             return True
 
-        except RuntimeError:
+        except Exception:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
@@ -646,7 +636,7 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                 return self.check()
 
             return self.clean()
-        except RuntimeError:
+        except Exception:
             info = traceback.format_exception(*sys.exc_info())
             for i in info:
                 sys.stderr.write(i)
@@ -1344,9 +1334,7 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
         self.runCommand(
             self._query.deleteJournalQuery("PublicObject", *v) + " and used=0"
         )
-        self.runCommand(
-            self._query.deleteObjectQuery("Object", *v) + " and used=0"
-        )
+        self.runCommand(self._query.deleteObjectQuery("Object", *v) + " and used=0")
         self.runCommand(
             self._query.deleteObjectQuery("PublicObject", *v) + " and used=0"
         )
