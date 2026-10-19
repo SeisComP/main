@@ -101,7 +101,7 @@ class EventList(client.Application):
 
         try:
             self._inputFile = self.commandline().optionString("input")
-        except RuntimeError:
+        except Exception:
             pass
 
         if self._inputFile:
@@ -113,13 +113,13 @@ class EventList(client.Application):
         def readTimeOption(option):
             try:
                 value = self.commandline().optionString(option)
-            except RuntimeError:
+            except Exception:
                 return None
 
             try:
                 time = core.Time.FromString(value)
                 logging.debug(f"Setting {option} to {time.toString('%FT%TZ')}")
-            except RuntimeError as e:
+            except Exception as e:
                 logging.error(f"Wrong '{option}' format '{value}'")
                 raise e
 
@@ -138,35 +138,35 @@ class EventList(client.Application):
         except ValueError as e:
             logging.error(f"Invalid 'hour' value: {e}")
             return False
-        except RuntimeError:
+        except Exception:
             try:
                 self._startTime = readTimeOption("begin")
-            except RuntimeError:
+            except Exception:
                 return False
 
             try:
                 self._endTime = readTimeOption("end")
-            except RuntimeError:
+            except Exception:
                 return False
 
         try:
             self._delimiter = self.commandline().optionString("delimiter")
-        except RuntimeError:
+        except Exception:
             self._delimiter = "\n"
 
         try:
             self._modifiedAfterTime = readTimeOption("modified-after")
-        except RuntimeError:
+        except Exception:
             return False
 
         try:
             self._preferredOrigin = self.commandline().hasOption("preferred-origin")
-        except RuntimeError:
+        except Exception:
             pass
 
         try:
             self._originCount = self.commandline().hasOption("origin-count")
-        except RuntimeError:
+        except Exception:
             pass
 
         try:
@@ -182,20 +182,23 @@ class EventList(client.Application):
                 if not self._eventType:
                     logging.error(f"'{eventType}' is not a valid SeisComP event type")
                     return False
-        except RuntimeError:
+        except Exception:
             pass
 
         return True
 
     def printUsage(self):
-        print(f"""Usage:
+        print(
+            f"""Usage:
   {os.path.basename(__file__)} [options]
 
-List event IDs available in a given time range and print to stdout.""")
+List event IDs available in a given time range and print to stdout."""
+        )
 
         client.Application.printUsage(self)
 
-        print(f"""Examples:
+        print(
+            f"""Examples:
 Print all event IDs from year 2022 and thereafter
   {os.path.basename(__file__)} -d mysql://sysop:sysop@localhost/seiscomp \
 --begin 2022-01-01T00:00:00
@@ -205,7 +208,8 @@ Print all event IDs with event type 'quarry blast'
 
 Print IDs of all events in XML file
   {os.path.basename(__file__)} -i events.xml
-""")
+"""
+        )
 
     def readEventParameters(self):
         ar = io.XMLArchive()

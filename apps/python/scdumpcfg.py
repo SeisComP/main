@@ -106,7 +106,7 @@ class DumpCfg(seiscomp.client.Application):
         try:
             param = self.commandline().optionString("param")
             self.param = param.split(",")
-        except RuntimeError:
+        except Exception:
             pass
 
         self.allowGlobal = self.commandline().hasOption("allow-global")

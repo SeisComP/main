@@ -1528,7 +1528,7 @@ class BulletinApp(seiscomp.client.Application):
                 "- 4/FDSNWS event text: Additional columns\n"
                 "More information may be added in future versions.",
             )
-        except RuntimeError:
+        except Exception:
             seiscomp.logging.warning(f"caught unexpected error {sys.exc_info()}")
 
         return True
@@ -1539,7 +1539,7 @@ class BulletinApp(seiscomp.client.Application):
 
         try:
             self.inputFile = self.commandline().optionString("input")
-        except RuntimeError:
+        except Exception:
             self.inputFile = None
 
         if self.inputFile:
@@ -1583,12 +1583,12 @@ Create a bulletin from event parameters in XML
 
         try:
             evid = self.commandline().optionString("event")
-        except RuntimeError:
+        except Exception:
             pass
 
         try:
             orid = self.commandline().optionString("origin")
-        except RuntimeError:
+        except Exception:
             pass
 
         if evid != "" or orid != "" or not self.inputFile:
@@ -1601,7 +1601,7 @@ Create a bulletin from event parameters in XML
 
         try:
             mw = self.commandline().optionString("weight")
-        except RuntimeError:
+        except Exception:
             pass
 
         if mw != "" and mw is not None:
@@ -1609,7 +1609,7 @@ Create a bulletin from event parameters in XML
 
         try:
             self.extra = self.commandline().hasOption("extra")
-        except RuntimeError:
+        except Exception:
             pass
 
         if self.commandline().hasOption("autoloc1"):
@@ -1637,7 +1637,7 @@ Create a bulletin from event parameters in XML
 
         try:
             outputFile = self.commandline().optionString("output")
-        except RuntimeError:
+        except Exception:
             pass
 
         inputFile = self.inputFile
@@ -1672,7 +1672,7 @@ Create a bulletin from event parameters in XML
             try:
                 try:
                     inputFormat = self.commandline().optionString("format")
-                except RuntimeError:
+                except Exception:
                     pass
 
                 if inputFormat == "xml":

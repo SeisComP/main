@@ -34,47 +34,43 @@ qcParamsDefault = (
 
 
 def getStreamsFromInventory(self):
-    try:
-        dbr = seiscomp.datamodel.DatabaseReader(self.database())
-        inv = seiscomp.datamodel.Inventory()
-        dbr.loadNetworks(inv)
+    dbr = seiscomp.datamodel.DatabaseReader(self.database())
+    inv = seiscomp.datamodel.Inventory()
+    dbr.loadNetworks(inv)
 
-        streamList = set()
-        for inet in range(inv.networkCount()):
-            network = inv.network(inet)
-            dbr.load(network)
-            for ista in range(network.stationCount()):
-                station = network.station(ista)
-                try:
-                    start = station.start()
-                except Exception:
+    streamList = set()
+    for inet in range(inv.networkCount()):
+        network = inv.network(inet)
+        dbr.load(network)
+        for ista in range(network.stationCount()):
+            station = network.station(ista)
+            try:
+                start = station.start()
+            except Exception:
+                continue
+            try:
+                end = station.end()
+                if not start <= self._end <= end and end >= self._start:
                     continue
-                try:
-                    end = station.end()
-                    if not start <= self._end <= end and end >= self._start:
-                        continue
-                except Exception:
-                    pass
+            except Exception:
+                pass
 
-                for iloc in range(station.sensorLocationCount()):
-                    location = station.sensorLocation(iloc)
-                    for istr in range(location.streamCount()):
-                        stream = location.stream(istr)
-                        streamID = (
-                            network.code()
-                            + "."
-                            + station.code()
-                            + "."
-                            + location.code()
-                            + "."
-                            + stream.code()
-                        )
-                        streamList.add(streamID)
+            for iloc in range(station.sensorLocationCount()):
+                location = station.sensorLocation(iloc)
+                for istr in range(location.streamCount()):
+                    stream = location.stream(istr)
+                    streamID = (
+                        network.code()
+                        + "."
+                        + station.code()
+                        + "."
+                        + location.code()
+                        + "."
+                        + stream.code()
+                    )
+                    streamList.add(streamID)
 
-        return list(streamList)
-
-    except Exception:
-        return False
+    return list(streamList)
 
 
 class WfqQuery(seiscomp.client.Application):
@@ -167,12 +163,12 @@ Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from \
 
         try:
             self._streams = self.commandline().optionString("stream-id").split(",")
-        except RuntimeError:
+        except Exception:
             pass
 
         try:
             self._fromInventory = self.commandline().hasOption("streams-from-inventory")
-        except RuntimeError:
+        except Exception:
             pass
 
         if not self._streams and not self._fromInventory:
@@ -184,12 +180,12 @@ Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from \
 
         try:
             self._outfile = self.commandline().optionString("output")
-        except RuntimeError:
+        except Exception:
             print("No output file name given: Sending to stdout", file=sys.stderr)
 
         try:
             self._start = self.commandline().optionString("begin")
-        except RuntimeError:
+        except Exception:
             print(
                 f"No begin time given, considering: {self._start}",
                 file=sys.stderr,
@@ -197,7 +193,7 @@ Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from \
 
         try:
             self._end = self.commandline().optionString("end")
-        except RuntimeError:
+        except Exception:
             print(
                 f"No end time given, considering 'now': {self._end}",
                 file=sys.stderr,
@@ -205,12 +201,12 @@ Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from \
 
         try:
             self._parameter = self.commandline().optionString("parameter")
-        except RuntimeError:
+        except Exception:
             print("No QC parameter given, using default", file=sys.stderr)
 
         try:
             self._formatted = self.commandline().hasOption("formatted")
-        except RuntimeError:
+        except Exception:
             pass
 
         return True
@@ -222,11 +218,7 @@ Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from \
 
         streams = self._streams
         if not streams and self._fromInventory:
-            try:
-                streams = getStreamsFromInventory(self)
-            except RuntimeError:
-                print("No streams read from database!\n", file=sys.stderr)
-                return False
+            streams = getStreamsFromInventory(self)
 
         if not streams:
             print("Empty stream list")

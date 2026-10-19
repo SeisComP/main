@@ -103,7 +103,7 @@ Set the type of the event with ID gempa2021abcd and read the type from file
 
         try:
             self.filename = self.commandline().optionString("input")
-        except RuntimeError:
+        except Exception:
             pass
 
         self.params = self.commandline().unrecognizedOptions()
