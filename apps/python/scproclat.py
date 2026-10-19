@@ -288,7 +288,9 @@ class ProcLatency(seiscomp.client.Application):
 
         logEntry = logEntry + ";" + text
 
-        sys.stdout.write(f"{timeToString(received)};{logEntry}\n")
+        # The stream ID is appended to the stdout output only. It is part of
+        # the file names of the log files.
+        sys.stdout.write(f"{timeToString(received)};{logEntry};{streamID}\n")
 
         if nowDirectory != self._nowDirectory:
             if not createDirectory(nowDirectory):
