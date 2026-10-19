@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<module name="scproclat" category="Utilities">
+		<description>Log the processing latencies of picks, amplitudes, origins, magnitudes and events.</description>
+		<configuration>
+			<parameter name="directory" type="string">
+				<description>
+				The storage directory of the latency log files. Within this
+				directory the files are stored in sub-directories named by
+				year, month and day. If not set, the current working directory
+				is used.
+				</description>
+			</parameter>
+			<parameter name="logMsgLatency" type="boolean" default="false">
+				<description>
+				Additionally log the latency of picks and amplitudes with
+				respect to their creation time, e.g. to measure the delay
+				caused by the messaging.
+				</description>
+			</parameter>
+		</configuration>
+		<command-line>
+			<synopsis>
+				scproclat [options]
+			</synopsis>
+			<group name="Generic">
+				<optionReference>generic#help</optionReference>
+				<optionReference>generic#version</optionReference>
+				<optionReference>generic#config-file</optionReference>
+				<optionReference>generic#plugins</optionReference>
+				<optionReference>generic#daemon</optionReference>
+				<optionReference>generic#auto-shutdown</optionReference>
+				<optionReference>generic#shutdown-master-module</optionReference>
+				<optionReference>generic#shutdown-master-username</optionReference>
+			</group>
+
+			<group name="Verbosity">
+				<optionReference>verbosity#verbosity</optionReference>
+				<optionReference>verbosity#v</optionReference>
+				<optionReference>verbosity#quiet</optionReference>
+				<optionReference>verbosity#component</optionReference>
+				<optionReference>verbosity#syslog</optionReference>
+				<optionReference>verbosity#lockfile</optionReference>
+				<optionReference>verbosity#console</optionReference>
+				<optionReference>verbosity#debug</optionReference>
+				<optionReference>verbosity#log-file</optionReference>
+			</group>
+
+			<group name="Messaging">
+				<optionReference>messaging#user</optionReference>
+				<optionReference>messaging#host</optionReference>
+				<optionReference>messaging#timeout</optionReference>
+				<optionReference>messaging#primary-group</optionReference>
+				<optionReference>messaging#subscribe-group</optionReference>
+				<optionReference>messaging#content-type</optionReference>
+				<optionReference>messaging#start-stop-msg</optionReference>
+			</group>
+
+			<group name="Storage">
+				<option flag="o" long-flag="directory" argument="arg" param-ref="directory"/>
+			</group>
+		</command-line>
+	</module>
+</seiscomp>
