@@ -493,8 +493,8 @@ Arrival residuals
 
 The tool tip of an arrival shows the time residual and the weight as computed by
 the locator. The time residual can also be shown next to the phase label of the
-arrival. This display is disabled by default and toggled with :kbd:`Ctrl+R`.
-The residuals are updated after
+arrival. Toggle this display with :kbd:`Ctrl+R` and configure its initial state
+with :confval:`picker.showArrivalResiduals`. The residuals are updated after
 relocating and removed from arrivals whose pick time has been changed. A
 residual is not shown next to the phase label if it would overlap the label of
 the next pick or arrival, the tool tip always shows it.
