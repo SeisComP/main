@@ -699,6 +699,9 @@ MainFrame::MainFrame(){
 	connect(_originLocator, SIGNAL(artificalOriginCreated(Seiscomp::DataModel::Origin*)),
 	        this, SLOT(setArtificialOrigin(Seiscomp::DataModel::Origin*)));
 
+	connect(_originLocator, SIGNAL(pickerFilterSaveRequested(QString,QString)),
+	        this, SLOT(savePickerFilters()));
+
 	/*
 	_picker = new PickerView();
 	_picker->setDatabase(_query.get());
@@ -1192,6 +1195,17 @@ void MainFrame::configureAcquisition() {
 
 		SCApp->saveConfiguration();
 	}
+}
+
+
+void MainFrame::savePickerFilters() {
+	std::vector<std::string> filters;
+	foreach ( const PickerView::Config::FilterEntry &entry, _originLocator->pickerConfig().filters ) {
+		filters.push_back(QString("%1;%2").arg(entry.first, entry.second).toStdString());
+	}
+
+	SCApp->configSetStrings("picker.filters", filters);
+	SCApp->saveConfiguration();
 }
 
 

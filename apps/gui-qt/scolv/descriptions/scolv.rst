@@ -513,6 +513,29 @@ configured in :confval:`picker.filters`. Selecting filters or unfiltered data
 interactively is available by choosing the filter from the filter menu or
 :ref:`hot keys <sec-scolv-hotkeys>`.
 
+New filters can be created without writing the filter string by hand:
+
+* **Filter builder** (:menuselection:`Filter --> Filter builder...`,
+  :kbd:`Ctrl+Shift+F`): compose a filter chain from stages such as remove
+  mean, taper, Butterworth filters, smoothing, integration or seismometer
+  simulations. Stages are reordered by drag and drop, the parameters are set
+  with spin boxes and the resulting filter string is shown and validated
+  while editing. With *Apply live to the traces* the traces are refiltered
+  while the parameters change. *OK* adds the filter to the filter list for the
+  current session, *Save to configuration* also adds it to
+  :confval:`picker.filters` in the user configuration. Filter strings which
+  are more complex than a plain chain of stages, e.g. arithmetic expressions,
+  can still be edited as text.
+* **Quick filter** (:menuselection:`Filter --> Quick filter`): shows controls
+  in the filter toolbar to set the type, order and corner frequencies of a
+  Butterworth filter. Changes are applied to the traces immediately. This is
+  useful to scan through frequency bands.
+
+The filters configured in :confval:`picker.filters` and
+:confval:`amplitudePicker.filters` can also be edited in the settings dialog
+of scolv. Invalid filter strings are shown in red and the filter builder is
+available there as well.
+
 
 Waveform rotation
 ^^^^^^^^^^^^^^^^^
