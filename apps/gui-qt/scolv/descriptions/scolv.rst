@@ -523,9 +523,19 @@ New filters can be created without writing the filter string by hand:
   while editing. With *Apply live to the traces* the traces are refiltered
   while the parameters change. *OK* adds the filter to the filter list for the
   current session, *Save to configuration* also adds it to
-  :confval:`picker.filters` in the user configuration. Filter strings which
-  are more complex than a plain chain of stages, e.g. arithmetic expressions,
-  can still be edited as text.
+  :confval:`picker.filters` in the user configuration.
+
+  Two stage types cover combined filters:
+
+  * *Multi-band combination* combines Butterworth bandpasses of the same order
+    as root-sum-square, sum or sum of absolute values, e.g.
+    ``(BW(4,0.7,2)^2+BW(4,2,6)^2)^0.5``. The bands are edited in a table.
+  * *Expression* holds any other part of the filter grammar as text, e.g.
+    ``|DIFF|*2``, and is validated on its own.
+
+  Existing filter strings are split into these stages, e.g.
+  ``ITAPER(10)>>(BW(4,0.7,2)^2+BW(4,2,6)^2)^0.5`` becomes an initial taper
+  followed by a multi-band combination of two bands.
 * **Quick filter** (:menuselection:`Filter --> Quick filter`): shows controls
   in the filter toolbar to set the type, order and corner frequencies of a
   Butterworth filter. Changes are applied to the traces immediately. This is
