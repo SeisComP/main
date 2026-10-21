@@ -195,12 +195,15 @@
 					</description>
 					<parameter name="lonmin" type="double" unit="deg" default="-180.0">
 						<description>
-						Minimum longitude.
+						Minimum longitude. If greater than lonmax, the region
+						crosses the dateline, e.g. lonmin = 129 and
+						lonmax = -150.
 						</description>
 					</parameter>
 					<parameter name="lonmax" type="double" unit="deg" default="180.0">
 						<description>
-						Maximum longitude.
+						Maximum longitude. If less than lonmin, the region
+						crosses the dateline.
 						</description>
 					</parameter>
 					<parameter name="latmin" type="double" unit="deg" default="-90.0">
