@@ -261,7 +261,7 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 
 		_db->loadDataAttributeExtents(_extent);
 
-		_extentOID = _db->getCachedId(_extent);
+		_extentOID = _db->publicObjectId(_extent->publicID());
 		if ( _extentOID != IO::DatabaseInterface::INVALID_OID ) {
 			auto it = dbSegments();
 			for ( ; *it; ++it ) {
@@ -291,7 +291,7 @@ void Worker::processExtent(DataExtent *extent, bool foundInDB) {
 		               dbSegs.size() + _segCount, extent->segmentOverflow());
 	}
 	else if ( writeExtent(OP_ADD) ) {
-		_extentOID = _db->getCachedId(_extent);
+		_extentOID = _db->publicObjectId(_extent->publicID());
 	}
 	else {
 		SEISCOMP_ERROR("[%i] %s: Could not create new extent", _id, _sid);
