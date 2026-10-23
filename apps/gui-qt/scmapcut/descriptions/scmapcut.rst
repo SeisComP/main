@@ -37,3 +37,16 @@ Examples
       :width: 10cm
 
       Generic example.
+
+#. Draw a map for the event with event ID <eventID> with the region fitted to
+   the origin and all stations. Stations are drawn as triangles at their
+   inventory coordinates and annotated with their station code. An information
+   box with origin parameters and a legend of the travel time residuals are
+   added. The html/area section with one area per station is written to
+   *<eventID>.html*.
+
+   .. code-block:: sh
+
+      scmapcut -E <eventID> --ep <eventID>.xml --inventory-xml inventory.xml \
+               --station-labels --station-symbol triangle --info --legend \
+               --html-area -d 1000x800 -o <eventID>.png > <eventID>.html
