@@ -2421,14 +2421,15 @@ void MainWindow::openAcquisition() {
 		if ( lonMax < -180 ) {
 			lonMax += 360.0;
 		}
-		double latDelta = 0.0;
-		latDelta = lonMax-lonMin;
-		if ( latDelta < 0 ) {
-			latDelta += 360.;
+		// The region may cross the dateline: then the rectangle extends
+		// beyond 180 deg and station longitudes are shifted accordingly.
+		double lonDelta = lonMax-lonMin;
+		if ( lonDelta < 0 ) {
+			lonDelta += 360.;
 		}
 		try {
 			if ( latMin != -90.0 || latMax != 90.0 || lonMin != -180.0 || lonMax != 180.0 ) {
-				regionRect.setRect(lonMin, latMin, latDelta, latMax-latMin);
+				regionRect.setRect(lonMin, latMin, lonDelta, latMax-latMin);
 			}
 		}
 		catch ( ... ) {
@@ -2470,7 +2471,11 @@ void MainWindow::openAcquisition() {
 
 				if ( !regionRect.isEmpty() ) {
 					try {
-						if ( !regionRect.contains(sta->longitude(), sta->latitude()) )
+						double lon = sta->longitude();
+						if ( lon < regionRect.left() ) {
+							lon += 360.0;
+						}
+						if ( !regionRect.contains(lon, sta->latitude()) )
 							continue;
 					}
 					catch ( ... ) {
