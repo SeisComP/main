@@ -1,0 +1,4 @@
+#EventID|Time|Latitude|Longitude|Depth/km|Author|Catalog|Contributor|ContributorID|MagType|Magnitude|MagAuthor|EventLocationName|EventType
+gfz2021jtmw|2021-05-19T17:54:36.232216|-36.6749115|-110.2756348|10.0|||GFZ|gfz2021jtmw|Mw|5.491027531||Southern East Pacific Rise|
+rs2019qtevor|2019-08-26T01:52:33.931644|-19.6568737|-69.32772827|95.14685822|scanloc_CX||gempa|rs2019qtevor|M|2.532054686|scmag@mars|Tarapaca, Chile|other event
+rs2019qrwzhx|2019-08-25T08:51:02.992597|-34.21940231|-72.4805069|10.0|scautoloc@mars||gempa|rs2019qrwzhx|M|4.052819682|scmag@mars|offshore Libertador O'Higgins, Chile|

@@ -152,7 +152,11 @@ class RequestOptions:
                 self.maxLon = None
 
             def dateLineCrossing(self):
-                return self.minLon and self.maxLon and self.minLon > self.maxLon
+                return (
+                    self.minLon is not None
+                    and self.maxLon is not None
+                    and self.minLon > self.maxLon
+                )
 
         # -----------------------------------------------------------------------
         class BCircle:
@@ -179,7 +183,7 @@ class RequestOptions:
                 b.maxLat = self.lat + self.maxRad
                 if b.minLat > -90 and b.maxLat < 90:
                     dLon = deg(
-                        math.asin(math.sin(rad(self.maxRad) / math.cos(rad(self.lat))))
+                        math.asin(math.sin(rad(self.maxRad)) / math.cos(rad(self.lat)))
                     )
                     b.minLon = self.lon - dLon
                     if b.minLon < -180:
