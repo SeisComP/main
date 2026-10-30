@@ -10,7 +10,9 @@
 #     parameter is mapped to the agencyID.
 #   - origin and magnitude filter parameters are always applied to
 #     preferred origin resp. preferred magnitude
-#   - 'updateafter' request parameter not implemented
+#   - 'updatedafter' (alias 'updateafter') selects events of which the event
+#     itself, its preferred origin or its preferred magnitude was created or
+#     modified after the given time
 #   - additional request parameters:
 #     - includepicks:    boolean, default: true,
 #                        available only in combination with includearrivals=true
@@ -87,7 +89,7 @@ class _EventRequestOptions(RequestOptions):
 
     PContributor = ["contributor"]
     PCatalog = ["catalog"]
-    PUpdateAfter = ["updateafter"]
+    PUpdateAfter = ["updatedafter", "updateafter"]
 
     # non standard parameters
     PPicks = ["includepicks", "picks"]
@@ -351,11 +353,6 @@ class FDSNEvent(BaseResource):
 
         if ro.comments and self._hideComments:
             msg = "including of comments not supported"
-            return self.renderErrorPage(req, http.BAD_REQUEST, msg, ro)
-
-        # updateafter not implemented
-        if ro.updatedAfter:
-            msg = "filtering based on update time not supported"
             return self.renderErrorPage(req, http.BAD_REQUEST, msg, ro)
 
         if self._formatList is not None and ro.format not in self._formatList:
@@ -1009,21 +1006,29 @@ class FDSNEvent(BaseResource):
                 q += " AND o.$depth_value <= ?"
                 params.append(ro.depth.max)
 
-        # updated after
+        # updated after: the event, its preferred origin or its preferred
+        # magnitude was created or modified after the given time. scevent
+        # updates the event's modification time if a preferred object changes,
+        # scmag the magnitude's modification time if its value changes.
         if ro.updatedAfter:
             t = _time(ro.updatedAfter)
             ms = ro.updatedAfter.microseconds()
 
+            def _after(alias):
+                cond = []
+                for col in ("creationtime", "modificationtime"):
+                    c = f"{alias}.$creationinfo_{col}"
+                    cond.append(f"{c} > ? OR ({c} = ? AND {c}_ms > ?)")
+                    params.extend([t, t, ms])
+                return " OR ".join(cond)
+
+            q += f" AND ({_after('e')} OR {_after('o')}"
             q += (
-                " AND ("
-                "(o.$creationinfo_creationtime > ? "
-                "OR (o.$creationinfo_creationtime = ? "
-                "AND o.$creationinfo_creationtime_ms > ?)) "
-                "OR (o.$creationinfo_modificationtime > ? "
-                "OR (o.$creationinfo_modificationtime = ? "
-                "AND o.$creationinfo_modificationtime_ms > ?)))"
+                " OR EXISTS (SELECT 1 FROM @Magnitude AS um, @PublicObject AS pum"
+                " WHERE um._oid = pum._oid"
+                " AND pum.$publicID = e.$preferredMagnitudeID"
+                f" AND ({_after('um')})))"
             )
-            params += [t, t, ms, t, t, ms]
 
         # magnitude information filter
         if reqMag:

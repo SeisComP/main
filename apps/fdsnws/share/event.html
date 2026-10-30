@@ -32,11 +32,9 @@
       available in SeisComP)</li>
     <li><em>contributor</em> request parameter is mapped to the
       <em>agencyID</em></li>
-    <li><em>updatedafter</em> request parameter not implemented: The last
-      modification time in SeisComP is tracked on the object level. If a child
-      of an object is updated the update time is not propagated to all parents.
-      In order to check if a station was updated all children must be evaluated
-      recursively. This operation would be much to expensive.</li>
+    <li><em>updatedafter[,updateafter]</em>: selects events of which the event,
+      its preferred origin or its preferred magnitude was created or modified
+      after the specified time</li>
     <li>additional request parameters, effective only for xml output:
       <ul>
         <li><em>includecomments[,comments]</em>: boolean, default: <em>false</em></li>

@@ -45,8 +45,13 @@
 					</param>
 					<param name="contributor" style="query" type="xsd:string"/>
 					<param name="catalog" style="query" type="xsd:string"/>
-					<!-- not implemented -->
-					<!--param name="updateafter" style="query" type="xsd:dateTime"/-->
+					<param name="updatedafter" style="query" type="xsd:dateTime">
+						<doc title="definition">
+							Limit to events of which the event, its preferred
+							origin or its preferred magnitude was created or
+							modified after the specified time.
+						</doc>
+					</param>
 					<param name="format" style="query" type="xsd:string" default="xml">
 						<option value="xml" mediaType="application/xml"/>
 						<option value="text" mediaType="text/plain"/>
