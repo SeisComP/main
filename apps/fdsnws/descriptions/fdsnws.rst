@@ -229,11 +229,11 @@ Feature Notes
     if unset, fall back to the event.
 * Origin and magnitude filter parameters are always applied to preferred origin
   resp. preferred magnitude
-* ``updatedafter`` request parameter not implemented: The last modification time
-  in |scname| is tracked on the object level. If a child of an object is updated
-  the update time is not propagated to all parents. In order to check if a
-  station was updated all children must be evaluated recursively. This operation
-  would be much too expensive.
+* ``updatedafter`` (alias ``updateafter``) selects events of which the event,
+  its preferred origin or its preferred magnitude was created or modified after
+  the specified time. :ref:`scevent` updates the modification time of an event
+  if its preferred origin, magnitude, focal mechanism or type changes,
+  :ref:`scmag` the modification time of a magnitude if its value changes.
 * Additional request parameters:
 
   * ``includepicks``: boolean, default: ``false``, works only in combination
