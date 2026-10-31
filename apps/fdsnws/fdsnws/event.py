@@ -8,6 +8,9 @@
 #   - SeisComP does not distinguish between catalogs and contributors, but
 #     supports agencyIDs. Hence, if specified, the value of the 'contributor'
 #     parameter is mapped to the agencyID.
+#   - includearrivals also adds the station magnitudes contributing to the
+#     exported magnitudes (all station magnitudes of the exported origins with
+#     includeallmagnitudes) and their amplitudes
 #   - origin and magnitude filter parameters are always applied to
 #     preferred origin resp. preferred magnitude
 #   - 'updateafter' request parameter not implemented
@@ -262,7 +265,7 @@ class _EventRequestOptions(RequestOptions):
 
         # catalogs and contributors
         self.catalogs = self.getValues(self.PCatalog)
-        self.contributors = self.getValues(self.PContributor)
+        self.contributors = list(self.getListValues(self.PContributor))
         self.updatedAfter = self.parseTimeStr(self.PUpdateAfter)
 
         # eventID(s)
@@ -444,6 +447,7 @@ class FDSNEvent(BaseResource):
             return False
 
         pickIDs = set()
+        amplitudeIDs = set()
         if ro.picks is None:
             ro.picks = True
 
@@ -551,11 +555,13 @@ class FDSNEvent(BaseResource):
                     if not self.checkObjects(req, objCount, maxObj):
                         return False
 
-            # find ID of origin containing preferred Magnitude
-            if e.preferredMagnitudeID():
-                obj = dbq.getObject(
-                    datamodel.Magnitude.TypeInfo(), e.preferredMagnitudeID()
-                )
+            # find IDs of origins containing the preferred Magnitude and the
+            # moment magnitudes, the latter are not necessarily part of the
+            # derived origin
+            for magID in sorted(magIDs):
+                if not magID:
+                    continue
+                obj = dbq.getObject(datamodel.Magnitude.TypeInfo(), magID)
                 m = datamodel.Magnitude.Cast(obj)
                 if m is not None:
                     oID = dbq.parentPublicID(m)
@@ -591,8 +597,11 @@ class FDSNEvent(BaseResource):
                     if ro.allMags:
                         o.add(mag)
                     elif mag.publicID() in magIDs:
+                        # do not stop at the first match: magIDs may contain
+                        # more than one magnitude of this origin, e.g., the
+                        # preferred magnitude and the moment magnitude of a
+                        # moment tensor
                         o.add(mag)
-                        dbIter.close()
 
                     if self._hideAuthor:
                         self._removeAuthor(mag)
@@ -604,11 +613,41 @@ class FDSNEvent(BaseResource):
                 if not self.checkObjects(req, objCount, maxObj):
                     return False
 
-                # TODO station magnitudes, amplitudes
-                # - added pick id for each pick referenced by amplitude
-
-                # arrivals
+                # arrivals, station magnitudes and amplitudes
                 if ro.arrivals:
+                    # station magnitudes: either all or those contributing to
+                    # the magnitudes exported above
+                    staMagIDs = set()
+                    for iMag in range(o.magnitudeCount()):
+                        mag = o.magnitude(iMag)
+                        objCount += dbq.loadStationMagnitudeContributions(mag)
+                        for iContrib in range(mag.stationMagnitudeContributionCount()):
+                            staMagIDs.add(
+                                mag.stationMagnitudeContribution(
+                                    iContrib
+                                ).stationMagnitudeID()
+                            )
+
+                    if ro.allMags or staMagIDs:
+                        dbIter = dbq.getObjects(
+                            oID, datamodel.StationMagnitude.TypeInfo()
+                        )
+                        for obj in dbIter:
+                            staMag = datamodel.StationMagnitude.Cast(obj)
+                            if staMag is None:
+                                continue
+                            if not ro.allMags and staMag.publicID() not in staMagIDs:
+                                continue
+                            o.add(staMag)
+                            if self._hideAuthor:
+                                self._removeAuthor(staMag)
+                            if staMag.amplitudeID():
+                                amplitudeIDs.add(staMag.amplitudeID())
+
+                        objCount += o.stationMagnitudeCount()
+                        if not self.checkObjects(req, objCount, maxObj):
+                            return False
+
                     objCount += dbq.loadArrivals(o)
                     if self._hideAuthor:
                         for iArrival in range(o.arrivalCount()):
@@ -619,6 +658,26 @@ class FDSNEvent(BaseResource):
                         for iArrival in range(o.arrivalCount()):
                             pickIDs.add(o.arrival(iArrival).pickID())
 
+                if not self.checkObjects(req, objCount, maxObj):
+                    return False
+
+        # amplitudes referenced by the station magnitudes
+        if amplitudeIDs:
+            objCount += len(amplitudeIDs)
+            if not self.checkObjects(req, objCount, maxObj):
+                return False
+
+            for amplitudeID in sorted(amplitudeIDs):
+                obj = dbq.getObject(datamodel.Amplitude.TypeInfo(), amplitudeID)
+                amp = datamodel.Amplitude.Cast(obj)
+                if amp is not None:
+                    if self._hideAuthor:
+                        self._removeAuthor(amp)
+                    if ro.comments:
+                        objCount += self._loadComments(dbq, amp)
+                    if ro.picks and amp.pickID():
+                        pickIDs.add(amp.pickID())
+                    ep.add(amp)
                 if not self.checkObjects(req, objCount, maxObj):
                     return False
 
