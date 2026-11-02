@@ -67,41 +67,41 @@ bool SDSCollector::RecordIterator::valid() const {
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool SDSCollector::RecordIterator::next() {
-	while ( !aborted() ) {
-		try {
+	try {
+		while ( !aborted() ) {
 			_rec = _input.next();
-		}
-		catch ( std::exception &e ) {
-			throw CollectorException(_file + ": " + e.what());
-		}
 
-		if ( !valid() ) {
-			return false;
+			if ( !valid() ) {
+				return false;
+			}
+
+			// SEISCOMP_DEBUG("%s: Received record: %i samples, %.1fHz, %s ~ %s",
+			//                _sid, _rec->sampleCount(),
+			//                _rec->samplingFrequency(), _rec->startTime().iso(),
+			//                _rec->endTime().iso());
+
+			if ( _rec->streamID() != _sid ) {
+				SEISCOMP_WARNING("%s: Received record with invalid stream id "
+				                 "while reading file: %s",
+				                 _sid, _file);
+				continue;
+			}
+
+			_endTime = _rec->endTime();
+
+			auto *msRec = IO::MSeedRecord::Cast(_rec.get());
+			if ( msRec ) {
+				_quality = string(1, msRec->dataQuality());
+			}
+			else {
+				_quality = "";
+			}
+
+			return true;
 		}
-
-		// SEISCOMP_DEBUG("%s: Received record: %i samples, %.1fHz, %s ~ %s",
-		//                _sid, _rec->sampleCount(),
-		//                _rec->samplingFrequency(), _rec->startTime().iso(),
-		//                _rec->endTime().iso());
-
-		if ( _rec->streamID() != _sid ) {
-			SEISCOMP_WARNING("%s: Received record with invalid stream id "
-			                 "while reading file: %s",
-			                 _sid, _file);
-			continue;
-		}
-
-		_endTime = _rec->endTime();
-
-		auto *msRec = IO::MSeedRecord::Cast(_rec.get());
-		if ( msRec ) {
-			_quality = string(1, msRec->dataQuality());
-		}
-		else {
-			_quality = "";
-		}
-
-		return true;
+	}
+	catch ( std::exception &e ) {
+		throw CollectorException(_file + ": " + e.what());
 	}
 
 	// only reached if abort was requested
