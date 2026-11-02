@@ -288,7 +288,7 @@ class Access:
 ###############################################################################
 class DataAvailabilityCache:
     # -------------------------------------------------------------------------
-    def __init__(self, app, da, validUntil):
+    def __init__(self, app, da, oids, validUntil):
         self._da = da
         self._validUntil = validUntil
         self._extents = {}
@@ -318,7 +318,7 @@ class DataAvailabilityCache:
 
             # create a list of (extent, oid, restricted) tuples sorted by stream
             self._extentsSorted = [
-                (e, app.query().getCachedId(e), res)
+                (e, oids.get(e.publicID()), res)
                 for wid, (e, res) in sorted(self._extents.items(), key=lambda t: t[0])
             ]
 
@@ -890,10 +890,19 @@ Execute on command line with debug output
                 seiscomp.logging.error("failed to connect to database")
                 return None
 
+            # load extents manually to record their database object IDs
             da = seiscomp.datamodel.DataAvailability()
-            self.query().loadDataExtents(da)
+            oids = {}
+            it = self.query().getObjects(da, seiscomp.datamodel.DataExtent.TypeInfo())
+            while it.get():
+                ext = seiscomp.datamodel.DataExtent.Cast(it.get())
+                oids[ext.publicID()] = it.oid()
+                da.add(ext)
+                it.step()
+            it.close()
+
             validUntil = now + seiscomp.core.TimeSpan(self._daCacheDuration, 0)
-            self._daCache = DataAvailabilityCache(self, da, validUntil)
+            self._daCache = DataAvailabilityCache(self, da, oids, validUntil)
 
         return self._daCache
 
