@@ -1,7 +1,7 @@
 The output is a table where each row contains the information of a
 certain connected client. The rows are sorted in descending order based on the
 contents of the name column. Other columns can be interactively selected with
-the left and right arrow key. The r key changes the sorting to ascending order.
+the '<' (less than) and '>' (greater than) keys. The r key changes the sorting to ascending order.
 The displayed parameter are the name of the binary (prog), the name of the
 client (name), the name of the host name from which the client is connected
 (host), the available memory on the clients host in kb (hmem), the clients
