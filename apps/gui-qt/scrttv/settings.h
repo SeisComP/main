@@ -74,13 +74,11 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 			"Don't ask for time window at data server. This might be important "
 			"if e.g. Seedlink does not allow time window extraction."
 		)
-		& cliSwitch(
+		& cliInverseSwitch(
 			mapPicksToBestMatchingTrace,
-			"Mode", "map-picks",
-			"Map picks to best matching rows. This is important "
-			"if picks created on BHN should be shown but only the BHZ trace "
-			"is part of the list. Network code, station code and location code "
-			"must match anyway."
+			"Mode", "skip-map-picks",
+			"Do not map picks to best matching rows. That means that a pick waveformID "
+			"must match exactly the waveformID of a trace row."
 		)
 		& cliSwitch(
 			threeComponents,
@@ -134,7 +132,7 @@ struct Settings : Seiscomp::System::Application::AbstractSettings {
 	bool                     autoApplyFilter{false};
 	bool                     automaticSortEnabled{true};
 	bool                     showPicks{true};
-	bool                     mapPicksToBestMatchingTrace{false};
+	bool                     mapPicksToBestMatchingTrace{true};
 	bool                     inventoryDisabled{false};
 	bool                     disableTimeWindowRequest{false};
 	bool                     threeComponents{false};

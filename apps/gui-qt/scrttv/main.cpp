@@ -66,7 +66,7 @@ class App : public Kicker<MainWindow> {
 			cout << "View 3C data from default recordstream 3 hours before "
 			        "midnight. All available picks are mapped and displayed."
 			     << endl
-			     << "  scrttv --buffer-size 10800 --end-time 2026-05-01 --map-picks"
+			     << "  scrttv --buffer-size 10800 --end-time 2026-05-01"
 			     << endl << endl;
 			cout << "View data from a miniSEED file in offline mode without messaging"
 			     << endl

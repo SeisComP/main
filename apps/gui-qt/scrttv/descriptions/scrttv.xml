@@ -36,12 +36,12 @@
 					If enabled, picks are shown.
 				</description>
 			</parameter>
-			<parameter name="mapPicks" type="boolean" default="false">
+			<parameter name="mapPicks" type="boolean" default="true">
 				<description>
-					Map picks to best matching rows. This is important
-					if picks created on BHN should be shown but only the BHZ trace
-					is part of the list. Network code, station code and location code
-					must match anyway.
+				Map picks to best matching rows. This is important
+				if picks created on BHN should be shown but only the BHZ trace
+				is part of the list. Network code, station code and location code
+				must match anyway.
 				</description>
 			</parameter>
 			<parameter name="filter" type="string">
@@ -651,7 +651,7 @@
 					extraction.
 					</description>
 				</option>
-				<option long-flag="map-picks" argument="" param-ref="mapPicks" publicID="mode#map-picks"/>
+				<option long-flag="skip-map-picks" argument="" param-ref="mapPicks" publicID="mode#skip-map-picks"/>
 				<option flag="" long-flag="3c" argument="" param-ref="3c"/>
 				<option long-flag="channels" argument="" publicID="mode#channels">
 					<description>

@@ -495,7 +495,7 @@ Applications
 
    .. code-block:: sh
 
-      scrttv --buffer-size 10800 --end-time 2022-06-01 --map-picks
+      scrttv --buffer-size 10800 --end-time 2022-06-01
 
 #. View data from a miniSEED file in offline mode without messaging
 
