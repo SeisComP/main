@@ -64,6 +64,7 @@ class MainFrame : public MainWindow {
 
 	private slots:
 		void configureAcquisition();
+		void savePickerFilters();
 
 		void messageAvailable(Seiscomp::Core::Message*, Seiscomp::Client::Packet*);
 

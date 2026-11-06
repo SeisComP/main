@@ -513,6 +513,39 @@ configured in :confval:`picker.filters`. Selecting filters or unfiltered data
 interactively is available by choosing the filter from the filter menu or
 :ref:`hot keys <sec-scolv-hotkeys>`.
 
+New filters can be created without writing the filter string by hand:
+
+* **Filter builder** (:menuselection:`Filter --> Filter builder...`,
+  :kbd:`Ctrl+Shift+F`): compose a filter chain from stages such as remove
+  mean, taper, Butterworth filters, smoothing, integration or seismometer
+  simulations. Stages are reordered by drag and drop, the parameters are set
+  with spin boxes and the resulting filter string is shown and validated
+  while editing. With *Apply live to the traces* the traces are refiltered
+  while the parameters change. *OK* adds the filter to the filter list for the
+  current session, *Save to configuration* also adds it to
+  :confval:`picker.filters` in the user configuration.
+
+  Two stage types cover combined filters:
+
+  * *Multi-band combination* combines Butterworth bandpasses of the same order
+    as root-sum-square, sum or sum of absolute values, e.g.
+    ``(BW(4,0.7,2)^2+BW(4,2,6)^2)^0.5``. The bands are edited in a table.
+  * *Expression* holds any other part of the filter grammar as text, e.g.
+    ``|DIFF|*2``, and is validated on its own.
+
+  Existing filter strings are split into these stages, e.g.
+  ``ITAPER(10)>>(BW(4,0.7,2)^2+BW(4,2,6)^2)^0.5`` becomes an initial taper
+  followed by a multi-band combination of two bands.
+* **Quick filter** (:menuselection:`Filter --> Quick filter`): shows controls
+  in the filter toolbar to set the type, order and corner frequencies of a
+  Butterworth filter. Changes are applied to the traces immediately. This is
+  useful to scan through frequency bands.
+
+The filters configured in :confval:`picker.filters` and
+:confval:`amplitudePicker.filters` can also be edited in the settings dialog
+of scolv. Invalid filter strings are shown in red and the filter builder is
+available there as well.
+
 
 Waveform rotation
 ^^^^^^^^^^^^^^^^^
