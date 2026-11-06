@@ -45,6 +45,15 @@ class TestEvent(FDSNWSTest):
             ("?format=text&magnitudetype=Mw", ctTXT, False),
             ("?format=text&minlat=-30&maxlat=30&minlon=150&maxlon=-150", ctTXT, False),
         ]
+
+        # contributor: comma separated list
+        self.testHTTP(
+            f"{query}?format=text&contributor=GFZ,unknown",
+            ctTXT,
+            dataFile=f"{resFile}contributor-1.txt",
+            testID="contributor-1",
+        )
+
         for q, ct, concurrent in tests:
             self.testHTTP(
                 f"{query}{q}",

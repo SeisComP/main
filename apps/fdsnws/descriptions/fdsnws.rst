@@ -227,6 +227,9 @@ Feature Notes
     fall back to the preferred origin.
   * ``OriginEvent``: Read the agencyID from the preferred origin object and,
     if unset, fall back to the event.
+* ``includearrivals`` also adds the station magnitudes contributing to the
+  exported magnitudes (all station magnitudes of the exported origins with
+  ``includeallmagnitudes``) and their amplitudes
 * Origin and magnitude filter parameters are always applied to preferred origin
   resp. preferred magnitude
 * ``updatedafter`` request parameter not implemented: The last modification time
