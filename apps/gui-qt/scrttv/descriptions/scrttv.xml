@@ -44,7 +44,7 @@
 				must match anyway.
 				</description>
 			</parameter>
-			<parameter name="filter" type="string">
+			<parameter name="filter" type="filter">
 				<description>
 				Define the filter to be used when filtering is activated. This
 				parameter is ignored if &quot;filters&quot; is configured.
