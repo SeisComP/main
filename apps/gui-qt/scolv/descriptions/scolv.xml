@@ -945,7 +945,7 @@
 					required if the desired waveform unit is changed and the
 					sensor data must be integrated once or multiple times.
 					</description>
-					<parameter name="preFilter" type="string">
+					<parameter name="preFilter" type="filter">
 						<description>
 						An optional pre-filter which is applied prior to the
 						numerical integration to stabilize the result. This

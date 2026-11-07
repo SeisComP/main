@@ -53,7 +53,7 @@
 					amplitudes of either window.
 					</description>
 				</parameter>
-				<parameter name="filter" type="string">
+				<parameter name="filter" type="filter">
 					<description>
 					The configurable filter such that the V measurement is
 					made on a filtered trace. By default, filtering is not

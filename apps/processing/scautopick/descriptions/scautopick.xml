@@ -47,7 +47,7 @@
 				subscribed to.
 				</description>
 			</parameter>
-			<parameter name="filter" type="string" default="&quot;RMHP(10)>>ITAPER(30)>>BW(4,0.7,2)>>STALTA(2,80)&quot;">
+			<parameter name="filter" type="filter" default="&quot;RMHP(10)>>ITAPER(30)>>BW(4,0.7,2)>>STALTA(2,80)&quot;">
 				<description>
 				The default filter used for making detections. Station-specific
 				configurations (bindings) override this value.
@@ -406,7 +406,7 @@
 				Enables/disables picking on a station.
 				</description>
 			</parameter>
-			<parameter name="detecFilter" type="string" default="&quot;RMHP(10)>>ITAPER(30)>>BW(4,0.7,2)>>STALTA(2,80)&quot;">
+			<parameter name="detecFilter" type="filter" default="&quot;RMHP(10)>>ITAPER(30)>>BW(4,0.7,2)>>STALTA(2,80)&quot;">
 				<description>
 				Defines the filter to be used for picking.
 				</description>

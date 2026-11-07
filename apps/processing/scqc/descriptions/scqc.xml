@@ -53,7 +53,7 @@
 							Default [disable]: plugin is able to process archived data AND realtime data streams.
 						</description>
 					</parameter>
-					<parameter name="filter" type="string" default="" unit="">
+					<parameter name="filter" type="filter" default="" unit="">
 						<description>
 							Filter string used to filter waveforms before
 							processing. Currently only used by QcRms.
@@ -456,7 +456,7 @@
 							Default [disable]: plugin is able to process archived data AND realtime data streams.
 						</description>
 					</parameter>
-					<parameter name="filter" type="string" default="" unit="">
+					<parameter name="filter" type="filter" default="" unit="">
 						<description>
 							Filter string used to filter waveforms before processing.
 							</description>

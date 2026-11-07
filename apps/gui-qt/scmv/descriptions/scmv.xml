@@ -89,7 +89,7 @@
 				</parameter>
 			</group>
 			<group name="stations">
-				<parameter name="groundMotionFilter" type="string" default="&quot;RMHP(50)>>ITAPER(20)>>BW(2,0.04,2)&quot;">
+				<parameter name="groundMotionFilter" type="filter" default="&quot;RMHP(50)>>ITAPER(20)>>BW(2,0.04,2)&quot;">
 					<description>
 					The filter applied to waveforms for measuring ground motion.
 					</description>

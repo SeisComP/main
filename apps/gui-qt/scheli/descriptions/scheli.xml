@@ -16,7 +16,7 @@
 					Example: GR.CLL..BHZ,GR.MOX..BHZ
 					</description>
 				</parameter>
-				<parameter name="filter" type="string" default="" unit="">
+				<parameter name="filter" type="filter" default="" unit="">
 					<description>Filter to be applied on the data.</description>
 				</parameter>
 				<parameter name="numberOfRows" type="integer" default="48" unit="">
