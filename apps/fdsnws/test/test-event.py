@@ -44,6 +44,16 @@ class TestEvent(FDSNWSTest):
             # the preferred origin
             ("?format=text&magnitudetype=Mw", ctTXT, False),
             ("?format=text&minlat=-30&maxlat=30&minlon=150&maxlon=-150", ctTXT, False),
+            # date line crossing with a longitude of 0
+            ("?format=text&minlon=160&maxlon=0", ctTXT, False),
+            # event close to the longitude limit of the circle's bounding box
+            ("?format=text&lat=-30&lon=-50&maxradius=50", ctTXT, False),
+            # event (almost) in the center of the circle
+            (
+                "?format=text&lat=-7.916882046&lon=159.24310297&maxradius=0.001",
+                ctTXT,
+                False,
+            ),
         ]
         for q, ct, concurrent in tests:
             self.testHTTP(
@@ -55,6 +65,9 @@ class TestEvent(FDSNWSTest):
                 testID=i,
             )
             i += 1
+
+        # a maximum depth of 0 is a valid filter
+        self.testHTTP(f"{query}?format=text&maxdepth=0", None, retCode=204, testID=i)
 
 
 # ------------------------------------------------------------------------------
