@@ -40,7 +40,7 @@ from . import utils
 
 DBMaxUInt = 18446744073709551615  # 2^64 - 1
 
-VERSION = "1.2.9"
+VERSION = "1.2.10"
 
 # Source(s) of the agencyID mapped to the FDSNWS 'contributor' property. The
 # value is controlled by the 'agencyIDPolicy' configuration parameter and used
@@ -199,7 +199,7 @@ class _EventRequestOptions(RequestOptions):
         d.max = self.parseFloat(self.PMaxDepth)
         if d.min is not None and d.max is not None and d.min > d.max:
             raise ValueError(f"{self.PMinDepth[0]} exceeds {self.PMaxDepth[0]}")
-        if d.min is not None or d.max:
+        if d.min is not None or d.max is not None:
             self.depth = d
 
         # magnitude
@@ -282,7 +282,7 @@ class _EventRequestOptions(RequestOptions):
         # eventID, MUST NOT be combined with above parameters
         if filterParams and self.eventIDs:
             raise ValueError(
-                f"invalid mixture of parameters, the parameter 'self.PEventID[0]' may "
+                f"invalid mixture of parameters, the parameter '{self.PEventID[0]}' may "
                 f"only be combined with: {self.PAllOrigins[0]}, {self.PAllMags[0]}, "
                 f"{self.PArrivals[0]}, {self.PPicks[0]}, {self.PFM[0]}, "
                 f"{self.PAllFMs[0]}, {self.PStaMTs[0]}, {self.PComments[0]}"
@@ -850,12 +850,12 @@ class FDSNEvent(BaseResource):
         if reqDist:  # Great circle distance calculated by Haversine formula
             c = ro.geo.bCircle
             q += (
-                ", DEGREES(ACOS("
+                ", DEGREES(2 * ASIN(SQRT("
+                "POWER(SIN(RADIANS(o.$latitude_value - ?) / 2), 2) + "
                 "COS(RADIANS(o.$latitude_value)) * COS(RADIANS(?)) * "
-                "COS(RADIANS(o.$longitude_value) - RADIANS(?)) + "
-                "SIN(RADIANS(o.$latitude_value)) * SIN(RADIANS(?)))) AS distance"
+                "POWER(SIN(RADIANS(o.$longitude_value - ?) / 2), 2)))) AS distance"
             )
-            params += [c.lat, c.lon, c.lat]
+            params += [c.lat, c.lat, c.lon]
 
         # FROM ----------------------------------
         q += " FROM @Event AS e, @PublicObject AS pe, @Origin AS o, @PublicObject AS po"
@@ -891,7 +891,7 @@ class FDSNEvent(BaseResource):
             typeNames = [datamodel.EEventTypeNames.name(x) for x in types]
             etqIn = f"e.$type IN ({_PH(typeNames)})"
             if allowNull:
-                etqNull = "e.$type is NULL"
+                etqNull = "e.$type IS NULL"
                 if types:
                     q += f" AND ({etqNull} OR {etqIn})"
                     params += typeNames
@@ -908,13 +908,12 @@ class FDSNEvent(BaseResource):
 
             typeNames = [datamodel.EEventTypeNames.name(x) for x in types]
             etqNotIn = f"e.$type NOT IN ({_PH(typeNames)})"
-            if allowNull:
-                etqNull = "e.$type is NULL"
-                if types:
-                    q += f" AND ({etqNull} OR {etqNotIn})"
-                    params += typeNames
-                else:
-                    q += f" AND {etqNull}"
+            if not types:
+                # only 'unknown' is blacklisted
+                q += " AND e.$type IS NOT NULL"
+            elif allowNull:
+                q += f" AND (e.$type IS NULL OR {etqNotIn})"
+                params += typeNames
             else:
                 q += f" AND {etqNotIn}"
                 params += typeNames
