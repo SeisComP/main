@@ -23,6 +23,24 @@ class TestEvent(FDSNWSTest):
         ctXML = "application/xml; charset=utf-8"
         resFile = f"{self.rootdir}/results/event-"
 
+        # updatedafter
+        for n, param in enumerate(
+            (
+                # rs2019qrwzhx is selected only through its preferred magnitude
+                "updatedafter=2019-08-25T08:55:00",
+                # gfz2021jtmw was last modified at 2021-05-19T19:18:25.377184
+                "updatedafter=2021-05-19T19:18:25.377184",
+                "updatedafter=2021-05-19T19:18:25.377183",
+            ),
+            1,
+        ):
+            self.testHTTP(
+                f"{query}?format=text&{param}",
+                ctTXT,
+                dataFile=f"{resFile}updatedafter-{n}.txt",
+                testID=f"updatedafter-{n}",
+            )
+
         i = 1
         tests = [
             ("?format=text", ctTXT, False),
