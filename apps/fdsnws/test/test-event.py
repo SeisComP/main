@@ -14,6 +14,10 @@ from fdsnwstest import FDSNWSTest
 
 ###############################################################################
 class TestEvent(FDSNWSTest):
+    def __init__(self, port=9980):
+        super().__init__(port)
+        self.extraArgs.append("--hideStationMagnitudes=false")
+
     # --------------------------------------------------------------------------
     def test(self):
         print("Testing event service")
@@ -73,6 +77,30 @@ class TestEvent(FDSNWSTest):
                 False,
             ),
         ]
+
+        # station magnitudes, magnitude contributions and amplitudes
+        self.testHTTP(
+            f"{query}?format=sc3ml&eventid=rs2019qsodmc&includestationmagnitudes=true"
+            "&formatted=true",
+            ctXML,
+            dataFile=f"{resFile}stamags-1.txt",
+            testID="stamags-1",
+        )
+        for n, (fmt, param) in enumerate(
+            (
+                ("sc3ml", "includeallmagnitudes=true"),
+                ("qml", "includeallmagnitudes=true&includearrivals=true"),
+            ),
+            2,
+        ):
+            self.testHTTP(
+                f"{query}?format={fmt}&eventid=gfz2021jtmw"
+                f"&includestationmagnitudes=true&{param}&formatted=true",
+                ctXML,
+                dataFile=f"{resFile}stamags-{n}.txt",
+                testID=f"stamags-{n}",
+            )
+
         for q, ct, concurrent in tests:
             self.testHTTP(
                 f"{query}{q}",
