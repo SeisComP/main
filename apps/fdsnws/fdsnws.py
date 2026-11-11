@@ -399,6 +399,7 @@ class FDSNWS(seiscomp.client.Application):
 
         self._hideAuthor = False
         self._hideComments = False
+        self._hideStationMagnitudes = True
         self._evaluationMode = None
         self._eventTypeWhitelist = None
         self._eventTypeBlacklist = None
@@ -633,6 +634,11 @@ class FDSNWS(seiscomp.client.Application):
 
         try:
             self._hideComments = self.configGetBool("hideComments")
+        except Exception:
+            pass
+
+        try:
+            self._hideStationMagnitudes = self.configGetBool("hideStationMagnitudes")
         except Exception:
             pass
 
@@ -985,6 +991,7 @@ configuration read:
   useAccess                : {self._useAccess}
   hideAuthor               : {self._hideAuthor}
   hideComments             : {self._hideComments}
+  hideStationMagnitudes    : {self._hideStationMagnitudes}
   evaluationMode           : {modeStr}
   agencyIDPolicy           : {self._agencyIDPolicy}
   data availability
@@ -1182,6 +1189,7 @@ configuration read:
                 FDSNEvent(
                     self._hideAuthor,
                     self._hideComments,
+                    self._hideStationMagnitudes,
                     self._evaluationMode,
                     self._eventTypeWhitelist,
                     self._eventTypeBlacklist,
@@ -1204,7 +1212,11 @@ configuration read:
             event1.putChild(b"version", ServiceVersion(EventVersion))
 
             # application.wadl
-            filterList = ["includecomments"] if self._hideComments else []
+            filterList = []
+            if self._hideComments:
+                filterList.append("includecomments")
+            if self._hideStationMagnitudes:
+                filterList.append("includestationmagnitudes")
             try:
                 fileRes = WADLFilter(os.path.join(shareDir, "event.wadl"), filterList)
             except Exception:

@@ -1,0 +1,950 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp xmlns="http://geofon.gfz.de/ns/seiscomp-schema/0.14" version="0.14">
+  <EventParameters>
+    <origin publicID="Origin/20190826002935.184037.286503">
+      <time>
+        <value>2019-08-25T17:28:52.37413Z</value>
+        <uncertainty>0.5867292285</uncertainty>
+      </time>
+      <latitude>
+        <value>-7.916882038</value>
+        <uncertainty>2.897164106</uncertainty>
+      </latitude>
+      <longitude>
+        <value>159.243103</value>
+        <uncertainty>3.474297523</uncertainty>
+      </longitude>
+      <depth>
+        <value>63.71457291</value>
+        <uncertainty>6.368777752</uncertainty>
+      </depth>
+      <methodID>LOCSAT</methodID>
+      <earthModelID>iasp91</earthModelID>
+      <quality>
+        <associatedPhaseCount>127</associatedPhaseCount>
+        <usedPhaseCount>46</usedPhaseCount>
+        <associatedStationCount>127</associatedStationCount>
+        <usedStationCount>46</usedStationCount>
+        <depthPhaseCount>0</depthPhaseCount>
+        <standardError>1.155741985</standardError>
+        <azimuthalGap>63.34012222</azimuthalGap>
+        <maximumDistance>73.40821075</maximumDistance>
+        <minimumDistance>1.664754272</minimumDistance>
+        <medianDistance>40.32049942</medianDistance>
+      </quality>
+      <uncertainty>
+        <minHorizontalUncertainty>6.156744957</minHorizontalUncertainty>
+        <maxHorizontalUncertainty>7.510982513</maxHorizontalUncertainty>
+        <azimuthMaxHorizontalUncertainty>101.8503952</azimuthMaxHorizontalUncertainty>
+        <preferredDescription>horizontal uncertainty</preferredDescription>
+      </uncertainty>
+      <evaluationMode>manual</evaluationMode>
+      <evaluationStatus>confirmed</evaluationStatus>
+      <creationInfo>
+        <agencyID>gempa</agencyID>
+        <author>scolv@user</author>
+        <creationTime>2019-08-26T00:29:35.184417Z</creationTime>
+        <modificationTime>2019-08-26T00:29:42.563602Z</modificationTime>
+      </creationInfo>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mB/AU.ARMA">
+        <magnitude>
+          <value>5.407504467</value>
+        </magnitude>
+        <type>mB</type>
+        <amplitudeID>Amplitude/20190825173537.235274.562459</amplitudeID>
+        <waveformID networkCode="AU" stationCode="ARMA" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.966355Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/AU.ARMA">
+        <magnitude>
+          <value>5.452961315</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173537.233124.562458</amplitudeID>
+        <waveformID networkCode="AU" stationCode="ARMA" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.96642Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/AU.BBOO">
+        <magnitude>
+          <value>5.334875871</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173633.878585.562812</amplitudeID>
+        <waveformID networkCode="AU" stationCode="BBOO" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.966565Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/AU.CMSA">
+        <magnitude>
+          <value>5.094323473</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173531.391153.562411</amplitudeID>
+        <waveformID networkCode="AU" stationCode="CMSA" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.96672Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/AU.CNB">
+        <magnitude>
+          <value>5.151287327</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173618.023787.562686</amplitudeID>
+        <waveformID networkCode="AU" stationCode="CNB" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.966859Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/Mjma/AU.EIDS">
+        <magnitude>
+          <value>5.61151084</value>
+        </magnitude>
+        <type>Mjma</type>
+        <amplitudeID>Amplitude/20190825173625.082361.562753</amplitudeID>
+        <waveformID networkCode="AU" stationCode="EIDS" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.96698Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mB/AU.EIDS">
+        <magnitude>
+          <value>5.360123705</value>
+        </magnitude>
+        <type>mB</type>
+        <amplitudeID>Amplitude/20190825173447.841972.561897</amplitudeID>
+        <waveformID networkCode="AU" stationCode="EIDS" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.967029Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/AU.EIDS">
+        <magnitude>
+          <value>5.110672419</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173447.840007.561896</amplitudeID>
+        <waveformID networkCode="AU" stationCode="EIDS" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.967073Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/AU.HTT">
+        <magnitude>
+          <value>5.245818659</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173704.684472.563058</amplitudeID>
+        <waveformID networkCode="AU" stationCode="HTT" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.967215Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/AU.MEEK">
+        <magnitude>
+          <value>5.739546568</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173758.048906.563530</amplitudeID>
+        <waveformID networkCode="AU" stationCode="MEEK" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.967356Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/AU.MORW">
+        <magnitude>
+          <value>5.470338206</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173832.915391.563725</amplitudeID>
+        <waveformID networkCode="AU" stationCode="MORW" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.967494Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/AU.MTN">
+        <magnitude>
+          <value>5.011493443</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173606.977389.562601</amplitudeID>
+        <waveformID networkCode="AU" stationCode="MTN" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.967646Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/AU.MUN">
+        <magnitude>
+          <value>5.320973124</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173832.916921.563726</amplitudeID>
+        <waveformID networkCode="AU" stationCode="MUN" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.96778Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mB/AU.QIS">
+        <magnitude>
+          <value>5.480510552</value>
+        </magnitude>
+        <type>mB</type>
+        <amplitudeID>Amplitude/20190825173531.49512.562413</amplitudeID>
+        <waveformID networkCode="AU" stationCode="QIS" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.967918Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/AU.QIS">
+        <magnitude>
+          <value>5.212006104</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173522.747975.562308</amplitudeID>
+        <waveformID networkCode="AU" stationCode="QIS" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.967964Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mB/AU.QLP">
+        <magnitude>
+          <value>5.783404788</value>
+        </magnitude>
+        <type>mB</type>
+        <amplitudeID>Amplitude/20190825173531.503756.562415</amplitudeID>
+        <waveformID networkCode="AU" stationCode="QLP" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.968099Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/AU.QLP">
+        <magnitude>
+          <value>5.662941809</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173503.545517.562058</amplitudeID>
+        <waveformID networkCode="AU" stationCode="QLP" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.968144Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/AU.STKA">
+        <magnitude>
+          <value>4.546551285</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173559.863662.562568</amplitudeID>
+        <waveformID networkCode="AU" stationCode="STKA" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.968298Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/G.DRV">
+        <magnitude>
+          <value>5.847905662</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825174017.737251.564523</amplitudeID>
+        <waveformID networkCode="G" stationCode="DRV" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.968439Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/Mjma/G.DZM">
+        <magnitude>
+          <value>5.437292572</value>
+        </magnitude>
+        <type>Mjma</type>
+        <amplitudeID>Amplitude/20190825173622.92284.562730</amplitudeID>
+        <waveformID networkCode="G" stationCode="DZM" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.968561Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/G.DZM">
+        <magnitude>
+          <value>5.139649035</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173425.696851.561763</amplitudeID>
+        <waveformID networkCode="G" stationCode="DZM" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.968619Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/G.INU">
+        <magnitude>
+          <value>4.898714401</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173839.722284.563795</amplitudeID>
+        <waveformID networkCode="G" stationCode="INU" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.968753Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/GE.GSI">
+        <magnitude>
+          <value>5.269751043</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173951.857026.564320</amplitudeID>
+        <waveformID networkCode="GE" stationCode="GSI" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.968909Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/GE.JAGI">
+        <magnitude>
+          <value>5.657207949</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173740.971764.563315</amplitudeID>
+        <waveformID networkCode="GE" stationCode="JAGI" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.969048Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/GE.PLAI">
+        <magnitude>
+          <value>5.526143799</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173715.351932.563106</amplitudeID>
+        <waveformID networkCode="GE" stationCode="PLAI" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.969187Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/GE.TOLI2">
+        <magnitude>
+          <value>5.111457394</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173651.823809.562994</amplitudeID>
+        <waveformID networkCode="GE" stationCode="TOLI2" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.969327Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/GT.VNDA">
+        <magnitude>
+          <value>5.093936971</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825174135.225466.565130</amplitudeID>
+        <waveformID networkCode="GT" stationCode="VNDA" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.969468Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/IA.EDFI">
+        <magnitude>
+          <value>5.359816289</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173645.588759.562928</amplitudeID>
+        <waveformID networkCode="IA" stationCode="EDFI" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.969622Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mB/IA.SMPI">
+        <magnitude>
+          <value>5.703045899</value>
+        </magnitude>
+        <type>mB</type>
+        <amplitudeID>Amplitude/20190825173447.991281.561898</amplitudeID>
+        <waveformID networkCode="IA" stationCode="SMPI" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.969762Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/IA.SMPI">
+        <magnitude>
+          <value>5.339944235</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173427.8889.561774</amplitudeID>
+        <waveformID networkCode="IA" stationCode="SMPI" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.969808Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/II.MSVF">
+        <magnitude>
+          <value>4.948920795</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173524.35482.562330</amplitudeID>
+        <waveformID networkCode="II" stationCode="MSVF" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.969945Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/IU.CASY">
+        <magnitude>
+          <value>5.281098837</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825174125.652897.565069</amplitudeID>
+        <waveformID networkCode="IU" stationCode="CASY" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.970084Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/IU.CHTO">
+        <magnitude>
+          <value>5.529978661</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825174041.565168.564719</amplitudeID>
+        <waveformID networkCode="IU" stationCode="CHTO" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.970219Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/MLv/IU.HNR">
+        <magnitude>
+          <value>5.974946484</value>
+        </magnitude>
+        <type>MLv</type>
+        <amplitudeID>Amplitude/20190825173848.442537.563886</amplitudeID>
+        <waveformID networkCode="IU" stationCode="HNR" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.970331Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/Mjma/IU.HNR">
+        <magnitude>
+          <value>5.89693174</value>
+        </magnitude>
+        <type>Mjma</type>
+        <amplitudeID>Amplitude/20190825173848.443456.563887</amplitudeID>
+        <waveformID networkCode="IU" stationCode="HNR" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.970381Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mB/IU.INCN">
+        <magnitude>
+          <value>5.840003519</value>
+        </magnitude>
+        <type>mB</type>
+        <amplitudeID>Amplitude/20190825174001.391449.2071953</amplitudeID>
+        <waveformID networkCode="IU" stationCode="INCN" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.970573Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/IU.INCN">
+        <magnitude>
+          <value>5.496723753</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173915.491136.564059</amplitudeID>
+        <waveformID networkCode="IU" stationCode="INCN" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.97062Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mB/IU.MA2">
+        <magnitude>
+          <value>5.467961333</value>
+        </magnitude>
+        <type>mB</type>
+        <amplitudeID>Amplitude/20190825174127.7391.565086</amplitudeID>
+        <waveformID networkCode="IU" stationCode="MA2" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.970767Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/IU.MA2">
+        <magnitude>
+          <value>5.185666161</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825174104.461704.564925</amplitudeID>
+        <waveformID networkCode="IU" stationCode="MA2" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.970814Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/IU.MAJO">
+        <magnitude>
+          <value>4.967046333</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173842.626316.563816</amplitudeID>
+        <waveformID networkCode="IU" stationCode="MAJO" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.970952Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/IU.MBWA">
+        <magnitude>
+          <value>5.240215985</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173728.358666.563217</amplitudeID>
+        <waveformID networkCode="IU" stationCode="MBWA" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.971084Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/IU.NWAO">
+        <magnitude>
+          <value>5.335374465</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173820.860303.563662</amplitudeID>
+        <waveformID networkCode="IU" stationCode="NWAO" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.971223Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mB/IU.YAK">
+        <magnitude>
+          <value>5.711246806</value>
+        </magnitude>
+        <type>mB</type>
+        <amplitudeID>Amplitude/20190825174203.53077.565381</amplitudeID>
+        <waveformID networkCode="IU" stationCode="YAK" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.971367Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/IU.YAK">
+        <magnitude>
+          <value>5.424224927</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825174139.052617.565163</amplitudeID>
+        <waveformID networkCode="IU" stationCode="YAK" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.971415Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/JP.JGF">
+        <magnitude>
+          <value>4.940502762</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173931.59984.564208</amplitudeID>
+        <waveformID networkCode="JP" stationCode="JGF" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.971585Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mB/JP.JMN">
+        <magnitude>
+          <value>5.993006191</value>
+        </magnitude>
+        <type>mB</type>
+        <amplitudeID>Amplitude/20190825173845.989943.563859</amplitudeID>
+        <waveformID networkCode="JP" stationCode="JMN" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.971726Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/JP.JMN">
+        <magnitude>
+          <value>5.60097133</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173845.987158.563858</amplitudeID>
+        <waveformID networkCode="JP" stationCode="JMN" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.971776Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/JP.JNU">
+        <magnitude>
+          <value>5.315964489</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173843.201123.563827</amplitudeID>
+        <waveformID networkCode="JP" stationCode="JNU" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.971912Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/KG.TJN">
+        <magnitude>
+          <value>5.870974333</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825173915.761704.564081</amplitudeID>
+        <waveformID networkCode="KG" stationCode="TJN" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.97205Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mB/MM.TMU">
+        <magnitude>
+          <value>5.524582816</value>
+        </magnitude>
+        <type>mB</type>
+        <amplitudeID>Amplitude/20190825174111.555893.564978</amplitudeID>
+        <waveformID networkCode="MM" stationCode="TMU" channelCode="HHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.972191Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/MM.TMU">
+        <magnitude>
+          <value>5.393115623</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825174111.550899.564977</amplitudeID>
+        <waveformID networkCode="MM" stationCode="TMU" channelCode="HHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.972239Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/MY.IPM">
+        <magnitude>
+          <value>4.779482992</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190825174102.323096.564894</amplitudeID>
+        <waveformID networkCode="MY" stationCode="IPM" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.972375Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/GE.GENI">
+        <magnitude>
+          <value>5.413345803</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190826002948.494232.2943566</amplitudeID>
+        <waveformID networkCode="GE" stationCode="GENI" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:49.000874Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mB/GE.GENI">
+        <magnitude>
+          <value>5.744663761</value>
+        </magnitude>
+        <type>mB</type>
+        <amplitudeID>Amplitude/20190826002948.498762.2943568</amplitudeID>
+        <waveformID networkCode="GE" stationCode="GENI" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:49.001403Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/Mjma/GE.GENI">
+        <magnitude>
+          <value>5.754945176</value>
+        </magnitude>
+        <type>Mjma</type>
+        <amplitudeID>Amplitude/20190826002948.509817.2943573</amplitudeID>
+        <waveformID networkCode="GE" stationCode="GENI" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:49.001847Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/IU.PMG">
+        <magnitude>
+          <value>5.00291127</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190826002948.544386.2943588</amplitudeID>
+        <waveformID networkCode="IU" stationCode="PMG" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:49.002263Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mB/IU.PMG">
+        <magnitude>
+          <value>5.541467731</value>
+        </magnitude>
+        <type>mB</type>
+        <amplitudeID>Amplitude/20190826002948.561611.2943596</amplitudeID>
+        <waveformID networkCode="IU" stationCode="PMG" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:49.0028Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/Mjma/IU.PMG">
+        <magnitude>
+          <value>5.219871785</value>
+        </magnitude>
+        <type>Mjma</type>
+        <amplitudeID>Amplitude/20190826002948.679631.2943633</amplitudeID>
+        <waveformID networkCode="IU" stationCode="PMG" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:49.003244Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/II.KWJN">
+        <magnitude>
+          <value>5.566148511</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190826002948.689875.2943636</amplitudeID>
+        <waveformID networkCode="II" stationCode="KWJN" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:49.003662Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/mb/IU.TARA">
+        <magnitude>
+          <value>5.497419745</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20190826002948.690907.2943637</amplitudeID>
+        <waveformID networkCode="IU" stationCode="TARA" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:49.004178Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/Mjma/IU.TARA">
+        <magnitude>
+          <value>5.892820731</value>
+        </magnitude>
+        <type>Mjma</type>
+        <amplitudeID>Amplitude/20190826002948.734108.2943645</amplitudeID>
+        <waveformID networkCode="IU" stationCode="TARA" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:49.005175Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20190826002935.184037.286503/staMag/Mjma/II.KWJN">
+        <magnitude>
+          <value>5.976055239</value>
+        </magnitude>
+        <type>Mjma</type>
+        <amplitudeID>Amplitude/20190826002948.735309.2943646</amplitudeID>
+        <waveformID networkCode="II" stationCode="KWJN" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:49.005614Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <magnitude publicID="Origin/20190826002935.184037.286503/netMag/M">
+        <magnitude>
+          <value>5.283150143</value>
+        </magnitude>
+        <type>M</type>
+        <methodID>weighted average</methodID>
+        <stationCount>32</stationCount>
+        <creationInfo>
+          <agencyID>gempa</agencyID>
+          <author>scmag@mars</author>
+          <creationTime>2019-08-26T00:29:48.972817Z</creationTime>
+          <modificationTime>2019-08-26T00:29:49.005702Z</modificationTime>
+        </creationInfo>
+      </magnitude>
+    </origin>
+    <event publicID="rs2019qsodmc">
+      <preferredOriginID>Origin/20190826002935.184037.286503</preferredOriginID>
+      <preferredMagnitudeID>Origin/20190826002935.184037.286503/netMag/M</preferredMagnitudeID>
+      <preferredFocalMechanismID>FocalMechanism/20190825181659.570749.275061</preferredFocalMechanismID>
+      <type>earthquake</type>
+      <creationInfo>
+        <agencyID>gempa</agencyID>
+        <author>scevent@mars</author>
+        <creationTime>2019-08-25T17:36:07.108647Z</creationTime>
+        <modificationTime>2019-08-26T00:29:49.016316Z</modificationTime>
+      </creationInfo>
+      <description>
+        <text>Solomon Islands</text>
+        <type>region name</type>
+      </description>
+      <originReference>Origin/20190826002935.184037.286503</originReference>
+    </event>
+  </EventParameters>
+</seiscomp>

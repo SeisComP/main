@@ -15,6 +15,10 @@ from seiscomp.fdsnws import event, station, dataselect, availability
 
 ###############################################################################
 class TestStatic(FDSNWSTest):
+    def __init__(self, port=9980):
+        super().__init__(port)
+        self.extraArgs.append("--hideStationMagnitudes=false")
+
     # --------------------------------------------------------------------------
     def test(self):
         print("Testing static files")

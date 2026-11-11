@@ -252,6 +252,12 @@ Feature Notes
   * ``includepicks``: boolean, default: ``false``, works only in combination
     with ``includearrivals`` set to ``true``
   * ``includecomments``: boolean, default: ``true``
+  * ``includestationmagnitudes``: boolean, default: ``false``, adds the station
+    magnitudes of the exported origins, the station magnitude contributions of
+    the exported magnitudes and the amplitudes referenced by the station
+    magnitudes, with ``includearrivals`` set to ``true`` also the picks
+    referenced by the amplitudes, only available if ``hideStationMagnitudes``
+    is disabled (default: enabled)
   * ``formatted``: boolean, default: ``false``
 
 * Additional values of request parameters:
