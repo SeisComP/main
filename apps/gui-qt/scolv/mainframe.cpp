@@ -617,6 +617,37 @@ MainFrame::MainFrame(){
 	}
 	catch ( ... ) {}
 
+	try {
+		auto sets = SCApp->configGetStrings("picker.stationSets");
+		for ( const auto &name : sets ) {
+			Gui::StationSet set;
+			set.name = name.data();
+
+			try {
+				set.patterns = SCApp->configGetStrings("picker.stationSets." + name + ".stations");
+			}
+			catch ( ... ) {}
+
+			if ( set.patterns.empty() ) {
+				SEISCOMP_WARNING("picker.stationSets.%s.stations is empty, "
+				                 "ignoring station set", name.c_str());
+				continue;
+			}
+
+			try {
+				set.minimumDistance = SCApp->configGetDouble("picker.stationSets." + name + ".minimumDistance");
+			}
+			catch ( ... ) {}
+			try {
+				set.maximumDistance = SCApp->configGetDouble("picker.stationSets." + name + ".maximumDistance");
+			}
+			catch ( ... ) {}
+
+			pickerConfig.stationSets.push_back(set);
+		}
+	}
+	catch ( ... ) {}
+
 	try { amplitudeConfig.preOffset = Core::TimeSpan(SCApp->configGetDouble("amplitudePicker.preOffset")); }
 	catch ( ... ) { amplitudeConfig.preOffset = Core::TimeSpan(300, 0); }
 
@@ -654,6 +685,7 @@ MainFrame::MainFrame(){
 	OriginDialog::SetDefaultDepth(pickerConfig.defaultDepth);
 
 	amplitudeConfig.auxiliaryChannelProfiles = pickerConfig.auxiliaryChannelProfiles;
+	amplitudeConfig.stationSets = pickerConfig.stationSets;
 	amplitudeConfig.defaultAddStationsDistance = pickerConfig.defaultAddStationsDistance;
 	amplitudeConfig.hideStationsWithoutData = pickerConfig.hideStationsWithoutData;
 	amplitudeConfig.loadStrongMotionData = pickerConfig.loadStrongMotionData;
