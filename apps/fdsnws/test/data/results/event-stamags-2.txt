@@ -1,0 +1,2736 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp xmlns="http://geofon.gfz.de/ns/seiscomp-schema/0.14" version="0.14">
+  <EventParameters>
+    <amplitude publicID="20210519.180440.51-AIC-MX.ZAIG..BHZ.mb">
+      <type>mb</type>
+      <amplitude>
+        <value>13.90365983</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:04:46.215Z</reference>
+        <begin>-10.7</begin>
+        <end>24.3</end>
+      </timeWindow>
+      <period>
+        <value>2.425</value>
+      </period>
+      <snr>4.341962881</snr>
+      <pickID>20210519.180440.51-AIC-MX.ZAIG..BHZ</pickID>
+      <waveformID networkCode="MX" stationCode="ZAIG" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="20210519.180449.71-AIC-GE.SNAA..BHZ.mb">
+      <type>mb</type>
+      <amplitude>
+        <value>11.74621152</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:04:53.711303Z</reference>
+        <begin>-9</begin>
+        <end>26</end>
+      </timeWindow>
+      <period>
+        <value>1.475</value>
+      </period>
+      <snr>2.781899929</snr>
+      <pickID>20210519.180449.71-AIC-GE.SNAA..BHZ</pickID>
+      <waveformID networkCode="GE" stationCode="SNAA" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="20210519.180502.57-AIC-BL.BSFB..HHZ.mb">
+      <type>mb</type>
+      <amplitude>
+        <value>11.44894227</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:05:12.63Z</reference>
+        <begin>-15.06</begin>
+        <end>19.94</end>
+      </timeWindow>
+      <period>
+        <value>1.115</value>
+      </period>
+      <snr>1.46098326</snr>
+      <pickID>20210519.180502.57-AIC-BL.BSFB..HHZ</pickID>
+      <waveformID networkCode="BL" stationCode="BSFB" channelCode="HHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="20210519.180506.49-AIC-MX.HPIG..BHZ.mb">
+      <type>mb</type>
+      <amplitude>
+        <value>9.015267657</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:05:27.193393Z</reference>
+        <begin>-25.7</begin>
+        <end>9.3</end>
+      </timeWindow>
+      <period>
+        <value>1.4375</value>
+      </period>
+      <snr>2.826569808</snr>
+      <pickID>20210519.180506.49-AIC-MX.HPIG..BHZ</pickID>
+      <waveformID networkCode="MX" stationCode="HPIG" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="20210519.180539.71-AIC-IU.TUC.00.BHZ.mb">
+      <type>mb</type>
+      <amplitude>
+        <value>6.755845876</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:06:06.494538Z</reference>
+        <begin>-31.775</begin>
+        <end>3.225</end>
+      </timeWindow>
+      <period>
+        <value>1.20625</value>
+      </period>
+      <snr>2.863374236</snr>
+      <pickID>20210519.180539.71-AIC-IU.TUC.00.BHZ</pickID>
+      <waveformID networkCode="IU" stationCode="TUC" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="20210519.180550.11-AIC-II.PFO.00.BHZ.mb">
+      <type>mb</type>
+      <amplitude>
+        <value>17.93628479</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:06:04.194538Z</reference>
+        <begin>-19.075</begin>
+        <end>15.925</end>
+      </timeWindow>
+      <period>
+        <value>1.35625</value>
+      </period>
+      <snr>4.421759519</snr>
+      <pickID>20210519.180550.11-AIC-II.PFO.00.BHZ</pickID>
+      <waveformID networkCode="II" stationCode="PFO" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="20210519.180609.25-AIC-US.MVCO.00.BHZ.mb">
+      <type>mb</type>
+      <amplitude>
+        <value>15.4621502</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:06:31.075003Z</reference>
+        <begin>-26.825</begin>
+        <end>8.175</end>
+      </timeWindow>
+      <period>
+        <value>1.4375</value>
+      </period>
+      <snr>5.165500674</snr>
+      <pickID>20210519.180609.25-AIC-US.MVCO.00.BHZ</pickID>
+      <waveformID networkCode="US" stationCode="MVCO" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="20210519.180625.31-AIC-IU.CCM.00.BHZ.mb">
+      <type>mb</type>
+      <amplitude>
+        <value>12.3160001</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:06:39.969534Z</reference>
+        <begin>-19.65</begin>
+        <end>15.35</end>
+      </timeWindow>
+      <period>
+        <value>1.31875</value>
+      </period>
+      <snr>3.348124142</snr>
+      <pickID>20210519.180625.31-AIC-IU.CCM.00.BHZ</pickID>
+      <waveformID networkCode="IU" stationCode="CCM" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="20210519.180626.52-AIC-US.DUG.00.BHZ.mb">
+      <type>mb</type>
+      <amplitude>
+        <value>7.359889631</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:06:44.95Z</reference>
+        <begin>-23.425</begin>
+        <end>11.575</end>
+      </timeWindow>
+      <period>
+        <value>1.49375</value>
+      </period>
+      <snr>3.76774321</snr>
+      <pickID>20210519.180626.52-AIC-US.DUG.00.BHZ</pickID>
+      <waveformID networkCode="US" stationCode="DUG" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="20210519.180641.25-AIC-US.WVOR.00.BHZ.mb">
+      <type>mb</type>
+      <amplitude>
+        <value>15.28035413</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:06:56.050001Z</reference>
+        <begin>-19.8</begin>
+        <end>15.2</end>
+      </timeWindow>
+      <period>
+        <value>0.3625</value>
+      </period>
+      <snr>5.493025211</snr>
+      <pickID>20210519.180641.25-AIC-US.WVOR.00.BHZ</pickID>
+      <waveformID networkCode="US" stationCode="WVOR" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="20210519.180645.55-AIC-US.HLID.00.BHZ.mB">
+      <type>mB</type>
+      <amplitude>
+        <value>503.2923709</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:07:39.175Z</reference>
+        <begin>-58.625</begin>
+        <end>6.375</end>
+      </timeWindow>
+      <snr>3.284541727</snr>
+      <pickID>20210519.180645.55-AIC-US.HLID.00.BHZ</pickID>
+      <waveformID networkCode="US" stationCode="HLID" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="20210519.180645.55-AIC-US.HLID.00.BHZ.mb">
+      <type>mb</type>
+      <amplitude>
+        <value>13.39719957</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:07:01.05Z</reference>
+        <begin>-20.5</begin>
+        <end>14.5</end>
+      </timeWindow>
+      <period>
+        <value>1.41875</value>
+      </period>
+      <snr>8.151793878</snr>
+      <pickID>20210519.180645.55-AIC-US.HLID.00.BHZ</pickID>
+      <waveformID networkCode="US" stationCode="HLID" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="20210519.180648.54-AIC-IU.RSSD.00.BHZ.mb">
+      <type>mb</type>
+      <amplitude>
+        <value>7.597269687</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:07:08.719538Z</reference>
+        <begin>-25.175</begin>
+        <end>9.825</end>
+      </timeWindow>
+      <period>
+        <value>1.8625</value>
+      </period>
+      <snr>3.45152718</snr>
+      <pickID>20210519.180648.54-AIC-IU.RSSD.00.BHZ</pickID>
+      <waveformID networkCode="IU" stationCode="RSSD" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="20210519.180650.27-AIC-US.ECSD.00.BHZ.mb">
+      <type>mb</type>
+      <amplitude>
+        <value>10.96993705</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:07:00.525Z</reference>
+        <begin>-15.25</begin>
+        <end>19.75</end>
+      </timeWindow>
+      <period>
+        <value>1.00625</value>
+      </period>
+      <snr>3.460693945</snr>
+      <pickID>20210519.180650.27-AIC-US.ECSD.00.BHZ</pickID>
+      <waveformID networkCode="US" stationCode="ECSD" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="20210519.180655.19-AIC-AU.CMSA..BHZ.mb">
+      <type>mb</type>
+      <amplitude>
+        <value>15.06126556</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:06:56.344538Z</reference>
+        <begin>-6.15</begin>
+        <end>28.85</end>
+      </timeWindow>
+      <period>
+        <value>1.59375</value>
+      </period>
+      <snr>2.726057244</snr>
+      <pickID>20210519.180655.19-AIC-AU.CMSA..BHZ</pickID>
+      <waveformID networkCode="AU" stationCode="CMSA" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="20210519.180714.87-AIC-US.EYMN.00.BHZ.mb">
+      <type>mb</type>
+      <amplitude>
+        <value>12.25011742</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:07:29.5Z</reference>
+        <begin>-19.625</begin>
+        <end>15.375</end>
+      </timeWindow>
+      <period>
+        <value>1.1375</value>
+      </period>
+      <snr>3.642662399</snr>
+      <pickID>20210519.180714.87-AIC-US.EYMN.00.BHZ</pickID>
+      <waveformID networkCode="US" stationCode="EYMN" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519180824.001502.5491562">
+      <type>mB</type>
+      <amplitude>
+        <value>447.0351682</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:07:02.75Z</reference>
+        <begin>-17.475</begin>
+        <end>47.525</end>
+      </timeWindow>
+      <snr>3.026006467</snr>
+      <pickID>20210519.180650.27-AIC-US.ECSD.00.BHZ</pickID>
+      <waveformID networkCode="US" stationCode="ECSD" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183519.924008.321436">
+      <type>mb</type>
+      <amplitude>
+        <value>230.2592502</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T17:57:21.719538Z</reference>
+        <begin>-32.35</begin>
+        <end>2.65</end>
+      </timeWindow>
+      <period>
+        <value>1.325</value>
+      </period>
+      <snr>2.51157096</snr>
+      <pickID>Pick/20210519183157.126034.321168</pickID>
+      <waveformID networkCode="II" stationCode="RPN" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183519.934961.321437">
+      <type>mb</type>
+      <amplitude>
+        <value>11.82334551</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:02:10.069538Z</reference>
+        <begin>-9.9</begin>
+        <end>25.1</end>
+      </timeWindow>
+      <period>
+        <value>1.225</value>
+      </period>
+      <snr>1.634628146</snr>
+      <pickID>Pick/20210519183508.51318.321381</pickID>
+      <waveformID networkCode="CX" stationCode="PB08" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183519.943478.321438">
+      <type>mb</type>
+      <amplitude>
+        <value>20.96054653</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:02:04.169538Z</reference>
+        <begin>-17.5</begin>
+        <end>17.5</end>
+      </timeWindow>
+      <period>
+        <value>1.475</value>
+      </period>
+      <snr>1.545861779</snr>
+      <pickID>Pick/20210519183433.932742.321297</pickID>
+      <waveformID networkCode="CX" stationCode="PB06" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.119055.321439">
+      <type>mb</type>
+      <amplitude>
+        <value>22.79198724</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:02:04.25Z</reference>
+        <begin>-6.75</begin>
+        <end>28.25</end>
+      </timeWindow>
+      <period>
+        <value>1.2625</value>
+      </period>
+      <snr>2.247838374</snr>
+      <pickID>Pick/20210519183433.932954.321300</pickID>
+      <waveformID networkCode="CX" stationCode="PB11" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.121149.321440">
+      <type>mb</type>
+      <amplitude>
+        <value>14.15471996</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:02:21.369538Z</reference>
+        <begin>-25.4</begin>
+        <end>9.6</end>
+      </timeWindow>
+      <period>
+        <value>2.0875</value>
+      </period>
+      <snr>1.062979856</snr>
+      <pickID>Pick/20210519183142.813671.321161</pickID>
+      <waveformID networkCode="CX" stationCode="PB01" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.123044.321441">
+      <type>mb</type>
+      <amplitude>
+        <value>26.69733886</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:57.269538Z</reference>
+        <begin>-9.95</begin>
+        <end>25.05</end>
+      </timeWindow>
+      <period>
+        <value>1.4875</value>
+      </period>
+      <snr>2.789373101</snr>
+      <pickID>Pick/20210519183433.93282.321298</pickID>
+      <waveformID networkCode="CX" stationCode="PB03" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.132366.321443">
+      <type>mb</type>
+      <amplitude>
+        <value>19.96549658</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:02:12.219538Z</reference>
+        <begin>-8.9</begin>
+        <end>26.1</end>
+      </timeWindow>
+      <period>
+        <value>2.3875</value>
+      </period>
+      <snr>7.525553048</snr>
+      <pickID>Pick/20210519183433.933073.321302</pickID>
+      <waveformID networkCode="GE" stationCode="SALTA" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.156205.321444">
+      <type>mb</type>
+      <amplitude>
+        <value>29.50270856</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:58.65Z</reference>
+        <begin>-15.6</begin>
+        <end>19.4</end>
+      </timeWindow>
+      <period>
+        <value>2.3875</value>
+      </period>
+      <snr>3.624199275</snr>
+      <pickID>Pick/20210519183433.932684.321296</pickID>
+      <waveformID networkCode="CX" stationCode="PB19" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.157595.321445">
+      <type>mb</type>
+      <amplitude>
+        <value>17.53336878</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:26.0000Z</reference>
+        <begin>-35.05</begin>
+        <end>-0.05</end>
+      </timeWindow>
+      <period>
+        <value>1.75625</value>
+      </period>
+      <snr>1.588401516</snr>
+      <pickID>Pick/20210519183433.932058.321286</pickID>
+      <waveformID networkCode="C1" stationCode="BI02" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.162382.321446">
+      <type>mb</type>
+      <amplitude>
+        <value>25.85555089</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:00:57.6Z</reference>
+        <begin>-12.3</begin>
+        <end>22.7</end>
+      </timeWindow>
+      <period>
+        <value>1.65625</value>
+      </period>
+      <snr>1.165019472</snr>
+      <pickID>Pick/20210519183104.128006.321085</pickID>
+      <waveformID networkCode="C" stationCode="GO09" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.166659.321447">
+      <type>mb</type>
+      <amplitude>
+        <value>29.45704124</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:38.1Z</reference>
+        <begin>-21.525</begin>
+        <end>13.475</end>
+      </timeWindow>
+      <period>
+        <value>1.55625</value>
+      </period>
+      <snr>3.302954083</snr>
+      <pickID>Pick/20210519183433.93249.321293</pickID>
+      <waveformID networkCode="C1" stationCode="AC05" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.167524.321448">
+      <type>mb</type>
+      <amplitude>
+        <value>13.66112143</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:18.525001Z</reference>
+        <begin>-13.75</begin>
+        <end>21.25</end>
+      </timeWindow>
+      <period>
+        <value>1.5625</value>
+      </period>
+      <snr>1.989482437</snr>
+      <pickID>Pick/20210519183433.932314.321290</pickID>
+      <waveformID networkCode="C" stationCode="FAR1" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.169973.321449">
+      <type>mb</type>
+      <amplitude>
+        <value>18.73038037</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:13.4Z</reference>
+        <begin>-16.6</begin>
+        <end>18.4</end>
+      </timeWindow>
+      <period>
+        <value>1.29375</value>
+      </period>
+      <snr>1.747825728</snr>
+      <pickID>Pick/20210519183104.128334.321088</pickID>
+      <waveformID networkCode="C1" stationCode="BO01" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.170897.321450">
+      <type>mb</type>
+      <amplitude>
+        <value>15.30273611</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:32.475Z</reference>
+        <begin>-31.55</begin>
+        <end>3.45</end>
+      </timeWindow>
+      <period>
+        <value>1.1375</value>
+      </period>
+      <snr>1.123658339</snr>
+      <pickID>Pick/20210519183433.93225.321289</pickID>
+      <waveformID networkCode="C1" stationCode="CO04" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.174097.321451">
+      <type>mb</type>
+      <amplitude>
+        <value>42.77798034</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:02:47.6Z</reference>
+        <begin>-35.65</begin>
+        <end>-0.65</end>
+      </timeWindow>
+      <period>
+        <value>1.4625</value>
+      </period>
+      <snr>3.856474189</snr>
+      <pickID>Pick/20210519183127.967347.321156</pickID>
+      <waveformID networkCode="CX" stationCode="PB18" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.176747.321452">
+      <type>mb</type>
+      <amplitude>
+        <value>39.56323351</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:12.45Z</reference>
+        <begin>-10.9</begin>
+        <end>24.1</end>
+      </timeWindow>
+      <period>
+        <value>1.9</value>
+      </period>
+      <snr>3.247603108</snr>
+      <pickID>Pick/20210519183433.932192.321288</pickID>
+      <waveformID networkCode="G" stationCode="PEL" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.177752.321453">
+      <type>mB</type>
+      <amplitude>
+        <value>2249.481439</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:03:15.7Z</reference>
+        <begin>-63.75</begin>
+        <end>1.25</end>
+      </timeWindow>
+      <snr>3.414280889</snr>
+      <pickID>Pick/20210519183127.967347.321156</pickID>
+      <waveformID networkCode="CX" stationCode="PB18" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.18051.321454">
+      <type>mb</type>
+      <amplitude>
+        <value>35.3380894</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:23.2Z</reference>
+        <begin>-17</begin>
+        <end>18</end>
+      </timeWindow>
+      <period>
+        <value>1.125</value>
+      </period>
+      <snr>2.514678222</snr>
+      <pickID>Pick/20210519183433.932371.321291</pickID>
+      <waveformID networkCode="C1" stationCode="CO02" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.182053.321455">
+      <type>mb</type>
+      <amplitude>
+        <value>20.09961687</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:00:47.575Z</reference>
+        <begin>-7.9</begin>
+        <end>27.1</end>
+      </timeWindow>
+      <period>
+        <value>2.525</value>
+      </period>
+      <snr>1.344352744</snr>
+      <pickID>Pick/20210519183104.127879.321084</pickID>
+      <waveformID networkCode="C1" stationCode="LL02" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.185998.321456">
+      <type>mb</type>
+      <amplitude>
+        <value>63.18627045</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:21.3Z</reference>
+        <begin>-11.75</begin>
+        <end>23.25</end>
+      </timeWindow>
+      <period>
+        <value>1.80625</value>
+      </period>
+      <snr>5.965746947</snr>
+      <pickID>Pick/20210519183433.932429.321292</pickID>
+      <waveformID networkCode="C" stationCode="GO04" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.186869.321457">
+      <type>mb</type>
+      <amplitude>
+        <value>35.88665175</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:01.15Z</reference>
+        <begin>-21.7</begin>
+        <end>13.3</end>
+      </timeWindow>
+      <period>
+        <value>1.7125</value>
+      </period>
+      <snr>0.8780864298</snr>
+      <pickID>Pick/20210519183433.931729.321284</pickID>
+      <waveformID networkCode="G" stationCode="COYC" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.195291.321458">
+      <type>mb</type>
+      <amplitude>
+        <value>46.42209566</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:43.399998Z</reference>
+        <begin>-9.825</begin>
+        <end>25.175</end>
+      </timeWindow>
+      <period>
+        <value>1.85</value>
+      </period>
+      <snr>6.159857904</snr>
+      <pickID>Pick/20210519183147.988396.321163</pickID>
+      <waveformID networkCode="C1" stationCode="AC02" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.198043.321460">
+      <type>mb</type>
+      <amplitude>
+        <value>36.79335074</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:00:55.150001Z</reference>
+        <begin>-10.85</begin>
+        <end>24.15</end>
+      </timeWindow>
+      <period>
+        <value>2.29375</value>
+      </period>
+      <snr>1.944269576</snr>
+      <pickID>Pick/20210519183433.931965.321285</pickID>
+      <waveformID networkCode="C1" stationCode="MG05" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.199535.321461">
+      <type>mb</type>
+      <amplitude>
+        <value>18.17390699</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:25.649998Z</reference>
+        <begin>-16.5</begin>
+        <end>18.5</end>
+      </timeWindow>
+      <period>
+        <value>2.5375</value>
+      </period>
+      <snr>1.775180396</snr>
+      <pickID>Pick/20210519183104.128539.321090</pickID>
+      <waveformID networkCode="C1" stationCode="CO03" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.200918.321462">
+      <type>mb</type>
+      <amplitude>
+        <value>20.39428819</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:40.675Z</reference>
+        <begin>-18.45</begin>
+        <end>16.55</end>
+      </timeWindow>
+      <period>
+        <value>1.53125</value>
+      </period>
+      <snr>2.240445414</snr>
+      <pickID>Pick/20210519183433.932619.321295</pickID>
+      <waveformID networkCode="C" stationCode="GO03" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.21223.321463">
+      <type>mb</type>
+      <amplitude>
+        <value>7.34615614</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:05:40.250001Z</reference>
+        <begin>-9.35</begin>
+        <end>25.65</end>
+      </timeWindow>
+      <period>
+        <value>0.525</value>
+      </period>
+      <snr>3.330392641</snr>
+      <pickID>Pick/20210519183115.968119.321117</pickID>
+      <waveformID networkCode="US" stationCode="MNTX" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.213997.321464">
+      <type>mb</type>
+      <amplitude>
+        <value>36.85420228</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:12.375Z</reference>
+        <begin>-7.775</begin>
+        <end>27.225</end>
+      </timeWindow>
+      <period>
+        <value>1.00625</value>
+      </period>
+      <snr>2.912466408</snr>
+      <pickID>Pick/20210519183104.128437.321089</pickID>
+      <waveformID networkCode="C1" stationCode="VA03" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.215487.321465">
+      <type>mb</type>
+      <amplitude>
+        <value>20.16570774</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:06:10.219538Z</reference>
+        <begin>-11.9</begin>
+        <end>23.1</end>
+      </timeWindow>
+      <period>
+        <value>1.5625</value>
+      </period>
+      <snr>2.16543887</snr>
+      <pickID>Pick/20210519183218.528493.321177</pickID>
+      <waveformID networkCode="IU" stationCode="CASY" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.216667.321466">
+      <type>mb</type>
+      <amplitude>
+        <value>21.79902711</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:02:36.15Z</reference>
+        <begin>-9.6</begin>
+        <end>25.4</end>
+      </timeWindow>
+      <period>
+        <value>1.6</value>
+      </period>
+      <snr>7.623473288</snr>
+      <pickID>Pick/20210519183104.129082.321095</pickID>
+      <waveformID networkCode="GT" stationCode="LPAZ" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.217663.321467">
+      <type>mb</type>
+      <amplitude>
+        <value>26.79451215</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:05:19.269538Z</reference>
+        <begin>-7.7</begin>
+        <end>27.3</end>
+      </timeWindow>
+      <period>
+        <value>1.275</value>
+      </period>
+      <snr>1.015865173</snr>
+      <pickID>Pick/20210519183104.130208.321106</pickID>
+      <waveformID networkCode="II" stationCode="MSVF" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.220681.321468">
+      <type>mb</type>
+      <amplitude>
+        <value>71.99255586</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:28.624998Z</reference>
+        <begin>-33.025</begin>
+        <end>1.975</end>
+      </timeWindow>
+      <period>
+        <value>1.69375</value>
+      </period>
+      <snr>0.8306472071</snr>
+      <pickID>Pick/20210519183433.932122.321287</pickID>
+      <waveformID networkCode="C" stationCode="GO10" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.226446.321469">
+      <type>mb</type>
+      <amplitude>
+        <value>24.76178456</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:04:48.488391Z</reference>
+        <begin>-12.76</begin>
+        <end>22.24</end>
+      </timeWindow>
+      <period>
+        <value>1.015</value>
+      </period>
+      <snr>7.729929501</snr>
+      <pickID>Pick/20210519183104.130096.321105</pickID>
+      <waveformID networkCode="AW" stationCode="VNA2" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.228908.321470">
+      <type>mb</type>
+      <amplitude>
+        <value>24.14841678</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:08.05Z</reference>
+        <begin>-17.65</begin>
+        <end>17.35</end>
+      </timeWindow>
+      <period>
+        <value>1.525</value>
+      </period>
+      <snr>2.306020175</snr>
+      <pickID>Pick/20210519183104.128227.321087</pickID>
+      <waveformID networkCode="GT" stationCode="PLCA" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.232704.321471">
+      <type>mb</type>
+      <amplitude>
+        <value>13.73386554</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:04:18.925Z</reference>
+        <begin>-23.4</begin>
+        <end>11.6</end>
+      </timeWindow>
+      <period>
+        <value>1.1625</value>
+      </period>
+      <snr>3.279457181</snr>
+      <pickID>Pick/20210519183104.129701.321101</pickID>
+      <waveformID networkCode="GT" stationCode="VNDA" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.238127.321472">
+      <type>mb</type>
+      <amplitude>
+        <value>4.478031081</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:06:38.274998Z</reference>
+        <begin>-19.05</begin>
+        <end>15.95</end>
+      </timeWindow>
+      <period>
+        <value>1.75</value>
+      </period>
+      <snr>1.952088517</snr>
+      <pickID>Pick/20210519183135.496499.321159</pickID>
+      <waveformID networkCode="US" stationCode="ISCO" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.239195.321473">
+      <type>mb</type>
+      <amplitude>
+        <value>18.32313666</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:04:45.448391Z</reference>
+        <begin>-14.72</begin>
+        <end>20.28</end>
+      </timeWindow>
+      <period>
+        <value>0.88</value>
+      </period>
+      <snr>4.657956308</snr>
+      <pickID>Pick/20210519183104.129902.321103</pickID>
+      <waveformID networkCode="AW" stationCode="VNA3" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.248241.321474">
+      <type>mb</type>
+      <amplitude>
+        <value>13.51598904</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:03:10.225Z</reference>
+        <begin>-16.675</begin>
+        <end>18.325</end>
+      </timeWindow>
+      <period>
+        <value>1.70625</value>
+      </period>
+      <snr>3.633870843</snr>
+      <pickID>Pick/20210519183206.070595.321173</pickID>
+      <waveformID networkCode="GT" stationCode="CPUP" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.249634.321475">
+      <type>mb</type>
+      <amplitude>
+        <value>20.74237642</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:03:52.469539Z</reference>
+        <begin>-7.85</begin>
+        <end>27.15</end>
+      </timeWindow>
+      <period>
+        <value>1.50625</value>
+      </period>
+      <snr>3.110798882</snr>
+      <pickID>Pick/20210519183104.129495.321099</pickID>
+      <waveformID networkCode="II" stationCode="JTS" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.258143.321476">
+      <type>mb</type>
+      <amplitude>
+        <value>19.08026652</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:04:15.944536Z</reference>
+        <begin>-28.15</begin>
+        <end>6.85</end>
+      </timeWindow>
+      <period>
+        <value>2.4625</value>
+      </period>
+      <snr>2.368856188</snr>
+      <pickID>Pick/20210519183104.129391.321098</pickID>
+      <waveformID networkCode="IU" stationCode="SBA" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.267329.321477">
+      <type>mb</type>
+      <amplitude>
+        <value>20.02492621</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:39.358393Z</reference>
+        <begin>-20.47</begin>
+        <end>14.53</end>
+      </timeWindow>
+      <period>
+        <value>1.6575</value>
+      </period>
+      <snr>2.230240698</snr>
+      <pickID>Pick/20210519183433.932564.321294</pickID>
+      <waveformID networkCode="WA" stationCode="ZON" channelCode="HHE"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.277742.321478">
+      <type>mb</type>
+      <amplitude>
+        <value>15.03102794</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:07:31.394539Z</reference>
+        <begin>-15.825</begin>
+        <end>19.175</end>
+      </timeWindow>
+      <period>
+        <value>1.5</value>
+      </period>
+      <snr>1.570021936</snr>
+      <pickID>Pick/20210519183104.13043.321108</pickID>
+      <waveformID networkCode="AU" stationCode="BBOO" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.288068.321479">
+      <type>mb</type>
+      <amplitude>
+        <value>15.96106291</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:04:11.7682Z</reference>
+        <begin>-7.9</begin>
+        <end>27.1</end>
+      </timeWindow>
+      <period>
+        <value>1.4</value>
+      </period>
+      <snr>4.866408999</snr>
+      <pickID>Pick/20210519183104.129802.321102</pickID>
+      <waveformID networkCode="BL" stationCode="CLDB" channelCode="HHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.3047.321481">
+      <type>mb</type>
+      <amplitude>
+        <value>23.11162758</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:04:22.75Z</reference>
+        <begin>-23.16</begin>
+        <end>11.84</end>
+      </timeWindow>
+      <period>
+        <value>2.3075</value>
+      </period>
+      <snr>2.903875409</snr>
+      <pickID>Pick/20210519183444.808602.321308</pickID>
+      <waveformID networkCode="BL" stationCode="ITRB" channelCode="HHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.314892.321482">
+      <type>mb</type>
+      <amplitude>
+        <value>26.01798875</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:03:33.1Z</reference>
+        <begin>-8.44</begin>
+        <end>26.56</end>
+      </timeWindow>
+      <period>
+        <value>1.1</value>
+      </period>
+      <snr>5.105830306</snr>
+      <pickID>Pick/20210519183104.129284.321097</pickID>
+      <waveformID networkCode="BL" stationCode="AQDB" channelCode="HHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183520.317504.321483">
+      <type>mb</type>
+      <amplitude>
+        <value>19.85754806</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:04:04.1Z</reference>
+        <begin>-16.43</begin>
+        <end>18.57</end>
+      </timeWindow>
+      <period>
+        <value>1.86</value>
+      </period>
+      <snr>2.526959632</snr>
+      <pickID>Pick/20210519183104.129599.321100</pickID>
+      <waveformID networkCode="BL" stationCode="PCMB" channelCode="HHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183525.335909.5493266">
+      <type>mb</type>
+      <amplitude>
+        <value>19.32532673</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:45.5Z</reference>
+        <begin>-28.55</begin>
+        <end>6.45</end>
+      </timeWindow>
+      <period>
+        <value>4.175</value>
+      </period>
+      <snr>1.863864947</snr>
+      <pickID>Pick/20210519183104.128749.321092</pickID>
+      <waveformID networkCode="C1" stationCode="CO01" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183525.459047.5493292">
+      <type>mb</type>
+      <amplitude>
+        <value>16.46264956</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:01:14.199998Z</reference>
+        <begin>-29.75</begin>
+        <end>5.25</end>
+      </timeWindow>
+      <period>
+        <value>3.93125</value>
+      </period>
+      <snr>1.279066254</snr>
+      <pickID>Pick/20210519183104.12812.321086</pickID>
+      <waveformID networkCode="C" stationCode="GO06" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183525.712541.5493326">
+      <type>mb</type>
+      <amplitude>
+        <value>45.715614</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T18:04:44.648391Z</reference>
+        <begin>-8.78</begin>
+        <end>26.22</end>
+      </timeWindow>
+      <period>
+        <value>0.375</value>
+      </period>
+      <snr>3.378343434</snr>
+      <pickID>Pick/20210519183104.129999.321104</pickID>
+      <waveformID networkCode="AW" stationCode="VNA1" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <amplitude publicID="Amplitude/20210519183525.75931.5493334">
+      <type>Mwp</type>
+      <amplitude>
+        <value>12315.62169</value>
+      </amplitude>
+      <timeWindow>
+        <reference>2021-05-19T17:57:00.569538Z</reference>
+        <begin>-11.2</begin>
+        <end>88.8</end>
+      </timeWindow>
+      <snr>3.019487572</snr>
+      <pickID>Pick/20210519183157.126034.321168</pickID>
+      <waveformID networkCode="II" stationCode="RPN" locationCode="00" channelCode="BHZ"/>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+      </creationInfo>
+    </amplitude>
+    <origin publicID="Origin/20210519184903.567113.3459465">
+      <time>
+        <value>2021-05-19T17:54:36.232216Z</value>
+        <uncertainty>0.1921489835</uncertainty>
+      </time>
+      <latitude>
+        <value>-36.6749115</value>
+        <uncertainty>3.265675068</uncertainty>
+      </latitude>
+      <longitude>
+        <value>-110.2756348</value>
+        <uncertainty>3.345170736</uncertainty>
+      </longitude>
+      <depth>
+        <value>10</value>
+        <uncertainty>0</uncertainty>
+      </depth>
+      <depthType>operator assigned</depthType>
+      <methodID>LOCSAT</methodID>
+      <earthModelID>iasp91</earthModelID>
+      <quality>
+        <associatedPhaseCount>122</associatedPhaseCount>
+        <usedPhaseCount>62</usedPhaseCount>
+        <associatedStationCount>122</associatedStationCount>
+        <usedStationCount>62</usedStationCount>
+        <standardError>0.8698670943</standardError>
+        <azimuthalGap>87.88058472</azimuthalGap>
+        <maximumDistance>86.95843506</maximumDistance>
+        <minimumDistance>9.581422806</minimumDistance>
+        <medianDistance>44.06953049</medianDistance>
+      </quality>
+      <evaluationMode>automatic</evaluationMode>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+        <creationTime>2021-05-19T18:49:03.568603Z</creationTime>
+      </creationInfo>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/AU.BBOO">
+        <magnitude>
+          <value>4.95748411935869</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.277742.321478</amplitudeID>
+        <waveformID networkCode="AU" stationCode="BBOO" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.618463Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/AU.CMSA">
+        <magnitude>
+          <value>4.85344124158244</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>20210519.180655.19-AIC-AU.CMSA..BHZ.mb</amplitudeID>
+        <waveformID networkCode="AU" stationCode="CMSA" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.618555Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/AW.VNA1">
+        <magnitude>
+          <value>5.88837154370358</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183525.712541.5493326</amplitudeID>
+        <waveformID networkCode="AW" stationCode="VNA1" channelCode="BHZ"/>
+        <passedQC>false</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.618723Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/AW.VNA2">
+        <magnitude>
+          <value>5.19131187391111</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.226446.321469</amplitudeID>
+        <waveformID networkCode="AW" stationCode="VNA2" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.618868Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/AW.VNA3">
+        <magnitude>
+          <value>5.11530236928911</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.239195.321473</amplitudeID>
+        <waveformID networkCode="AW" stationCode="VNA3" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.619009Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/BL.AQDB">
+        <magnitude>
+          <value>5.1131376924133</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.314892.321482</amplitudeID>
+        <waveformID networkCode="BL" stationCode="AQDB" channelCode="HHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.619159Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/BL.BSFB">
+        <magnitude>
+          <value>4.83206736901269</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>20210519.180502.57-AIC-BL.BSFB..HHZ.mb</amplitudeID>
+        <waveformID networkCode="BL" stationCode="BSFB" channelCode="HHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.61934Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/BL.CLDB">
+        <magnitude>
+          <value>4.83523295867857</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.288068.321479</amplitudeID>
+        <waveformID networkCode="BL" stationCode="CLDB" channelCode="HHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.619484Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/BL.ITRB">
+        <magnitude>
+          <value>4.7740414024674</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.3047.321481</amplitudeID>
+        <waveformID networkCode="BL" stationCode="ITRB" channelCode="HHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.619625Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/BL.PCMB">
+        <magnitude>
+          <value>4.79295726883803</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.317504.321483</amplitudeID>
+        <waveformID networkCode="BL" stationCode="PCMB" channelCode="HHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.619784Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C.FAR1">
+        <magnitude>
+          <value>4.61966639432706</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.167524.321448</amplitudeID>
+        <waveformID networkCode="C" stationCode="FAR1" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.619919Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C.GO03">
+        <magnitude>
+          <value>4.80246251894542</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.200918.321462</amplitudeID>
+        <waveformID networkCode="C" stationCode="GO03" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.619996Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C.GO04">
+        <magnitude>
+          <value>5.22184493058742</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.185998.321456</amplitudeID>
+        <waveformID networkCode="C" stationCode="GO04" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.620123Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C.GO06">
+        <magnitude>
+          <value>4.27617559762721</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183525.459047.5493292</amplitudeID>
+        <waveformID networkCode="C" stationCode="GO06" channelCode="BHZ"/>
+        <passedQC>false</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.620263Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C.GO09">
+        <magnitude>
+          <value>4.84926131521028</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.162382.321446</amplitudeID>
+        <waveformID networkCode="C" stationCode="GO09" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.620388Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C.GO10">
+        <magnitude>
+          <value>5.30373023690512</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.220681.321468</amplitudeID>
+        <waveformID networkCode="C" stationCode="GO10" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.620516Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C1.AC02">
+        <magnitude>
+          <value>5.07155294510641</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.195291.321458</amplitudeID>
+        <waveformID networkCode="C1" stationCode="AC02" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.620657Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C1.AC05">
+        <magnitude>
+          <value>4.95510982698687</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.166659.321447</amplitudeID>
+        <waveformID networkCode="C1" stationCode="AC05" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.620824Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C1.BI02">
+        <magnitude>
+          <value>4.66790197692964</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.157595.321445</amplitudeID>
+        <waveformID networkCode="C1" stationCode="BI02" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.620991Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C1.BO01">
+        <magnitude>
+          <value>4.83622821353969</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.169973.321449</amplitudeID>
+        <waveformID networkCode="C1" stationCode="BO01" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.621168Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C1.CO01">
+        <magnitude>
+          <value>4.3434704340400296</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183525.335909.5493266</amplitudeID>
+        <waveformID networkCode="C1" stationCode="CO01" channelCode="BHZ"/>
+        <passedQC>false</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.621324Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C1.CO02">
+        <magnitude>
+          <value>5.17509061132374</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.18051.321454</amplitudeID>
+        <waveformID networkCode="C1" stationCode="CO02" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.621468Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C1.CO03">
+        <magnitude>
+          <value>4.53304231884323</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.199535.321461</amplitudeID>
+        <waveformID networkCode="C1" stationCode="CO03" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.621551Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C1.CO04">
+        <magnitude>
+          <value>4.8068177524038</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.170897.321450</amplitudeID>
+        <waveformID networkCode="C1" stationCode="CO04" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.621761Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C1.LL02">
+        <magnitude>
+          <value>4.54236826584807</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.182053.321455</amplitudeID>
+        <waveformID networkCode="C1" stationCode="LL02" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.621925Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C1.MG05">
+        <magnitude>
+          <value>4.86104229635671</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.198043.321460</amplitudeID>
+        <waveformID networkCode="C1" stationCode="MG05" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.62207Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/C1.VA03">
+        <magnitude>
+          <value>5.24178119049489</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.213997.321464</amplitudeID>
+        <waveformID networkCode="C1" stationCode="VA03" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.622248Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/CX.PB01">
+        <magnitude>
+          <value>4.50104417040048</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.121149.321440</amplitudeID>
+        <waveformID networkCode="CX" stationCode="PB01" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.622379Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/CX.PB03">
+        <magnitude>
+          <value>4.92072801128427</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.123044.321441</amplitudeID>
+        <waveformID networkCode="CX" stationCode="PB03" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.62251Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/CX.PB06">
+        <magnitude>
+          <value>4.82053411449148</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183519.943478.321438</amplitudeID>
+        <waveformID networkCode="CX" stationCode="PB06" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.622659Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/CX.PB08">
+        <magnitude>
+          <value>4.65506265393714</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183519.934961.321437</amplitudeID>
+        <waveformID networkCode="CX" stationCode="PB08" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.62279Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/CX.PB11">
+        <magnitude>
+          <value>4.9277234634639</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.119055.321439</amplitudeID>
+        <waveformID networkCode="CX" stationCode="PB11" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.622927Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mB/CX.PB18">
+        <magnitude>
+          <value>6.08605630057948</value>
+        </magnitude>
+        <type>mB</type>
+        <amplitudeID>Amplitude/20210519183520.177752.321453</amplitudeID>
+        <waveformID networkCode="CX" stationCode="PB18" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.623091Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/CX.PB18">
+        <magnitude>
+          <value>5.13771772285944</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.174097.321451</amplitudeID>
+        <waveformID networkCode="CX" stationCode="PB18" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.623169Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/CX.PB19">
+        <magnitude>
+          <value>4.76215300398887</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.156205.321444</amplitudeID>
+        <waveformID networkCode="CX" stationCode="PB19" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.623299Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/G.COYC">
+        <magnitude>
+          <value>4.96007555287715</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.186869.321457</amplitudeID>
+        <waveformID networkCode="G" stationCode="COYC" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.623401Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/G.PEL">
+        <magnitude>
+          <value>4.99653824705147</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.176747.321452</amplitudeID>
+        <waveformID networkCode="G" stationCode="PEL" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.62348Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/GE.SALTA">
+        <magnitude>
+          <value>4.59238995240113</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.132366.321443</amplitudeID>
+        <waveformID networkCode="GE" stationCode="SALTA" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.62358Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/GE.SNAA">
+        <magnitude>
+          <value>4.70910588456264</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>20210519.180449.71-AIC-GE.SNAA..BHZ.mb</amplitudeID>
+        <waveformID networkCode="GE" stationCode="SNAA" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.623659Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/GT.CPUP">
+        <magnitude>
+          <value>4.60607801518047</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.248241.321474</amplitudeID>
+        <waveformID networkCode="GT" stationCode="CPUP" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.623749Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/GT.LPAZ">
+        <magnitude>
+          <value>4.81325838538945</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.216667.321466</amplitudeID>
+        <waveformID networkCode="GT" stationCode="LPAZ" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.62383Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/GT.PLCA">
+        <magnitude>
+          <value>4.86759293268576</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.228908.321470</amplitudeID>
+        <waveformID networkCode="GT" stationCode="PLCA" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.623973Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/GT.VNDA">
+        <magnitude>
+          <value>4.84188712792056</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.232704.321471</amplitudeID>
+        <waveformID networkCode="GT" stationCode="VNDA" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.624051Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/II.JTS">
+        <magnitude>
+          <value>4.90151527741845</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.249634.321475</amplitudeID>
+        <waveformID networkCode="II" stationCode="JTS" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.624158Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/II.MSVF">
+        <magnitude>
+          <value>5.15062933765127</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.217663.321467</amplitudeID>
+        <waveformID networkCode="II" stationCode="MSVF" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.624245Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/II.PFO">
+        <magnitude>
+          <value>4.97252280820307</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>20210519.180550.11-AIC-II.PFO.00.BHZ.mb</amplitudeID>
+        <waveformID networkCode="II" stationCode="PFO" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.624329Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/Mwp/II.RPN">
+        <magnitude>
+          <value>5.75035862610434</value>
+        </magnitude>
+        <type>Mwp</type>
+        <amplitudeID>Amplitude/20210519183525.75931.5493334</amplitudeID>
+        <waveformID networkCode="II" stationCode="RPN" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.624433Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/II.RPN">
+        <magnitude>
+          <value>5.3662351132941</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183519.924008.321436</amplitudeID>
+        <waveformID networkCode="II" stationCode="RPN" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.624499Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/IU.CASY">
+        <magnitude>
+          <value>4.96479334350507</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.215487.321465</amplitudeID>
+        <waveformID networkCode="IU" stationCode="CASY" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.624596Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/IU.CCM">
+        <magnitude>
+          <value>4.83430734081536</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>20210519.180625.31-AIC-IU.CCM.00.BHZ.mb</amplitudeID>
+        <waveformID networkCode="IU" stationCode="CCM" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.624679Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/IU.RSSD">
+        <magnitude>
+          <value>4.48857316774307</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>20210519.180648.54-AIC-IU.RSSD.00.BHZ.mb</amplitudeID>
+        <waveformID networkCode="IU" stationCode="RSSD" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.624771Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/IU.SBA">
+        <magnitude>
+          <value>4.65323429762566</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.258143.321476</amplitudeID>
+        <waveformID networkCode="IU" stationCode="SBA" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.624857Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/IU.TUC">
+        <magnitude>
+          <value>4.59024231917643</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>20210519.180539.71-AIC-IU.TUC.00.BHZ.mb</amplitudeID>
+        <waveformID networkCode="IU" stationCode="TUC" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.624942Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/MX.HPIG">
+        <magnitude>
+          <value>4.62392887478933</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>20210519.180506.49-AIC-MX.HPIG..BHZ.mb</amplitudeID>
+        <waveformID networkCode="MX" stationCode="HPIG" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.625033Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/MX.ZAIG">
+        <magnitude>
+          <value>4.56529515210868</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>20210519.180440.51-AIC-MX.ZAIG..BHZ.mb</amplitudeID>
+        <waveformID networkCode="MX" stationCode="ZAIG" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.625172Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/US.DUG">
+        <magnitude>
+          <value>4.55659351310816</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>20210519.180626.52-AIC-US.DUG.00.BHZ.mb</amplitudeID>
+        <waveformID networkCode="US" stationCode="DUG" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.625345Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mB/US.ECSD">
+        <magnitude>
+          <value>5.5889618059879</value>
+        </magnitude>
+        <type>mB</type>
+        <amplitudeID>Amplitude/20210519180824.001502.5491562</amplitudeID>
+        <waveformID networkCode="US" stationCode="ECSD" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.625455Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/US.ECSD">
+        <magnitude>
+          <value>4.91549821534312</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>20210519.180650.27-AIC-US.ECSD.00.BHZ.mb</amplitudeID>
+        <waveformID networkCode="US" stationCode="ECSD" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.625522Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/US.EYMN">
+        <magnitude>
+          <value>4.96520378004977</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>20210519.180714.87-AIC-US.EYMN.00.BHZ.mb</amplitudeID>
+        <waveformID networkCode="US" stationCode="EYMN" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.625665Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mB/US.HLID">
+        <magnitude>
+          <value>5.64124989911392</value>
+        </magnitude>
+        <type>mB</type>
+        <amplitudeID>20210519.180645.55-AIC-US.HLID.00.BHZ.mB</amplitudeID>
+        <waveformID networkCode="US" stationCode="HLID" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.625814Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/US.HLID">
+        <magnitude>
+          <value>4.85445718601918</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>20210519.180645.55-AIC-US.HLID.00.BHZ.mb</amplitudeID>
+        <waveformID networkCode="US" stationCode="HLID" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.62588Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/US.ISCO">
+        <magnitude>
+          <value>4.27204918460657</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.238127.321472</amplitudeID>
+        <waveformID networkCode="US" stationCode="ISCO" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.626027Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/US.MNTX">
+        <magnitude>
+          <value>4.98790076374192</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.21223.321463</amplitudeID>
+        <waveformID networkCode="US" stationCode="MNTX" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.62618Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/US.MVCO">
+        <magnitude>
+          <value>4.88566193516674</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>20210519.180609.25-AIC-US.MVCO.00.BHZ.mb</amplitudeID>
+        <waveformID networkCode="US" stationCode="MVCO" locationCode="00" channelCode="BHZ"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.62635Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/US.WVOR">
+        <magnitude>
+          <value>5.5016794662352</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>20210519.180641.25-AIC-US.WVOR.00.BHZ.mb</amplitudeID>
+        <waveformID networkCode="US" stationCode="WVOR" locationCode="00" channelCode="BHZ"/>
+        <passedQC>false</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.626502Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <stationMagnitude publicID="Origin/20210519184903.567113.3459465/staMag/mb/WA.ZON">
+        <magnitude>
+          <value>4.76011745601199</value>
+        </magnitude>
+        <type>mb</type>
+        <amplitudeID>Amplitude/20210519183520.267329.321477</amplitudeID>
+        <waveformID networkCode="WA" stationCode="ZON" channelCode="HHE"/>
+        <passedQC>true</passedQC>
+        <creationInfo>
+          <agencyID>Test</agencyID>
+          <author>scmag</author>
+          <creationTime>2026-11-10T17:58:01.626715Z</creationTime>
+        </creationInfo>
+      </stationMagnitude>
+      <magnitude publicID="Origin/20210519184903.567113.3459465/netMag/Mwp">
+        <magnitude>
+          <value>5.561027522</value>
+          <uncertainty>0</uncertainty>
+        </magnitude>
+        <type>Mwp</type>
+        <methodID>mean</methodID>
+        <stationCount>1</stationCount>
+        <creationInfo>
+          <agencyID>GFZ</agencyID>
+          <creationTime>2021-05-19T18:49:03.757046Z</creationTime>
+        </creationInfo>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/Mwp/II.RPN</stationMagnitudeID>
+          <residual>0</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+      </magnitude>
+      <magnitude publicID="Origin/20210519184903.567113.3459465/netMag/Mw(Mwp)">
+        <magnitude>
+          <value>5.374946054</value>
+          <uncertainty>0.4</uncertainty>
+        </magnitude>
+        <type>Mw(Mwp)</type>
+        <stationCount>1</stationCount>
+        <creationInfo>
+          <agencyID>GFZ</agencyID>
+          <creationTime>2021-05-19T18:49:03.757171Z</creationTime>
+        </creationInfo>
+      </magnitude>
+      <magnitude publicID="Origin/20210519184903.567113.3459465/netMag/mB">
+        <magnitude>
+          <value>5.772089335</value>
+          <uncertainty>0.2731573771</uncertainty>
+        </magnitude>
+        <type>mB</type>
+        <methodID>mean</methodID>
+        <stationCount>3</stationCount>
+        <creationInfo>
+          <agencyID>GFZ</agencyID>
+          <creationTime>2021-05-19T18:49:03.757231Z</creationTime>
+        </creationInfo>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mB/CX.PB18</stationMagnitudeID>
+          <residual>0.444806401465558</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mB/US.ECSD</stationMagnitudeID>
+          <residual>-0.0522880931260223</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mB/US.HLID</stationMagnitudeID>
+          <residual>0</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+      </magnitude>
+      <magnitude publicID="Origin/20210519184903.567113.3459465/netMag/Mw(mB)">
+        <magnitude>
+          <value>5.323716136</value>
+          <uncertainty>0.4</uncertainty>
+        </magnitude>
+        <type>Mw(mB)</type>
+        <stationCount>3</stationCount>
+        <creationInfo>
+          <agencyID>GFZ</agencyID>
+          <creationTime>2021-05-19T18:49:03.75736Z</creationTime>
+        </creationInfo>
+      </magnitude>
+      <magnitude publicID="Origin/20210519184903.567113.3459465/netMag/mb">
+        <magnitude>
+          <value>4.846652238</value>
+          <uncertainty>0.1395658746</uncertainty>
+        </magnitude>
+        <type>mb</type>
+        <methodID>trimmed mean(25)</methodID>
+        <stationCount>44</stationCount>
+        <creationInfo>
+          <agencyID>GFZ</agencyID>
+          <creationTime>2021-05-19T18:49:03.757412Z</creationTime>
+        </creationInfo>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/AU.BBOO</stationMagnitudeID>
+          <residual>0.111909897793272</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/AU.CMSA</stationMagnitudeID>
+          <residual>0.00786702001702899</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/AW.VNA2</stationMagnitudeID>
+          <residual>0.345737652345691</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/AW.VNA3</stationMagnitudeID>
+          <residual>0.269728147723696</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/BL.AQDB</stationMagnitudeID>
+          <residual>0.267563470847887</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/BL.BSFB</stationMagnitudeID>
+          <residual>-0.0135068525527284</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/BL.CLDB</stationMagnitudeID>
+          <residual>-0.010341262886851299</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/BL.ITRB</stationMagnitudeID>
+          <residual>-0.0715328190980191</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/BL.PCMB</stationMagnitudeID>
+          <residual>-0.0526169527273899</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C.FAR1</stationMagnitudeID>
+          <residual>-0.225907827238352</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C.GO03</stationMagnitudeID>
+          <residual>-0.043111702619997402</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C.GO04</stationMagnitudeID>
+          <residual>0.376270709022005</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C.GO09</stationMagnitudeID>
+          <residual>0.0036870936448592</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C.GO10</stationMagnitudeID>
+          <residual>0.458156015339707</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C1.AC02</stationMagnitudeID>
+          <residual>0.225978723540996</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C1.AC05</stationMagnitudeID>
+          <residual>0.10953560542145</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C1.BI02</stationMagnitudeID>
+          <residual>-0.177672244635778</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C1.BO01</stationMagnitudeID>
+          <residual>-0.00934600802572749</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C1.CO02</stationMagnitudeID>
+          <residual>0.329516389758327</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C1.CO03</stationMagnitudeID>
+          <residual>-0.312531902722182</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C1.CO04</stationMagnitudeID>
+          <residual>-0.0387564691616138</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C1.LL02</stationMagnitudeID>
+          <residual>-0.303205955717347</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C1.MG05</stationMagnitudeID>
+          <residual>0.015468074791299601</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C1.VA03</stationMagnitudeID>
+          <residual>0.396206968929476</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/CX.PB01</stationMagnitudeID>
+          <residual>-0.344530051164936</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/CX.PB03</stationMagnitudeID>
+          <residual>0.07515378971885139</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/CX.PB06</stationMagnitudeID>
+          <residual>-0.0250401070739343</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/CX.PB08</stationMagnitudeID>
+          <residual>-0.190511567628276</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/CX.PB11</stationMagnitudeID>
+          <residual>0.0821492418984802</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/CX.PB18</stationMagnitudeID>
+          <residual>0.29214350129402</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/CX.PB19</stationMagnitudeID>
+          <residual>-0.0834212175765439</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/G.COYC</stationMagnitudeID>
+          <residual>0.114501331311738</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/G.PEL</stationMagnitudeID>
+          <residual>0.150964025486057</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/GE.SALTA</stationMagnitudeID>
+          <residual>-0.253184269164288</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/GE.SNAA</stationMagnitudeID>
+          <residual>-0.136468337002773</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/GT.CPUP</stationMagnitudeID>
+          <residual>-0.239496206384942</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/GT.LPAZ</stationMagnitudeID>
+          <residual>-0.032315836175961003</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/GT.PLCA</stationMagnitudeID>
+          <residual>0.0220187111203458</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/GT.VNDA</stationMagnitudeID>
+          <residual>-0.00368709364486008</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/II.JTS</stationMagnitudeID>
+          <residual>0.0559410558530384</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/II.MSVF</stationMagnitudeID>
+          <residual>0.305055116085858</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/II.PFO</stationMagnitudeID>
+          <residual>0.126948586637649</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/II.RPN</stationMagnitudeID>
+          <residual>0.52066089172868</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/IU.CASY</stationMagnitudeID>
+          <residual>0.119219121939654</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/IU.CCM</stationMagnitudeID>
+          <residual>-0.011266880750053301</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/IU.RSSD</stationMagnitudeID>
+          <residual>-0.357001053822348</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/IU.SBA</stationMagnitudeID>
+          <residual>-0.192339923939759</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/IU.TUC</stationMagnitudeID>
+          <residual>-0.255331902388988</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/MX.HPIG</stationMagnitudeID>
+          <residual>-0.221645346776089</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/MX.ZAIG</stationMagnitudeID>
+          <residual>-0.28027906945674003</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/US.DUG</stationMagnitudeID>
+          <residual>-0.288980708457253</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/US.ECSD</stationMagnitudeID>
+          <residual>0.069923993777703</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/US.EYMN</stationMagnitudeID>
+          <residual>0.11962955848435</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/US.HLID</stationMagnitudeID>
+          <residual>0.00888296445375936</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/US.ISCO</stationMagnitudeID>
+          <residual>-0.573525036958847</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/US.MNTX</stationMagnitudeID>
+          <residual>0.1423265421765</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/US.MVCO</stationMagnitudeID>
+          <residual>0.0400877136013253</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/WA.ZON</stationMagnitudeID>
+          <residual>-0.0854567655534293</residual>
+          <weight>1</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/AW.VNA1</stationMagnitudeID>
+          <residual>1.0427973221381699</residual>
+          <weight>0</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C.GO06</stationMagnitudeID>
+          <residual>-0.56939862393821</residual>
+          <weight>0</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/C1.CO01</stationMagnitudeID>
+          <residual>-0.502103787525386</residual>
+          <weight>0</weight>
+        </stationMagnitudeContribution>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>Origin/20210519184903.567113.3459465/staMag/mb/US.WVOR</stationMagnitudeID>
+          <residual>0.65610524466978</residual>
+          <weight>0</weight>
+        </stationMagnitudeContribution>
+      </magnitude>
+      <magnitude publicID="Origin/20210519184903.567113.3459465/netMag/M">
+        <magnitude>
+          <value>4.846652238</value>
+        </magnitude>
+        <type>M</type>
+        <methodID>weighted average</methodID>
+        <stationCount>44</stationCount>
+        <creationInfo>
+          <agencyID>GFZ</agencyID>
+          <creationTime>2021-05-19T18:49:03.758731Z</creationTime>
+        </creationInfo>
+      </magnitude>
+    </origin>
+    <origin publicID="Origin/20210519191535.242113.940830">
+      <time>
+        <value>2021-05-19T17:54:36.232216Z</value>
+      </time>
+      <latitude>
+        <value>-36.6749115</value>
+      </latitude>
+      <longitude>
+        <value>-110.2756348</value>
+      </longitude>
+      <depth>
+        <value>10</value>
+      </depth>
+      <methodID>FocalMechanism</methodID>
+      <earthModelID>gemini-prem</earthModelID>
+      <quality>
+        <usedPhaseCount>74</usedPhaseCount>
+        <associatedStationCount>149</associatedStationCount>
+        <usedStationCount>60</usedStationCount>
+        <azimuthalGap>75.24598552</azimuthalGap>
+        <maximumDistance>82.71982342</maximumDistance>
+        <minimumDistance>9.513227733</minimumDistance>
+      </quality>
+      <type>hypocenter</type>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+        <creationTime>2021-05-19T19:15:35.241457Z</creationTime>
+      </creationInfo>
+      <magnitude publicID="Magnitude/20210519191535.242341.940831">
+        <magnitude>
+          <value>5.491027531</value>
+        </magnitude>
+        <type>Mw</type>
+        <methodID>MT</methodID>
+        <stationCount>60</stationCount>
+        <azimuthalGap>75.24598552</azimuthalGap>
+        <creationInfo>
+          <agencyID>GFZ</agencyID>
+          <creationTime>2021-05-19T19:15:35.241457Z</creationTime>
+        </creationInfo>
+      </magnitude>
+    </origin>
+    <event publicID="gfz2021jtmw">
+      <preferredOriginID>Origin/20210519184903.567113.3459465</preferredOriginID>
+      <preferredMagnitudeID>Magnitude/20210519191535.242341.940831</preferredMagnitudeID>
+      <preferredFocalMechanismID>FocalMechanism/20210519191535.241804.940829</preferredFocalMechanismID>
+      <creationInfo>
+        <agencyID>GFZ</agencyID>
+        <creationTime>2021-05-19T18:02:39.515659Z</creationTime>
+        <modificationTime>2021-05-19T19:18:25.377184Z</modificationTime>
+      </creationInfo>
+      <description>
+        <text>Southern East Pacific Rise</text>
+        <type>region name</type>
+      </description>
+      <originReference>Origin/20210519184903.567113.3459465</originReference>
+    </event>
+  </EventParameters>
+</seiscomp>

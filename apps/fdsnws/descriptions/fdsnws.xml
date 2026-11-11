@@ -163,6 +163,15 @@
 				If enabled, event comment elements are no longer accessible.
 				</description>
 			</parameter>
+			<parameter name="hideStationMagnitudes" type="boolean" default="true">
+				<description>
+				If enabled, station magnitudes, station magnitude
+				contributions and amplitudes are not accessible (request
+				parameter includestationmagnitudes). Disable it to allow
+				requesting them, which may considerably increase the size
+				of the responses and the load of the server.
+				</description>
+			</parameter>
 			<parameter name="evaluationMode" type="string" values=",automatic,manual">
 				<description>
 				If set, the event service will only return events having a

@@ -103,6 +103,17 @@
 							Adds all momentensor station contributions.
 						</doc>
 					</param>
+					<!-- includestationmagnitudes parameter, requires hideStationMagnitudes configuration parameter to be disabled -->
+					<param name="includestationmagnitudes" style="query" type="xsd:boolean" default="false">
+						<doc title="definition">
+							Adds the station magnitudes of the exported origins,
+							the station magnitude contributions of the exported
+							magnitudes and the amplitudes referenced by the
+							station magnitudes. With includearrivals=true, the
+							picks referenced by the amplitudes are added as
+							well.
+						</doc>
+					</param>
 					<!-- includecomments parameter, requires hideComments configuration parameter to be disabled -->
 					<param name="includecomments" style="query" type="xsd:boolean" default="false">
 						<doc title="definition">
