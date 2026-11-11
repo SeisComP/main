@@ -67,6 +67,183 @@
          <string>Magnitudes</string>
         </attribute>
        </widget>
+       <widget class="QWidget" name="tabNearbyCities" >
+        <attribute name="title" >
+         <string>Nearby Cities</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="layoutCities" >
+         <property name="margin" >
+          <number>4</number>
+         </property>
+         <item>
+          <layout class="QHBoxLayout" >
+           <item>
+            <widget class="QCheckBox" name="citiesUseFullState" >
+             <property name="text" >
+              <string>Full state name</string>
+             </property>
+             <property name="toolTip" >
+              <string>Show full state name (e.g. Queensland) instead of abbreviation (e.g. QLD)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QLabel" name="currentRegionLabel" >
+             <property name="text" >
+              <string>Region: —</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QTableWidget" name="citiesTable" >
+           <property name="editTriggers" >
+            <set>QAbstractItemView::NoEditTriggers</set>
+           </property>
+           <property name="selectionBehavior" >
+            <enum>QAbstractItemView::SelectRows</enum>
+           </property>
+           <property name="selectionMode" >
+            <enum>QAbstractItemView::SingleSelection</enum>
+           </property>
+           <property name="sortingEnabled" >
+            <bool>true</bool>
+           </property>
+           <property name="alternatingRowColors" >
+            <bool>true</bool>
+           </property>
+           <column>
+            <property name="text" >
+             <string>Name</string>
+            </property>
+           </column>
+           <column>
+            <property name="text" >
+             <string>Type</string>
+            </property>
+           </column>
+           <column>
+            <property name="text" >
+             <string>Region</string>
+            </property>
+           </column>
+           <column>
+            <property name="text" >
+             <string>Country</string>
+            </property>
+           </column>
+           <column>
+            <property name="text" >
+             <string>Distance (km)</string>
+            </property>
+           </column>
+           <column>
+            <property name="text" >
+             <string>Direction</string>
+            </property>
+           </column>
+           <column>
+            <property name="text" >
+             <string>Population</string>
+            </property>
+           </column>
+           <column>
+            <property name="text" >
+             <string>&#9733;</string>
+            </property>
+           </column>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="regionNameGroup" >
+           <property name="title" >
+            <string>Set Region Name</string>
+           </property>
+           <layout class="QVBoxLayout" >
+            <item>
+             <layout class="QHBoxLayout" >
+              <item>
+               <widget class="QLabel" >
+                <property name="text" >
+                 <string>Format:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="regionFormatCombo" >
+                <item>
+                 <property name="text" >
+                  <string>DIRECTION of NAME, STATE</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text" >
+                  <string>NAME, DIRECTION at DISTANCE km</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text" >
+                  <string>DISTANCE km DIRECTION of NAME</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text" >
+                  <string>NAME (DIRECTION, DISTANCE km)</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text" >
+                  <string>DISTANCE km DIRECTION of NAME, STATE</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="regionPreview" >
+              <property name="readOnly" >
+               <bool>true</bool>
+              </property>
+              <property name="placeholderText" >
+               <string>Select a city to preview the region name...</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" >
+              <item>
+               <spacer>
+                <property name="orientation" >
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QPushButton" name="setRegionBtn" >
+                <property name="text" >
+                 <string>Set as Region Name</string>
+                </property>
+                <property name="enabled" >
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </widget>
        <widget class="QWidget" name="tabEventList" >
         <attribute name="title" >
          <string>Events</string>

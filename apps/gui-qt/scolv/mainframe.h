@@ -64,6 +64,9 @@ class MainFrame : public MainWindow {
 
 	private slots:
 		void configureAcquisition();
+		void onCitySelectionChanged();
+		void onSetRegionName();
+		void onRegionFormatChanged();
 
 		void messageAvailable(Seiscomp::Core::Message*, Seiscomp::Client::Packet*);
 
@@ -95,6 +98,12 @@ class MainFrame : public MainWindow {
 
 	private:
 		bool populateOrigin(Seiscomp::DataModel::Origin*, Seiscomp::DataModel::Event*, bool);
+		void updateCitiesTab(Seiscomp::DataModel::Origin*);
+		void updateRegionPreview();
+		void updateCurrentRegionLabel(Seiscomp::DataModel::Event*);
+		QString formatRegionName(const QString &name, const QString &state,
+		                         const QString &country, int distKm,
+		                         const QString &dir) const;
 
 		// This creates an EventParameters instance containing copies
 		// of all event attributes relevant for publication incl.
@@ -132,6 +141,12 @@ class MainFrame : public MainWindow {
 		bool               _exportScriptTerminate;
 		QWidget           *_currentTabWidget;
 		QProcess           _exportProcess;
+
+		// Nearby Cities tab
+		double             _citiesMaxDist{1000.0};
+		int                _citiesMaxCount{20};
+		int                _citiesMinPopulation{10000};
+		bool               _citiesUseFullState{true};
 };
 
 
