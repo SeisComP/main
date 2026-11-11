@@ -45,8 +45,27 @@
 					</param>
 					<param name="contributor" style="query" type="xsd:string"/>
 					<param name="catalog" style="query" type="xsd:string"/>
-					<!-- not implemented -->
-					<!--param name="updateafter" style="query" type="xsd:dateTime"/-->
+					<param name="updatedafter" style="query" type="xsd:dateTime">
+						<doc title="definition">
+							Limit to events of which the event, its preferred
+							origin, preferred magnitude or preferred focal
+							mechanism was created or modified after the
+							specified time. Only these four objects are checked.
+							The modification time of the event is updated if the
+							preferred origin, magnitude or focal mechanism or the
+							event type changes.
+							Limitations: (1) changes to other objects, e.g.,
+							non-preferred origins, magnitudes and focal
+							mechanisms, moment tensors, arrivals or picks, are
+							only detected if they also change the modification
+							time of the event; (2) comments are not checked;
+							(3) event descriptions have no modification time:
+							an updated region name is only detected together
+							with a new preferred origin, an event name set by
+							an operator is not detected; (4) events without any
+							creation or modification time are never selected.
+						</doc>
+					</param>
 					<param name="format" style="query" type="xsd:string" default="xml">
 						<option value="xml" mediaType="application/xml"/>
 						<option value="text" mediaType="text/plain"/>
