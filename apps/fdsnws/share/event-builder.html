@@ -170,9 +170,14 @@
           <td>Contributor</td>
           <td><input type="text" size="10" name="contributor" value="" placeholder="agency" /></td>
         </tr>
-        <tr>
-          <td>Update After</td>
-          <td><input type="text" size="10" maxlength="26" name="updateafter" value="" class="tcal" placeholder="YYYY-MM-DDTHH:MM:SS" disabled="disabled"/></td>
+        <tr title="Note: Only the event, its preferred origin, its preferred magnitude and its preferred focal mechanism are checked. The modification time of the event is updated if the preferred origin, magnitude or focal mechanism or the event type changes.
+Limitations:
+- changes to other objects, e.g., non-preferred origins, magnitudes and focal mechanisms, moment tensors, arrivals or picks, are only detected if they also change the modification time of the event
+- comments are not checked
+- event descriptions have no modification time: an updated region name is only detected together with a new preferred origin, an event name set by an operator is not detected
+- events without any creation or modification time are never selected">
+          <td>Updated After</td>
+          <td><input type="text" size="10" maxlength="26" name="updatedafter" value="" class="tcal" placeholder="YYYY-MM-DDTHH:MM:SS"/></td>
         </tr>
       </tbody>
     </table>

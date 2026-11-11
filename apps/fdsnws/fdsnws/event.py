@@ -10,7 +10,12 @@
 #     parameter is mapped to the agencyID.
 #   - origin and magnitude filter parameters are always applied to
 #     preferred origin resp. preferred magnitude
-#   - 'updateafter' request parameter not implemented
+#   - 'updatedafter' selects events of which the event itself, its preferred
+#     origin, preferred magnitude or preferred focal mechanism was created or
+#     modified after the given time. Changes to other objects, e.g.,
+#     non-preferred origins, magnitudes and focal mechanisms, moment tensors,
+#     comments or event descriptions, are only detected if they also change
+#     the modification time of the event.
 #   - additional request parameters:
 #     - includepicks:    boolean, default: true,
 #                        available only in combination with includearrivals=true
@@ -40,7 +45,7 @@ from . import utils
 
 DBMaxUInt = 18446744073709551615  # 2^64 - 1
 
-VERSION = "1.2.10"
+VERSION = "1.3.0"
 
 # Source(s) of the agencyID mapped to the FDSNWS 'contributor' property. The
 # value is controlled by the 'agencyIDPolicy' configuration parameter and used
@@ -87,7 +92,7 @@ class _EventRequestOptions(RequestOptions):
 
     PContributor = ["contributor"]
     PCatalog = ["catalog"]
-    PUpdateAfter = ["updateafter"]
+    PUpdateAfter = ["updatedafter"]
 
     # non standard parameters
     PPicks = ["includepicks", "picks"]
@@ -351,11 +356,6 @@ class FDSNEvent(BaseResource):
 
         if ro.comments and self._hideComments:
             msg = "including of comments not supported"
-            return self.renderErrorPage(req, http.BAD_REQUEST, msg, ro)
-
-        # updateafter not implemented
-        if ro.updatedAfter:
-            msg = "filtering based on update time not supported"
             return self.renderErrorPage(req, http.BAD_REQUEST, msg, ro)
 
         if self._formatList is not None and ro.format not in self._formatList:
@@ -858,7 +858,17 @@ class FDSNEvent(BaseResource):
             params += [c.lat, c.lat, c.lon]
 
         # FROM ----------------------------------
-        q += " FROM @Event AS e, @PublicObject AS pe, @Origin AS o, @PublicObject AS po"
+        q += " FROM @Event AS e"
+        if ro.updatedAfter:
+            q += (
+                " LEFT JOIN @PublicObject AS pum"
+                " ON pum.$publicID = e.$preferredMagnitudeID"
+                " LEFT JOIN @Magnitude AS um ON um._oid = pum._oid"
+                " LEFT JOIN @PublicObject AS puf"
+                " ON puf.$publicID = e.$preferredFocalMechanismID"
+                " LEFT JOIN @FocalMechanism AS uf ON uf._oid = puf._oid"
+            )
+        q += ", @PublicObject AS pe, @Origin AS o, @PublicObject AS po"
         if reqMag:
             q += ", @Magnitude AS m"
             if not reqMagType:
@@ -1008,21 +1018,24 @@ class FDSNEvent(BaseResource):
                 q += " AND o.$depth_value <= ?"
                 params.append(ro.depth.max)
 
-        # updated after
+        # updated after: the event, its preferred origin, preferred magnitude or
+        # preferred focal mechanism was created or modified after the given time
         if ro.updatedAfter:
             t = _time(ro.updatedAfter)
             ms = ro.updatedAfter.microseconds()
 
+            def _after(alias):
+                cond = []
+                for col in ("creationtime", "modificationtime"):
+                    c = f"{alias}.$creationinfo_{col}"
+                    cond.append(f"{c} > ? OR ({c} = ? AND {c}_ms > ?)")
+                    params.extend([t, t, ms])
+                return " OR ".join(cond)
+
             q += (
-                " AND ("
-                "(o.$creationinfo_creationtime > ? "
-                "OR (o.$creationinfo_creationtime = ? "
-                "AND o.$creationinfo_creationtime_ms > ?)) "
-                "OR (o.$creationinfo_modificationtime > ? "
-                "OR (o.$creationinfo_modificationtime = ? "
-                "AND o.$creationinfo_modificationtime_ms > ?)))"
+                f" AND ({_after('e')} OR {_after('o')}"
+                f" OR {_after('um')} OR {_after('uf')})"
             )
-            params += [t, t, ms, t, t, ms]
 
         # magnitude information filter
         if reqMag:
