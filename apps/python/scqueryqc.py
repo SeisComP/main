@@ -19,7 +19,6 @@
 
 import os
 import sys
-import re
 import seiscomp.core
 import seiscomp.client
 import seiscomp.io
@@ -33,61 +32,21 @@ qcParamsDefault = (
 )
 
 
-def getStreamsFromInventory(self):
-    dbr = seiscomp.datamodel.DatabaseReader(self.database())
-    inv = seiscomp.datamodel.Inventory()
-    dbr.loadNetworks(inv)
-
-    streamList = set()
-    for inet in range(inv.networkCount()):
-        network = inv.network(inet)
-        dbr.load(network)
-        for ista in range(network.stationCount()):
-            station = network.station(ista)
-            try:
-                start = station.start()
-            except Exception:
-                continue
-            try:
-                end = station.end()
-                if not start <= self._end <= end and end >= self._start:
-                    continue
-            except Exception:
-                pass
-
-            for iloc in range(station.sensorLocationCount()):
-                location = station.sensorLocation(iloc)
-                for istr in range(location.streamCount()):
-                    stream = location.stream(istr)
-                    streamID = (
-                        network.code()
-                        + "."
-                        + station.code()
-                        + "."
-                        + location.code()
-                        + "."
-                        + stream.code()
-                    )
-                    streamList.add(streamID)
-
-    return list(streamList)
-
-
 class WfqQuery(seiscomp.client.Application):
     def __init__(self, argc, argv):
-        seiscomp.client.Application.__init__(self, argc, argv)
+        super().__init__(argc, argv)
 
         self.setMessagingEnabled(False)
         self.setDatabaseEnabled(True, False)
         self.setLoggingToStdErr(True)
         self.setDaemonEnabled(False)
 
-        self._streams = False
+        self._streams = []
         self._fromInventory = False
         self._outfile = "-"
         self._parameter = qcParamsDefault
         self._start = "1900-01-01T00:00:00Z"
-        self._end = str(seiscomp.core.Time.GMT())
+        self._end = None
         self._formatted = False
 
     def createCommandLineDescription(self):
@@ -121,7 +80,7 @@ class WfqQuery(seiscomp.client.Application):
         self.commandline().addStringOption(
             "Query",
             "parameter,p",
-            "QC parameter to output: (e.g. delay, rms, 'gaps count' ...). "
+            "QC parameter to output: (e.g. delay, rms, 'gaps count', ...). "
             "Provide a single parameter or a comma-separated list. Defaults "
             "apply if parameter is not given.",
         )
@@ -135,41 +94,40 @@ class WfqQuery(seiscomp.client.Application):
 
     def printUsage(self):
         print(
-            """Usage:
+            f"""Usage:
   {os.path.basename(__file__)} [options]
 
 Query a database for waveform quality control (QC) parameters.""",
-            file=sys.stderr,
+            file=sys.stdout,
         )
 
         seiscomp.client.Application.printUsage(self)
 
         print(
-            f"""Default QC parameters: {qcParamsDefault}\n""",
-            file=sys.stderr,
-        )
-        print(
-            f"""Examples:
+            f"""Default QC parameters: {qcParamsDefault}
+
+Examples:
 Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from \
 2021-11-20 00:00:00 until current
-  {os.path.basename(__file__)} -d localhost -b 2021-11-20T00:00:00 -p rms,delay \
+  {os.path.basename(__file__)} -d localhost -b 2021-11-20 -p rms,'gaps count' \
 -i AU.AS18..SHZ,AU.AS19..SHZ""",
-            file=sys.stderr,
+            file=sys.stdout,
         )
 
     def validateParameters(self):
-        if not seiscomp.client.Application.validateParameters(self):
+        if not super().validateParameters():
             return False
 
         try:
-            self._streams = self.commandline().optionString("stream-id").split(",")
+            self._streams = [
+                s.strip()
+                for s in self.commandline().optionString("stream-id").split(",")
+                if s.strip()
+            ]
         except Exception:
             pass
 
-        try:
-            self._fromInventory = self.commandline().hasOption("streams-from-inventory")
-        except Exception:
-            pass
+        self._fromInventory = self.commandline().hasOption("streams-from-inventory")
 
         if not self._streams and not self._fromInventory:
             print(
@@ -177,6 +135,17 @@ Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from \
                 file=sys.stderr,
             )
             return False
+
+        for stream in self._streams:
+            if stream.count(".") != 3 or any(c in stream for c in "*?"):
+                print(
+                    f"Invalid stream ID (net.sta.loc.cha, no wildcards): {stream}",
+                    file=sys.stderr,
+                )
+                return False
+
+        # load inventory if no stream list is given
+        self.setLoadInventoryEnabled(not self._streams)
 
         try:
             self._outfile = self.commandline().optionString("output")
@@ -194,95 +163,126 @@ Query rms and delay values for streams 'AU.AS18..SHZ' and 'AU.AS19..SHZ' from \
         try:
             self._end = self.commandline().optionString("end")
         except Exception:
-            print(
-                f"No end time given, considering 'now': {self._end}",
-                file=sys.stderr,
-            )
+            print("No end time given, considering 'now'", file=sys.stderr)
 
         try:
             self._parameter = self.commandline().optionString("parameter")
         except Exception:
             print("No QC parameter given, using default", file=sys.stderr)
 
-        try:
-            self._formatted = self.commandline().hasOption("formatted")
-        except Exception:
-            pass
+        # "'gaps count'" -> "gaps count"
+        self._parameter = [
+            p.strip().strip("'\"")
+            for p in self._parameter.split(",")
+            if p.strip().strip("'\"")
+        ]
 
+        self._formatted = self.commandline().hasOption("formatted")
+
+        start = seiscomp.core.Time.FromString(self._start)
+        if start is None:
+            print(f"Wrong 'begin' format '{self._start}'", file=sys.stderr)
+            return False
+
+        if self._end is None:
+            end = seiscomp.core.Time.UTC()
+        else:
+            end = seiscomp.core.Time.FromString(self._end)
+            if end is None:
+                print(f"Wrong 'end' format '{self._end}'", file=sys.stderr)
+                return False
+
+        if start > end:
+            print("Begin time is after end time", file=sys.stderr)
+            return False
+
+        self._start, self._end = start, end
         return True
+
+    def _isActive(self, obj):
+        if obj.start() > self._end:
+            return False
+        try:
+            return obj.end() >= self._start
+        except ValueError:
+            return True
+
+    def streamsFromInventory(self):
+        inv = seiscomp.client.Inventory.Instance().inventory()
+        if not inv:
+            return []
+
+        streams = set()
+        for inet in range(inv.networkCount()):
+            net = inv.network(inet)
+            for ista in range(net.stationCount()):
+                sta = net.station(ista)
+                if not self._isActive(sta):
+                    continue
+                for iloc in range(sta.sensorLocationCount()):
+                    loc = sta.sensorLocation(iloc)
+                    if not self._isActive(loc):
+                        continue
+                    for icha in range(loc.streamCount()):
+                        cha = loc.stream(icha)
+                        if self._isActive(cha):
+                            streams.add(
+                                f"{net.code()}.{sta.code()}.{loc.code()}.{cha.code()}"
+                            )
+
+        return sorted(streams)
 
     def run(self):
         if not self.query():
             print("No database connection!\n", file=sys.stderr)
             return False
 
-        streams = self._streams
-        if not streams and self._fromInventory:
-            streams = getStreamsFromInventory(self)
-
+        streams = self._streams or self.streamsFromInventory()
         if not streams:
-            print("Empty stream list")
+            print("Empty stream list", file=sys.stderr)
             return False
 
-        for stream in streams:
-            if re.search("[*?]", stream):
-                print(
-                    f"Wildcards in streamID are not supported: {stream}\n",
-                    file=sys.stderr,
-                )
-                return False
-
         print("Request:", file=sys.stderr)
-        print(f"  streams:           {str(streams)}", file=sys.stderr)
+        print(f"  streams:           {streams}", file=sys.stderr)
         print(f"  number of streams: {len(streams)}", file=sys.stderr)
-        print(f"  begin time:        {str(self._start)}", file=sys.stderr)
-        print(f"  end time:          {str(self._end)}", file=sys.stderr)
-        print(f"  parameters:        {str(self._parameter)}", file=sys.stderr)
+        print(f"  begin time:        {self._start.iso()}", file=sys.stderr)
+        print(f"  end time:          {self._end.iso()}", file=sys.stderr)
+        print(f"  parameters:        {self._parameter}", file=sys.stderr)
         print("Output:", file=sys.stderr)
         print(f"  file:              {self._outfile}", file=sys.stderr)
         print(f"  formatted XML:     {self._formatted}", file=sys.stderr)
 
-        # create archive
-        xarc = seiscomp.io.XMLArchive()
-        if not xarc.create(self._outfile, True, True):
+        ar = seiscomp.io.XMLArchive()
+        if not ar.create(self._outfile, True, True):
             print(f"Unable to write XML to {self._outfile}!\n", file=sys.stderr)
             return False
-        xarc.setFormattedOutput(self._formatted)
+
         qc = seiscomp.datamodel.QualityControl()
 
         # write parameters
-        for parameter in self._parameter.split(","):
+        for parameter in self._parameter:
             for stream in streams:
-                start = seiscomp.core.Time.FromString(self._start)
-                if start is None:
-                    seiscomp.logging.error(f"Wrong 'start' format '{self._start}'")
-                    return False
-
-                end = seiscomp.core.Time.FromString(self._end)
-                if end is None:
-                    seiscomp.logging.error(f"Wrong 'end' format '{self._end}'")
-                    return False
-
-                (net, sta, loc, cha) = stream.split(".")
-                it = self.query().getWaveformQuality(
+                net, sta, loc, cha = stream.split(".")
+                for obj in self.query().getWaveformQuality(
                     seiscomp.datamodel.WaveformStreamID(net, sta, loc, cha, ""),
                     parameter,
-                    start,
-                    end,
-                )
-
-                while it.get():
-                    try:
-                        wfq = seiscomp.datamodel.WaveformQuality.Cast(it.get())
+                    self._start,
+                    self._end,
+                ):
+                    wfq = seiscomp.datamodel.WaveformQuality.Cast(obj)
+                    if wfq:
                         qc.add(wfq)
-                    except Exception:
-                        pass
-                    it.step()
 
-        xarc.writeObject(qc)
-        xarc.close()
+        ar.setFormattedOutput(self._formatted)
+        ar.writeObject(qc)
+        ar.close()
         return True
 
 
-app = WfqQuery(len(sys.argv), sys.argv)
-sys.exit(app())
+def main():
+    app = WfqQuery(len(sys.argv), sys.argv)
+    return app()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

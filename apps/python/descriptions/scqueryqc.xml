@@ -2,11 +2,11 @@
 <seiscomp>
 	<module name="scqueryqc" category="Utilities">
 		<description>
-			Query waveform quality control (QC) parameters from database.
+		Query waveform quality control (QC) parameters from database.
 		</description>
 		<command-line>
 		<synopsis>
-			scqueryqc [options]
+		scqueryqc [options]
 		</synopsis>
 			<group name="Generic">
 				<optionReference>generic#help</optionReference>
@@ -48,13 +48,13 @@
 			<group name="Query">
 				<option flag="b" long-flag="begin" argument="time">
 					<description>
-					Begin time of query. Format: 'YYYY-MM-DD hh:mm:ss'.
+					Begin time of query in any format supported by SeisComP.
 					'1900-01-01T00:00:00Z' is considered if undefined.
 					</description>
 				</option>
 				<option flag="e" long-flag="end" argument="time">
 					<description>
-					End time of query. Format: 'YYYY-MM-DD hh:mm:ss'.
+					End time of query in any format supported by SeisComP.
 					Current time is considered if undefined.
 					</description>
 				</option>
@@ -62,8 +62,8 @@
 					<description>
 					Waveform stream ID to search for QC parameters: net.sta.loc.cha -
 					[networkCode].[stationCode].[sensorLocationCode].[channelCode].
-					Provide a single ID or a comma-separated list. Overrides
-					'--streams-from-inventory'.
+					Provide a single ID or a comma-separated list. Wildcards are not
+					supported. Overrides '--streams-from-inventory'.
 					</description>
 				</option>
 				<option flag="p" long-flag="parameter" argument="string">

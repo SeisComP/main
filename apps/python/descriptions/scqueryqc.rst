@@ -8,7 +8,7 @@ QC parameters are typically provided and written to the database by :ref:`scqc`.
    permanent application without regularly stripping database from these
    parameters!
 
-The database query is done for
+Database queries are done for
 
 * One or multiple streams,
 * One or multiple QC parameters. All QC parameters can be requested. Defaults
@@ -23,7 +23,7 @@ The database query is done for
 
 
 Workflow
---------
+========
 
 You should minimize the impact of stored waveform QC parameters on the size of the
 database by regularly archiving the stored parameters and cleaning the database
@@ -40,7 +40,7 @@ database by regularly archiving the stored parameters and cleaning the database
 
    .. code-block:: sh
 
-      scqueryqc -d [database] -e '[end time]' --streams-from-inventory -o [XML file]
+      scqueryqc -d mysql://sysop:sysop@localhost/seiscomp -e 2026-10-01T00:00:00 --streams-from-inventory -o /tmp/qc.xml
 
 
 #. Clean the database from QC parameters by one of the modules: :ref:`scdb`,
@@ -51,7 +51,7 @@ database by regularly archiving the stored parameters and cleaning the database
 
      .. code-block:: sh
 
-        scdb -d [database] -i [XML file] -r
+        scdb -d mysql://sysop:sysop@localhost/seiscomp -i /tmp/qc.xml -r
 
    * :ref:`scdispatch`: Use with the parameters saved in XML. You may need
      to set the routing table for sending the QualityControl parameters to the
@@ -59,7 +59,7 @@ database by regularly archiving the stored parameters and cleaning the database
 
      .. code-block:: sh
 
-        scdispatch -H [host] -O remove --routingtable QualityControl:QC -i [XML file]
+        scdispatch -H localhost -O remove --routingtable QualityControl:QC -i /tmp/qc.xml
 
    * :ref:`scdbstrip`: Run with the command-line option
      :option:`--qc-only` and remove **all** QC parameters in the time span. Use the same
@@ -67,7 +67,7 @@ database by regularly archiving the stored parameters and cleaning the database
 
      .. code-block:: sh
 
-        scdbstrip -d [database] -Q --date-time '[end time]'
+        scdbstrip -d mysql://sysop:sysop@localhost/seiscomp -Q --date-time 2026-10-01T00:00:00
 
      .. note::
 
@@ -77,19 +77,19 @@ database by regularly archiving the stored parameters and cleaning the database
 
 
 Examples
---------
+========
 
 * Query rms and delay values for the stream AU.AS18..SHZ,AU.AS19..SHZ before
-  '2021-11-20 00:00:00'. Write the XML to stdout
+  2021-11-20T00:00:00. Write the XML to stdout
 
   .. code-block:: sh
 
-     scqueryqc -d localhost -e '2021-11-20 00:00:00' -p rms,delay -i AU.AS18..SHZ,AU.AS19..SHZ
+     scqueryqc -d localhost -e 2021-11-20 -p rms,delay -i AU.AS18..SHZ,AU.AS19..SHZ
 
-* Query all default QC parameter values for all streams found in the inventory
-  from '2021-11-20 00:00:00' until current. Write the formatted XML output to
+* Query all default QC parameter values for all streams found in inventory
+  from 2021-11-20T00:00:00 until current. Write formatted XML output to
   :file:`/tmp/query.xml`
 
   .. code-block:: sh
 
-     scqueryqc -d localhost -b '2021-11-20 00:00:00' --streams-from-inventory -f -o /tmp/query.xml
+     scqueryqc -d localhost -b 2021-11-20 --streams-from-inventory -f -o /tmp/query.xml
