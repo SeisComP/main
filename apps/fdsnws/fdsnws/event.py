@@ -50,7 +50,7 @@ from . import utils
 
 DBMaxUInt = 18446744073709551615  # 2^64 - 1
 
-VERSION = "1.4.0"
+VERSION = "1.3.0"
 
 # Source(s) of the agencyID mapped to the FDSNWS 'contributor' property. The
 # value is controlled by the 'agencyIDPolicy' configuration parameter and used
