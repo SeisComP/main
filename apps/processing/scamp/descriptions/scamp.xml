@@ -85,6 +85,9 @@
 				<optionReference>database#config-module</optionReference>
 				<optionReference>database#inventory-db</optionReference>
 				<optionReference>database#db-disable</optionReference>
+				<option long-flag="db-disable">
+					<description>Do not use the database when in messaging mode.</description>
+				</option>
 			</group>
 
 			<group name="Records">

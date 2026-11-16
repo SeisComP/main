@@ -115,6 +115,7 @@ AmpTool::~AmpTool() {
 void AmpTool::createCommandLineDescription() {
 	Application::createCommandLineDescription();
 
+	commandline().addOption("Database", "db-disable", "Do not use the database when in messaging mode.");
 	commandline().addOption("Messaging", "test", "Test mode, no messages are sent.");
 	commandline().addOption("Generic", "expiry,x",
 	                        "Time span in hours after which objects expire.", &_fExpiry, true);
@@ -173,8 +174,16 @@ bool AmpTool::validateParameters() {
 		setMessagingEnabled(false);
 		setLoggingToStdErr(true);
 
-		if ( !isInventoryDatabaseEnabled() && !isConfigDatabaseEnabled() )
+		if ( (!isInventoryDatabaseEnabled() && !isConfigDatabaseEnabled()) ) {
 			setDatabaseEnabled(false, false);
+		}
+	}
+
+	if ( isMessagingEnabled() ) {
+		if ( commandline().hasOption("db-disable") ) {
+			setDatabaseEnabled(false, false);
+			_fetchMissingAmplitudes = false;
+		}
 	}
 
 	return true;
@@ -1279,7 +1288,10 @@ void AmpTool::removedFromCache(Seiscomp::DataModel::PublicObject *po) {
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 size_t AmpTool::loadAmplitudes(const std::string &pickID,
                                Seiscomp::DataModel::Amplitude *ignoreAmp) {
-	if ( !_fetchMissingAmplitudes ) return 0;
+	if ( !_fetchMissingAmplitudes ) {
+		return 0;
+	}
+
 	// Load all amplitudes from the database
 	size_t cnt = 0;
 	DatabaseIterator it = query()->getAmplitudesForPick(pickID);
