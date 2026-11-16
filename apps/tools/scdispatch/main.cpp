@@ -98,6 +98,37 @@ class BaseObjectDispatcher : protected Visitor {
 	//  Protected interface
 	// ----------------------------------------------------------------------
 	protected:
+		void flush() {
+			if ( !_msg || _createNotifier ) { // redundant check but better safe...
+				return;
+			}
+			if ( _test ) {
+				SEISCOMP_DEBUG("Would send %d notifiers to %s group",
+				               _msg->size(), _targetGroup.c_str());
+				_msg = nullptr;
+				return;
+			}
+
+			SEISCOMP_DEBUG("Send %d notifiers to %s group",
+			               _msg->size(), _targetGroup.c_str());
+
+			while ( !SCCoreApp->isExitRequested() ) {
+				if ( _connection->send(_targetGroup.c_str(), _msg.get()) ) {
+					_msg = nullptr;
+					++_msgCount;
+					return;
+				}
+
+				SEISCOMP_ERROR("Could not send message to %s@%s",
+				               _targetGroup.c_str(), _connection->source().c_str());
+
+				sleep(1);
+			}
+
+			_msg = nullptr;
+			++_errors;
+		}
+
 		string indent(Object *object) {
 			string tmp;
 			while ( object->parent() != nullptr ) {
@@ -168,6 +199,8 @@ class BaseObjectDispatcher : protected Visitor {
 		bool                       _createNotifier{false};
 		int                        _ignoreTypes{};
 		NotifierMessagePtr         _outputNotifier;
+		string                     _targetGroup;
+		NotifierMessagePtr         _msg;
 };
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -194,7 +227,9 @@ class ObjectDispatcherV1 : public BaseObjectDispatcher {
 	public:
 		bool operator()(Object *object) {
 			_parentID = "";
-			return BaseObjectDispatcher::operator()(object);
+			auto ret = BaseObjectDispatcher::operator()(object);
+			flush();
+			return ret;
 		}
 
 		void setOperation(Operation op) {
@@ -210,7 +245,23 @@ class ObjectDispatcherV1 : public BaseObjectDispatcher {
 	//  Visitor interface
 	// ----------------------------------------------------------------------
 	protected:
-		bool visit(PublicObject* publicObject) {
+		bool visit(PublicObject *publicObject) {
+			flush();
+
+			auto targetIt = _routingTable.find(publicObject->className());
+			auto *p = publicObject->parent();
+			while ( (targetIt == _routingTable.end()) && p ) {
+				targetIt = _routingTable.find(p->className());
+				p = p->parent();
+			}
+
+			if ( targetIt == _routingTable.end() ) {
+				SEISCOMP_ERROR("! No routing for %s", publicObject->className());
+				return false;
+			}
+
+			_targetGroup = targetIt->second;
+
 			return write(publicObject);
 		}
 
@@ -235,19 +286,7 @@ class ObjectDispatcherV1 : public BaseObjectDispatcher {
 				return false;
 			}
 
-			auto targetIt = _routingTable.find(object->className());
-			auto p = parent;
-			while ( (targetIt == _routingTable.end()) && p ) {
-				targetIt = _routingTable.find(p->className());
-				p = p->parent();
-			}
-
-			if ( targetIt == _routingTable.end() ) {
-				SEISCOMP_ERROR("! No routing for %s", object->className());
-				return false;
-			}
-
-			logObject(object, _operation, targetIt->second);
+			logObject(object, _operation, _targetGroup);
 
 			_parentID = parent->publicID();
 
@@ -264,29 +303,13 @@ class ObjectDispatcherV1 : public BaseObjectDispatcher {
 				return true;
 			}
 
-			NotifierMessage notifierMessage;
-			notifierMessage.attach(notif.get());
-
-			size_t counter = 0;
-			while ( counter <= 4 ) {
-				if ( _connection->send(targetIt->second, &notifierMessage) ) {
-					++_msgCount;
-					return true;
-				}
-
-				SEISCOMP_ERROR("Could not send object %s to %s@%s",
-				               object->className(), targetIt->second.c_str(),
-				               _connection->source().c_str());
-				if ( _connection->isConnected() ) {
-					break;
-				}
-
-				++counter;
-				sleep(1);
+			if ( !_msg ) {
+				_msg = new NotifierMessage;
 			}
 
-			++_errors;
-			return false;
+			_msg->attach(notif.get());
+
+			return true;
 		}
 
 
@@ -322,7 +345,9 @@ class ObjectDispatcherV2 : public BaseObjectDispatcher {
 		bool operator()(Object *object) {
 			_parentID = "";
 			_msgCount = 0;
-			return BaseObjectDispatcher::operator()(object);
+			auto ret = BaseObjectDispatcher::operator()(object);
+			flush();
+			return ret;
 		}
 
 		void setOperation(Operation op) {
@@ -338,7 +363,23 @@ class ObjectDispatcherV2 : public BaseObjectDispatcher {
 	//  Visitor interface
 	// ----------------------------------------------------------------------
 	protected:
-		bool visit(PublicObject* publicObject) {
+		bool visit(PublicObject *publicObject) {
+			flush();
+
+			auto targetIt = _routingTable.find(publicObject->className());
+			auto *p = publicObject->parent();
+			while ( (targetIt == _routingTable.end()) && p ) {
+				targetIt = _routingTable.find(p->className());
+				p = p->parent();
+			}
+
+			if ( targetIt == _routingTable.end() ) {
+				SEISCOMP_ERROR("! No routing for %s", publicObject->className());
+				return false;
+			}
+
+			_targetGroup = targetIt->second;
+
 			return write(publicObject);
 		}
 
@@ -363,19 +404,7 @@ class ObjectDispatcherV2 : public BaseObjectDispatcher {
 				return false;
 			}
 
-			auto targetIt = _routingTable.find(object->className());
-			auto p = parent;
-			while ( (targetIt == _routingTable.end()) && p ) {
-				targetIt = _routingTable.find(p->className());
-				p = p->parent();
-			}
-
-			if ( targetIt == _routingTable.end() ) {
-				SEISCOMP_ERROR("! No routing for %s", object->className());
-				return false;
-			}
-
-			logObject(object, _operation, targetIt->second);
+			logObject(object, _operation, _targetGroup);
 
 			_parentID = parent->publicID();
 
@@ -392,29 +421,13 @@ class ObjectDispatcherV2 : public BaseObjectDispatcher {
 				return _operation != OP_REMOVE;
 			}
 
-			NotifierMessage notifierMessage;
-			notifierMessage.attach(notif.get());
-
-			size_t counter = 0;
-			while ( counter <= 4 ) {
-				if ( _connection->send(targetIt->second, &notifierMessage) ) {
-					++_msgCount;
-					return _operation != OP_REMOVE;
-				}
-
-				SEISCOMP_ERROR("Could not send object %s to %s@%s",
-				               object->className(), targetIt->second.c_str(),
-				               _connection->source().c_str());
-				if ( _connection->isConnected() ) {
-					break;
-				}
-
-				++counter;
-				sleep(1);
+			if ( !_msg ) {
+				_msg = new NotifierMessage;
 			}
 
-			++_errors;
-			return false;
+			_msg->attach(notif.get());
+
+			return true;
 		}
 
 
@@ -451,9 +464,7 @@ class ObjectMerger : public BaseObjectDispatcher {
 	public:
 		bool operator()(Object *object) {
 			_msgCount = 0;
-
-			bool ret = BaseObjectDispatcher::operator()(object);
-
+			auto ret = BaseObjectDispatcher::operator()(object);
 			flush();
 			return ret;
 		}
@@ -592,42 +603,13 @@ class ObjectMerger : public BaseObjectDispatcher {
 				return true;
 			}
 
-			if ( !_msg ) _msg = new NotifierMessage;
+			if ( !_msg ) {
+				_msg = new NotifierMessage;
+			}
 
 			_msg->attach(notif.get());
 
 			return false;
-		}
-
-		void flush() {
-			if ( !_msg || _createNotifier ) { // redundant check but better safe...
-				return;
-			}
-			if ( _test ) {
-				SEISCOMP_DEBUG("Would send %d notifiers to %s group",
-				               _msg->size(), _targetGroup.c_str());
-				_msg = nullptr;
-				return;
-			}
-
-			SEISCOMP_DEBUG("Send %d notifiers to %s group",
-			               _msg->size(), _targetGroup.c_str());
-
-			while ( !SCCoreApp->isExitRequested() ) {
-				if ( _connection->send(_targetGroup.c_str(), _msg.get()) ) {
-					_msg = nullptr;
-					++_msgCount;
-					return;
-				}
-
-				SEISCOMP_ERROR("Could not send message to %s@%s",
-				               _targetGroup.c_str(), _connection->source().c_str());
-
-				sleep(1);
-			}
-
-			_msg = nullptr;
-			++_errors;
 		}
 
 		void logObject(Object *object, Operation op, const std::string &group) {
@@ -643,8 +625,6 @@ class ObjectMerger : public BaseObjectDispatcher {
 	// ----------------------------------------------------------------------
 	private:
 		DatabaseReader     *_db;
-		NotifierMessagePtr  _msg;
-		string              _targetGroup;
 		string              _inputIndent;
 		bool                _allowRemove;
 };
@@ -761,13 +741,13 @@ class DispatchTool : public Seiscomp::Client::Application {
 				if ( _notifierOperation != "merge" && _notifierOperation != "merge-without-remove" ) {
 					if ( !_operation.fromString(_notifierOperation) ) {
 						SEISCOMP_ERROR("Notifier operation %s is not valid. Operations are "
-						               "add, update, remove or merge", _notifierOperation.c_str());
+						               "add, update, remove or merge", _notifierOperation);
 						return false;
 					}
 
 					if ( _operation != OP_ADD && _operation != OP_REMOVE && _operation != OP_UPDATE ) {
 						SEISCOMP_ERROR("Notifier operation %s is not valid. Operations are "
-						               "add, update, remove or merge", _notifierOperation.c_str());
+						               "add, update, remove or merge", _notifierOperation);
 						return false;
 					}
 				}
