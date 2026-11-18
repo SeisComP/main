@@ -929,10 +929,6 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 				continue;
 			}
 
-			if ( existingAmp ) {
-				_ampIDReuse[proc.get()] = existingAmp;
-			}
-
 			proc->setTrigger(pickTime);
 			proc->setReferencingPickID(pickID);
 
@@ -952,6 +948,10 @@ void AmpTool::process(Origin *origin, Pick *pickInput) {
 					return;
 				}
 				continue;
+			}
+
+			if ( existingAmp ) {
+				_ampIDReuse[proc.get()] = existingAmp;
 			}
 
 			proc->setPublishFunction(bind(&AmpTool::emitAmplitude, this, placeholders::_1, placeholders::_2));
