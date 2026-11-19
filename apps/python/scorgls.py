@@ -73,7 +73,7 @@ class OriginList(seiscomp.client.Application):
         self.setDaemonEnabled(False)
 
         self._startTime = seiscomp.core.Time()
-        self._endTime = seiscomp.core.Time.GMT()
+        self._endTime = seiscomp.core.Time.UTC()
         self._delimiter = None
         self._inputFile = None
 

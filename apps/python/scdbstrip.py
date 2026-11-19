@@ -753,7 +753,7 @@ Remove all waveform QC paramters older than 30 days but do not effect event para
                     timeSpan += seiscomp.core.TimeSpan(self._minutesToKeep * 60)
 
                 # All times are given in GMT (UTC)
-                timestamp = seiscomp.core.Time.GMT() - timeSpan
+                timestamp = seiscomp.core.Time.UTC() - timeSpan
             else:
                 timestamp = self._datetime
 

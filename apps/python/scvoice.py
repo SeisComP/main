@@ -455,7 +455,7 @@ Execute scvoice on command line with debug output
             logging.debug(f"desc: {dsc}")
 
             dep = org.depth().value()
-            now = core.Time.GMT()
+            now = core.Time.UTC()
             otm = org.time().value()
 
             dt = (now - otm).seconds()

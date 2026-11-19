@@ -68,7 +68,7 @@ Set the type of the event with ID gempa2021abcd and read the type from file
         msg = seiscomp.datamodel.NotifierMessage()
 
         entry = seiscomp.datamodel.JournalEntry()
-        entry.setCreated(seiscomp.core.Time.GMT())
+        entry.setCreated(seiscomp.core.Time.UTC())
         entry.setObjectID(self.params[0])
         entry.setSender(self.author())
         entry.setAction(self.params[1])

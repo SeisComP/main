@@ -889,7 +889,7 @@ Execute on command line with debug output
         if not self._daEnabled:
             return None
 
-        now = seiscomp.core.Time.GMT()
+        now = seiscomp.core.Time.UTC()
         # check if cache is still valid
         if self._daCache is None or now > self._daCache.validUntil():
             if self.query() is None:
@@ -1090,7 +1090,7 @@ configuration read:
             if stationInv != dataSelectInv:
                 self._obfuscateInventory(dataSelectInv)
 
-            self.__timeInventoryLoaded = seiscomp.core.Time.GMT()
+            self.__timeInventoryLoaded = seiscomp.core.Time.UTC()
 
             if not retn:
                 return None

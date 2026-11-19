@@ -239,7 +239,7 @@ class RequestOptions:
     # ---------------------------------------------------------------------------
     def __init__(self):
         self.service = ""
-        self.accessTime = Time.GMT()
+        self.accessTime = Time.UTC()
         self.userName = None
 
         self.time = None

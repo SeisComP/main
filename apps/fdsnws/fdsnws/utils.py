@@ -156,7 +156,7 @@ class AccessLogEntry:
         net, sta, loc, cha = "", "", "", ""
         if ro is not None:
             # processing time in milliseconds
-            procTime = int((seiscomp.core.Time.GMT() - ro.accessTime).length() * 1000.0)
+            procTime = int((seiscomp.core.Time.UTC() - ro.accessTime).length() * 1000.0)
 
             service = ro.service
             if ro.userName is not None:

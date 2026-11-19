@@ -29,7 +29,7 @@ class InvApp(seiscomp.client.Application):
         return True
 
     def run(self):
-        now = seiscomp.core.Time.GMT()
+        now = seiscomp.core.Time.UTC()
         try:
             lines = []
             dbr = seiscomp.datamodel.DatabaseReader(self.database())

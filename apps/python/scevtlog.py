@@ -285,7 +285,7 @@ Execute on command line with debug output
         return summary
 
     def printEventProcAlert(self, evt, newEvent):
-        now = seiscomp.core.Time.GMT()
+        now = seiscomp.core.Time.UTC()
 
         org = self._cache.get(seiscomp.datamodel.Origin, evt.preferredOriginID())
         prefmag = self._cache.get(
@@ -391,7 +391,7 @@ Execute on command line with debug output
         seiscomp.logging.info("cache size = %d" % self._cache.size())
 
     def printEventXML(self, evt, newEvent):
-        now = seiscomp.core.Time.GMT()
+        now = seiscomp.core.Time.UTC()
 
         # Load comments
         if evt.commentCount() == 0:

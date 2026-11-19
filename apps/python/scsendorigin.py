@@ -45,7 +45,7 @@ class SendOrigin(seiscomp.client.Application):
 
         ci = seiscomp.datamodel.CreationInfo()
         ci.setAgencyID(self.agencyID())
-        ci.setCreationTime(seiscomp.core.Time.GMT())
+        ci.setCreationTime(seiscomp.core.Time.UTC())
         self.origin.setCreationInfo(ci)
 
         lat, lon, dep = list(map(float, cstr.split(",")))

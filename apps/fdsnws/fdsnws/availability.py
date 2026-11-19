@@ -350,7 +350,7 @@ class _Availability(BaseResource):
         req.setHeader("Content-Type", contentType)
         req.setHeader(
             "Content-Disposition",
-            f"inline; filename=fdsnws-ext-availability_{Time.GMT().iso()}.{extension}",
+            f"inline; filename=fdsnws-ext-availability_{Time.UTC().iso()}.{extension}",
         )
 
         d = deferToThread(self._processRequest, req, ro, dac)
@@ -557,7 +557,7 @@ class _Availability(BaseResource):
     # --------------------------------------------------------------------------
     def _writeFormatJSON(self, req, lines, ro):
         header = (
-            f'{{"created":"{self._formatTime(Time.GMT())}",'
+            f'{{"created":"{self._formatTime(Time.UTC())}",'
             '"version": 1.0,'
             '"datasources":['
         )

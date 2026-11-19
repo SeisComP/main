@@ -58,7 +58,7 @@ Service Version:
             reference = b"%s/" % request.path.rpartition(b"/")[0]
 
             codeStr = http.RESPONSES[code]
-            date = b_str(seiscomp.core.Time.GMT().toString("%FT%T.%f"))
+            date = b_str(seiscomp.core.Time.UTC().toString("%FT%T.%f"))
             response = resp % (
                 code,
                 codeStr,

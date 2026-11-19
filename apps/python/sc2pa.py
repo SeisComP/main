@@ -203,7 +203,7 @@ class ProcAlert(seiscomp.client.Application):
             seiscomp.logging.error("too few picks - ignored")
             publish = False
 
-        now = seiscomp.core.Time.GMT()
+        now = seiscomp.core.Time.UTC()
         if (now - org.time().value()).seconds() / 86400.0 > self.maxAgeDays:
             seiscomp.logging.error("origin too old - ignored")
             publish = False

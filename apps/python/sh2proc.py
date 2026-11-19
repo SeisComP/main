@@ -118,7 +118,7 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
 
     ###########################################################################
     def loadStreams(self):
-        now = seiscomp.core.Time.GMT()
+        now = seiscomp.core.Time.UTC()
         inv = seiscomp.client.Inventory.Instance()
 
         self.streams = {}
@@ -300,7 +300,7 @@ Read Seismic Handler data from stdin. Provide inventory and configuration in XML
         event = seiscomp.datamodel.Event.Create()
 
         origin.setCreationInfo(seiscomp.datamodel.CreationInfo())
-        origin.creationInfo().setCreationTime(seiscomp.core.Time.GMT())
+        origin.creationInfo().setCreationTime(seiscomp.core.Time.UTC())
 
         originQuality = None
         originCE = None

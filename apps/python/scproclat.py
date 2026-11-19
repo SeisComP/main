@@ -140,7 +140,7 @@ class ProcLatency(seiscomp.client.Application):
             sys.stderr.write(f"{traceback.format_exc()}\n")
 
     def logObject(self, parentID, obj, update):
-        now = seiscomp.core.Time.GMT()
+        now = seiscomp.core.Time.UTC()
         pick = seiscomp.datamodel.Pick.Cast(obj)
         if pick:
             phase = ""

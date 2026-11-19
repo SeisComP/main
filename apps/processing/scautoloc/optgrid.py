@@ -74,7 +74,7 @@ class InvApp(seiscomp.client.Application):
 
         grid = readGrid("config/grid.conf")
 
-        now = seiscomp.core.Time.GMT()
+        now = seiscomp.core.Time.UTC()
         try:
             _stations = []
             dbr = seiscomp.datamodel.DatabaseReader(self.database())

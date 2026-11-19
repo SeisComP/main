@@ -382,7 +382,7 @@ Create an output XML file every 60 seconds and execute a custom script to proces
         if name not in self._clients:
             self._clients[name] = Client()
 
-        now = seiscomp.core.Time.GMT()
+        now = seiscomp.core.Time.UTC()
         client = self._clients[name]
         self.logObject(self._monitor, now)
 

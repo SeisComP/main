@@ -35,7 +35,7 @@ class RequestTrackerDB(object):
     ):
         self.msgConn = msgConn
         self.arclinkRequest = seiscomp.datamodel.ArclinkRequest.Create()
-        self.arclinkRequest.setCreated(seiscomp.core.Time.GMT())
+        self.arclinkRequest.setCreated(seiscomp.core.Time.UTC())
         self.arclinkRequest.setRequestID(req_id)
         self.arclinkRequest.setUserID(str(user))
         self.arclinkRequest.setClientID(appName)
