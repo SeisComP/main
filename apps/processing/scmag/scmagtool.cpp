@@ -34,7 +34,7 @@ using namespace Seiscomp::DataModel;
 using namespace Seiscomp::IO;
 
 
-class MagToolApp : public Seiscomp::Client::Application {
+class MagToolApp : public Client::Application {
 	public:
 		MagToolApp(int argc, char **argv)
 		: Application(argc, argv), _expiry(3*3600.)
@@ -439,7 +439,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 			        << "Calculates magnitudes of different types."
 			        << endl;
 
-			   Seiscomp::Client::Application::printUsage();
+			   Client::Application::printUsage();
 
 			   cout << "Examples:" << endl;
 			   cout << "Real-time processing with informative debug output." << endl
@@ -498,7 +498,7 @@ class MagToolApp : public Seiscomp::Client::Application {
 				return true;
 			}
 
-			return Seiscomp::Client::Application::run();
+			return Client::Application::run();
 		}
 
 		void done() {
@@ -514,6 +514,12 @@ class MagToolApp : public Seiscomp::Client::Application {
 					connection()->send(xmsg.get());
 				}
 			}
+		}
+
+		void handleAutoShutdown() {
+			// Flush all pending messages first and then shutdown
+			handleTimeout();
+			Client::Application::handleAutoShutdown();
 		}
 
 		void handleMessage(Core::Message* msg) {
