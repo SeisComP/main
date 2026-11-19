@@ -948,7 +948,7 @@ throw(Core::GeneralException)
 		}
 
 		DataModel::CreationInfo ci;
-		ci.setCreationTime(Core::Time().gmt());
+		ci.setCreationTime(Core::Time::UTC());
 		origin->setCreationInfo(ci);
 
 		origin->setMethodID("iLoc");
