@@ -881,6 +881,46 @@
 						</struct>
 					</group>
 				</group>
+				<parameter name="stationSets" type="list:string">
+					<description>
+					A list of station sets offered as presets in the
+					"Add station(s)" dialog (F3) of the picker and the
+					amplitude view. Selecting a preset fills in the station
+					patterns and the distance range of the set and selects
+					all matching stations, which can then be added with
+					the "Add" button. Unlike auxiliary channel profiles,
+					station sets do not affect which stations are loaded
+					otherwise.
+					</description>
+				</parameter>
+				<group name="stationSets">
+					<description>
+					Add the name of the station sets to 'picker.stationSets'
+					for using them.
+					</description>
+					<struct type="StationSet" link="picker.stationSets">
+						<parameter name="stations" type="list:string">
+							<description>
+							A list of wildcard patterns matched against the
+							station ID, the network and station code separated
+							by a period, e.g. "AM.*, S1.*". Matching is case
+							insensitive.
+							</description>
+						</parameter>
+						<parameter name="minimumDistance" type="double" unit="deg" default="0">
+							<description>
+							The minimum epicentral distance of stations
+							selected by this set.
+							</description>
+						</parameter>
+						<parameter name="maximumDistance" type="double" unit="deg" default="180">
+							<description>
+							The maximum epicentral distance of stations
+							selected by this set.
+							</description>
+						</parameter>
+					</struct>
+				</group>
 				<group name="phases">
 					<description>
 					Phases defined for picking. The phase phases can be selected
