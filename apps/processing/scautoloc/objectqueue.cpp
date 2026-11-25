@@ -88,11 +88,16 @@ bool PublicObjectQueue::fill(const EventParameters *ep) {
 				continue;
 			}
 
-			try {
-				Time t = picks[pickID]->time().value();
-				objs.push_back(TimeObject(t, 1, amplitude));
+			if ( auto it = picks.find(pickID); it != picks.end() ) {
+				try {
+					Time t = it->second->time().value();
+					objs.push_back(TimeObject(t, 1, amplitude));
+				}
+				catch ( ... ) {
+					SEISCOMP_WARNING("Pick %s: no pick time set", pickID);
+				}
 			}
-			catch ( ... ) {
+			else {
 				SEISCOMP_WARNING("Amplitude %s: referenced pick not found", amplitude->publicID());
 			}
 		}
