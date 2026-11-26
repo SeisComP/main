@@ -269,6 +269,14 @@ class Access:
         except KeyError:
             pass
 
+        try:
+            # New in JWT
+            for memberof in user["eduperson_entitlement"]:
+                matchers.append((self.__matchAttribute, f"{memberof}"))
+
+        except KeyError:
+            pass
+
         for m in matchers:
             for u, start, end in self.__access.get((net, "", "", ""), []):
                 if self.__matchTime(t1, t2, start, end) and m[0](m[1], u):
