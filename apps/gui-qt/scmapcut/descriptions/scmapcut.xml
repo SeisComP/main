@@ -49,6 +49,8 @@
 				<option flag="m" long-flag="margin" argument="arg" type="string" unit="degree">
 					<description>
 					Margin in degrees around origin (margin|margin_latxmargin_lon).
+					If neither region nor margin are given, the region is fitted
+					to all plotted origins and stations.
 					</description>
 				</option>
 				<option flag="d" long-flag="dimension" argument="arg" type="string" unit="px">
@@ -66,7 +68,7 @@
 					Latitude of symbol.
 					</description>
 				</option>
-				<option flag="" long-flag="long" argument="arg" unit="degree">
+				<option flag="" long-flag="lon" argument="arg" type="float" unit="degree">
 					<description>
 					Longitude of symbol.
 					</description>
@@ -81,7 +83,7 @@
 					Magnitude of event.
 					</description>
 				</option>
-				<option flag="" long-flag="layers" argument="arg" unit="">
+				<option flag="" long-flag="layers">
 					<description>
 					Draw polygonal layers.
 					</description>
@@ -96,14 +98,51 @@
 					Event ID of the event to plot on map.
 					</description>
 				</option>
+				<option flag="" long-flag="inventory-xml" argument="arg" unit="">
+					<description>
+					Name of XML file containing the inventory. If given, stations
+					are plotted at their inventory coordinates. Otherwise their
+					location is derived from the arrival distance and azimuth.
+					</description>
+				</option>
 				<option flag="" long-flag="html-area">
 					<description>
-					Print html/area section.
+					Print html/area section. Each area carries the pick ID and,
+					if the pick is available, a title with stream ID, phase and
+					residual.
 					</description>
 				</option>
 				<option flag="" long-flag="without-arrivals">
 					<description>
 					Do not render arrivals (stations).
+					</description>
+				</option>
+				<option flag="" long-flag="station-labels">
+					<description>
+					Annotate stations with their station code. Labels which
+					would overlap other labels are not drawn. Requires the
+					picks to be part of the event parameters.
+					</description>
+				</option>
+				<option flag="" long-flag="station-symbol" argument="arg" type="string" default="circle">
+					<description>
+					Symbol of stations: circle or triangle.
+					</description>
+				</option>
+				<option flag="" long-flag="info">
+					<description>
+					Draw a box with origin information: region, time,
+					magnitude, depth, location, number of used phases and RMS.
+					</description>
+				</option>
+				<option flag="" long-flag="title" argument="arg" type="string">
+					<description>
+					Title of the information box. Implies --info.
+					</description>
+				</option>
+				<option flag="" long-flag="legend">
+					<description>
+					Draw a legend of the travel time residual colors.
 					</description>
 				</option>
 			</group>
