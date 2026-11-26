@@ -505,6 +505,61 @@ been located yet, the difference to the theoretical arrival time of the same
 phase is used instead.
 
 
+Data importances
+^^^^^^^^^^^^^^^^
+
+When the origin was located with LOCSAT and
+:confval:`LOCSAT.enableDiagnosticComments` is active, the picker additionally
+shows the data importance of each arrival time. It is added to the residual
+next to the phase label, e.g. "+0.42s I=0.45", if the residuals are displayed
+(:kbd:`Ctrl+R`), and always shown in the tool tip
+together with the importances of the backazimuth and slowness if they were
+used. Data which were not used for the location do not show an importance.
+
+The data importance is the diagonal element of the data resolution matrix. It
+describes how much the fitted value of a datum is determined by the datum
+itself rather than by the other data:
+
+* **Close to 0**: The other data constrain the datum. Removing it changes the
+  location only little.
+* **Close to 1**: The datum alone constrains a parameter of the solution, e.g.
+  the depth or the origin time. The solution fits the datum almost exactly.
+
+The importances of all used data sum up to the number of free parameters *p*:
+4 (latitude, longitude, depth and time) or 3 with a fixed depth. With *n* used
+data the average importance is hence *p*/*n*, e.g. 0.36 for 11 data or 0.08
+for 50 data with a free depth. Compare the importances within an event rather
+than across events.
+
+An error in a pick appears in its own residual only partly, approximately by
+the factor (1 - importance). Residuals of data with a low importance are
+therefore meaningful: a large residual indicates a wrong pick. A datum with a
+high importance has a small residual even if the pick is wrong because the
+solution adapts to it. Such picks control the location and should be reviewed
+carefully. The following table summarizes the interpretation:
+
+.. csv-table::
+   :header: "Residual", "Importance", "Interpretation"
+   :widths: 15 15 70
+
+   "large", "low", "The other data contradict the pick. Check the pick, it is likely wrong."
+   "small", "low", "The pick is consistent with the other data."
+   "small", "high", "The solution adapts to the pick and a pick error is not visible in the residual. Review the pick carefully."
+   "large", "high", "The pick controls the solution and conflicts with the other data. Check the pick and the station geometry."
+
+As a rule of thumb from regression diagnostics, importances above twice the
+average, 2\ *p*/*n*, can be considered high.
+
+.. note::
+
+   The data importances depend on the station geometry, the phase types and the
+   data uncertainties at the final location but not on the picked times. They
+   tell where a wrong pick would affect the location most, not whether a pick
+   is wrong. They are computed for the linearized problem at the final location
+   and are hence approximations, e.g. for very local events or for solutions at
+   the depth limit.
+
+
 Data filtering
 ^^^^^^^^^^^^^^
 
