@@ -206,6 +206,65 @@
 								show all unassociated stations.
 							</description>
 						</parameter>
+						<parameter name="unassociated" type="string" default="all" values="all,auto,off">
+							<description>
+								Defines which unassociated stations are shown in
+								the maps up to "unassociatedMaxDist". "all" shows
+								all of them, "auto" shows stations up to
+								"unassociatedDistanceFactor" times the distance of
+								the farthest used station and "off" shows none.
+								With "auto" all stations are shown if no station is
+								used. The value can be changed interactively from
+								the context menu of the map.
+							</description>
+						</parameter>
+						<parameter name="unassociatedDistanceFactor" type="double" default="1.2">
+							<description>
+								The factor applied to the distance of the farthest
+								used station to show unassociated stations if
+								"unassociated" is "auto".
+							</description>
+						</parameter>
+						<parameter name="highlightInRange" type="boolean" default="true">
+							<description>
+								Highlight unassociated stations which are not
+								farther from the epicenter than the farthest used
+								station by the color
+								"scheme.colors.stations.unassociatedInRange". They
+								may indicate missed or not yet picked phases.
+							</description>
+						</parameter>
+						<parameter name="drawDistanceCircles" type="boolean" default="true">
+							<description>
+								Draw a dashed circle around the epicenter at the
+								distance of the farthest used station and, if
+								"unassociated" is "auto", a dotted circle at the
+								distance up to which unassociated stations are
+								shown.
+							</description>
+						</parameter>
+						<parameter name="hideDisabled" type="boolean" default="false">
+							<description>
+								Hide unassociated stations which are disabled in
+								the configuration module. Otherwise they are drawn
+								by the color "scheme.colors.stations.disabled".
+							</description>
+						</parameter>
+						<parameter name="hideUnconfigured" type="boolean" default="false">
+							<description>
+								Hide unassociated stations without bindings in the
+								configuration module, see "requiredBinding".
+							</description>
+						</parameter>
+						<parameter name="requiredBinding" type="string" default="">
+							<description>
+								The module, e.g. "scautopick", a station must have
+								an enabled binding for to be considered configured
+								by "hideUnconfigured". If empty, any binding is
+								sufficient. Bindings are read from the configuration
+								module of scolv, by default "trunk" in the database.
+							</description>
+						</parameter>
 					</group>
 					<group name="event">
 						<parameter name="defaultRadius" type="double" unit="deg" default="-1.0">
