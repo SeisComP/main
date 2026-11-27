@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<module name="scstation" category="Utilities" standalone="true">
+		<description>
+		Enable or disable stations in the config module from the command line.
+		</description>
+		<command-line>
+			<synopsis>
+			scstation [options] {enable|disable|list} [enabled|disabled] [NET.STA ...]
+			</synopsis>
+			<description>
+			Commands are "enable NET.STA ...", "disable NET.STA ..." and
+			"list [enabled|disabled] [NET.STA ...]". Station IDs are given as
+			NET.STA and may contain wildcards (*, ?, [...]). Several IDs can
+			also be separated by commas.
+			</description>
+			<group name="Generic">
+				<optionReference>generic#help</optionReference>
+				<optionReference>generic#version</optionReference>
+				<optionReference>generic#config-file</optionReference>
+				<optionReference>generic#plugins</optionReference>
+			</group>
+
+			<group name="Verbosity">
+				<optionReference>verbosity#verbosity</optionReference>
+				<optionReference>verbosity#v</optionReference>
+				<optionReference>verbosity#quiet</optionReference>
+				<optionReference>verbosity#component</optionReference>
+				<optionReference>verbosity#syslog</optionReference>
+				<optionReference>verbosity#lockfile</optionReference>
+				<optionReference>verbosity#console</optionReference>
+				<optionReference>verbosity#debug</optionReference>
+				<optionReference>verbosity#log-file</optionReference>
+			</group>
+
+			<group name="Messaging">
+				<optionReference>messaging#user</optionReference>
+				<optionReference>messaging#host</optionReference>
+				<optionReference>messaging#timeout</optionReference>
+				<optionReference>messaging#primary-group</optionReference>
+				<optionReference>messaging#subscribe-group</optionReference>
+				<optionReference>messaging#encoding</optionReference>
+				<optionReference>messaging#start-stop-msg</optionReference>
+			</group>
+
+			<group name="Database">
+				<optionReference>database#db-driver-list</optionReference>
+				<optionReference>database#database</optionReference>
+				<optionReference>database#config-module</optionReference>
+				<optionReference>database#inventory-db</optionReference>
+				<optionReference>database#config-db</optionReference>
+			</group>
+
+			<group name="Stations">
+				<option flag="i" long-flag="input" argument="file">
+					<description>
+					Read station IDs from file, one or more per line. Text
+					after '#' is ignored. Use '-' to read from stdin.
+					</description>
+				</option>
+				<option long-flag="group" argument="group" default="CONFIG">
+					<description>
+					The messaging group to send the change to.
+					</description>
+				</option>
+				<option long-flag="dry-run">
+					<description>
+					Show what would change without sending anything.
+					</description>
+				</option>
+			</group>
+		</command-line>
+	</module>
+</seiscomp>
